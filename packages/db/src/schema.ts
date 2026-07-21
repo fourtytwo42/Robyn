@@ -1,5 +1,6 @@
 import {
   bigint,
+  bigserial,
   boolean,
   index,
   integer,
@@ -102,10 +103,44 @@ export const jobAudit = pgTable(
     state: text("state").notNull(),
     attempts: integer("attempts").notNull().default(0),
     payload: jsonb("payload").notNull(),
+    result: jsonb("result"),
     lastError: text("last_error"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [index("job_audit_state_idx").on(table.queue, table.state)],
+);
+
+export const serviceHeartbeats = pgTable("service_heartbeats", {
+  service: text("service").primaryKey(),
+  status: text("status").notNull(),
+  metadata: jsonb("metadata").notNull().default({}),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const jobAuditEvents = pgTable(
+  "job_audit_events",
+  {
+    eventId: bigserial("event_id", { mode: "bigint" }).primaryKey(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    queue: text("queue").notNull(),
+    state: text("state").notNull(),
+    attempts: integer("attempts").notNull(),
+    lastError: text("last_error"),
+    result: jsonb("result"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("job_audit_events_key_idx").on(table.idempotencyKey, table.eventId),
+    index("job_audit_events_queue_idx").on(table.queue, table.eventId),
+  ],
 );

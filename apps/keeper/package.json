@@ -1,0 +1,28 @@
+{
+  "name": "@robyn/keeper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "jobs:retry": "node dist/retry.js",
+    "lint": "eslint src test",
+    "start": "node dist/server.js",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@robyn/db": "workspace:*",
+    "bullmq": "5.80.9",
+    "ioredis": "5.11.1",
+    "viem": "2.55.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@types/node": "24.13.3",
+    "eslint": "9.39.5",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.57.1",
+    "vitest": "4.1.10"
+  }
+}

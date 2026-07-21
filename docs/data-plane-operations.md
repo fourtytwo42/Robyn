@@ -1,6 +1,6 @@
 # Native data-plane operations
 
-Status: PostgreSQL schema, reorg-aware indexer and read API implemented; queue workers and artifact service remain in progress
+Status: PostgreSQL, Redis, reorg-aware indexing, read API and bounded conversion keeper implemented; artifact service remains in progress
 Last verified: 2026-07-21
 
 ## Native services
@@ -18,13 +18,15 @@ No database password or Redis secret is stored in the repository or PM2 configur
 
 ## Schema and migrations
 
-The shared package is packages/db. Migration 0001_initial creates:
+The shared package is packages/db. Ordered migrations 0001 through 0003 create:
 
 - canonical chain blocks;
 - append-only raw logs with transaction/log identity;
 - rebuildable launch projections with formula version;
 - durable indexer checkpoints;
-- bounded-job audit and dead-letter state; and
+- bounded-job current state and dead-letter status;
+- append-only job transition history and receipts;
+- service heartbeats; and
 - an idempotent migration ledger.
 
 Run on the VM:
@@ -35,7 +37,7 @@ pnpm --filter @robyn/db build
 pnpm --filter @robyn/db migrate
 ~~~
 
-The migration is transactional and idempotent. It was applied twice successfully on 2026-07-21. PostgreSQL schema inspection confirmed all six tables.
+Every migration is transactional and idempotent. Reapplying the ordered set succeeded on 2026-07-21; the migration ledger records all three versions.
 
 ## Service checks
 
@@ -61,7 +63,35 @@ The RPC gateway uses atomic Redis Lua reservations for its one-address-per-hour 
 
 ## Remaining work
 
-- Add BullMQ workers and durable job audit/dead-letter visibility.
 - Install and harden native MinIO for content-addressed artifacts.
 - Add database backup, off-VM copy and destructive restore rehearsal.
 - Add metrics, alerts, kill/restart and deterministic rebuild tests.
+
+## Conversion keeper
+
+`robyn-keeper` is a single-concurrency BullMQ worker on the native Redis
+service. Every executable vault leg gets a deterministic job ID derived from
+the vault, leg, pending timestamp and observed amount. Jobs retry at most three
+times with exponential backoff. `job_audit` stores the current state while
+`job_audit_events` preserves an append-only transition/receipt trail.
+Exhausted jobs become `dead_letter`, and both views remain visible through
+`GET /operations` on the read API.
+
+The keeper deliberately starts only when `ROBYN_ENV=robyn-devnet`, the
+manifest chain is 31337 and the loopback operator RPC exposes an unlocked
+account. It cannot silently run against testnet. A testnet keeper requires a
+separately approved scoped signer and quote/oracle policy.
+
+Every scan pings Redis before refreshing the PostgreSQL heartbeat. A controlled
+Redis outage aged the heartbeat to `degraded` and made API health return 503;
+restoring Redis and restarting its two consumers returned all health checks to
+`ok`.
+
+Useful checks:
+
+```bash
+pm2 status robyn-keeper
+curl -fsS http://127.0.0.1:3100/operations
+psql -d robyn -c "select state,count(*) from job_audit group by state"
+ROBYN_ENV=robyn-devnet pnpm --filter @robyn/keeper jobs:retry
+```

@@ -97,6 +97,9 @@ export default async function Home() {
             {dataPlane.status} · block {dataPlane.asOfBlock ?? "unavailable"}
           </strong>
         </div>
+        <div data-testid="keeper-status">
+          Keeper <strong>{dataPlane.keeperStatus}</strong>
+        </div>
       </section>
 
       <LaunchpadConsole deployment={deployment as Deployment} />

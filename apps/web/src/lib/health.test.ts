@@ -55,15 +55,21 @@ describe("getHealthStatus", () => {
     it("accepts indexed freshness metadata", async () => {
       const request = () =>
         Promise.resolve(
-          new Response(JSON.stringify({ asOfBlock: "90", launchCount: "2" }), {
-            status: 200,
-          }),
+          new Response(
+            JSON.stringify({
+              asOfBlock: "90",
+              launchCount: "2",
+              keeperStatus: "ok",
+            }),
+            { status: 200 },
+          ),
         );
 
       await expect(getDataPlaneHealth(request)).resolves.toEqual({
         status: "ok",
         asOfBlock: "90",
         launchCount: "2",
+        keeperStatus: "ok",
       });
     });
 
@@ -74,6 +80,7 @@ describe("getHealthStatus", () => {
         status: "degraded",
         asOfBlock: null,
         launchCount: "0",
+        keeperStatus: "degraded",
       });
     });
   });

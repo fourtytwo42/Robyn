@@ -2,7 +2,7 @@
 
 Robyn is a proposed Robinhood Chain launchpad where creators launch community tokens with an immutable, weighted asset basket. A token's creator-fee stream purchases the selected assets, and holders accrue claimable basket rewards.
 
-> **Project status:** Implementation is active. The VM runs a persistent controlled Anvil devnet, restricted user RPC/faucet, browser-operated permissionless launchpad, native PostgreSQL/Redis, a reorg-aware indexer and a freshness-labeled read API. The core launch-to-claim experience works for LAN users. Queue/artifact services, hardening, recovery evidence and testnet rehearsal remain in progress.
+> **Project status:** Implementation is active. The VM runs a persistent controlled Anvil devnet, restricted user RPC/faucet, browser-operated permissionless launchpad, native PostgreSQL/Redis, a reorg-aware indexer, freshness-labeled read API and bounded conversion keeper. The core launch-to-claim experience works for LAN users. Artifact storage, hardening, recovery evidence and testnet rehearsal remain in progress.
 
 ## Authoritative development environment
 
@@ -25,6 +25,10 @@ The Windows checkout is not an execution environment. It is only a convenience m
 | [`research/`](research/) | Chain, market, competitor, terms, contract-reuse, liquidity, security, and operational evidence |
 | [`prd/`](prd/) | Authoritative product requirements and architecture decisions |
 | [`apps/web/`](apps/web/) | Next.js user application and health surface |
+| [`apps/api/`](apps/api/) | Freshness-labeled read API and operator visibility |
+| [`apps/indexer/`](apps/indexer/) | Reorg-aware canonical chain indexer |
+| [`apps/keeper/`](apps/keeper/) | Bounded BullMQ conversion worker and dead-letter recovery |
+| [`packages/db/`](packages/db/) | Shared PostgreSQL schema and ordered migrations |
 | [`packages/contracts/`](packages/contracts/) | Foundry contracts and invariant-focused tests |
 | [`user-stories/`](user-stories/) | Delivery backlog and PRD traceability |
 | [`scripts/`](scripts/) | Reproducible research, validation, market-snapshot, and screenshot tooling |

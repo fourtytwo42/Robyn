@@ -59,6 +59,7 @@ export type DataPlaneHealth = {
   status: "ok" | "degraded";
   asOfBlock: string | null;
   launchCount: string;
+  keeperStatus: "ok" | "degraded";
 };
 
 export async function getDataPlaneHealth(
@@ -75,7 +76,8 @@ export async function getDataPlaneHealth(
     const payload = (await response.json()) as Partial<DataPlaneHealth>;
     if (
       typeof payload.asOfBlock !== "string" ||
-      typeof payload.launchCount !== "string"
+      typeof payload.launchCount !== "string" ||
+      payload.keeperStatus !== "ok"
     ) {
       throw new Error("Data API status response was invalid");
     }
@@ -83,9 +85,15 @@ export async function getDataPlaneHealth(
       status: "ok",
       asOfBlock: payload.asOfBlock,
       launchCount: payload.launchCount,
+      keeperStatus: payload.keeperStatus,
     };
   } catch {
-    return { status: "degraded", asOfBlock: null, launchCount: "0" };
+    return {
+      status: "degraded",
+      asOfBlock: null,
+      launchCount: "0",
+      keeperStatus: "degraded",
+    };
   }
 }
 

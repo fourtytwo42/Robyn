@@ -31,25 +31,45 @@ async function freshness() {
   };
 }
 
+async function keeperState() {
+  const rows = await sql.unsafe<
+    { status: string; updated_at: string; fresh: boolean }[]
+  >(
+    "SELECT status,updated_at::text,(updated_at > now() - interval '30 seconds') fresh FROM service_heartbeats WHERE service='conversion-keeper'",
+  );
+  return {
+    keeperStatus: rows[0]?.status === "ok" && rows[0].fresh ? "ok" : "degraded",
+    keeperUpdatedAt: rows[0]?.updated_at ?? null,
+  };
+}
+
 app.get("/health", async (_request, reply) => {
-  const database = await sql.unsafe<{ ok: number }[]>("SELECT 1 AS ok");
-  const state = await freshness();
-  const healthy = database[0]?.ok === 1 && state.asOfBlock !== null;
+  const [database, state, keeper] = await Promise.all([
+    sql.unsafe<{ ok: number }[]>("SELECT 1 AS ok"),
+    freshness(),
+    keeperState(),
+  ]);
+  const healthy =
+    database[0]?.ok === 1 &&
+    state.asOfBlock !== null &&
+    keeper.keeperStatus === "ok";
   return reply.code(healthy ? 200 : 503).send({
     service: "robyn-api",
     status: healthy ? "ok" : "degraded",
     chainId,
     ...state,
+    ...keeper,
   });
 });
 
 app.get("/status", async () => {
-  const [state, counts] = await Promise.all([
+  const [state, counts, keeper] = await Promise.all([
     freshness(),
     sql.unsafe<{ launches: string; logs: string }[]>(
       "SELECT (SELECT count(*)::text FROM launches WHERE chain_id=$1) launches,(SELECT count(*)::text FROM raw_logs WHERE chain_id=$1) logs",
       [chainId],
     ),
+    keeperState(),
   ]);
   return {
     service: "robyn-api",
@@ -58,6 +78,30 @@ app.get("/status", async () => {
     launchCount: counts[0]?.launches ?? "0",
     rawLogCount: counts[0]?.logs ?? "0",
     formulaVersion: "native-v1",
+    ...keeper,
+  };
+});
+
+app.get("/operations", async () => {
+  const [keeper, counts, jobs, events] = await Promise.all([
+    keeperState(),
+    sql.unsafe<{ state: string; count: string }[]>(
+      "SELECT state,count(*)::text count FROM job_audit WHERE queue='robyn-conversions' GROUP BY state ORDER BY state",
+    ),
+    sql.unsafe(
+      "SELECT idempotency_key,state,attempts,last_error,result,created_at::text,updated_at::text,completed_at::text FROM job_audit WHERE queue='robyn-conversions' ORDER BY updated_at DESC LIMIT 25",
+    ),
+    sql.unsafe(
+      "SELECT event_id::text,idempotency_key,state,attempts,last_error,result,created_at::text FROM job_audit_events WHERE queue='robyn-conversions' ORDER BY event_id DESC LIMIT 50",
+    ),
+  ]);
+  return {
+    service: "robyn-api",
+    queue: "robyn-conversions",
+    ...keeper,
+    counts: Object.fromEntries(counts.map((row) => [row.state, row.count])),
+    recent: jobs,
+    recentEvents: events,
   };
 });
 
