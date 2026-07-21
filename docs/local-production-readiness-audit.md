@@ -108,6 +108,24 @@ The auditor independently rejects malformed/error samples, SHA/path/process drif
 8. Tag and push the proven 8def270 runtime commit.
 9. Verify remote branch and tag SHAs, then perform one final requirement-by-requirement audit before closing the goal.
 
+Backup evidence must be generated from the actual encrypted artifact, checksum,
+private GitHub release assets and saved isolated-restore output:
+
+```bash
+node scripts/collect-backup-evidence.mjs \
+  --release-sha 8def270b1856c2bcfcd69d429a8d88def4ab15a8 \
+  --backup /var/backups/robyn/robyn-state-<timestamp>.tar.zst.age \
+  --checksum /var/backups/robyn/robyn-state-<timestamp>.tar.zst.age.sha256 \
+  --restore-output /var/tmp/robyn-final-restore-output.txt \
+  --output artifacts/browser-uat/2026-07-21-8def270/post-reboot-backup-evidence.json
+```
+
+The collector downloads the exact matching private release assets, compares their
+size and digest to the local encrypted artifact, authenticates the remote checksum
+file and validates the isolated restore's release SHA, table/artifact counts, chain
+ID and `liveStateTouched=false`. It reproduced the existing pre-soak evidence
+byte-for-byte; an intentionally wrong release SHA was rejected.
+
 The pre-reboot boot ID is preserved as `61d23088-ad4b-4430-a0ad-5eab296d9550`. After reboot, the machine gate must pass without rehearsal overrides:
 
 ```bash
