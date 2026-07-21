@@ -1199,9 +1199,24 @@ main > .notice {
 
 .discovery-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
   margin-top: 1rem;
+}
+
+.discovery-page {
+  width: min(100% - 3rem, 1280px);
+  padding-top: 2.75rem;
+}
+
+.discovery-hero {
+  max-width: 760px;
+  margin-bottom: 1.5rem;
+}
+
+.discovery-hero h1 {
+  font-size: clamp(2.5rem, 4.5vw, 4rem);
+  line-height: 0.98;
 }
 
 .launch-card,
@@ -1214,6 +1229,33 @@ main > .notice {
   border-radius: 1rem;
   background: rgba(11, 17, 31, 0.88);
   padding: 1.2rem;
+}
+
+.launch-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0.9rem;
+  border-radius: 0.9rem;
+}
+
+.launch-card-top {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.launch-card-copy {
+  min-width: 0;
+}
+
+.launch-card .launch-card-art {
+  width: 88px;
+  height: 88px;
+  aspect-ratio: 1;
+  margin: 0;
+  border-radius: 0.75rem;
+  object-fit: cover;
 }
 
 .launch-card-heading,
@@ -1231,6 +1273,28 @@ main > .notice {
 .activity-card h2,
 .portfolio-card h2 {
   margin: 0.35rem 0 0.7rem;
+}
+
+.launch-card h2 {
+  margin: 0.2rem 0 0.35rem;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.launch-card .asset-symbol {
+  font-size: 0.65rem;
+}
+
+.launch-card .live-chip {
+  padding: 0.3rem 0.45rem;
+  font-size: 0.6rem;
+}
+
+.launch-card .canonical-address {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.65rem;
 }
 
 .canonical-address,
@@ -1259,6 +1323,59 @@ main > .notice {
   padding: 0.4rem 0.6rem;
   color: var(--muted);
   font-size: 0.68rem;
+}
+
+.launch-card .basket-chips {
+  gap: 0.3rem;
+  margin: 0.55rem 0 0;
+}
+
+.launch-card .basket-chips span {
+  padding: 0.3rem 0.45rem;
+  color: #c7d1e6;
+  font-size: 0.62rem;
+}
+
+.reward-state-compact {
+  margin: 0.8rem 0;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.reward-state-compact dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.reward-state-compact dl div {
+  min-width: 0;
+}
+
+.reward-state-compact dt {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.reward-state-compact dd {
+  margin: 0.2rem 0 0;
+  color: var(--text);
+  font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  font-size: 0.68rem;
+}
+
+.reward-state-compact .freshness {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.58rem;
+}
+
+.launch-card > .button {
+  width: 100%;
+  min-height: 40px;
+  margin-top: auto;
 }
 
 .reward-state {
@@ -1467,6 +1584,12 @@ main > .notice {
   }
 }
 
+@media (max-width: 1050px) {
+  .discovery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 600px) {
   .site-nav {
     order: 3;
@@ -1493,10 +1616,23 @@ main > .notice {
   }
 
   .detail-hero,
-  .launch-card-heading,
   .section-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .discovery-page {
+    width: min(100% - 2rem, 1280px);
+  }
+
+  .launch-card-top {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  .launch-card .launch-card-art {
+    width: 76px;
+    height: 76px;
   }
 
   .risk-badge {

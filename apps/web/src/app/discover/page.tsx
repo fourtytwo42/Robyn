@@ -3,6 +3,8 @@ import { LaunchRewardState } from "@/components/launch-reward-state";
 import { SiteHeader } from "@/components/site-header";
 import { getLaunches } from "@/lib/data-api";
 import { TokenArt } from "@/components/launchpad-visuals";
+import { rewardAssetMetadata } from "@/lib/reward-assets";
+import deployment from "@robyn/deployment";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +12,7 @@ function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
 }
 
-function short(address: string) {
+function shortAddress(address: string) {
   return address.slice(0, 8) + "…" + address.slice(-6);
 }
 
@@ -33,13 +35,19 @@ export default async function Discover({
   const assets = Array.from(
     new Set(allLaunches.data.flatMap((launch) => launch.assets)),
   ).sort();
+  const assetMetadata = new Map(
+    assets.map((asset) => [
+      asset.toLowerCase(),
+      rewardAssetMetadata(asset, deployment.contracts.rewardAssets, isTestnet),
+    ]),
+  );
 
   return (
     <main id="main">
       <div className="ambient ambient-left" aria-hidden="true" />
       <SiteHeader />
-      <section className="page-shell">
-        <header className="page-hero">
+      <section className="page-shell discovery-page">
+        <header className="page-hero discovery-hero">
           <p className="eyebrow">Every token, its own basket</p>
           <h1>Discover tokens by the rewards they earn.</h1>
           <p className="lede">
@@ -76,7 +84,8 @@ export default async function Discover({
               <option value="">Any asset</option>
               {assets.map((asset) => (
                 <option value={asset} key={asset}>
-                  {short(asset)}
+                  {assetMetadata.get(asset.toLowerCase())?.symbol} —{" "}
+                  {assetMetadata.get(asset.toLowerCase())?.name}
                 </option>
               ))}
             </select>
@@ -109,41 +118,61 @@ export default async function Discover({
           <section className="discovery-grid" aria-label="Launch discovery">
             {launches.data.map((launch, index) => (
               <article className="launch-card" key={launch.token}>
-                <TokenArt
-                  symbol={launch.symbol}
-                  alt=""
-                  className="launch-card-art"
-                  priority={index < 2}
-                />
-                <div className="launch-card-heading">
-                  <div>
-                    <span className="asset-symbol">{launch.symbol}</span>
-                    <h2>{launch.name}</h2>
+                <div className="launch-card-top">
+                  <TokenArt
+                    symbol={launch.symbol}
+                    alt=""
+                    className="launch-card-art"
+                    priority={index < 3}
+                  />
+                  <div className="launch-card-copy">
+                    <div className="launch-card-heading">
+                      <div>
+                        <span className="asset-symbol">{launch.symbol}</span>
+                        <h2>{launch.name}</h2>
+                      </div>
+                      <span className="live-chip">#{launch.launch_id}</span>
+                    </div>
+                    <Link
+                      className="canonical-address"
+                      href={"/launches/" + launch.token}
+                      aria-label={launch.name + " token " + launch.token}
+                    >
+                      {shortAddress(launch.token)}
+                    </Link>
+                    <div
+                      className="basket-chips"
+                      aria-label="Immutable basket weights"
+                    >
+                      {launch.assets.map((asset, assetIndex) => {
+                        const metadata = assetMetadata.get(asset.toLowerCase());
+                        const weight =
+                          (launch.weights_bps[assetIndex] ?? 0) / 100;
+                        return (
+                          <span
+                            key={asset}
+                            title={metadata?.name}
+                            aria-label={
+                              (metadata?.name ?? "Unverified asset") +
+                              " " +
+                              weight +
+                              "%"
+                            }
+                          >
+                            {metadata?.symbol} · {weight}%
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <span className="live-chip">#{launch.launch_id}</span>
-                </div>
-                <Link
-                  className="canonical-address"
-                  href={"/launches/" + launch.token}
-                >
-                  {launch.token}
-                </Link>
-                <div
-                  className="basket-chips"
-                  aria-label="Immutable basket weights"
-                >
-                  {launch.assets.map((asset, index) => (
-                    <span key={asset}>
-                      {short(asset)} · {(launch.weights_bps[index] ?? 0) / 100}%
-                    </span>
-                  ))}
                 </div>
                 <LaunchRewardState
                   vault={launch.vault}
                   indexedBlock={launches.asOfBlock}
+                  compact
                 />
                 <Link className="button" href={"/launches/" + launch.token}>
-                  Inspect launch
+                  View market
                 </Link>
               </article>
             ))}

@@ -15,6 +15,7 @@ import {
 } from "@/components/launchpad-visuals";
 import { getLaunches } from "@/lib/data-api";
 import Link from "next/link";
+import { rewardAssetMetadata } from "@/lib/reward-assets";
 
 export const dynamic = "force-dynamic";
 
@@ -28,10 +29,6 @@ export default async function Home() {
   const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
   const marketShowcase = ["ROBYN", "SOAK", "ONE", "EVID"].flatMap(
     (symbol) => launches.data.find((launch) => launch.symbol === symbol) ?? [],
-  );
-  const rewardSymbols = ["mNVDA", "mSPY", "mETH"] as const;
-  const rewardAddresses = deployment.contracts.rewardAssets.map((address) =>
-    address.toLowerCase(),
   );
 
   return (
@@ -113,10 +110,12 @@ export default async function Home() {
                 <p>
                   {market.assets
                     .map((asset, index) => {
-                      const assetIndex = rewardAddresses.indexOf(
-                        asset.toLowerCase(),
+                      const metadata = rewardAssetMetadata(
+                        asset,
+                        deployment.contracts.rewardAssets,
+                        isTestnet,
                       );
-                      return `${rewardSymbols[assetIndex] ?? "asset"} ${(market.weights_bps[index] ?? 0) / 100}%`;
+                      return `${metadata.symbol} ${(market.weights_bps[index] ?? 0) / 100}%`;
                     })
                     .join(" / ")}
                 </p>
