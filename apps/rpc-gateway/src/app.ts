@@ -52,9 +52,16 @@ const TARGET_BALANCE_WEI = 10_000_000_000_000_000_000n;
 
 type RateRecord = { count: number; resetAt: number };
 
+export type RateLimiter = {
+  reserve: (key: string, maximum: number, windowMs: number) => Promise<boolean>;
+  release: (key: string) => Promise<void>;
+  close?: () => Promise<void>;
+};
+
 export type GatewayOptions = {
   now?: () => number;
   rpcRequest?: RpcRequester;
+  rateLimiter?: RateLimiter;
 };
 
 function errorResponse(
@@ -120,8 +127,15 @@ function releaseRateLimit(records: Map<string, RateRecord>, key: string): void {
 export function buildGateway(options: GatewayOptions = {}): FastifyInstance {
   const now = options.now ?? Date.now;
   const rpcRequest = options.rpcRequest ?? createDefaultRequester();
-  const ipRates = new Map<string, RateRecord>();
-  const addressRates = new Map<string, RateRecord>();
+  const memoryRates = new Map<string, RateRecord>();
+  const rateLimiter: RateLimiter = options.rateLimiter ?? {
+    reserve: (key, maximum) =>
+      Promise.resolve(takeRateLimit(memoryRates, key, maximum, now())),
+    release: (key) => {
+      releaseRateLimit(memoryRates, key);
+      return Promise.resolve();
+    },
+  };
   const app = Fastify({
     logger: false,
     bodyLimit: 256 * 1024,
@@ -138,6 +152,9 @@ export function buildGateway(options: GatewayOptions = {}): FastifyInstance {
   });
 
   app.options("/*", async (_request, reply) => reply.code(204).send());
+  app.addHook("onClose", async () => {
+    await rateLimiter.close?.();
+  });
 
   app.get("/health", async (_request, reply) => {
     try {
@@ -202,17 +219,22 @@ export function buildGateway(options: GatewayOptions = {}): FastifyInstance {
       return reply.code(400).send({ error: "A valid EVM address is required" });
     }
 
-    const timestamp = now();
     const address = parsed.data.address.toLowerCase();
-    if (!takeRateLimit(ipRates, request.ip, MAX_IP_REQUESTS, timestamp)) {
-      return reply
-        .code(429)
-        .send({ error: "Faucet IP limit reached", retryAfterSeconds: 3600 });
-    }
-    if (!takeRateLimit(addressRates, address, 1, timestamp)) {
-      return reply
-        .code(429)
-        .send({ error: "Address already funded", retryAfterSeconds: 3600 });
+    const ipKey = "faucet:ip:" + request.ip;
+    const addressKey = "faucet:address:" + address;
+    try {
+      if (!(await rateLimiter.reserve(ipKey, MAX_IP_REQUESTS, WINDOW_MS))) {
+        return reply
+          .code(429)
+          .send({ error: "Faucet IP limit reached", retryAfterSeconds: 3600 });
+      }
+      if (!(await rateLimiter.reserve(addressKey, 1, WINDOW_MS))) {
+        return reply
+          .code(429)
+          .send({ error: "Address already funded", retryAfterSeconds: 3600 });
+      }
+    } catch {
+      return reply.code(503).send({ error: "Faucet quota store unavailable" });
     }
 
     try {
@@ -247,8 +269,10 @@ export function buildGateway(options: GatewayOptions = {}): FastifyInstance {
         network: { name: "Robyn Devnet", chainId: 31337 },
       };
     } catch {
-      releaseRateLimit(ipRates, request.ip);
-      releaseRateLimit(addressRates, address);
+      await Promise.all([
+        rateLimiter.release(ipKey),
+        rateLimiter.release(addressKey),
+      ]).catch(() => undefined);
       return reply.code(503).send({ error: "Faucet upstream unavailable" });
     }
   });

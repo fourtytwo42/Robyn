@@ -55,9 +55,12 @@ The read-only API listens on port 3100 and exposes /health, /status, /launches, 
 
 A destructive derived-data rebuild test truncated blocks, raw logs, launch projections and the checkpoint, restarted the indexer, and reproduced 75 logs plus both launches through block 90. Subsequent API/indexer restarts retained the same results. The live web status surface independently displayed Indexer ok at block 90.
 
+## Redis-backed faucet quotas
+
+The RPC gateway uses atomic Redis Lua reservations for its one-address-per-hour and five-requests-per-source-IP windows. Successful quota state survived a PM2 gateway restart with 3,589 seconds remaining and rejected the repeated address with HTTP 429. When Redis was deliberately stopped, a fresh faucet request failed closed with HTTP 503 before any privileged RPC call; restarting Redis and the gateway restored service. Unit tests retain an injectable in-memory limiter so failure/release semantics remain deterministic.
+
 ## Remaining work
 
-- Move faucet quota state into Redis with bounded expiry.
 - Add BullMQ workers and durable job audit/dead-letter visibility.
 - Install and harden native MinIO for content-addressed artifacts.
 - Add database backup, off-VM copy and destructive restore rehearsal.

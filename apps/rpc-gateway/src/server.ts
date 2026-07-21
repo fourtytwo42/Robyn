@@ -1,11 +1,15 @@
 import { buildGateway } from "./app.js";
+import { createRedisRateLimiter } from "./rate-limit.js";
 
 const port = Number.parseInt(process.env.PORT ?? "8546", 10);
 if (!Number.isInteger(port) || port < 1 || port > 65_535) {
   throw new Error("PORT must be a valid TCP port");
 }
 
-const app = buildGateway();
+const rateLimiter = await createRedisRateLimiter(
+  process.env.REDIS_URL ?? "redis://127.0.0.1:6379",
+);
+const app = buildGateway({ rateLimiter });
 
 async function shutdown(signal: string) {
   app.log.info({ signal }, "Shutting down");

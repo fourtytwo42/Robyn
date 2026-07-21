@@ -10,7 +10,7 @@ Durable project context lives here. Update this file whenever information should
 - Last meaningful change: Added robyn-indexer and robyn-api as persistent PM2 processes. The indexer stores canonical blocks/raw logs and rebuildable launch projections; the API exposes bounded discovery/detail/activity/assets/status endpoints with freshness.
 - Files touched: API, indexer, shared database package, PM2 topology, web health surface, data-plane operations docs, README and MEMORY.
 - Last verification: 2026-07-21 a destructive derived-data rebuild reproduced 75 raw logs and both launches through block 90; process restarts retained the result. Full repository gates passed, and in-app-browser UAT displayed RPC ok plus Indexer ok at block 90.
-- Next step: move gateway quota state and bounded jobs into Redis, install/harden native MinIO, add dedicated data-backed pages, then complete backup/restore, monitoring, load/security and testnet rehearsal.
+- Next step: add bounded BullMQ jobs and durable job audit, install/harden native MinIO, add dedicated data-backed pages, then complete backup/restore, monitoring, load/security and testnet rehearsal.
 - Blockers: Bags/pons compatibility requires funded transactions; anonymous 0x and 1inch quote calls return 401; no public testnet faucet/canonical Stock Token registry was found; current Alloy website source is unverified; no reusable license/repository was found for Vladdy/HoodETF/BASKET.
 
 ## Current State
@@ -159,6 +159,7 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-21: Redis faucet quota checkpoint - gateway uses atomic Redis Lua reservations with bounded TTL. Address quota survived PM2 restart and returned HTTP 429 with 3,589 seconds remaining. A controlled Redis outage made the faucet fail closed with HTTP 503 before privileged RPC; Redis/gateway restart restored service. Unit suite remains deterministic through the injectable memory limiter.
 - 2026-07-21: Reorg-aware indexer/API checkpoint - persistent PM2 indexer stores canonical blocks and 75 raw logs, verifies its checkpoint hash and rebuilds two launch projections. The read API exposes bounded status/launch/detail/activity/assets endpoints with asOfBlock/indexedAt. Truncating all derived/indexed state and restarting reproduced the exact counts at block 90; API/indexer restart retained them; browser showed Indexer ok at block 90.
 - 2026-07-21: Native data foundation - installed Ubuntu PostgreSQL 16.14 and Redis 7.0.15 natively, enabled both systemd services, verified loopback-only listeners and created peer-authenticated database robyn owned by hendo420. Added the Drizzle schema plus transactional idempotent migration 0001 for canonical blocks, raw logs, launch projections, checkpoints, job audit and migration ledger; applying it twice succeeded.
 - 2026-07-21: Permissionless browser launch UAT - a session creator launched and seeded MYCO with a 40/40/20 basket as registry launch #2. A distinct session holder funded, bought 990,000 MYCO, generated and converted exact 4/4/2 mUSD legs, claimed 7,904,349,388,211,341 mNVDA, 15,808,698,776,422,683 mSPY and 11,856,524,082,317,012 mETH units, then sold 10,000 MYCO. The mobile 390x844 registry had no horizontal overflow.
