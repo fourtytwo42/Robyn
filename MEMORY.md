@@ -6,17 +6,18 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
 - Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; lower-level correctness tests pass; no unresolved critical/high defect remains; and the exact release commit and evidence are pushed. Partial, documentation-only, mocked-happy-path-only or unpushed work is not completion.
-- Current task: controlled devnet infrastructure checkpoint is implemented and under final repository validation.
-- Last meaningful change: Added systemd-persistent Anvil state, a fail-closed Fastify RPC gateway with rate-limited faucet, PM2/systemd persistence for web/gateway, live chain health in the web UI, and operational documentation.
-- Files touched: `apps/rpc-gateway/`, web health files, `infrastructure/pm2/`, `infrastructure/systemd/`, `scripts/install-anvil-service.sh`, `docs/devnet-operations.md`, workspace dependencies, README and MEMORY.
-- Last verification: 2026-07-21 live gateway allow/deny, faucet, CORS and port isolation passed; a full VM reboot preserved Anvil balance, restored both enabled systemd units and both PM2 apps, and passed recovered in-app-browser health with no console errors.
-- Next step: move faucet limits to native Redis, add TLS/firewall/reverse-proxy and immutable release operation, complete reboot/backup/load evidence, then deploy mock asset/factory/trading contracts.
+- Current task: the native protocol contract checkpoint is implemented and passing; documentation, full repository validation and push are in progress.
+- Last meaningful change: Added a permissionless launch factory, isolated immutable fee-basket vault, constrained permissionless conversion, transfer-aware multi-asset launch token rewards, pull claims and adversarial lifecycle tests.
+- Files touched: `packages/contracts/src/`, `packages/contracts/test/RobynProtocol.t.sol`, `docs/protocol-core.md`, pinned workspace dependencies, README and MEMORY.
+- Last verification: 2026-07-21 full format, lint, strict typecheck, Vitest, isolated Anvil, Foundry, build and story gates passed; Foundry passed 16 tests including two 256-run fuzz properties; pnpm audit reports no known vulnerabilities; production contract sizes remain below EIP-170.
+- Next step: finish full repository validation and push this checkpoint, then add production-shaped mock market/fee generation, deployment scripts and a persistent-devnet manifest before wiring the browser journey.
 - Blockers: Bags/pons compatibility requires funded transactions; anonymous 0x and 1inch quote calls return 401; no public testnet faucet/canonical Stock Token registry was found; current Alloy website source is unverified; no reusable license/repository was found for Vladdy/HoodETF/BASKET.
 
 ## Current State
 
 - Last verified 2026-07-20: the authoritative workspace is `/home/hendo420/Robyn` on Ubuntu VM `robyn` at `192.168.50.250`; the Windows checkout is control-only and not an execution environment.
 - The repository now contains the first implementation foundation: `apps/web`, `packages/contracts`, a pinned workspace lockfile and an isolated Anvil smoke harness. It is not yet a functional launchpad.
+- Last verified 2026-07-21: the native contract core creates fixed-supply launch tokens with one-to-three immutable weighted assets, isolates and converts measured fee balances by leg, and preserves transfer-aware multi-asset pull claims. It is tested but not yet deployed to the persistent shared devnet.
 - Last verified 2026-07-20: `prd/` is the authoritative product-intent layer. It specifies R0 validation, R1 crypto adapter pilot, R2 Stock Token beta and optional R3 native launchpad; research remains authoritative for external evidence.
 - Last verified 2026-07-20: `user-stories/` is the delivery-backlog layer derived from the PRDs. Its generated traceability matrix covers all 182 PRD requirements with 154 stories.
 - Last verified 2026-07-20: settled application stack is pnpm/Turborepo; Next.js 15, React 19, strict TypeScript, Tailwind v4, Radix/shadcn-owned components, viem/wagmi, WalletConnect/injected wallets, TanStack Query/Table, Zod/React Hook Form; Fastify; VM-native PostgreSQL/Drizzle, Redis/BullMQ and MinIO; Solidity/Foundry/OpenZeppelin; Vitest/Testing Library/Playwright; OpenTelemetry/local structured errors/Prometheus/Grafana; PM2 plus systemd; and a VM self-hosted GitHub Actions runner. Docker and containers are prohibited.
@@ -158,6 +159,7 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-21: Native protocol core - full repository gates passed; 16 Foundry tests including 512 aggregate fuzz cases passed; pnpm audit found no known vulnerabilities after exact PostCSS 8.5.20 and esbuild 0.28.1 overrides. Largest runtime was RobynLaunchFactory at 19,588 bytes, 4,988 bytes below EIP-170.
 - 2026-07-21: Controlled devnet infrastructure - native Anvil systemd service enabled and active with five-second state persistence; state balance survived restart. Restricted gateway passed 10 unit/integration tests plus live standard-method, privileged-method rejection, fixed faucet funding, repeat-rate-limit, CORS and LAN port-isolation checks. PM2 systemd restart resurrected web and gateway; in-app browser then showed `ok · chain 31337` with no console warnings/errors. Remaining gaps include Redis-backed limits, TLS/firewall, immutable releases, full VM reboot, backups and load/metrics.
 - 2026-07-21: Full VM reboot recovery - passed from pushed commit dd90518. Host returned with robyn-anvil.service and pm2-hendo420.service enabled/active, robyn-web and robyn-rpc-gateway online, the 10-dev-ETH test balance unchanged, both health endpoints healthy and the in-app browser showing robyn-devnet plus ok on chain 31337 without warnings/errors.
 - 2026-07-21: Foundation checkpoint 01 - VM production build passed; Vitest 2/2, Foundry 5/5 including 256 fuzz runs, isolated Anvil chain 31337 smoke, lint, strict typecheck and formatting passed. In-app browser verified the VM URL at 1440x900, 768x1024 and 390x844 with correct `robyn-devnet` status, unique semantic landmarks, no element crossing viewport bounds and no console warnings/errors. Browser testing caught and drove fixes for static environment labeling and mobile wrapping before acceptance.
@@ -234,6 +236,16 @@ When sources conflict, use this order:
 - 2026-06-18: `rg -n "agents\.md|memory\.md" .\AGENTS.md` - passed with no matches; confirmed operational instructions use uppercase filenames.
 
 ## Decisions
+
+### 2026-07-21 - Native Protocol Core Uses Fixed Router And Transfer Corrections
+
+- Context: The controlled devnet needs a complete launch-to-claim accounting seam before market, data-plane and web work can be trusted.
+- Decision: Deploy each launch as a fixed-supply ERC-20 plus an isolated immutable-weight vault. The vault fixes its base asset, conversion router and reward outputs; public callers can trigger only bounded per-leg operations. The token uses magnified per-share corrections on every transfer and pull claims.
+- Decision: Measure fee receipt, conversion output and final reward-token deposit independently. Failed legs revert atomically and cannot reallocate weight or block other legs.
+- Files: `packages/contracts/src/RobynLaunchFactory.sol`, `packages/contracts/src/FeeBasketVault.sol`, `packages/contracts/src/RobynLaunchToken.sol`, `packages/contracts/test/RobynProtocol.t.sol`, `docs/protocol-core.md`.
+- Commands/tests: `forge test --root packages/contracts -vv`; `forge build --root packages/contracts --sizes`.
+- Result: 16 tests pass, including two 256-run fuzz properties; OpenZeppelin Contracts is pinned to 5.4.0.
+- Follow-up: Add formal handler invariants, malicious callback fixtures, mock market/fee source, deployment manifest and shared-devnet/browser integration. Contracts remain unaudited and must not hold real value.
 
 ### 2026-07-20 - Controlled Anvil Devnet And Browser Release Gates
 
@@ -434,6 +446,7 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Complete native protocol hardening with stateful handler invariants, malicious callback fixtures and independent review; do not treat the current unaudited checkpoint as real-value ready.
 - Ask Vladdy whether the team will provide a repository/license and whether a native multi-asset mode is planned; current deployed contracts do not expose a safe weighted-basket seam.
 - Reconcile Alloy's current `0x5a5f...10f2` launchpad and `0x0E9705...` index factory with the pinned MIT repository and its older published deployment before treating the repository as exact source for the current app.
 - Obtain HoodETF and BASKET Protocol complete source repositories, licenses and audit status before considering code reuse; do not infer a copying license from Blockscout verification.

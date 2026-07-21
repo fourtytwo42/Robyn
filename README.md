@@ -2,7 +2,7 @@
 
 Robyn is a proposed Robinhood Chain launchpad where creators launch community tokens with an immutable, weighted asset basket. A token's creator-fee stream purchases the selected assets, and holders accrue claimable basket rewards.
 
-> **Project status:** Implementation is active. The first VM-native foundation includes a pinned pnpm/Turborepo workspace, production-buildable Next.js health surface, isolated Anvil smoke harness, and the first tested fee-basket conservation contract. Full launchpad journeys and persistent devnet infrastructure remain in progress.
+> **Project status:** Implementation is active. The VM now runs a persistent controlled Anvil devnet, restricted user RPC/faucet, production web health surface, and a tested native launch, immutable basket, guarded conversion, transfer-aware reward and pull-claim contract core. Shared-devnet contract deployment and the full launchpad UI/data plane remain in progress.
 
 ## Authoritative development environment
 
@@ -30,18 +30,16 @@ The Windows checkout is not an execution environment. It is only a convenience m
 | [`scripts/`](scripts/) | Reproducible research, validation, market-snapshot, and screenshot tooling |
 | [Controlled devnet operations](docs/devnet-operations.md) | Live Anvil, restricted RPC/faucet and PM2 service operation |
 | [`docs/`](docs/) | VM runtime, operating procedures and delivery roadmaps |
+| [Protocol core](docs/protocol-core.md) | Current contract boundaries, invariants, dependency provenance and limitations |
 | [Devnet-to-testnet readiness plan](docs/devnet-to-testnet-readiness-plan.md) | Phase-by-phase implementation, verification and release plan |
 
 The initial implementation will use the monorepo and contract stack defined in [`prd/10-technology-stack-and-repository-architecture.md`](prd/10-technology-stack-and-repository-architecture.md). Product language must describe the launch token as a fee-funded reward token, not an asset-backed or redeemable security.
 
 ## Validate the documentation
 
-```bash
-## Foundation commands
-
 Run only on the authoritative VM:
 
-```bash
+~~~bash
 cd /home/hendo420/Robyn
 pnpm install --frozen-lockfile
 pnpm format
@@ -49,14 +47,15 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
-```
+~~~
 
-`pnpm test` includes the Vitest suite, an isolated Anvil chain-ID/fresh-state smoke test, and Foundry unit/fuzz tests. It does not touch the future persistent shared devnet.
+`pnpm test` includes the Vitest suite, an isolated Anvil chain-ID/fresh-state smoke test, and Foundry unit/fuzz tests. It does not touch the persistent shared devnet.
 
+~~~bash
 ssh hendo420@192.168.50.250
 cd /home/hendo420/Robyn
 python3 scripts/validate-user-stories.py
-```
+~~~
 
 Research date: 2026-07-20
 

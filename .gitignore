@@ -24,6 +24,7 @@ __pycache__/
 
 # Foundry
 packages/contracts/cache/
+cache/
 packages/contracts/out/
 packages/contracts/broadcast/
 
