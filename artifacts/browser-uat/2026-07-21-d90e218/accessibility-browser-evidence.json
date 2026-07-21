@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-21T10:53:07.495Z",
+  "releaseGitSha": "d90e2187afcf278cdc5d49acaf20f3c23d8ac72a",
+  "surface": "Codex in-app Browser",
+  "skipLink": {
+    "role": "link",
+    "name": "Skip to main content",
+    "href": "#main",
+    "targetMainExists": true,
+    "pointerActivationChangedHash": true,
+    "focusStyleRules": 4
+  },
+  "reducedMotion": {
+    "mediaRuleCount": 1
+  },
+  "nonColorStatusText": [
+    "Controlled development network",
+    "RPC ok",
+    "Indexer ok · block 156",
+    "Keeper ok",
+    "Artifacts ok",
+    "Create or fund a session wallet, then launch.",
+    "Session wallet restored. Live balances refreshed."
+  ],
+  "keyboardAutomationNote": "The in-app browser key injector did not advance document focus from BODY; locator-level Tab reached the semantic skip link, and its target was verified by activation. This is recorded as a browser-control limitation rather than hidden as a product pass.",
+  "passed": true,
+  "warnOrErrorLogs": 0
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-21T11:25:10.423Z",
+  "releaseGitSha": "8def270b1856c2bcfcd69d429a8d88def4ab15a8",
+  "wallet": "0x7169095880B36c1a602340294E8b2E0047b8AD96",
+  "chainId": 31337,
+  "indexedBlock": 173,
+  "journey": {
+    "restoredWallet": true,
+    "buy": true,
+    "weightedPending": true,
+    "convertAll": true,
+    "claimAll": true,
+    "sell": true,
+    "portfolioReload": true
+  },
+  "balances": {
+    "beforeRobyn": "890000",
+    "afterBuyRobyn": "1880000",
+    "afterSellRobyn": "1780000",
+    "afterSellBase": "8198"
+  },
+  "claimedHistory": {
+    "mNVDA": "0.025",
+    "mSPY": "0.05",
+    "mETH": "0.0375"
+  },
+  "warningOrErrorLogs": 0,
+  "passed": true
+}

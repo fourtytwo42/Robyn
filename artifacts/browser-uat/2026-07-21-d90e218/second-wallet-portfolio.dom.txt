@@ -1,0 +1,44 @@
+- link "Skip to main content":
+  - /url: "#main"
+- main:
+  - link "Robyn home":
+    - /url: /
+    - generic: R
+    - generic: ROBYN
+  - navigation "Primary navigation":
+    - link "Discover":
+      - /url: /discover
+    - link "Portfolio":
+      - /url: /portfolio
+    - link "Create":
+      - /url: /#devnet-console
+  - generic: Controlled development network
+  - paragraph: Wallet-specific state
+  - heading "Your rewards across every launch." [level=1]
+  - paragraph: Held community tokens, pending launch-level cash, claimable assets and claimed amounts remain separate. No wallet data is sent to the indexer; routine reads use this browser's public RPC path.
+  - paragraph: Session wallet
+  - code: "0x7169095880B36c1a602340294E8b2E0047b8AD96"
+  - button "Refresh onchain state"
+  - status: Portfolio reconciled from live contract state.
+  - region "Cross-launch portfolio":
+    - article:
+      - text: ROBYN
+      - heading "Robyn Genesis" [level=2]
+      - generic: "#1"
+      - term: Held launch tokens
+      - definition: 890,000 ROBYN
+      - term: Launch-level pending cash
+      - definition: 1 mUSD
+      - heading "Claimable now" [level=3]
+      - paragraph: 0 mNVDA
+      - paragraph: 0 mSPY
+      - paragraph: 0 mETH
+      - heading "Claimed history" [level=3]
+      - paragraph: 0.00863 mNVDA
+      - paragraph: 0.01727 mSPY
+      - paragraph: 0.01295 mETH
+      - link "Inspect allocation evidence":
+        - /url: /launches/0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5
+  - paragraph: Token amounts are primary · indexed registry block 165 · live values read through the user RPC
+  - region "Portfolio disclosure": Values are token amounts from the controlled development chain. No fiat estimate, promised return or redemption claim is shown.
+- alert

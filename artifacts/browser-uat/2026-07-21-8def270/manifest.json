@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-21T11:25:10.423Z",
+  "releaseGitSha": "8def270b1856c2bcfcd69d429a8d88def4ab15a8",
+  "releasePath": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8",
+  "evidenceBranch": "evidence/8def270-browser-uat",
+  "chainId": 31337,
+  "wallet": "0x7169095880B36c1a602340294E8b2E0047b8AD96",
+  "indexedBlock": 173,
+  "journey": {
+    "restoredWallet": true,
+    "buy": true,
+    "weightedPendingFees": true,
+    "convertAllLegs": true,
+    "keeperRaceRecovery": true,
+    "claimAll": true,
+    "sell": true,
+    "portfolioReload": true
+  },
+  "observedState": {
+    "beforeRobyn": "890000",
+    "afterBuyRobyn": "1880000",
+    "afterSellRobyn": "1780000",
+    "afterSellBase": "8198",
+    "claimedHistory": {
+      "mNVDA": "0.025",
+      "mSPY": "0.05",
+      "mETH": "0.0375"
+    }
+  },
+  "domSnapshots": [
+    "replacement-claim.dom.txt",
+    "replacement-sold.dom.txt",
+    "replacement-portfolio.dom.txt"
+  ],
+  "structuredEvidence": "replacement-browser-evidence.json",
+  "transactionEvidence": "replacement-transactions.json",
+  "receiptEvidence": "replacement-receipts.json",
+  "transactionBlocks": [
+    166,
+    167,
+    168,
+    169,
+    170,
+    171,
+    172,
+    173
+  ],
+  "warningOrErrorLogs": 0,
+  "passed": true,
+  "notes": [
+    "The exact replacement release repeated the signed buy, weighted pending fee, three-leg conversion, claim-all, sell and portfolio reconciliation path through the Codex in-app browser.",
+    "All eight wallet and keeper transactions have successful status 0x1 receipts.",
+    "The source diff from d90e218 to 8def270 changes release operations, documentation and durable memory only; application, contract, database and PM2 runtime source is unchanged."
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-21T10:57:03.687Z",
+  "releaseGitSha": "d90e2187afcf278cdc5d49acaf20f3c23d8ac72a",
+  "surface": "Codex in-app Browser",
+  "token": "0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5",
+  "indexedBlock": 165,
+  "liveBlock": 165,
+  "formulaVersion": "native-v1",
+  "recentEventsShown": 20,
+  "recentEventsAvailable": 50,
+  "warnOrErrorLogs": 0,
+  "passed": true
+}
