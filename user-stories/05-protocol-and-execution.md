@@ -263,3 +263,55 @@ Acceptance criteria:
 3. Transfer/mint/burn sequences preserve system entitlement within bounded dust.
 4. Gas is profiled for one, three and five slots before the R3 decision.
 
+## Epic O: Native curve and graduation
+
+### US-CURVE-001: Trade on a canonical bonding curve
+
+- Release: R1
+- Priority: Must
+- Persona: Trader, Verifier
+- PRD: PROTO-013, PROTO-016
+- Depends on: Economic simulation and immutable launch configuration
+
+As a trader, I want every pre-graduation quote derived from immutable onchain reserves so that price and progress cannot be fabricated or administratively changed.
+
+Acceptance criteria:
+
+1. Buy and sell quotes use the documented constant-product formula with conservative rounding.
+2. Progress uses net canonical reserve divided by the immutable target, not gross volume.
+3. Actual balances cover recorded reserves after every successful transition.
+4. No privileged withdrawal path exists for curve liquidity.
+
+### US-CURVE-002: Graduate automatically and irreversibly
+
+- Release: R1
+- Priority: Must
+- Persona: Trader, Holder
+- PRD: PROTO-014, PROTO-015, PROTO-016
+- Depends on: Completed curve and canonical graduation adapter
+
+As a holder, I want a completed curve migrated permissionlessly into locked liquidity so that no creator or operator can delay, redirect or reverse graduation.
+
+Acceptance criteria:
+
+1. Graduation reverts below the immutable threshold and can be called by anyone at or above it.
+2. The adapter fixes token, quote asset, venue, pool parameters, recipient and locker before launch.
+3. A successful migration happens once, records exact amounts and cannot be reversed.
+4. Failure leaves the completed curve recoverable without losing user or reward funds.
+
+### US-CURVE-003: Preserve fair transfer and reward behavior
+
+- Release: R1
+- Priority: Must
+- Persona: Holder, Security reviewer
+- PRD: PROTO-017, PROTO-018
+- Depends on: Curve-aware launch token and immutable reward vault
+
+As a holder, I want pre-graduation trading constrained to the curve and basket fees preserved across graduation so that side markets cannot bypass launch pricing and my reward system does not reset.
+
+Acceptance criteria:
+
+1. Before graduation, only explicitly approved protocol flows can move tokens between wallets and market inventory.
+2. Graduation permanently enables ordinary transfers.
+3. Curve and post-graduation fees enter the same immutable basket vault.
+4. Transfer-aware reward accounting remains solvent across the phase transition.

@@ -108,7 +108,7 @@ These do not block the validation build but must be resolved before adapter MVP 
 
 - Brand name and public domain.
 - Final logo and brand mark.
-- Exact token supply and launch-curve parameters inherited from the selected launchpad.
+- Production virtual reserves, starting/terminal FDV and canonical Robinhood Chain graduation adapter parameters. Controlled devnet uses the fixed policy in `research/17-bonding-curve-and-graduation-design.md`.
 - Epoch cadence and challenge delay.
 - Minimum claim amount and whether claims may combine assets.
 - Initial crypto asset allowlist.
@@ -128,4 +128,11 @@ These do not block the validation build but must be resolved before adapter MVP 
 - Guaranteed conversion timing or reward value.
 - Pushing tokens to every holder in a loop.
 - Project custody or discretionary trading of user assets.
-- Native launch bonding curve unless adapter validation fails and the decision is consciously revisited.
+- Multiple creator-selectable curve formulas or graduation venues. R1 uses one protocol-defined curve and one canonical venue.
+
+## Native bonding and graduation decision (2026-07-21)
+
+- New Robyn-native launches use a constant-product bonding curve followed by an automatic, irreversible graduation into locked AMM liquidity.
+- The curve and graduated venue both route their configured trading-fee share to the launch's existing immutable reward basket.
+- Controlled devnet uses 1B fixed supply, an 800M curve allocation, a 200M graduation allocation, 1% fee and 6,500 mUSD target. Production virtual reserves remain gated on economic simulation and review.
+- Existing fixed-price devnet launches remain readable as `legacy_fixed`; they are not silently relabeled or rewritten.

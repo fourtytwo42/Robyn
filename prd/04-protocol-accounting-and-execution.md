@@ -33,6 +33,8 @@ flowchart LR
 
 Replace the upstream token/factory dependency and Merkle ownership calculation with a Robyn launch token that updates per-asset magnified correction state on every mint, burn and transfer. Fee conversion and pull claims remain isolated from trading.
 
+The native release also adds the protocol-defined curve and graduation lifecycle in `research/17-bonding-curve-and-graduation-design.md`. The curve is a constant-product market with immutable parameters. Reaching its onchain threshold closes the curve and permits exactly one permissionless, irreversible migration into canonical locked liquidity. Both phases route the configured fee share to the same launch reward vault.
+
 ## Adapter components
 
 | Component | Responsibility |
@@ -92,6 +94,12 @@ Basket address/weight arrays are immutable. Asset pause or delisting changes exe
 | PROTO-010 | Contracts MUST use custom errors and explicit bounds for array length, weights, amounts and deadlines | MUST | Static/unit review |
 | PROTO-011 | No component MAY sweep holder rewards to treasury or creator | MUST | Role and bytecode review |
 | PROTO-012 | Contract versions and implementation/admin addresses MUST be publicly discoverable | MUST | Explorer/config audit |
+| PROTO-013 | Curve progress MUST derive from canonical net reserve and immutable target, never gross volume or an offchain flag | MUST | Stateful invariant and API test |
+| PROTO-014 | Graduation MUST be threshold-gated, permissionless, idempotent, atomic and irreversible | MUST | Unit/fuzz/adversarial tests |
+| PROTO-015 | Graduation calldata MUST NOT permit arbitrary asset, pool, recipient, locker, router or fee-tier selection | MUST | Calldata mutation suite |
+| PROTO-016 | Curve and graduated liquidity MUST have no privileged withdrawal path | MUST | Role/bytecode review |
+| PROTO-017 | Pre-graduation transfers MUST be restricted to approved protocol flow; transfers become permanently permissionless after graduation | MUST | Transfer-state tests |
+| PROTO-018 | Curve and post-graduation trading fees MUST remain bound to the launch's immutable basket vault | MUST | Cross-phase fee invariant |
 
 ## Adapter epoch calculation
 
@@ -164,4 +172,3 @@ These are configurable policy hypotheses, not immutable product decisions. Chang
 - Use Alloy and Vladdy accounting behavior as references; do not deploy Alloy unchanged or copy unlicensed Vladdy source.
 - Call the selected upstream factory through a pinned, verified ABI and monitored implementation.
 - Do not depend on IndexPad, current Alloy, HoodETF or BASKET deployments for holder accounting.
-
