@@ -401,21 +401,40 @@ export function DevnetConsole({ deployment }: { deployment: Deployment }) {
   async function convert() {
     if (!walletClient) return;
     await execute("Converting every funded basket leg&", async () => {
+      const threshold = parseEther("1");
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
       for (let index = 0; index < state.assets.length; index += 1) {
-        const pending = state.assets[index].pending;
-        if (pending < parseEther("1")) continue;
+        const current = await publicClient.readContract({
+          address: deployment.contracts.genesisVault,
+          abi: vaultAbi,
+          functionName: "leg",
+          args: [BigInt(index)],
+        });
+        const pending = current.pendingBase;
+        if (pending < threshold) continue;
         const minimum = pending * BigInt(index + 1);
-        await submit(
-          await walletClient.writeContract({
+        try {
+          await submit(
+            await walletClient.writeContract({
+              address: deployment.contracts.genesisVault,
+              abi: vaultAbi,
+              functionName: "convertLeg",
+              args: [BigInt(index), pending, minimum, deadline],
+            }),
+          );
+        } catch (error) {
+          const latest = await publicClient.readContract({
             address: deployment.contracts.genesisVault,
             abi: vaultAbi,
-            functionName: "convertLeg",
-            args: [BigInt(index), pending, minimum, deadline],
-          }),
-        );
+            functionName: "leg",
+            args: [BigInt(index)],
+          });
+          if (latest.pendingBase >= threshold) throw error;
+        }
       }
-      setStatus("Basket conversion confirmed. Holder rewards are now accrued.");
+      setStatus(
+        "Basket conversion complete. Any raced leg was already converted by the keeper.",
+      );
     });
   }
 

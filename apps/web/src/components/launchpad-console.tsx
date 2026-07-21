@@ -510,7 +510,9 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
             functionName: "leg",
             args: [index],
           });
-          if (leg.pendingBase >= parseEther("1"))
+          const threshold = parseEther("1");
+          if (leg.pendingBase < threshold) continue;
+          try {
             await submit({
               address: launch.vault,
               abi: vaultAbi,
@@ -523,6 +525,15 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
               ],
               account,
             });
+          } catch (error) {
+            const latest = await publicClient.readContract({
+              address: launch.vault,
+              abi: vaultAbi,
+              functionName: "leg",
+              args: [index],
+            });
+            if (latest.pendingBase >= threshold) throw error;
+          }
         }
       } else {
         setStatus("Claiming all available basket rewards...");

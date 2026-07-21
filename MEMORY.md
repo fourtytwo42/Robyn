@@ -6,13 +6,15 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
 - Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; no unresolved critical/high defect remains; exact release evidence is pushed; and the final exact candidate completes an uninterrupted 24-hour soak.
-- Current task: commit and push the browser-found portfolio/cleanup fixes, build/promote/reboot the exact immutable release, run final devnet browser acceptance, then start its real 24-hour soak.
+- Current task: commit and push the keeper-race UI fix, build/promote/reboot the new exact immutable release, repeat final browser acceptance, then start its real 24-hour soak.
 - Last meaningful change: implemented stateful invariants and malicious callback coverage, bounded exclusions, protected Robinhood Testnet modules/deployer/verifier/build, full transaction and isolated five-service rehearsals, release-gate integration and security triage.
 - Last verification: 2026-07-21 testnet transaction rehearsal passed faucet, buy, three conversions, claim and sell; isolated web/API/indexer/keeper/artifact rehearsal passed with restricted key file, three keeper conversions, dedicated database cleanup and live devnet preservation. Security audit passed with zero critical/high, zero high/critical dependency advisories and zero secret-history findings.
-- Next step: commit/push the browser-found fixes, immutable release build/promotion/reboot/browser verification, off-VM backup and uninterrupted 24-hour soak.
+- Next step: commit/push the keeper-race fix, immutable release build/promotion/reboot/browser verification, off-VM backup and uninterrupted 24-hour soak.
 - External gates: public testnet ETH and explicit broadcast authorization are needed for an actual Robinhood Testnet transaction; human alert delivery and independent contract review are required before real-value operation.
 
 ## Current State
+
+- Last verified 2026-07-21: post-reboot signed browser acceptance found a keeper/manual conversion race. All devnet and protected-testnet conversion buttons now read live pending state and suppress a transaction error only when a post-error reread proves the keeper already consumed that leg; every other error is rethrown. A forced 5.2-second keeper race then passed buy, idempotent conversion, claim of all three assets and sell with zero console warnings/errors.
 
 - Last verified 2026-07-21: in-app-browser UAT passed protected testnet home, injected-wallet absence handling, one-launch registry, anonymous discovery, canonical detail, repaired portfolio, zero console warnings/errors and a 390 by 844 responsive overflow check. The browser found and drove fixes for a portfolio 404, stale devnet disclosure and dishonest PM2 cleanup evidence.
 
@@ -490,6 +492,15 @@ When sources conflict, use this order:
 - Commands/tests: protected build, in-app-browser DOM and console checks, 390 by 844 overflow check, full monorepo gates, transaction rehearsal, five-service rehearsal and security audit.
 - Result: Browser exposed portfolio 404 and stale copy; both were fixed. Teardown exposed comma-selector deletion failure; cleanup now uses explicit PM2 names and asserts none remain. Rehearsal passed afterward with no testnet processes and live devnet health preserved.
 - Follow-up: push the fix commit and run the same exact-release gates during immutable build.
+
+### 2026-07-21 - Keeper and manual-conversion race
+
+- Context: On exact release c9807e1, the post-reboot browser funded and bought successfully, but the keeper consumed the pending fee before the user clicked Convert; the stale manual call reverted InsufficientPending.
+- Decision: Re-read each leg immediately before submission; if submission errors, re-read again and treat it as success only when pending is now below the executable threshold. Rethrow every error while principal remains pending. Apply the rule to genesis and permissionless launch controls in both devnet and protected testnet modules.
+- Files: apps/web/src/components/devnet-console.tsx, launchpad-console.tsx, network-console.testnet.tsx and network-launchpad.testnet.tsx.
+- Commands/tests: web format/lint/typecheck/test/build; in-app-browser forced race after waiting beyond the keeper scan interval; signed buy, convert, three-asset claim and sell.
+- Result: Passed with status explaining raced legs were already converted, pending zero, claim enabled, nonzero mNVDA/mSPY/mETH rewards, completed sell and zero browser warnings/errors.
+- Follow-up: cut a new exact immutable release; c9807e1 is not the final candidate.
 
 ## Open Follow-ups
 

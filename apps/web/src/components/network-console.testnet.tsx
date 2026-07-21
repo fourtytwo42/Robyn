@@ -385,21 +385,40 @@ export function NetworkConsole({ deployment }: { deployment: Deployment }) {
   const convert = () =>
     execute("Converting every eligible basket leg...", async () => {
       if (!account || !walletClient) return;
+      const threshold = parseEther("1");
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
       for (let index = 0; index < state.assets.length; index += 1) {
-        const pending = state.assets[index].pending;
-        if (pending < parseEther("1")) continue;
-        await submit(
-          walletClient.writeContract({
+        const current = await publicClient.readContract({
+          address: deployment.contracts.genesisVault,
+          abi: vaultAbi,
+          functionName: "leg",
+          args: [BigInt(index)],
+        });
+        const pending = current.pendingBase;
+        if (pending < threshold) continue;
+        try {
+          await submit(
+            walletClient.writeContract({
+              address: deployment.contracts.genesisVault,
+              abi: vaultAbi,
+              functionName: "convertLeg",
+              args: [BigInt(index), pending, 1n, deadline],
+              account,
+            }),
+          );
+        } catch (error) {
+          const latest = await publicClient.readContract({
             address: deployment.contracts.genesisVault,
             abi: vaultAbi,
-            functionName: "convertLeg",
-            args: [BigInt(index), pending, 1n, deadline],
-            account,
-          }),
-        );
+            functionName: "leg",
+            args: [BigInt(index)],
+          });
+          if (latest.pendingBase >= threshold) throw error;
+        }
       }
-      setStatus("Eligible basket legs converted into testnet mock rewards.");
+      setStatus(
+        "Basket conversion complete. Any raced leg was already converted by the keeper.",
+      );
     });
 
   const claim = () =>

@@ -46,6 +46,8 @@ Both rehearsals are mandatory gates in `scripts/build-release.sh`; their JSON su
 
 ## Browser acceptance
 
+Conversion controls are keeper-race safe: they re-read the leg before submitting and, after an error, suppress it only when a second read proves the keeper already consumed the pending principal. Any error with executable principal still pending is rethrown.
+
 On 2026-07-21 the in-app browser verified the protected chain-46630 home, explicit mock disclosures, no-injected-wallet failure state, one-launch registry, anonymous discovery, canonical detail, portfolio no-wallet state, zero console warnings/errors and a 390 by 844 responsive layout without horizontal overflow. CLI signed transactions remain the transaction evidence because the in-app browser has no injected wallet; the protected UI correctly refuses to invent or bundle one.
 
 ## Protected web build
