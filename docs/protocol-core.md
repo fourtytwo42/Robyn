@@ -93,8 +93,8 @@ They require loopback operator RPC with an unlocked Anvil account, refuse any ch
 
 ## Deployment evidence
 
-- The controlled-devnet genesis deployment is recorded in deployments/31337.json at block 19 from commit fad0444980512dd8876802ff89b0018083ca3a97.
-- A live second-account journey bought and sold ROBYN, generated 11 base-asset fees, converted 4 into mNVDA, claimed 7,904,349,388,211,341 reward units and retained exact state across an Anvil service restart.
+- The current controlled-devnet deployment is recorded in deployments/31337.json at block 74 from commit d31c68ff8bcb15f3ed37414baab43c3c3221915e and includes the self-service market factory.
+- The prior browser journey bought and sold ROBYN, converted exact weighted fees, claimed all three reward assets and recovered its state after reload. Each deployment is independently verified before the web build is promoted.
 
 The following items remain required before Robinhood testnet or any real-value deployment.
 

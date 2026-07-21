@@ -34,7 +34,7 @@ base="$(jq -r '.contracts.baseAsset' "$manifest")"
 router="$(jq -r '.contracts.conversionRouter' "$manifest")"
 factory="$(jq -r '.contracts.factory' "$manifest")"
 market_factory="$(jq -r '.contracts.marketFactory' "$manifest")"
-token="$(jq -r '.contracts.genesisToken' "$manifest")
+token="$(jq -r '.contracts.genesisToken' "$manifest")"
 vault="$(jq -r '.contracts.genesisVault' "$manifest")"
 market="$(jq -r '.contracts.genesisMarket' "$manifest")"
 
