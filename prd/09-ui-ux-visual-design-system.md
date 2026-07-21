@@ -2,13 +2,23 @@
 
 Status: Draft specification, palette direction settled  
 Owner: Product design/frontend TBD  
-Date: 2026-07-20
+Date: 2026-07-21
 
 ## Design intent
 
 Robyn should feel like an understandable onchain capital product, not a casino-style memecoin terminal. The visual system is dark-first, restrained, precise and basket-forward. It borrows the simplicity of Bags, the market transparency of Clanker and the reward explicitness of BONKfun without copying their brand expression.
 
 The external asset basket is the visual center of discovery cards, launch preview and token pages. Holder-facing acquisition surfaces lead with the benefit: every token has its own reward basket. Trading fees are explained as the funding mechanism after the benefit is clear, while creator surfaces make fee routing and permanent economics explicit.
+
+## Brand mark
+
+The canonical Robyn mark is a compact right-facing robin whose three ascending wing feathers represent the one-to-three-asset reward basket. It follows the strongest launchpad convention found in the visual study: one recognizable glyph, no lettering inside the mark and enough silhouette contrast to remain legible at favicon size.
+
+- Primary mark colors are deep navy `#0B1020` and Robyn teal `#35D0BA`.
+- The transparent mark is paired with the uppercase `ROBYN` wordmark in the site header; the accessible home-link name remains text, not image content.
+- Header, favicon, application-icon and Apple-touch variants derive from the same square master and may not change geometry independently.
+- The three wing feathers must remain distinct at 32 pixels. Do not add coins, price arrows, stock symbols, gradients behind the mark or unverified third-party brand elements.
+- Canonical production assets live in `apps/web/public/assets/brand/` and `apps/web/src/app/{favicon.ico,icon.png,apple-icon.png}`.
 
 ## Experience principles
 
@@ -220,4 +230,4 @@ Components consume semantic tokens. A page must not invent one-off status colors
 3. Component inventory with every financial/degraded state.
 4. Clickable prototype for creator and holder comprehension studies.
 5. Accessibility annotation and content inventory.
-6. Final logo/brand-mark decision, which remains separate from the settled interface palette.
+6. Maintain the canonical logo/brand-mark source, optimized web asset and browser-icon derivatives documented above.

@@ -396,14 +396,19 @@ main {
 
 .brand-mark {
   display: grid;
-  width: 2rem;
-  height: 2rem;
+  width: 2.25rem;
+  height: 2.25rem;
   place-items: center;
   border: 1px solid rgba(53, 208, 186, 0.45);
   border-radius: 0.55rem;
-  background: rgba(53, 208, 186, 0.08);
-  color: var(--primary);
-  letter-spacing: 0;
+  background: rgba(53, 208, 186, 0.1);
+  overflow: hidden;
+}
+
+.brand-mark img {
+  width: 1.9rem;
+  height: 1.9rem;
+  object-fit: contain;
 }
 
 .network-pill,

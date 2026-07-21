@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function SiteHeader() {
@@ -6,7 +7,13 @@ export function SiteHeader() {
     <header className="site-header">
       <Link className="brand" href="/" aria-label="Robyn home">
         <span className="brand-mark" aria-hidden="true">
-          R
+          <Image
+            src="/assets/brand/robyn-logo.webp"
+            alt=""
+            width={32}
+            height={32}
+            priority
+          />
         </span>
         <span>ROBYN</span>
       </Link>
