@@ -9,6 +9,7 @@ previous="${root}/previous"
 history=/var/lib/robyn/release-history
 pm2_home=/home/hendo420/.pm2
 legacy_root="${ROBYN_LEGACY_ROOT:-/home/hendo420/Robyn}"
+pm2_bin="${target}/node_modules/.bin/pm2"
 
 [[ -d "${target}" ]] || {
   echo "unknown release: ${target}" >&2
@@ -33,20 +34,26 @@ atomic_link() {
   mv -Tf "${temporary}" "${link}"
 }
 
+switch_processes() {
+  local process_root="${1}"
+  local ecosystem="${2}"
+  PM2_HOME="${pm2_home}" "${pm2_bin}" delete all >/dev/null 2>&1 || true
+  ROBYN_RELEASE_ROOT="${process_root}" PM2_HOME="${pm2_home}" "${pm2_bin}" start "${ecosystem}"
+}
+
 rollback_failed_promotion() {
   if [[ -n "${old_target}" ]]; then
     atomic_link "${old_target}" "${current}"
-    PM2_HOME="${pm2_home}" "${old_target}/node_modules/.bin/pm2" startOrReload "${current}/infrastructure/pm2/ecosystem.config.cjs" --update-env
-    PM2_HOME="${pm2_home}" "${old_target}/node_modules/.bin/pm2" save --force
+    switch_processes "${old_target}" "${current}/infrastructure/pm2/ecosystem.config.cjs"
   else
     rm -f "${current}"
-    PM2_HOME="${pm2_home}" "${target}/node_modules/.bin/pm2" startOrReload "${legacy_root}/infrastructure/pm2/ecosystem.config.cjs" --update-env
-    PM2_HOME="${pm2_home}" "${target}/node_modules/.bin/pm2" save --force
+    switch_processes "${legacy_root}" "${legacy_root}/infrastructure/pm2/ecosystem.config.cjs"
   fi
+  PM2_HOME="${pm2_home}" "${pm2_bin}" save --force
 }
 
 atomic_link "${target}" "${current}"
-if ! PM2_HOME="${pm2_home}" "${target}/node_modules/.bin/pm2" startOrReload "${current}/infrastructure/pm2/ecosystem.config.cjs" --update-env; then
+if ! switch_processes "${target}" "${current}/infrastructure/pm2/ecosystem.config.cjs"; then
   rollback_failed_promotion
   exit 1
 fi
@@ -69,7 +76,7 @@ fi
 if [[ -n "${old_target}" && "${old_target}" != "${target}" ]]; then
   atomic_link "${old_target}" "${previous}"
 fi
-PM2_HOME="${pm2_home}" "${target}/node_modules/.bin/pm2" save --force
+PM2_HOME="${pm2_home}" "${pm2_bin}" save --force
 
 mkdir -p "${history}"
 history_file="${history}/$(date -u +%Y%m%dT%H%M%SZ)-promote-${release_id}.json"

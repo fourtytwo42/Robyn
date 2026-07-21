@@ -30,6 +30,8 @@ The builder:
 - writes `release-manifest.json`, `release-files.sha256` and retained gate evidence; and
 - removes write permission before moving the result into `/opt/robyn/releases/<git-sha>`.
 
+Runtime never invokes pnpm from a release. PM2 executes the pinned Node binary and built entrypoints directly; the artifact wrapper only loads its protected service environment before executing Node. This keeps dependency tooling from attempting writes inside the read-only artifact.
+
 ## Promote and verify
 
 ~~~bash

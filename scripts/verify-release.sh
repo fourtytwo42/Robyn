@@ -23,7 +23,7 @@ pm2_bin="${release_real}/node_modules/.bin/pm2"
 pm2_json="$(PM2_HOME=/home/hendo420/.pm2 "${pm2_bin}" jlist)"
 app_count="$(jq 'length' <<<"${pm2_json}")"
 online_count="$(jq '[.[] | select(.pm2_env.status == "online")]|length' <<<"${pm2_json}")"
-wrong_cwd="$(jq --arg cwd "${release_real}" '[.[] | select(.pm2_env.pm_cwd != $cwd)]|length' <<<"${pm2_json}")"
+wrong_cwd="$(jq --arg cwd "${release_real}" --arg web_cwd "${release_real}/apps/web" '[.[] | select((.name == "robyn-web" and .pm2_env.pm_cwd != $web_cwd) or (.name != "robyn-web" and .pm2_env.pm_cwd != $cwd))]|length' <<<"${pm2_json}")"
 
 [[ "${app_count}" -eq 6 && "${online_count}" -eq 6 && "${wrong_cwd}" -eq 0 ]] || {
   echo "PM2 release binding mismatch" >&2

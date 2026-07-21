@@ -2,14 +2,18 @@ const path = require("node:path");
 
 const releaseRoot =
   process.env.ROBYN_RELEASE_ROOT || path.resolve(__dirname, "../..");
+const nodeBinary = "/opt/node-v24.18.0-linux-x64/bin/node";
 
 module.exports = {
   apps: [
     {
       name: "robyn-web",
-      cwd: releaseRoot,
-      script: "/usr/local/bin/pnpm",
-      args: "--filter @robyn/web start",
+      cwd: path.join(releaseRoot, "apps/web"),
+      script: nodeBinary,
+      args: `${path.join(
+        releaseRoot,
+        "apps/web/node_modules/next/dist/bin/next",
+      )} start --hostname 127.0.0.1`,
       env: {
         NODE_ENV: "production",
         ROBYN_ENV: "robyn-devnet",
@@ -25,8 +29,8 @@ module.exports = {
     {
       name: "robyn-rpc-gateway",
       cwd: releaseRoot,
-      script: "/usr/local/bin/pnpm",
-      args: "--filter @robyn/rpc-gateway start",
+      script: nodeBinary,
+      args: path.join(releaseRoot, "apps/rpc-gateway/dist/server.js"),
       env: {
         NODE_ENV: "production",
         HOST: "127.0.0.1",
@@ -41,8 +45,8 @@ module.exports = {
     {
       name: "robyn-api",
       cwd: releaseRoot,
-      script: "/usr/local/bin/pnpm",
-      args: "--filter @robyn/api start",
+      script: nodeBinary,
+      args: path.join(releaseRoot, "apps/api/dist/server.js"),
       env: {
         NODE_ENV: "production",
         HOST: "127.0.0.1",
@@ -59,8 +63,8 @@ module.exports = {
     {
       name: "robyn-indexer",
       cwd: releaseRoot,
-      script: "/usr/local/bin/pnpm",
-      args: "--filter @robyn/indexer start",
+      script: nodeBinary,
+      args: path.join(releaseRoot, "apps/indexer/dist/server.js"),
       env: {
         NODE_ENV: "production",
         ROBYN_OPERATOR_RPC_URL: "http://127.0.0.1:8545",
@@ -77,8 +81,8 @@ module.exports = {
     {
       name: "robyn-keeper",
       cwd: releaseRoot,
-      script: "/usr/local/bin/pnpm",
-      args: "--filter @robyn/keeper start",
+      script: nodeBinary,
+      args: path.join(releaseRoot, "apps/keeper/dist/server.js"),
       env: {
         NODE_ENV: "production",
         ROBYN_ENV: "robyn-devnet",
