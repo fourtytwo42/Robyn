@@ -76,6 +76,7 @@
   },
   "soak": {
     "status": "active",
+    "completionPending": true,
     "startedAt": "2026-07-21T11:42:42.706Z",
     "requiredDurationSeconds": 86400,
     "intervalSeconds": 15,

@@ -118,6 +118,18 @@ sudo scripts/audit-recovery-state.sh \
 
 The auditor verifies a changed boot ID, inactive completed soak, zero failed units, all required enabled/active native services and timers, disabled/inactive container services, exact immutable release verification, six online zero-restart exact-path PM2 apps, deployed protocol conservation, preserved chain/index/launch/log state, healthy web/API/RPC/artifact/Prometheus endpoints, two healthy scrape targets, zero alerts, exact LAN listeners, loopback-only internal listeners and the exact four subnet-scoped UFW rules. Its current-state rehearsal passes only with explicit same-boot/active-soak overrides; final mode correctly rejects the current boot, active soak and non-root execution.
 
+The goal may be closed only after the fail-closed verifier passes with no `--allow-incomplete` override:
+
+```bash
+node scripts/verify-final-readiness.mjs \
+  --repo /home/hendo420/Robyn-evidence-8def \
+  --config artifacts/browser-uat/2026-07-21-8def270/closure-requirements.json \
+  --audit docs/local-production-readiness-audit.md \
+  --evidence-dir artifacts/browser-uat/2026-07-21-8def270
+```
+
+`closure-requirements.json` fixes the exact release SHA/path, evidence branch, annotated tag, allowed final audit statuses and required soak, reboot, browser and backup evidence contracts. During the active soak the verifier correctly reports all remaining blockers and exits nonzero; an isolated 37-row, fully checksummed, clean, pushed and annotated-tag fixture passes with zero blockers. Final closure requires the same result from the real package, including exact remote main and annotated `v0.1.0-rc.1` tag pointing to 8def270.
+
 ## External gates after this milestone
 
 - Actual Robinhood Testnet broadcast requires explicit user authorization, current chain/address revalidation and funded testnet ETH.

@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "expectedReleaseGitSha": "8def270b1856c2bcfcd69d429a8d88def4ab15a8",
+  "expectedReleasePath": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8",
+  "evidenceBranch": "evidence/8def270-browser-uat",
+  "releaseTag": "v0.1.0-rc.1",
+  "minimumAuditRows": 35,
+  "allowedFinalAuditStatuses": ["PROVEN", "PROVEN-DESIGN", "EXTERNAL-LATER"],
+  "requiredEvidence": [
+    {
+      "file": "manifest.json",
+      "kind": "json",
+      "assertions": [
+        {"path": "passed", "equals": true},
+        {"path": "releaseGitSha", "expectedSha": true},
+        {"path": "soak.status", "equals": "passed"},
+        {"path": "soak.completionPending", "equals": false}
+      ]
+    },
+    {
+      "file": "soak-final-summary.json",
+      "kind": "json",
+      "assertions": [
+        {"path": "passed", "equals": true},
+        {"path": "completedDuration", "equals": true},
+        {"path": "aborted", "equals": false},
+        {"path": "errorCount", "equals": 0},
+        {"path": "gitSha", "expectedSha": true}
+      ]
+    },
+    {
+      "file": "soak-final-independent-audit.json",
+      "kind": "json",
+      "assertions": [
+        {"path": "passed", "equals": true},
+        {"path": "completionPending", "equals": false},
+        {"path": "mode", "equals": "final"},
+        {"path": "expectedSha", "expectedSha": true}
+      ]
+    },
+    {
+      "file": "post-reboot-recovery-audit.json",
+      "kind": "json",
+      "assertions": [
+        {"path": "passed", "equals": true},
+        {"path": "rebootProven", "equals": true},
+        {"path": "rehearsalOverrides.allowSameBoot", "equals": false},
+        {"path": "rehearsalOverrides.allowActiveSoak", "equals": false},
+        {"path": "soakState", "equals": "inactive"},
+        {"path": "expectedSha", "expectedSha": true}
+      ]
+    },
+    {
+      "file": "post-reboot-browser-evidence.json",
+      "kind": "json",
+      "assertions": [
+        {"path": "passed", "equals": true},
+        {"path": "warningOrErrorLogs", "equals": 0},
+        {"path": "releaseGitSha", "expectedSha": true}
+      ]
+    },
+    {
+      "file": "post-reboot-browser-logs.json",
+      "kind": "json",
+      "emptyArray": true
+    },
+    {
+      "file": "post-reboot-browser-receipts.json",
+      "kind": "json",
+      "allReceiptStatuses": "0x1"
+    },
+    {
+      "file": "post-reboot-backup-evidence.json",
+      "kind": "json",
+      "assertions": [
+        {"path": "passed", "equals": true},
+        {"path": "releaseGitSha", "expectedSha": true},
+        {"path": "backup.offVmDigestMatched", "equals": true},
+        {"path": "restoreRehearsal.passed", "equals": true},
+        {"path": "restoreRehearsal.gitSha", "expectedSha": true},
+        {"path": "restoreRehearsal.liveStateTouched", "equals": false}
+      ]
+    }
+  ]
+}
