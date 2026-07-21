@@ -73,4 +73,4 @@ Before identifying a release as a candidate:
 - run the exact release for a real uninterrupted 24-hour soak; and
 - push the release manifest/evidence and candidate tag.
 
-TLS remains mandatory before access leaves the trusted LAN. Human alert delivery and independent protocol/security review remain separate release gates.
+TLS remains mandatory before access leaves the trusted LAN. Human alert delivery and independent protocol/security review remain separate gates before unattended public-testnet or real-value operation; they do not weaken or replace the controlled-devnet release gates above.

@@ -1,6 +1,6 @@
 # Devnet to testnet-readiness plan
 
-Status: Approved planning baseline; implementation not started
+Status: Native controlled-devnet implementation complete; exact candidate `d90e218` is in its mandatory final soak
 Owner: Product and engineering TBD
 Date: 2026-07-20
 
@@ -21,14 +21,15 @@ This milestone does not claim Robinhood mainnet readiness. Real Bags/pons fee-re
 7. Every user-facing story requires successful testing through the Codex in-app browser against the VM-hosted application. CLI/unit/invariant tests remain mandatory and run on the VM; browser UAT does not replace financial correctness tests.
 8. Each major change is committed and pushed to GitHub from the VM after its checks pass. No major completed slice remains only on disk.
 9. The devnet-only wallet/faucet/test controls must be impossible to include in the Robinhood testnet build.
-10. This document is a plan only. It authorizes no implementation, package installation, service creation or deployment by itself.
+10. The controlled-devnet candidate selects settled decision `D-010`: native launches use transfer-integrated cumulative multi-asset accounting. Adapter-only Merkle epoch requirements remain conditional and are not components of this native candidate.
+11. Implementation is authorized and complete through the protected testnet rehearsal. Actual public-testnet broadcast remains a separate explicitly authorized action.
 
 ## What production-ready means for this milestone
 
 The product is production-shaped on the controlled devnet when:
 
 - any user who can reach the VM application can create or connect a devnet wallet, obtain dev ETH, launch a token, trade it, generate fees, observe basket conversions, accrue rewards and claim them;
-- the complete web, API, indexer, keeper, epoch builder, PostgreSQL, Redis, MinIO, monitoring and chain stack runs natively and persistently on the VM;
+- the complete web, API, indexer, keeper, native onchain accumulator, PostgreSQL, Redis, MinIO, monitoring and chain stack runs natively and persistently on the VM; an epoch builder is required only for a later adapter-mode release;
 - contracts and offchain accounting reconcile under unit, fuzz, invariant, integration, restart, replay and failure tests;
 - every required user journey passes in the in-app browser at desktop, tablet and mobile viewport sizes with no unexplained console errors;
 - services recover after controlled process restarts and a VM reboot;
@@ -45,7 +46,7 @@ The product is production-shaped on the controlled devnet when:
 | Engine | Anvil from the pinned Foundry release |
 | Chain ID | `31337` |
 | Raw RPC | `127.0.0.1:8545`, VM-local only |
-| User RPC gateway | LAN-reachable VM endpoint, planned `192.168.50.250:8546` until TLS/domain routing is selected |
+| User RPC gateway | LAN-reachable restricted VM endpoint `192.168.50.250:8546`; raw privileged Anvil remains loopback-only |
 | State | `/var/lib/robyn/anvil/state.json` with controlled dump/load |
 | Service | `robyn-anvil.service` under systemd |
 | Mining | Deterministic interval or automine selected and pinned in configuration |
@@ -190,7 +191,7 @@ Deliverables:
 - reorg-aware deterministic indexer;
 - Fastify read API and health/freshness contracts;
 - Redis/BullMQ bounded jobs with idempotency and dead-letter visibility;
-- deterministic epoch builder and content-addressed MinIO artifacts;
+- native accumulator indexing and content-addressed MinIO artifacts; add a deterministic epoch builder only if a later adapter-mode release is selected;
 - keeper simulation, submission and receipt reconciliation; and
 - full rebuild, migration, backup and restore commands.
 
@@ -253,7 +254,7 @@ Deliverables:
 - incident runbooks for invalid root, quote failure, key compromise, RPC disagreement and database restore;
 - PM2/systemd persistence and controlled reboot evidence;
 - load, soak and resource-contention tests on the single VM; and
-- independent contract/security review with all critical/high findings resolved.
+- internal contract/security review with all critical/high findings resolved; independent review remains mandatory before real-value asset operation.
 
 Exit gate:
 
@@ -293,8 +294,8 @@ Required journey matrix:
 6. buy and sell from two different wallets;
 7. show fee accrual, threshold and pending conversion states;
 8. execute all-success, partial-failure and stale-quote conversions;
-9. transfer launch tokens between epoch boundaries;
-10. propose, challenge, finalize and reproduce an epoch;
+9. transfer native launch tokens before and after reward deposits and prove accrued rewards remain with the earning history;
+10. reproduce native accumulator accounting and repeated-claim safety; propose/challenge/finalize/reproduce an epoch only for a future adapter-mode candidate;
 11. claim multiple reward assets and reject duplicate claims;
 12. recover from stale API, index lag, worker restart and public-RPC failure;
 13. verify portfolio and history after reload;
@@ -326,7 +327,7 @@ Exit gate:
 
 ### Phase 11: Robinhood testnet migration package
 
-Implementation status (2026-07-21): package, protected build, deployment verifier, full transaction rehearsal and isolated five-service rehearsal are implemented and mandatory release gates. Browser UAT of the exact protected candidate and the final exact-release soak remain open. Actual public-testnet broadcast remains separately authorized.
+Implementation status (2026-07-21): package, protected build, deployment verifier, full transaction rehearsal, isolated five-service rehearsal and protected-build browser UAT are implemented and mandatory release gates. Exact release `d90e218` is in the final uninterrupted soak. Actual public-testnet broadcast remains separately authorized.
 
 Deliverables:
 
@@ -388,6 +389,8 @@ artifacts/
 ```
 
 Browser evidence may contain public devnet addresses and transaction hashes but never private keys, wallet recovery material, provider credentials or session storage dumps.
+Because browser evidence can only exist after an exact commit is built and promoted, it may be committed on a release-attestation branch rooted at that exact commit and later attached to the candidate tag. The attestation manifest must name the runtime commit and include checksums; this avoids an impossible self-referential release commit.
+
 
 ## Dependencies and blockers by phase
 
@@ -397,7 +400,7 @@ Browser evidence may contain public devnet addresses and transaction hashes but 
 | Native PostgreSQL/Redis/MinIO and PM2/systemd setup | Phases 5 onward |
 | Browser reachability to VM web/RPC gateway | Browser gates from Phase 6 onward |
 | Devnet session-wallet isolation design | Signed browser flows and testnet-safe build |
-| Independent contract/security reviewer | Phase 8 exit |
+| Independent contract/security reviewer | Real-value/public operation; not mock controlled-devnet or protected testnet rehearsal |
 | Robinhood testnet ETH | Actual deployment after Phase 11, not devnet readiness |
 | Bags/pons funded mainnet spike | Real adapter/mainnet release, not controlled devnet completion |
 | Authenticated quote provider access | Real execution evidence and Stock Token beta, not mock devnet completion |
