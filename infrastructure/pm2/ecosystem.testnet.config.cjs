@@ -53,7 +53,7 @@ module.exports = {
         PGUSER: "hendo420",
       },
       autorestart: true,
-      max_memory_restart: "256M",
+      max_memory_restart: "384M",
       time: true,
     },
     {
@@ -111,7 +111,7 @@ module.exports = {
         PGUSER: "hendo420",
       },
       autorestart: true,
-      max_memory_restart: "256M",
+      max_memory_restart: "384M",
       time: true,
     },
   ],

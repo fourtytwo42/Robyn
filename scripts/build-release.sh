@@ -51,6 +51,7 @@ trap cleanup EXIT
 {
   pnpm format
   pnpm lint
+  node scripts/validate-pm2-config.mjs
   pnpm typecheck
   pnpm test
   pnpm build
@@ -113,7 +114,7 @@ cp "${testnet_stack_json}" "${staging}/release-evidence/testnet-stack.json"
       nodeVersion: $nodeVersion,
       pnpmVersion: $pnpmVersion,
       migrations: $migrations,
-      gates: ["format", "lint", "typecheck", "test", "build", "traceability", "security-audit", "testnet-journey", "testnet-stack"]
+      gates: ["format", "lint", "pm2-config", "typecheck", "test", "build", "traceability", "security-audit", "testnet-journey", "testnet-stack"]
     }' > release-manifest.json
   sha256sum release-manifest.json > release-manifest.json.sha256
 )
