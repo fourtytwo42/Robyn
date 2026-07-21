@@ -90,6 +90,32 @@ The 2026-07-21 checkpoint verified:
 - a full VM reboot restores Anvil, the saved PM2 applications, web and gateway health with the funded balance unchanged; and
 - in-app-browser DOM and console checks show recovered RPC status ok on chain 31337.
 
+## Protocol deployment
+
+The canonical controlled-devnet manifest is deployments/31337.json. It contains public contract addresses only and no signing material.
+
+Deploy or verify from the VM:
+
+~~~bash
+cd /home/hendo420/Robyn
+scripts/deploy-devnet-protocol.sh
+scripts/verify-devnet-deployment.sh deployments/31337.json
+~~~
+
+Deployment uses the first Anvil unlocked account through loopback operator RPC. No private key is exported or stored. The deployment script refuses every chain ID except 31337 and returns the existing verified deployment unless ROBYN_FORCE_DEPLOY=true is explicitly set.
+
+The verifier checks:
+
+- bytecode at every declared address;
+- factory, token, vault, router and market cross-links;
+- chain ID and immutable market fee/price policy;
+- sealed market exclusion and basket asset order; and
+- live accounting conservation after both unused and actively traded states.
+
+Devnet-only contracts under packages/contracts/src/devnet must never appear in a Robinhood testnet manifest. Testnet release checks will reject the DEVNET_ONLY marker and controlled-chain identifiers.
+
+Last verified 2026-07-21: the live deployment survived robyn-anvil.service restart with the second user's 890,000 ROBYN token balance unchanged. Manifest bytecode and accounting verification passed at block 26 after buy, convert, claim and sell transactions.
+
 ## Remaining production-readiness work
 
 - Move faucet limits from process memory to native Redis before untrusted public exposure.

@@ -1,6 +1,6 @@
 # Protocol core
 
-Status: implemented and tested locally; shared-devnet deployment pending
+Status: implemented, tested and deployed to the shared controlled devnet
 
 Last verified: 2026-07-21
 
@@ -89,6 +89,13 @@ scripts/verify-devnet-deployment.sh deployments/31337.json
 ~~~
 
 They require loopback operator RPC with an unlocked Anvil account, refuse any chain other than 31337, store no private key, and verify live bytecode and cross-contract relationships.
+
+## Deployment evidence
+
+- The controlled-devnet genesis deployment is recorded in deployments/31337.json at block 19 from commit fad0444980512dd8876802ff89b0018083ca3a97.
+- A live second-account journey bought and sold ROBYN, generated 11 base-asset fees, converted 4 into mNVDA, claimed 7,904,349,388,211,341 reward units and retained exact state across an Anvil service restart.
+
+The following items remain required before Robinhood testnet or any real-value deployment.
 
 ## Required before deployment
 

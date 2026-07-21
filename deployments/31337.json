@@ -1,0 +1,38 @@
+{
+  "environment": "robyn-devnet",
+  "chainId": 31337,
+  "deploymentBlock": 19,
+  "gitCommit": "fad0444980512dd8876802ff89b0018083ca3a97",
+  "deployer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+  "contracts": {
+    "baseAsset": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "rewardAssets": [
+      "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
+    ],
+    "conversionRouter": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "factory": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "genesisToken": "0x23dB4a08f2272df049a4932a4Cc3A6Dc1002B33E",
+    "genesisVault": "0x61c36a8d610163660E21a8b7359e1Cac0C9133e1",
+    "genesisMarket": "0x9A676e781A523b5d0C0e43731313A708CB607508"
+  },
+  "genesisBasket": [
+    {
+      "symbol": "mNVDA",
+      "weightBps": 4000
+    },
+    {
+      "symbol": "mSPY",
+      "weightBps": 4000
+    },
+    {
+      "symbol": "mETH",
+      "weightBps": 2000
+    }
+  ],
+  "market": {
+    "basePerToken": "1000000000000000",
+    "feeBps": 100
+  }
+}
