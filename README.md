@@ -2,7 +2,7 @@
 
 Robyn is a proposed Robinhood Chain launchpad where creators launch community tokens with an immutable, weighted asset basket. A token's creator-fee stream purchases the selected assets, and holders accrue claimable basket rewards.
 
-> **Project status:** Implementation is active. The VM runs a persistent controlled Anvil devnet, restricted user RPC/faucet, browser-operated permissionless launchpad, native PostgreSQL/Redis/MinIO, a reorg-aware indexer, freshness-labeled read API, bounded conversion keeper and content-addressed artifact service. The core launch-to-claim experience works for LAN users. Backups, monitoring, dedicated discovery/detail/portfolio UX, security/load evidence and testnet rehearsal remain in progress.
+> **Project status:** Implementation is active. The VM runs a persistent controlled Anvil devnet, restricted user RPC/faucet, browser-operated permissionless launchpad, native PostgreSQL/Redis/MinIO, a reorg-aware indexer, freshness-labeled filtered discovery API, bounded conversion keeper and content-addressed artifact service. Anonymous discovery, canonical launch detail and session-wallet portfolio pages are live alongside the launch-to-claim console. Backups, monitoring, security/load evidence, protocol hardening and testnet rehearsal remain in progress.
 
 ## Authoritative development environment
 
@@ -24,7 +24,7 @@ The Windows checkout is not an execution environment. It is only a convenience m
 |---|---|
 | [`research/`](research/) | Chain, market, competitor, terms, contract-reuse, liquidity, security, and operational evidence |
 | [`prd/`](prd/) | Authoritative product requirements and architecture decisions |
-| [`apps/web/`](apps/web/) | Next.js user application and health surface |
+| [`apps/web/`](apps/web/) | Next.js launch console, anonymous discovery, launch detail, portfolio and health surfaces |
 | [`apps/api/`](apps/api/) | Freshness-labeled read API and operator visibility |
 | [`apps/indexer/`](apps/indexer/) | Reorg-aware canonical chain indexer |
 | [`apps/keeper/`](apps/keeper/) | Bounded BullMQ conversion worker and dead-letter recovery |

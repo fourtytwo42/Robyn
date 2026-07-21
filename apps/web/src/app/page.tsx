@@ -1,11 +1,11 @@
 import { DevnetConsole, type Deployment } from "@/components/devnet-console";
+import { SiteHeader } from "@/components/site-header";
 import { LaunchpadConsole } from "@/components/launchpad-console";
 import {
   getDataPlaneHealth,
   getGatewayHealth,
   getHealthStatus,
 } from "@/lib/health";
-import Link from "next/link";
 import deployment from "../../../../deployments/31337.json";
 
 export const dynamic = "force-dynamic";
@@ -21,18 +21,7 @@ export default async function Home() {
     <main id="main">
       <div className="ambient ambient-left" aria-hidden="true" />
       <div className="ambient ambient-right" aria-hidden="true" />
-      <header className="site-header">
-        <Link className="brand" href="/" aria-label="Robyn home">
-          <span className="brand-mark" aria-hidden="true">
-            R
-          </span>
-          <span>ROBYN</span>
-        </Link>
-        <span className="network-pill" data-testid="network-status">
-          <span className="status-dot" aria-hidden="true" />
-          Controlled devnet
-        </span>
-      </header>
+      <SiteHeader />
 
       <section className="product-hero" aria-labelledby="hero-heading">
         <div className="hero-copy">

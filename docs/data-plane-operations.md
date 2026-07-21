@@ -56,6 +56,16 @@ The robyn-indexer and robyn-api processes run under PM2 and are saved for system
 
 The read-only API listens on port 3100 and exposes /health, /status, /launches, /launches/{token}, /launches/{token}/activity and /assets. Every chain-derived response includes asOfBlock and indexedAt freshness. Pagination and request limits are bounded.
 
+`GET /launches` accepts the following optional discovery parameters:
+
+- `limit`: 1 through 100, default 20;
+- `before`: a PostgreSQL bigint launch cursor; malformed or overflowing values return HTTP 400;
+- `q`: an 80-character maximum, case-insensitive literal name or symbol substring, or an exact canonical token address;
+- `asset`: an exact basket-asset address; and
+- `basketSize`: 1, 2 or 3.
+
+Address-like malformed searches return an empty result with `queryStatus: invalid_address` instead of fuzzy matching. Invalid optional asset and basket filters are ignored so stale bookmarks degrade safely. Exact token matches are ranked first; otherwise launches remain newest-first. The API deliberately excludes raw volume and projected returns from ranking.
+
 A destructive derived-data rebuild test truncated blocks, raw logs, launch projections and the checkpoint, restarted the indexer, and reproduced 75 logs plus both launches through block 90. Subsequent API/indexer restarts retained the same results. The live web status surface independently displayed Indexer ok at block 90.
 
 ## Redis-backed faucet quotas

@@ -1,0 +1,343 @@
+"use client";
+
+import Link from "next/link";
+import {
+  createPublicClient,
+  defineChain,
+  formatEther,
+  http,
+  type Address,
+  type Hex,
+} from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { LaunchList, LaunchRecord } from "@/lib/data-api";
+
+const tokenAbi = [
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "rewardAssetCount",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "rewardAsset",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "withdrawableRewardOf",
+    stateMutability: "view",
+    inputs: [{ type: "address" }, { type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "withdrawnRewardOf",
+    stateMutability: "view",
+    inputs: [{ type: "address" }, { type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+
+const vaultAbi = [
+  {
+    type: "function",
+    name: "legCount",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "leg",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "asset", type: "address" },
+          { name: "weightBps", type: "uint16" },
+          { name: "pendingBase", type: "uint256" },
+          { name: "consumedBase", type: "uint256" },
+          { name: "rewardsDeposited", type: "uint256" },
+          { name: "pendingSince", type: "uint256" },
+        ],
+      },
+    ],
+  },
+] as const;
+
+const symbolAbi = [
+  {
+    type: "function",
+    name: "symbol",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "string" }],
+  },
+] as const;
+
+type Reward = {
+  asset: Address;
+  symbol: string;
+  claimable: bigint;
+  claimed: bigint;
+};
+
+type Position = {
+  launch: LaunchRecord;
+  balance: bigint;
+  pendingBase: bigint;
+  rewards: Reward[];
+};
+
+function amount(value: bigint) {
+  return Number(formatEther(value)).toLocaleString(undefined, {
+    maximumFractionDigits: 5,
+  });
+}
+
+export function PortfolioView() {
+  const [wallet, setWallet] = useState<Address>();
+  const [positions, setPositions] = useState<Position[]>();
+  const [indexedBlock, setIndexedBlock] = useState<string | null>(null);
+  const [status, setStatus] = useState("Reading this browser session wallet.");
+  const rpcUrl =
+    typeof window === "undefined"
+      ? "http://127.0.0.1:8546"
+      : "http://" + window.location.hostname + ":8546";
+  const client = useMemo(
+    () =>
+      createPublicClient({
+        chain: defineChain({
+          id: 31337,
+          name: "Robyn Controlled Devnet",
+          nativeCurrency: { name: "Dev Ether", symbol: "DEV", decimals: 18 },
+          rpcUrls: { default: { http: [rpcUrl] } },
+        }),
+        transport: http(rpcUrl),
+      }),
+    [rpcUrl],
+  );
+
+  const refresh = useCallback(async () => {
+    const stored = window.sessionStorage.getItem("robyn-devnet-session-key");
+    if (!stored?.startsWith("0x")) {
+      setWallet(undefined);
+      setPositions([]);
+      setStatus("No session wallet exists in this browser tab.");
+      return;
+    }
+    const account = privateKeyToAccount(stored as Hex);
+    setWallet(account.address);
+    setStatus("Loading held tokens and reward state…");
+    const response = await fetch(
+      "http://" + window.location.hostname + ":3100/launches?limit=100",
+      { cache: "no-store" },
+    );
+    if (!response.ok) throw new Error("Launch registry unavailable");
+    const launches = (await response.json()) as LaunchList;
+    setIndexedBlock(launches.asOfBlock);
+    const next = await Promise.all(
+      launches.data.map(async (launch): Promise<Position> => {
+        const [balance, count, legCount] = await Promise.all([
+          client.readContract({
+            address: launch.token as Address,
+            abi: tokenAbi,
+            functionName: "balanceOf",
+            args: [account.address],
+          }),
+          client.readContract({
+            address: launch.token as Address,
+            abi: tokenAbi,
+            functionName: "rewardAssetCount",
+          }),
+          client.readContract({
+            address: launch.vault as Address,
+            abi: vaultAbi,
+            functionName: "legCount",
+          }),
+        ]);
+        const rewards = await Promise.all(
+          Array.from({ length: Number(count) }, async (_, index) => {
+            const assetIndex = BigInt(index);
+            const asset = await client.readContract({
+              address: launch.token as Address,
+              abi: tokenAbi,
+              functionName: "rewardAsset",
+              args: [assetIndex],
+            });
+            const [symbol, claimable, claimed] = await Promise.all([
+              client.readContract({
+                address: asset,
+                abi: symbolAbi,
+                functionName: "symbol",
+              }),
+              client.readContract({
+                address: launch.token as Address,
+                abi: tokenAbi,
+                functionName: "withdrawableRewardOf",
+                args: [account.address, assetIndex],
+              }),
+              client.readContract({
+                address: launch.token as Address,
+                abi: tokenAbi,
+                functionName: "withdrawnRewardOf",
+                args: [account.address, assetIndex],
+              }),
+            ]);
+            return { asset, symbol, claimable, claimed };
+          }),
+        );
+        const legs = await Promise.all(
+          Array.from({ length: Number(legCount) }, (_, index) =>
+            client.readContract({
+              address: launch.vault as Address,
+              abi: vaultAbi,
+              functionName: "leg",
+              args: [BigInt(index)],
+            }),
+          ),
+        );
+        return {
+          launch,
+          balance,
+          rewards,
+          pendingBase: legs.reduce((sum, leg) => sum + leg.pendingBase, 0n),
+        };
+      }),
+    );
+    setPositions(
+      next.filter(
+        (position) =>
+          position.balance > 0n ||
+          position.pendingBase > 0n ||
+          position.rewards.some(
+            (reward) => reward.claimable > 0n || reward.claimed > 0n,
+          ),
+      ),
+    );
+    setStatus("Portfolio reconciled from live contract state.");
+  }, [client]);
+
+  useEffect(() => {
+    void refresh().catch(() => {
+      setStatus("Portfolio state is temporarily unavailable.");
+      setPositions(undefined);
+    });
+    window.addEventListener("robyn-wallet-change", refresh);
+    return () => window.removeEventListener("robyn-wallet-change", refresh);
+  }, [refresh]);
+
+  if (!wallet) {
+    return (
+      <section className="empty-state portfolio-empty" aria-live="polite">
+        <h2>No session wallet in this tab</h2>
+        <p>
+          Public discovery remains available. Create or restore a development
+          wallet from the live console to see its cross-launch positions.
+        </p>
+        <div className="action-row">
+          <Link className="button primary" href="/#devnet-console">
+            Open wallet console
+          </Link>
+          <Link className="button" href="/discover">
+            Browse anonymously
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <>
+      <section className="wallet-bar">
+        <div>
+          <p>Session wallet</p>
+          <code>{wallet}</code>
+        </div>
+        <button className="button" onClick={() => void refresh()}>
+          Refresh onchain state
+        </button>
+      </section>
+      <p className="transaction-status" role="status">
+        {status}
+      </p>
+      {positions === undefined ? (
+        <p className="empty-state">Loading portfolio…</p>
+      ) : positions.length === 0 ? (
+        <p className="empty-state">
+          This wallet has no held launch tokens, claimable rewards, pending
+          launch fees or claimed history.
+        </p>
+      ) : (
+        <section className="portfolio-grid" aria-label="Cross-launch portfolio">
+          {positions.map((position) => (
+            <article className="portfolio-card" key={position.launch.token}>
+              <div className="launch-card-heading">
+                <div>
+                  <span className="asset-symbol">{position.launch.symbol}</span>
+                  <h2>{position.launch.name}</h2>
+                </div>
+                <span className="live-chip">#{position.launch.launch_id}</span>
+              </div>
+              <dl className="portfolio-summary">
+                <div>
+                  <dt>Held launch tokens</dt>
+                  <dd>
+                    {amount(position.balance)} {position.launch.symbol}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Launch-level pending cash</dt>
+                  <dd>{amount(position.pendingBase)} mUSD</dd>
+                </div>
+              </dl>
+              <div className="reward-columns">
+                <section>
+                  <h3>Claimable now</h3>
+                  {position.rewards.map((reward) => (
+                    <p key={reward.asset}>
+                      {amount(reward.claimable)} {reward.symbol}
+                    </p>
+                  ))}
+                </section>
+                <section>
+                  <h3>Claimed history</h3>
+                  {position.rewards.map((reward) => (
+                    <p key={reward.asset}>
+                      {amount(reward.claimed)} {reward.symbol}
+                    </p>
+                  ))}
+                </section>
+              </div>
+              <Link
+                className="button"
+                href={"/launches/" + position.launch.token}
+              >
+                Inspect allocation evidence
+              </Link>
+            </article>
+          ))}
+        </section>
+      )}
+      <p className="freshness page-freshness">
+        Token amounts are primary · indexed registry block{" "}
+        {indexedBlock ?? "unavailable"} · live values read through the user RPC
+      </p>
+    </>
+  );
+}

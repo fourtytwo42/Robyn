@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import { createDatabase } from "@robyn/db";
+import { parseDiscoveryQuery, type DiscoveryQuery } from "./discovery-query.js";
 
 const app = Fastify({
   logger: { level: process.env.LOG_LEVEL ?? "info" },
@@ -123,29 +124,46 @@ app.get("/operations", async () => {
   };
 });
 
-app.get<{ Querystring: { limit?: string; before?: string } }>(
-  "/launches",
-  async (request) => {
-    const limit = Math.min(
-      Math.max(Number(request.query.limit ?? "20"), 1),
-      100,
-    );
-    const before = request.query.before ? BigInt(request.query.before) : null;
-    const rows = await sql.unsafe<{ launch_id: string }[]>(
-      "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version FROM launches WHERE chain_id=$1 AND ($2::bigint IS NULL OR launch_id<$2::bigint) ORDER BY launch_id DESC LIMIT $3",
-      [chainId, before?.toString() ?? null, limit],
-    );
-    const state = await freshness();
+app.get<{
+  Querystring: DiscoveryQuery;
+}>("/launches", async (request, reply) => {
+  const {
+    limit,
+    before,
+    query,
+    asset,
+    basketSize,
+    invalidCursor,
+    invalidCanonicalAddress,
+  } = parseDiscoveryQuery(request.query);
+  if (invalidCursor) {
+    return reply.code(400).send({ error: "invalid_cursor" });
+  }
+  const state = await freshness();
+  if (invalidCanonicalAddress) {
     return {
-      data: rows,
-      nextCursor:
-        rows.length === limit
-          ? (rows.at(-1) as { launch_id: string }).launch_id
-          : null,
+      data: [],
+      nextCursor: null,
+      queryStatus: "invalid_address",
+      filters: { q: query, asset, basketSize },
       ...state,
     };
-  },
-);
+  }
+  const rows = await sql.unsafe<{ launch_id: string }[]>(
+    "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version FROM launches WHERE chain_id=$1 AND ($2::bigint IS NULL OR launch_id<$2::bigint) AND ($4::text IS NULL OR token=$4 OR strpos(lower(name),$4)>0 OR strpos(lower(symbol),$4)>0) AND ($5::text IS NULL OR assets ? $5) AND ($6::integer IS NULL OR jsonb_array_length(assets)=$6) ORDER BY CASE WHEN token=$4 THEN 0 ELSE 1 END,launch_id DESC LIMIT $3",
+    [chainId, before, limit, query, asset, basketSize],
+  );
+  return {
+    data: rows,
+    nextCursor:
+      rows.length === limit
+        ? (rows.at(-1) as { launch_id: string }).launch_id
+        : null,
+    queryStatus: "ok",
+    filters: { q: query, asset, basketSize },
+    ...state,
+  };
+});
 
 app.get<{ Params: { token: string } }>(
   "/launches/:token",
