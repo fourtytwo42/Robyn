@@ -1,0 +1,17 @@
+.git
+.next
+.pnpm-store
+.turbo
+coverage
+node_modules
+packages/contracts/cache
+packages/contracts/lib
+packages/contracts/out
+playwright-report
+research
+test-results
+user-stories/TRACEABILITY.md
+pnpm-lock.yaml
+*.json
+**/*.md
+scripts/*.mjs

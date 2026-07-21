@@ -6,17 +6,17 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
 - Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; lower-level correctness tests pass; no unresolved critical/high defect remains; and the exact release commit and evidence are pushed. Partial, documentation-only, mocked-happy-path-only or unpushed work is not completion.
-- Current task: controlled-devnet-to-testnet roadmap is settled and documented; no application code or runtime service was created.
-- Last meaningful change: Selected native Anvil chain ID 31337 for the VM-hosted Robyn Devnet, separated persistent human/UAT state from ephemeral automated-test chains, made in-app-browser UAT mandatory for user-facing acceptance and required a GitHub push after every major validated change.
-- Files touched: `AGENTS.md`, `README.md`, `docs/devnet-to-testnet-readiness-plan.md`, `docs/vm-runtime-and-operations.md`, `prd/00-product-brief-and-decisions.md`, `prd/05-platform-data-and-infrastructure.md`, `prd/07-delivery-plan-and-acceptance.md`, `prd/10-technology-stack-and-repository-architecture.md`, `prd/README.md`, `user-stories/10-technology-stack-and-developer-platform.md`, `user-stories/README.md`, `user-stories/TRACEABILITY.md`, and `MEMORY.md`.
-- Last verification: 2026-07-20 VM validator reports 154 stories covering 182/182 requirements, including STACK-001 through STACK-027 and INFRA-001 through INFRA-015.
-- Next step: When implementation is authorized, execute only the first build slice in the roadmap: monorepo foundation, ephemeral Anvil smoke test, accounting skeleton/conservation test and a nonfunctional web health page, then validate, commit and push.
+- Current task: foundation checkpoint 01 is implemented and under final validation: monorepo, isolated Anvil smoke, fee-basket accounting conservation primitive, and VM-served health page.
+- Last meaningful change: Added pinned pnpm/Turborepo and Next.js 15/React 19 workspaces, an isolated Anvil chain 31337 smoke harness, five Foundry accounting tests including 256 fuzz runs, and a production-built responsive health surface.
+- Files touched: root workspace/toolchain files, `apps/web/`, `packages/contracts/`, `scripts/smoke-anvil.sh`, `README.md`, and `MEMORY.md`.
+- Last verification: 2026-07-21 VM lint/typecheck/Vitest/Foundry/build pass; Anvil smoke passes on isolated chain ID 31337; in-app-browser acceptance passes at desktop/tablet/mobile with correct `robyn-devnet` state and no console warnings/errors.
+- Next step: implement Phase 2 native persistent Anvil, restricted RPC gateway/faucet, and PM2/systemd service persistence, then begin deployable mock asset/factory contracts.
 - Blockers: Bags/pons compatibility requires funded transactions; anonymous 0x and 1inch quote calls return 401; no public testnet faucet/canonical Stock Token registry was found; current Alloy website source is unverified; no reusable license/repository was found for Vladdy/HoodETF/BASKET.
 
 ## Current State
 
 - Last verified 2026-07-20: the authoritative workspace is `/home/hendo420/Robyn` on Ubuntu VM `robyn` at `192.168.50.250`; the Windows checkout is control-only and not an execution environment.
-- The repository currently contains research documentation only; there is no application or smart-contract implementation.
+- The repository now contains the first implementation foundation: `apps/web`, `packages/contracts`, a pinned workspace lockfile and an isolated Anvil smoke harness. It is not yet a functional launchpad.
 - Last verified 2026-07-20: `prd/` is the authoritative product-intent layer. It specifies R0 validation, R1 crypto adapter pilot, R2 Stock Token beta and optional R3 native launchpad; research remains authoritative for external evidence.
 - Last verified 2026-07-20: `user-stories/` is the delivery-backlog layer derived from the PRDs. Its generated traceability matrix covers all 182 PRD requirements with 154 stories.
 - Last verified 2026-07-20: settled application stack is pnpm/Turborepo; Next.js 15, React 19, strict TypeScript, Tailwind v4, Radix/shadcn-owned components, viem/wagmi, WalletConnect/injected wallets, TanStack Query/Table, Zod/React Hook Form; Fastify; VM-native PostgreSQL/Drizzle, Redis/BullMQ and MinIO; Solidity/Foundry/OpenZeppelin; Vitest/Testing Library/Playwright; OpenTelemetry/local structured errors/Prometheus/Grafana; PM2 plus systemd; and a VM self-hosted GitHub Actions runner. Docker and containers are prohibited.
@@ -75,6 +75,8 @@ When sources conflict, use this order:
 - Last verified 2026-07-20: the VM repository uses `main`; origin is `https://github.com/fourtytwo42/Robyn.git` and GitHub reports the repository visibility as private.
 - Docker/Compose packages were installed before the no-Docker decision, but `docker.service`, `docker.socket` and `containerd.service` are disabled and inactive. They are not part of the project stack; package removal is a separate administrative action.
 - Install PostgreSQL, Redis, MinIO, PM2, monitoring, reverse proxy, self-hosted runner and RPC software natively on the VM only when required by the current implementation slice.
+- Last verified 2026-07-21: Node `24.18.0`, pnpm `11.15.1`, Foundry/Anvil `1.7.1`, Solidity `0.8.30`; run `pnpm install --frozen-lockfile` then `pnpm format && pnpm lint && pnpm typecheck && pnpm test && pnpm build`.
+- The pnpm build-script allowlist permits only pinned transitive Next.js dependencies `sharp` and `unrs-resolver`; do not broaden it without review.
 - Operational reference: `docs/vm-runtime-and-operations.md`.
 - Official Stock Token registry: `https://api.robinhood.com/rhj/assets`.
 - Robinhood Chain public RPC: `https://rpc.mainnet.chain.robinhood.com`; mainnet chain ID `4663`.
@@ -155,6 +157,7 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-21: Foundation checkpoint 01 - VM production build passed; Vitest 2/2, Foundry 5/5 including 256 fuzz runs, isolated Anvil chain 31337 smoke, lint, strict typecheck and formatting passed. In-app browser verified the VM URL at 1440x900, 768x1024 and 390x844 with correct `robyn-devnet` status, unique semantic landmarks, no element crossing viewport bounds and no console warnings/errors. Browser testing caught and drove fixes for static environment labeling and mobile wrapping before acceptance.
 - 2026-07-20: Controlled-devnet planning traceability - passed; `python3 scripts/validate-user-stories.py` ran on the VM and reports 154 stories covering 182/182 requirements, including Anvil isolation, browser acceptance and Git checkpoint requirements.
 - 2026-07-20: Initial repository publication - passed; initialized local `main`, committed 105 files as the research/product baseline, created private `fourtytwo42/Robyn`, pushed through the authenticated VM, set `main` as default, and cloned the repository to `/home/hendo420/Robyn`.
 - 2026-07-20: VM-only runtime decision - passed documentation review; `AGENTS.md`, README, PRD decisions, stack/infrastructure requirements, delivery mappings, research blueprint and user stories consistently require the `robyn` VM and prohibit Docker/containers.

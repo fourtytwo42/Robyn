@@ -1,0 +1,26 @@
+{
+  "name": "robyn",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.15.1",
+  "engines": {
+    "node": "24.18.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "lint": "turbo run lint",
+    "test": "turbo run test && pnpm test:anvil && pnpm test:contracts",
+    "test:anvil": "bash scripts/smoke-anvil.sh",
+    "test:contracts": "PATH=$HOME/.foundry/bin:$PATH forge test --root packages/contracts -vv",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "prettier": "3.9.5",
+    "prettier-plugin-tailwindcss": "0.8.1",
+    "turbo": "2.10.5",
+    "typescript": "5.9.3"
+  }
+}

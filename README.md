@@ -2,7 +2,7 @@
 
 Robyn is a proposed Robinhood Chain launchpad where creators launch community tokens with an immutable, weighted asset basket. A token's creator-fee stream purchases the selected assets, and holders accrue claimable basket rewards.
 
-> **Project status:** Research and product definition are complete. Smart contracts and application code have not been implemented. The approved build roadmap starts on a VM-hosted Anvil devnet and produces a production-shaped release candidate that is ready to migrate to Robinhood Chain Testnet.
+> **Project status:** Implementation is active. The first VM-native foundation includes a pinned pnpm/Turborepo workspace, production-buildable Next.js health surface, isolated Anvil smoke harness, and the first tested fee-basket conservation contract. Full launchpad journeys and persistent devnet infrastructure remain in progress.
 
 ## Authoritative development environment
 
@@ -24,6 +24,8 @@ The Windows checkout is not an execution environment. It is only a convenience m
 |---|---|
 | [`research/`](research/) | Chain, market, competitor, terms, contract-reuse, liquidity, security, and operational evidence |
 | [`prd/`](prd/) | Authoritative product requirements and architecture decisions |
+| [`apps/web/`](apps/web/) | Next.js user application and health surface |
+| [`packages/contracts/`](packages/contracts/) | Foundry contracts and invariant-focused tests |
 | [`user-stories/`](user-stories/) | Delivery backlog and PRD traceability |
 | [`scripts/`](scripts/) | Reproducible research, validation, market-snapshot, and screenshot tooling |
 | [`docs/`](docs/) | VM runtime, operating procedures and delivery roadmaps |
@@ -34,6 +36,22 @@ The initial implementation will use the monorepo and contract stack defined in [
 ## Validate the documentation
 
 ```bash
+## Foundation commands
+
+Run only on the authoritative VM:
+
+```bash
+cd /home/hendo420/Robyn
+pnpm install --frozen-lockfile
+pnpm format
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+`pnpm test` includes the Vitest suite, an isolated Anvil chain-ID/fresh-state smoke test, and Foundry unit/fuzz tests. It does not touch the future persistent shared devnet.
+
 ssh hendo420@192.168.50.250
 cd /home/hendo420/Robyn
 python3 scripts/validate-user-stories.py
