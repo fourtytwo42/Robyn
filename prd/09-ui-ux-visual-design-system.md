@@ -119,7 +119,7 @@ Primary navigation:
 - Cards show token identity, basket badges/weights, realized reward state, liquidity/volume freshness and route state.
 - The default token browser is compact and responsive: three columns on wide desktop, two on compact desktop/tablet and one on mobile.
 - Token artwork uses a fixed square thumbnail with proportional `object-fit: cover`; artwork MUST NOT be stretched into a mismatched aspect ratio.
-- Browser cards summarize realized rewards and link to the token page for full per-asset metrics, holder data and market detail.
+- Browser cards omit pending rewards, converted totals and block-level operational detail; they link to the token page for those metrics, holder data and market detail.
 - Public basket labels lead with recognizable asset symbols and names. Contract addresses remain available for identity and verification but do not replace human-readable asset labels.
 - Rankings never rely on raw volume alone.
 

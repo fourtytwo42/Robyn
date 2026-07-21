@@ -71,12 +71,10 @@ export function LaunchRewardState({
   vault,
   indexedBlock,
   detailed = false,
-  compact = false,
 }: {
   vault: string;
   indexedBlock: string | null;
   detailed?: boolean;
-  compact?: boolean;
 }) {
   const [legs, setLegs] = useState<LegState[]>();
   const [chainBlock, setChainBlock] = useState<bigint>();
@@ -164,36 +162,6 @@ export function LaunchRewardState({
       </p>
     );
   if (!legs) return <p className="metric-unavailable">Loading live rewards…</p>;
-
-  if (compact) {
-    const pendingTotal = legs.reduce(
-      (total, leg) => total + leg.pendingBase,
-      0n,
-    );
-    const convertedTotal = legs.reduce(
-      (total, leg) => total + leg.consumedBase,
-      0n,
-    );
-    return (
-      <div className="reward-state-compact">
-        <dl>
-          <div>
-            <dt>Pending rewards cash</dt>
-            <dd>
-              {units(pendingTotal)} {baseSymbol}
-            </dd>
-          </div>
-          <div>
-            <dt>Converted for holders</dt>
-            <dd>
-              {units(convertedTotal)} {baseSymbol}
-            </dd>
-          </div>
-        </dl>
-        <span className="freshness">Block {indexedBlock ?? "unavailable"}</span>
-      </div>
-    );
-  }
 
   return (
     <div className={detailed ? "reward-state detailed" : "reward-state"}>

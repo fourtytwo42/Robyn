@@ -1336,46 +1336,10 @@ main > .notice {
   font-size: 0.62rem;
 }
 
-.reward-state-compact {
-  margin: 0.8rem 0;
-  padding: 0.7rem 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-
-.reward-state-compact dl {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.6rem;
-  margin: 0;
-}
-
-.reward-state-compact dl div {
-  min-width: 0;
-}
-
-.reward-state-compact dt {
-  color: var(--muted);
-  font-size: 0.62rem;
-}
-
-.reward-state-compact dd {
-  margin: 0.2rem 0 0;
-  color: var(--text);
-  font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
-  font-size: 0.68rem;
-}
-
-.reward-state-compact .freshness {
-  display: block;
-  margin-top: 0.45rem;
-  font-size: 0.58rem;
-}
-
 .launch-card > .button {
   width: 100%;
   min-height: 40px;
-  margin-top: auto;
+  margin-top: 0.8rem;
 }
 
 .reward-state {

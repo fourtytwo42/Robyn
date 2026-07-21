@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { LaunchRewardState } from "@/components/launch-reward-state";
 import { SiteHeader } from "@/components/site-header";
 import { getLaunches } from "@/lib/data-api";
 import { TokenArt } from "@/components/launchpad-visuals";
@@ -166,11 +165,6 @@ export default async function Discover({
                     </div>
                   </div>
                 </div>
-                <LaunchRewardState
-                  vault={launch.vault}
-                  indexedBlock={launches.asOfBlock}
-                  compact
-                />
                 <Link className="button" href={"/launches/" + launch.token}>
                   View market
                 </Link>
