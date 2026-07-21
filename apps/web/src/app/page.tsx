@@ -42,14 +42,12 @@ export default async function Home() {
 
       <section className="product-hero" aria-labelledby="hero-heading">
         <div className="hero-copy">
-          <p className="eyebrow">Programmable creator fees</p>
-          <h1 id="hero-heading">
-            Trade a token. Build a basket. Share the upside.
-          </h1>
+          <p className="eyebrow">A reward basket for every token</p>
+          <h1 id="hero-heading">Hold the token. Earn the basket.</h1>
           <p className="lede">
-            Robyn turns market fees into an immutable mix of{" "}
-            {isTestnet ? "testnet mock" : "mock"} tokenized assets, then
-            distributes the resulting rewards to eligible token holders.
+            Every Robyn token has its own immutable mix of{" "}
+            {isTestnet ? "testnet mock" : "mock"} stock and crypto rewards.
+            Trade, hold, and claim the assets that token activity creates.
           </p>
           <div className="hero-actions">
             <Link className="button primary" href="/create">
@@ -67,12 +65,12 @@ export default async function Home() {
         <aside className="hero-token-card" aria-label="Robyn genesis market">
           <TokenArt symbol="ROBYN" priority />
           <div className="hero-token-overlay">
-            <span className="hot-chip">Featured</span>
+            <span className="hot-chip">Live reward basket</span>
             <div>
               <strong>Robyn Genesis</strong>
               <span>ROBYN</span>
             </div>
-            <p>Fees flow into a 40 / 40 / 20 reward basket.</p>
+            <p>Holders earn 40% mNVDA / 40% mSPY / 20% mETH.</p>
           </div>
         </aside>
       </section>
@@ -81,7 +79,9 @@ export default async function Home() {
         <div className="section-heading launchpad-heading">
           <div>
             <p className="eyebrow">Live &amp; rising</p>
-            <h2 id="market-radar-heading">Find your next community.</h2>
+            <h2 id="market-radar-heading">
+              Choose the rewards you want to earn.
+            </h2>
           </div>
           <Link className="text-link" href="/discover">
             View all markets →
@@ -138,8 +138,8 @@ export default async function Home() {
         aria-label="Available reward basket assets"
       >
         <div className="asset-rail-copy">
-          <p className="eyebrow">Build the basket</p>
-          <h2>Creator fees become assets holders recognize.</h2>
+          <p className="eyebrow">Inside the basket</p>
+          <h2>Recognizable rewards, earned by holding.</h2>
         </div>
         {[
           { symbol: "mNVDA", name: "Mock NVIDIA", weight: "40%" },

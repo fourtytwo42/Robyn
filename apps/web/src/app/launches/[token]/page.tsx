@@ -96,7 +96,7 @@ export default async function LaunchDetail({
             aria-labelledby="basket-heading"
           >
             <p className="card-label">Immutable reward basket</p>
-            <h2 id="basket-heading">Realized onchain reward state</h2>
+            <h2 id="basket-heading">What holders earn</h2>
             <LaunchRewardState
               vault={launch.vault}
               indexedBlock={detail.asOfBlock}

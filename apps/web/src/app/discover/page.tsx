@@ -40,12 +40,11 @@ export default async function Discover({
       <SiteHeader />
       <section className="page-shell">
         <header className="page-hero">
-          <p className="eyebrow">Permissionless registry</p>
-          <h1>Discover fee-funded reward tokens.</h1>
+          <p className="eyebrow">Every token, its own basket</p>
+          <h1>Discover tokens by the rewards they earn.</h1>
           <p className="lede">
-            Browse without a wallet. Basket configuration comes from the indexed
-            launch registry; pending and purchased amounts are read live from
-            the{" "}
+            Browse communities without a wallet and compare their immutable
+            reward baskets. Pending and purchased rewards are read live from the{" "}
             {isTestnet
               ? "Robinhood testnet rehearsal"
               : "controlled development"}{" "}

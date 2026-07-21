@@ -17,11 +17,13 @@ export default function CreateLaunch() {
       <section className="create-hero" aria-labelledby="create-heading">
         <div>
           <p className="eyebrow">Create on Robyn</p>
-          <h1 id="create-heading">Launch the token. Choose the upside.</h1>
+          <h1 id="create-heading">
+            Launch a token with its own reward basket.
+          </h1>
           <p className="lede">
-            Name your community, preview its identity, and lock creator fees
-            into a holder reward basket. The selected weights cannot be changed
-            after launch.
+            Choose the stock and crypto rewards holders can earn. Trading fees
+            automatically build the basket, and its selected weights cannot be
+            changed after launch.
           </p>
           <div className="create-steps" aria-label="Launch steps">
             <span>

@@ -497,9 +497,7 @@ export function DevnetConsole({ deployment }: { deployment: Deployment }) {
       <div className="console-heading">
         <div>
           <p className="eyebrow">Live genesis market</p>
-          <h2 id="console-title">
-            Trade fees into a 40 / 40 / 20 reward basket.
-          </h2>
+          <h2 id="console-title">Trade ROBYN. Earn its 40 / 40 / 20 basket.</h2>
         </div>
         <span className="live-chip">Live - block state</span>
       </div>

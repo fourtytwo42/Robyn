@@ -562,10 +562,12 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
       <div className="console-heading">
         <div>
           <p className="eyebrow">Permissionless launchpad</p>
-          <h2 id="launchpad-title">Launch your own fee-funded reward token.</h2>
+          <h2 id="launchpad-title">
+            Create a token holders want to earn with.
+          </h2>
           <p>
-            Choose an immutable mock-asset basket, seed a market, then trade and
-            claim through the shared registry.
+            Choose its immutable mock-asset reward basket, seed a market, then
+            let trading activity fund rewards holders can claim.
           </p>
         </div>
         <span className="live-chip">

@@ -8,7 +8,7 @@ Date: 2026-07-20
 
 Robyn should feel like an understandable onchain capital product, not a casino-style memecoin terminal. The visual system is dark-first, restrained, precise and basket-forward. It borrows the simplicity of Bags, the market transparency of Clanker and the reward explicitness of BONKfun without copying their brand expression.
 
-The external asset basket is the visual center of discovery cards, launch preview and token pages. Trading remains important, but the interface should first explain where fees go and what has actually happened.
+The external asset basket is the visual center of discovery cards, launch preview and token pages. Holder-facing acquisition surfaces lead with the benefit: every token has its own reward basket. Trading fees are explained as the funding mechanism after the benefit is clear, while creator surfaces make fee routing and permanent economics explicit.
 
 ## Experience principles
 
@@ -181,6 +181,9 @@ Components consume semantic tokens. A page must not invent one-off status colors
 ## Voice and content
 
 - Direct, calm and specific.
+- Lead holder-facing acquisition copy with “Every token has its own reward basket” and “Hold the token. Earn the basket.”
+- Reserve fee-flow-first explanations for creator, economics and verification surfaces; fee routing supports the holder benefit rather than replacing it.
+- Say a token “has” a reward basket or lets holders “earn” basket assets. Never say the token “is” the basket, is backed by it or is redeemable for it.
 - Prefer “Pending $18.40 for NVDA conversion” over “Rewards loading.”
 - Prefer “Claim available after epoch finalizes” over “Coming soon.”
 - Describe failure cause, retained funds and next safe action.
@@ -218,4 +221,3 @@ Components consume semantic tokens. A page must not invent one-off status colors
 4. Clickable prototype for creator and holder comprehension studies.
 5. Accessibility annotation and content inventory.
 6. Final logo/brand-mark decision, which remains separate from the settled interface palette.
-

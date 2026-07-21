@@ -27,7 +27,9 @@ Launchpads generally send creator fees to the creator, burn tokens, or apply one
 
 ## Product promise
 
-“Launch a token whose trading fees build the reward basket you choose.”
+Holder-facing promise: **“Every token has its own reward basket. Hold the token. Earn the basket.”**
+
+Creator-facing explanation: **“Launch a token and choose the immutable reward basket its holders can earn.”** Trading fees are the funding mechanism and should support these promises rather than lead holder-facing acquisition copy.
 
 Every product surface must preserve these truths:
 
@@ -82,6 +84,7 @@ Robyn is a launchpad and reward protocol. It is not presented as a brokerage, fu
 | D-028 | Initial development and acceptance use a native VM-hosted Anvil chain ID 31337 with easy faucet funding before Robinhood Testnet migration | Settled | Removes external faucet dependence while preserving EVM behavior and the selected Foundry toolchain |
 | D-029 | Every user-facing story requires Codex in-app-browser acceptance evidence in addition to the appropriate VM-native lower-level tests | Settled | Verifies complete real user journeys without weakening contract, service or data correctness tests |
 | D-030 | Every major validated change is committed and pushed from the authoritative VM; incomplete or risky work remains on feature branches and main stays deployable | Settled | Keeps GitHub current and preserves recoverable, reviewable checkpoints |
+| D-031 | Holder-facing acquisition copy leads with each token's reward basket; creator-fee routing is supporting mechanism copy and remains prominent in creation/economics surfaces | Settled | Communicates the holder benefit first without implying that the launch token is collateral-backed or redeemable |
 | D-023 | CI/CD uses a self-hosted GitHub Actions runner on the project VM, frozen installs and immutable build-artifact promotion without containers | Settled baseline | Keeps all project execution on the VM while preserving reproducible releases |
 | D-024 | The `robyn` VM at `192.168.50.250` and `/home/hendo420/Robyn` are the only authoritative development and runtime environment | Settled | The user requires all project work and services to run on the VM, never the workstation |
 | D-025 | Docker, Compose, Kubernetes and container images are prohibited for project development and deployment | Settled | The user requires native VM operation |
