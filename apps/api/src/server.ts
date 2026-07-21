@@ -326,6 +326,7 @@ app.get<{
         metrics: metric
           ? {
               marketCapBase: metric.marketCapBase,
+              priceChangeBps: metric.priceChangeBps,
               liquidityBase: metric.liquidityBase,
               totalVolumeBase: metric.totalVolumeBase,
               holderCount: metric.holderCount,

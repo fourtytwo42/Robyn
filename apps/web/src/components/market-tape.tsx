@@ -31,9 +31,17 @@ export async function MarketTape() {
                 {compactBase(market.metrics!.marketCapBase)}{" "}
                 {market.metrics!.baseSymbol}
               </span>
-              <small>
-                {market.assets.length} reward asset
-                {market.assets.length === 1 ? "" : "s"}
+              <small
+                className={
+                  market.metrics!.priceChangeBps > 0
+                    ? "market-change positive"
+                    : market.metrics!.priceChangeBps < 0
+                      ? "market-change negative"
+                      : "market-change neutral"
+                }
+              >
+                {market.metrics!.priceChangeBps > 0 ? "+" : ""}
+                {(market.metrics!.priceChangeBps / 100).toFixed(2)}%
               </small>
             </Link>
           ))

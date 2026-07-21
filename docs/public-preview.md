@@ -23,3 +23,20 @@ The random hostname changes whenever `cloudflared` starts a new Quick Tunnel. Qu
 ## Application configuration
 
 The preview web process must run with `NEXT_PUBLIC_ROBYN_RPC_URL=/rpc`. Production testnet builds continue to use their explicitly supplied Robinhood Chain RPC URL.
+
+The shareable preview serves an optimized Next.js production build. It must not run `next dev`:
+
+```sh
+cd /home/hendo420/Robyn
+pnpm exec pm2 stop robyn-web-preview
+rm -rf apps/web/.next
+ROBYN_NETWORK_MODE=devnet \
+NEXT_PUBLIC_ROBYN_NETWORK_MODE=devnet \
+NEXT_PUBLIC_ROBYN_RPC_URL=/rpc \
+DATA_API_URL=http://127.0.0.1:3103 \
+DATA_API_STATUS_URL=http://127.0.0.1:3103/status \
+RPC_GATEWAY_HEALTH_URL=http://127.0.0.1:8547/health \
+  pnpm --filter @robyn/web build
+```
+
+Start the built app with the same environment, `NODE_ENV=production`, `PORT=3003`, and `pnpm --filter @robyn/web start`, then run `pnpm exec pm2 save`. Verify `pm2 describe robyn-web-preview` reports script arguments `--filter @robyn/web start`, node environment `production`, and zero unstable restarts. `apps/web/.next/BUILD_ID` identifies the exact compiled output currently available to the production process.

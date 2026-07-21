@@ -13,6 +13,7 @@ export type LaunchRecord = {
   formula_version: string;
   metrics?: {
     marketCapBase: string;
+    priceChangeBps: number;
     liquidityBase: string;
     totalVolumeBase: string;
     holderCount: number;

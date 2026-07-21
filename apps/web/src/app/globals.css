@@ -2409,7 +2409,7 @@ main > .notice {
 
 .market-tape-track a {
   display: grid;
-  grid-template-columns: auto auto;
+  grid-template-columns: auto auto auto;
   gap: 0.1rem 0.55rem;
   align-content: center;
   min-width: 176px;
@@ -2439,9 +2439,24 @@ main > .notice {
 }
 
 .market-tape-track small {
-  grid-column: 1 / -1;
-  color: #6f7c98;
-  font-size: 0.58rem;
+  align-self: center;
+  color: #8895ad;
+  font:
+    750 0.62rem/1.2 "IBM Plex Mono",
+    ui-monospace,
+    monospace;
+}
+
+.market-tape-track .market-change.positive {
+  color: #50d7a5;
+}
+
+.market-tape-track .market-change.negative {
+  color: #ff8f8f;
+}
+
+.market-tape-track .market-change.neutral {
+  color: #8895ad;
 }
 
 .market-tape-empty {
