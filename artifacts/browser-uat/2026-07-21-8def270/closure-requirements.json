@@ -4,6 +4,22 @@
   "expectedReleasePath": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8",
   "evidenceBranch": "evidence/8def270-browser-uat",
   "releaseTag": "v0.1.0-rc.1",
+  "expectedNodeVersion": "v24.18.0",
+  "expectedPnpmVersion": "11.15.1",
+  "minimumMigrationCount": 4,
+  "requiredReleaseGates": [
+    "format",
+    "lint",
+    "pm2-config",
+    "immutability-validator",
+    "typecheck",
+    "test",
+    "build",
+    "traceability",
+    "security-audit",
+    "testnet-journey",
+    "testnet-stack"
+  ],
   "minimumAuditRows": 35,
   "allowedFinalAuditStatuses": ["PROVEN", "PROVEN-DESIGN", "EXTERNAL-LATER"],
   "requiredEvidence": [

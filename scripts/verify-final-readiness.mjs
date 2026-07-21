@@ -50,6 +50,7 @@ const configPath = path.resolve(requiredOption("--config"));
 const auditPath = path.resolve(requiredOption("--audit"));
 const evidenceDir = path.resolve(requiredOption("--evidence-dir"));
 const allowIncomplete = hasFlag("--allow-incomplete");
+const syntheticFixture = hasFlag("--synthetic-fixture");
 const config = readJson(configPath);
 const blockers = [];
 const checks = [];
@@ -67,9 +68,89 @@ check(
 );
 check(
   "expected release path",
-  config.expectedReleasePath === `/opt/robyn/releases/${config.expectedReleaseGitSha}`,
-  "release path must be commit-addressed",
+  syntheticFixture
+    ? path.isAbsolute(config.expectedReleasePath) && config.releaseTag === "vtest"
+    : config.expectedReleasePath ===
+        `/opt/robyn/releases/${config.expectedReleaseGitSha}`,
+  syntheticFixture
+    ? "synthetic path must be absolute and use the reserved vtest tag"
+    : "release path must be commit-addressed under /opt/robyn/releases",
 );
+
+const releaseManifestPath = path.join(config.expectedReleasePath, "release-manifest.json");
+const releaseLockPath = path.join(config.expectedReleasePath, "pnpm-lock.yaml");
+const releaseFilesPath = path.join(config.expectedReleasePath, "release-files.sha256");
+const releaseManifestChecksumPath = `${releaseManifestPath}.sha256`;
+for (const filename of [
+  releaseManifestPath,
+  releaseLockPath,
+  releaseFilesPath,
+  releaseManifestChecksumPath,
+]) {
+  check(`release artifact ${path.basename(filename)}`, fs.existsSync(filename), filename);
+}
+if (
+  [releaseManifestPath, releaseLockPath, releaseFilesPath, releaseManifestChecksumPath].every(
+    (filename) => fs.existsSync(filename),
+  )
+) {
+  const releaseManifest = readJson(releaseManifestPath);
+  const requiredGates = new Set(config.requiredReleaseGates);
+  const actualGates = new Set(releaseManifest.gates ?? []);
+  const sha256File = (filename) =>
+    crypto.createHash("sha256").update(fs.readFileSync(filename)).digest("hex");
+  const manifestChecksumEntry = fs
+    .readFileSync(releaseManifestChecksumPath, "utf8")
+    .trim()
+    .match(/^([0-9a-f]{64})\s+release-manifest\.json$/);
+  check(
+    "release manifest identity",
+    releaseManifest.schemaVersion === 1 &&
+      releaseManifest.releaseId === config.expectedReleaseGitSha &&
+      releaseManifest.gitSha === config.expectedReleaseGitSha,
+    `releaseId=${releaseManifest.releaseId}, gitSha=${releaseManifest.gitSha}`,
+  );
+  check(
+    "release dependency isolation",
+    releaseManifest.packageImportMethod === "copy",
+    `packageImportMethod=${releaseManifest.packageImportMethod}`,
+  );
+  check(
+    "release toolchain",
+    releaseManifest.nodeVersion === config.expectedNodeVersion &&
+      releaseManifest.pnpmVersion === config.expectedPnpmVersion,
+    `node=${releaseManifest.nodeVersion}, pnpm=${releaseManifest.pnpmVersion}`,
+  );
+  check(
+    "release migrations",
+    Array.isArray(releaseManifest.migrations) &&
+      releaseManifest.migrations.length >= config.minimumMigrationCount &&
+      releaseManifest.migrations.every((entry) => /^[0-9a-f]{64}\s+.+\.sql$/.test(entry)),
+    `migration count=${releaseManifest.migrations?.length ?? 0}`,
+  );
+  check(
+    "release required gates",
+    [...requiredGates].every((gate) => actualGates.has(gate)) &&
+      actualGates.size === requiredGates.size,
+    `actual=${[...actualGates].sort().join(",")}`,
+  );
+  check(
+    "release lock hash",
+    releaseManifest.lockSha256 === sha256File(releaseLockPath),
+    `manifest=${releaseManifest.lockSha256}`,
+  );
+  check(
+    "release tree-manifest hash",
+    releaseManifest.releaseFilesSha256 === sha256File(releaseFilesPath),
+    `manifest=${releaseManifest.releaseFilesSha256}`,
+  );
+  check(
+    "release manifest sidecar hash",
+    Boolean(manifestChecksumEntry) &&
+      manifestChecksumEntry[1] === sha256File(releaseManifestPath),
+    "release-manifest.json.sha256 must match",
+  );
+}
 
 const auditText = fs.readFileSync(auditPath, "utf8");
 const auditRows = auditText
@@ -262,6 +343,7 @@ const result = {
   expectedReleasePath: config.expectedReleasePath,
   evidenceBranch: config.evidenceBranch,
   releaseTag: config.releaseTag,
+  syntheticFixture,
   auditRowCount: auditRows.length,
   auditStatusCounts: statusCounts,
   checksumEntryCount: checksumEntries.length,

@@ -128,7 +128,7 @@ node scripts/verify-final-readiness.mjs \
   --evidence-dir artifacts/browser-uat/2026-07-21-8def270
 ```
 
-`closure-requirements.json` fixes the exact release SHA/path, evidence branch, annotated tag, allowed final audit statuses and required soak, reboot, browser and backup evidence contracts. During the active soak the verifier correctly reports all remaining blockers and exits nonzero; an isolated 37-row, fully checksummed, clean, pushed and annotated-tag fixture passes with zero blockers. Final closure requires the same result from the real package, including exact remote main and annotated `v0.1.0-rc.1` tag pointing to 8def270.
+`closure-requirements.json` fixes the exact release SHA/path, Node/pnpm versions, copied-dependency mode, four migration hashes, eleven release gates, evidence branch, annotated tag, allowed final audit statuses and required soak, reboot, browser and backup evidence contracts. The verifier recomputes the lock, release-tree manifest and release-manifest sidecar hashes directly from the immutable artifact and requires the format, lint, PM2 policy, immutability, typecheck, test, build, traceability, security, testnet journey and isolated testnet-stack gates. During the active soak it correctly reports all remaining blockers and exits nonzero; an isolated 37-row, fully checksummed, clean, pushed, annotated-tag and commit-addressed release fixture passes with zero blockers. Final closure requires the same result from the real package, including exact remote main and annotated `v0.1.0-rc.1` tag pointing to 8def270.
 
 ## External gates after this milestone
 
