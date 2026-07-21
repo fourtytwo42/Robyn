@@ -33,6 +33,7 @@ function git(repo, commandArgs) {
   return execFileSync("git", ["-C", repo, ...commandArgs], {
     encoding: "utf8",
     maxBuffer: 4 * 1024 * 1024,
+    stdio: ["ignore", "pipe", "pipe"],
   }).trim();
 }
 
