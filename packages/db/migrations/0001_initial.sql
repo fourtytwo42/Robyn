@@ -1,0 +1,15 @@
+BEGIN;
+CREATE TABLE IF NOT EXISTS schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS chain_blocks (chain_id integer NOT NULL, number bigint NOT NULL, hash text NOT NULL, parent_hash text NOT NULL, timestamp bigint NOT NULL, canonical boolean NOT NULL DEFAULT true, observed_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (chain_id, number));
+CREATE UNIQUE INDEX IF NOT EXISTS chain_blocks_hash_uq ON chain_blocks (chain_id, hash);
+CREATE TABLE IF NOT EXISTS raw_logs (chain_id integer NOT NULL, block_number bigint NOT NULL, block_hash text NOT NULL, transaction_hash text NOT NULL, transaction_index integer NOT NULL, log_index integer NOT NULL, address text NOT NULL, topics jsonb NOT NULL, data text NOT NULL, removed boolean NOT NULL DEFAULT false, observed_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (chain_id, transaction_hash, log_index));
+CREATE INDEX IF NOT EXISTS raw_logs_block_idx ON raw_logs (chain_id, block_number);
+CREATE INDEX IF NOT EXISTS raw_logs_address_idx ON raw_logs (chain_id, address);
+CREATE TABLE IF NOT EXISTS launches (chain_id integer NOT NULL, launch_id bigint NOT NULL, token text NOT NULL, vault text NOT NULL, market text NOT NULL, creator text NOT NULL, name text NOT NULL, symbol text NOT NULL, assets jsonb NOT NULL, weights_bps jsonb NOT NULL, created_block bigint NOT NULL, updated_block bigint NOT NULL, formula_version text NOT NULL DEFAULT 'native-v1', PRIMARY KEY (chain_id, token));
+CREATE UNIQUE INDEX IF NOT EXISTS launches_id_uq ON launches (chain_id, launch_id);
+CREATE INDEX IF NOT EXISTS launches_updated_idx ON launches (chain_id, updated_block);
+CREATE TABLE IF NOT EXISTS indexer_checkpoints (service text NOT NULL, chain_id integer NOT NULL, last_block bigint NOT NULL, last_hash text NOT NULL, updated_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (service, chain_id));
+CREATE TABLE IF NOT EXISTS job_audit (idempotency_key text PRIMARY KEY, queue text NOT NULL, state text NOT NULL, attempts integer NOT NULL DEFAULT 0, payload jsonb NOT NULL, last_error text, updated_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS job_audit_state_idx ON job_audit (queue, state);
+INSERT INTO schema_migrations(version) VALUES ('0001_initial') ON CONFLICT (version) DO NOTHING;
+COMMIT;

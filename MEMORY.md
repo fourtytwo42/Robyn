@@ -10,7 +10,7 @@ Durable project context lives here. Update this file whenever information should
 - Last meaningful change: Added the guided creator workflow for immutable 1-3 asset baskets, token/vault deployment, one-market deployment, liquidity seeding and exclusion sealing, plus registry buy/sell/convert/claim actions.
 - Files touched: web application, controlled-devnet deployment/contracts, protocol/devnet operations docs, README and MEMORY.
 - Last verification: 2026-07-21 in-app-browser LAN UAT launched MYCO as launch #2, then created/funded a separate holder wallet that bought 990,000 MYCO, converted exact 4/4/2 mUSD legs, claimed all three assets and sold 10,000 MYCO. Onchain balances confirmed 980,000 MYCO plus nonzero mNVDA/mSPY/mETH; mobile 390x844 had no horizontal overflow.
-- Next step: add dedicated discovery/token-detail/portfolio UX and a native PostgreSQL/Redis-backed data plane, then complete release hardening, recovery, monitoring and testnet rehearsal.
+- Next step: build the reorg-aware indexer and Fastify read API on the new native PostgreSQL/Redis foundation, then add dedicated discovery/token-detail/portfolio UX, artifact/queue services, release hardening, recovery, monitoring and testnet rehearsal.
 - Blockers: Bags/pons compatibility requires funded transactions; anonymous 0x and 1inch quote calls return 401; no public testnet faucet/canonical Stock Token registry was found; current Alloy website source is unverified; no reusable license/repository was found for Vladdy/HoodETF/BASKET.
 
 ## Current State
@@ -159,6 +159,7 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-21: Native data foundation - installed Ubuntu PostgreSQL 16.14 and Redis 7.0.15 natively, enabled both systemd services, verified loopback-only listeners and created peer-authenticated database robyn owned by hendo420. Added the Drizzle schema plus transactional idempotent migration 0001 for canonical blocks, raw logs, launch projections, checkpoints, job audit and migration ledger; applying it twice succeeded.
 - 2026-07-21: Permissionless browser launch UAT - a session creator launched and seeded MYCO with a 40/40/20 basket as registry launch #2. A distinct session holder funded, bought 990,000 MYCO, generated and converted exact 4/4/2 mUSD legs, claimed 7,904,349,388,211,341 mNVDA, 15,808,698,776,422,683 mSPY and 11,856,524,082,317,012 mETH units, then sold 10,000 MYCO. The mobile 390x844 registry had no horizontal overflow.
 - 2026-07-21: Self-service market factory - added DevnetMarketFactory so each recorded launch creator can permissionlessly deploy exactly one fixed-policy controlled-devnet market without bundling deployment bytecode in the browser. Contract suite passes 21 tests. Deployment block 74 from d31c68f includes the market factory, and live verification confirms its factory/market registry links plus genesis accounting.
 - 2026-07-21: Browser genesis journey - in-app-browser LAN UAT created a session-only wallet, received 10 DEV and 10,000 mUSD, bought 990,000 ROBYN, observed exact 4/4/2 fee weights, converted all legs, claimed mNVDA/mSPY/mETH, sold 100,000 ROBYN and recovered the 890,000-token and reward state after reload. The 390x844 layout had no horizontal overflow. Next.js production build, strict typecheck and web tests passed.

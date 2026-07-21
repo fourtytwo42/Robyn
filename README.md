@@ -29,6 +29,7 @@ The Windows checkout is not an execution environment. It is only a convenience m
 | [`user-stories/`](user-stories/) | Delivery backlog and PRD traceability |
 | [`scripts/`](scripts/) | Reproducible research, validation, market-snapshot, and screenshot tooling |
 | [Controlled devnet operations](docs/devnet-operations.md) | Live Anvil, restricted RPC/faucet and PM2 service operation |
+| [Native data-plane operations](docs/data-plane-operations.md) | PostgreSQL/Redis service, schema, migration and recovery status |
 | [`docs/`](docs/) | VM runtime, operating procedures and delivery roadmaps |
 | [Protocol core](docs/protocol-core.md) | Current contract boundaries, invariants, dependency provenance and limitations |
 | [Devnet-to-testnet readiness plan](docs/devnet-to-testnet-readiness-plan.md) | Phase-by-phase implementation, verification and release plan |
