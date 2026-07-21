@@ -1,0 +1,119 @@
+- link "Skip to main content":
+  - /url: "#main"
+- alert
+- main:
+  - link "Robyn home":
+    - /url: /
+    - generic: R
+    - generic: ROBYN
+  - navigation "Primary navigation":
+    - link "Discover":
+      - /url: /discover
+    - link "Portfolio":
+      - /url: /portfolio
+    - link "Create":
+      - /url: /#devnet-console
+  - generic: Controlled development network
+  - paragraph: "Canonical launch #6"
+  - heading "Soak Candidate SOAK" [level=1]
+  - code: "0xab940d69774041d3bf14c5a55d755c9980a4ba34"
+  - generic: Experimental · controlled development network
+  - region "Fixed-price development market":
+    - paragraph: Market
+    - heading "Fixed-price development market" [level=2]
+    - paragraph: Trading and reward claiming are operationally separate. The live console revalidates chain 31337 and transaction targets before submitting.
+    - term: Market
+    - definition:
+      - code: "0xd6277af194aadfe1d0817e5fbf1967100f1e4ca9"
+    - term: Creator
+    - definition:
+      - code: "0x1ce1d394fe324c04226892a7d91da426b05fe878"
+    - term: Token
+    - definition:
+      - code: "0xab940d69774041d3bf14c5a55d755c9980a4ba34"
+    - link "Open live trading console":
+      - /url: /#devnet-console
+    - link "View portfolio":
+      - /url: /portfolio
+  - region "Realized onchain reward state":
+    - paragraph: Immutable reward basket
+    - heading "Realized onchain reward state" [level=2]
+    - article:
+      - strong: mNVDA
+      - generic: 40%
+      - term: Pending cash
+      - definition: 0 mUSD
+      - term: Purchased / deposited
+      - definition: 0 mNVDA
+      - term: Converted base
+      - definition: 0 mUSD
+      - code: "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49"
+    - article:
+      - strong: mSPY
+      - generic: 40%
+      - term: Pending cash
+      - definition: 0 mUSD
+      - term: Purchased / deposited
+      - definition: 0 mSPY
+      - term: Converted base
+      - definition: 0 mUSD
+      - code: "0x4826533B4897376654Bb4d4AD88B7faFD0C98528"
+    - article:
+      - strong: mETH
+      - generic: 20%
+      - term: Pending cash
+      - definition: 0 mUSD
+      - term: Purchased / deposited
+      - definition: 0 mETH
+      - term: Converted base
+      - definition: 0 mUSD
+      - code: "0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf"
+    - paragraph: Indexed block 180 · live chain block 180 · realized state only
+  - region "Contracts and indexed provenance":
+    - paragraph: Verify independently
+    - heading "Contracts and indexed provenance" [level=2]
+    - term: Launch token
+    - definition:
+      - code: "0xab940d69774041d3bf14c5a55d755c9980a4ba34"
+    - term: Reward vault
+    - definition:
+      - code: "0x1e417dc190f5522439a4000904dd63358a23a8e0"
+    - term: Market
+    - definition:
+      - code: "0xd6277af194aadfe1d0817e5fbf1967100f1e4ca9"
+    - term: Creator wallet
+    - definition:
+      - code: "0x1ce1d394fe324c04226892a7d91da426b05fe878"
+    - term: Formula version
+    - definition:
+      - code: native-v1
+    - term: Created block
+    - definition:
+      - code: "175"
+    - term: Indexed through
+    - definition:
+      - code: "180"
+  - region "Canonical logs":
+    - paragraph: Protocol activity
+    - heading "Canonical logs" [level=2]
+    - generic: 6 shown recent events
+    - list:
+      - generic: Block 180
+      - code: "0x9d0c3365e9029be403390ce7a5338cfccf105029687f84c54884861d47f93d31"
+      - generic: Contract 0xab940d69774041d3bf14c5a55d755c9980a4ba34 · topic 0x012d86c4fb833c6fa408e565b7c12185233bae73a6379ff47e4f99be306b0551
+      - generic: Block 179
+      - code: "0xbac1a4836884c90f8ad4af90f7899c7266cecc2b00ed4a5afe13b03374b3f723"
+      - generic: Contract 0xd6277af194aadfe1d0817e5fbf1967100f1e4ca9 · topic 0x8e35909329327a37503200dfcee9d7ab5d6bfa455eeda068210182468f9d4b59
+      - generic: Block 179
+      - code: "0xbac1a4836884c90f8ad4af90f7899c7266cecc2b00ed4a5afe13b03374b3f723"
+      - generic: Contract 0xab940d69774041d3bf14c5a55d755c9980a4ba34 · topic 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+      - generic: Block 177
+      - code: "0x2db38d7cbf5421104ccd37d06e29f847632f033a49dd54d52ed660b20a080d07"
+      - generic: Contract 0xab940d69774041d3bf14c5a55d755c9980a4ba34 · topic 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
+      - generic: Block 175
+      - code: "0x7cd4b4d9fc0d73e6ed9b3eacc7c77d75f91c2c354621b80856eceb549367f462"
+      - generic: Contract 0x1e417dc190f5522439a4000904dd63358a23a8e0 · topic 0x4a58f529601885177194a5a37c25d7b7a3ae95e81d43621f48d80ae7b43cd982
+      - generic: Block 175
+      - code: "0x7cd4b4d9fc0d73e6ed9b3eacc7c77d75f91c2c354621b80856eceb549367f462"
+      - generic: Contract 0xab940d69774041d3bf14c5a55d755c9980a4ba34 · topic 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+  - region "Reward disclosure": This launch token is not redeemable for the basket. Rewards shown are funded only by mock market fees, and all displayed assets have no real-world value.

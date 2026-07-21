@@ -1,12 +1,13 @@
 {
   "schemaVersion": 1,
   "capturedAt": "2026-07-21T11:25:10.423Z",
+  "lastCapturedAt": "2026-07-21T11:37:11Z",
   "releaseGitSha": "8def270b1856c2bcfcd69d429a8d88def4ab15a8",
   "releasePath": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8",
   "evidenceBranch": "evidence/8def270-browser-uat",
   "chainId": 31337,
   "wallet": "0x7169095880B36c1a602340294E8b2E0047b8AD96",
-  "indexedBlock": 173,
+  "indexedBlock": 180,
   "journey": {
     "restoredWallet": true,
     "buy": true,
@@ -46,11 +47,27 @@
     172,
     173
   ],
+  "permissionlessLaunch": {
+    "wallet": "0x1cE1D394FE324c04226892a7d91Da426b05fe878",
+    "name": "Soak Candidate",
+    "symbol": "SOAK",
+    "registryId": 6,
+    "token": "0xab940d69774041d3bf14c5a55d755c9980a4ba34",
+    "market": "0xd6277af194aadfe1d0817e5fbf1967100f1e4ca9",
+    "vault": "0x1e417dc190f5522439a4000904dd63358a23a8e0",
+    "weightsBps": [4000, 4000, 2000],
+    "transactionBlocks": [174, 175, 176, 177, 178, 179, 180],
+    "successfulReceipts": 7,
+    "indexedDiscovery": true,
+    "canonicalDetail": true,
+    "browserWarningOrErrorLogs": 0
+  },
   "warningOrErrorLogs": 0,
   "passed": true,
   "notes": [
     "The exact replacement release repeated the signed buy, weighted pending fee, three-leg conversion, claim-all, sell and portfolio reconciliation path through the Codex in-app browser.",
     "All eight wallet and keeper transactions have successful status 0x1 receipts.",
+    "A fresh browser-only wallet then funded and permissionlessly launched registry token 6 with immutable 40/40/20 weights; discovery and canonical detail reconciled at indexed/live block 180 and all seven fund/launch receipts succeeded.",
     "The source diff from d90e218 to 8def270 changes release operations, documentation and durable memory only; application, contract, database and PM2 runtime source is unchanged."
   ]
 }

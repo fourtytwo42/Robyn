@@ -1,0 +1,183 @@
+- link "Skip to main content":
+  - /url: "#main"
+- main:
+  - link "Robyn home":
+    - /url: /
+    - generic: R
+    - generic: ROBYN
+  - navigation "Primary navigation":
+    - link "Discover":
+      - /url: /discover
+    - link "Portfolio":
+      - /url: /portfolio
+    - link "Create":
+      - /url: /#devnet-console
+  - generic: Controlled development network
+  - region "Trade a token. Build a basket. Share the upside.":
+    - paragraph: Programmable creator fees
+    - heading "Trade a token. Build a basket. Share the upside." [level=1]
+    - paragraph: Robyn turns market fees into an immutable mix of mock tokenized assets, then distributes the resulting rewards to eligible token holders.
+    - link "Try the live flow":
+      - /url: "#devnet-console"
+    - generic: Permissionless launch architecture · controlled local chain
+    - complementary "Genesis basket preview":
+      - generic: 100%
+      - generic: allocated
+      - paragraph: Genesis basket
+      - list:
+        - text: Mock NVIDIA
+        - strong: 40%
+        - text: Mock S&P 500
+        - strong: 40%
+        - text: Mock Ether
+        - strong: 20%
+  - region "System status":
+    - text: Web
+    - strong: ok
+    - text: RPC
+    - strong: ok
+    - text: Chain
+    - strong: "31337"
+    - text: Indexer
+    - strong: ok · block 173
+    - text: Keeper
+    - strong: ok
+    - text: Artifacts
+    - strong: ok
+  - region "Launch your own fee-funded reward token.":
+    - paragraph: Permissionless launchpad
+    - heading "Launch your own fee-funded reward token." [level=2]
+    - paragraph: Choose an immutable mock-asset basket, seed a market, then trade and claim through the shared registry.
+    - generic: 6 live launches
+    - text: Token name
+    - textbox "Token name": Soak Candidate
+    - text: Symbol
+    - textbox "Symbol": SOAK
+    - group "Basket weights (must total 100%)":
+      - generic: Basket weights (must total 100%)
+      - text: mNVDA
+      - spinbutton "mNVDA": "40"
+      - text: mSPY
+      - spinbutton "mSPY": "40"
+      - text: mETH
+      - spinbutton "mETH": "20"
+    - paragraph: Total 100%
+    - button "Launch token and market"
+    - generic "Launch registry":
+      - article:
+        - generic: SOAK
+        - generic: "#6"
+        - heading "Soak Candidate" [level=3]
+        - paragraph: 500,000,000 SOAK in this wallet
+        - code: 0xaB940D69...A4Ba34
+        - button "Buy 990k"
+        - button "Sell 10k"
+        - button "Convert"
+        - button "Claim"
+      - article:
+        - generic: ONE
+        - generic: "#5"
+        - heading "Single Asset Evidence" [level=3]
+        - paragraph: 0 ONE in this wallet
+        - code: 0xFBf90645...27aD77
+        - button "Buy 990k"
+        - button "Sell 10k" [disabled]
+        - button "Convert"
+        - button "Claim"
+      - article:
+        - generic: MYCO
+        - generic: "#4"
+        - heading "My Community" [level=3]
+        - paragraph: 0 MYCO in this wallet
+        - code: 0x7835B0Dc...792299
+        - button "Buy 990k"
+        - button "Sell 10k" [disabled]
+        - button "Convert"
+        - button "Claim"
+      - article:
+        - generic: EVID
+        - generic: "#3"
+        - heading "Evidence Basket" [level=3]
+        - paragraph: 0 EVID in this wallet
+        - code: 0xF8698093...911301
+        - button "Buy 990k"
+        - button "Sell 10k" [disabled]
+        - button "Convert"
+        - button "Claim"
+      - article:
+        - generic: MYCO
+        - generic: "#2"
+        - heading "My Community" [level=3]
+        - paragraph: 0 MYCO in this wallet
+        - code: 0xa0372fAA...c08cB2
+        - button "Buy 990k"
+        - button "Sell 10k" [disabled]
+        - button "Convert"
+        - button "Claim"
+      - article:
+        - generic: ROBYN
+        - generic: "#1"
+        - heading "Robyn Genesis" [level=3]
+        - paragraph: 0 ROBYN in this wallet
+        - code: 0xc9A9DCE7...50a3F5
+        - button "Buy 990k"
+        - button "Sell 10k" [disabled]
+        - button "Convert"
+        - button "Claim"
+    - status: Launch complete. Its market is live and basket rules are immutable.
+  - region "Trade fees into a 40 / 40 / 20 reward basket.":
+    - paragraph: Live genesis market
+    - heading "Trade fees into a 40 / 40 / 20 reward basket." [level=2]
+    - generic: Live - block state
+    - text: Session wallet
+    - code: "0x1cE1D394FE324c04226892a7d91Da426b05fe878"
+    - button "Clear wallet"
+    - generic "Wallet balances":
+      - article:
+        - text: Dev gas
+        - strong: 9.9999 DEV
+      - article:
+        - text: Trading cash
+        - strong: 10,000 mUSD
+      - article:
+        - text: Community token
+        - strong: 0 ROBYN
+    - generic "Genesis market actions":
+      - button "1. Fund wallet"
+      - button "2. Buy ROBYN"
+      - button "3. Convert fees" [disabled]
+      - button "4. Claim rewards" [disabled]
+      - button "Sell 100k" [disabled]
+      - button "Refresh"
+    - generic "Immutable reward basket":
+      - article:
+        - generic: mNVDA
+        - generic: 40%
+        - term: Pending fees
+        - definition: 0.4 mUSD
+        - term: Claimable
+        - definition: 0 mNVDA
+        - term: Wallet rewards
+        - definition: 0 mNVDA
+      - article:
+        - generic: mSPY
+        - generic: 40%
+        - term: Pending fees
+        - definition: 0.4 mUSD
+        - term: Claimable
+        - definition: 0 mSPY
+        - term: Wallet rewards
+        - definition: 0 mSPY
+      - article:
+        - generic: mETH
+        - generic: 20%
+        - term: Pending fees
+        - definition: 0.2 mUSD
+        - term: Claimable
+        - definition: 0 mETH
+        - term: Wallet rewards
+        - definition: 0 mETH
+    - status: Wallet funded with 10 DEV and 10,000 mUSD.
+    - paragraph: ROBYN is not redeemable for this basket. Rewards shown here are funded only by mock trading fees on a development network and have no financial value.
+  - region "Development disclaimer": Development network only. Every asset is a mock with no real-world value. This environment proves the full protocol workflow before testnet deployment.
+- alert

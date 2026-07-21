@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-21T11:37:11Z",
+  "releaseGitSha": "8def270b1856c2bcfcd69d429a8d88def4ab15a8",
+  "releasePath": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8",
+  "browser": "Codex in-app browser",
+  "chainId": 31337,
+  "wallet": "0x1cE1D394FE324c04226892a7d91Da426b05fe878",
+  "funding": {
+    "devGas": "10 DEV",
+    "mockBase": "10000 mUSD",
+    "receiptBlock": 174
+  },
+  "launch": {
+    "registryId": 6,
+    "name": "Soak Candidate",
+    "symbol": "SOAK",
+    "token": "0xab940d69774041d3bf14c5a55d755c9980a4ba34",
+    "market": "0xd6277af194aadfe1d0817e5fbf1967100f1e4ca9",
+    "vault": "0x1e417dc190f5522439a4000904dd63358a23a8e0",
+    "creatorAllocation": "500000000 SOAK",
+    "basket": [
+      {"symbol": "mNVDA", "weightBps": 4000},
+      {"symbol": "mSPY", "weightBps": 4000},
+      {"symbol": "mETH", "weightBps": 2000}
+    ],
+    "transactionBlocks": [175, 176, 177, 178, 179, 180]
+  },
+  "verification": {
+    "launchCompleteStatus": true,
+    "discoveryNewestFirst": true,
+    "canonicalDetail": true,
+    "indexedBlock": 180,
+    "liveBlock": 180,
+    "successfulReceipts": 7,
+    "browserWarningOrErrorLogs": 0
+  },
+  "artifacts": [
+    "permissionless-launch.dom.txt",
+    "permissionless-discovery.dom.txt",
+    "permissionless-detail.dom.txt",
+    "permissionless-browser-logs.json",
+    "permissionless-blocks.json",
+    "permissionless-transactions.json",
+    "permissionless-receipts.json"
+  ],
+  "passed": true
+}

@@ -14,6 +14,8 @@ The product/runtime diff from invalidated candidate d90e218 to 8def270 is empty 
 
 The replacement candidate independently repeated the signed buy, weighted pending-fee, three-leg conversion, claim-all, sell and portfolio-reload journey through the in-app browser. Its exact-SHA DOM, structured record and eight successful receipts at blocks 166-173 live under `artifacts/browser-uat/2026-07-21-8def270`.
 
+A second fresh browser-only wallet then obtained development gas and mock cash and permissionlessly launched the `SOAK` 40/40/20 basket as registry entry 6. Seven fund/launch receipts at blocks 174-180 succeeded; anonymous discovery and canonical detail independently reconciled the immutable basket and exact contracts at indexed/live block 180 with zero browser warning/error logs.
+
 The fresh 8def soak must start from zero after exact-candidate launch and backup checkpoints. Prior elapsed time never counts toward it.
 
 
@@ -38,10 +40,10 @@ Status meanings:
 | Native accounting conservation | PROVEN | Foundry unit, fuzz and four stateful invariant campaigns; verify-devnet-deployment.sh; soak initial and final protocol verifiers |
 | Reentrancy and adversarial token/router behavior | PROVEN | malicious callback tests and docs/protocol-security-review.md |
 | No unresolved critical or high security finding | PROVEN | exact release static-security-audit.json: zero history secrets, zero high/critical dependency advisories and zero unresolved high contract findings |
-| Any reachable LAN user can obtain dev gas and mock cash | PROVEN | exact-release signed in-app-browser faucet journey and successful receipt evidence |
+| Any reachable LAN user can obtain dev gas and mock cash | PROVEN | exact 8def fresh browser wallet received 10 DEV and 10,000 mUSD; fund receipt at block 174 succeeded before permissionless launch |
 | Invalid basket total and invalid metadata rejected before a transaction | PROVEN | invalid-weights.dom.txt and invalid-metadata.dom.txt; launch count remained five after the deliberate whitespace replay |
 | Permissionless one-asset launch | PROVEN | one-asset-launch DOM/screenshot, launch 5 ONE at block 156 and six successful launch receipts |
-| Permissionless three-asset launch | PROVEN | EVID browser state, transaction/receipt evidence and immutable 40/40/20 indexed basket |
+| Permissionless three-asset launch | PROVEN | exact 8def fresh browser wallet created SOAK registry entry 6 with immutable 40/40/20 weights; six launch receipts at blocks 175-180 succeeded and discovery/detail reconciled its token, market, vault and creator at indexed/live block 180 |
 | Duplicate asset rejection | PROVEN-DESIGN | the fixed three-slot UI cannot select duplicate assets; exact-candidate factory tests reject duplicate addresses |
 | Buy and sell from two distinct wallets | PROVEN | source-equivalent broad journeys used 0x23954C7F... and 0x71690958...; exact 8def repeated buy/sell with the restored second wallet and reconciled 1,780,000 ROBYN at block 173 |
 | Fee generation and weighted pending state | PROVEN | source-equivalent pending-fees DOM/screenshot plus exact 8def browser observation of 4.4/4.4/2.2 mUSD before conversion |
