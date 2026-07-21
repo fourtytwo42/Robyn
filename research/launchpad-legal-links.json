@@ -1,0 +1,217 @@
+[
+  {
+    "platform": "Pump.fun",
+    "requestedUrl": "https://pump.fun/",
+    "finalUrl": "https://pump.fun/",
+    "statusCode": 200,
+    "title": "Pump.fun — Launch and trade memecoins on Solana",
+    "links": [
+      {
+        "text": "Privacy policy",
+        "href": "https://pump.fun/docs/privacy-policy"
+      },
+      {
+        "text": "Terms of service",
+        "href": "https://pump.fun/docs/terms-and-conditions"
+      },
+      {
+        "text": "Tokenized agent disclaimer",
+        "href": "https://pump.fun/docs/tokenized-agent-disclaimer"
+      },
+      {
+        "text": "Livestream policy",
+        "href": "https://pump.fun/docs/livestream-moderation-policy"
+      },
+      {
+        "text": "DMCA policy",
+        "href": "https://pump.fun/docs/dmca-policy"
+      },
+      {
+        "text": "Trademark guidelines",
+        "href": "https://pump.fun/docs/trademark-guidelines"
+      },
+      {
+        "text": "Go.fun terms",
+        "href": "https://pump.fun/docs/go-fun-terms"
+      }
+    ],
+    "status": "inspected"
+  },
+  {
+    "platform": "Bags",
+    "requestedUrl": "https://bags.fm/",
+    "finalUrl": "https://bags.fm/",
+    "statusCode": 200,
+    "title": "Bags",
+    "links": [
+      {
+        "text": "Terms",
+        "href": "https://bags.fm/terms"
+      }
+    ],
+    "status": "inspected"
+  },
+  {
+    "platform": "Believe",
+    "requestedUrl": "https://believe.app/",
+    "finalUrl": "https://believe.app/",
+    "statusCode": 200,
+    "title": "Believe",
+    "links": [
+      {
+        "text": "Privacy",
+        "href": "https://believe.app/privacy"
+      },
+      {
+        "text": "Terms",
+        "href": "https://believe.app/terms"
+      }
+    ],
+    "status": "inspected"
+  },
+  {
+    "platform": "BONKfun",
+    "requestedUrl": "https://www.letsbonk.fun/",
+    "finalUrl": "https://www.letsbonk.fun/",
+    "statusCode": 200,
+    "title": "BONKfun",
+    "links": [
+      {
+        "text": "Terms",
+        "href": "https://www.letsbonk.fun/terms-of-service"
+      },
+      {
+        "text": "Privacy",
+        "href": "https://www.letsbonk.fun/privacy-policy"
+      }
+    ],
+    "status": "inspected"
+  },
+  {
+    "platform": "DAOS.FUN",
+    "requestedUrl": "https://www.daos.fun/",
+    "finalUrl": "https://www.daos.fun/",
+    "statusCode": 200,
+    "title": "DAOS.FUN",
+    "links": [
+      {
+        "text": "Privacy Policy",
+        "href": "https://www.daos.fun/privacy"
+      },
+      {
+        "text": "Terms of Service",
+        "href": "https://www.daos.fun/terms-of-service"
+      }
+    ],
+    "status": "inspected"
+  },
+  {
+    "platform": "Clanker",
+    "requestedUrl": "https://clanker.world/",
+    "finalUrl": "https://clanker.world/",
+    "statusCode": 200,
+    "title": "Clanker — Launch Your Token in Minutes | Multi-Chain Token Platform | Clanker",
+    "links": [],
+    "status": "inspected"
+  },
+  {
+    "platform": "Zora",
+    "requestedUrl": "https://zora.co/",
+    "finalUrl": "https://zora.co/",
+    "statusCode": 200,
+    "title": "Zora — Post, discover, and trade what’s next",
+    "links": [
+      {
+        "text": "Learn more",
+        "href": "https://support.zora.co/en/articles/6383373-zora-privacy-policy"
+      }
+    ],
+    "status": "inspected"
+  },
+  {
+    "platform": "Four.meme",
+    "requestedUrl": "https://four.meme/en",
+    "finalUrl": "https://four.meme/en",
+    "statusCode": 200,
+    "title": "Four.meme: Best Memecoin Launchpad on BNB Chain | Create & Launch Tokens",
+    "links": [],
+    "status": "inspected"
+  },
+  {
+    "platform": "PinkSale",
+    "requestedUrl": "https://www.pinksale.finance/",
+    "finalUrl": "https://www.pinksale.finance/",
+    "statusCode": 403,
+    "title": "Just a moment...",
+    "links": [
+      {
+        "text": "Privacy",
+        "href": "https://www.cloudflare.com/privacypolicy/"
+      }
+    ],
+    "status": "inspected"
+  },
+  {
+    "platform": "SunPump",
+    "requestedUrl": "https://sunpump.meme/",
+    "finalUrl": "https://sunpump.meme/",
+    "statusCode": 200,
+    "title": "Sun Pump | The First Meme Fair Launch Platform on Tron:swap,earn,meme culture,instantly tradable without having to seed liquidity",
+    "links": [
+      {
+        "text": "Privacy Policy",
+        "href": "https://policies.google.com/privacy"
+      },
+      {
+        "text": "Terms of Service",
+        "href": "https://policies.google.com/terms"
+      }
+    ],
+    "status": "inspected"
+  },
+  {
+    "platform": "Virtuals",
+    "requestedUrl": "https://app.virtuals.io/",
+    "finalUrl": "https://app.virtuals.io/",
+    "statusCode": 200,
+    "title": "Virtuals Protocol | Society of AI Agents",
+    "links": [
+      {
+        "text": "Privacy HoodPHOOD0x26C4...6cDf",
+        "href": "https://app.virtuals.io/virtuals/106006"
+      },
+      {
+        "text": "Terms of Use",
+        "href": "https://app.virtuals.io/terms_of_use.pdf"
+      },
+      {
+        "text": "Privacy Policy",
+        "href": "https://app.virtuals.io/privacy_policy.pdf"
+      }
+    ],
+    "status": "inspected"
+  },
+  {
+    "platform": "pons",
+    "requestedUrl": "https://pons.money/",
+    "finalUrl": "https://pons.money/",
+    "statusCode": 200,
+    "title": "Launchpad · Pons Family",
+    "links": [],
+    "status": "inspected"
+  },
+  {
+    "platform": "hood.fun",
+    "requestedUrl": "https://hood.fun/",
+    "finalUrl": "https://hood.fun/",
+    "statusCode": 200,
+    "title": "hood.fun — Launch & Trade Coins on Robinhood Chain",
+    "links": [
+      {
+        "text": "Terms",
+        "href": "https://hood.fun/terms"
+      }
+    ],
+    "status": "inspected"
+  }
+]

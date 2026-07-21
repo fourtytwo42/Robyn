@@ -1,0 +1,5063 @@
+{
+  "generated_at": "2026-07-20T22:42:29.889773+00:00",
+  "chain_id": 4663,
+  "block_number": 15068866,
+  "methodology": {
+    "identity": "Canonical assets from Robinhood RHJ API.",
+    "pair_data": "Dexscreener discovery estimates; not executable quotes and not summed TVL.",
+    "oracle_data": "Direct onchain latestRoundData reads from feeds listed by verified BASKET factory."
+  },
+  "sources": {
+    "rhj_assets": "https://api.robinhood.com/rhj/assets",
+    "dexscreener": "https://api.dexscreener.com/latest/dex/tokens",
+    "rpc": "https://rpc.mainnet.chain.robinhood.com",
+    "basket_factory": "0xEedC0E6812D49D1165E501eB8B5Ad53380Df3d75"
+  },
+  "asset_count": 96,
+  "markets": [
+    {
+      "symbol": "AAOI",
+      "name": "Applied Optoelectronics \u2022 Robinhood Token",
+      "address": "0x521Cf887E6531c6F667b5BC4D896E5d9bfE8EB2E",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1352.93,
+      "aggregate_volume_24h_usd": 29.66,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x078c1690865964838Ae346077046750846a552D1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 123.18,
+        "liquidity_usd": 1352.93,
+        "volume_24h_usd": 29.66,
+        "created_at_ms": 1782404939000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x078c1690865964838Ae346077046750846a552D1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 123.18,
+        "liquidity_usd": 1352.93,
+        "volume_24h_usd": 29.66,
+        "created_at_ms": 1782404939000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x078c1690865964838Ae346077046750846a552D1",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 123.18,
+          "liquidity_usd": 1352.93,
+          "volume_24h_usd": 29.66,
+          "created_at_ms": 1782404939000
+        }
+      ]
+    },
+    {
+      "symbol": "AAPL",
+      "name": "Apple \u2022 Robinhood Token",
+      "address": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 30,
+      "aggregate_liquidity_usd": 422768.13,
+      "aggregate_volume_24h_usd": 290103.8,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xda4116b5894ee7479e64eae9276e1a2944ef0e5ce863a299d296a15618deee01",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 326.64,
+        "liquidity_usd": 67349.23,
+        "volume_24h_usd": 24255.38,
+        "created_at_ms": 1783457376000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xda4116b5894ee7479e64eae9276e1a2944ef0e5ce863a299d296a15618deee01",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 326.64,
+        "liquidity_usd": 67349.23,
+        "volume_24h_usd": 24255.38,
+        "created_at_ms": 1783457376000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0xf4dda6b92ccfaa5db9d241651557195e3ef3959f1bbedb2acc38c57919a18052",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 335.35,
+        "liquidity_usd": 17237.07,
+        "volume_24h_usd": 2016.29,
+        "created_at_ms": 1783024204000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xda4116b5894ee7479e64eae9276e1a2944ef0e5ce863a299d296a15618deee01",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 326.64,
+          "liquidity_usd": 67349.23,
+          "volume_24h_usd": 24255.38,
+          "created_at_ms": 1783457376000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x719a752f07c591328c94ba2d1cb44f11d0eafb98f3caf67566c33ba74061c5b6",
+          "other_symbol": "AAPLCAT",
+          "other_address": "0x73A9999f6e9Db138E1aE4595fde049A401161E18",
+          "price_usd": 5.926e-05,
+          "liquidity_usd": 51537.98,
+          "volume_24h_usd": 72725.73,
+          "created_at_ms": 1784296867000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x6203ca8f1a7c630c5e613d113b01a0b64921b8c4b62070b6db7ed6315d4227a7",
+          "other_symbol": "TIM",
+          "other_address": "0x85747822cef10Bd5aC453d35aa6A4f21D8571E18",
+          "price_usd": 5.659e-05,
+          "liquidity_usd": 50356.56,
+          "volume_24h_usd": 11607.57,
+          "created_at_ms": 1784052119000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xc748f4671a867db48b552f6b7650bf3255e05f80f00e3f7aad1b17ccb7898fdb",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 324.57,
+          "liquidity_usd": 41446.15,
+          "volume_24h_usd": 136412.44,
+          "created_at_ms": 1783916912000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x4ccccf8eb39f94f63f56a29e4031f76cf9d4fbf859c7e06bc9bb8a9a9649c969",
+          "other_symbol": "ICOIN",
+          "other_address": "0xe0CD7E38300C50e3DFd8c9c3de5094097827eBA3",
+          "price_usd": 4.151e-07,
+          "liquidity_usd": 40278.47,
+          "volume_24h_usd": 3883.04,
+          "created_at_ms": 1784530913000
+        }
+      ]
+    },
+    {
+      "symbol": "AMAT",
+      "name": "Applied Materials \u2022 Robinhood Token",
+      "address": "0x36046893810a7E7fCE501229d57dc3FC8c8716d0",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 4,
+      "aggregate_liquidity_usd": 2669.04,
+      "aggregate_volume_24h_usd": 1420.8000000000002,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xa6a6e8c2412d1443435a18abcedee0e30d4c1ee92ae5a4b855f7ec23218a41f6",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 1449.59,
+        "liquidity_usd": 1863.53,
+        "volume_24h_usd": 30.05,
+        "created_at_ms": 1784217436000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xa6a6e8c2412d1443435a18abcedee0e30d4c1ee92ae5a4b855f7ec23218a41f6",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 1449.59,
+        "liquidity_usd": 1863.53,
+        "volume_24h_usd": 30.05,
+        "created_at_ms": 1784217436000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0xe0b89abd528cc5ef11f3e3a862edb7f2eea4fad0bdf189759642c3ad38f0fc3d",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 166.23,
+        "liquidity_usd": 0.0,
+        "volume_24h_usd": 0.0,
+        "created_at_ms": 1783792761000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xa6a6e8c2412d1443435a18abcedee0e30d4c1ee92ae5a4b855f7ec23218a41f6",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 1449.59,
+          "liquidity_usd": 1863.53,
+          "volume_24h_usd": 30.05,
+          "created_at_ms": 1784217436000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xcc24d44719d8104becde814a14b7ba8bdbd1f68d2bebe6ce2d0576ea99785604",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 2894.72,
+          "liquidity_usd": 756.57,
+          "volume_24h_usd": 7.83,
+          "created_at_ms": 1782983491000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xa255bAfB65F9c79047EC74814e456e53713C8Cb3",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 2.94e-27,
+          "liquidity_usd": 48.94,
+          "volume_24h_usd": 1382.92,
+          "created_at_ms": 1782404956000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xe0b89abd528cc5ef11f3e3a862edb7f2eea4fad0bdf189759642c3ad38f0fc3d",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 166.23,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.0,
+          "created_at_ms": 1783792761000
+        }
+      ]
+    },
+    {
+      "symbol": "AMD",
+      "name": "AMD \u2022 Robinhood Token",
+      "address": "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 7,
+      "aggregate_liquidity_usd": 42656.79,
+      "aggregate_volume_24h_usd": 7007.3,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x7299841b076c2e7021cc1cad26b0f96046a32bd5212851b68ee3cf1958f57e3d",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 527.25,
+        "liquidity_usd": 32292.85,
+        "volume_24h_usd": 1012.05,
+        "created_at_ms": 1783025188000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xd208170d710fd458ae38ec2fc81f3a33b149725367c04cf7b7daa2f663f8ccc9",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 511.13,
+        "liquidity_usd": 3487.89,
+        "volume_24h_usd": 1632.36,
+        "created_at_ms": 1784014809000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0x7299841b076c2e7021cc1cad26b0f96046a32bd5212851b68ee3cf1958f57e3d",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 527.25,
+        "liquidity_usd": 32292.85,
+        "volume_24h_usd": 1012.05,
+        "created_at_ms": 1783025188000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x7299841b076c2e7021cc1cad26b0f96046a32bd5212851b68ee3cf1958f57e3d",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 527.25,
+          "liquidity_usd": 32292.85,
+          "volume_24h_usd": 1012.05,
+          "created_at_ms": 1783025188000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xd208170d710fd458ae38ec2fc81f3a33b149725367c04cf7b7daa2f663f8ccc9",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 511.13,
+          "liquidity_usd": 3487.89,
+          "volume_24h_usd": 1632.36,
+          "created_at_ms": 1784014809000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xde9f85fdd9e05a943a52f2c69ffafe3064a3287df03d02c9b431bc92d4781274",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 507.72,
+          "liquidity_usd": 2508.92,
+          "volume_24h_usd": 1966.02,
+          "created_at_ms": 1783034281000
+        },
+        {
+          "dex": "sheriff",
+          "pair": "0x93b00DA5736Df94F54F21418011eECf96eFbC78C",
+          "other_symbol": "WETH",
+          "other_address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+          "price_usd": 503.37,
+          "liquidity_usd": 2322.0,
+          "volume_24h_usd": 2141.92,
+          "created_at_ms": null
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x0388aafe54a728a31e7ea90ae938ae5ba5c9c2dafdca4550e5eb679ce3b95852",
+          "other_symbol": "NVDA",
+          "other_address": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+          "price_usd": 524.11,
+          "liquidity_usd": 2044.26,
+          "volume_24h_usd": 240.84,
+          "created_at_ms": 1784567870000
+        }
+      ]
+    },
+    {
+      "symbol": "AMZN",
+      "name": "Amazon \u2022 Robinhood Token",
+      "address": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 16,
+      "aggregate_liquidity_usd": 67652.78,
+      "aggregate_volume_24h_usd": 100563.20999999999,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xbf6e30b3a8df71bf8b79bdaab6423d6cdc032006b68a455b208b4889b3490386",
+        "other_symbol": "PECCY",
+        "other_address": "0xdA2CB743A44c360561187eef805b343E79081E18",
+        "price_usd": 2.69e-05,
+        "liquidity_usd": 26510.27,
+        "volume_24h_usd": 18980.67,
+        "created_at_ms": 1784326935000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xd32646872e6712af8cf778e34b6bbef1d2ae0bddd83764e1b07333518ad59333",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 248.6,
+        "liquidity_usd": 10040.45,
+        "volume_24h_usd": 62665.13,
+        "created_at_ms": 1784117123000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0x24fe1c9ad6f3e4118505f3269716b2f532396895611440679192d299e5aa16f8",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 245.57,
+        "liquidity_usd": 2938.76,
+        "volume_24h_usd": 1597.41,
+        "created_at_ms": 1784156760000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xbf6e30b3a8df71bf8b79bdaab6423d6cdc032006b68a455b208b4889b3490386",
+          "other_symbol": "PECCY",
+          "other_address": "0xdA2CB743A44c360561187eef805b343E79081E18",
+          "price_usd": 2.69e-05,
+          "liquidity_usd": 26510.27,
+          "volume_24h_usd": 18980.67,
+          "created_at_ms": 1784326935000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x1719450e3a622c549c30ea7bd0acc38736ab3db77c54eb253be45d82ebab6c81",
+          "other_symbol": "DATACENTER",
+          "other_address": "0x52A1A90b63b47D01B2395C7cE9EE8D8aBb331e18",
+          "price_usd": 2.088e-05,
+          "liquidity_usd": 21072.61,
+          "volume_24h_usd": 186.55,
+          "created_at_ms": 1784236676000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xd32646872e6712af8cf778e34b6bbef1d2ae0bddd83764e1b07333518ad59333",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 248.6,
+          "liquidity_usd": 10040.45,
+          "volume_24h_usd": 62665.13,
+          "created_at_ms": 1784117123000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xa3280c768df670a535d14af8c22ad3907f2acfc0277c03309fb4d5fc8d43447e",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 250.71,
+          "liquidity_usd": 3249.74,
+          "volume_24h_usd": 1391.44,
+          "created_at_ms": 1783800243000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x24fe1c9ad6f3e4118505f3269716b2f532396895611440679192d299e5aa16f8",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 245.57,
+          "liquidity_usd": 2938.76,
+          "volume_24h_usd": 1597.41,
+          "created_at_ms": 1784156760000
+        }
+      ]
+    },
+    {
+      "symbol": "APLD",
+      "name": "Applied Digital \u2022 Robinhood Token",
+      "address": "0xb8DBf92F9741c9ac1c32115E78581f23509916FD",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 2,
+      "aggregate_liquidity_usd": 1419.94,
+      "aggregate_volume_24h_usd": 46.690000000000005,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x3B2ebc77D892CD02c913b9dA9A8354D7925F4C8c",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 37.12,
+        "liquidity_usd": 1361.79,
+        "volume_24h_usd": 46.35,
+        "created_at_ms": 1782404952000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x3B2ebc77D892CD02c913b9dA9A8354D7925F4C8c",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 37.12,
+        "liquidity_usd": 1361.79,
+        "volume_24h_usd": 46.35,
+        "created_at_ms": 1782404952000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x3B2ebc77D892CD02c913b9dA9A8354D7925F4C8c",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 37.12,
+          "liquidity_usd": 1361.79,
+          "volume_24h_usd": 46.35,
+          "created_at_ms": 1782404952000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x6f5ca2d0999b4e78e39dd831368dd1b559b16b5ba56f1fe9b895265b0bb38749",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 34.41,
+          "liquidity_usd": 58.15,
+          "volume_24h_usd": 0.34,
+          "created_at_ms": 1782983537000
+        }
+      ]
+    },
+    {
+      "symbol": "ASML",
+      "name": "ASML Holding NV \u2022 Robinhood Token",
+      "address": "0x47F93d52cBeC7C6D2CfC080e154002370a60dAEA",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1408.62,
+      "aggregate_volume_24h_usd": 127.63,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xedb22516B14Eb2d1C86927Db373B0E8bF70F5cD1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 1763.16,
+        "liquidity_usd": 1408.62,
+        "volume_24h_usd": 127.63,
+        "created_at_ms": 1782404953000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xedb22516B14Eb2d1C86927Db373B0E8bF70F5cD1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 1763.16,
+        "liquidity_usd": 1408.62,
+        "volume_24h_usd": 127.63,
+        "created_at_ms": 1782404953000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xedb22516B14Eb2d1C86927Db373B0E8bF70F5cD1",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 1763.16,
+          "liquidity_usd": 1408.62,
+          "volume_24h_usd": 127.63,
+          "created_at_ms": 1782404953000
+        }
+      ]
+    },
+    {
+      "symbol": "ASTS",
+      "name": "AST SpaceMobile \u2022 Robinhood Token",
+      "address": "0x1AF6446f07eb1d97c546AFC8c9544cBDF3AD5137",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1364.3,
+      "aggregate_volume_24h_usd": 77.76,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xB4C19C79b22310B5fB70959C3490149638E7bd14",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 58.8,
+        "liquidity_usd": 1364.3,
+        "volume_24h_usd": 77.76,
+        "created_at_ms": 1782404949000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xB4C19C79b22310B5fB70959C3490149638E7bd14",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 58.8,
+        "liquidity_usd": 1364.3,
+        "volume_24h_usd": 77.76,
+        "created_at_ms": 1782404949000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xB4C19C79b22310B5fB70959C3490149638E7bd14",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 58.8,
+          "liquidity_usd": 1364.3,
+          "volume_24h_usd": 77.76,
+          "created_at_ms": 1782404949000
+        }
+      ]
+    },
+    {
+      "symbol": "AVGO",
+      "name": "Broadcom \u2022 Robinhood Token",
+      "address": "0x156E175DD063a8cE274C50654eF40e0032b3fbcF",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 3,
+      "aggregate_liquidity_usd": 2172.7200000000003,
+      "aggregate_volume_24h_usd": 29.56,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xC3DaBBED6574E1Ef93C9E3e68E4E30bA77CA38be",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 376.8,
+        "liquidity_usd": 1413.18,
+        "volume_24h_usd": 26.74,
+        "created_at_ms": 1782404950000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xC3DaBBED6574E1Ef93C9E3e68E4E30bA77CA38be",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 376.8,
+        "liquidity_usd": 1413.18,
+        "volume_24h_usd": 26.74,
+        "created_at_ms": 1782404950000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0x8b889a6d8346da240607f13a00d284087873abec5f51d2c095c81b07f1c5f5a8",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 5.26,
+        "liquidity_usd": 0.0,
+        "volume_24h_usd": 0.0,
+        "created_at_ms": 1783793020000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xC3DaBBED6574E1Ef93C9E3e68E4E30bA77CA38be",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 376.8,
+          "liquidity_usd": 1413.18,
+          "volume_24h_usd": 26.74,
+          "created_at_ms": 1782404950000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xbe61ca568ac8cb71d67b4a34a5e978f45ace14c2c561166b07975907e30fb5ea",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 728.91,
+          "liquidity_usd": 759.54,
+          "volume_24h_usd": 2.82,
+          "created_at_ms": 1784335663000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x8b889a6d8346da240607f13a00d284087873abec5f51d2c095c81b07f1c5f5a8",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 5.26,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.0,
+          "created_at_ms": 1783793020000
+        }
+      ]
+    },
+    {
+      "symbol": "BA",
+      "name": "Boeing \u2022 Robinhood Token",
+      "address": "0x4D21483a44Bf67a86b77E3dA301411880797D452",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1400.6,
+      "aggregate_volume_24h_usd": 236.03,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xbf3904cAd0E63a4796CF806C21f2C1528B8eBE06",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 212.43,
+        "liquidity_usd": 1400.6,
+        "volume_24h_usd": 236.03,
+        "created_at_ms": 1782404967000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xbf3904cAd0E63a4796CF806C21f2C1528B8eBE06",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 212.43,
+        "liquidity_usd": 1400.6,
+        "volume_24h_usd": 236.03,
+        "created_at_ms": 1782404967000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xbf3904cAd0E63a4796CF806C21f2C1528B8eBE06",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 212.43,
+          "liquidity_usd": 1400.6,
+          "volume_24h_usd": 236.03,
+          "created_at_ms": 1782404967000
+        }
+      ]
+    },
+    {
+      "symbol": "BABA",
+      "name": "Alibaba \u2022 Robinhood Token",
+      "address": "0xad25Ac6C84D497db898fa1E8387bf6Af3532a1c4",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 2,
+      "aggregate_liquidity_usd": 204.49,
+      "aggregate_volume_24h_usd": 18.37,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xa51ac29be730bdcb54e31de0876b01fc0a34a236defdeba3c5e305e267f5523a",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 102.79,
+        "liquidity_usd": 204.49,
+        "volume_24h_usd": 18.37,
+        "created_at_ms": 1782957100000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xa51ac29be730bdcb54e31de0876b01fc0a34a236defdeba3c5e305e267f5523a",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 102.79,
+        "liquidity_usd": 204.49,
+        "volume_24h_usd": 18.37,
+        "created_at_ms": 1782957100000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xa51ac29be730bdcb54e31de0876b01fc0a34a236defdeba3c5e305e267f5523a",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 102.79,
+          "liquidity_usd": 204.49,
+          "volume_24h_usd": 18.37,
+          "created_at_ms": 1782957100000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x531a549239fec5c043638ee356fce4504f21086463a9eb949bbd994084e501dd",
+          "other_symbol": "BEPE",
+          "other_address": "0xeE3B2Ed2383dd67CA0DA9f279766b69EbCb55bA3",
+          "price_usd": 0.0,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.0,
+          "created_at_ms": 1784528775000
+        }
+      ]
+    },
+    {
+      "symbol": "BE",
+      "name": "Bloom Energy \u2022 Robinhood Token",
+      "address": "0x822CC93fFD030293E9842c30BBD678F530701867",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 2,
+      "aggregate_liquidity_usd": 333.32,
+      "aggregate_volume_24h_usd": 0.81,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x864e3dbf181bdd57016f55bc313c27afb538d87d5a3eb3eb367a4a91cd4b81ea",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 227.47,
+        "liquidity_usd": 224.89,
+        "volume_24h_usd": 0.03,
+        "created_at_ms": 1784203868000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x864e3dbf181bdd57016f55bc313c27afb538d87d5a3eb3eb367a4a91cd4b81ea",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 227.47,
+        "liquidity_usd": 224.89,
+        "volume_24h_usd": 0.03,
+        "created_at_ms": 1784203868000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x864e3dbf181bdd57016f55bc313c27afb538d87d5a3eb3eb367a4a91cd4b81ea",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 227.47,
+          "liquidity_usd": 224.89,
+          "volume_24h_usd": 0.03,
+          "created_at_ms": 1784203868000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x4afb9b1e7fa9dfcd9e3181530b713c8bd150e8505e7a0ab0b593cd22ac53733c",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 229.068,
+          "liquidity_usd": 108.43,
+          "volume_24h_usd": 0.78,
+          "created_at_ms": 1783036680000
+        }
+      ]
+    },
+    {
+      "symbol": "CBRS",
+      "name": "Cerebras Systems \u2022 Robinhood Token",
+      "address": "0x5c90450Bbb4273D7b2f17CF6917AEB237A569679",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "CCL",
+      "name": "Carnival Corporation \u2022 Robinhood Token",
+      "address": "0x9651342CeA770aE9a2969Ba2A52611523146aef9",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1365.18,
+      "aggregate_volume_24h_usd": 436.07,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xB19AcE635Ef3A28B85bFB01Bae97d0DE80750680",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 26.46,
+        "liquidity_usd": 1365.18,
+        "volume_24h_usd": 436.07,
+        "created_at_ms": 1782404972000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xB19AcE635Ef3A28B85bFB01Bae97d0DE80750680",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 26.46,
+        "liquidity_usd": 1365.18,
+        "volume_24h_usd": 436.07,
+        "created_at_ms": 1782404972000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xB19AcE635Ef3A28B85bFB01Bae97d0DE80750680",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 26.46,
+          "liquidity_usd": 1365.18,
+          "volume_24h_usd": 436.07,
+          "created_at_ms": 1782404972000
+        }
+      ]
+    },
+    {
+      "symbol": "CELH",
+      "name": "Celsius \u2022 Robinhood Token",
+      "address": "0x8cF07C5A878945185d327aAa6e33FAa95F95e7bF",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "CLSK",
+      "name": "CleanSpark \u2022 Robinhood Token",
+      "address": "0xcBB95BBF36099d34dA091dc6Fa6F49EfA257Cee3",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1400.33,
+      "aggregate_volume_24h_usd": 615.65,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xf58a091afD28F26e7E2a60803e6Dfb5A8e451021",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 14.83,
+        "liquidity_usd": 1400.33,
+        "volume_24h_usd": 615.65,
+        "created_at_ms": 1782404945000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xf58a091afD28F26e7E2a60803e6Dfb5A8e451021",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 14.83,
+        "liquidity_usd": 1400.33,
+        "volume_24h_usd": 615.65,
+        "created_at_ms": 1782404945000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xf58a091afD28F26e7E2a60803e6Dfb5A8e451021",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 14.83,
+          "liquidity_usd": 1400.33,
+          "volume_24h_usd": 615.65,
+          "created_at_ms": 1782404945000
+        }
+      ]
+    },
+    {
+      "symbol": "COIN",
+      "name": "Coinbase \u2022 Robinhood Token",
+      "address": "0x6330D8C3178a418788dF01a47479c0ce7CCF450b",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 7,
+      "aggregate_liquidity_usd": 3733.05,
+      "aggregate_volume_24h_usd": 1204.23,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x6d7ab147afc5e87dadfe3bbfec63773a02839310b57f7b8d37bf2bea0d546890",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 210.9,
+        "liquidity_usd": 1183.82,
+        "volume_24h_usd": 4.75,
+        "created_at_ms": 1784056159000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x67ebd9343424966426ae30e0c6f9133580704bfc62c19b945041fd0994ecf493",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 159.98,
+        "liquidity_usd": 1101.77,
+        "volume_24h_usd": 32.33,
+        "created_at_ms": 1784375883000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0x6d7ab147afc5e87dadfe3bbfec63773a02839310b57f7b8d37bf2bea0d546890",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 210.9,
+        "liquidity_usd": 1183.82,
+        "volume_24h_usd": 4.75,
+        "created_at_ms": 1784056159000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x6d7ab147afc5e87dadfe3bbfec63773a02839310b57f7b8d37bf2bea0d546890",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 210.9,
+          "liquidity_usd": 1183.82,
+          "volume_24h_usd": 4.75,
+          "created_at_ms": 1784056159000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x67ebd9343424966426ae30e0c6f9133580704bfc62c19b945041fd0994ecf493",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 159.98,
+          "liquidity_usd": 1101.77,
+          "volume_24h_usd": 32.33,
+          "created_at_ms": 1784375883000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xFaDffabF97DcC540644110F3f1F8077d27c7631b",
+          "other_symbol": "RVH",
+          "other_address": "0x96765066f6a040a21EB027167D2315B707c82633",
+          "price_usd": 160.27,
+          "liquidity_usd": 791.72,
+          "volume_24h_usd": 793.38,
+          "created_at_ms": 1784484613000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xef2812489ebae4c52965a1269459cee6aeeffcd8f389412065fd4bd43e72c89b",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 218.73,
+          "liquidity_usd": 655.74,
+          "volume_24h_usd": 283.67,
+          "created_at_ms": 1784564897000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x5366b2ea18801773e756d5335f57694382714c0f9754978df4877320268c4864",
+          "other_symbol": "FATHER",
+          "other_address": "0xD8628Cc6e229F71832261cd9BC0Cb1d258571e18",
+          "price_usd": 2.629e-05,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 24.04,
+          "created_at_ms": 1784583017000
+        }
+      ]
+    },
+    {
+      "symbol": "COST",
+      "name": "Costco \u2022 Robinhood Token",
+      "address": "0x4EA005168D7F09a7A0Ba9D1DEf21a479950E44C2",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 3,
+      "aggregate_liquidity_usd": 5835.54,
+      "aggregate_volume_24h_usd": 164.68,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x285c005f566c7725f3c5ebe73acc3d68853eded9fb0d7e662ebe1d02198ed27d",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 9159.73,
+        "liquidity_usd": 4433.9,
+        "volume_24h_usd": 130.27,
+        "created_at_ms": 1784217396000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x285c005f566c7725f3c5ebe73acc3d68853eded9fb0d7e662ebe1d02198ed27d",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 9159.73,
+        "liquidity_usd": 4433.9,
+        "volume_24h_usd": 130.27,
+        "created_at_ms": 1784217396000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0xf01c08dff502cce3dc324909658f963b29723ba7a6f1a555eccdd46b20250b7f",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 62.86,
+        "liquidity_usd": 0.0,
+        "volume_24h_usd": 0.0,
+        "created_at_ms": 1783895356000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x285c005f566c7725f3c5ebe73acc3d68853eded9fb0d7e662ebe1d02198ed27d",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 9159.73,
+          "liquidity_usd": 4433.9,
+          "volume_24h_usd": 130.27,
+          "created_at_ms": 1784217396000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xdb073638f94A384b8B7a647d73274deCAC9E7cA5",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 925.55,
+          "liquidity_usd": 1401.64,
+          "volume_24h_usd": 34.41,
+          "created_at_ms": 1782404942000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xf01c08dff502cce3dc324909658f963b29723ba7a6f1a555eccdd46b20250b7f",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 62.86,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.0,
+          "created_at_ms": 1783895356000
+        }
+      ]
+    },
+    {
+      "symbol": "CRCL",
+      "name": "Circle Internet Group \u2022 Robinhood Token",
+      "address": "0xdF0992E440dD0be65BD8439b609d6D4366bf1CB5",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "CRWD",
+      "name": "CrowdStrike Holdings \u2022 Robinhood Token",
+      "address": "0xea72Ecca2d0f6bFA1394DBBCff85b52CD4233931",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "4.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "CRWV",
+      "name": "CoreWeave \u2022 Robinhood Token",
+      "address": "0x5f10A1C971B69e47e059e1dC91901B59b3fB49C3",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 5,
+      "aggregate_liquidity_usd": 490.5,
+      "aggregate_volume_24h_usd": 1.46,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xd7ada31b9746cb0b765c14ab756e4fea8f3ff800ed6b2ed2d549180398e75fb7",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 73.69,
+        "liquidity_usd": 247.93,
+        "volume_24h_usd": 1.41,
+        "created_at_ms": 1782957150000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xd7ada31b9746cb0b765c14ab756e4fea8f3ff800ed6b2ed2d549180398e75fb7",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 73.69,
+        "liquidity_usd": 247.93,
+        "volume_24h_usd": 1.41,
+        "created_at_ms": 1782957150000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0x6ec7c1763233ed1a7969d2cd00a4d06ee950ea64dc3d588008818efd3b4be1c5",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 2.61,
+        "liquidity_usd": 2.09,
+        "volume_24h_usd": 0.0,
+        "created_at_ms": 1783736870000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xd7ada31b9746cb0b765c14ab756e4fea8f3ff800ed6b2ed2d549180398e75fb7",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 73.69,
+          "liquidity_usd": 247.93,
+          "volume_24h_usd": 1.41,
+          "created_at_ms": 1782957150000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x335aee5297eda88f75af358a1cce266507d736f80c0efab7c73ed4d7347736d8",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 74.91,
+          "liquidity_usd": 240.48,
+          "volume_24h_usd": 0.02,
+          "created_at_ms": 1784203627000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x6ec7c1763233ed1a7969d2cd00a4d06ee950ea64dc3d588008818efd3b4be1c5",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 2.61,
+          "liquidity_usd": 2.09,
+          "volume_24h_usd": 0.0,
+          "created_at_ms": 1783736870000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x1d0d744ded76edf28651b23b97a730768f054c08ea7922fb262aea9cf2e8a922",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 77.69,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.02,
+          "created_at_ms": 1784559115000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x87396db049ec6c5ea5fc7de11f1bd1de2b9ada16efc7c4aafe78af584fd0c24f",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 73.085,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.01,
+          "created_at_ms": 1784216736000
+        }
+      ]
+    },
+    {
+      "symbol": "DDOG",
+      "name": "Datadog \u2022 Robinhood Token",
+      "address": "0x27c99fBde9D0d2AA4f4Bfb4943f237843DdF6958",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "DELL",
+      "name": "Dell \u2022 Robinhood Token",
+      "address": "0x941AE714EC6D8130c7B75d67160Ca08f1e7d11Dd",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 2,
+      "aggregate_liquidity_usd": 5672.53,
+      "aggregate_volume_24h_usd": 1165.82,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xdd25f7bfe79cfca21f38170881f1116a22cee5a3e4054608fc5592f6daf7fba1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 3835.7,
+        "liquidity_usd": 4247.21,
+        "volume_24h_usd": 64.96,
+        "created_at_ms": 1784216646000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xdd25f7bfe79cfca21f38170881f1116a22cee5a3e4054608fc5592f6daf7fba1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 3835.7,
+        "liquidity_usd": 4247.21,
+        "volume_24h_usd": 64.96,
+        "created_at_ms": 1784216646000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xdd25f7bfe79cfca21f38170881f1116a22cee5a3e4054608fc5592f6daf7fba1",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 3835.7,
+          "liquidity_usd": 4247.21,
+          "volume_24h_usd": 64.96,
+          "created_at_ms": 1784216646000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xc30c89cB7815A1488b7998D15eEC73961707Fc5a",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 387.77,
+          "liquidity_usd": 1425.32,
+          "volume_24h_usd": 1100.86,
+          "created_at_ms": 1782404931000
+        }
+      ]
+    },
+    {
+      "symbol": "ELF",
+      "name": "e.l.f. Beauty \u2022 Robinhood Token",
+      "address": "0x39EC44Bee4F6A116c6F9B8De566848a985C53C60",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "EWY",
+      "name": "iShares MSCI South Korea fund \u2022 Robinhood Token",
+      "address": "0x7f0aBeF0C07280F82c6a08ead09dEd6BAE2C13Fc",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "F",
+      "name": "Ford Motor \u2022 Robinhood Token",
+      "address": "0x25C288E6D899b9BC30160965aD9644c67e73bE0C",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "FLNC",
+      "name": "Fluence Energy \u2022 Robinhood Token",
+      "address": "0x282e87451E10fA6679BC7D76C69BE44cD3fC777C",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "FUTU",
+      "name": "Futu Holdings \u2022 Robinhood Token",
+      "address": "0xeB30663bDFf0622Ef4e4E5cBb4E975F19f33f51D",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1411.63,
+      "aggregate_volume_24h_usd": 413.3,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xb3E2fb8e10AF6C9FDD7F2D31CEa79927a9dBfcf6",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 98.21,
+        "liquidity_usd": 1411.63,
+        "volume_24h_usd": 413.3,
+        "created_at_ms": 1782404968000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xb3E2fb8e10AF6C9FDD7F2D31CEa79927a9dBfcf6",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 98.21,
+        "liquidity_usd": 1411.63,
+        "volume_24h_usd": 413.3,
+        "created_at_ms": 1782404968000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xb3E2fb8e10AF6C9FDD7F2D31CEa79927a9dBfcf6",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 98.21,
+          "liquidity_usd": 1411.63,
+          "volume_24h_usd": 413.3,
+          "created_at_ms": 1782404968000
+        }
+      ]
+    },
+    {
+      "symbol": "GLW",
+      "name": "Corning \u2022 Robinhood Token",
+      "address": "0x7c04E6A3368F2A1DE3874f0e80d2e0A1a9915da6",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 2,
+      "aggregate_liquidity_usd": 1353.2,
+      "aggregate_volume_24h_usd": 121.08,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x5f15120B65498573Dd0770F92646077A76B60724",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 203.59,
+        "liquidity_usd": 1353.2,
+        "volume_24h_usd": 120.61,
+        "created_at_ms": 1782404935000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x5f15120B65498573Dd0770F92646077A76B60724",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 203.59,
+        "liquidity_usd": 1353.2,
+        "volume_24h_usd": 120.61,
+        "created_at_ms": 1782404935000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x5f15120B65498573Dd0770F92646077A76B60724",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 203.59,
+          "liquidity_usd": 1353.2,
+          "volume_24h_usd": 120.61,
+          "created_at_ms": 1782404935000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xb7beb37d1fcb6d78ddba973325de3a0682115e74b10d5bcd8d6087a3dce094cd",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 208.35,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.47,
+          "created_at_ms": 1782983498000
+        }
+      ]
+    },
+    {
+      "symbol": "GME",
+      "name": "GameStop \u2022 Robinhood Token",
+      "address": "0x1b0E319c6A659F002271B69dB8A7df2F911c153E",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 21,
+      "aggregate_liquidity_usd": 19114.23,
+      "aggregate_volume_24h_usd": 17794.25,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xb767c50c20c9ec37e540cf9f85a3344c0a9f0877a4400bc152a39c7ad3033cf3",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 217.94,
+        "liquidity_usd": 15512.26,
+        "volume_24h_usd": 12824.26,
+        "created_at_ms": 1784564686000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xb767c50c20c9ec37e540cf9f85a3344c0a9f0877a4400bc152a39c7ad3033cf3",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 217.94,
+        "liquidity_usd": 15512.26,
+        "volume_24h_usd": 12824.26,
+        "created_at_ms": 1784564686000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0x1c9973863e64f4f2595be10de357f78503365821ac97a1c520494cdf561607f9",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 20.97,
+        "liquidity_usd": 358.27,
+        "volume_24h_usd": 1342.65,
+        "created_at_ms": 1784573201000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xb767c50c20c9ec37e540cf9f85a3344c0a9f0877a4400bc152a39c7ad3033cf3",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 217.94,
+          "liquidity_usd": 15512.26,
+          "volume_24h_usd": 12824.26,
+          "created_at_ms": 1784564686000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xE9713f453aDB9245B19559790c96F470a18F2fDF",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 20.75,
+          "liquidity_usd": 1403.26,
+          "volume_24h_usd": 170.48,
+          "created_at_ms": 1782404941000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x60643044437ccf6fd7c1d39c185a2ba0b0d612b9c6bf800374cbbc59923c6e4d",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 173.79,
+          "liquidity_usd": 1212.86,
+          "volume_24h_usd": 1700.73,
+          "created_at_ms": 1783001434000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x3de54340e8cd912f46789bd67250b6cef482b6d4b3fe97ea70f35dd5d4bb826c",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 97.54,
+          "liquidity_usd": 493.06,
+          "volume_24h_usd": 675.46,
+          "created_at_ms": 1784547564000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x1c9973863e64f4f2595be10de357f78503365821ac97a1c520494cdf561607f9",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 20.97,
+          "liquidity_usd": 358.27,
+          "volume_24h_usd": 1342.65,
+          "created_at_ms": 1784573201000
+        }
+      ]
+    },
+    {
+      "symbol": "GOOGL",
+      "name": "Alphabet Class A \u2022 Robinhood Token",
+      "address": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 18,
+      "aggregate_liquidity_usd": 210546.34,
+      "aggregate_volume_24h_usd": 123509.2,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xd4ecb79fdc521d7725d22b33ed43cb4e47aa96bfad76aa29577e3151f723ac5e",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 351.3,
+        "liquidity_usd": 65805.61,
+        "volume_24h_usd": 78055.43,
+        "created_at_ms": 1783917555000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xd4ecb79fdc521d7725d22b33ed43cb4e47aa96bfad76aa29577e3151f723ac5e",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 351.3,
+        "liquidity_usd": 65805.61,
+        "volume_24h_usd": 78055.43,
+        "created_at_ms": 1783917555000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0xc4852acea8d50e2e27aed3f68f0fae3e7ca4f394b80c59da68391e8ecbcd2b41",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 366.23,
+        "liquidity_usd": 23890.87,
+        "volume_24h_usd": 3037.22,
+        "created_at_ms": 1783826601000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xd4ecb79fdc521d7725d22b33ed43cb4e47aa96bfad76aa29577e3151f723ac5e",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 351.3,
+          "liquidity_usd": 65805.61,
+          "volume_24h_usd": 78055.43,
+          "created_at_ms": 1783917555000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xda5c0d76c5e6181be7b9956bca81b152024e5092888bd79b4dcc2f03b35cbbc2",
+          "other_symbol": "JEFFREE",
+          "other_address": "0x418fa7Fc73F7BaA12606526c76C6Bd7543Ae1e18",
+          "price_usd": 3.019e-05,
+          "liquidity_usd": 29444.42,
+          "volume_24h_usd": 347.73,
+          "created_at_ms": 1784053776000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x77d2d2a263c747a79c20c755936b76bd432e428a9861ae89fb804adea99d8da2",
+          "other_symbol": "ZA",
+          "other_address": "0x3e833744E7Ce9A18b384A509c484E69BA6e91E18",
+          "price_usd": 2.898e-05,
+          "liquidity_usd": 28959.49,
+          "volume_24h_usd": 3201.34,
+          "created_at_ms": 1784307287000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xc4852acea8d50e2e27aed3f68f0fae3e7ca4f394b80c59da68391e8ecbcd2b41",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 366.23,
+          "liquidity_usd": 23890.87,
+          "volume_24h_usd": 3037.22,
+          "created_at_ms": 1783826601000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x90235e92861e72df23b0e2980aec7caf4f7b10a4ce35249c35d9eb78b3c983f9",
+          "other_symbol": "GIGI",
+          "other_address": "0xDe214b0dBFc7d5CE394F2597fBE1B726B67b1e18",
+          "price_usd": 2.37e-05,
+          "liquidity_usd": 23839.59,
+          "volume_24h_usd": 29372.54,
+          "created_at_ms": 1784485304000
+        }
+      ]
+    },
+    {
+      "symbol": "INOD",
+      "name": "Innodata \u2022 Robinhood Token",
+      "address": "0xf1953DAB6FaD537488d5A022361FfAa8B4c95eC6",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1362.98,
+      "aggregate_volume_24h_usd": 132.98,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x47ec01141EA4D6325908bc5291a981b17eF2daD6",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 66.3,
+        "liquidity_usd": 1362.98,
+        "volume_24h_usd": 132.98,
+        "created_at_ms": 1782404966000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x47ec01141EA4D6325908bc5291a981b17eF2daD6",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 66.3,
+        "liquidity_usd": 1362.98,
+        "volume_24h_usd": 132.98,
+        "created_at_ms": 1782404966000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x47ec01141EA4D6325908bc5291a981b17eF2daD6",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 66.3,
+          "liquidity_usd": 1362.98,
+          "volume_24h_usd": 132.98,
+          "created_at_ms": 1782404966000
+        }
+      ]
+    },
+    {
+      "symbol": "INTC",
+      "name": "Intel \u2022 Robinhood Token",
+      "address": "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 4,
+      "aggregate_liquidity_usd": 1229.18,
+      "aggregate_volume_24h_usd": 208.35,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xf2e329e631d0fb315a5c563ee3a9120f24822b5ef6c502a91cb56b174d5d8c22",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 97.79,
+        "liquidity_usd": 643.67,
+        "volume_24h_usd": 21.95,
+        "created_at_ms": 1784050808000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xf2e329e631d0fb315a5c563ee3a9120f24822b5ef6c502a91cb56b174d5d8c22",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 97.79,
+        "liquidity_usd": 643.67,
+        "volume_24h_usd": 21.95,
+        "created_at_ms": 1784050808000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0x13b07230e8fb997cf47ec9579449ae0c8453e4310bc8d5064f9c0195b2bef72b",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 99.13,
+        "liquidity_usd": 309.41,
+        "volume_24h_usd": 0.48,
+        "created_at_ms": 1784386086000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xf2e329e631d0fb315a5c563ee3a9120f24822b5ef6c502a91cb56b174d5d8c22",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 97.79,
+          "liquidity_usd": 643.67,
+          "volume_24h_usd": 21.95,
+          "created_at_ms": 1784050808000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x13b07230e8fb997cf47ec9579449ae0c8453e4310bc8d5064f9c0195b2bef72b",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 99.13,
+          "liquidity_usd": 309.41,
+          "volume_24h_usd": 0.48,
+          "created_at_ms": 1784386086000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xe05e831cd2a8e9965e0a1f8a52c6794daed2006ca9f39ac87c2dc0b9bc95f1a3",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 97.69,
+          "liquidity_usd": 272.71,
+          "volume_24h_usd": 185.91,
+          "created_at_ms": 1784385305000
+        },
+        {
+          "dex": "pancakeswap",
+          "pair": "0x3b69C18e50E927190A3BCE96B0EA9E19C20f62Fc",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 95.99,
+          "liquidity_usd": 3.39,
+          "volume_24h_usd": 0.01,
+          "created_at_ms": 1784015485000
+        }
+      ]
+    },
+    {
+      "symbol": "INTU",
+      "name": "Intuit \u2022 Robinhood Token",
+      "address": "0x56d23beE5f41A7120170b0c603Dae30128e460e9",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1402.16,
+      "aggregate_volume_24h_usd": 10.0,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x235B2650E67570Ef3bFd0b3024fc0Ed0B0b24245",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 252.79,
+        "liquidity_usd": 1402.16,
+        "volume_24h_usd": 10.0,
+        "created_at_ms": 1782404961000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x235B2650E67570Ef3bFd0b3024fc0Ed0B0b24245",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 252.79,
+        "liquidity_usd": 1402.16,
+        "volume_24h_usd": 10.0,
+        "created_at_ms": 1782404961000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x235B2650E67570Ef3bFd0b3024fc0Ed0B0b24245",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 252.79,
+          "liquidity_usd": 1402.16,
+          "volume_24h_usd": 10.0,
+          "created_at_ms": 1782404961000
+        }
+      ]
+    },
+    {
+      "symbol": "IONQ",
+      "name": "IonQ \u2022 Robinhood Token",
+      "address": "0x558378E000D634A36593E338eBacdd6207640EfE",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1364.97,
+      "aggregate_volume_24h_usd": 196.51,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xbc44b11f569d3FEEd9B4088F5A3fC569D2E3c77F",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 46.3,
+        "liquidity_usd": 1364.97,
+        "volume_24h_usd": 196.51,
+        "created_at_ms": 1782404951000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xbc44b11f569d3FEEd9B4088F5A3fC569D2E3c77F",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 46.3,
+        "liquidity_usd": 1364.97,
+        "volume_24h_usd": 196.51,
+        "created_at_ms": 1782404951000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xbc44b11f569d3FEEd9B4088F5A3fC569D2E3c77F",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 46.3,
+          "liquidity_usd": 1364.97,
+          "volume_24h_usd": 196.51,
+          "created_at_ms": 1782404951000
+        }
+      ]
+    },
+    {
+      "symbol": "IREN",
+      "name": "IREN Limited \u2022 Robinhood Token",
+      "address": "0xF0AB0c93bE6F41369d302e55db1A96b3c430212D",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 2,
+      "aggregate_liquidity_usd": 1360.04,
+      "aggregate_volume_24h_usd": 17.49,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x0dBe9EEEa89C6EF5cd2ffCDF800E6f2548524cDB",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 44.39,
+        "liquidity_usd": 1360.04,
+        "volume_24h_usd": 17.45,
+        "created_at_ms": 1782404941000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x0dBe9EEEa89C6EF5cd2ffCDF800E6f2548524cDB",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 44.39,
+        "liquidity_usd": 1360.04,
+        "volume_24h_usd": 17.45,
+        "created_at_ms": 1782404941000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x0dBe9EEEa89C6EF5cd2ffCDF800E6f2548524cDB",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 44.39,
+          "liquidity_usd": 1360.04,
+          "volume_24h_usd": 17.45,
+          "created_at_ms": 1782404941000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xbacbc635ee24487cba56b57be4555cb578b9487786333fbadf0f12fe9c02f9c4",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 42.47,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.04,
+          "created_at_ms": 1782983484000
+        }
+      ]
+    },
+    {
+      "symbol": "LITE",
+      "name": "Lumentum \u2022 Robinhood Token",
+      "address": "0x8eF20885F94e3D9bc7eB3080279188Bd5ED7c08C",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1380.58,
+      "aggregate_volume_24h_usd": 266.64,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x48731d5732b6bD1AD3325C77cEDCFF131169783c",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 776.11,
+        "liquidity_usd": 1380.58,
+        "volume_24h_usd": 266.64,
+        "created_at_ms": 1782404931000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x48731d5732b6bD1AD3325C77cEDCFF131169783c",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 776.11,
+        "liquidity_usd": 1380.58,
+        "volume_24h_usd": 266.64,
+        "created_at_ms": 1782404931000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x48731d5732b6bD1AD3325C77cEDCFF131169783c",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 776.11,
+          "liquidity_usd": 1380.58,
+          "volume_24h_usd": 266.64,
+          "created_at_ms": 1782404931000
+        }
+      ]
+    },
+    {
+      "symbol": "LLY",
+      "name": "Eli Lilly \u2022 Robinhood Token",
+      "address": "0x8005d266423c7ea827372c9c864491e5786600ea",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 3,
+      "aggregate_liquidity_usd": 5323.2300000000005,
+      "aggregate_volume_24h_usd": 246.20999999999998,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xea32fd5cad0e98b33dc2fe1b2f5d0a761600f9ff93416bdc00c2335b6cd39ca7",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 11178.97,
+        "liquidity_usd": 3370.38,
+        "volume_24h_usd": 223.79,
+        "created_at_ms": 1784217481000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xea32fd5cad0e98b33dc2fe1b2f5d0a761600f9ff93416bdc00c2335b6cd39ca7",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 11178.97,
+        "liquidity_usd": 3370.38,
+        "volume_24h_usd": 223.79,
+        "created_at_ms": 1784217481000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xea32fd5cad0e98b33dc2fe1b2f5d0a761600f9ff93416bdc00c2335b6cd39ca7",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 11178.97,
+          "liquidity_usd": 3370.38,
+          "volume_24h_usd": 223.79,
+          "created_at_ms": 1784217481000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xF4274130137eeE20bAD928B593d992716516CEB9",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 1110.16,
+          "liquidity_usd": 1401.13,
+          "volume_24h_usd": 13.43,
+          "created_at_ms": 1782404958000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x29b75a24ae42e2f9d78d33ec30517fdc1fe727b869a46247d6c12cad5db19a7e",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 17693.68,
+          "liquidity_usd": 551.72,
+          "volume_24h_usd": 8.99,
+          "created_at_ms": 1784336417000
+        }
+      ]
+    },
+    {
+      "symbol": "LULU",
+      "name": "Lululemon \u2022 Robinhood Token",
+      "address": "0x4e62068525Ab11FE768e29dfD00ef909B9803016",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 3,
+      "aggregate_liquidity_usd": 1477.72,
+      "aggregate_volume_24h_usd": 2.05,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x19757223628dA89569f9A2488Af6C45cB9824EA1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 109.15,
+        "liquidity_usd": 1401.05,
+        "volume_24h_usd": 0.17,
+        "created_at_ms": 1782404965000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x19757223628dA89569f9A2488Af6C45cB9824EA1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 109.15,
+        "liquidity_usd": 1401.05,
+        "volume_24h_usd": 0.17,
+        "created_at_ms": 1782404965000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x19757223628dA89569f9A2488Af6C45cB9824EA1",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 109.15,
+          "liquidity_usd": 1401.05,
+          "volume_24h_usd": 0.17,
+          "created_at_ms": 1782404965000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xa06dc390dc3e055d25f911ef65ba4d67564c06022ad76e7bf46cfb7b152d1e2f",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 90.78,
+          "liquidity_usd": 76.67,
+          "volume_24h_usd": 1.88,
+          "created_at_ms": 1784556384000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xecc13bca44cce4e49826f0565726ace91a63fd800ed1cdece75accda3e55a69c",
+          "other_symbol": "ABC",
+          "other_address": "0x38cC0Cd0e54f0a01ca26a5C9BE1AeA057ec20899",
+          "price_usd": 0.0,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.0,
+          "created_at_ms": 1784579496000
+        }
+      ]
+    },
+    {
+      "symbol": "LUNR",
+      "name": "Intuitive Machines \u2022 Robinhood Token",
+      "address": "0xa5D4968421bA94814Be3B136b15cf422101aC1a3",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1363.56,
+      "aggregate_volume_24h_usd": 48.62,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xEd48CCb8d9BB86c7E039b153C53CB1A1d8bE85E5",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 17.03,
+        "liquidity_usd": 1363.56,
+        "volume_24h_usd": 48.62,
+        "created_at_ms": 1782404959000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xEd48CCb8d9BB86c7E039b153C53CB1A1d8bE85E5",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 17.03,
+        "liquidity_usd": 1363.56,
+        "volume_24h_usd": 48.62,
+        "created_at_ms": 1782404959000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xEd48CCb8d9BB86c7E039b153C53CB1A1d8bE85E5",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 17.03,
+          "liquidity_usd": 1363.56,
+          "volume_24h_usd": 48.62,
+          "created_at_ms": 1782404959000
+        }
+      ]
+    },
+    {
+      "symbol": "MDB",
+      "name": "MongoDB \u2022 Robinhood Token",
+      "address": "0xDdf2266b79abf0B48898959B0ed6E6adf512be74",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "META",
+      "name": "Meta Platforms \u2022 Robinhood Token",
+      "address": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 11,
+      "aggregate_liquidity_usd": 74863.58,
+      "aggregate_volume_24h_usd": 56904.47,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x86c8e9c095ca3e1814db1851932aef06580cbbc479023aad5d5772a87d784eea",
+        "other_symbol": "ZUCC",
+        "other_address": "0x3b6d5c97AF1dde394d955bfA677716a199d71e18",
+        "price_usd": 3.101e-05,
+        "liquidity_usd": 29952.1,
+        "volume_24h_usd": 7421.01,
+        "created_at_ms": 1784051071000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x5875d407a42965b0e768c8925cea290e06fa50603ef34fc99eb92a1050e6ae36",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 641.77,
+        "liquidity_usd": 9996.87,
+        "volume_24h_usd": 23662.63,
+        "created_at_ms": 1783772328000
+      },
+      "top_eth_pair": {
+        "dex": "sheriff",
+        "pair": "0xA3B563A64910B5a3d5dc815147B82f27BD902bDA",
+        "other_symbol": "WETH",
+        "other_address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+        "price_usd": 640.58,
+        "liquidity_usd": 3321.39,
+        "volume_24h_usd": 12676.44,
+        "created_at_ms": null
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x86c8e9c095ca3e1814db1851932aef06580cbbc479023aad5d5772a87d784eea",
+          "other_symbol": "ZUCC",
+          "other_address": "0x3b6d5c97AF1dde394d955bfA677716a199d71e18",
+          "price_usd": 3.101e-05,
+          "liquidity_usd": 29952.1,
+          "volume_24h_usd": 7421.01,
+          "created_at_ms": 1784051071000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xc74bba1134acdfdcd722de2e744ee19bc4c321dfb80e1bca1adfb764f2dba8a4",
+          "other_symbol": "ZUCK",
+          "other_address": "0xE45c2402d7a944F706Fd1714a1fA5D1d9B40Dba3",
+          "price_usd": 2.117e-07,
+          "liquidity_usd": 17836.66,
+          "volume_24h_usd": 2123.35,
+          "created_at_ms": 1784523302000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x5875d407a42965b0e768c8925cea290e06fa50603ef34fc99eb92a1050e6ae36",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 641.77,
+          "liquidity_usd": 9996.87,
+          "volume_24h_usd": 23662.63,
+          "created_at_ms": 1783772328000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xc4f07510cc2ec00d3db7927d7af86c88fbbd2c72c9cebc49a2c5e6eebb1742fc",
+          "other_symbol": "BASKET",
+          "other_address": "0xBD3b6ed7442A75500742C194b53994782325CBd6",
+          "price_usd": 1.986e-05,
+          "liquidity_usd": 3383.6,
+          "volume_24h_usd": 8922.38,
+          "created_at_ms": 1784569463000
+        },
+        {
+          "dex": "sheriff",
+          "pair": "0xA3B563A64910B5a3d5dc815147B82f27BD902bDA",
+          "other_symbol": "WETH",
+          "other_address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+          "price_usd": 640.58,
+          "liquidity_usd": 3321.39,
+          "volume_24h_usd": 12676.44,
+          "created_at_ms": null
+        }
+      ]
+    },
+    {
+      "symbol": "MRVL",
+      "name": "Marvell Technology \u2022 Robinhood Token",
+      "address": "0x62fd0668e10D8B72339BE2DCF7643001688ff13B",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 3,
+      "aggregate_liquidity_usd": 1178.2,
+      "aggregate_volume_24h_usd": 778.29,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x06cc0b96Be1fa1d754CE2e1228F5d8c616F795b0",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 199.18,
+        "liquidity_usd": 1178.2,
+        "volume_24h_usd": 775.67,
+        "created_at_ms": 1782404933000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x06cc0b96Be1fa1d754CE2e1228F5d8c616F795b0",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 199.18,
+        "liquidity_usd": 1178.2,
+        "volume_24h_usd": 775.67,
+        "created_at_ms": 1782404933000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0x8816fed7dadcbc4afff815b3bcf51433e1ed89feea36ef35d8fd744697a7f4d4",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 357.71,
+        "liquidity_usd": 0.0,
+        "volume_24h_usd": 0.0,
+        "created_at_ms": 1783941928000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x06cc0b96Be1fa1d754CE2e1228F5d8c616F795b0",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 199.18,
+          "liquidity_usd": 1178.2,
+          "volume_24h_usd": 775.67,
+          "created_at_ms": 1782404933000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x8816fed7dadcbc4afff815b3bcf51433e1ed89feea36ef35d8fd744697a7f4d4",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 357.71,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.0,
+          "created_at_ms": 1783941928000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xd20feebb32266449a38dab2795ef2c92e0413298fe557f7530883874dadca3ae",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 156.92,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 2.62,
+          "created_at_ms": 1784541293000
+        }
+      ]
+    },
+    {
+      "symbol": "MSFT",
+      "name": "Microsoft \u2022 Robinhood Token",
+      "address": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 13,
+      "aggregate_liquidity_usd": 302127.87,
+      "aggregate_volume_24h_usd": 548848.06,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xb3e164e6cce432f23a0d553f37091216963010de78c5d3ca80d1d56aadab3e25",
+        "other_symbol": "CLIPPY",
+        "other_address": "0x85856F025BF13b8Fd2aaE2F6DA458318744F1E18",
+        "price_usd": 0.0001574,
+        "liquidity_usd": 95275.18,
+        "volume_24h_usd": 156033.6,
+        "created_at_ms": 1784316990000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xace02af66d24427b162f80329e039b78c226fb9a79669f5e18d5feec2aa0c056",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 396.4,
+        "liquidity_usd": 82784.81,
+        "volume_24h_usd": 72470.33,
+        "created_at_ms": 1783780735000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0x34147f36f89c42a67f77601e612abdb1bd40869e53e8d0edd19705ae0499192d",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 396.78,
+        "liquidity_usd": 5776.66,
+        "volume_24h_usd": 6067.72,
+        "created_at_ms": 1784377933000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xb3e164e6cce432f23a0d553f37091216963010de78c5d3ca80d1d56aadab3e25",
+          "other_symbol": "CLIPPY",
+          "other_address": "0x85856F025BF13b8Fd2aaE2F6DA458318744F1E18",
+          "price_usd": 0.0001574,
+          "liquidity_usd": 95275.18,
+          "volume_24h_usd": 156033.6,
+          "created_at_ms": 1784316990000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xace02af66d24427b162f80329e039b78c226fb9a79669f5e18d5feec2aa0c056",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 396.4,
+          "liquidity_usd": 82784.81,
+          "volume_24h_usd": 72470.33,
+          "created_at_ms": 1783780735000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x9194a557b6a6bb2236b49ea7e2bbccec5d3eeb705aef00903be4b3de1d949579",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 400.16,
+          "liquidity_usd": 66048.73,
+          "volume_24h_usd": 204019.66,
+          "created_at_ms": 1784376792000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x26b08a94299eedeb32d732aebb3826f51961809a9308263e6d70daff9c6238f8",
+          "other_symbol": "MACROHARD",
+          "other_address": "0x11Feed2daAd06BF44274B1d9a450282263c21e18",
+          "price_usd": 2.494e-05,
+          "liquidity_usd": 24844.29,
+          "volume_24h_usd": 4695.92,
+          "created_at_ms": 1784485700000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x0276642cf79677938bd9a3d97b3785dbe6906c3679c67fb0e9999b1cceb8fafb",
+          "other_symbol": "CLIPPY",
+          "other_address": "0xd7fC45f0E19554aa2130f52A741990321b32FBA3",
+          "price_usd": 2.07e-07,
+          "liquidity_usd": 17550.42,
+          "volume_24h_usd": 2472.97,
+          "created_at_ms": 1784528057000
+        }
+      ]
+    },
+    {
+      "symbol": "MSTR",
+      "name": "Strategy Inc. \u2022 Robinhood Token",
+      "address": "0xec262a75e413fAfD0dF80480274532C79D42da09",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "MU",
+      "name": "Micron Technology \u2022 Robinhood Token",
+      "address": "0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 4,
+      "aggregate_liquidity_usd": 1471.78,
+      "aggregate_volume_24h_usd": 1584.58,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xd40de533224a3a52c22649070225f5970c8fd1b49f95c0638a38afa096284b9a",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 867.28,
+        "liquidity_usd": 711.14,
+        "volume_24h_usd": 186.55,
+        "created_at_ms": 1783637462000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x6fa3ee0048e78bf0a513eb0ab56f482944a767c21db990fcf555605e69f05659",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 865.38,
+        "liquidity_usd": 572.76,
+        "volume_24h_usd": 1259.03,
+        "created_at_ms": 1783457152000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0xd40de533224a3a52c22649070225f5970c8fd1b49f95c0638a38afa096284b9a",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 867.28,
+        "liquidity_usd": 711.14,
+        "volume_24h_usd": 186.55,
+        "created_at_ms": 1783637462000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xd40de533224a3a52c22649070225f5970c8fd1b49f95c0638a38afa096284b9a",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 867.28,
+          "liquidity_usd": 711.14,
+          "volume_24h_usd": 186.55,
+          "created_at_ms": 1783637462000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x6fa3ee0048e78bf0a513eb0ab56f482944a767c21db990fcf555605e69f05659",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 865.38,
+          "liquidity_usd": 572.76,
+          "volume_24h_usd": 1259.03,
+          "created_at_ms": 1783457152000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x729f26e24e2a0be049f7769e61fd46d911cfa8601069ffb9cafb2880dcc2a2c2",
+          "other_symbol": "NVDA",
+          "other_address": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+          "price_usd": 900.33,
+          "liquidity_usd": 185.84,
+          "volume_24h_usd": 139.0,
+          "created_at_ms": 1783992655000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x5fb97aef826b674c4bc76707563816f171043a3b1bf91431b7f82acd6381876b",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 335.59,
+          "liquidity_usd": 2.04,
+          "volume_24h_usd": 0.0,
+          "created_at_ms": 1783609675000
+        }
+      ]
+    },
+    {
+      "symbol": "MXL",
+      "name": "MaxLinear \u2022 Robinhood Token",
+      "address": "0x48961813349333209994750ffA89b3c5C22eC969",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "NBIS",
+      "name": "Nebius Group \u2022 Robinhood Token",
+      "address": "0x9D9c6684F596F66a64C030B93A886D51Fd4D7931",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "NFLX",
+      "name": "Netflix \u2022 Robinhood Token",
+      "address": "0xE0444EF8BF4eD74f74FD73686e2ddF4C1c5591E8",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 10,
+      "aggregate_liquidity_usd": 55774.36,
+      "aggregate_volume_24h_usd": 105779.91,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xe4930a6215f21aa3b37c01adbded3362f56ae31b9a60066f5f9641e601d5111f",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 68.52,
+        "liquidity_usd": 39502.35,
+        "volume_24h_usd": 67250.58,
+        "created_at_ms": 1784421658000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xe4930a6215f21aa3b37c01adbded3362f56ae31b9a60066f5f9641e601d5111f",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 68.52,
+        "liquidity_usd": 39502.35,
+        "volume_24h_usd": 67250.58,
+        "created_at_ms": 1784421658000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0xa9b2283e74df7b4b544b29aa42c2bf6804b9cac7dbbd65e2eab2faec1aa34796",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 70.081,
+        "liquidity_usd": 1430.8,
+        "volume_24h_usd": 1584.82,
+        "created_at_ms": 1784382382000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xe4930a6215f21aa3b37c01adbded3362f56ae31b9a60066f5f9641e601d5111f",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 68.52,
+          "liquidity_usd": 39502.35,
+          "volume_24h_usd": 67250.58,
+          "created_at_ms": 1784421658000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x1431c115bd89cab1c78e0df9c97de9433a39f4f3a9e3be60a68a406e06d8b6d6",
+          "other_symbol": "CHILL",
+          "other_address": "0xF699AEA8a333202A7Dc610aBc664c213c9dc4111",
+          "price_usd": 2.327e-05,
+          "liquidity_usd": 8698.26,
+          "volume_24h_usd": 26547.51,
+          "created_at_ms": 1784479245000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x4083e6ce52533e1e88cb842cfdc94462023fba0847ae470bdfd6e2763826c544",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 668.93,
+          "liquidity_usd": 3242.74,
+          "volume_24h_usd": 3.18,
+          "created_at_ms": 1784215848000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xeA75eA625d83aE276b9ae8B0A3dC205916EE65cF",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 68.46,
+          "liquidity_usd": 1571.19,
+          "volume_24h_usd": 8813.69,
+          "created_at_ms": 1782404951000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xa9b2283e74df7b4b544b29aa42c2bf6804b9cac7dbbd65e2eab2faec1aa34796",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 70.081,
+          "liquidity_usd": 1430.8,
+          "volume_24h_usd": 1584.82,
+          "created_at_ms": 1784382382000
+        }
+      ]
+    },
+    {
+      "symbol": "NNE",
+      "name": "Nano Nuclear Energy \u2022 Robinhood Token",
+      "address": "0xBEF75684C43c4ea7BD18Dd532a2244674Ee8b926",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1369.13,
+      "aggregate_volume_24h_usd": 92.19,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x8368991BF7f5380CecD4a6f4fc4eA151d62343Bc",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 19.28,
+        "liquidity_usd": 1369.13,
+        "volume_24h_usd": 92.19,
+        "created_at_ms": 1782404974000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x8368991BF7f5380CecD4a6f4fc4eA151d62343Bc",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 19.28,
+        "liquidity_usd": 1369.13,
+        "volume_24h_usd": 92.19,
+        "created_at_ms": 1782404974000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x8368991BF7f5380CecD4a6f4fc4eA151d62343Bc",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 19.28,
+          "liquidity_usd": 1369.13,
+          "volume_24h_usd": 92.19,
+          "created_at_ms": 1782404974000
+        }
+      ]
+    },
+    {
+      "symbol": "NOW",
+      "name": "ServiceNow \u2022 Robinhood Token",
+      "address": "0x0C3260aF4B8f13a69c4c2dFb84fD667890CDFa14",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "NU",
+      "name": "Nu \u2022 Robinhood Token",
+      "address": "0x408c14038a04f7bD235329E26d2bf569ee20e250",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "NVDA",
+      "name": "NVIDIA \u2022 Robinhood Token",
+      "address": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 30,
+      "aggregate_liquidity_usd": 2481588.25,
+      "aggregate_volume_24h_usd": 10943573.42,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xaa8039d8e39d2bbcae23762e71f5a12162875a61848f0d96914c827f61877ef6",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 211.76,
+        "liquidity_usd": 1096906.11,
+        "volume_24h_usd": 533227.23,
+        "created_at_ms": 1783023926000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x3bb34a44f1b2b5f32c034c38a53065a521a47b199700fa9bd19d60985ff24bf1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 202.79,
+        "liquidity_usd": 539860.39,
+        "volume_24h_usd": 4410759.35,
+        "created_at_ms": 1783034891000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0xaa8039d8e39d2bbcae23762e71f5a12162875a61848f0d96914c827f61877ef6",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 211.76,
+        "liquidity_usd": 1096906.11,
+        "volume_24h_usd": 533227.23,
+        "created_at_ms": 1783023926000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xaa8039d8e39d2bbcae23762e71f5a12162875a61848f0d96914c827f61877ef6",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 211.76,
+          "liquidity_usd": 1096906.11,
+          "volume_24h_usd": 533227.23,
+          "created_at_ms": 1783023926000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x3bb34a44f1b2b5f32c034c38a53065a521a47b199700fa9bd19d60985ff24bf1",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 202.79,
+          "liquidity_usd": 539860.39,
+          "volume_24h_usd": 4410759.35,
+          "created_at_ms": 1783034891000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xcbdfea90430a30ee4469c9902e120a77e7c7e4711d5643671c1d1957f2f1ce27",
+          "other_symbol": "AI",
+          "other_address": "0x2E8c31162b855A2ffa90F6F8634643Ad6F111e18",
+          "price_usd": 0.001347,
+          "liquidity_usd": 373653.26,
+          "volume_24h_usd": 1026119.3,
+          "created_at_ms": 1784051311000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xe499147a14ac7393103be2aeef3d5ebf0f14435054d12a692e56d17c243a8d73",
+          "other_symbol": "REAL",
+          "other_address": "0x237c79C93c3EB8C61a2a2a7465a851B0381b8ba3",
+          "price_usd": 7.28e-06,
+          "liquidity_usd": 171562.64,
+          "volume_24h_usd": 4651277.9,
+          "created_at_ms": 1784520529000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x747f08f30c449fef628d86771358c698b0a7cb224f593c10b7f7671e946ac967",
+          "other_symbol": "AIPLAY",
+          "other_address": "0x05107869c777F4640BF431C4Be1daF66910cD5A0",
+          "price_usd": 8.056e-05,
+          "liquidity_usd": 92439.03,
+          "volume_24h_usd": 92.14,
+          "created_at_ms": 1783812697000
+        }
+      ]
+    },
+    {
+      "symbol": "NVTS",
+      "name": "Navitas Semiconductor \u2022 Robinhood Token",
+      "address": "0xbE6702d7b70315376dC48a3293f24f0982F86386",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "ORCL",
+      "name": "Oracle \u2022 Robinhood Token",
+      "address": "0xb0992820E760d836549ba69BC7598b4af75dEE03",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 2,
+      "aggregate_liquidity_usd": 6045.160000000001,
+      "aggregate_volume_24h_usd": 1739.43,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x3a03bd306e0cbec0c0a33d5dee9c88e31c1ed46fd1d9a1e0350cd76260e2da73",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 119.62,
+        "liquidity_usd": 5666.1,
+        "volume_24h_usd": 1704.8,
+        "created_at_ms": 1784011619000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x3a03bd306e0cbec0c0a33d5dee9c88e31c1ed46fd1d9a1e0350cd76260e2da73",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 119.62,
+        "liquidity_usd": 5666.1,
+        "volume_24h_usd": 1704.8,
+        "created_at_ms": 1784011619000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0xc4521bbf7ce3fc0503375a8c77eb14b70e333e5972783ec1e9760ca26346a1a9",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 122.73,
+        "liquidity_usd": 379.06,
+        "volume_24h_usd": 34.63,
+        "created_at_ms": 1784387838000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x3a03bd306e0cbec0c0a33d5dee9c88e31c1ed46fd1d9a1e0350cd76260e2da73",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 119.62,
+          "liquidity_usd": 5666.1,
+          "volume_24h_usd": 1704.8,
+          "created_at_ms": 1784011619000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xc4521bbf7ce3fc0503375a8c77eb14b70e333e5972783ec1e9760ca26346a1a9",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 122.73,
+          "liquidity_usd": 379.06,
+          "volume_24h_usd": 34.63,
+          "created_at_ms": 1784387838000
+        }
+      ]
+    },
+    {
+      "symbol": "P",
+      "name": "Everpure \u2022 Robinhood Token",
+      "address": "0x1Cdad396DB64BDa184d5182A97Dd9B3C62100b7D",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1409.58,
+      "aggregate_volume_24h_usd": 334.73,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x0425C69694c9357b6F2DAeb9897795fcD9c6e6cB",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 69.44,
+        "liquidity_usd": 1409.58,
+        "volume_24h_usd": 334.73,
+        "created_at_ms": 1782404972000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x0425C69694c9357b6F2DAeb9897795fcD9c6e6cB",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 69.44,
+        "liquidity_usd": 1409.58,
+        "volume_24h_usd": 334.73,
+        "created_at_ms": 1782404972000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x0425C69694c9357b6F2DAeb9897795fcD9c6e6cB",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 69.44,
+          "liquidity_usd": 1409.58,
+          "volume_24h_usd": 334.73,
+          "created_at_ms": 1782404972000
+        }
+      ]
+    },
+    {
+      "symbol": "PENG",
+      "name": "Penguin Solutions \u2022 Robinhood Token",
+      "address": "0x9b23573b156B52565012F5cE02CDF60AFBaa70Be",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1361.69,
+      "aggregate_volume_24h_usd": 1387.6,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x10508F818e05193eFd10A5AD360441067892551F",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 60.0048,
+        "liquidity_usd": 1361.69,
+        "volume_24h_usd": 1387.6,
+        "created_at_ms": 1782404974000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x10508F818e05193eFd10A5AD360441067892551F",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 60.0048,
+        "liquidity_usd": 1361.69,
+        "volume_24h_usd": 1387.6,
+        "created_at_ms": 1782404974000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x10508F818e05193eFd10A5AD360441067892551F",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 60.0048,
+          "liquidity_usd": 1361.69,
+          "volume_24h_usd": 1387.6,
+          "created_at_ms": 1782404974000
+        }
+      ]
+    },
+    {
+      "symbol": "PLTR",
+      "name": "Palantir Technologies \u2022 Robinhood Token",
+      "address": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 7,
+      "aggregate_liquidity_usd": 10462.39,
+      "aggregate_volume_24h_usd": 8245.39,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x382388e2afeae1ca3740dacfecea03cbc3419cba51dbeca026c1e5d8218e19c1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 133.71,
+        "liquidity_usd": 6731.55,
+        "volume_24h_usd": 4909.03,
+        "created_at_ms": 1784012080000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x382388e2afeae1ca3740dacfecea03cbc3419cba51dbeca026c1e5d8218e19c1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 133.71,
+        "liquidity_usd": 6731.55,
+        "volume_24h_usd": 4909.03,
+        "created_at_ms": 1784012080000
+      },
+      "top_eth_pair": {
+        "dex": "sheriff",
+        "pair": "0xBacc7e8808ae4C27DA59A149DfE83fFAF61c3e1a",
+        "other_symbol": "WETH",
+        "other_address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+        "price_usd": 133.63,
+        "liquidity_usd": 2221.55,
+        "volume_24h_usd": 3190.13,
+        "created_at_ms": null
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x382388e2afeae1ca3740dacfecea03cbc3419cba51dbeca026c1e5d8218e19c1",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 133.71,
+          "liquidity_usd": 6731.55,
+          "volume_24h_usd": 4909.03,
+          "created_at_ms": 1784012080000
+        },
+        {
+          "dex": "sheriff",
+          "pair": "0xBacc7e8808ae4C27DA59A149DfE83fFAF61c3e1a",
+          "other_symbol": "WETH",
+          "other_address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+          "price_usd": 133.63,
+          "liquidity_usd": 2221.55,
+          "volume_24h_usd": 3190.13,
+          "created_at_ms": null
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xF310Bd682f2811db4DEceA4c72346Dc52870c48b",
+          "other_symbol": "RVH",
+          "other_address": "0x96765066f6a040a21EB027167D2315B707c82633",
+          "price_usd": 134.71,
+          "liquidity_usd": 792.38,
+          "volume_24h_usd": 105.66,
+          "created_at_ms": 1783587990000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x71c75f22871e483dfa16970efb42564462b1878112acb0d09e3f318bcd59c353",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 134.6,
+          "liquidity_usd": 668.91,
+          "volume_24h_usd": 39.61,
+          "created_at_ms": 1784192057000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x79246a5a0e8175f8e6ebabe614d797c9887bd4157c27f1d67c793f245142c7fe",
+          "other_symbol": "NVDA",
+          "other_address": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+          "price_usd": 138.53,
+          "liquidity_usd": 48.0,
+          "volume_24h_usd": 0.96,
+          "created_at_ms": 1784311846000
+        }
+      ]
+    },
+    {
+      "symbol": "POET",
+      "name": "POET Technologies \u2022 Robinhood Token",
+      "address": "0xcf6B2D875361be807EAfa57458c80f28521F9333",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "PR",
+      "name": "Permian Resources \u2022 Robinhood Token",
+      "address": "0x4189F0c66EBBB0bfeF1C31f763131361EF32f77C",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "QBTS",
+      "name": "D-Wave Quantum \u2022 Robinhood Token",
+      "address": "0xC583c60aeF9Dc401Da72cEC1B404743a93cea1Cc",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "QCOM",
+      "name": "Qualcomm \u2022 Robinhood Token",
+      "address": "0x0f17206447090e464C277571124dD2688E48AEA9",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 2,
+      "aggregate_liquidity_usd": 2655.09,
+      "aggregate_volume_24h_usd": 1378.83,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xFf3aB07DD9C241a72D42b3841814bF800494607a",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 191.065,
+        "liquidity_usd": 1399.54,
+        "volume_24h_usd": 1378.37,
+        "created_at_ms": 1782404930000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xFf3aB07DD9C241a72D42b3841814bF800494607a",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 191.065,
+        "liquidity_usd": 1399.54,
+        "volume_24h_usd": 1378.37,
+        "created_at_ms": 1782404930000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xFf3aB07DD9C241a72D42b3841814bF800494607a",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 191.065,
+          "liquidity_usd": 1399.54,
+          "volume_24h_usd": 1378.37,
+          "created_at_ms": 1782404930000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xf2ecdc0039727a9817c41327a52ca74e68c05215501f656f6eeedfc9b5f4fa29",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 398.62,
+          "liquidity_usd": 1255.55,
+          "volume_24h_usd": 0.46,
+          "created_at_ms": 1784335917000
+        }
+      ]
+    },
+    {
+      "symbol": "QQQ",
+      "name": "Invesco QQQ \u2022 Robinhood Token",
+      "address": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 5,
+      "aggregate_liquidity_usd": 10670.43,
+      "aggregate_volume_24h_usd": 14063.05,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xEbD78dcfc8a6b3A696f1E191aD1ff321f9579f79",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 691.87,
+        "liquidity_usd": 7616.57,
+        "volume_24h_usd": 9061.8,
+        "created_at_ms": 1783047725000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xEbD78dcfc8a6b3A696f1E191aD1ff321f9579f79",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 691.87,
+        "liquidity_usd": 7616.57,
+        "volume_24h_usd": 9061.8,
+        "created_at_ms": 1783047725000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xEbD78dcfc8a6b3A696f1E191aD1ff321f9579f79",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 691.87,
+          "liquidity_usd": 7616.57,
+          "volume_24h_usd": 9061.8,
+          "created_at_ms": 1783047725000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x2712e35e9a3d94c8a3388dea9a91b654de41df6898c659f97697605d88cb9a3b",
+          "other_symbol": "BASKET",
+          "other_address": "0xBD3b6ed7442A75500742C194b53994782325CBd6",
+          "price_usd": 753.56,
+          "liquidity_usd": 2002.7,
+          "volume_24h_usd": 2656.31,
+          "created_at_ms": 1784569466000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x4e4D9432171A38aC56bdB62eEa8B602Ecb5b1E06",
+          "other_symbol": "RVH",
+          "other_address": "0x96765066f6a040a21EB027167D2315B707c82633",
+          "price_usd": 679.028,
+          "liquidity_usd": 533.64,
+          "volume_24h_usd": 141.26,
+          "created_at_ms": 1784397002000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xd3d49eaab15eb8f4d1d480a8518fc3ce4e60ca81d69904b3e7dc53b4fc0ce2d9",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 697.97,
+          "liquidity_usd": 517.52,
+          "volume_24h_usd": 2203.68,
+          "created_at_ms": 1782936150000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x73639709289a49933a6e4a32e282bcc83947fc1f87eeb4b13816c785932bbc68",
+          "other_symbol": "NASDOG",
+          "other_address": "0xF848D316332dd1e30Ff3A641A0aC68B1053a0BA3",
+          "price_usd": 0.0,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.0,
+          "created_at_ms": 1784524909000
+        }
+      ]
+    },
+    {
+      "symbol": "QUBT",
+      "name": "Quantum Computing \u2022 Robinhood Token",
+      "address": "0x59818904ab4cE163b3cE4FfB64f2D6Ca02c434B4",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "RBLX",
+      "name": "Roblox \u2022 Robinhood Token",
+      "address": "0xF0C4BF4C582cb3836e98394b1d4e7B7281101bE8",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1400.83,
+      "aggregate_volume_24h_usd": 1.0,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x2ef5945cd5664876b6481FdacFaA2942995a4DA8",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 45.25,
+        "liquidity_usd": 1400.83,
+        "volume_24h_usd": 1.0,
+        "created_at_ms": 1782404973000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x2ef5945cd5664876b6481FdacFaA2942995a4DA8",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 45.25,
+        "liquidity_usd": 1400.83,
+        "volume_24h_usd": 1.0,
+        "created_at_ms": 1782404973000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x2ef5945cd5664876b6481FdacFaA2942995a4DA8",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 45.25,
+          "liquidity_usd": 1400.83,
+          "volume_24h_usd": 1.0,
+          "created_at_ms": 1782404973000
+        }
+      ]
+    },
+    {
+      "symbol": "RDDT",
+      "name": "Reddit \u2022 Robinhood Token",
+      "address": "0x05b37Fb53A299a1b874A619e1c4C404D52C36F4C",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 0.0,
+      "aggregate_volume_24h_usd": 0.92,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xe54b570ebc7fc18ab51157c4af2f07b9207b899c0fed7795722b45aee18ffb6f",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 195.22,
+        "liquidity_usd": 0.0,
+        "volume_24h_usd": 0.92,
+        "created_at_ms": 1783035710000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xe54b570ebc7fc18ab51157c4af2f07b9207b899c0fed7795722b45aee18ffb6f",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 195.22,
+        "liquidity_usd": 0.0,
+        "volume_24h_usd": 0.92,
+        "created_at_ms": 1783035710000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xe54b570ebc7fc18ab51157c4af2f07b9207b899c0fed7795722b45aee18ffb6f",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 195.22,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.92,
+          "created_at_ms": 1783035710000
+        }
+      ]
+    },
+    {
+      "symbol": "RDW",
+      "name": "Redwire \u2022 Robinhood Token",
+      "address": "0x92Ef19E82bD8fF36661DE838D5eaE7e5CEF0EfFE",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1365.16,
+      "aggregate_volume_24h_usd": 120.76,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x71E15C0Ed50142C772beE6195c936F04E4696F5d",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 9.53,
+        "liquidity_usd": 1365.16,
+        "volume_24h_usd": 120.76,
+        "created_at_ms": 1782404957000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x71E15C0Ed50142C772beE6195c936F04E4696F5d",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 9.53,
+        "liquidity_usd": 1365.16,
+        "volume_24h_usd": 120.76,
+        "created_at_ms": 1782404957000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x71E15C0Ed50142C772beE6195c936F04E4696F5d",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 9.53,
+          "liquidity_usd": 1365.16,
+          "volume_24h_usd": 120.76,
+          "created_at_ms": 1782404957000
+        }
+      ]
+    },
+    {
+      "symbol": "RGTI",
+      "name": "Rigetti Computing \u2022 Robinhood Token",
+      "address": "0x284358abc07F9359f19f4b5b4aC91901Be2597Ba",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 2,
+      "aggregate_liquidity_usd": 1408.15,
+      "aggregate_volume_24h_usd": 28.509999999999998,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xb549D4EaF467277E48Aa350f216e413DF8c8BA12",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 17.03,
+        "liquidity_usd": 1349.21,
+        "volume_24h_usd": 28.47,
+        "created_at_ms": 1782404938000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xb549D4EaF467277E48Aa350f216e413DF8c8BA12",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 17.03,
+        "liquidity_usd": 1349.21,
+        "volume_24h_usd": 28.47,
+        "created_at_ms": 1782404938000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xb549D4EaF467277E48Aa350f216e413DF8c8BA12",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 17.03,
+          "liquidity_usd": 1349.21,
+          "volume_24h_usd": 28.47,
+          "created_at_ms": 1782404938000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x8114750f105d1e15e06f1da11a59ebaae11f01304ed1df0b331462536114a716",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 18.47,
+          "liquidity_usd": 58.94,
+          "volume_24h_usd": 0.04,
+          "created_at_ms": 1782983608000
+        }
+      ]
+    },
+    {
+      "symbol": "RIVN",
+      "name": "Rivian Automotive \u2022 Robinhood Token",
+      "address": "0xB1BF26c1D20ff267A4f93550d1E0d06ac40a114B",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "RKLB",
+      "name": "Rocket Lab Corporation \u2022 Robinhood Token",
+      "address": "0x3b14C39E89D60D627b42a1A4CA45b5bb45Fc12e2",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 3,
+      "aggregate_liquidity_usd": 1491.96,
+      "aggregate_volume_24h_usd": 2783.98,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xa9888De1B9D64A93eaeb495A39FE9B3d00654928",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 73.22,
+        "liquidity_usd": 1390.65,
+        "volume_24h_usd": 2461.85,
+        "created_at_ms": 1782404546000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xa9888De1B9D64A93eaeb495A39FE9B3d00654928",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 73.22,
+        "liquidity_usd": 1390.65,
+        "volume_24h_usd": 2461.85,
+        "created_at_ms": 1782404546000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0xbd5a81db7103ab739ad07814b94460f8ca6bb3b15f1fdb74c5ab45dba90df209",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 68.88,
+        "liquidity_usd": 101.31,
+        "volume_24h_usd": 322.13,
+        "created_at_ms": 1784387437000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xa9888De1B9D64A93eaeb495A39FE9B3d00654928",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 73.22,
+          "liquidity_usd": 1390.65,
+          "volume_24h_usd": 2461.85,
+          "created_at_ms": 1782404546000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xbd5a81db7103ab739ad07814b94460f8ca6bb3b15f1fdb74c5ab45dba90df209",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 68.88,
+          "liquidity_usd": 101.31,
+          "volume_24h_usd": 322.13,
+          "created_at_ms": 1784387437000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x0f024648c0ca77383d14ecd471d93f589bf4a9fd421a7c270dc1ccccb5e8dd35",
+          "other_symbol": "ROAR",
+          "other_address": "0xD5A0392bBc4E1Ba261c532ba03423F827138cBa3",
+          "price_usd": 0.0,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.0,
+          "created_at_ms": 1784554604000
+        }
+      ]
+    },
+    {
+      "symbol": "SATS",
+      "name": "EchoStar \u2022 Robinhood Token",
+      "address": "0x95052ddcd5DC25641657424A8Cf04834997E1730",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "SGOV",
+      "name": "iShares 0-3 Month Treasury Bond \u2022 Robinhood Token",
+      "address": "0x92FD66527192E3e61d4DDd13322Aa222DE86F9B5",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000957519890990718",
+      "pair_count_returned": 3,
+      "aggregate_liquidity_usd": 0.9,
+      "aggregate_volume_24h_usd": 365.39000000000004,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xFfb376Bfc48668f16719b42ed8AEEF5b98dBc4f1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 2.943e-27,
+        "liquidity_usd": 0.9,
+        "volume_24h_usd": 361.48,
+        "created_at_ms": 1783561578000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xFfb376Bfc48668f16719b42ed8AEEF5b98dBc4f1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 2.943e-27,
+        "liquidity_usd": 0.9,
+        "volume_24h_usd": 361.48,
+        "created_at_ms": 1783561578000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xFfb376Bfc48668f16719b42ed8AEEF5b98dBc4f1",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 2.943e-27,
+          "liquidity_usd": 0.9,
+          "volume_24h_usd": 361.48,
+          "created_at_ms": 1783561578000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x8db521d272888af0c0622b8692059973343b3dec86b59abfcb08fe7cfa8d534d",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 100.26,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.12,
+          "created_at_ms": 1783036811000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x002eaee43a6c1daa7c29484ee0d44a9abcd65827e72f883a1feb42ab8618ccba",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 106.48,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 3.79,
+          "created_at_ms": 1782983463000
+        }
+      ]
+    },
+    {
+      "symbol": "SHOP",
+      "name": "Shopify \u2022 Robinhood Token",
+      "address": "0xF53F66751B1Eff985311b693531E3290F600c410",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1404.37,
+      "aggregate_volume_24h_usd": 25.05,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x18A1aFa849A6940870c2163B7ECBCC85d455Ad99",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 113.81,
+        "liquidity_usd": 1404.37,
+        "volume_24h_usd": 25.05,
+        "created_at_ms": 1782404963000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x18A1aFa849A6940870c2163B7ECBCC85d455Ad99",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 113.81,
+        "liquidity_usd": 1404.37,
+        "volume_24h_usd": 25.05,
+        "created_at_ms": 1782404963000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x18A1aFa849A6940870c2163B7ECBCC85d455Ad99",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 113.81,
+          "liquidity_usd": 1404.37,
+          "volume_24h_usd": 25.05,
+          "created_at_ms": 1782404963000
+        }
+      ]
+    },
+    {
+      "symbol": "SKHY",
+      "name": "SK hynix Inc. American Depositary Shares \u2022 Robinhood Token",
+      "address": "0x84CAb63bc87912E71ad199ff14A0bA45de68FeF8",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "SLV",
+      "name": "iShares Silver Trust \u2022 Robinhood Token",
+      "address": "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 7,
+      "aggregate_liquidity_usd": 23647.36,
+      "aggregate_volume_24h_usd": 23117.3,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x0Fa7BC480885DCf58Ad2ef63eC7289cF2481D51c",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 50.84,
+        "liquidity_usd": 10017.28,
+        "volume_24h_usd": 10626.15,
+        "created_at_ms": 1784510000000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x0Fa7BC480885DCf58Ad2ef63eC7289cF2481D51c",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 50.84,
+        "liquidity_usd": 10017.28,
+        "volume_24h_usd": 10626.15,
+        "created_at_ms": 1784510000000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x0Fa7BC480885DCf58Ad2ef63eC7289cF2481D51c",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 50.84,
+          "liquidity_usd": 10017.28,
+          "volume_24h_usd": 10626.15,
+          "created_at_ms": 1784510000000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xCBeFaF31521ea6fADa413eF8D513db2317Eb9DF2",
+          "other_symbol": "MESSY",
+          "other_address": "0x84f3E265dEda4ddF1B225C841e55384091C1C4B8",
+          "price_usd": 0.00508,
+          "liquidity_usd": 5081.14,
+          "volume_24h_usd": 17.61,
+          "created_at_ms": 1784497131000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x5345B8817c13730008D8123a528cDEE5bbF873ce",
+          "other_symbol": "PAIN",
+          "other_address": "0xd795caea6d38D0B213E1719E7d90eAB6928fE8D6",
+          "price_usd": 0.005063,
+          "liquidity_usd": 5067.44,
+          "volume_24h_usd": 17.57,
+          "created_at_ms": 1784492761000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x350021798755743990552ba741c93a55b4248080f625079e918ce95bd529a366",
+          "other_symbol": "BASKET",
+          "other_address": "0xBD3b6ed7442A75500742C194b53994782325CBd6",
+          "price_usd": 53.81,
+          "liquidity_usd": 2117.76,
+          "volume_24h_usd": 8891.46,
+          "created_at_ms": 1784569471000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xf6f742665e3927ee7ee8da2a9caac0b68580af5249f1c70f4db02937bb1b0b58",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 51.4,
+          "liquidity_usd": 1157.37,
+          "volume_24h_usd": 3504.44,
+          "created_at_ms": 1784144817000
+        }
+      ]
+    },
+    {
+      "symbol": "SMCI",
+      "name": "Super Micro Computer \u2022 Robinhood Token",
+      "address": "0xc01aA1fECeC0605b13bc84874ff7256C0f5F562a",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1364.24,
+      "aggregate_volume_24h_usd": 89.1,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x9f0167dA6D9738b57CbA0833a541Db77762fB7Bb",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 29.21,
+        "liquidity_usd": 1364.24,
+        "volume_24h_usd": 89.1,
+        "created_at_ms": 1782404946000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x9f0167dA6D9738b57CbA0833a541Db77762fB7Bb",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 29.21,
+        "liquidity_usd": 1364.24,
+        "volume_24h_usd": 89.1,
+        "created_at_ms": 1782404946000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x9f0167dA6D9738b57CbA0833a541Db77762fB7Bb",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 29.21,
+          "liquidity_usd": 1364.24,
+          "volume_24h_usd": 89.1,
+          "created_at_ms": 1782404946000
+        }
+      ]
+    },
+    {
+      "symbol": "SNDK",
+      "name": "Sandisk Corporation \u2022 Robinhood Token",
+      "address": "0xB90A19fF0Af67f7779afF50A882A9CfF42446400",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 6,
+      "aggregate_liquidity_usd": 5914.76,
+      "aggregate_volume_24h_usd": 20450.95,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x2707cb88a6a40fa0f948f58958051ba097d6f6a3cf7f87929bd68ccc5becea24",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 1389.7,
+        "liquidity_usd": 3071.98,
+        "volume_24h_usd": 17748.95,
+        "created_at_ms": 1782990759000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x2707cb88a6a40fa0f948f58958051ba097d6f6a3cf7f87929bd68ccc5becea24",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 1389.7,
+        "liquidity_usd": 3071.98,
+        "volume_24h_usd": 17748.95,
+        "created_at_ms": 1782990759000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0xa408c8e75f819f665e7d5b7d78f8796a6bb4a3a745393b3c62d40f55ef76bb3f",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 1539.53,
+        "liquidity_usd": 956.01,
+        "volume_24h_usd": 76.42,
+        "created_at_ms": 1784450234000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x2707cb88a6a40fa0f948f58958051ba097d6f6a3cf7f87929bd68ccc5becea24",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 1389.7,
+          "liquidity_usd": 3071.98,
+          "volume_24h_usd": 17748.95,
+          "created_at_ms": 1782990759000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x250c401f1f8cae172f0d2ded2764c5f364f360e2218731aab1a7e69f95a47f43",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 1345.62,
+          "liquidity_usd": 1886.77,
+          "volume_24h_usd": 2625.58,
+          "created_at_ms": 1784015248000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xa408c8e75f819f665e7d5b7d78f8796a6bb4a3a745393b3c62d40f55ef76bb3f",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 1539.53,
+          "liquidity_usd": 956.01,
+          "volume_24h_usd": 76.42,
+          "created_at_ms": 1784450234000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x7baa91f37a61825492856f8650a4bed4cf4f0fab5c625df7625fe639c56b2250",
+          "other_symbol": "SNDK",
+          "other_address": "0xF1D1fe1066706e60429a12ACc29C9Eef55b03BA3",
+          "price_usd": 0.0,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.0,
+          "created_at_ms": 1784521496000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x87871e6db750bb3b210bc7a9b1480e480d4374186919f30674d13cb34804a834",
+          "other_symbol": "MEMORYMAN",
+          "other_address": "0x64b0E7b4090792b74e7C8082CA1369E684461e18",
+          "price_usd": 0.0,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.0,
+          "created_at_ms": 1784482973000
+        }
+      ]
+    },
+    {
+      "symbol": "SOFI",
+      "name": "SoFi Technologies \u2022 Robinhood Token",
+      "address": "0x98E75885157C80992A8D41b696D8c9C6Fb30A926",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "SOXX",
+      "name": "iShares Semiconductor ETF \u2022 Robinhood Token",
+      "address": "0x75742c18BC1f1C5c5f448f4C9D9C6F66dafAAa38",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1364.18,
+      "aggregate_volume_24h_usd": 26.31,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x563a3154BC09d2a2364b9a2A5766148F4e89be77",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 564.21,
+        "liquidity_usd": 1364.18,
+        "volume_24h_usd": 26.31,
+        "created_at_ms": 1782404944000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x563a3154BC09d2a2364b9a2A5766148F4e89be77",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 564.21,
+        "liquidity_usd": 1364.18,
+        "volume_24h_usd": 26.31,
+        "created_at_ms": 1782404944000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x563a3154BC09d2a2364b9a2A5766148F4e89be77",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 564.21,
+          "liquidity_usd": 1364.18,
+          "volume_24h_usd": 26.31,
+          "created_at_ms": 1782404944000
+        }
+      ]
+    },
+    {
+      "symbol": "SPCX",
+      "name": "Space Exploration Technologies Corp. Class A Common Stock \u2022 Robinhood Token",
+      "address": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 30,
+      "aggregate_liquidity_usd": 859909.74,
+      "aggregate_volume_24h_usd": 808309.17,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xcb6ffbcc84359535c2cc0a5688c0a76520ea6e0a4820fddd3ac8d7880e576370",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 120.46,
+        "liquidity_usd": 325533.11,
+        "volume_24h_usd": 385172.07,
+        "created_at_ms": 1782952127000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xcb6ffbcc84359535c2cc0a5688c0a76520ea6e0a4820fddd3ac8d7880e576370",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 120.46,
+        "liquidity_usd": 325533.11,
+        "volume_24h_usd": 385172.07,
+        "created_at_ms": 1782952127000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0x7cf7a805185bce4766278dc4e4047fbc5d8e2bc8a33b3268270d43b86e10236b",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 125.15,
+        "liquidity_usd": 35021.91,
+        "volume_24h_usd": 11833.76,
+        "created_at_ms": 1783025017000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xcb6ffbcc84359535c2cc0a5688c0a76520ea6e0a4820fddd3ac8d7880e576370",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 120.46,
+          "liquidity_usd": 325533.11,
+          "volume_24h_usd": 385172.07,
+          "created_at_ms": 1782952127000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x225cc98f7d66b29fef96377becc7bf89582e2ab7b923a09aee9719fd80eb94ca",
+          "other_symbol": "SPACEHOOD",
+          "other_address": "0xFe7E19CbCe2f896C6C528BC355bAF5a768291E18",
+          "price_usd": 0.0003329,
+          "liquidity_usd": 154372.94,
+          "volume_24h_usd": 151740.06,
+          "created_at_ms": 1784040493000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xa44c8fecb0ac2cb2bb32a2ee6d57158c2b1af5472d149b06530dbe51cb1c3645",
+          "other_symbol": "STARMAN",
+          "other_address": "0xA5839ec14251c6D18330340a4E62e062e4A51E18",
+          "price_usd": 6.223e-05,
+          "liquidity_usd": 51909.32,
+          "volume_24h_usd": 52264.27,
+          "created_at_ms": 1784399232000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x15a09db785c7b5fc9d794f685a04e4ad38842a2035b9a8fab17909c0e54c425f",
+          "other_symbol": "ASTEROID",
+          "other_address": "0xFd82D8DB539b6AcE0D50815845133767e24F1E18",
+          "price_usd": 4.75e-05,
+          "liquidity_usd": 41882.86,
+          "volume_24h_usd": 26171.66,
+          "created_at_ms": 1784047356000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xc6944c251a3afb7572ae323bd54b913e16422ee2c076123e76a7ee61d1adcc93",
+          "other_symbol": "MARSCOIN",
+          "other_address": "0x5A02ff1Fa21055E40753Fb039B3589781a361e18",
+          "price_usd": 3.787e-05,
+          "liquidity_usd": 35549.72,
+          "volume_24h_usd": 9046.4,
+          "created_at_ms": 1784308766000
+        }
+      ]
+    },
+    {
+      "symbol": "SPMO",
+      "name": "Invesco S&P 500 Momentum ETF \u2022 Robinhood Token",
+      "address": "0xAd622320e520de39e72d41EF07438C3Fd3354875",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1368.39,
+      "aggregate_volume_24h_usd": 526.61,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x727C8A9e0da8Bb21bE322D2Bb5D891b126143b8C",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 144.55,
+        "liquidity_usd": 1368.39,
+        "volume_24h_usd": 526.61,
+        "created_at_ms": 1782404963000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x727C8A9e0da8Bb21bE322D2Bb5D891b126143b8C",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 144.55,
+        "liquidity_usd": 1368.39,
+        "volume_24h_usd": 526.61,
+        "created_at_ms": 1782404963000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x727C8A9e0da8Bb21bE322D2Bb5D891b126143b8C",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 144.55,
+          "liquidity_usd": 1368.39,
+          "volume_24h_usd": 526.61,
+          "created_at_ms": 1782404963000
+        }
+      ]
+    },
+    {
+      "symbol": "SPY",
+      "name": "SPDR S&P 500 ETF Trust \u2022 Robinhood Token",
+      "address": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 30,
+      "aggregate_liquidity_usd": 395931.5,
+      "aggregate_volume_24h_usd": 367432.63,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xcedcdba59c8462cca78583594447a3b59693eef3f6986474933ef54d655e2649",
+        "other_symbol": "SPYING",
+        "other_address": "0x01c4942839F4FC08034ee86eA88295FC8E6e8515",
+        "price_usd": 1.759e-06,
+        "liquidity_usd": 176056.9,
+        "volume_24h_usd": 7.92,
+        "created_at_ms": 1783894803000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xfe2a80bb5618fd14984b92ca6d45bf5ba67443ddb1435e28b2e48df2fc1526cd",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 742.92,
+        "liquidity_usd": 54117.84,
+        "volume_24h_usd": 171204.97,
+        "created_at_ms": 1784014110000
+      },
+      "top_eth_pair": {
+        "dex": "sheriff",
+        "pair": "0x5DBEB962FC071137252e013B24E6a3ee35714F2f",
+        "other_symbol": "WETH",
+        "other_address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+        "price_usd": 742.94,
+        "liquidity_usd": 10895.63,
+        "volume_24h_usd": 73379.65,
+        "created_at_ms": null
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xcedcdba59c8462cca78583594447a3b59693eef3f6986474933ef54d655e2649",
+          "other_symbol": "SPYING",
+          "other_address": "0x01c4942839F4FC08034ee86eA88295FC8E6e8515",
+          "price_usd": 1.759e-06,
+          "liquidity_usd": 176056.9,
+          "volume_24h_usd": 7.92,
+          "created_at_ms": 1783894803000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xfe2a80bb5618fd14984b92ca6d45bf5ba67443ddb1435e28b2e48df2fc1526cd",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 742.92,
+          "liquidity_usd": 54117.84,
+          "volume_24h_usd": 171204.97,
+          "created_at_ms": 1784014110000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x32ec317915996100b4a3b28ef99955ff247a1f20c61880f23e8baf2803707365",
+          "other_symbol": "BNKRSTR",
+          "other_address": "0x073994bD1e0dF07e5B15167916FcC4C859a70BA3",
+          "price_usd": 2.484e-07,
+          "liquidity_usd": 21407.22,
+          "volume_24h_usd": 56261.24,
+          "created_at_ms": 1784521162000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x42d51ce4cb011aa11b79a2f81460076afa7fc3719c3e41231c66c927d02fc180",
+          "other_symbol": "REALSTABLE",
+          "other_address": "0xe1176a5180e99bB9e260F8b7849406cD4d1E2bA3",
+          "price_usd": 1.859e-07,
+          "liquidity_usd": 15876.13,
+          "volume_24h_usd": 29967.73,
+          "created_at_ms": 1784547895000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xe8285e63c21e9d25e1e751973667b7e43bfcdc241cf866083225154c1082c73c",
+          "other_symbol": "BRRR",
+          "other_address": "0x1B72EBa309EAeCDD96c711FF92cDfb7F6b5b8ba3",
+          "price_usd": 1.515e-07,
+          "liquidity_usd": 12841.42,
+          "volume_24h_usd": 462.05,
+          "created_at_ms": 1784529002000
+        }
+      ]
+    },
+    {
+      "symbol": "TSEM",
+      "name": "Tower Semiconductor \u2022 Robinhood Token",
+      "address": "0x89776d4Cd68193597A2fC132cfaC1fDe36CCeA8a",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1364.59,
+      "aggregate_volume_24h_usd": 53.09,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x350051ec863739E4875F255e760Ad3514c10f110",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 248.48,
+        "liquidity_usd": 1364.59,
+        "volume_24h_usd": 53.09,
+        "created_at_ms": 1782404964000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x350051ec863739E4875F255e760Ad3514c10f110",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 248.48,
+        "liquidity_usd": 1364.59,
+        "volume_24h_usd": 53.09,
+        "created_at_ms": 1782404964000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x350051ec863739E4875F255e760Ad3514c10f110",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 248.48,
+          "liquidity_usd": 1364.59,
+          "volume_24h_usd": 53.09,
+          "created_at_ms": 1782404964000
+        }
+      ]
+    },
+    {
+      "symbol": "TSLA",
+      "name": "Tesla \u2022 Robinhood Token",
+      "address": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 30,
+      "aggregate_liquidity_usd": 429719.32,
+      "aggregate_volume_24h_usd": 213573.19,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xb2a6d67bf3fc511d11cac788a531655f5a7b60cd31c8ff386f0476121741e751",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 387.55,
+        "liquidity_usd": 137862.57,
+        "volume_24h_usd": 48238.87,
+        "created_at_ms": 1782956898000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x8517f8071ae5b831b738052f12125e8e3d6c158b78728aa44ce3b25e5104d32e",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 370.29,
+        "liquidity_usd": 41537.2,
+        "volume_24h_usd": 104235.81,
+        "created_at_ms": 1783232339000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0xb2a6d67bf3fc511d11cac788a531655f5a7b60cd31c8ff386f0476121741e751",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 387.55,
+        "liquidity_usd": 137862.57,
+        "volume_24h_usd": 48238.87,
+        "created_at_ms": 1782956898000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xb2a6d67bf3fc511d11cac788a531655f5a7b60cd31c8ff386f0476121741e751",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 387.55,
+          "liquidity_usd": 137862.57,
+          "volume_24h_usd": 48238.87,
+          "created_at_ms": 1782956898000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xef3422f03f45e33527e9837a30328c36368f0d5b10455d4098760ba75c18d4c3",
+          "other_symbol": "OPTIMUS",
+          "other_address": "0xB5D553Cc06F9b3569731b7a74fc269B939841E18",
+          "price_usd": 4.782e-05,
+          "liquidity_usd": 42347.53,
+          "volume_24h_usd": 2736.11,
+          "created_at_ms": 1784453405000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x8517f8071ae5b831b738052f12125e8e3d6c158b78728aa44ce3b25e5104d32e",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 370.29,
+          "liquidity_usd": 41537.2,
+          "volume_24h_usd": 104235.81,
+          "created_at_ms": 1783232339000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x53f5718baccfb3e2db76c973e52a94228b6e3c89ce56a9e739231ec439b654d0",
+          "other_symbol": "HEDGE",
+          "other_address": "0xeFfB7652f53B5F121C810cC801af889DD4491E18",
+          "price_usd": 2.334e-05,
+          "liquidity_usd": 23321.91,
+          "volume_24h_usd": 2537.87,
+          "created_at_ms": 1784452277000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xab5588eee487b383d6272643bedd57bcd37738834dba190e61132246803d9ee1",
+          "other_symbol": "ELON",
+          "other_address": "0x6DB6C77d7B450059a041a30D109F4c34B0481E18",
+          "price_usd": 2.076e-05,
+          "liquidity_usd": 20774.06,
+          "volume_24h_usd": 26.17,
+          "created_at_ms": 1784485836000
+        }
+      ]
+    },
+    {
+      "symbol": "TSM",
+      "name": "Taiwan Semiconductor Manufacturing \u2022 Robinhood Token",
+      "address": "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1649.07,
+      "aggregate_volume_24h_usd": 523.56,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x07e8Ea83D4C1340774c8965125e26e12bf943bf1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 408.21,
+        "liquidity_usd": 1649.07,
+        "volume_24h_usd": 523.56,
+        "created_at_ms": 1782404939000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x07e8Ea83D4C1340774c8965125e26e12bf943bf1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 408.21,
+        "liquidity_usd": 1649.07,
+        "volume_24h_usd": 523.56,
+        "created_at_ms": 1782404939000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x07e8Ea83D4C1340774c8965125e26e12bf943bf1",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 408.21,
+          "liquidity_usd": 1649.07,
+          "volume_24h_usd": 523.56,
+          "created_at_ms": 1782404939000
+        }
+      ]
+    },
+    {
+      "symbol": "TTWO",
+      "name": "Take-Two Interactive Software \u2022 Robinhood Token",
+      "address": "0x5e81213613b6B86EaB4c6c50d718d34359459786",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "UMC",
+      "name": "United Microelectronics \u2022 Robinhood Token",
+      "address": "0x0E6e67Ba88e7b5d9B67636A215c76779B948dE79",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 0.06,
+      "aggregate_volume_24h_usd": 29.63,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xD95a760934ddf6818176d51c12e89520DD7bAC44",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 2.942e-27,
+        "liquidity_usd": 0.06,
+        "volume_24h_usd": 29.63,
+        "created_at_ms": 1782404938000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xD95a760934ddf6818176d51c12e89520DD7bAC44",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 2.942e-27,
+        "liquidity_usd": 0.06,
+        "volume_24h_usd": 29.63,
+        "created_at_ms": 1782404938000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xD95a760934ddf6818176d51c12e89520DD7bAC44",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 2.942e-27,
+          "liquidity_usd": 0.06,
+          "volume_24h_usd": 29.63,
+          "created_at_ms": 1782404938000
+        }
+      ]
+    },
+    {
+      "symbol": "UPS",
+      "name": "UPS \u2022 Robinhood Token",
+      "address": "0xf23250dac154D05Bb671CB0d0eBEf3c635c79CE2",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1405.59,
+      "aggregate_volume_24h_usd": 25.07,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x3Ab74C45DceCC6A62898204Dd42143a816B44CB1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 107.26,
+        "liquidity_usd": 1405.59,
+        "volume_24h_usd": 25.07,
+        "created_at_ms": 1782404973000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x3Ab74C45DceCC6A62898204Dd42143a816B44CB1",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 107.26,
+        "liquidity_usd": 1405.59,
+        "volume_24h_usd": 25.07,
+        "created_at_ms": 1782404973000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x3Ab74C45DceCC6A62898204Dd42143a816B44CB1",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 107.26,
+          "liquidity_usd": 1405.59,
+          "volume_24h_usd": 25.07,
+          "created_at_ms": 1782404973000
+        }
+      ]
+    },
+    {
+      "symbol": "USAR",
+      "name": "USA Rare Earth \u2022 Robinhood Token",
+      "address": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 3,
+      "aggregate_liquidity_usd": 549.48,
+      "aggregate_volume_24h_usd": 0.63,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x061a6e50ea9288db8b8cda2e4c9976dd9c295d91870cde18aaeb0bfd054beff4",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 14.9,
+        "liquidity_usd": 321.15,
+        "volume_24h_usd": 0.0,
+        "created_at_ms": 1783036750000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x061a6e50ea9288db8b8cda2e4c9976dd9c295d91870cde18aaeb0bfd054beff4",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 14.9,
+        "liquidity_usd": 321.15,
+        "volume_24h_usd": 0.0,
+        "created_at_ms": 1783036750000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0x8ca23e334ac19f41c4b4c833261a219dcc5eb5db0cbea1eb32786aa55284a30f",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 15.41,
+        "liquidity_usd": 0.0,
+        "volume_24h_usd": 0.02,
+        "created_at_ms": 1784558173000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x061a6e50ea9288db8b8cda2e4c9976dd9c295d91870cde18aaeb0bfd054beff4",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 14.9,
+          "liquidity_usd": 321.15,
+          "volume_24h_usd": 0.0,
+          "created_at_ms": 1783036750000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x6ec24c93eebf149bac3d57795708e83e25d24add8260c86488f634877a0342c9",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 16.38,
+          "liquidity_usd": 228.33,
+          "volume_24h_usd": 0.61,
+          "created_at_ms": 1784203985000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x8ca23e334ac19f41c4b4c833261a219dcc5eb5db0cbea1eb32786aa55284a30f",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 15.41,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.02,
+          "created_at_ms": 1784558173000
+        }
+      ]
+    },
+    {
+      "symbol": "USO",
+      "name": "United States Oil Fund \u2022 Robinhood Token",
+      "address": "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 2,
+      "aggregate_liquidity_usd": 4768.700000000001,
+      "aggregate_volume_24h_usd": 1988.06,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xe5bd4e3b7abfc0d5ce97d433449b0eb2aaabeff413b6538bb354681c3e3cc96a",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 123.12,
+        "liquidity_usd": 4557.77,
+        "volume_24h_usd": 1927.58,
+        "created_at_ms": 1784145416000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xe5bd4e3b7abfc0d5ce97d433449b0eb2aaabeff413b6538bb354681c3e3cc96a",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 123.12,
+        "liquidity_usd": 4557.77,
+        "volume_24h_usd": 1927.58,
+        "created_at_ms": 1784145416000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xe5bd4e3b7abfc0d5ce97d433449b0eb2aaabeff413b6538bb354681c3e3cc96a",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 123.12,
+          "liquidity_usd": 4557.77,
+          "volume_24h_usd": 1927.58,
+          "created_at_ms": 1784145416000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x02175608F1b5E6b5ed221cCFdC7Be197D111D915",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 123.84,
+          "liquidity_usd": 210.93,
+          "volume_24h_usd": 60.48,
+          "created_at_ms": 1784281508000
+        }
+      ]
+    },
+    {
+      "symbol": "WDAY",
+      "name": "Workday \u2022 Robinhood Token",
+      "address": "0x82DA4646242e1D962e96e932269Dc644c94a9CaA",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1402.74,
+      "aggregate_volume_24h_usd": 25.01,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xcF64702D2538149a2e84FfA96b00ee745195791D",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 113.62,
+        "liquidity_usd": 1402.74,
+        "volume_24h_usd": 25.01,
+        "created_at_ms": 1782404971000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xcF64702D2538149a2e84FfA96b00ee745195791D",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 113.62,
+        "liquidity_usd": 1402.74,
+        "volume_24h_usd": 25.01,
+        "created_at_ms": 1782404971000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xcF64702D2538149a2e84FfA96b00ee745195791D",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 113.62,
+          "liquidity_usd": 1402.74,
+          "volume_24h_usd": 25.01,
+          "created_at_ms": 1782404971000
+        }
+      ]
+    },
+    {
+      "symbol": "XLK",
+      "name": "State Street Technology Select Sector SPDR ETF \u2022 Robinhood Token",
+      "address": "0x15Cd20759CE7F3285c29A319dE2D1A2e098c6f43",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1402.2,
+      "aggregate_volume_24h_usd": 16.59,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xe20463635cEEEA8E30A315FFc4D4e81c80E53147",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 176.026,
+        "liquidity_usd": 1402.2,
+        "volume_24h_usd": 16.59,
+        "created_at_ms": 1782404946000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xe20463635cEEEA8E30A315FFc4D4e81c80E53147",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 176.026,
+        "liquidity_usd": 1402.2,
+        "volume_24h_usd": 16.59,
+        "created_at_ms": 1782404946000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xe20463635cEEEA8E30A315FFc4D4e81c80E53147",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 176.026,
+          "liquidity_usd": 1402.2,
+          "volume_24h_usd": 16.59,
+          "created_at_ms": 1782404946000
+        }
+      ]
+    },
+    {
+      "symbol": "XNDU",
+      "name": "Xanadu Quantum \u2022 Robinhood Token",
+      "address": "0xA8eB3BCcbf2017eE7CBfb652eB51CF2E1B153289",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1360.27,
+      "aggregate_volume_24h_usd": 25.56,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0x69174bFCFAcaDfB056982C88c351549ef6308213",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 10.95,
+        "liquidity_usd": 1360.27,
+        "volume_24h_usd": 25.56,
+        "created_at_ms": 1782404961000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0x69174bFCFAcaDfB056982C88c351549ef6308213",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 10.95,
+        "liquidity_usd": 1360.27,
+        "volume_24h_usd": 25.56,
+        "created_at_ms": 1782404961000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0x69174bFCFAcaDfB056982C88c351549ef6308213",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 10.95,
+          "liquidity_usd": 1360.27,
+          "volume_24h_usd": 25.56,
+          "created_at_ms": 1782404961000
+        }
+      ]
+    },
+    {
+      "symbol": "XOM",
+      "name": "ExxonMobil Holdings Corporation \u2022 Robinhood Token",
+      "address": "0xf9B46d3D1B22199D4D1025a9cEDB540A33F1a2d5",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 4,
+      "aggregate_liquidity_usd": 4159.14,
+      "aggregate_volume_24h_usd": 152.15,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xd5c6302444e291c56fb0156fbe4b4b4ba1262184273e47e7151c1361027b86e7",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 1313.33,
+        "liquidity_usd": 2755.92,
+        "volume_24h_usd": 122.91,
+        "created_at_ms": 1784217614000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xd5c6302444e291c56fb0156fbe4b4b4ba1262184273e47e7151c1361027b86e7",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 1313.33,
+        "liquidity_usd": 2755.92,
+        "volume_24h_usd": 122.91,
+        "created_at_ms": 1784217614000
+      },
+      "top_eth_pair": {
+        "dex": "uniswap",
+        "pair": "0xea871a5910ea477f40a11fcbffc1d66a032d16da98fc17151ef7caf9f614a454",
+        "other_symbol": "ETH",
+        "other_address": "0x0000000000000000000000000000000000000000",
+        "price_usd": 0.685,
+        "liquidity_usd": 0.0,
+        "volume_24h_usd": 0.0,
+        "created_at_ms": 1783871455000
+      },
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xd5c6302444e291c56fb0156fbe4b4b4ba1262184273e47e7151c1361027b86e7",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 1313.33,
+          "liquidity_usd": 2755.92,
+          "volume_24h_usd": 122.91,
+          "created_at_ms": 1784217614000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0x6aF79a2c154E7EeA9c87B38617D5f0B598B690FB",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 133.46,
+          "liquidity_usd": 1403.22,
+          "volume_24h_usd": 0.33,
+          "created_at_ms": 1782404954000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xd4df869ee6ecc3c3ad0c593608295aba13b87851993b7c2d93337f69ea5646bf",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 13354.87,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 28.91,
+          "created_at_ms": 1784341424000
+        },
+        {
+          "dex": "uniswap",
+          "pair": "0xea871a5910ea477f40a11fcbffc1d66a032d16da98fc17151ef7caf9f614a454",
+          "other_symbol": "ETH",
+          "other_address": "0x0000000000000000000000000000000000000000",
+          "price_usd": 0.685,
+          "liquidity_usd": 0.0,
+          "volume_24h_usd": 0.0,
+          "created_at_ms": 1783871455000
+        }
+      ]
+    },
+    {
+      "symbol": "ZM",
+      "name": "Zoom \u2022 Robinhood Token",
+      "address": "0x44c4F142009036cF477eD2d09932051843137CF1",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 0,
+      "aggregate_liquidity_usd": 0,
+      "aggregate_volume_24h_usd": 0,
+      "top_pair": null,
+      "top_usdg_pair": null,
+      "top_eth_pair": null,
+      "pairs": []
+    },
+    {
+      "symbol": "ZS",
+      "name": "Zscaler \u2022 Robinhood Token",
+      "address": "0x7dc013eB55e436f30d7ED1AFE4E36d6e45e3c3f7",
+      "status": "ASSET_STATUS_ACTIVE",
+      "multiplier": "1.000000000000000000",
+      "pair_count_returned": 1,
+      "aggregate_liquidity_usd": 1402.36,
+      "aggregate_volume_24h_usd": 10.0,
+      "top_pair": {
+        "dex": "uniswap",
+        "pair": "0xdF9A23295D5D66E8066370CeA9349DEf9CcafDAe",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 120.65,
+        "liquidity_usd": 1402.36,
+        "volume_24h_usd": 10.0,
+        "created_at_ms": 1782404943000
+      },
+      "top_usdg_pair": {
+        "dex": "uniswap",
+        "pair": "0xdF9A23295D5D66E8066370CeA9349DEf9CcafDAe",
+        "other_symbol": "USDG",
+        "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "price_usd": 120.65,
+        "liquidity_usd": 1402.36,
+        "volume_24h_usd": 10.0,
+        "created_at_ms": 1782404943000
+      },
+      "top_eth_pair": null,
+      "pairs": [
+        {
+          "dex": "uniswap",
+          "pair": "0xdF9A23295D5D66E8066370CeA9349DEf9CcafDAe",
+          "other_symbol": "USDG",
+          "other_address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "price_usd": 120.65,
+          "liquidity_usd": 1402.36,
+          "volume_24h_usd": 10.0,
+          "created_at_ms": 1782404943000
+        }
+      ]
+    }
+  ],
+  "basket_registered_feeds": [
+    {
+      "token": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "feed": "0x6B22A786bAa607d76728168703a39Ea9C99f2cD0",
+      "description": "Robinhood AAPL / USD",
+      "decimals": 8,
+      "answer": "32649000000",
+      "price": 326.49,
+      "round_id": "18446744073709551868",
+      "started_at": 1784577326,
+      "updated_at": 1784577338,
+      "age_seconds": 10001,
+      "answered_in_round": "18446744073709551868",
+      "symbol": "AAPL"
+    },
+    {
+      "token": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "feed": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15",
+      "description": "RHNVDA / USD",
+      "decimals": 8,
+      "answer": "20270000000",
+      "price": 202.7,
+      "round_id": "18446744073709552010",
+      "started_at": 1784574334,
+      "updated_at": 1784574347,
+      "age_seconds": 12992,
+      "answered_in_round": "18446744073709552010",
+      "symbol": "NVDA"
+    },
+    {
+      "token": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+      "feed": "0xF6f373a037c30F0e5010d854385cA89185AE638b",
+      "description": "Robinhood GOOGL / USD",
+      "decimals": 8,
+      "answer": "35197290000",
+      "price": 351.9729,
+      "round_id": "18446744073709551927",
+      "started_at": 1784572046,
+      "updated_at": 1784572059,
+      "age_seconds": 15280,
+      "answered_in_round": "18446744073709551927",
+      "symbol": "GOOGL"
+    },
+    {
+      "token": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+      "feed": "0x45C3C877C15E6BA2EBB19eA114Ea508d14C1Af2E",
+      "description": "RHMSFT / USD",
+      "decimals": 8,
+      "answer": "40055410000",
+      "price": 400.5541,
+      "round_id": "18446744073709551915",
+      "started_at": 1784579307,
+      "updated_at": 1784579319,
+      "age_seconds": 8020,
+      "answered_in_round": "18446744073709551915",
+      "symbol": "MSFT"
+    },
+    {
+      "token": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+      "feed": "0x7C38C00C30BEe9378381E7B6135d7283356D71b1",
+      "description": "Robinhood META / USD",
+      "decimals": 8,
+      "answer": "64552500000",
+      "price": 645.525,
+      "round_id": "18446744073709552057",
+      "started_at": 1784577492,
+      "updated_at": 1784577505,
+      "age_seconds": 9834,
+      "answered_in_round": "18446744073709552057",
+      "symbol": "META"
+    },
+    {
+      "token": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+      "feed": "0xD5a1508ceD74c084eBf3cBe853e2C968fB2a651C",
+      "description": "Robinhood AMZN / USD",
+      "decimals": 8,
+      "answer": "24988280000",
+      "price": 249.8828,
+      "round_id": "18446744073709551916",
+      "started_at": 1784572854,
+      "updated_at": 1784572867,
+      "age_seconds": 14472,
+      "answered_in_round": "18446744073709551916",
+      "symbol": "AMZN"
+    },
+    {
+      "token": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+      "feed": "0x4A1166a659A55625345e9515b32adECea5547C38",
+      "description": "RHTSLA / USD",
+      "decimals": 8,
+      "answer": "36951500000",
+      "price": 369.515,
+      "round_id": "18446744073709552031",
+      "started_at": 1784577562,
+      "updated_at": 1784577574,
+      "age_seconds": 9765,
+      "answered_in_round": "18446744073709552031",
+      "symbol": "TSLA"
+    },
+    {
+      "token": "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC",
+      "feed": "0x943A29E7ae51A4798823ca9eEd2ed533B2A22C72",
+      "description": "RHAMD / USD",
+      "decimals": 8,
+      "answer": "50272780000",
+      "price": 502.7278,
+      "round_id": "18446744073709552796",
+      "started_at": 1784577321,
+      "updated_at": 1784577333,
+      "age_seconds": 10006,
+      "answered_in_round": "18446744073709552796",
+      "symbol": "AMD"
+    },
+    {
+      "token": "0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD",
+      "feed": "0x425EEFdCf05ed6526C3cE61Af99429A228a6d596",
+      "description": "RHMU / USD",
+      "decimals": 8,
+      "answer": "86959390000",
+      "price": 869.5939,
+      "round_id": "18446744073709553949",
+      "started_at": 1784577935,
+      "updated_at": 1784577948,
+      "age_seconds": 9391,
+      "answered_in_round": "18446744073709553949",
+      "symbol": "MU"
+    },
+    {
+      "token": "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681",
+      "feed": "0x3f390C5C24628Ac7C489515402235FeAD71D1913",
+      "description": "RHINTC / USD",
+      "decimals": 8,
+      "answer": "9697160000",
+      "price": 96.9716,
+      "round_id": "18446744073709553228",
+      "started_at": 1784577341,
+      "updated_at": 1784577353,
+      "age_seconds": 9986,
+      "answered_in_round": "18446744073709553228",
+      "symbol": "INTC"
+    },
+    {
+      "token": "0xB90A19fF0Af67f7779afF50A882A9CfF42446400",
+      "feed": "0xfb133Fa4B7b385802B693a293606682Df47109A3",
+      "description": "RHSNDK / USD",
+      "decimals": 8,
+      "answer": "139821825000",
+      "price": 1398.21825,
+      "round_id": "18446744073709554532",
+      "started_at": 1784585133,
+      "updated_at": 1784585146,
+      "age_seconds": 2193,
+      "answered_in_round": "18446744073709554532",
+      "symbol": "SNDK"
+    },
+    {
+      "token": "0xb0992820E760d836549ba69BC7598b4af75dEE03",
+      "feed": "0x0e6a64a2B58A6693a531E6c555f3A5d042eEA844",
+      "description": "Robinhood ORCL / USD",
+      "decimals": 8,
+      "answer": "12162345000",
+      "price": 121.62345,
+      "round_id": "18446744073709552278",
+      "started_at": 1784577319,
+      "updated_at": 1784577331,
+      "age_seconds": 10008,
+      "answered_in_round": "18446744073709552278",
+      "symbol": "ORCL"
+    },
+    {
+      "token": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+      "feed": "0x820ABedFF239034956B7A9d2F0a331f9F075eB4c",
+      "description": "Robinhood PLTR / USD",
+      "decimals": 8,
+      "answer": "13421635000",
+      "price": 134.21635,
+      "round_id": "18446744073709552365",
+      "started_at": 1784578190,
+      "updated_at": 1784578203,
+      "age_seconds": 9136,
+      "answered_in_round": "18446744073709552365",
+      "symbol": "PLTR"
+    },
+    {
+      "token": "0x5f10A1C971B69e47e059e1dC91901B59b3fB49C3",
+      "feed": "0xe1b3aABCAFAd1c94708dc1367dcfF8Aa4407487C",
+      "description": "Robinhood CRWV / USD",
+      "decimals": 8,
+      "answer": "7359710000",
+      "price": 73.5971,
+      "round_id": "18446744073709552960",
+      "started_at": 1784585200,
+      "updated_at": 1784585213,
+      "age_seconds": 2126,
+      "answered_in_round": "18446744073709552960",
+      "symbol": "CRWV"
+    },
+    {
+      "token": "0x6330D8C3178a418788dF01a47479c0ce7CCF450b",
+      "feed": "0xA3a468A452940B7D6b69991207B508c609a98Ef2",
+      "description": "Robinhood COIN / USD",
+      "decimals": 8,
+      "answer": "16073695000",
+      "price": 160.73695,
+      "round_id": "18446744073709552621",
+      "started_at": 1784576990,
+      "updated_at": 1784577003,
+      "age_seconds": 10336,
+      "answered_in_round": "18446744073709552621",
+      "symbol": "COIN"
+    },
+    {
+      "token": "0xdF0992E440dD0be65BD8439b609d6D4366bf1CB5",
+      "feed": "0x6652eDf64bA3731C4F2D3ce821A0Fb1f1f6b482a",
+      "description": "Robinhood CRCL / USD",
+      "decimals": 8,
+      "answer": "6668500000",
+      "price": 66.685,
+      "round_id": "18446744073709553064",
+      "started_at": 1784587005,
+      "updated_at": 1784587018,
+      "age_seconds": 321,
+      "answered_in_round": "18446744073709553064",
+      "symbol": "CRCL"
+    },
+    {
+      "token": "0xad25Ac6C84D497db898fa1E8387bf6Af3532a1c4",
+      "feed": "0x62Cc8F9b5f56a33c9C8A60c8B92779f523c4E984",
+      "description": "Robinhood BABA / USD",
+      "decimals": 8,
+      "answer": "12060499999",
+      "price": 120.60499999,
+      "round_id": "18446744073709552339",
+      "started_at": 1784572863,
+      "updated_at": 1784572876,
+      "age_seconds": 14463,
+      "answered_in_round": "18446744073709552339",
+      "symbol": "BABA"
+    },
+    {
+      "token": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
+      "feed": "0xB265810950ba6c5C0Ff821c9963014a56fD8Bffb",
+      "description": "Robinhood SPCX / USD",
+      "decimals": 8,
+      "answer": "12003115000",
+      "price": 120.03115,
+      "round_id": "18446744073709552877",
+      "started_at": 1784577474,
+      "updated_at": 1784577486,
+      "age_seconds": 9853,
+      "answered_in_round": "18446744073709552877",
+      "symbol": "SPCX"
+    },
+    {
+      "token": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
+      "feed": "0xA994d3684e8400A6c8078226925779FdeE682DD9",
+      "description": "Robinhood USAR-USD",
+      "decimals": 8,
+      "answer": "1524480000",
+      "price": 15.2448,
+      "round_id": "18446744073709552244",
+      "started_at": 1784578599,
+      "updated_at": 1784578612,
+      "age_seconds": 8727,
+      "answered_in_round": "18446744073709552244",
+      "symbol": "USAR"
+    },
+    {
+      "token": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+      "feed": "0x319724394D3A0e3669269846abE664Cd621f9f6A",
+      "description": "RHSPY / USD",
+      "decimals": 8,
+      "answer": "74334000000",
+      "price": 743.34,
+      "round_id": "18446744073709551666",
+      "started_at": 1784572858,
+      "updated_at": 1784572870,
+      "age_seconds": 14469,
+      "answered_in_round": "18446744073709551666",
+      "symbol": "SPY"
+    },
+    {
+      "token": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+      "feed": "0x80901d846d5D7B030F26B480776EE3b29374C2ae",
+      "description": "Robinhood QQQ / USD",
+      "decimals": 8,
+      "answer": "69750000000",
+      "price": 697.5,
+      "round_id": "18446744073709551769",
+      "started_at": 1784574217,
+      "updated_at": 1784574230,
+      "age_seconds": 13109,
+      "answered_in_round": "18446744073709551769",
+      "symbol": "QQQ"
+    },
+    {
+      "token": "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f",
+      "feed": "0x209b73908e92Ae021826eD79609845451Ecba2ce",
+      "description": "Robinhood SLV / USD",
+      "decimals": 8,
+      "answer": "5097499999",
+      "price": 50.97499999,
+      "round_id": "18446744073709552217",
+      "started_at": 1784577364,
+      "updated_at": 1784577376,
+      "age_seconds": 9963,
+      "answered_in_round": "18446744073709552217",
+      "symbol": "SLV"
+    },
+    {
+      "token": "0x92FD66527192E3e61d4DDd13322Aa222DE86F9B5",
+      "feed": "0xa0DF4ee0fFf975306345875E3548Fcc519577A11",
+      "description": "Robinhood SGOV-USD",
+      "decimals": 8,
+      "answer": "10068131213",
+      "price": 100.68131213,
+      "round_id": "18446744073709551632",
+      "started_at": 1784505623,
+      "updated_at": 1784505636,
+      "age_seconds": 81703,
+      "answered_in_round": "18446744073709551632",
+      "symbol": "SGOV"
+    }
+  ],
+  "authenticated_quote_api_probes": [
+    {
+      "url": "https://api.0x.org/swap/allowance-holder/quote?chainId=4663&sellToken=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168&buyToken=0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC&sellAmount=100000000&taker=0x0000000000000000000000000000000000000001",
+      "status": 401,
+      "body": "{\n  \"message\":\"No API key found in request\",\n  \"request_id\":\"15bdae18966580337f5bf55cd3375d2a\"\n}"
+    },
+    {
+      "url": "https://api.1inch.dev/swap/v6.1/4663/quote?src=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168&dst=0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC&amount=100000000",
+      "status": 401,
+      "body": "{\"success\":false,\"error\":\"Unauthorized\"}"
+    }
+  ]
+}

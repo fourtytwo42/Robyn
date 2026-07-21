@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-07-20T22:52:13.655195+00:00",
+  "chain_id": 4663,
+  "latest_block": 15073832,
+  "methodology": "eth_getLogs from factory creation block through latest block in 100,000-block chunks",
+  "warning": "Raw creation-event counts are not active-token, unique-user, quality, liquidity, or revenue counts.",
+  "results": {
+    "bags": {
+      "address": "0xe8Cc4431adF8b5A847C113EF0c6af9043219Cb37",
+      "abi_address": "0x7dfa0131F6c8626F199A2E33E49DfB5660e6Ef1C",
+      "event": "TokenCreated",
+      "start_block": 7887315,
+      "creation_block": 7887315,
+      "event_topic": "0x643b3b606052cbadac2f906ad0b462da99eda2a1d4f824d315d7f6edd3e4cced",
+      "event_count": 3066
+    },
+    "pons": {
+      "address": "0xA5aAb3F0c6EeadF30Ef1D3Eb997108E976351feB",
+      "event": "TokenLaunched",
+      "start_block": 8991118,
+      "abi_address": "0xA5aAb3F0c6EeadF30Ef1D3Eb997108E976351feB",
+      "creation_block": 8991118,
+      "event_topic": "0xdb51ea9ad51ab453a65a4cb7e60c3cb378c9501bb002609f8f97778fb6c4235a",
+      "event_count": 64602
+    }
+  }
+}

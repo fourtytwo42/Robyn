@@ -1,0 +1,667 @@
+{
+  "generated_at": "2026-07-20T22:47:30.848751+00:00",
+  "warning": "Scenario model only. Values are fee flows, not promised yield or APY.",
+  "formulae": {
+    "gross_daily_rewards_usd": "daily_volume_usd * pool_fee_rate * creator_share * basket_share",
+    "net_daily_rewards_usd": "gross_daily_rewards_usd * (1 - execution_loss_rate)",
+    "illustrative_annual_reward_to_market_cap": "net_daily_rewards_usd * 365 / market_cap_usd"
+  },
+  "excluded": [
+    "token or basket price changes",
+    "gas and keeper costs",
+    "taxes and regulatory costs",
+    "market impact beyond the selected execution-loss scenario",
+    "failed or delayed conversions",
+    "holder dilution and wallet-level holding duration"
+  ],
+  "architectures": {
+    "bags_adapter_max_creator_share": {
+      "pool_fee_bps": 200,
+      "creator_share_bps": 5000,
+      "basket_share_of_creator_bps": 10000,
+      "note": "Bags advertises a 2% swap fee split evenly between protocol and creator; confirm the live deployment and contract-recipient behavior before relying on this.",
+      "gross_reward_capture_bps_of_volume": 100.0,
+      "scenarios": [
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 10.0,
+          "net_daily_rewards_usd": 10.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.073,
+            "250000": 0.0146,
+            "1000000": 0.00365
+          }
+        },
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 10.0,
+          "net_daily_rewards_usd": 9.95,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.072635,
+            "250000": 0.014527,
+            "1000000": 0.003632
+          }
+        },
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 10.0,
+          "net_daily_rewards_usd": 9.8,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.07154,
+            "250000": 0.014308,
+            "1000000": 0.003577
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 100.0,
+          "net_daily_rewards_usd": 100.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.73,
+            "250000": 0.146,
+            "1000000": 0.0365
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 100.0,
+          "net_daily_rewards_usd": 99.5,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.72635,
+            "250000": 0.14527,
+            "1000000": 0.036318
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 100.0,
+          "net_daily_rewards_usd": 98.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.7154,
+            "250000": 0.14308,
+            "1000000": 0.03577
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 1000.0,
+          "net_daily_rewards_usd": 1000.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 7.3,
+            "250000": 1.46,
+            "1000000": 0.365
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 1000.0,
+          "net_daily_rewards_usd": 995.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 7.2635,
+            "250000": 1.4527,
+            "1000000": 0.363175
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 1000.0,
+          "net_daily_rewards_usd": 980.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 7.154,
+            "250000": 1.4308,
+            "1000000": 0.3577
+          }
+        }
+      ]
+    },
+    "pons_adapter": {
+      "pool_fee_bps": 100,
+      "creator_share_bps": 7000,
+      "basket_share_of_creator_bps": 10000,
+      "note": "pons advertises 70% of a 1% trading fee for creators; confirm the live fee-wallet implementation before relying on it.",
+      "gross_reward_capture_bps_of_volume": 70.0,
+      "scenarios": [
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 7.0,
+          "net_daily_rewards_usd": 7.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.0511,
+            "250000": 0.01022,
+            "1000000": 0.002555
+          }
+        },
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 7.0,
+          "net_daily_rewards_usd": 6.96,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.050845,
+            "250000": 0.010169,
+            "1000000": 0.002542
+          }
+        },
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 7.0,
+          "net_daily_rewards_usd": 6.86,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.050078,
+            "250000": 0.010016,
+            "1000000": 0.002504
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 70.0,
+          "net_daily_rewards_usd": 70.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.511,
+            "250000": 0.1022,
+            "1000000": 0.02555
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 70.0,
+          "net_daily_rewards_usd": 69.65,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.508445,
+            "250000": 0.101689,
+            "1000000": 0.025422
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 70.0,
+          "net_daily_rewards_usd": 68.6,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.50078,
+            "250000": 0.100156,
+            "1000000": 0.025039
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 700.0,
+          "net_daily_rewards_usd": 700.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 5.11,
+            "250000": 1.022,
+            "1000000": 0.2555
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 700.0,
+          "net_daily_rewards_usd": 696.5,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 5.08445,
+            "250000": 1.01689,
+            "1000000": 0.254223
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 700.0,
+          "net_daily_rewards_usd": 686.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 5.0078,
+            "250000": 1.00156,
+            "1000000": 0.25039
+          }
+        }
+      ]
+    },
+    "alloy_advertised": {
+      "pool_fee_bps": 100,
+      "creator_share_bps": 7000,
+      "basket_share_of_creator_bps": 10000,
+      "note": "Advertised/repository economics only. The inspected old live factory currently reports 0% drip and 100% creator allocation.",
+      "gross_reward_capture_bps_of_volume": 70.0,
+      "scenarios": [
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 7.0,
+          "net_daily_rewards_usd": 7.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.0511,
+            "250000": 0.01022,
+            "1000000": 0.002555
+          }
+        },
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 7.0,
+          "net_daily_rewards_usd": 6.96,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.050845,
+            "250000": 0.010169,
+            "1000000": 0.002542
+          }
+        },
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 7.0,
+          "net_daily_rewards_usd": 6.86,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.050078,
+            "250000": 0.010016,
+            "1000000": 0.002504
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 70.0,
+          "net_daily_rewards_usd": 70.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.511,
+            "250000": 0.1022,
+            "1000000": 0.02555
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 70.0,
+          "net_daily_rewards_usd": 69.65,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.508445,
+            "250000": 0.101689,
+            "1000000": 0.025422
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 70.0,
+          "net_daily_rewards_usd": 68.6,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.50078,
+            "250000": 0.100156,
+            "1000000": 0.025039
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 700.0,
+          "net_daily_rewards_usd": 700.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 5.11,
+            "250000": 1.022,
+            "1000000": 0.2555
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 700.0,
+          "net_daily_rewards_usd": 696.5,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 5.08445,
+            "250000": 1.01689,
+            "1000000": 0.254223
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 700.0,
+          "net_daily_rewards_usd": 686.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 5.0078,
+            "250000": 1.00156,
+            "1000000": 0.25039
+          }
+        }
+      ]
+    },
+    "vladdy_stock_mode_1pct": {
+      "pool_fee_bps": 100,
+      "creator_share_bps": 7500,
+      "basket_share_of_creator_bps": 10000,
+      "note": "Live V4 platformBps is 25%; stock mode routes the remaining share to a single stock reserve.",
+      "gross_reward_capture_bps_of_volume": 75.0,
+      "scenarios": [
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 7.5,
+          "net_daily_rewards_usd": 7.5,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.05475,
+            "250000": 0.01095,
+            "1000000": 0.002737
+          }
+        },
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 7.5,
+          "net_daily_rewards_usd": 7.46,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.054476,
+            "250000": 0.010895,
+            "1000000": 0.002724
+          }
+        },
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 7.5,
+          "net_daily_rewards_usd": 7.35,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.053655,
+            "250000": 0.010731,
+            "1000000": 0.002683
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 75.0,
+          "net_daily_rewards_usd": 75.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.5475,
+            "250000": 0.1095,
+            "1000000": 0.027375
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 75.0,
+          "net_daily_rewards_usd": 74.62,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.544763,
+            "250000": 0.108952,
+            "1000000": 0.027238
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 75.0,
+          "net_daily_rewards_usd": 73.5,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.53655,
+            "250000": 0.10731,
+            "1000000": 0.026828
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 750.0,
+          "net_daily_rewards_usd": 750.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 5.475,
+            "250000": 1.095,
+            "1000000": 0.27375
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 750.0,
+          "net_daily_rewards_usd": 746.25,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 5.447625,
+            "250000": 1.089525,
+            "1000000": 0.272381
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 750.0,
+          "net_daily_rewards_usd": 735.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 5.3655,
+            "250000": 1.0731,
+            "1000000": 0.268275
+          }
+        }
+      ]
+    },
+    "vladdy_stock_mode_5pct": {
+      "pool_fee_bps": 500,
+      "creator_share_bps": 7500,
+      "basket_share_of_creator_bps": 10000,
+      "note": "High-fee scenario based on the four inspected 5% stock-mode launches; likely creates a major trading-friction tradeoff.",
+      "gross_reward_capture_bps_of_volume": 375.0,
+      "scenarios": [
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 37.5,
+          "net_daily_rewards_usd": 37.5,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.27375,
+            "250000": 0.05475,
+            "1000000": 0.013688
+          }
+        },
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 37.5,
+          "net_daily_rewards_usd": 37.31,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.272381,
+            "250000": 0.054476,
+            "1000000": 0.013619
+          }
+        },
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 37.5,
+          "net_daily_rewards_usd": 36.75,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.268275,
+            "250000": 0.053655,
+            "1000000": 0.013414
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 375.0,
+          "net_daily_rewards_usd": 375.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 2.7375,
+            "250000": 0.5475,
+            "1000000": 0.136875
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 375.0,
+          "net_daily_rewards_usd": 373.12,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 2.723813,
+            "250000": 0.544763,
+            "1000000": 0.136191
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 375.0,
+          "net_daily_rewards_usd": 367.5,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 2.68275,
+            "250000": 0.53655,
+            "1000000": 0.134137
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 3750.0,
+          "net_daily_rewards_usd": 3750.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 27.375,
+            "250000": 5.475,
+            "1000000": 1.36875
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 3750.0,
+          "net_daily_rewards_usd": 3731.25,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 27.238125,
+            "250000": 5.447625,
+            "1000000": 1.361906
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 3750.0,
+          "net_daily_rewards_usd": 3675.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 26.8275,
+            "250000": 5.3655,
+            "1000000": 1.341375
+          }
+        }
+      ]
+    },
+    "robyn_native_reference": {
+      "pool_fee_bps": 100,
+      "creator_share_bps": 7500,
+      "basket_share_of_creator_bps": 10000,
+      "note": "Planning assumption, not a deployed configuration: 1% pool fee and 75% of that fee to holder rewards.",
+      "gross_reward_capture_bps_of_volume": 75.0,
+      "scenarios": [
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 7.5,
+          "net_daily_rewards_usd": 7.5,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.05475,
+            "250000": 0.01095,
+            "1000000": 0.002737
+          }
+        },
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 7.5,
+          "net_daily_rewards_usd": 7.46,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.054476,
+            "250000": 0.010895,
+            "1000000": 0.002724
+          }
+        },
+        {
+          "daily_volume_usd": 1000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 7.5,
+          "net_daily_rewards_usd": 7.35,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.053655,
+            "250000": 0.010731,
+            "1000000": 0.002683
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 75.0,
+          "net_daily_rewards_usd": 75.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.5475,
+            "250000": 0.1095,
+            "1000000": 0.027375
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 75.0,
+          "net_daily_rewards_usd": 74.62,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.544763,
+            "250000": 0.108952,
+            "1000000": 0.027238
+          }
+        },
+        {
+          "daily_volume_usd": 10000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 75.0,
+          "net_daily_rewards_usd": 73.5,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 0.53655,
+            "250000": 0.10731,
+            "1000000": 0.026828
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 0,
+          "gross_daily_rewards_usd": 750.0,
+          "net_daily_rewards_usd": 750.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 5.475,
+            "250000": 1.095,
+            "1000000": 0.27375
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 50,
+          "gross_daily_rewards_usd": 750.0,
+          "net_daily_rewards_usd": 746.25,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 5.447625,
+            "250000": 1.089525,
+            "1000000": 0.272381
+          }
+        },
+        {
+          "daily_volume_usd": 100000,
+          "execution_loss_bps": 200,
+          "gross_daily_rewards_usd": 750.0,
+          "net_daily_rewards_usd": 735.0,
+          "illustrative_annual_reward_to_market_cap": {
+            "50000": 5.3655,
+            "250000": 1.0731,
+            "1000000": 0.268275
+          }
+        }
+      ]
+    }
+  }
+}
