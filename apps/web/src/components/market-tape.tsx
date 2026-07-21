@@ -14,11 +14,22 @@ export async function MarketTape() {
   const launches = await getLaunches().catch(() => null);
   const markets =
     launches?.data.filter((launch) => launch.metrics).slice(0, 8) ?? [];
+  const containsDemoMovement = markets.some(
+    (market) => market.metrics?.priceChangeSource === "demo",
+  );
 
   return (
-    <aside className="market-tape" aria-label="Live reward market tape">
+    <aside
+      className="market-tape"
+      aria-label={
+        containsDemoMovement
+          ? "Demo reward market tape"
+          : "Live reward market tape"
+      }
+    >
       <span className="market-tape-label">
-        <i aria-hidden="true" /> Live reward markets
+        <i aria-hidden="true" />
+        {containsDemoMovement ? "Demo reward markets" : "Live reward markets"}
       </span>
       <div className="market-tape-track">
         {markets.length === 0 ? (
