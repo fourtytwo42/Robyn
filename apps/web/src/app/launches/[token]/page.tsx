@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { LaunchRewardState } from "@/components/launch-reward-state";
 import { SiteHeader } from "@/components/site-header";
 import { getLaunch, getLaunchActivity } from "@/lib/data-api";
+import { TokenArt } from "@/components/launchpad-visuals";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,11 @@ export default async function LaunchDetail({
       <SiteHeader />
       <section className="page-shell">
         <header className="detail-hero">
+          <TokenArt
+            symbol={launch.symbol}
+            className="detail-token-art"
+            priority
+          />
           <div>
             <p className="eyebrow">Canonical launch #{launch.launch_id}</p>
             <h1>

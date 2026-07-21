@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { TokenArt } from "@/components/launchpad-visuals";
 import {
   createPublicClient,
   defineChain,
@@ -287,6 +288,11 @@ export function PortfolioView() {
         <section className="portfolio-grid" aria-label="Cross-launch portfolio">
           {positions.map((position) => (
             <article className="portfolio-card" key={position.launch.token}>
+              <TokenArt
+                symbol={position.launch.symbol}
+                alt=""
+                className="portfolio-token-art"
+              />
               <div className="launch-card-heading">
                 <div>
                   <span className="asset-symbol">{position.launch.symbol}</span>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LaunchRewardState } from "@/components/launch-reward-state";
 import { SiteHeader } from "@/components/site-header";
 import { getLaunches } from "@/lib/data-api";
+import { TokenArt } from "@/components/launchpad-visuals";
 
 export const dynamic = "force-dynamic";
 
@@ -109,6 +110,11 @@ export default async function Discover({
           <section className="discovery-grid" aria-label="Launch discovery">
             {launches.data.map((launch) => (
               <article className="launch-card" key={launch.token}>
+                <TokenArt
+                  symbol={launch.symbol}
+                  alt=""
+                  className="launch-card-art"
+                />
                 <div className="launch-card-heading">
                   <div>
                     <span className="asset-symbol">{launch.symbol}</span>

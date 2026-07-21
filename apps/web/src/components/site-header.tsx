@@ -13,9 +13,7 @@ export function SiteHeader() {
       <nav className="site-nav" aria-label="Primary navigation">
         <Link href="/discover">Discover</Link>
         <Link href="/portfolio">Portfolio</Link>
-        <Link href={isTestnet ? "/#testnet-console" : "/#devnet-console"}>
-          Create
-        </Link>
+        <Link href="/create">Create</Link>
       </nav>
       <span className="network-pill" data-testid="network-status">
         <span className="status-dot" aria-hidden="true" />

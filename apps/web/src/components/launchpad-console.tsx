@@ -13,6 +13,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Deployment } from "@/lib/deployment";
+import { TokenArt } from "@/components/launchpad-visuals";
 
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
 const factoryAbi = [
@@ -579,6 +580,16 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
           }}
           className="launch-form"
         >
+          <div className="launch-art-preview">
+            <TokenArt symbol={symbol} alt="" priority />
+            <div>
+              <strong>Token artwork preview</strong>
+              <span>
+                Known demos use curated art. New launches receive Robyn&apos;s
+                generative fallback until custom metadata is enabled.
+              </span>
+            </div>
+          </div>
           <label>
             Token name
             <input
@@ -641,6 +652,11 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
         <div className="launch-list" aria-label="Launch registry">
           {launches.map((launch) => (
             <article key={launch.token}>
+              <TokenArt
+                symbol={launch.symbol}
+                alt=""
+                className="launch-list-art"
+              />
               <div>
                 <span className="asset-symbol">{launch.symbol}</span>
                 <span className="weight">#{launch.id.toString()}</span>

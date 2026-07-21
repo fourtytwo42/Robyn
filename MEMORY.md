@@ -6,13 +6,16 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
 - Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; no unresolved critical/high defect remains; exact release evidence is pushed; and the final exact candidate completes an uninterrupted 24-hour soak.
-- Current task: push the read-only staging finalization fix, build/promote the replacement exact release, repeat browser/release/backup verification and restart the mandatory uninterrupted 24-hour soak from zero.
-- Last meaningful change: the independent d90e218 audit found dependency executables hardlinked to the shared pnpm store; release construction now copies dependencies and adds writable-path, shared-hardlink and external-symlink rejection.
-- Last verification: 2026-07-21 the b4c4436 full release build passed every functional/security/testnet gate and proved 45,503 regular files with zero writable paths, shared hardlinks or external symlinks in staging. Moving the read-only root across parent directories failed safely and left no target. The finalizer now temporarily restores write permission only on the staging root for rename, removes it on the target and repeats full immutability validation with cleanup on failure; a disposable move test passed.
-- Next step: commit/push the finalizer correction, build/promote/verify a copied-dependency release, repeat browser UAT and backup, then start a new 24-hour soak.
+- Current task: finish and certify the launchpad visual-system redesign on `feat/launchpad-visual-system`; the previous exact-candidate soak was intentionally retired because the user requested a material UI change.
+- Last meaningful change: generated and integrated compressed WebP artwork for ROBYN, MYCO, EVID, ONE, SOAK, mNVDA, mSPY, mETH and the permissionless fallback; added art-rich home/discovery/detail/portfolio/create surfaces and a dedicated `/create` route.
+- Last verification: 2026-07-21 full repository gates and a focused web production build passed; the PM2-persistent preview at VM loopback port 3003 passed in-app-browser desktop and 390x844 visual checks. The redesigned `/create` route created and funded a session wallet, launched PIXEL as canonical launch #8, showed fallback artwork in the registry/discovery and produced no clean-run browser warnings/errors. Windows access uses a local SSH control tunnel to `http://127.0.0.1:3003`; the stable release remains unchanged at `http://192.168.50.250:3000`.
+- Next step: finish clean-browser regression, run the complete VM quality suite, commit/push the visual branch, build/promote a new immutable exact release, repeat backup/recovery gates and start a fresh uninterrupted 24-hour soak.
 - External gates: public testnet ETH and explicit broadcast authorization are needed for an actual Robinhood Testnet transaction; human alert delivery and independent contract review are required before real-value operation.
 
 ## Current State
+- Last verified 2026-07-21: visual redesign work is isolated on `feat/launchpad-visual-system`; exact release `8def270b1856c2bcfcd69d429a8d88def4ab15a8` remains the stable deployed runtime while the preview runs separately under PM2 as `robyn-web-preview` on loopback port 3003.
+- Last verified 2026-07-21: the indexed devnet contains eight real launch records across symbols ROBYN, MYCO, EVID, ONE, SOAK and PIXEL. Home showcase cards bind to real canonical token pages and display immutable basket composition; no fictional change or volume metrics are presented. PIXEL proves the generic fallback art path for unknown permissionless symbols.
+- Last verified 2026-07-21: launchpad art assets live under `apps/web/public/assets/launchpad/`; generated PNG masters remain outside the repository and the production assets are 31-122 KB WebP files. `TokenArt` provides curated demo mappings and a generic permissionless fallback; `BasketAssetArt` covers mNVDA, mSPY and mETH.
 - Last verified 2026-07-21: exact candidate d90e218 was invalidated as the final release after an independent audit found 39 owner-writable regular dependency executables with shared pnpm-store inodes. The soak was stopped cleanly after 191 samples with zero runtime errors; its summary correctly records aborted=true, completedDuration=false and passed=false. A replacement release must use copied dependencies and prove zero writable regular files/directories, shared dependency hardlinks and external symlinks.
 - Last verified 2026-07-21: the copied-dependency b4c4436 artifact passed all release gates and staging immutability validation, but Linux denied moving its non-writable root between staging and releases because the directory's parent entry must change. No release target remained. The corrected sequence validates read-only staging, grants write only to its root for the atomic rename, removes that bit at the target and validates the final tree again; the behavior passed a disposable exact-path test.
 
@@ -178,6 +181,8 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-21: Launchpad visual-system checkpoint - generated nine square masters and committed 31-122 KB WebP derivatives totaling 680 KB for ROBYN, MYCO, EVID, ONE, SOAK, mNVDA, mSPY, mETH and the permissionless fallback. Home, discovery, create, detail, reward, registry and portfolio surfaces now use artwork. Full format/lint/typecheck/test/build passed, including 28 Foundry tests and four 128-run invariants. Clean in-app-browser desktop and 390x844 checks had no overflow or warnings/errors; `/create` funded a session wallet, launched PIXEL as canonical #8 and verified its fallback art in discovery. The stable 8def270 release remained untouched while the PM2 preview ran on loopback port 3003.
+
 - 2026-07-21: PM2 memory-budget soak checkpoint - the first exact 2ba08ef full soak was stopped after nine samples because API and artifact restart totals moved from 4 to 12 while health stayed superficially green. Their measured normal RSS of roughly 278-301 MB exceeded the 256 MB PM2 ceilings. Devnet API/artifact and testnet API/artifact ceilings were raised to a reviewed 384 MB floor, and a release-gated validator now covers names, autorestart and memory floors for all 11 PM2 definitions. A 120-second nine-sample regression soak then passed with zero errors, restart totals 0 to 0, both protocol verifications, zero alerts, healthy resources and 33.14 ms worst endpoint p95.
 
 - 2026-07-21: exact-release browser and soak-gate checkpoint - immutable release a4d9d4d passed post-reboot signed claim and sell, discovery, canonical launch detail and portfolio reconciliation at block 120 with zero browser warnings/errors. Its matching encrypted post-UAT state backup was uploaded as private GitHub release assets. The full soak stopped before sampling on an obsolete discovery-copy assertion; updating the gate to the rendered controlled-development-network label then passed a 20-second five-sample lifecycle with zero errors, unchanged restart count, 38.05 ms worst endpoint p95 and successful initial/final protocol verification. The 24-hour clock must restart on the replacement exact release.
@@ -275,6 +280,15 @@ When sources conflict, use this order:
 - 2026-06-18: `rg -n "agents\.md|memory\.md" .\AGENTS.md` - passed with no matches; confirmed operational instructions use uppercase filenames.
 
 ## Decisions
+
+### 2026-07-21 - Art-Forward Launchpad Visual System
+
+- Context: The first production-shaped UI communicated protocol state well but resembled an infrastructure dashboard and lacked the token artwork, dense market discovery and branded creation flow common to Pump.fun, Bags, Four.meme, pons, DAOS.FUN and other reviewed launchpads.
+- Decision: Keep the dark navy, teal, violet and gold system, but lead with square token art, compact real-market cards, a dedicated `/create` route, visual reward-asset tiles and artwork on detail/portfolio/registry surfaces. Curated demo art maps by token symbol; unknown permissionless symbols use a generic visual fallback until durable custom metadata is implemented.
+- Files: `apps/web/public/assets/launchpad/`, `apps/web/src/components/launchpad-visuals.tsx`, `apps/web/src/app/page.tsx`, `apps/web/src/app/discover/page.tsx`, `apps/web/src/app/create/page.tsx`, `apps/web/src/app/launches/[token]/page.tsx`, `apps/web/src/app/globals.css`.
+- Commands/tests: VM Prettier and web typecheck; Codex in-app-browser desktop and 390x844 checks through the isolated PM2 preview.
+- Result: all seven indexed demo launches have visible artwork via ROBYN, MYCO, EVID, ONE and SOAK mappings; the three reward assets have dedicated visuals; canonical cards link to real launch pages without invented market metrics.
+- Follow-up: implement durable creator-uploaded token metadata as a separately threat-modeled artifact/API feature; do not imply the current fallback is a persisted custom upload.
 
 ### 2026-07-21 - Native Protocol Core Uses Fixed Router And Transfer Corrections
 
@@ -514,6 +528,7 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Implement durable creator-uploaded token metadata only as a separately threat-modeled artifact/API feature with image decoding, content-type validation, size/dimension limits, moderation/reporting, content addressing and canonical token linkage. The current release truthfully uses curated demo mappings plus a generated fallback.
 - Run a real uninterrupted 24-hour soak against the final exact immutable release candidate; short harness tests and forced-build contention do not satisfy this gate.
 - Configure and test a human alert receiver before unattended public-testnet or real-value operation; local Prometheus/Grafana alert state alone is insufficient.
 - Obtain independent protocol/security review before real-value operation. Stateful invariants and malicious callbacks are now implemented, but the internal engineering review is not independent.

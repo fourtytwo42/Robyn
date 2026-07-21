@@ -8,6 +8,10 @@ import {
   type Address,
 } from "viem";
 import { useEffect, useMemo, useState } from "react";
+import {
+  BasketAssetArt,
+  type BasketArtSymbol,
+} from "@/components/launchpad-visuals";
 
 const vaultAbi = [
   {
@@ -163,6 +167,13 @@ export function LaunchRewardState({
     <div className={detailed ? "reward-state detailed" : "reward-state"}>
       {legs.map((leg) => (
         <article key={leg.asset}>
+          {(
+            ["mNVDA", "mSPY", "mETH", "tmNVDA", "tmSPY", "tmETH"] as const
+          ).includes(leg.symbol as "mNVDA") ? (
+            <BasketAssetArt
+              symbol={leg.symbol.replace(/^t/, "") as BasketArtSymbol}
+            />
+          ) : null}
           <div className="reward-leg-heading">
             <strong>{leg.symbol}</strong>
             <span>{leg.weightBps / 100}%</span>

@@ -8,16 +8,31 @@ import {
   getHealthStatus,
 } from "@/lib/health";
 import deployment from "@robyn/deployment";
+import {
+  type BasketArtSymbol,
+  BasketAssetArt,
+  TokenArt,
+} from "@/components/launchpad-visuals";
+import { getLaunches } from "@/lib/data-api";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [gateway, dataPlane] = await Promise.all([
+  const [gateway, dataPlane, launches] = await Promise.all([
     getGatewayHealth(),
     getDataPlaneHealth(),
+    getLaunches(),
   ]);
   const health = getHealthStatus();
   const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
+  const marketShowcase = ["ROBYN", "SOAK", "ONE", "EVID"].flatMap(
+    (symbol) => launches.data.find((launch) => launch.symbol === symbol) ?? [],
+  );
+  const rewardSymbols = ["mNVDA", "mSPY", "mETH"] as const;
+  const rewardAddresses = deployment.contracts.rewardAssets.map((address) =>
+    address.toLowerCase(),
+  );
 
   return (
     <main id="main">
@@ -37,44 +52,109 @@ export default async function Home() {
             distributes the resulting rewards to eligible token holders.
           </p>
           <div className="hero-actions">
-            <a
-              className="button primary"
-              href={isTestnet ? "#testnet-console" : "#devnet-console"}
-            >
-              Try the live flow
-            </a>
-            <span>
+            <Link className="button primary" href="/create">
+              Launch a token
+            </Link>
+            <Link className="button ghost" href="/discover">
+              Explore markets
+            </Link>
+            <span className="hero-network-copy">
               Permissionless launch architecture ·{" "}
               {isTestnet ? "Robinhood Chain Testnet" : "controlled local chain"}
             </span>
           </div>
         </div>
-        <aside className="basket-preview" aria-label="Genesis basket preview">
-          <div className="basket-ring" aria-hidden="true">
-            <span>100%</span>
-            <small>allocated</small>
-          </div>
-          <div>
-            <p className="card-label">Genesis basket</p>
-            <ul>
-              <li>
-                <span className="swatch nvda" />
-                {isTestnet ? "Testnet mock NVIDIA" : "Mock NVIDIA"}{" "}
-                <strong>40%</strong>
-              </li>
-              <li>
-                <span className="swatch cash" />
-                {isTestnet ? "Testnet mock S&P 500" : "Mock S&P 500"}{" "}
-                <strong>40%</strong>
-              </li>
-              <li>
-                <span className="swatch spx" />
-                {isTestnet ? "Testnet mock Ether" : "Mock Ether"}{" "}
-                <strong>20%</strong>
-              </li>
-            </ul>
+        <aside className="hero-token-card" aria-label="Robyn genesis market">
+          <TokenArt symbol="ROBYN" priority />
+          <div className="hero-token-overlay">
+            <span className="hot-chip">Featured</span>
+            <div>
+              <strong>Robyn Genesis</strong>
+              <span>ROBYN</span>
+            </div>
+            <p>Fees flow into a 40 / 40 / 20 reward basket.</p>
           </div>
         </aside>
+      </section>
+
+      <section className="market-radar" aria-labelledby="market-radar-heading">
+        <div className="section-heading launchpad-heading">
+          <div>
+            <p className="eyebrow">Live &amp; rising</p>
+            <h2 id="market-radar-heading">Find your next community.</h2>
+          </div>
+          <Link className="text-link" href="/discover">
+            View all markets →
+          </Link>
+        </div>
+        <div className="market-card-grid">
+          {marketShowcase.map((market) => (
+            <Link
+              className="market-card"
+              href={`/launches/${market.token}`}
+              key={market.token}
+            >
+              <div className="market-art-wrap">
+                <TokenArt
+                  symbol={market.symbol}
+                  alt=""
+                  priority={market.symbol === "ROBYN"}
+                />
+                <span className="demo-badge">Live demo</span>
+              </div>
+              <div className="market-card-copy">
+                <div className="market-title-row">
+                  <div>
+                    <strong>{market.name}</strong>
+                    <span>${market.symbol}</span>
+                  </div>
+                  <span className="market-up">#{market.launch_id}</span>
+                </div>
+                <p>
+                  {market.assets
+                    .map((asset, index) => {
+                      const assetIndex = rewardAddresses.indexOf(
+                        asset.toLowerCase(),
+                      );
+                      return `${rewardSymbols[assetIndex] ?? "asset"} ${(market.weights_bps[index] ?? 0) / 100}%`;
+                    })
+                    .join(" / ")}
+                </p>
+                <div className="market-stats">
+                  <span>Immutable basket</span>
+                  <strong>
+                    {market.assets.length} asset
+                    {market.assets.length === 1 ? "" : "s"}
+                  </strong>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section
+        className="basket-asset-rail"
+        aria-label="Available reward basket assets"
+      >
+        <div className="asset-rail-copy">
+          <p className="eyebrow">Build the basket</p>
+          <h2>Creator fees become assets holders recognize.</h2>
+        </div>
+        {[
+          { symbol: "mNVDA", name: "Mock NVIDIA", weight: "40%" },
+          { symbol: "mSPY", name: "Mock S&P 500", weight: "40%" },
+          { symbol: "mETH", name: "Mock Ether", weight: "20%" },
+        ].map((asset) => (
+          <article className="basket-asset-tile" key={asset.symbol}>
+            <BasketAssetArt symbol={asset.symbol as BasketArtSymbol} />
+            <div>
+              <strong>{asset.symbol}</strong>
+              <span>{asset.name}</span>
+            </div>
+            <b>{asset.weight}</b>
+          </article>
+        ))}
       </section>
 
       <section className="system-strip" aria-label="System status">
