@@ -6,11 +6,11 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
 - Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; lower-level correctness tests pass; no unresolved critical/high defect remains; and the exact release commit and evidence are pushed. Partial, documentation-only, mocked-happy-path-only or unpushed work is not completion.
-- Current task: foundation checkpoint 01 is implemented and under final validation: monorepo, isolated Anvil smoke, fee-basket accounting conservation primitive, and VM-served health page.
-- Last meaningful change: Added pinned pnpm/Turborepo and Next.js 15/React 19 workspaces, an isolated Anvil chain 31337 smoke harness, five Foundry accounting tests including 256 fuzz runs, and a production-built responsive health surface.
-- Files touched: root workspace/toolchain files, `apps/web/`, `packages/contracts/`, `scripts/smoke-anvil.sh`, `README.md`, and `MEMORY.md`.
-- Last verification: 2026-07-21 VM lint/typecheck/Vitest/Foundry/build pass; Anvil smoke passes on isolated chain ID 31337; in-app-browser acceptance passes at desktop/tablet/mobile with correct `robyn-devnet` state and no console warnings/errors.
-- Next step: implement Phase 2 native persistent Anvil, restricted RPC gateway/faucet, and PM2/systemd service persistence, then begin deployable mock asset/factory contracts.
+- Current task: controlled devnet infrastructure checkpoint is implemented and under final repository validation.
+- Last meaningful change: Added systemd-persistent Anvil state, a fail-closed Fastify RPC gateway with rate-limited faucet, PM2/systemd persistence for web/gateway, live chain health in the web UI, and operational documentation.
+- Files touched: `apps/rpc-gateway/`, web health files, `infrastructure/pm2/`, `infrastructure/systemd/`, `scripts/install-anvil-service.sh`, `docs/devnet-operations.md`, workspace dependencies, README and MEMORY.
+- Last verification: 2026-07-21 live gateway allow/deny, 10-dev-ETH faucet, repeat 429, CORS, loopback-only raw RPC, Anvil state restart, PM2 systemd resurrection and in-app-browser recovered-health checks passed.
+- Next step: move faucet limits to native Redis, add TLS/firewall/reverse-proxy and immutable release operation, complete reboot/backup/load evidence, then deploy mock asset/factory/trading contracts.
 - Blockers: Bags/pons compatibility requires funded transactions; anonymous 0x and 1inch quote calls return 401; no public testnet faucet/canonical Stock Token registry was found; current Alloy website source is unverified; no reusable license/repository was found for Vladdy/HoodETF/BASKET.
 
 ## Current State
@@ -75,6 +75,7 @@ When sources conflict, use this order:
 - Last verified 2026-07-20: the VM repository uses `main`; origin is `https://github.com/fourtytwo42/Robyn.git` and GitHub reports the repository visibility as private.
 - Docker/Compose packages were installed before the no-Docker decision, but `docker.service`, `docker.socket` and `containerd.service` are disabled and inactive. They are not part of the project stack; package removal is a separate administrative action.
 - Install PostgreSQL, Redis, MinIO, PM2, monitoring, reverse proxy, self-hosted runner and RPC software natively on the VM only when required by the current implementation slice.
+- Live controlled devnet operations: `docs/devnet-operations.md`. Services are `robyn-anvil.service` and `pm2-hendo420.service`; user RPC is port 8546 and raw privileged RPC is loopback port 8545.
 - Last verified 2026-07-21: Node `24.18.0`, pnpm `11.15.1`, Foundry/Anvil `1.7.1`, Solidity `0.8.30`; run `pnpm install --frozen-lockfile` then `pnpm format && pnpm lint && pnpm typecheck && pnpm test && pnpm build`.
 - The pnpm build-script allowlist permits only pinned transitive Next.js dependencies `sharp` and `unrs-resolver`; do not broaden it without review.
 - Operational reference: `docs/vm-runtime-and-operations.md`.
@@ -157,6 +158,7 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-21: Controlled devnet infrastructure - native Anvil systemd service enabled and active with five-second state persistence; state balance survived restart. Restricted gateway passed 10 unit/integration tests plus live standard-method, privileged-method rejection, fixed faucet funding, repeat-rate-limit, CORS and LAN port-isolation checks. PM2 systemd restart resurrected web and gateway; in-app browser then showed `ok · chain 31337` with no console warnings/errors. Remaining gaps include Redis-backed limits, TLS/firewall, immutable releases, full VM reboot, backups and load/metrics.
 - 2026-07-21: Foundation checkpoint 01 - VM production build passed; Vitest 2/2, Foundry 5/5 including 256 fuzz runs, isolated Anvil chain 31337 smoke, lint, strict typecheck and formatting passed. In-app browser verified the VM URL at 1440x900, 768x1024 and 390x844 with correct `robyn-devnet` status, unique semantic landmarks, no element crossing viewport bounds and no console warnings/errors. Browser testing caught and drove fixes for static environment labeling and mobile wrapping before acceptance.
 - 2026-07-20: Controlled-devnet planning traceability - passed; `python3 scripts/validate-user-stories.py` ran on the VM and reports 154 stories covering 182/182 requirements, including Anvil isolation, browser acceptance and Git checkpoint requirements.
 - 2026-07-20: Initial repository publication - passed; initialized local `main`, committed 105 files as the research/product baseline, created private `fourtytwo42/Robyn`, pushed through the authenticated VM, set `main` as default, and cloned the repository to `/home/hendo420/Robyn`.

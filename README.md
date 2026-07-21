@@ -28,6 +28,7 @@ The Windows checkout is not an execution environment. It is only a convenience m
 | [`packages/contracts/`](packages/contracts/) | Foundry contracts and invariant-focused tests |
 | [`user-stories/`](user-stories/) | Delivery backlog and PRD traceability |
 | [`scripts/`](scripts/) | Reproducible research, validation, market-snapshot, and screenshot tooling |
+| [Controlled devnet operations](docs/devnet-operations.md) | Live Anvil, restricted RPC/faucet and PM2 service operation |
 | [`docs/`](docs/) | VM runtime, operating procedures and delivery roadmaps |
 | [Devnet-to-testnet readiness plan](docs/devnet-to-testnet-readiness-plan.md) | Phase-by-phase implementation, verification and release plan |
 

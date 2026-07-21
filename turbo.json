@@ -15,9 +15,6 @@
     "test": {
       "dependsOn": ["^test"]
     },
-    "typecheck": {
-      "dependsOn": ["^typecheck"],
-      "outputs": ["*.tsbuildinfo"]
-    }
+    "typecheck": { "dependsOn": ["^typecheck"] }
   }
 }

@@ -1,0 +1,34 @@
+[Unit]
+Description=Robyn persistent controlled Anvil devnet
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=robyn
+Group=robyn
+ExecStart=/usr/local/bin/anvil --host 127.0.0.1 --port 8545 --chain-id 31337 --accounts 10 --balance 10000 --state /var/lib/robyn/anvil/state.json --state-interval 5 --silent
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=30
+KillSignal=SIGTERM
+WorkingDirectory=/var/lib/robyn/anvil
+
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+ReadWritePaths=/var/lib/robyn/anvil
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

@@ -1,9 +1,14 @@
-import { foundationChecks, getHealthStatus } from "@/lib/health";
+import {
+  foundationChecks,
+  getGatewayHealth,
+  getHealthStatus,
+} from "@/lib/health";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-export default function Home() {
+export default async function Home() {
+  const gateway = await getGatewayHealth();
   const health = getHealthStatus();
 
   return (
@@ -48,8 +53,13 @@ export default function Home() {
               <dd>{health.environment}</dd>
             </div>
           </dl>
+          <div>
+            <dt>RPC gateway</dt>
+            <dd data-testid="rpc-status">
+              {gateway.status} · chain {gateway.chainId}
+            </dd>
+          </div>
         </div>
-
         <ul className="check-grid" aria-label="Foundation checks">
           {foundationChecks.map((check, index) => (
             <li key={check}>
