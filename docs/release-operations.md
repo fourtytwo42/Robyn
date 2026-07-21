@@ -25,10 +25,10 @@ The builder:
 
 - runs formatting, lint, typecheck, all tests, production build, traceability, static security, full chain-46630 transaction journey and isolated five-service testnet rehearsal gates;
 - archives the exact Git commit instead of copying the mutable checkout;
-- installs the frozen pnpm lockfile and rebuilds inside staging;
+- installs the frozen pnpm lockfile with dependency copies rather than links to the shared pnpm store, then rebuilds inside staging;
 - records source, lock, dependency, migration, build and gate hashes;
 - writes `release-manifest.json`, `release-files.sha256` and retained gate evidence; and
-- removes write permission before moving the result into `/opt/robyn/releases/<git-sha>`.
+- removes write permission and rejects writable files/directories, shared dependency hardlinks or external symlinks before accepting `/opt/robyn/releases/<git-sha>`.
 
 Runtime never invokes pnpm from a release. PM2 executes the pinned Node binary and built entrypoints directly; the artifact wrapper only loads its protected service environment before executing Node. This keeps dependency tooling from attempting writes inside the read-only artifact.
 

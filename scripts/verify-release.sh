@@ -12,6 +12,11 @@ release_real="$(readlink -f "${release_path}")"
   exit 1
 }
 
+jq -e '.packageImportMethod == "copy" and (.gates | index("immutability-validator") != null)' "${release_real}/release-manifest.json" >/dev/null || {
+  echo "release manifest does not attest copied dependencies and immutability validation" >&2
+  exit 1
+}
+immutability_json="$("${release_real}/scripts/verify-release-immutability.sh" "${release_real}")"
 (
   cd "${release_real}"
   sha256sum -c release-manifest.json.sha256 >/dev/null
@@ -47,11 +52,13 @@ jq -n \
   --arg chainBlock "${chain_block}" \
   --argjson status "${status_json}" \
   --argjson appCount "${app_count}" \
+  --argjson immutability "${immutability_json}" \
   '{
     verifiedAt: $verifiedAt,
     releasePath: $releasePath,
     gitSha: $gitSha,
     appCount: $appCount,
     chainBlock: $chainBlock,
-    status: $status
+    status: $status,
+    immutability: $immutability
   }'

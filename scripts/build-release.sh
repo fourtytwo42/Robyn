@@ -22,6 +22,7 @@ testnet_stack_json="/tmp/robyn-testnet-stack-$$.json"
 cleanup() {
   rm -f "${security_json}" "${gate_log}" "${archive}" "${testnet_journey_json}" "${testnet_stack_json}"
   if [[ -d "${staging}" ]]; then
+    chmod -R u+w "${staging}" 2>/dev/null || true
     rm -rf "${staging}"
   fi
 }
@@ -52,6 +53,7 @@ trap cleanup EXIT
   pnpm format
   pnpm lint
   node scripts/validate-pm2-config.mjs
+  scripts/test-release-immutability.sh
   pnpm typecheck
   pnpm test
   pnpm build
@@ -72,7 +74,7 @@ cp "${testnet_stack_json}" "${staging}/release-evidence/testnet-stack.json"
 
 (
   cd "${staging}"
-  pnpm install --frozen-lockfile
+  pnpm install --frozen-lockfile --package-import-method=copy
   pnpm build
   pnpm list --depth Infinity --json > release-evidence/dependencies.json
 
@@ -113,15 +115,17 @@ cp "${testnet_stack_json}" "${staging}/release-evidence/testnet-stack.json"
       dependenciesSha256: $dependenciesSha256,
       nodeVersion: $nodeVersion,
       pnpmVersion: $pnpmVersion,
+      packageImportMethod: "copy",
       migrations: $migrations,
-      gates: ["format", "lint", "pm2-config", "typecheck", "test", "build", "traceability", "security-audit", "testnet-journey", "testnet-stack"]
+      gates: ["format", "lint", "pm2-config", "immutability-validator", "typecheck", "test", "build", "traceability", "security-audit", "testnet-journey", "testnet-stack"]
     }' > release-manifest.json
   sha256sum release-manifest.json > release-manifest.json.sha256
 )
 
+chmod -R a-w "${staging}"
+"${staging}/scripts/verify-release-immutability.sh" "${staging}"
 mv "${staging}" "${target}"
 staging=""
-chmod -R a-w "${target}"
 
 printf 'release=%s\n' "${target}"
 printf 'gitSha=%s\n' "${git_sha}"
