@@ -8,6 +8,7 @@ import { RobynLaunchToken } from "../src/RobynLaunchToken.sol";
 import { FeeBasketVault, IRobynConversionRouter } from "../src/FeeBasketVault.sol";
 import { RobynLaunchFactory } from "../src/RobynLaunchFactory.sol";
 import { DevnetFixedPriceMarket } from "../src/devnet/DevnetFixedPriceMarket.sol";
+import { DevnetMockERC20 } from "../src/devnet/DevnetMockERC20.sol";
 
 contract ProtocolMockERC20 is ERC20 {
     uint16 public feeBps;
@@ -282,6 +283,17 @@ contract RobynProtocolTest {
         require(excludedToken.withdrawableRewardOf(address(inventory), 0) == 0, "inventory reward");
         try factory.sealLaunchExclusions(excludedToken, exclusions) {
             revert("reseal accepted");
+        } catch { }
+    }
+
+    function testDevnetBaseFaucetClaimsOncePerAddress() public {
+        DevnetMockERC20 faucetToken =
+            new DevnetMockERC20("Faucet", "FAU", address(this), 10_000 ether);
+        ProtocolActor recipient = new ProtocolActor();
+        faucetToken.claimFaucet(address(recipient));
+        require(faucetToken.balanceOf(address(recipient)) == 10_000 ether, "faucet balance");
+        try faucetToken.claimFaucet(address(recipient)) {
+            revert("duplicate faucet");
         } catch { }
     }
 

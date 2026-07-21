@@ -44,10 +44,10 @@ send_transaction() {
     jq -e '.status == "0x1" or .status == 1' >/dev/null
 }
 
-base="$(deploy_contract src/devnet/DevnetMockERC20.sol:DevnetMockERC20 "Mock USD" "mUSD" "$deployer")"
-nvda="$(deploy_contract src/devnet/DevnetMockERC20.sol:DevnetMockERC20 "Mock NVIDIA" "mNVDA" "$deployer")"
-spy="$(deploy_contract src/devnet/DevnetMockERC20.sol:DevnetMockERC20 "Mock S&P 500" "mSPY" "$deployer")"
-eth_reward="$(deploy_contract src/devnet/DevnetMockERC20.sol:DevnetMockERC20 "Mock Ether" "mETH" "$deployer")"
+base="$(deploy_contract src/devnet/DevnetMockERC20.sol:DevnetMockERC20 "Mock USD" "mUSD" "$deployer" "10000000000000000000000")"
+nvda="$(deploy_contract src/devnet/DevnetMockERC20.sol:DevnetMockERC20 "Mock NVIDIA" "mNVDA" "$deployer" "0")"
+spy="$(deploy_contract src/devnet/DevnetMockERC20.sol:DevnetMockERC20 "Mock S&P 500" "mSPY" "$deployer" "0")"
+eth_reward="$(deploy_contract src/devnet/DevnetMockERC20.sol:DevnetMockERC20 "Mock Ether" "mETH" "$deployer" "0")"
 router="$(deploy_contract src/devnet/DevnetConversionRouter.sol:DevnetConversionRouter "$deployer")"
 factory="$(deploy_contract src/RobynLaunchFactory.sol:RobynLaunchFactory "$base" "$router" "1000000000000000000" "86400")"
 

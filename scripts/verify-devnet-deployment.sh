@@ -43,6 +43,7 @@ test "$(cast call "$vault" "baseAsset()(address)" --rpc-url "$rpc_url" | tr '[:u
 test "$(cast call "$vault" "conversionRouter()(address)" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$router" | tr '[:upper:]' '[:lower:]')"
 test "$(cast call "$token" "exclusionsSealed()(bool)" --rpc-url "$rpc_url")" = "true"
 test "$(cast call "$token" "isExcluded(address)(bool)" "$market" --rpc-url "$rpc_url")" = "true"
+test "$(cast call "$base" "faucetAmount()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "10000000000000000000000"
 test "$(cast call "$vault" "legCount()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "3"
 pending="$(cast call "$vault" "totalPendingBase()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')"
 consumed="$(cast call "$vault" "totalBaseConsumed()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')"
