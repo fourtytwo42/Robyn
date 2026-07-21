@@ -6,11 +6,11 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
 - Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; lower-level correctness tests pass; no unresolved critical/high defect remains; and the exact release commit and evidence are pushed. Partial, documentation-only, mocked-happy-path-only or unpushed work is not completion.
-- Current task: the persistent shared-devnet protocol and browser-operated genesis trade-to-claim journey are complete; permissionless user-created launch, discovery and token-detail work is next.
-- Last meaningful change: Added and deployed the self-service DevnetMarketFactory, which lets each recorded creator deploy exactly one fixed-policy market. The current verified manifest is block 74 from commit d31c68f.
-- Files touched: web application, exact viem dependency/lockfile, deployment manifest, protocol/devnet operations docs, README and MEMORY.
-- Last verification: 2026-07-21 in-app-browser LAN UAT created and funded a new session wallet, bought 990,000 ROBYN, observed 4/4/2 mUSD pending weights, converted all legs, claimed three reward assets, sold 100,000 ROBYN and retained balances/rewards after page reload. Mobile 390x844 had no horizontal overflow.
-- Next step: make launch creation self-service and deploy a market per launch, then add registry-driven discovery/token detail UX and the native data/operations plane.
+- Current task: the persistent protocol, permissionless browser launch, registry, trade, conversion and claim journeys are complete; dedicated discovery/detail UX and the production data/operations plane are next.
+- Last meaningful change: Added the guided creator workflow for immutable 1-3 asset baskets, token/vault deployment, one-market deployment, liquidity seeding and exclusion sealing, plus registry buy/sell/convert/claim actions.
+- Files touched: web application, controlled-devnet deployment/contracts, protocol/devnet operations docs, README and MEMORY.
+- Last verification: 2026-07-21 in-app-browser LAN UAT launched MYCO as launch #2, then created/funded a separate holder wallet that bought 990,000 MYCO, converted exact 4/4/2 mUSD legs, claimed all three assets and sold 10,000 MYCO. Onchain balances confirmed 980,000 MYCO plus nonzero mNVDA/mSPY/mETH; mobile 390x844 had no horizontal overflow.
+- Next step: add dedicated discovery/token-detail/portfolio UX and a native PostgreSQL/Redis-backed data plane, then complete release hardening, recovery, monitoring and testnet rehearsal.
 - Blockers: Bags/pons compatibility requires funded transactions; anonymous 0x and 1inch quote calls return 401; no public testnet faucet/canonical Stock Token registry was found; current Alloy website source is unverified; no reusable license/repository was found for Vladdy/HoodETF/BASKET.
 
 ## Current State
@@ -159,6 +159,7 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-21: Permissionless browser launch UAT - a session creator launched and seeded MYCO with a 40/40/20 basket as registry launch #2. A distinct session holder funded, bought 990,000 MYCO, generated and converted exact 4/4/2 mUSD legs, claimed 7,904,349,388,211,341 mNVDA, 15,808,698,776,422,683 mSPY and 11,856,524,082,317,012 mETH units, then sold 10,000 MYCO. The mobile 390x844 registry had no horizontal overflow.
 - 2026-07-21: Self-service market factory - added DevnetMarketFactory so each recorded launch creator can permissionlessly deploy exactly one fixed-policy controlled-devnet market without bundling deployment bytecode in the browser. Contract suite passes 21 tests. Deployment block 74 from d31c68f includes the market factory, and live verification confirms its factory/market registry links plus genesis accounting.
 - 2026-07-21: Browser genesis journey - in-app-browser LAN UAT created a session-only wallet, received 10 DEV and 10,000 mUSD, bought 990,000 ROBYN, observed exact 4/4/2 fee weights, converted all legs, claimed mNVDA/mSPY/mETH, sold 100,000 ROBYN and recovered the 890,000-token and reward state after reload. The 390x844 layout had no horizontal overflow. Next.js production build, strict typecheck and web tests passed.
 - 2026-07-21: Devnet faucet fixture and current deployment - 20 Foundry tests passed. The mock base asset permits one 10,000-unit claim per address while reward-asset faucets are disabled. The persistent block-45 deployment manifest and verifier enforce that policy.

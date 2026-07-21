@@ -19,6 +19,8 @@ export type Deployment = {
   contracts: {
     baseAsset: Address;
     rewardAssets: Address[];
+    factory: Address;
+    marketFactory: Address;
     genesisToken: Address;
     genesisVault: Address;
     genesisMarket: Address;
@@ -307,12 +309,14 @@ export function DevnetConsole({ deployment }: { deployment: Deployment }) {
     const key = generatePrivateKey();
     window.sessionStorage.setItem("robyn-devnet-session-key", key);
     setPrivateKey(key);
+    window.dispatchEvent(new Event("robyn-wallet-change"));
     setStatus("Session wallet created. Fund it with dev-only assets.");
   }
 
   function resetWallet() {
     window.sessionStorage.removeItem("robyn-devnet-session-key");
     setPrivateKey(undefined);
+    window.dispatchEvent(new Event("robyn-wallet-change"));
     setState(emptyState);
     setStatus("Session wallet cleared from this browser session.");
   }

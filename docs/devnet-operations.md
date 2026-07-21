@@ -123,6 +123,6 @@ Last verified 2026-07-21: the current manifest records the self-service-market d
 - Promote immutable releases instead of running from the checkout.
 - Add generation/reset tooling and off-VM state backup.
 - Add gateway load/soak tests, structured metrics and alerts.
-- Extend the verified session-wallet genesis trade/convert/claim journey to permissionless user-created launches, discovery and token detail pages.
+- Extend the verified permissionless launch registry and inline market actions into dedicated discovery, token-detail, portfolio and transaction-history pages backed by the production data plane.
 
 These gaps keep the active production-readiness goal open.

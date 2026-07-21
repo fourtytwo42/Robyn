@@ -1,4 +1,5 @@
 import { DevnetConsole, type Deployment } from "@/components/devnet-console";
+import { LaunchpadConsole } from "@/components/launchpad-console";
 import { getGatewayHealth, getHealthStatus } from "@/lib/health";
 import Link from "next/link";
 import deployment from "../../../../deployments/31337.json";
@@ -88,6 +89,7 @@ export default async function Home() {
         </div>
       </section>
 
+      <LaunchpadConsole deployment={deployment as Deployment} />
       <DevnetConsole deployment={deployment as Deployment} />
 
       <section className="notice" aria-label="Development disclaimer">
