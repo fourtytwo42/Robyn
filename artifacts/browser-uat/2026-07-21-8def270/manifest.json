@@ -85,6 +85,15 @@
     "baselineFiringAlerts": 0,
     "releaseGitSha": "8def270b1856c2bcfcd69d429a8d88def4ab15a8"
   },
+  "closureTooling": {
+    "independentSoakAuditor": "scripts/audit-soak-evidence.mjs",
+    "postRebootAuditor": "scripts/audit-recovery-state.sh",
+    "preRebootBootId": "61d23088-ad4b-4430-a0ad-5eab296d9550",
+    "recoveryRehearsalPassed": true,
+    "sameBootRejected": true,
+    "activeSoakRejectedInFinalMode": true,
+    "nonRootExecutionRejected": true
+  },
   "warningOrErrorLogs": 0,
   "passed": true,
   "notes": [

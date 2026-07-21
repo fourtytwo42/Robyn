@@ -108,6 +108,16 @@ The auditor independently rejects malformed/error samples, SHA/path/process drif
 8. Tag and push the proven 8def270 runtime commit.
 9. Verify remote branch and tag SHAs, then perform one final requirement-by-requirement audit before closing the goal.
 
+The pre-reboot boot ID is preserved as `61d23088-ad4b-4430-a0ad-5eab296d9550`. After reboot, the machine gate must pass without rehearsal overrides:
+
+```bash
+sudo scripts/audit-recovery-state.sh \
+  --expected-sha 8def270b1856c2bcfcd69d429a8d88def4ab15a8 \
+  --previous-boot-id 61d23088-ad4b-4430-a0ad-5eab296d9550
+```
+
+The auditor verifies a changed boot ID, inactive completed soak, zero failed units, all required enabled/active native services and timers, disabled/inactive container services, exact immutable release verification, six online zero-restart exact-path PM2 apps, deployed protocol conservation, preserved chain/index/launch/log state, healthy web/API/RPC/artifact/Prometheus endpoints, two healthy scrape targets, zero alerts, exact LAN listeners, loopback-only internal listeners and the exact four subnet-scoped UFW rules. Its current-state rehearsal passes only with explicit same-boot/active-soak overrides; final mode correctly rejects the current boot, active soak and non-root execution.
+
 ## External gates after this milestone
 
 - Actual Robinhood Testnet broadcast requires explicit user authorization, current chain/address revalidation and funded testnet ETH.

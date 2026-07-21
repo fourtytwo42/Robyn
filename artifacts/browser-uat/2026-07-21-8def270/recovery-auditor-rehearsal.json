@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-07-21T11:51:08Z",
+  "expectedSha": "8def270b1856c2bcfcd69d429a8d88def4ab15a8",
+  "expectedRelease": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8",
+  "previousBootId": "61d23088-ad4b-4430-a0ad-5eab296d9550",
+  "bootId": "61d23088-ad4b-4430-a0ad-5eab296d9550",
+  "rebootProven": false,
+  "rehearsalOverrides": {
+    "allowSameBoot": true,
+    "allowActiveSoak": true
+  },
+  "soakState": "active",
+  "failedUnits": 0,
+  "activeEnabledServices": [
+    "grafana-server.service",
+    "minio.service",
+    "nginx.service",
+    "pm2-hendo420.service",
+    "postgresql.service",
+    "postgresql@16-main.service",
+    "prometheus-node-exporter.service",
+    "prometheus.service",
+    "redis-server.service",
+    "robyn-anvil.service"
+  ],
+  "activeEnabledTimers": [
+    "robyn-backup.timer",
+    "robyn-metrics-collector.timer"
+  ],
+  "containerServicesDisabled": true,
+  "releaseVerification": {
+    "verifiedAt": "2026-07-21T11:51:08Z",
+    "releasePath": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8",
+    "gitSha": "8def270b1856c2bcfcd69d429a8d88def4ab15a8",
+    "appCount": 6,
+    "chainBlock": "0xb4",
+    "status": {
+      "service": "robyn-api",
+      "chainId": 31337,
+      "asOfBlock": "180",
+      "indexedAt": "2026-07-21 11:51:06.626669+00",
+      "launchCount": "6",
+      "rawLogCount": "573",
+      "formulaVersion": "native-v1",
+      "keeperStatus": "ok",
+      "keeperUpdatedAt": "2026-07-21 11:51:03.876837+00",
+      "artifactStatus": "ok",
+      "artifactUpdatedAt": "2026-07-21 11:51:02.964163+00"
+    },
+    "immutability": {
+      "schemaVersion": 1,
+      "releasePath": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8",
+      "writablePaths": 0,
+      "sharedHardlinks": 0,
+      "externalSymlinks": 0,
+      "regularFiles": 45503,
+      "symlinks": 1755,
+      "passed": true
+    }
+  },
+  "pm2": [
+    {
+      "name": "robyn-web",
+      "status": "online",
+      "restartCount": 0,
+      "cwd": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8/apps/web"
+    },
+    {
+      "name": "robyn-rpc-gateway",
+      "status": "online",
+      "restartCount": 0,
+      "cwd": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8"
+    },
+    {
+      "name": "robyn-api",
+      "status": "online",
+      "restartCount": 0,
+      "cwd": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8"
+    },
+    {
+      "name": "robyn-indexer",
+      "status": "online",
+      "restartCount": 0,
+      "cwd": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8"
+    },
+    {
+      "name": "robyn-keeper",
+      "status": "online",
+      "restartCount": 0,
+      "cwd": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8"
+    },
+    {
+      "name": "robyn-artifacts",
+      "status": "online",
+      "restartCount": 0,
+      "cwd": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8"
+    }
+  ],
+  "chainBlock": 180,
+  "indexedStatus": {
+    "service": "robyn-api",
+    "chainId": 31337,
+    "asOfBlock": "180",
+    "indexedAt": "2026-07-21 11:51:06.626669+00",
+    "launchCount": "6",
+    "rawLogCount": "573",
+    "formulaVersion": "native-v1",
+    "keeperStatus": "ok",
+    "keeperUpdatedAt": "2026-07-21 11:51:03.876837+00",
+    "artifactStatus": "ok",
+    "artifactUpdatedAt": "2026-07-21 11:51:02.964163+00"
+  },
+  "healthyPrometheusTargets": 2,
+  "firingAlerts": 0,
+  "expectedLanListeners": [
+    22,
+    3000,
+    3100,
+    8546
+  ],
+  "loopbackOnlyListeners": [
+    3001,
+    3002,
+    3101,
+    3200,
+    5432,
+    6379,
+    8545,
+    8547,
+    9000,
+    9090,
+    9100
+  ],
+  "ufwActiveWithExactLanRules": true,
+  "passed": true
+}
