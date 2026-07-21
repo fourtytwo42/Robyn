@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "evidenceType": "in-app-browser-release-uat",
+  "capturedAt": "2026-07-21T10:28:00Z",
+  "releaseGitSha": "d90e2187afcf278cdc5d49acaf20f3c23d8ac72a",
+  "releasePath": "/opt/robyn/releases/d90e2187afcf278cdc5d49acaf20f3c23d8ac72a",
+  "baseUrl": "http://192.168.50.250:3000/",
+  "chainId": 31337,
+  "browserSurface": "Codex in-app Browser",
+  "wallet": "0x23954C7FF3F751cf3C6f2bce085e7A59F937E110",
+  "journey": {
+    "anonymousPortfolio": true,
+    "sessionWalletCreated": true,
+    "walletFunded": true,
+    "genesisBuy": true,
+    "pendingWeightedFeesObserved": true,
+    "permissionlessThreeAssetLaunch": true,
+    "feesConverted": true,
+    "threeRewardAssetsClaimed": true,
+    "genesisSell": true,
+    "portfolioReconciled": true,
+    "consoleWarningsOrErrors": 0
+  },
+  "observedState": {
+    "launchName": "Evidence Basket",
+    "launchSymbol": "EVID",
+    "launchToken": "0xF8698093ef2a86718040fabcacaf8bf556911301",
+    "launchCount": 3,
+    "genesisBalanceAfterSell": "890000 ROBYN",
+    "claimedRewards": {
+      "mNVDA": "0.00865",
+      "mSPY": "0.0173",
+      "mETH": "0.01297"
+    },
+    "indexedBlock": 144
+  },
+  "screenshots": [
+    "portfolio-anonymous-desktop.jpg",
+    "pending-fees-desktop.jpg",
+    "permissionless-launch-desktop.jpg",
+    "claimed-sold-desktop.jpg",
+    "portfolio-signed-desktop.jpg"
+  ],
+  "domSnapshots": [
+    "pending-fees.dom.txt",
+    "permissionless-launch.dom.txt",
+    "converted.dom.txt",
+    "claimed-sold.dom.txt",
+    "portfolio.dom.txt"
+  ],
+  "transactionEvidence": "transactions.json",
+  "receiptEvidence": "receipts.json",
+  "consoleEvidence": "console.json",
+  "notes": [
+    "Screenshots are JPEG bytes captured directly from the in-app browser at its 1265-pixel desktop surface.",
+    "No private key, recovery material, browser storage dump or provider credential is included.",
+    "The final 24-hour soak summary will be added only after the uninterrupted gate completes."
+  ],
+  "transactionActions": [
+    "fund faucet",
+    "approve base for genesis buy",
+    "buy genesis",
+    "create launch",
+    "create market",
+    "approve launch token for seed",
+    "approve base for seed",
+    "seed market",
+    "seal launch exclusions",
+    "claim all genesis rewards",
+    "approve genesis token for sell",
+    "sell genesis"
+  ],
+  "keeperConversionEvidence": "keeper-conversions.json",
+  "keeperConversionReceiptEvidence": "keeper-conversion-receipts.json"
+}
