@@ -108,6 +108,23 @@ The auditor independently rejects malformed/error samples, SHA/path/process drif
 8. Tag and push the proven 8def270 runtime commit.
 9. Verify remote branch and tag SHAs, then perform one final requirement-by-requirement audit before closing the goal.
 
+Steps 1 and 2 must use the fail-closed preservation command after systemd reports
+the soak inactive:
+
+```bash
+node scripts/finalize-soak-evidence.mjs \
+  --samples /var/lib/robyn/soak/8def270b1856c2bcfcd69d429a8d88def4ab15a8/soak-20260721T114242706Z.jsonl \
+  --summary /var/lib/robyn/soak/8def270b1856c2bcfcd69d429a8d88def4ab15a8/soak-20260721T114242706Z-summary.json \
+  --expected-sha 8def270b1856c2bcfcd69d429a8d88def4ab15a8 \
+  --expected-release /opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8 \
+  --evidence-dir artifacts/browser-uat/2026-07-21-8def270
+```
+
+It refuses an active or unknown soak state, reruns the independent final auditor,
+refuses to overwrite prior closure artifacts, preserves the raw stream as
+`soak-final-samples.jsonl`, and verifies the source/destination sample and summary
+digests. Its active-soak negative path was exercised and created no final evidence.
+
 The final browser package must be independently bound to the live chain before it
 is accepted:
 
@@ -171,7 +188,7 @@ node scripts/verify-final-readiness.mjs \
   --evidence-dir artifacts/browser-uat/2026-07-21-8def270
 ```
 
-`closure-requirements.json` fixes the exact release SHA/path, Node/pnpm versions, copied-dependency mode, four migration hashes, eleven release gates, evidence branch, annotated tag, allowed final audit statuses and required soak, reboot, browser and backup evidence contracts. The verifier recomputes the lock, release-tree manifest and release-manifest sidecar hashes directly from the immutable artifact and requires the format, lint, PM2 policy, immutability, typecheck, test, build, traceability, security, testnet journey and isolated testnet-stack gates. It also requires at least 5,759 clean soak samples and 86,400 elapsed seconds, the full zero-restart/monotonic independent audit, ten recovered services/two timers/six PM2 apps, every post-reboot fund/buy/weighted-fee/convert/race/claim/sell/discovery/detail/portfolio browser step, at least eight successful live-matched receipts, three listed/nontrivial DOM snapshots, empty logs, and an encrypted off-VM backup restored across nine tables, one artifact and chain 31337 without touching live state. During the active soak it correctly reports all remaining blockers and exits nonzero. `scripts/test-final-readiness-verifier.mjs` constructs an isolated exact-release Git publication and evidence package that passes all 129 checks with zero blockers, then proves a tampered live-receipt count is rejected. Final closure requires the real package to achieve the same result, including exact remote main and annotated `v0.1.0-rc.1` tag pointing to 8def270.
+`closure-requirements.json` fixes the exact release SHA/path, Node/pnpm versions, copied-dependency mode, four migration hashes, eleven release gates, evidence branch, annotated tag, allowed final audit statuses and required soak, reboot, browser and backup evidence contracts. The verifier recomputes the lock, release-tree manifest and release-manifest sidecar hashes directly from the immutable artifact and requires the format, lint, PM2 policy, immutability, typecheck, test, build, traceability, security, testnet journey and isolated testnet-stack gates. It also requires the preserved raw stream with at least 5,759 clean soak samples and 86,400 elapsed seconds, the full zero-restart/monotonic independent audit, ten recovered services/two timers/six PM2 apps, every post-reboot fund/buy/weighted-fee/convert/race/claim/sell/discovery/detail/portfolio browser step, at least eight successful live-matched receipts, three listed/nontrivial DOM snapshots, empty logs, and an encrypted off-VM backup restored across nine tables, one artifact and chain 31337 without touching live state. During the active soak it correctly reports all remaining blockers and exits nonzero. `scripts/test-final-readiness-verifier.mjs` constructs an isolated exact-release Git publication and evidence package that passes all 130 checks with zero blockers, then proves a tampered live-receipt count is rejected. Final closure requires the real package to achieve the same result, including exact remote main and annotated `v0.1.0-rc.1` tag pointing to 8def270.
 
 ## External gates after this milestone
 

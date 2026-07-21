@@ -88,6 +88,7 @@
   },
   "closureTooling": {
     "independentSoakAuditor": "scripts/audit-soak-evidence.mjs",
+    "finalSoakEvidencePreserver": "scripts/finalize-soak-evidence.mjs",
     "postRebootAuditor": "scripts/audit-recovery-state.sh",
     "browserEvidenceAuditor": "scripts/audit-browser-evidence.mjs",
     "backupEvidenceCollector": "scripts/collect-backup-evidence.mjs",

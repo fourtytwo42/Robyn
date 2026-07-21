@@ -170,8 +170,8 @@ try {
   if (!success.passed || success.completionPending || success.blockers.length !== 0) {
     throw new Error(`Complete fixture did not pass: ${JSON.stringify(success.blockers)}`);
   }
-  if (success.checks.length !== 129 || !success.checks.every((check) => check.passed)) {
-    throw new Error(`Expected 129 passing checks, got ${success.checks.length}`);
+  if (success.checks.length !== 130 || !success.checks.every((check) => check.passed)) {
+    throw new Error(`Expected 130 passing checks, got ${success.checks.length}`);
   }
 
   const browserAuditPath = path.join(evidenceDir, "post-reboot-browser-independent-audit.json");

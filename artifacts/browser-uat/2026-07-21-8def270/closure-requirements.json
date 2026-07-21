@@ -34,6 +34,10 @@
       ]
     },
     {
+      "file": "soak-final-samples.jsonl",
+      "kind": "text"
+    },
+    {
       "file": "soak-final-summary.json",
       "kind": "json",
       "assertions": [
