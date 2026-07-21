@@ -4,12 +4,12 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
-- Current task: Project VM `robyn` at `192.168.50.250` is fully provisioned and GitHub CLI is authenticated as `fourtytwo42`.
-- Last meaningful change: Completed GitHub CLI device authorization and configured Git HTTPS credential handling through `gh auth git-credential`.
-- Files touched: `prd/00-product-brief-and-decisions.md`, `prd/05-platform-data-and-infrastructure.md`, `prd/07-delivery-plan-and-acceptance.md`, `prd/10-technology-stack-and-repository-architecture.md`, `prd/README.md`, `user-stories/10-technology-stack-and-developer-platform.md`, `user-stories/README.md`, `user-stories/TRACEABILITY.md`, `scripts/validate-user-stories.py`, `README.md`, `MEMORY.md`.
+- Current task: Initial private GitHub repository `fourtytwo42/Robyn` is published with `main` as the default branch and cloned to `/home/hendo420/Robyn` on the project VM.
+- Last meaningful change: Created the repository README/ignore/line-ending baseline, committed the full research/PRD/story corpus, and pushed it to GitHub.
+- Files touched: `.gitattributes`, `.gitignore`, `README.md`, `user-stories/TRACEABILITY.md`, `MEMORY.md`, and repository Git metadata.
 - Last verification: 2026-07-20 VM root reports 60.8 GiB with 49.9 GiB available; Git 2.43.0, GitHub CLI 2.96.0, Node 24.18.0, npm 11.16.0, pnpm 11.15.1, Python 3.12.3, Docker 29.6.2, Compose 5.3.1, Buildx 0.35.0 and Foundry 1.7.1 all execute. Docker is active, enabled and usable by `hendo420` without sudo.
-- Next step: Initialize or connect the intended GitHub repository on the VM, then review/prioritize R0 and Milestone 1 stories.
-- Blockers: Bags/pons compatibility requires funded transactions; anonymous 0x and 1inch quote calls return 401; no public testnet faucet/canonical Stock Token registry was found; current Alloy website source is unverified; no reusable license/repository was found for Vladdy/HoodETF/BASKET; this folder is not a git repository.
+- Next step: Review/prioritize R0 and Milestone 1 stories, then scaffold the settled monorepo and accounting harness.
+- Blockers: Bags/pons compatibility requires funded transactions; anonymous 0x and 1inch quote calls return 401; no public testnet faucet/canonical Stock Token registry was found; current Alloy website source is unverified; no reusable license/repository was found for Vladdy/HoodETF/BASKET.
 
 ## Current State
 
@@ -29,7 +29,7 @@ Durable project context lives here. Update this file whenever information should
 - Last verified 2026-07-20: canonical Safe v1.4.1 deployments include Robinhood chain ID 4663.
 - Last verified 2026-07-20: Robinhood Chain mainnet is live on chain ID 4663 and the official RHJ API lists 96 active Stock Tokens and tokenized ETFs.
 - Last verified 2026-07-20: Robinhood Chain Testnet is live on chain ID 46630; its public RPC and explorer respond, and its RPC permits browser cross-origin POST requests.
-- Last verified 2026-07-20: this folder is not a git repository.
+- Last verified 2026-07-20: this folder is a Git repository on branch `main` with origin `https://github.com/fourtytwo42/Robyn.git`; the private GitHub repository is also cloned at `/home/hendo420/Robyn` on the VM.
 
 ## User Preferences
 
@@ -62,7 +62,7 @@ When sources conflict, use this order:
 ## Setup And Commands
 
 - Last verified 2026-07-20: use PowerShell from `C:\Users\hendo420\OneDrive\Documents\GitHub\Robyn`.
-- Last verified 2026-07-20: `git status --short` returned `fatal: not a git repository (or any of the parent directories): .git`.
+- Last verified 2026-07-20: local and VM repositories use `main`; origin is `https://github.com/fourtytwo42/Robyn.git` and GitHub reports the repository visibility as private.
 - Official Stock Token registry: `https://api.robinhood.com/rhj/assets`.
 - Robinhood Chain public RPC: `https://rpc.mainnet.chain.robinhood.com`; mainnet chain ID `4663`.
 - Robinhood Chain Testnet: chain ID `46630`, public RPC `https://rpc.testnet.chain.robinhood.com`, explorer `https://explorer.testnet.chain.robinhood.com`, feed `wss://feed.testnet.chain.robinhood.com`.
@@ -140,6 +140,8 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-20: Initial repository publication - passed; initialized local `main`, committed 105 files as the research/product baseline, created private `fourtytwo42/Robyn`, pushed through the authenticated VM, set `main` as default, and cloned the repository to `/home/hendo420/Robyn`.
+- 2026-07-20: Initial repository content validation - passed; secret-pattern scan found no supplied VM password, GitHub token, private key, or password assignment in staged files; Python caches are ignored; `python scripts/validate-user-stories.py` reports 150 stories covering 170/170 requirements.
 - 2026-07-20: VM provisioning - passed; confirmed Ubuntu 24.04.4 LTS host `robyn` at `192.168.50.250`, pinned its SSH ED25519 host key, expanded `/dev/ubuntu-vg/ubuntu-lv` online from 31 GiB to 62 GiB, and verified 60.8 GiB root capacity with 49.9 GiB available.
 - 2026-07-20: VM toolchain - passed; installed official GitHub CLI and Docker apt repositories, checksum-verified official Node 24.18.0 binary, pnpm 11.15.1 through Corepack, and attestation-verified Foundry 1.7.1. Docker is active/enabled and the developer account has working non-sudo access.
 - 2026-07-20: GitHub VM authentication - passed; GitHub CLI is authenticated to `github.com` as active account `fourtytwo42` with HTTPS Git protocol and `repo`, `read:org`, and `gist` scopes. `gh auth setup-git` configured Git credential helpers, `gh api user` returned `fourtytwo42`, and the credential file is owner-only mode `0600`.
@@ -415,7 +417,6 @@ When sources conflict, use this order:
 - Test whether pons creator fee claims and redirects work safely when the payout recipient is a smart contract.
 - Confirm 0x or UniswapX commercial/API access and quote reliability for selected Stock Tokens.
 - Continue legal advice for the operating entity, target jurisdictions, issuer restrictions, and reward-token classification in parallel; do not add active user restrictions unless the product decision changes.
-- If this folder should be version-controlled, initialize or connect the intended git repository.
 
 ## Do Not Forget
 
