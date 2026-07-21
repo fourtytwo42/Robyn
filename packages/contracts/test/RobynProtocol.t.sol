@@ -68,6 +68,40 @@ contract ProtocolMockRouter is IRobynConversionRouter {
     }
 }
 
+contract ReentrantProtocolRouter is IRobynConversionRouter {
+    using SafeERC20 for IERC20;
+
+    FeeBasketVault public target;
+    bool public convertCallbackRejected;
+    bool public recordCallbackRejected;
+
+    function setTarget(FeeBasketVault target_) external {
+        target = target_;
+    }
+
+    function swapExactInput(
+        address inputToken,
+        address outputToken,
+        uint256 amountIn,
+        uint256 minimumAmountOut,
+        address recipient,
+        uint256 deadline
+    ) external returns (uint256 reportedAmountOut) {
+        (bool convertSucceeded,) = address(target)
+            .call(abi.encodeCall(FeeBasketVault.convertLeg, (0, 1, 1, deadline)));
+        convertCallbackRejected = !convertSucceeded;
+        (bool recordSucceeded,) =
+            address(target).call(abi.encodeCall(FeeBasketVault.recordFees, (1)));
+        recordCallbackRejected = !recordSucceeded;
+        require(convertCallbackRejected && recordCallbackRejected, "reentry accepted");
+
+        IERC20(inputToken).safeTransferFrom(msg.sender, address(this), amountIn);
+        reportedAmountOut = amountIn;
+        require(reportedAmountOut >= minimumAmountOut, "slippage");
+        IERC20(outputToken).safeTransfer(recipient, reportedAmountOut);
+    }
+}
+
 contract ProtocolActor {
     function transferToken(RobynLaunchToken token, address to, uint256 amount) external {
         require(token.transfer(to, amount), "transfer");
@@ -192,6 +226,36 @@ contract RobynProtocolTest {
         uint256 claimed = token.totalRewardsClaimed(0);
         require(claimed <= token.totalRewardsReceived(0), "insolvent");
         require(token.totalRewardsReceived(0) - claimed <= 3, "rounding bound");
+    }
+
+    function testMaliciousRouterCallbacksCannotReenterVault() public {
+        ProtocolMockERC20 attackBase = new ProtocolMockERC20("Attack Base", "ABASE");
+        ProtocolMockERC20 attackReward = new ProtocolMockERC20("Attack Reward", "ARWD");
+        ReentrantProtocolRouter attackRouter = new ReentrantProtocolRouter();
+        RobynLaunchFactory attackFactory =
+            new RobynLaunchFactory(attackBase, attackRouter, 1, 1 days);
+        address[] memory assets = new address[](1);
+        assets[0] = address(attackReward);
+        uint16[] memory weights = new uint16[](1);
+        weights[0] = 10_000;
+        (RobynLaunchToken attackToken, FeeBasketVault attackVault) =
+            attackFactory.createLaunch("Attack Launch", "ATK", SUPPLY, assets, weights);
+        attackFactory.sealLaunchExclusions(attackToken, new address[](0));
+        attackRouter.setTarget(attackVault);
+        attackBase.mint(address(this), 1_000);
+        attackReward.mint(address(attackRouter), 1_000);
+        attackBase.approve(address(attackVault), 1_000);
+        attackVault.recordFees(1_000);
+
+        uint256 output = attackVault.convertLeg(0, 1_000, 1_000, block.timestamp);
+
+        require(attackRouter.convertCallbackRejected(), "convert callback entered");
+        require(attackRouter.recordCallbackRejected(), "record callback entered");
+        require(output == 1_000, "outer output");
+        require(attackVault.totalPendingBase() == 0, "pending");
+        require(attackVault.totalBaseConsumed() == 1_000, "consumed");
+        require(attackVault.totalFeesReceived() == 1_000, "received");
+        require(attackToken.totalRewardsReceived(0) == 1_000, "reward");
     }
 
     function testRouteFailureRetainsPrincipalAndDoesNotBlockOtherLeg() public {

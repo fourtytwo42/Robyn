@@ -152,6 +152,41 @@ describe("faucet", () => {
     expect(second.statusCode).toBe(429);
     expect(second.json()).toMatchObject({ error: "Address already funded" });
   });
+  it("attributes faucet IP quota to the trusted loopback proxy header", async () => {
+    const rpcRequest = vi.fn<RpcRequester>((payload) =>
+      Promise.resolve({
+        jsonrpc: "2.0",
+        id: payload.id,
+        result:
+          payload.method === "eth_getBalance" ? "0x8ac7230489e80000" : true,
+      }),
+    );
+    const app = createApp(rpcRequest, () => 1_000);
+
+    const responses = [];
+    for (let index = 0; index < 6; index += 1) {
+      responses.push(
+        await app.inject({
+          method: "POST",
+          url: "/faucet",
+          remoteAddress: "127.0.0.1",
+          headers: { "x-forwarded-for": "192.0.2.44" },
+          payload: {
+            address: "0x" + (index + 1).toString(16).padStart(40, "0"),
+          },
+        }),
+      );
+    }
+
+    expect(
+      responses.slice(0, 5).every((response) => response.statusCode === 200),
+    ).toBe(true);
+    expect(responses[5]?.statusCode).toBe(429);
+    expect(responses[5]?.json()).toMatchObject({
+      error: "Faucet IP limit reached",
+    });
+  });
+
   it("does not consume quota when the upstream request fails", async () => {
     let available = false;
     const rpcRequest = vi.fn<RpcRequester>((payload) => {

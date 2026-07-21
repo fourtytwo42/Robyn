@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 1,
+  "before": [
+    {
+      "name": "robyn-web",
+      "pid": 5596,
+      "restarts": 1,
+      "memory": 131358720,
+      "status": "online"
+    },
+    {
+      "name": "robyn-rpc-gateway",
+      "pid": 5595,
+      "restarts": 1,
+      "memory": 131358720,
+      "status": "online"
+    },
+    {
+      "name": "robyn-api",
+      "pid": 5622,
+      "restarts": 1,
+      "memory": 131215360,
+      "status": "online"
+    },
+    {
+      "name": "robyn-indexer",
+      "pid": 5636,
+      "restarts": 1,
+      "memory": 131072000,
+      "status": "online"
+    },
+    {
+      "name": "robyn-keeper",
+      "pid": 5711,
+      "restarts": 1,
+      "memory": 130985984,
+      "status": "online"
+    },
+    {
+      "name": "robyn-artifacts",
+      "pid": 5723,
+      "restarts": 1,
+      "memory": 128827392,
+      "status": "online"
+    }
+  ],
+  "after": [
+    {
+      "name": "robyn-web",
+      "pid": 5596,
+      "restarts": 1,
+      "memory": 131444736,
+      "status": "online"
+    },
+    {
+      "name": "robyn-rpc-gateway",
+      "pid": 5595,
+      "restarts": 1,
+      "memory": 131403776,
+      "status": "online"
+    },
+    {
+      "name": "robyn-api",
+      "pid": 5622,
+      "restarts": 1,
+      "memory": 131248128,
+      "status": "online"
+    },
+    {
+      "name": "robyn-indexer",
+      "pid": 5636,
+      "restarts": 1,
+      "memory": 131334144,
+      "status": "online"
+    },
+    {
+      "name": "robyn-keeper",
+      "pid": 5711,
+      "restarts": 1,
+      "memory": 130867200,
+      "status": "online"
+    },
+    {
+      "name": "robyn-artifacts",
+      "pid": 5723,
+      "restarts": 1,
+      "memory": 126935040,
+      "status": "online"
+    }
+  ],
+  "load": {
+    "schemaVersion": 1,
+    "startedAt": "2026-07-21T08:20:42.431Z",
+    "finishedAt": "2026-07-21T08:23:42.447Z",
+    "configuration": {
+      "baseHost": "127.0.0.1",
+      "durationSeconds": 180,
+      "requestsPerSecond": 25,
+      "concurrency": 25,
+      "p95LimitMs": 500,
+      "timeoutMs": 5000
+    },
+    "totals": {
+      "requests": 4500,
+      "ok": 4500,
+      "failed": 0
+    },
+    "endpoints": {
+      "web-discover": {
+        "requests": 900,
+        "ok": 900,
+        "failed": 0,
+        "statuses": {
+          "200": 900
+        },
+        "p50Ms": 8.179659000001266,
+        "p95Ms": 12.159460999999283,
+        "p99Ms": 22.346974000000046,
+        "maxMs": 75.67260299999907
+      },
+      "api-status": {
+        "requests": 900,
+        "ok": 900,
+        "failed": 0,
+        "statuses": {
+          "200": 900
+        },
+        "p50Ms": 2.5771890000032727,
+        "p95Ms": 3.7925749999994878,
+        "p99Ms": 5.782567000002018,
+        "maxMs": 15.056886999998824
+      },
+      "api-launches": {
+        "requests": 900,
+        "ok": 900,
+        "failed": 0,
+        "statuses": {
+          "200": 900
+        },
+        "p50Ms": 2.7429290000000037,
+        "p95Ms": 3.9218310000142083,
+        "p99Ms": 4.55465700000002,
+        "maxMs": 7.800162999999884
+      },
+      "rpc-chain": {
+        "requests": 900,
+        "ok": 900,
+        "failed": 0,
+        "statuses": {
+          "200": 900
+        },
+        "p50Ms": 3.79139599998598,
+        "p95Ms": 4.980114999998477,
+        "p99Ms": 6.655865000000631,
+        "maxMs": 8.647509000002174
+      },
+      "rpc-head": {
+        "requests": 900,
+        "ok": 900,
+        "failed": 0,
+        "statuses": {
+          "200": 900
+        },
+        "p50Ms": 3.6918839999998454,
+        "p95Ms": 4.847756999995909,
+        "p99Ms": 5.577421999998478,
+        "maxMs": 9.863346999998612
+      }
+    },
+    "resources": {
+      "before": {
+        "freeMemoryBytes": 6515814400,
+        "totalMemoryBytes": 8326946816,
+        "loadAverage": [
+          0.16,
+          0.18,
+          0.08
+        ]
+      },
+      "after": {
+        "freeMemoryBytes": 6247157760,
+        "totalMemoryBytes": 8326946816,
+        "loadAverage": [
+          0.13,
+          0.26,
+          0.14
+        ]
+      }
+    },
+    "passed": true
+  },
+  "buildTail": "@robyn/web:build: ┌ ƒ /                                    11.4 kB         204 kB\n@robyn/web:build: ├ ○ /_not-found                            992 B         103 kB\n@robyn/web:build: ├ ƒ /api/health                            123 B         102 kB\n@robyn/web:build: ├ ƒ /discover                            1.35 kB         192 kB\n@robyn/web:build: ├ ƒ /launches/[token]                    1.35 kB         192 kB\n@robyn/web:build: └ ○ /portfolio                           2.25 kB         195 kB\n@robyn/web:build: + First Load JS shared by all             102 kB\n@robyn/web:build:   ├ chunks/558-239c31f73a257451.js       45.7 kB\n@robyn/web:build:   ├ chunks/567e3fde-8c71b67cb98676f3.js  54.2 kB\n@robyn/web:build:   └ other shared chunks (total)          1.96 kB\n@robyn/web:build: \n@robyn/web:build: \n@robyn/web:build: ○  (Static)   prerendered as static content\n@robyn/web:build: ƒ  (Dynamic)  server-rendered on demand\n@robyn/web:build: \n\n Tasks:    7 successful, 7 total\nCached:    0 cached, 7 total\n  Time:    13.051s ",
+  "reconciledStatus": {
+    "service": "robyn-api",
+    "chainId": 31337,
+    "asOfBlock": "102",
+    "indexedAt": "2026-07-21 08:23:41.7819+00",
+    "launchCount": "2",
+    "rawLogCount": "169",
+    "formulaVersion": "native-v1",
+    "keeperStatus": "ok",
+    "keeperUpdatedAt": "2026-07-21 08:23:40.778539+00",
+    "artifactStatus": "ok",
+    "artifactUpdatedAt": "2026-07-21 08:23:34.852722+00"
+  },
+  "operationCounts": {
+    "completed": "6"
+  },
+  "generatedAt": "2026-07-21T08:23:42Z"
+}

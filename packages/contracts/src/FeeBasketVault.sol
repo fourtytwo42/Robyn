@@ -174,6 +174,8 @@ contract FeeBasketVault is ReentrancyGuard {
         uint256 baseBefore = baseAsset.balanceOf(address(this));
         uint256 rewardBefore = selected.asset.balanceOf(address(this));
         baseAsset.forceApprove(address(conversionRouter), amount);
+        // The function-wide nonReentrant guard is adversarially tested against router callbacks.
+        // slither-disable-next-line reentrancy-balance,reentrancy-no-eth
         conversionRouter.swapExactInput(
             address(baseAsset),
             address(selected.asset),
@@ -189,6 +191,8 @@ contract FeeBasketVault is ReentrancyGuard {
         if (actualOutput < minimumOutput) revert InsufficientOutput(minimumOutput, actualOutput);
         selected.consumedBase += amount;
         selected.asset.forceApprove(address(launchToken), actualOutput);
+        // The same guard rejects token callbacks before any post-call accounting can execute.
+        // slither-disable-next-line reentrancy-balance,reentrancy-no-eth
         uint256 rewardDeposited = launchToken.distributeReward(index, actualOutput);
         selected.asset.forceApprove(address(launchToken), 0);
         selected.rewardsDeposited += rewardDeposited;

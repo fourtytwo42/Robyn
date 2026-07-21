@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "testedFrom": "Windows LAN control host",
+  "target": "192.168.50.250",
+  "timeoutMs": 700,
+  "expectedOpen": {
+    "22": true,
+    "3000": true,
+    "3100": true,
+    "8546": true
+  },
+  "expectedClosed": {
+    "3001": false,
+    "3002": false,
+    "3101": false,
+    "3200": false,
+    "8545": false,
+    "8547": false,
+    "9000": false,
+    "9090": false,
+    "9100": false
+  },
+  "passed": true
+}

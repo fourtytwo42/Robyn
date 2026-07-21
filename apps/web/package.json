@@ -6,7 +6,7 @@
     "build": "next build",
     "dev": "next dev --hostname 0.0.0.0",
     "lint": "eslint .",
-    "start": "next start --hostname 0.0.0.0",
+    "start": "next start --hostname 127.0.0.1",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

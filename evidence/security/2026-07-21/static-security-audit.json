@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-21T08:29:49+00:00",
+  "gitSha": "51930586e11e6c545b286ab839fe1b47191d7486",
+  "gitleaks": {
+    "version": "8.30.1",
+    "historyFindings": 0
+  },
+  "dependencyAudit": {
+    "highOrCriticalKnownVulnerabilities": 0
+  },
+  "contracts": {
+    "foundrySuitesPassed": true,
+    "slitherVersion": "0.11.5",
+    "slitherExitStatus": 255,
+    "findingsByImpact": {
+      "Informational": 1,
+      "Low": 7,
+      "Medium": 10
+    },
+    "unresolvedHigh": 0,
+    "findings": [
+      {
+        "check": "incorrect-equality",
+        "impact": "Medium",
+        "confidence": "High",
+        "summary": "FeeBasketVault.recordFees(uint256) (src/FeeBasketVault.sol#133-150) uses a dangerous strict equality:"
+      },
+      {
+        "check": "incorrect-equality",
+        "impact": "Medium",
+        "confidence": "High",
+        "summary": "FeeBasketVault.recordFees(uint256) (src/FeeBasketVault.sol#133-150) uses a dangerous strict equality:"
+      },
+      {
+        "check": "incorrect-equality",
+        "impact": "Medium",
+        "confidence": "High",
+        "summary": "FeeBasketVault._fundLeg(uint256,uint256) (src/FeeBasketVault.sol#223-229) uses a dangerous strict equality:"
+      },
+      {
+        "check": "incorrect-equality",
+        "impact": "Medium",
+        "confidence": "High",
+        "summary": "RobynLaunchToken.distributeReward(uint256,uint256) (src/RobynLaunchToken.sol#110-136) uses a dangerous strict equality:"
+      },
+      {
+        "check": "incorrect-equality",
+        "impact": "Medium",
+        "confidence": "High",
+        "summary": "FeeBasketVault.convertLeg(uint256,uint256,uint256,uint256) (src/FeeBasketVault.sol#153-201) uses a dangerous strict equality:"
+      },
+      {
+        "check": "uninitialized-local",
+        "impact": "Medium",
+        "confidence": "Medium",
+        "summary": "FeeBasketVault.constructor(IERC20,IRobynConversionRouter,address,address[],uint16[],uint256,uint256).weightTotal (src/FeeBasketVault.sol#94) is a local variable never initialized"
+      },
+      {
+        "check": "uninitialized-local",
+        "impact": "Medium",
+        "confidence": "Medium",
+        "summary": "FeeBasketAccounting.constructor(IERC20Minimal,address,address[],uint16[]).totalWeight (src/FeeBasketAccounting.sol#59) is a local variable never initialized"
+      },
+      {
+        "check": "uninitialized-local",
+        "impact": "Medium",
+        "confidence": "Medium",
+        "summary": "FeeBasketAccounting.recordFees(uint256).assigned (src/FeeBasketAccounting.sol#92) is a local variable never initialized"
+      },
+      {
+        "check": "uninitialized-local",
+        "impact": "Medium",
+        "confidence": "Medium",
+        "summary": "FeeBasketVault.recordFees(uint256).assigned (src/FeeBasketVault.sol#140) is a local variable never initialized"
+      },
+      {
+        "check": "unused-return",
+        "impact": "Medium",
+        "confidence": "Medium",
+        "summary": "FeeBasketVault.convertLeg(uint256,uint256,uint256,uint256) (src/FeeBasketVault.sol#153-201) ignores return value by conversionRouter.swapExactInput(address(baseAsset),address(selected.asset),amount,minimumOutput,address(this),deadline) (src/FeeBasketVault.sol#179-186)"
+      },
+      {
+        "check": "reentrancy-benign",
+        "impact": "Low",
+        "confidence": "Medium",
+        "summary": "Reentrancy in FeeBasketAccounting.recordFees(uint256) (src/FeeBasketAccounting.sol#86-107):"
+      },
+      {
+        "check": "reentrancy-benign",
+        "impact": "Low",
+        "confidence": "Medium",
+        "summary": "Reentrancy in RobynLaunchFactory.createLaunch(string,string,uint256,address[],uint16[]) (src/RobynLaunchFactory.sol#49-75):"
+      },
+      {
+        "check": "reentrancy-events",
+        "impact": "Low",
+        "confidence": "Medium",
+        "summary": "Reentrancy in RobynLaunchFactory.createLaunch(string,string,uint256,address[],uint16[]) (src/RobynLaunchFactory.sol#49-75):"
+      },
+      {
+        "check": "reentrancy-events",
+        "impact": "Low",
+        "confidence": "Medium",
+        "summary": "Reentrancy in FeeBasketAccounting.recordFees(uint256) (src/FeeBasketAccounting.sol#86-107):"
+      },
+      {
+        "check": "reentrancy-events",
+        "impact": "Low",
+        "confidence": "Medium",
+        "summary": "Reentrancy in FeeBasketAccounting.consumeLeg(uint256,uint256,address) (src/FeeBasketAccounting.sol#109-125):"
+      },
+      {
+        "check": "reentrancy-events",
+        "impact": "Low",
+        "confidence": "Medium",
+        "summary": "Reentrancy in RobynLaunchFactory.sealLaunchExclusions(RobynLaunchToken,address[]) (src/RobynLaunchFactory.sol#77-81):"
+      },
+      {
+        "check": "timestamp",
+        "impact": "Low",
+        "confidence": "Medium",
+        "summary": "FeeBasketVault.convertLeg(uint256,uint256,uint256,uint256) (src/FeeBasketVault.sol#153-201) uses timestamp for comparisons"
+      },
+      {
+        "check": "costly-loop",
+        "impact": "Informational",
+        "confidence": "Medium",
+        "summary": "RobynLaunchToken.sealExclusions(address[]) (src/RobynLaunchToken.sol#91-103) has costly operations inside a loop:"
+      }
+    ]
+  },
+  "licenseInventory": {
+    "groups": 16,
+    "packages": 498,
+    "reviewedCopyleftRuntimePackages": [
+      {
+        "name": "pm2",
+        "versions": [
+          "7.0.3"
+        ],
+        "license": "AGPL-3.0"
+      }
+    ]
+  },
+  "passed": true
+}

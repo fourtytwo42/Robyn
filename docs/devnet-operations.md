@@ -118,8 +118,9 @@ Last verified 2026-07-21: the current manifest records the self-service-market d
 
 ## Remaining production-readiness work
 
-- Configure TLS/reverse proxy and explicit firewall policy.
+- Run the exact release candidate through the real 24-hour soak.
 - Promote immutable releases instead of running from the checkout.
-- Add gateway load/soak tests, structured metrics and alerts.
+- Configure TLS if a domain is attached or access leaves the trusted LAN.
+- Complete independent protocol/security review and human alert delivery.
 
 These gaps keep the active production-readiness goal open.

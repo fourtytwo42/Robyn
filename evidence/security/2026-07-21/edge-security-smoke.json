@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "host": "127.0.0.1",
+  "headers": "passed",
+  "privilegedRpc": "blocked",
+  "oversizedApiStatus": 413,
+  "traceStatus": 405,
+  "sqlInjectionLiteralMatches": 0,
+  "invalidCursorStatus": 400,
+  "burst": {
+    "passed": 116,
+    "limited": 134,
+    "other": 0
+  },
+  "postBurstHealth": "passed",
+  "passed": true
+}

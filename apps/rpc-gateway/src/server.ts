@@ -2,6 +2,7 @@ import { buildGateway } from "./app.js";
 import { createRedisRateLimiter } from "./rate-limit.js";
 
 const port = Number.parseInt(process.env.PORT ?? "8546", 10);
+const host = process.env.HOST ?? "127.0.0.1";
 if (!Number.isInteger(port) || port < 1 || port > 65_535) {
   throw new Error("PORT must be a valid TCP port");
 }
@@ -25,7 +26,7 @@ process.once("SIGTERM", () => {
 });
 
 try {
-  await app.listen({ host: "0.0.0.0", port });
+  await app.listen({ host, port });
 } catch (error) {
   app.log.error(error);
   process.exit(1);

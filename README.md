@@ -2,7 +2,7 @@
 
 Robyn is a proposed Robinhood Chain launchpad where creators launch community tokens with an immutable, weighted asset basket. A token's creator-fee stream purchases the selected assets, and holders accrue claimable basket rewards.
 
-> **Project status:** Implementation is active. The VM runs a persistent controlled Anvil devnet, restricted user RPC/faucet, browser-operated permissionless launchpad, native PostgreSQL/Redis/MinIO, a reorg-aware indexer, freshness-labeled filtered discovery API, bounded conversion keeper and content-addressed artifact service. Anonymous discovery, canonical launch detail and session-wallet portfolio pages are live alongside the launch-to-claim console. Encrypted off-VM backups and the loopback-only native monitoring/alert stack are verified. Security/load evidence, protocol hardening and testnet rehearsal remain in progress.
+> **Project status:** Implementation is active. The VM runs a persistent controlled Anvil devnet, restricted user RPC/faucet, browser-operated permissionless launchpad, native PostgreSQL/Redis/MinIO, a reorg-aware indexer, freshness-labeled filtered discovery API, bounded conversion keeper and content-addressed artifact service. Anonymous discovery, canonical launch detail and session-wallet portfolio pages are live alongside the launch-to-claim console. Encrypted off-VM backups, loopback monitoring/alerts, cold-start recovery, the subnet-scoped Nginx/UFW edge and short-duration load/security gates are verified. The 24-hour soak, independent protocol review, immutable release and testnet rehearsal remain in progress.
 
 ## Authoritative development environment
 
@@ -38,6 +38,7 @@ The Windows checkout is not an execution environment. It is only a convenience m
 | [Native object storage](docs/object-storage-operations.md) | MinIO installation, least-privilege access and artifact verification |
 | [Encrypted backup and restore](docs/backup-and-restore.md) | Scheduled off-VM state backups, recovery identity custody and clean-target rehearsal |
 | [Monitoring and incident operations](docs/monitoring-operations.md) | Native Prometheus, node-exporter, Grafana, alert rules and live drill |
+| [Security and capacity operations](docs/security-and-capacity.md) | LAN edge, firewall, static analysis, abuse and contention evidence |
 | [`docs/`](docs/) | VM runtime, operating procedures and delivery roadmaps |
 | [Protocol core](docs/protocol-core.md) | Current contract boundaries, invariants, dependency provenance and limitations |
 | [Devnet-to-testnet readiness plan](docs/devnet-to-testnet-readiness-plan.md) | Phase-by-phase implementation, verification and release plan |

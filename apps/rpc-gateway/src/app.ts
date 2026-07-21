@@ -139,7 +139,7 @@ export function buildGateway(options: GatewayOptions = {}): FastifyInstance {
   const app = Fastify({
     logger: false,
     bodyLimit: 256 * 1024,
-    trustProxy: false,
+    trustProxy: "127.0.0.1",
   });
 
   app.addHook("onSend", async (_request, reply) => {
