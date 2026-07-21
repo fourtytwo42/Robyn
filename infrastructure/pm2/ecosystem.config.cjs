@@ -1,8 +1,13 @@
+const path = require("node:path");
+
+const releaseRoot =
+  process.env.ROBYN_RELEASE_ROOT || path.resolve(__dirname, "../..");
+
 module.exports = {
   apps: [
     {
       name: "robyn-web",
-      cwd: "/home/hendo420/Robyn",
+      cwd: releaseRoot,
       script: "/usr/local/bin/pnpm",
       args: "--filter @robyn/web start",
       env: {
@@ -19,7 +24,7 @@ module.exports = {
     },
     {
       name: "robyn-rpc-gateway",
-      cwd: "/home/hendo420/Robyn",
+      cwd: releaseRoot,
       script: "/usr/local/bin/pnpm",
       args: "--filter @robyn/rpc-gateway start",
       env: {
@@ -35,7 +40,7 @@ module.exports = {
     },
     {
       name: "robyn-api",
-      cwd: "/home/hendo420/Robyn",
+      cwd: releaseRoot,
       script: "/usr/local/bin/pnpm",
       args: "--filter @robyn/api start",
       env: {
@@ -53,13 +58,13 @@ module.exports = {
     },
     {
       name: "robyn-indexer",
-      cwd: "/home/hendo420/Robyn",
+      cwd: releaseRoot,
       script: "/usr/local/bin/pnpm",
       args: "--filter @robyn/indexer start",
       env: {
         NODE_ENV: "production",
         ROBYN_OPERATOR_RPC_URL: "http://127.0.0.1:8545",
-        ROBYN_MANIFEST: "/home/hendo420/Robyn/deployments/31337.json",
+        ROBYN_MANIFEST: path.join(releaseRoot, "deployments/31337.json"),
         INDEXER_POLL_MS: "3000",
         PGHOST: "/var/run/postgresql",
         PGDATABASE: "robyn",
@@ -71,14 +76,14 @@ module.exports = {
     },
     {
       name: "robyn-keeper",
-      cwd: "/home/hendo420/Robyn",
+      cwd: releaseRoot,
       script: "/usr/local/bin/pnpm",
       args: "--filter @robyn/keeper start",
       env: {
         NODE_ENV: "production",
         ROBYN_ENV: "robyn-devnet",
         ROBYN_OPERATOR_RPC_URL: "http://127.0.0.1:8545",
-        ROBYN_MANIFEST: "/home/hendo420/Robyn/deployments/31337.json",
+        ROBYN_MANIFEST: path.join(releaseRoot, "deployments/31337.json"),
         REDIS_URL: "redis://127.0.0.1:6379",
         KEEPER_SCAN_MS: "5000",
         PGHOST: "/var/run/postgresql",
@@ -91,7 +96,7 @@ module.exports = {
     },
     {
       name: "robyn-artifacts",
-      cwd: "/home/hendo420/Robyn",
+      cwd: releaseRoot,
       script: "/bin/bash",
       args: "scripts/start-artifact-service.sh",
       env: {

@@ -39,6 +39,7 @@ The Windows checkout is not an execution environment. It is only a convenience m
 | [Encrypted backup and restore](docs/backup-and-restore.md) | Scheduled off-VM state backups, recovery identity custody and clean-target rehearsal |
 | [Monitoring and incident operations](docs/monitoring-operations.md) | Native Prometheus, node-exporter, Grafana, alert rules and live drill |
 | [Security and capacity operations](docs/security-and-capacity.md) | LAN edge, firewall, static analysis, abuse and contention evidence |
+| [Immutable release operations](docs/release-operations.md) | Exact-commit builds, manifests, atomic promotion and compatible rollback |
 | [`docs/`](docs/) | VM runtime, operating procedures and delivery roadmaps |
 | [Protocol core](docs/protocol-core.md) | Current contract boundaries, invariants, dependency provenance and limitations |
 | [Devnet-to-testnet readiness plan](docs/devnet-to-testnet-readiness-plan.md) | Phase-by-phase implementation, verification and release plan |
