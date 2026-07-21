@@ -1,0 +1,34 @@
+[Unit]
+Description=Encrypted Robyn state backup
+After=network-online.target postgresql.service minio.service robyn-anvil.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/robyn-backup
+User=hendo420
+Group=hendo420
+Environment=HOME=/home/hendo420
+UMask=0077
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=read-only
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ReadOnlyPaths=/etc/robyn/backup.env /etc/robyn/backup-age-recipient.txt /home/hendo420/Robyn
+ReadWritePaths=/var/backups/robyn
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+SystemCallArchitectures=native

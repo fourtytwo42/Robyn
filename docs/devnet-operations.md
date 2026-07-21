@@ -118,11 +118,8 @@ Last verified 2026-07-21: the current manifest records the self-service-market d
 
 ## Remaining production-readiness work
 
-- Move faucet limits from process memory to native Redis before untrusted public exposure.
 - Configure TLS/reverse proxy and explicit firewall policy.
 - Promote immutable releases instead of running from the checkout.
-- Add generation/reset tooling and off-VM state backup.
 - Add gateway load/soak tests, structured metrics and alerts.
-- Extend the verified permissionless launch registry and inline market actions into dedicated discovery, token-detail, portfolio and transaction-history pages backed by the production data plane.
 
 These gaps keep the active production-readiness goal open.

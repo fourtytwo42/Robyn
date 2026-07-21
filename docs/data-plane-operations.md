@@ -74,7 +74,7 @@ The RPC gateway uses atomic Redis Lua reservations for its one-address-per-hour 
 
 ## Remaining work
 
-- Add database backup, off-VM copy and destructive restore rehearsal.
+- Keep the scheduled encrypted backup and periodic clean-target restore rehearsal green.
 - Add metrics, alerts, kill/restart and deterministic rebuild tests.
 
 ## Content-addressed artifacts

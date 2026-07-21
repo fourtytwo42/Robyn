@@ -107,7 +107,7 @@ On 2026-07-21 the authoritative VM passed all of these checks:
 ## Recovery boundary
 
 MinIO versioning protects against application overwrites but is not a backup.
-Do not delete `/var/lib/robyn-minio` during ordinary recovery. Restore testing
-must cover the MinIO data directory together with PostgreSQL metadata, verify
-every restored object's SHA-256, and retain a copy outside the VM failure
-domain. That destructive restore rehearsal remains a release blocker.
+Do not delete `/var/lib/robyn-minio` during ordinary recovery. The encrypted
+state backup mirrors objects with a read-only MinIO account, verifies every
+object against its SHA-256 filename and retains an off-VM private GitHub copy.
+The clean-target restore rehearsal is documented in [Backup and restore operations](backup-and-restore.md).
