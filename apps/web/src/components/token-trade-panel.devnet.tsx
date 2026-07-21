@@ -81,7 +81,8 @@ export function NetworkTokenTradePanel({
   const rpcUrl =
     typeof window === "undefined"
       ? "http://127.0.0.1:8546"
-      : "http://" + window.location.hostname + ":8546";
+      : (process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
+        "http://" + window.location.hostname + ":8546");
   const chain = useMemo(
     () =>
       defineChain({

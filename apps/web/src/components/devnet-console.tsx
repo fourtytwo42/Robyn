@@ -201,7 +201,8 @@ export function DevnetConsole({ deployment }: { deployment: Deployment }) {
   const rpcUrl =
     typeof window === "undefined"
       ? "http://127.0.0.1:8546"
-      : "http://" + window.location.hostname + ":8546";
+      : (process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
+        "http://" + window.location.hostname + ":8546");
   const chain = useMemo(
     () =>
       defineChain({
@@ -334,14 +335,11 @@ export function DevnetConsole({ deployment }: { deployment: Deployment }) {
   async function fundWallet() {
     if (!account || !walletClient) return;
     await execute("Funding dev ETH and 10,000 mUSD&", async () => {
-      const response = await fetch(
-        "http://" + window.location.hostname + ":8546/faucet",
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ address: account.address }),
-        },
-      );
+      const response = await fetch(rpcUrl.replace(/\/$/, "") + "/faucet", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ address: account.address }),
+      });
       if (!response.ok && response.status !== 429)
         throw new Error("Dev ETH faucet unavailable.");
       const alreadyClaimed = await publicClient.readContract({

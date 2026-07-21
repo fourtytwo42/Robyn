@@ -1,0 +1,33 @@
+[Unit]
+Description=Robyn public preview quick tunnel
+Documentation=https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/trycloudflare/
+After=network-online.target nginx.service
+Wants=network-online.target
+Requires=nginx.service
+
+[Service]
+Type=simple
+User=hendo420
+Group=hendo420
+WorkingDirectory=/home/hendo420/Robyn
+Environment=ROBYN_PREVIEW_ORIGIN=http://127.0.0.1:3080
+Environment=ROBYN_PREVIEW_URL_FILE=/var/lib/robyn-preview/public-url
+ExecStart=/home/hendo420/Robyn/scripts/run-preview-tunnel.sh
+Restart=on-failure
+RestartSec=5s
+StateDirectory=robyn-preview
+UMask=0022
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target
