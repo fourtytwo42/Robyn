@@ -1,7 +1,7 @@
 # Robyn launchpad PRD set
 
 Status: Draft for implementation planning  
-Version: 0.4
+Version: 0.5
 Date: 2026-07-20
 
 ## Purpose
@@ -37,6 +37,8 @@ The documents distinguish the first shippable product from the eventual native l
 |---|---|
 | `CORE-` | Cross-product behavior |
 | `CREATE-` | Creator and launch flow |
+
+The implementation sequence and evidence gates are defined in [Devnet-to-testnet readiness plan](../docs/devnet-to-testnet-readiness-plan.md).
 | `DISC-` | Discovery and public profiles |
 | `TRADE-` | Trading experience |
 | `REWARD-` | Reward and claim experience |

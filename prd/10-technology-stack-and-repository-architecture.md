@@ -101,6 +101,10 @@ Use `viem`, not ethers.js, for first-party chain code. An upstream SDK may carry
 Fastify owns HTTP/API concerns only. Indexing, keeper and epoch calculation run as separate processes. BullMQ schedules/retries jobs but is not the financial source of truth. PostgreSQL checkpoints and onchain state establish idempotency.
 
 ## Smart contracts
+For R0 development, Foundry's native Anvil node provides the controlled EVM network on chain ID `31337`. The persistent shared devnet is separate from ephemeral Anvil instances used by automated tests. Hardhat Network is not part of the selected stack.
+
+All user-facing acceptance runs through the Codex in-app browser against the VM-served application. Playwright automation, stable semantic locators, DOM assertions, screenshots, console/network checks and responsive viewports provide release evidence; browser UAT does not replace Forge, Vitest or native service integration testing.
+
 
 | Concern | Selection |
 |---|---|
@@ -181,6 +185,9 @@ Tests use deterministic fixtures and pinned block numbers. Financial acceptance 
 | STACK-018 | One lockfile, pinned toolchain and frozen CI installs MUST make builds reproducible | MUST | Clean/frozen install test |
 | STACK-019 | Deployments MUST build versioned immutable artifacts on the VM, record hashes/source/test evidence and atomically promote release directories without containers | MUST | Release provenance and rollback test |
 | STACK-020 | All project builds, tests, services, data stores, deployments and Git operations MUST run on the `robyn` VM; the workstation MUST remain control-only | MUST | Environment and process audit |
+| STACK-025 | R0 development MUST use native Anvil chain ID 31337 on the VM with a loopback privileged endpoint, restricted user gateway, controlled faucet and separate ephemeral chains for automated tests; Hardhat Network MUST NOT be introduced without an ADR | MUST | Service/RPC/isolation test and dependency scan |
+| STACK-026 | Every user-facing story MUST pass Codex in-app-browser acceptance against the VM-served application at required viewports with durable DOM, screenshot and console/network evidence, in addition to its lower-level tests | MUST | Browser release-evidence audit |
+| STACK-027 | Every major validated change MUST be committed and pushed from the authoritative VM; incomplete or risky changes MUST use feature branches and main MUST remain deployable | MUST | Git/release checkpoint audit |
 | STACK-021 | Docker, Compose, Kubernetes, container images and container registries MUST NOT be used by the project | MUST | Dependency/config/process scan |
 | STACK-022 | Node application processes MUST use a committed PM2 ecosystem, systemd startup integration, saved process state and reboot verification | MUST | Reboot/persistence test |
 | STACK-023 | PostgreSQL, Redis, MinIO, monitoring, reverse proxy and any project-operated RPC node MUST run natively on the VM under systemd | MUST | Service/unit/network audit |

@@ -110,6 +110,8 @@ Write endpoints are limited to authenticated operational workflows that cannot m
 
 The keeper:
 
+During R0, browser and application development use the VM-hosted Robyn Devnet: native Anvil chain ID `31337`, loopback raw RPC, restricted LAN RPC gateway and an abuse-controlled faucet. Automated suites use isolated ephemeral Anvil processes rather than mutating the persistent shared devnet. Devnet-only wallets, keys, faucet routes and configuration cannot enter testnet or production bundles.
+
 - observes per-leg thresholds;
 - obtains authenticated quotes;
 - validates provider response against local policy;
@@ -132,6 +134,7 @@ Permissionless public triggering is preferred where valid quote data can be safe
 | Epoch construction | Primary path plus block-hash cross-check | Independent replay provider |
 | Keeper simulation/submission | VM node or protected provider | Independent provider |
 | Monitoring | Primary plus independent external provider | Explorer API for diagnosis only |
+| INFRA-015 | R0 MUST provide a native VM-hosted Anvil devnet on chain ID 31337 with persistent state, loopback raw RPC, restricted user RPC, controlled faucet funding and isolated ephemeral test chains; privileged dev methods and dev-only credentials MUST be absent from testnet/production builds | MUST | RPC allow/deny, persistence, faucet-abuse, isolation and bundle-scan tests |
 
 Public RPC rate limiting may aggregate users behind a corporate network, VPN or carrier NAT. Client backoff uses jitter, request coalescing and moderate polling. Never silently route all reads through a secret backend endpoint.
 

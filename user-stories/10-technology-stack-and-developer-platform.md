@@ -265,3 +265,55 @@ Acceptance criteria:
 5. The dedicated self-hosted GitHub Actions runner executes trusted workflows without unrestricted sudo or untrusted fork code.
 6. Release manifest records source, lockfile, artifact hashes, tests and migrations; atomic release selection and rollback are rehearsed.
 
+### US-STACK-017: Operate a safe controlled Anvil devnet
+
+- Release: R0
+- Priority: Must
+- Persona: Protocol engineer, Platform engineer
+- PRD: STACK-025, INFRA-015
+- Depends on: Authoritative VM and Foundry toolchain
+
+As a protocol engineer, I want a persistent controlled Anvil network with easy user funding and isolated automated-test chains so that development is deterministic without relying on an external faucet.
+
+Acceptance criteria:
+
+1. Native Anvil runs on chain ID 31337 under systemd, persists reviewed state outside Git and restores after reboot.
+2. Raw privileged RPC is loopback-only; the LAN gateway rejects privileged, impersonation, unsafe debug and destructive methods while permitting required standard EVM calls.
+3. A rate-limited faucet funds arbitrary development addresses without exposing a reusable private key.
+4. Automated suites create isolated ephemeral Anvil processes and cannot reset or contaminate the shared devnet.
+5. Devnet-only wallet code, faucet routes, fixture keys and chain configuration are absent from testnet/production bundles.
+
+### US-STACK-018: Accept every user flow in the in-app browser
+
+- Release: R0-R2
+- Priority: Must
+- Persona: Quality engineer, Product owner
+- PRD: STACK-026
+- Depends on: VM-served release and deterministic fixtures
+
+As a product owner, I want every user-facing story verified through the Codex in-app browser so that release acceptance reflects the complete experience users receive.
+
+Acceptance criteria:
+
+1. Required anonymous, wallet, create, trade, reward, claim and recovery journeys run against the VM-served application through the in-app browser.
+2. Desktop, tablet and mobile runs use stable semantic locators and assert visible state plus resulting chain/API state.
+3. Evidence retains screenshots, DOM assertions, console failures and relevant network/transaction identifiers by release and commit.
+4. Browser acceptance supplements Foundry, Vitest, integration, migration, security and operational tests and cannot waive a failure below the UI.
+
+### US-STACK-019: Preserve validated GitHub checkpoints
+
+- Release: R0-R2
+- Priority: Must
+- Persona: Release engineer
+- PRD: STACK-027
+- Depends on: Validated milestone evidence
+
+As a release engineer, I want each major validated change pushed from the authoritative VM so that GitHub always contains the latest recoverable checkpoint.
+
+Acceptance criteria:
+
+1. A major change is committed and pushed only after its declared validation passes.
+2. Incomplete or risky work remains on a named feature branch; main remains deployable.
+3. Commit/release evidence records tests, browser acceptance when user-facing, migrations and deployment state.
+4. The remote branch SHA is verified after push before the milestone is considered complete.
+

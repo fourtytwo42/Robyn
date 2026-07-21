@@ -4,11 +4,11 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
-- Current task: VM-only, no-Docker runtime policy is settled and documented across repository guidance, PRDs, stories and operations documentation.
-- Last meaningful change: Made `/home/hendo420/Robyn` on VM `robyn` the sole execution environment; specified PM2/systemd persistence, native PostgreSQL/Redis/MinIO, a VM self-hosted CI runner and VM-hosted RPC nodes when needed.
-- Files touched: `AGENTS.md`, `README.md`, `docs/vm-runtime-and-operations.md`, `prd/00-product-brief-and-decisions.md`, `prd/05-platform-data-and-infrastructure.md`, `prd/07-delivery-plan-and-acceptance.md`, `prd/10-technology-stack-and-repository-architecture.md`, `prd/README.md`, `research/06-launchpad-product-blueprint.md`, `user-stories/06-data-infrastructure-and-reliability.md`, `user-stories/10-technology-stack-and-developer-platform.md`, `user-stories/README.md`, `user-stories/TRACEABILITY.md`, and `MEMORY.md`.
-- Last verification: 2026-07-20 VM validator reports 151 stories covering 178/178 requirements, including STACK-001 through STACK-024 and INFRA-001 through INFRA-014.
-- Next step: Scaffold the settled monorepo and accounting harness on the VM; install native data services only when the first implementation slice requires them and configure PM2 persistence when the first Node process exists.
+- Current task: controlled-devnet-to-testnet roadmap is settled and documented; no application code or runtime service was created.
+- Last meaningful change: Selected native Anvil chain ID 31337 for the VM-hosted Robyn Devnet, separated persistent human/UAT state from ephemeral automated-test chains, made in-app-browser UAT mandatory for user-facing acceptance and required a GitHub push after every major validated change.
+- Files touched: `AGENTS.md`, `README.md`, `docs/devnet-to-testnet-readiness-plan.md`, `docs/vm-runtime-and-operations.md`, `prd/00-product-brief-and-decisions.md`, `prd/05-platform-data-and-infrastructure.md`, `prd/07-delivery-plan-and-acceptance.md`, `prd/10-technology-stack-and-repository-architecture.md`, `prd/README.md`, `user-stories/10-technology-stack-and-developer-platform.md`, `user-stories/README.md`, `user-stories/TRACEABILITY.md`, and `MEMORY.md`.
+- Last verification: 2026-07-20 VM validator reports 154 stories covering 182/182 requirements, including STACK-001 through STACK-027 and INFRA-001 through INFRA-015.
+- Next step: When implementation is authorized, execute only the first build slice in the roadmap: monorepo foundation, ephemeral Anvil smoke test, accounting skeleton/conservation test and a nonfunctional web health page, then validate, commit and push.
 - Blockers: Bags/pons compatibility requires funded transactions; anonymous 0x and 1inch quote calls return 401; no public testnet faucet/canonical Stock Token registry was found; current Alloy website source is unverified; no reusable license/repository was found for Vladdy/HoodETF/BASKET.
 
 ## Current State
@@ -16,7 +16,7 @@ Durable project context lives here. Update this file whenever information should
 - Last verified 2026-07-20: the authoritative workspace is `/home/hendo420/Robyn` on Ubuntu VM `robyn` at `192.168.50.250`; the Windows checkout is control-only and not an execution environment.
 - The repository currently contains research documentation only; there is no application or smart-contract implementation.
 - Last verified 2026-07-20: `prd/` is the authoritative product-intent layer. It specifies R0 validation, R1 crypto adapter pilot, R2 Stock Token beta and optional R3 native launchpad; research remains authoritative for external evidence.
-- Last verified 2026-07-20: `user-stories/` is the delivery-backlog layer derived from the PRDs. Its generated traceability matrix covers all 178 PRD requirements with 151 stories.
+- Last verified 2026-07-20: `user-stories/` is the delivery-backlog layer derived from the PRDs. Its generated traceability matrix covers all 182 PRD requirements with 154 stories.
 - Last verified 2026-07-20: settled application stack is pnpm/Turborepo; Next.js 15, React 19, strict TypeScript, Tailwind v4, Radix/shadcn-owned components, viem/wagmi, WalletConnect/injected wallets, TanStack Query/Table, Zod/React Hook Form; Fastify; VM-native PostgreSQL/Drizzle, Redis/BullMQ and MinIO; Solidity/Foundry/OpenZeppelin; Vitest/Testing Library/Playwright; OpenTelemetry/local structured errors/Prometheus/Grafana; PM2 plus systemd; and a VM self-hosted GitHub Actions runner. Docker and containers are prohibited.
 - Last verified 2026-07-20: the R1 visual direction is dark-first and restrained with canvas `#0B1020`, teal `#35D0BA` primary, violet `#8B7CF6` secondary, gold `#F2B84B` reward/pending accent, Inter UI typography and IBM Plex Mono for addresses/numbers. The basket is the primary visual concept; a final logo remains unresolved.
 - Last verified 2026-07-20: Alloy provides the closest reusable source implementation for the reward-stream model. Its MIT-licensed `AlloyMeme` has single-asset transfer-aware reward accounting, but production reuse requires a multi-asset rewrite, guarded swaps, a canonical asset allowlist and a new audit.
@@ -40,6 +40,10 @@ Durable project context lives here. Update this file whenever information should
 - Run all project builds, tests, package installs, databases, services, migrations, workers, RPC nodes, deployments and Git operations on the `robyn` VM, never on the Windows workstation.
 - Do not use Docker or containers for this project.
 - Make Node processes persistent with PM2 plus systemd startup and `pm2 save`; make native infrastructure services persistent with systemd.
+- Start development on the VM-hosted native Anvil chain rather than depending on Robinhood Testnet ETH; keep Hardhat Network out of the stack unless a later ADR changes the decision.
+- Perform all user-facing acceptance testing through the Codex in-app browser against the VM-served application.
+- Keep lower-level Foundry, service, database, migration, security and operational tests in addition to browser UAT.
+- Commit and push every major validated change from the VM so GitHub stays current; use feature branches for incomplete/risky work and keep `main` deployable.
 - Run any project-operated RPC server, database, queue, object store, monitoring stack or CI runner natively on the VM.
 
 ## Source Of Truth
@@ -83,6 +87,7 @@ When sources conflict, use this order:
 - Important paths:
   - `AGENTS.md`: repository-local agent workflow and memory rules.
   - `MEMORY.md`: durable context store.
+  - `docs/devnet-to-testnet-readiness-plan.md`: controlled Anvil topology, production-readiness definition, phased build sequence, browser UAT matrix, Git checkpoints, evidence gates and testnet migration package.
   - `README.md`: executive finding and research index.
   - `docs/vm-runtime-and-operations.md`: binding VM-only execution, native service, PM2/systemd persistence, CI, RPC, deployment, backup and capacity rules.
   - `research/01-chain-and-assets.md`: chain, liquidity, Stock Token, and registry findings.
@@ -113,7 +118,7 @@ When sources conflict, use this order:
   - `prd/09-ui-ux-visual-design-system.md`: settled palette, typography, responsive grid, information hierarchy, components, charts, motion, content and design QA requirements.
   - `prd/10-technology-stack-and-repository-architecture.md`: settled monorepo, frontend, backend, contracts, persistence, queue, artifacts, testing, observability and CI/CD baseline.
   - `user-stories/README.md`: story conventions, personas, epic index, definition of ready and definition of done.
-  - `user-stories/01-access-wallet-and-shared-experience.md` through `10-technology-stack-and-developer-platform.md`: 150 user, technical-enabler, operational, design, stack and release-gate stories.
+  - `user-stories/01-access-wallet-and-shared-experience.md` through `10-technology-stack-and-developer-platform.md`: 154 user, technical-enabler, operational, design, stack and release-gate stories.
   - `user-stories/TRACEABILITY.md`: generated mapping from every PRD requirement to covering story IDs.
   - `scripts/validate-user-stories.py`: validates story structure/PRD coverage and regenerates the traceability matrix.
   - `research/live-contract-audit.json`, `market-snapshot.json`, `competitor-traction.json`, `reward-economics.json`: machine-readable point-in-time evidence.
@@ -148,6 +153,7 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-20: Controlled-devnet planning traceability - passed; `python3 scripts/validate-user-stories.py` ran on the VM and reports 154 stories covering 182/182 requirements, including Anvil isolation, browser acceptance and Git checkpoint requirements.
 - 2026-07-20: Initial repository publication - passed; initialized local `main`, committed 105 files as the research/product baseline, created private `fourtytwo42/Robyn`, pushed through the authenticated VM, set `main` as default, and cloned the repository to `/home/hendo420/Robyn`.
 - 2026-07-20: VM-only runtime decision - passed documentation review; `AGENTS.md`, README, PRD decisions, stack/infrastructure requirements, delivery mappings, research blueprint and user stories consistently require the `robyn` VM and prohibit Docker/containers.
 - 2026-07-20: VM-native traceability - passed; `python3 scripts/validate-user-stories.py` ran on the VM and reports 151 stories covering 178/178 requirements, including new PM2/systemd, native-service, self-hosted-runner and VM-hosted-RPC requirements.
@@ -220,6 +226,16 @@ When sources conflict, use this order:
 - 2026-06-18: `rg -n "agents\.md|memory\.md" .\AGENTS.md` - passed with no matches; confirmed operational instructions use uppercase filenames.
 
 ## Decisions
+
+### 2026-07-20 - Controlled Anvil Devnet And Browser Release Gates
+
+- Context: Robinhood Testnet ETH has no documented public faucet, while development needs deterministic funding and complete user-flow validation.
+- Decision: Use native Anvil chain ID 31337 on the VM, with loopback privileged RPC, a restricted LAN gateway, controlled faucet, persistent shared state and separate ephemeral automated-test chains. Hardhat Network is not selected.
+- Decision: Accept every user-facing story through the Codex in-app browser at desktop, tablet and mobile viewports, without replacing lower-level correctness tests.
+- Decision: Commit and push from the VM after every major validated change; incomplete or risky work stays on feature branches and `main` remains deployable.
+- Files: `docs/devnet-to-testnet-readiness-plan.md`, VM operations, PRDs, stories and traceability.
+- Result: A complete planning-only path now runs from the documentation-only repository through a production-shaped controlled-devnet release candidate and Robinhood Testnet migration package.
+- Follow-up: Do not start implementation until authorized; then execute the plan's bounded first slice.
 
 ### 2026-07-20 - Application and Developer Stack Settled (VM runtime updated)
 
@@ -424,7 +440,7 @@ When sources conflict, use this order:
 - Have counsel draft Robyn-specific user and creator terms once the operating entity, jurisdictions, launch flow, basket contracts, fee mechanics and upstream adapter are fixed.
 - Obtain the full current Bags agreement and written confirmation that a smart contract may receive creator fees and route them into holder rewards; obtain equivalent terms from pons if it remains a candidate.
 - Run a Bags contract-recipient compatibility spike; keep pons as the next adapter candidate if Bags cannot safely route creator fees to the basket contracts.
-- If implementation is authorized, prototype reward conservation and transfer accounting on testnet.
+- If implementation is authorized, begin on the controlled Anvil devnet and move to Robinhood Testnet only after the migration gates pass.
 - Test whether pons creator fee claims and redirects work safely when the payout recipient is a smart contract.
 - Confirm 0x or UniswapX commercial/API access and quote reliability for selected Stock Tokens.
 - Continue legal advice for the operating entity, target jurisdictions, issuer restrictions, and reward-token classification in parallel; do not add active user restrictions unless the product decision changes.
@@ -440,6 +456,10 @@ When sources conflict, use this order:
 - Update `MEMORY.md` after durable discoveries, decisions, fixes, verification results, blocked work, and handoffs.
 - Never store secrets, tokens, passwords, private keys, or sensitive personal data in `MEMORY.md`.
 - Requery the official RHJ registry and launchpad contract parameters before relying on the 2026-07-20 snapshot.
+- Use native Anvil chain ID 31337 for the controlled Robyn Devnet; do not add Hardhat Network without an approved ADR.
+- Never expose raw Anvil privileged methods to LAN/browser users. Keep automated test chains isolated from persistent shared devnet state.
+- Run all user-facing acceptance through the Codex in-app browser and retain responsive DOM, screenshot, console/network and transaction evidence.
+- Commit and push every major validated change from the VM; verify the remote SHA before declaring the checkpoint complete.
 - Do not call Robinhood Stock Tokens wrapped shares or direct stock ownership.
 - Do not market a nonredeemable fee-reward token as backed.
 - Do not treat an onchain Stock Token transfer as legally valid merely because the ERC-20 transaction succeeded; RHJ Product Terms and selling restrictions control legal effectiveness and holder rights.

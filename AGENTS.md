@@ -34,6 +34,12 @@ This file is the repository-local agent guide. Use the uppercase filename `AGENT
 
 Use `MEMORY.md` as the source of retained project context. If chat history conflicts with `MEMORY.md`, verify the current repo state before acting and update `MEMORY.md` with any correction.
 
+## Controlled Devnet And Release Workflow
+
+- Use native Anvil on the VM as the controlled development network (chain ID 31337). Do not add Hardhat Network unless an approved architecture decision replaces Foundry/Anvil.
+- All user-facing acceptance testing must run through the Codex in-app browser against the VM-served application. VM-native unit, integration, fuzz, invariant, fork, accessibility, security and service tests remain required.
+- After every major validated change, commit and push from the authoritative VM checkout. Keep incomplete or risky work on feature branches and keep main deployable.
+
 ## Source Of Truth
 
 When sources conflict, prefer them in this order:

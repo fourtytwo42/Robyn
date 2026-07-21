@@ -2,7 +2,7 @@
 
 Robyn is a proposed Robinhood Chain launchpad where creators launch community tokens with an immutable, weighted asset basket. A token's creator-fee stream purchases the selected assets, and holders accrue claimable basket rewards.
 
-> **Project status:** Research and product definition are complete. Smart contracts and application code have not been implemented. The next release is an R0 accounting and integration proof using mock assets on Robinhood Chain Testnet.
+> **Project status:** Research and product definition are complete. Smart contracts and application code have not been implemented. The approved build roadmap starts on a VM-hosted Anvil devnet and produces a production-shaped release candidate that is ready to migrate to Robinhood Chain Testnet.
 
 ## Authoritative development environment
 
@@ -26,7 +26,8 @@ The Windows checkout is not an execution environment. It is only a convenience m
 | [`prd/`](prd/) | Authoritative product requirements and architecture decisions |
 | [`user-stories/`](user-stories/) | Delivery backlog and PRD traceability |
 | [`scripts/`](scripts/) | Reproducible research, validation, market-snapshot, and screenshot tooling |
-| [`docs/`](docs/) | VM runtime and operating procedures |
+| [`docs/`](docs/) | VM runtime, operating procedures and delivery roadmaps |
+| [Devnet-to-testnet readiness plan](docs/devnet-to-testnet-readiness-plan.md) | Phase-by-phase implementation, verification and release plan |
 
 The initial implementation will use the monorepo and contract stack defined in [`prd/10-technology-stack-and-repository-architecture.md`](prd/10-technology-stack-and-repository-architecture.md). Product language must describe the launch token as a fee-funded reward token, not an asset-backed or redeemable security.
 
@@ -107,7 +108,7 @@ The implementation-ready PRD set is indexed in [prd/README.md](prd/README.md). I
 
 ## User-story backlog
 
-The comprehensive delivery backlog is indexed in [user-stories/README.md](user-stories/README.md). It contains 151 stories across ten epic collections, with personas, releases, priorities, dependencies, acceptance criteria, PRD mappings, and a generated [requirement traceability matrix](user-stories/TRACEABILITY.md).
+The comprehensive delivery backlog is indexed in [user-stories/README.md](user-stories/README.md). It contains 154 stories across ten epic collections, with personas, releases, priorities, dependencies, acceptance criteria, PRD mappings, and a generated [requirement traceability matrix](user-stories/TRACEABILITY.md).
 
 ## Verified development endpoints
 

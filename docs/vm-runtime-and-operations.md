@@ -16,6 +16,9 @@ Date: 2026-07-20
 
 Docker was installed during initial VM provisioning before this decision. No containers or images existed, and `docker.service`, `docker.socket` and `containerd.service` were disabled on 2026-07-20. Package removal is a separate administrative action.
 
+8. Development starts on a native VM-hosted Anvil chain with chain ID `31337`; Hardhat Network is not part of the settled Foundry stack.
+9. Every user-facing story is accepted through the Codex in-app browser, while lower-level VM-native tests remain mandatory.
+10. Every major validated change is committed and pushed from the VM; main remains deployable.
 ## Authoritative workflow
 
 ```bash
@@ -65,6 +68,23 @@ PM2 configuration contains no secrets. Each process receives only its scoped env
 - Redis binds to loopback, uses authentication/ACLs where supported, has no public listener, and may be rebuilt from PostgreSQL/onchain checkpoints.
 - MinIO binds to a private interface or loopback behind the reverse proxy, uses a dedicated data directory and service account, and verifies object hashes during backup/restore.
 - Service data lives outside the Git checkout under documented paths such as `/var/lib/postgresql`, `/var/lib/redis`, and `/var/lib/minio`.
+## Controlled development network
+
+The first implementation environment is the persistent Robyn Devnet described in [Devnet-to-testnet readiness plan](devnet-to-testnet-readiness-plan.md):
+
+- native Anvil on chain ID `31337`, supervised by `robyn-anvil.service`;
+- raw JSON-RPC bound to `127.0.0.1:8545`;
+- a restricted LAN gateway planned at `192.168.50.250:8546`;
+- state outside Git under `/var/lib/robyn/anvil/state.json`;
+- a rate-limited faucet that funds arbitrary development addresses; and
+- production-shaped mock assets, feeds, exchange routes and issuer-control failure modes.
+
+The LAN gateway must deny privileged Anvil, impersonation, destructive, unsafe debug and state-manipulation methods. Automated contract and service tests use separate ephemeral Anvil processes and never reset the shared devnet.
+
+For devnet browser UAT only, the application may expose an explicitly labeled ephemeral session wallet so the in-app browser can sign transactions without an extension. That connector, its keys, the faucet and chain ID 31337 must be compile-time excluded from testnet/production bundles and confirmed absent by bundle scans.
+
+No Anvil service, gateway or faucet is installed by this planning change.
+
 - Service configuration lives under `/etc`, while repository-owned templates and runbooks live under `infrastructure/`.
 
 ## RPC policy
@@ -98,6 +118,11 @@ The workstation is never an RPC host.
 If GitHub Actions is used, register a dedicated self-hosted runner account on this VM and install its runner unit through `systemd`. Workflows must target only the labeled Robyn runner and must not use GitHub-hosted runners.
 
 Because the runner shares a host with project services:
+## Browser acceptance and Git checkpoints
+
+All anonymous, wallet, create, trade, reward, claim, recovery and responsive user journeys must be exercised through the Codex in-app browser against the VM-served application. Release evidence includes DOM assertions, screenshots, console/network failures and desktop/tablet/mobile results. This browser gate supplements rather than replaces Foundry, Vitest, service, database, security and operational verification.
+
+After each major validated slice, commit and push from the VM. Use feature branches for incomplete or risky slices and merge only after their required checks and browser acceptance pass.
 
 - do not execute workflows from untrusted forks;
 - use a dedicated unprivileged Unix account and workspace;

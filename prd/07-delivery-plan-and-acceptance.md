@@ -150,13 +150,19 @@ Proceed only if at least one is true:
 | Fee/vault/distributor contracts | `PROTO-001` to `PROTO-012` |
 | Constrained conversions | `EXEC-001` to `EXEC-010` |
 | Indexer/API/epoch builder | `DATA-001` to `DATA-010` |
-| Runtime infrastructure | `INFRA-001` to `INFRA-014` |
+| Runtime infrastructure | `INFRA-001` to `INFRA-015` |
 | Security and governance | `SEC-001` to `SEC-014` |
 | Legal/product policy | `LEGAL-001` to `LEGAL-008` |
 | Operations | `OPS-001` to `OPS-008` |
 | Measurement | `ANALYTICS-001` to `ANALYTICS-010` |
 | Visual design system | `DESIGN-001` to `DESIGN-018` |
-| Technology stack | `STACK-001` to `STACK-024` |
+| Technology stack | `STACK-001` to `STACK-027` |
+
+The complete implementation sequence from the current documentation-only state through a production-shaped controlled-devnet release candidate and Robinhood Testnet migration package is maintained in [Devnet-to-testnet readiness plan](../docs/devnet-to-testnet-readiness-plan.md).
+
+## Acceptance execution policy
+
+All user-facing end-to-end scenarios must be executed through the Codex in-app browser against the VM-served release at desktop, tablet and mobile viewports. Browser evidence is necessary but not sufficient: contract invariants, service/data integration, migrations, recovery, security and operational drills run independently on the VM. Every major validated milestone is committed and pushed before the next major slice begins.
 
 ## End-to-end acceptance scenarios
 
