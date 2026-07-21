@@ -1,9 +1,7 @@
-import {
-  foundationChecks,
-  getGatewayHealth,
-  getHealthStatus,
-} from "@/lib/health";
+import { DevnetConsole, type Deployment } from "@/components/devnet-console";
+import { getGatewayHealth, getHealthStatus } from "@/lib/health";
 import Link from "next/link";
+import deployment from "../../../../deployments/31337.json";
 
 export const dynamic = "force-dynamic";
 
@@ -28,51 +26,74 @@ export default async function Home() {
         </span>
       </header>
 
-      <section className="hero" aria-labelledby="page-title">
-        <p className="eyebrow">Foundation checkpoint 01</p>
-        <h1 id="page-title">The launchpad foundation is online.</h1>
-        <p className="lede">
-          Robyn turns creator trading fees into transparent, weighted asset
-          rewards. This page confirms the VM-hosted application foundation
-          before financial journeys are introduced.
-        </p>
-
-        <div className="health-card" aria-labelledby="health-heading">
-          <div>
-            <p className="card-label">System status</p>
-            <h2 id="health-heading">Ready for the next build slice</h2>
-          </div>
-          <span className="health-badge">{health.status}</span>
-          <dl>
-            <div>
-              <dt>Service</dt>
-              <dd>{health.service}</dd>
-            </div>
-            <div>
-              <dt>Environment</dt>
-              <dd>{health.environment}</dd>
-            </div>
-          </dl>
-          <div>
-            <dt>RPC gateway</dt>
-            <dd data-testid="rpc-status">
-              {gateway.status} · chain {gateway.chainId}
-            </dd>
+      <section className="product-hero" aria-labelledby="hero-heading">
+        <div className="hero-copy">
+          <p className="eyebrow">Programmable creator fees</p>
+          <h1 id="hero-heading">
+            Trade a token. Build a basket. Share the upside.
+          </h1>
+          <p className="lede">
+            Robyn turns market fees into an immutable mix of mock tokenized
+            assets, then distributes the resulting rewards to eligible token
+            holders.
+          </p>
+          <div className="hero-actions">
+            <a className="button primary" href="#devnet-console">
+              Try the live flow
+            </a>
+            <span>
+              Permissionless launch architecture · controlled local chain
+            </span>
           </div>
         </div>
-        <ul className="check-grid" aria-label="Foundation checks">
-          {foundationChecks.map((check, index) => (
-            <li key={check}>
-              <span className="check-index">0{index + 1}</span>
-              <span>{check}</span>
-              <span className="check-state">Verified</span>
-            </li>
-          ))}
-        </ul>
+        <aside className="basket-preview" aria-label="Genesis basket preview">
+          <div className="basket-ring" aria-hidden="true">
+            <span>100%</span>
+            <small>allocated</small>
+          </div>
+          <div>
+            <p className="card-label">Genesis basket</p>
+            <ul>
+              <li>
+                <span className="swatch nvda" />
+                Mock NVIDIA <strong>40%</strong>
+              </li>
+              <li>
+                <span className="swatch cash" />
+                Mock Cash App <strong>40%</strong>
+              </li>
+              <li>
+                <span className="swatch spx" />
+                Mock S&amp;P 500 <strong>20%</strong>
+              </li>
+            </ul>
+          </div>
+        </aside>
+      </section>
 
-        <p className="notice">
-          Development network only. No real assets or financial value.
-        </p>
+      <section className="system-strip" aria-label="System status">
+        <div>
+          <span className="status-dot" />
+          Web <strong>{health.status}</strong>
+        </div>
+        <div data-testid="rpc-status">
+          <span className="status-dot" />
+          RPC <strong>{gateway.status}</strong>
+        </div>
+        <div>
+          Chain <strong>{gateway.chainId}</strong>
+        </div>
+        <div>
+          Environment <strong>{health.environment}</strong>
+        </div>
+      </section>
+
+      <DevnetConsole deployment={deployment as Deployment} />
+
+      <section className="notice" aria-label="Development disclaimer">
+        Development network only. Every asset is a mock with no real-world
+        value. This environment is built to prove the full protocol workflow
+        before Robinhood Chain testnet deployment.
       </section>
     </main>
   );

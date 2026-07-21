@@ -114,7 +114,7 @@ The verifier checks:
 
 Devnet-only contracts under packages/contracts/src/devnet must never appear in a Robinhood testnet manifest. Testnet release checks will reject the DEVNET_ONLY marker and controlled-chain identifiers.
 
-Last verified 2026-07-21: the live deployment survived robyn-anvil.service restart with the second user's 890,000 ROBYN token balance unchanged. Manifest bytecode and accounting verification passed at block 26 after buy, convert, claim and sell transactions.
+Last verified 2026-07-21: the current manifest records the faucet-enabled deployment created at block 45. Its mock base token gives each address one 10,000 mUSD claim while reward-asset faucets remain disabled. Manifest bytecode, links, exclusion state, base-faucet policy and accounting verification pass against the live chain.
 
 ## Remaining production-readiness work
 
@@ -123,6 +123,6 @@ Last verified 2026-07-21: the live deployment survived robyn-anvil.service resta
 - Promote immutable releases instead of running from the checkout.
 - Add generation/reset tooling and off-VM state backup.
 - Add gateway load/soak tests, structured metrics and alerts.
-- Implement wallet, launch, trade, conversion, reward and claim journeys.
+- Extend the verified session-wallet genesis trade/convert/claim journey to permissionless user-created launches, discovery and token detail pages.
 
 These gaps keep the active production-readiness goal open.

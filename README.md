@@ -2,7 +2,7 @@
 
 Robyn is a proposed Robinhood Chain launchpad where creators launch community tokens with an immutable, weighted asset basket. A token's creator-fee stream purchases the selected assets, and holders accrue claimable basket rewards.
 
-> **Project status:** Implementation is active. The VM now runs a persistent controlled Anvil devnet, restricted user RPC/faucet, production web health surface, and a live genesis deployment with mock trading, immutable basket fees, guarded conversion, transfer-aware rewards and pull claims. The full launchpad UI/data plane remains in progress.
+> **Project status:** Implementation is active. The VM runs a persistent controlled Anvil devnet, restricted user RPC/faucet, and a live browser-operated genesis market. Any LAN user can create a browser-session wallet, receive dev gas and mock cash, buy or sell ROBYN, convert fees into its immutable 40/40/20 reward basket, and claim rewards. Permissionless user-created launches and the production data/operations plane remain in progress.
 
 ## Authoritative development environment
 
