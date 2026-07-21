@@ -60,15 +60,12 @@ export default async function Discover({
       <SiteHeader />
       <section className="page-shell discovery-page">
         <header className="page-hero discovery-hero">
-          <p className="eyebrow">Every token, its own basket</p>
-          <h1>Discover tokens by the rewards they earn.</h1>
+          <p className="eyebrow">Reward market board</p>
+          <h1>Find the token basket you want to hold.</h1>
           <p className="lede">
-            Browse communities without a wallet and compare their immutable
-            reward baskets. Pending and purchased rewards are read live from the{" "}
-            {isTestnet
-              ? "Robinhood testnet rehearsal"
-              : "controlled development"}{" "}
-            chain.
+            Browse every live market without a wallet. Compare market cap,
+            activity, holder count, and the immutable assets each community can
+            earn.
           </p>
         </header>
 
@@ -110,10 +107,15 @@ export default async function Discover({
           </Link>
         </form>
 
-        <div className="ranking-note">
-          <strong>Ranking: newest indexed launch first.</strong> Formula{" "}
-          <code>native-v1</code>. Raw volume and projected rewards are excluded
-          so self-trading cannot dominate this view.
+        <div className="market-board-toolbar" aria-label="Market board status">
+          <div>
+            <span className="board-tab active">All markets</span>
+            <span className="board-tab">Reward baskets</span>
+          </div>
+          <p>
+            <strong>{launches.data.length} listed</strong>
+            <span>Newest indexed first · native-v1</span>
+          </p>
         </div>
 
         {launches.queryStatus === "invalid_address" ? (
@@ -131,12 +133,15 @@ export default async function Discover({
             {launches.data.map((launch, index) => (
               <article className="launch-card" key={launch.token}>
                 <div className="launch-card-top">
-                  <TokenArt
-                    symbol={launch.symbol}
-                    alt=""
-                    className="launch-card-art"
-                    priority={index < 3}
-                  />
+                  <div className="launch-art-stage">
+                    <TokenArt
+                      symbol={launch.symbol}
+                      alt=""
+                      className="launch-card-art"
+                      priority={index < 4}
+                    />
+                    <span>{launch.assets.length} asset basket</span>
+                  </div>
                   <div className="launch-card-copy">
                     <div className="launch-card-heading">
                       <div>
@@ -175,6 +180,15 @@ export default async function Discover({
                           </span>
                         );
                       })}
+                    </div>
+                    <div className="basket-weight-bar" aria-hidden="true">
+                      {launch.weights_bps.map((weight, weightIndex) => (
+                        <i
+                          className={`weight-${(weightIndex % 3) + 1}`}
+                          style={{ width: `${weight / 100}%` }}
+                          key={`${launch.token}-${weightIndex}`}
+                        />
+                      ))}
                     </div>
                   </div>
                 </div>

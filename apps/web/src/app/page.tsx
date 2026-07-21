@@ -15,9 +15,18 @@ import {
 } from "@/components/launchpad-visuals";
 import { getLaunches } from "@/lib/data-api";
 import Link from "next/link";
+import { formatEther } from "viem";
 import { rewardAssetMetadata } from "@/lib/reward-assets";
 
 export const dynamic = "force-dynamic";
+
+function compactBase(value: string) {
+  const amount = Number(formatEther(BigInt(value)));
+  return amount.toLocaleString(undefined, {
+    notation: amount >= 1_000 ? "compact" : "standard",
+    maximumFractionDigits: 2,
+  });
+}
 
 export default async function Home() {
   const [gateway, dataPlane, launches] = await Promise.all([
@@ -30,6 +39,15 @@ export default async function Home() {
   const marketShowcase = ["ROBYN", "SOAK", "ONE", "EVID"].flatMap(
     (symbol) => launches.data.find((launch) => launch.symbol === symbol) ?? [],
   );
+  const rewardAssetCount = new Set(
+    launches.data.flatMap((launch) =>
+      launch.assets.map((asset) => asset.toLowerCase()),
+    ),
+  ).size;
+  const totalVolume = launches.data.reduce(
+    (total, launch) => total + BigInt(launch.metrics?.totalVolumeBase ?? "0"),
+    0n,
+  );
 
   return (
     <main id="main">
@@ -39,12 +57,13 @@ export default async function Home() {
 
       <section className="product-hero" aria-labelledby="hero-heading">
         <div className="hero-copy">
-          <p className="eyebrow">A reward basket for every token</p>
-          <h1 id="hero-heading">Hold the token. Earn the basket.</h1>
+          <p className="eyebrow">Fair launches · built-in reward baskets</p>
+          <h1 id="hero-heading">Every token launches with rewards.</h1>
           <p className="lede">
             Every Robyn token has its own immutable mix of{" "}
             {isTestnet ? "testnet mock" : "mock"} stock and crypto rewards.
-            Trade, hold, and claim the assets that token activity creates.
+            Discover a community, trade its market, then claim the basket assets
+            its activity creates.
           </p>
           <div className="hero-actions">
             <Link className="button primary" href="/create">
@@ -70,6 +89,25 @@ export default async function Home() {
             <p>Holders earn 40% mNVDA / 40% mSPY / 20% mETH.</p>
           </div>
         </aside>
+      </section>
+
+      <section className="launchpad-stats" aria-label="Launchpad activity">
+        <article>
+          <span>Live markets</span>
+          <strong>{launches.data.length}</strong>
+        </article>
+        <article>
+          <span>Reward assets</span>
+          <strong>{rewardAssetCount}</strong>
+        </article>
+        <article>
+          <span>Indexed volume</span>
+          <strong>{compactBase(totalVolume.toString())} mUSD</strong>
+        </article>
+        <article>
+          <span>Basket rules</span>
+          <strong>Immutable</strong>
+        </article>
       </section>
 
       <section className="market-radar" aria-labelledby="market-radar-heading">
@@ -119,11 +157,27 @@ export default async function Home() {
                     })
                     .join(" / ")}
                 </p>
+                <div className="basket-weight-bar" aria-hidden="true">
+                  {market.weights_bps.map((weight, index) => (
+                    <i
+                      className={`weight-${(index % 3) + 1}`}
+                      style={{ width: `${weight / 100}%` }}
+                      key={`${market.token}-${index}`}
+                    />
+                  ))}
+                </div>
                 <div className="market-stats">
-                  <span>Immutable basket</span>
+                  <span>
+                    MC{" "}
+                    {market.metrics
+                      ? compactBase(market.metrics.marketCapBase)
+                      : "—"}
+                  </span>
                   <strong>
-                    {market.assets.length} asset
-                    {market.assets.length === 1 ? "" : "s"}
+                    Vol{" "}
+                    {market.metrics
+                      ? compactBase(market.metrics.totalVolumeBase)
+                      : "—"}
                   </strong>
                 </div>
               </div>

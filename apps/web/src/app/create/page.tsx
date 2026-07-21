@@ -37,11 +37,28 @@ export default function CreateLaunch() {
             </span>
           </div>
         </div>
-        <TokenArt
-          symbol="MYCO"
-          alt="Example community token artwork"
-          priority
-        />
+        <aside
+          className="create-preview-card"
+          aria-label="Example launch preview"
+        >
+          <TokenArt
+            symbol="MYCO"
+            alt="Example community token artwork"
+            priority
+          />
+          <div>
+            <span className="hot-chip">Preview</span>
+            <h2>Your token. Your basket.</h2>
+            <p>
+              Choose up to three reward assets and lock their weights at launch.
+            </p>
+            <div className="basket-weight-bar" aria-hidden="true">
+              <i className="weight-1" style={{ width: "40%" }} />
+              <i className="weight-2" style={{ width: "40%" }} />
+              <i className="weight-3" style={{ width: "20%" }} />
+            </div>
+          </div>
+        </aside>
       </section>
       <NetworkLaunchpadConsole deployment={deployment as Deployment} />
       <NetworkConsole deployment={deployment as Deployment} />

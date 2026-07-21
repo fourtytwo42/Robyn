@@ -236,3 +236,15 @@ Components consume semantic tokens. A page must not invent one-off status colors
 4. Clickable prototype for creator and holder comprehension studies.
 5. Accessibility annotation and content inventory.
 6. Maintain the canonical logo/brand-mark source, optimized web asset and browser-icon derivatives documented above.
+## Circus-Informed Market Layer (2026-07-21)
+
+Robyn's launchpad UI SHALL combine the established dark reward-basket design system with the market density and task hierarchy observed on Circus. `research/16-circus-launchpad-ux-study.md` is the supporting reference and screenshot index.
+
+- The global shell SHALL include a horizontally scrollable live market tape using canonical indexed values. Until a trustworthy time-series projection exists, it SHALL NOT display invented percentage changes.
+- The homepage SHALL behave as a launchpad market board: a concise holder-first hero, real platform activity metrics, image-forward market cards, and direct paths to create and trade.
+- Discovery SHALL use a dense responsive grid that reaches four columns at the widest supported layout, then three, two, and one columns as space decreases.
+- Discovery cards SHALL show token identity, undistorted art, market cap, volume, holders, canonical address shorthand, and readable basket symbols/weights. Operational conversion and block details remain on the token page.
+- Each card SHALL visualize immutable basket composition with a segmented weight rail. This rail replaces any bonding-curve or graduation progress convention because Robyn does not currently implement those mechanics.
+- The canonical token page SHALL prioritize token identity, market cap, current indexed price, chart, trade action, reward basket, holder concentration, recent trades, and contract provenance in that order.
+- The creation experience SHALL pair launch inputs with a clear preview of the resulting token and basket. Durable user-uploaded media remains blocked on the separately documented artifact and moderation threat model.
+- Robyn SHALL retain its own navy/teal/violet/gold palette, logo, holder-first message, exact mock/testnet disclosures, and nonredeemability language. Circus's branding, metaphors, graphics, and unsupported economic claims SHALL NOT be copied.

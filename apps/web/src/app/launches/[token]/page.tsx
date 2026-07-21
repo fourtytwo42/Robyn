@@ -97,9 +97,16 @@ export default async function LaunchDetail({
               <span>Block {launch.created_block}</span>
             </div>
           </div>
-          <span className="risk-badge">
-            Experimental · {isTestnet ? "testnet mocks" : "controlled devnet"}
-          </span>
+          <div className="token-hero-quote">
+            <span>Market cap</span>
+            <strong>{metric(market.marketCapBase)}</strong>
+            <small>
+              Price {metric(market.priceBasePerToken)} / {launch.symbol}
+            </small>
+            <span className="risk-badge">
+              {isTestnet ? "Testnet mocks" : "Controlled devnet"}
+            </span>
+          </div>
         </header>
 
         <section
@@ -107,7 +114,7 @@ export default async function LaunchDetail({
           aria-label="Token market metrics"
         >
           {[
-            ["Market cap", metric(market.marketCapBase)],
+            ["Price", metric(market.priceBasePerToken)],
             ["Liquidity", metric(market.liquidityBase)],
             ["Total volume", metric(market.totalVolumeBase)],
             ["Holder fees", metric(market.totalFeesBase)],
