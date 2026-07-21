@@ -50,6 +50,17 @@ Promotion verifies artifact hashes, atomically switches the symlink, updates all
 
 Rollback swaps `current` and `previous`, reloads PM2, verifies the same release gate and records evidence. Contract deployments and incompatible database migrations require forward remediation; this mechanism must not pretend to reverse them.
 
+## Run the exact-release soak
+
+~~~bash
+sudo /home/hendo420/Robyn/scripts/install-soak-service.sh
+sudo systemctl start robyn-soak.service
+systemctl status robyn-soak.service --no-pager
+sudo find /var/lib/robyn/soak -name "*-summary.json" -type f -print
+~~~
+
+The service is installed but deliberately not enabled or started automatically. Its 24-hour run is bound to the selected release and fails if the symlink changes, an app leaves that immutable directory, a process restarts, health or onchain conservation fails, indexed state moves backward, an alert fires, p95 exceeds 500 ms, resource floors are crossed or RSS grows beyond the bounded allowance. Samples and the final summary are mode `0600` under `/var/lib/robyn/soak/<release-id>/`. A shortened run validates the harness only and never satisfies the release gate.
+
 ## Release acceptance
 
 Before identifying a release as a candidate:

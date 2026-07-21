@@ -1,0 +1,30 @@
+[Unit]
+Description=Robyn exact-release soak gate
+Requires=pm2-hendo420.service nginx.service prometheus.service
+After=pm2-hendo420.service nginx.service prometheus.service
+
+[Service]
+Type=simple
+User=hendo420
+Group=hendo420
+WorkingDirectory=/opt/robyn/current
+Environment=SOAK_DURATION_SECONDS=86400
+Environment=SOAK_INTERVAL_SECONDS=15
+Environment=SOAK_OUTPUT_DIR=/var/lib/robyn/soak
+ExecStart=/opt/node-v24.18.0-linux-x64/bin/node /opt/robyn/current/scripts/soak-release.mjs
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/robyn/soak /home/hendo420/.pm2
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
