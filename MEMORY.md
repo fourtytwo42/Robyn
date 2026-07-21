@@ -6,13 +6,15 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
 - Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; no unresolved critical/high defect remains; exact release evidence is pushed; and the final exact candidate completes an uninterrupted 24-hour soak.
-- Current task: finish the protected testnet browser UAT, commit and push the protocol/testnet package, build/promote/reboot the exact immutable release, then start its real 24-hour soak.
+- Current task: commit and push the browser-found portfolio/cleanup fixes, build/promote/reboot the exact immutable release, run final devnet browser acceptance, then start its real 24-hour soak.
 - Last meaningful change: implemented stateful invariants and malicious callback coverage, bounded exclusions, protected Robinhood Testnet modules/deployer/verifier/build, full transaction and isolated five-service rehearsals, release-gate integration and security triage.
 - Last verification: 2026-07-21 testnet transaction rehearsal passed faucet, buy, three conversions, claim and sell; isolated web/API/indexer/keeper/artifact rehearsal passed with restricted key file, three keeper conversions, dedicated database cleanup and live devnet preservation. Security audit passed with zero critical/high, zero high/critical dependency advisories and zero secret-history findings.
-- Next step: complete exact protected-candidate browser UAT, full repository gates, commit/push, immutable release build/promotion/reboot/browser verification, off-VM backup and uninterrupted 24-hour soak.
+- Next step: commit/push the browser-found fixes, immutable release build/promotion/reboot/browser verification, off-VM backup and uninterrupted 24-hour soak.
 - External gates: public testnet ETH and explicit broadcast authorization are needed for an actual Robinhood Testnet transaction; human alert delivery and independent contract review are required before real-value operation.
 
 ## Current State
+
+- Last verified 2026-07-21: in-app-browser UAT passed protected testnet home, injected-wallet absence handling, one-launch registry, anonymous discovery, canonical detail, repaired portfolio, zero console warnings/errors and a 390 by 844 responsive overflow check. The browser found and drove fixes for a portfolio 404, stale devnet disclosure and dishonest PM2 cleanup evidence.
 
 - Last verified 2026-07-21: protected chain-46630 deployment, verification and compile-time web module selection are implemented. Protected builds reject devnet markers, faucet routes and generated session keys, require injected-wallet calls and target Robinhood Testnet chain 46630.
 - Last verified 2026-07-21: the full chain-46630 mock journey and isolated five-service stack rehearsal pass. The rehearsal uses dedicated PostgreSQL database robyn_testnet_rehearsal, Redis DB 1, separate PM2 names/ports/queue and an owner-only operator key file, then removes its processes and preserves devnet health.
@@ -480,10 +482,18 @@ When sources conflict, use this order:
 - Result: All passed; no unresolved critical/high. The actual public-testnet broadcast remains separately authorized and unfunded.
 - Follow-up: Browser UAT exact protected candidate, final release/reboot/backup, uninterrupted 24-hour soak, human alert receiver and independent review before real-value use.
 
+### 2026-07-21 - Protected testnet browser UAT and teardown correction
+
+- Context: CLI rehearsals passed but in-app-browser acceptance was still mandatory.
+- Decision: Expose an isolated chain-46630 candidate temporarily on LAN, test home/wallet failure/discovery/detail/portfolio/mobile state, then remove exact temporary edge, firewall, chain, database and PM2 resources.
+- Files: apps/web/src/app/portfolio/page.tsx, apps/web/src/app/discover/page.tsx, scripts/deploy-testnet.sh, scripts/rehearse-testnet-stack.sh.
+- Commands/tests: protected build, in-app-browser DOM and console checks, 390 by 844 overflow check, full monorepo gates, transaction rehearsal, five-service rehearsal and security audit.
+- Result: Browser exposed portfolio 404 and stale copy; both were fixed. Teardown exposed comma-selector deletion failure; cleanup now uses explicit PM2 names and asserts none remain. Rehearsal passed afterward with no testnet processes and live devnet health preserved.
+- Follow-up: push the fix commit and run the same exact-release gates during immutable build.
+
 ## Open Follow-ups
 
 - Run a real uninterrupted 24-hour soak against the final exact immutable release candidate; short harness tests and forced-build contention do not satisfy this gate.
-- Complete in-app-browser UAT against the exact protected chain-46630 candidate; CLI transaction and service rehearsals do not replace browser acceptance.
 - Configure and test a human alert receiver before unattended public-testnet or real-value operation; local Prometheus/Grafana alert state alone is insufficient.
 - Obtain independent protocol/security review before real-value operation. Stateful invariants and malicious callbacks are now implemented, but the internal engineering review is not independent.
 - Ask Vladdy whether the team will provide a repository/license and whether a native multi-asset mode is planned; current deployed contracts do not expose a safe weighted-basket seam.

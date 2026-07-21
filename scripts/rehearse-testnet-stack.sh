@@ -8,11 +8,12 @@ work="$(mktemp -d)"
 database="robyn_testnet_rehearsal"
 rpc_url="http://127.0.0.1:18545"
 pm2="$repo_root/node_modules/.bin/pm2"
-apps="robyn-web-testnet,robyn-api-testnet,robyn-indexer-testnet,robyn-keeper-testnet,robyn-artifacts-testnet"
+app_selector="robyn-web-testnet,robyn-api-testnet,robyn-indexer-testnet,robyn-keeper-testnet,robyn-artifacts-testnet"
+app_names=(robyn-web-testnet robyn-api-testnet robyn-indexer-testnet robyn-keeper-testnet robyn-artifacts-testnet)
 anvil --host 127.0.0.1 --port 18545 --chain-id 46630 --config-out "$work/anvil.json" --silent >"$work/anvil.log" 2>&1 &
 anvil_pid=$!
 cleanup() {
-  "$pm2" delete $apps >/dev/null 2>&1 || true
+  "$pm2" delete "${app_names[@]}" >/dev/null 2>&1 || true
   if [[ "$database" == "robyn_testnet_rehearsal" ]]; then
     psql -d "$database" -v ON_ERROR_STOP=1 -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public" >/dev/null 2>&1 || true
   fi
@@ -49,7 +50,7 @@ ROBYN_TESTNET_MANIFEST="$manifest" \
 ROBYN_TESTNET_RPC_URL="$rpc_url" \
 ROBYN_OPERATOR_KEY_FILE="$work/operator.key" \
 ROBYN_TESTNET_DATABASE="$database" \
-  "$pm2" start infrastructure/pm2/ecosystem.testnet.config.cjs --only "$apps" --update-env >/dev/null
+  "$pm2" start infrastructure/pm2/ecosystem.testnet.config.cjs --only "$app_selector" --update-env >/dev/null
 
 healthy=false
 for _ in $(seq 1 120); do
@@ -92,10 +93,18 @@ for i in 0 1 2; do
 done
 
 processes="$(PM2_HOME=/home/hendo420/.pm2 "$pm2" jlist)"
-for name in ${apps//,/ }; do
+for name in "${app_names[@]}"; do
   jq -e --arg name "$name" '.[] | select(.name == $name and .pm2_env.status == "online")' <<<"$processes" >/dev/null
 done
 curl -fsS http://127.0.0.1:3000/api/health >/dev/null
+"$pm2" delete "${app_names[@]}" >/dev/null
+processes_after_cleanup="$(PM2_HOME=/home/hendo420/.pm2 "$pm2" jlist)"
+for name in "${app_names[@]}"; do
+  if jq -e --arg name "$name" '.[] | select(.name == $name)' <<<"$processes_after_cleanup" >/dev/null; then
+    echo "Testnet process survived cleanup: $name" >&2
+    exit 1
+  fi
+done
 
 summary="$(jq -n \
   --arg testedAt "$(date -u +%FT%TZ)" \

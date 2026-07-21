@@ -19,6 +19,7 @@ export default async function Discover({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const query = await searchParams;
+  const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
   const filters = {
     q: first(query.q).trim(),
     asset: first(query.asset),
@@ -43,7 +44,11 @@ export default async function Discover({
           <p className="lede">
             Browse without a wallet. Basket configuration comes from the indexed
             launch registry; pending and purchased amounts are read live from
-            the controlled chain.
+            the{" "}
+            {isTestnet
+              ? "Robinhood testnet rehearsal"
+              : "controlled development"}{" "}
+            chain.
           </p>
         </header>
 
@@ -144,9 +149,10 @@ export default async function Discover({
           {launches.indexedAt ?? "timestamp unavailable"}
         </p>
       </section>
-      <section className="notice" aria-label="Development disclaimer">
-        Development network only. Mock assets have no financial value and the
-        community token is not redeemable for its reward basket.
+      <section className="notice" aria-label="Network disclaimer">
+        {isTestnet
+          ? "Robinhood Chain Testnet only. Project-owned mock assets have no real-world value, and the community token is not redeemable for its reward basket."
+          : "Development network only. Mock assets have no financial value, and the community token is not redeemable for its reward basket."}
       </section>
     </main>
   );

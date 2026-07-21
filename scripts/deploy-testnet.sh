@@ -104,6 +104,7 @@ jq -n --arg environment "robinhood-testnet" --arg assetStrategy "project-owned-t
   chainId: $chainId,
   deploymentBlock: $blockNumber,
   gitCommit: $gitCommit,
+  gitSha: $gitCommit,
   deployer: $deployer,
   assetStrategy: $assetStrategy,
   mockOnly: true,

@@ -44,6 +44,10 @@ The database is preprovisioned natively in PostgreSQL and owned by the unprivile
 
 Both rehearsals are mandatory gates in `scripts/build-release.sh`; their JSON summaries are retained as `release-evidence/testnet-journey.json` and `release-evidence/testnet-stack.json`.
 
+## Browser acceptance
+
+On 2026-07-21 the in-app browser verified the protected chain-46630 home, explicit mock disclosures, no-injected-wallet failure state, one-launch registry, anonymous discovery, canonical detail, portfolio no-wallet state, zero console warnings/errors and a 390 by 844 responsive layout without horizontal overflow. CLI signed transactions remain the transaction evidence because the in-app browser has no injected wallet; the protected UI correctly refuses to invent or bundle one.
+
 ## Protected web build
 
 ~~~bash
