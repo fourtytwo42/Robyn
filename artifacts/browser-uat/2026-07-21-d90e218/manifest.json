@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "evidenceType": "in-app-browser-release-uat",
-  "capturedAt": "2026-07-21T10:28:00Z",
+  "capturedAt": "2026-07-21T10:38:00Z",
   "releaseGitSha": "d90e2187afcf278cdc5d49acaf20f3c23d8ac72a",
   "releasePath": "/opt/robyn/releases/d90e2187afcf278cdc5d49acaf20f3c23d8ac72a",
   "baseUrl": "http://192.168.50.250:3000/",
@@ -19,33 +19,57 @@
     "threeRewardAssetsClaimed": true,
     "genesisSell": true,
     "portfolioReconciled": true,
-    "consoleWarningsOrErrors": 0
+    "consoleWarningsOrErrors": 0,
+    "invalidBasketWeightRejected": true,
+    "invalidMetadataRejected": true,
+    "permissionlessOneAssetLaunch": true
   },
   "observedState": {
     "launchName": "Evidence Basket",
     "launchSymbol": "EVID",
     "launchToken": "0xF8698093ef2a86718040fabcacaf8bf556911301",
-    "launchCount": 3,
+    "launchCount": 5,
     "genesisBalanceAfterSell": "890000 ROBYN",
     "claimedRewards": {
       "mNVDA": "0.00865",
       "mSPY": "0.0173",
       "mETH": "0.01297"
     },
-    "indexedBlock": 144
+    "indexedBlock": 156,
+    "oneAssetLaunch": {
+      "name": "Single Asset Evidence",
+      "symbol": "ONE",
+      "token": "0xFBf90645b2a75ba27849d99d1cd8aee39227ad77",
+      "weights": {
+        "mNVDA": 100,
+        "mSPY": 0,
+        "mETH": 0
+      }
+    },
+    "automationTimingArtifactLaunch": {
+      "id": 4,
+      "name": "My Community",
+      "symbol": "MYCO",
+      "token": "0x7835B0Dc65dbe796c3330cd800acb57ce7792299"
+    }
   },
   "screenshots": [
-    "portfolio-anonymous-desktop.jpg",
+    "claimed-sold-desktop.jpg",
+    "invalid-metadata-desktop.jpg",
+    "one-asset-launch-desktop.jpg",
     "pending-fees-desktop.jpg",
     "permissionless-launch-desktop.jpg",
-    "claimed-sold-desktop.jpg",
+    "portfolio-anonymous-desktop.jpg",
     "portfolio-signed-desktop.jpg"
   ],
   "domSnapshots": [
+    "claimed-sold.dom.txt",
+    "converted.dom.txt",
+    "invalid-metadata.dom.txt",
+    "invalid-weights.dom.txt",
+    "one-asset-launch.dom.txt",
     "pending-fees.dom.txt",
     "permissionless-launch.dom.txt",
-    "converted.dom.txt",
-    "claimed-sold.dom.txt",
     "portfolio.dom.txt"
   ],
   "transactionEvidence": "transactions.json",
@@ -54,7 +78,11 @@
   "notes": [
     "Screenshots are JPEG bytes captured directly from the in-app browser at its 1265-pixel desktop surface.",
     "No private key, recovery material, browser storage dump or provider credential is included.",
-    "The final 24-hour soak summary will be added only after the uninterrupted gate completes."
+    "The final 24-hour soak summary will be added only after the uninterrupted gate completes.",
+    "Invalid 110-percent weights were rejected before any transaction with the documented total-100 validation message.",
+    "Whitespace-only name and symbol were deliberately allowed to settle in the controlled inputs, then rejected before any transaction; launch count remained five.",
+    "An earlier automation attempt clicked before empty controlled inputs settled and therefore submitted the prior default My Community / MYCO values, producing successful launch 4. It is retained transparently as a browser-automation timing artifact, not counted as invalid-input acceptance.",
+    "A one-asset 100/0/0 launch completed as launch 5; all 12 transactions for launches 4 and 5 have successful receipts."
   ],
   "transactionActions": [
     "fund faucet",
@@ -71,5 +99,7 @@
     "sell genesis"
   ],
   "keeperConversionEvidence": "keeper-conversions.json",
-  "keeperConversionReceiptEvidence": "keeper-conversion-receipts.json"
+  "keeperConversionReceiptEvidence": "keeper-conversion-receipts.json",
+  "additionalLaunchTransactionEvidence": "additional-launch-transactions.json",
+  "additionalLaunchReceiptEvidence": "additional-launch-receipts.json"
 }

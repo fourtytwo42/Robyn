@@ -13,6 +13,7 @@ Durable project context lives here. Update this file whenever information should
 - External gates: public testnet ETH and explicit broadcast authorization are needed for an actual Robinhood Testnet transaction; human alert delivery and independent contract review are required before real-value operation.
 
 ## Current State
+\n- Last verified 2026-07-21: exact release d90e218 browser UAT now covers three-asset and one-asset launches, 110-percent basket rejection, whitespace-only metadata rejection before any transaction, buy, weighted fee observation, keeper-race-safe conversion, three-asset claim, sell, discovery and portfolio reconciliation. All 12 additional launch transactions at blocks 145-156 succeeded. The earlier settled-default launch is retained transparently as a browser-automation timing artifact. Sixty-one soak samples through 10:38:43 UTC kept exact release paths, zero restarts, zero alerts, at least 6.51 GB available memory and 33.03 ms maximum observed endpoint latency.
 
 - Last verified 2026-07-21: exact release `d90e218` is live from `/opt/robyn/releases/d90e2187afcf278cdc5d49acaf20f3c23d8ac72a`. A fresh browser wallet launched EVID, bought ROBYN, observed weighted pending fees, raced safely with the keeper, claimed mNVDA/mSPY/mETH, sold and reconciled both positions at indexed block 144 with zero console warnings/errors. The attestation branch preserves five screenshots, five DOM snapshots, 15 successful transaction/keeper receipts and checksums without wallet secrets.
 
