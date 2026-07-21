@@ -96,6 +96,8 @@
         {"path": "passed", "equals": true},
         {"path": "warningOrErrorLogs", "equals": 0},
         {"path": "releaseGitSha", "expectedSha": true},
+        {"path": "browser", "equals": "Codex in-app browser"},
+        {"path": "wallet", "nonEmpty": true},
         {"path": "chainId", "equals": 31337},
         {"path": "indexedBlock", "minimum": 180},
         {"path": "journey.restoredOrFreshWallet", "equals": true},
@@ -123,6 +125,24 @@
       "kind": "json",
       "allReceiptStatuses": "0x1",
       "minimumReceiptCount": 8
+    },
+    {
+      "file": "post-reboot-browser-independent-audit.json",
+      "kind": "json",
+      "assertions": [
+        {"path": "passed", "equals": true},
+        {"path": "expectedSha", "expectedSha": true},
+        {"path": "browser", "equals": "Codex in-app browser"},
+        {"path": "chainId", "equals": 31337},
+        {"path": "receiptCount", "minimum": 8},
+        {"path": "uniqueReceiptCount", "minimum": 8},
+        {"path": "liveReceiptsMatched", "minimum": 8},
+        {"path": "snapshotCount", "minimum": 3},
+        {"path": "browserLogCount", "equals": 0},
+        {"path": "allReceiptsSuccessful", "equals": true},
+        {"path": "allReceiptSendersMatchWallet", "equals": true},
+        {"path": "allSnapshotsListedAndNontrivial", "equals": true}
+      ]
     },
     {
       "file": "post-reboot-backup-evidence.json",

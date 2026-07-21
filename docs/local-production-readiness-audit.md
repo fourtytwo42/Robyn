@@ -108,6 +108,31 @@ The auditor independently rejects malformed/error samples, SHA/path/process drif
 8. Tag and push the proven 8def270 runtime commit.
 9. Verify remote branch and tag SHAs, then perform one final requirement-by-requirement audit before closing the goal.
 
+The final browser package must be independently bound to the live chain before it
+is accepted:
+
+```bash
+node scripts/audit-browser-evidence.mjs \
+  --evidence artifacts/browser-uat/2026-07-21-8def270/post-reboot-browser-evidence.json \
+  --logs artifacts/browser-uat/2026-07-21-8def270/post-reboot-browser-logs.json \
+  --receipts artifacts/browser-uat/2026-07-21-8def270/post-reboot-browser-receipts.json \
+  --expected-sha 8def270b1856c2bcfcd69d429a8d88def4ab15a8 \
+  --minimum-receipts 8 \
+  --minimum-snapshots 3 \
+  --snapshot post-reboot-trade.dom.txt \
+  --snapshot post-reboot-detail.dom.txt \
+  --snapshot post-reboot-portfolio.dom.txt \
+  > artifacts/browser-uat/2026-07-21-8def270/post-reboot-browser-independent-audit.json
+```
+
+This auditor requires the exact release SHA, explicit `Codex in-app browser`
+provenance, chain 31337, an empty warning/error log, unique successful receipts
+sent by the browser wallet, receipts no newer than the claimed indexed block,
+three listed and nontrivial DOM snapshots, and byte-field agreement with the
+corresponding live RPC receipts. It matched all seven receipts and three DOM
+snapshots from the historical permissionless-launch package; final closure raises
+the receipt floor to eight.
+
 Backup evidence must be generated from the actual encrypted artifact, checksum,
 private GitHub release assets and saved isolated-restore output:
 
@@ -146,7 +171,7 @@ node scripts/verify-final-readiness.mjs \
   --evidence-dir artifacts/browser-uat/2026-07-21-8def270
 ```
 
-`closure-requirements.json` fixes the exact release SHA/path, Node/pnpm versions, copied-dependency mode, four migration hashes, eleven release gates, evidence branch, annotated tag, allowed final audit statuses and required soak, reboot, browser and backup evidence contracts. The verifier recomputes the lock, release-tree manifest and release-manifest sidecar hashes directly from the immutable artifact and requires the format, lint, PM2 policy, immutability, typecheck, test, build, traceability, security, testnet journey and isolated testnet-stack gates. It also requires at least 5,759 clean soak samples and 86,400 elapsed seconds, the full zero-restart/monotonic independent audit, ten recovered services/two timers/six PM2 apps, every post-reboot fund/buy/weighted-fee/convert/race/claim/sell/discovery/detail/portfolio browser step with at least eight successful receipts and empty logs, and an encrypted off-VM backup restored across nine tables, one artifact and chain 31337 without touching live state. During the active soak it correctly reports all remaining blockers and exits nonzero; an isolated 37-row package passes all 114 checks with zero blockers. Final closure requires the same result from the real package, including exact remote main and annotated `v0.1.0-rc.1` tag pointing to 8def270.
+`closure-requirements.json` fixes the exact release SHA/path, Node/pnpm versions, copied-dependency mode, four migration hashes, eleven release gates, evidence branch, annotated tag, allowed final audit statuses and required soak, reboot, browser and backup evidence contracts. The verifier recomputes the lock, release-tree manifest and release-manifest sidecar hashes directly from the immutable artifact and requires the format, lint, PM2 policy, immutability, typecheck, test, build, traceability, security, testnet journey and isolated testnet-stack gates. It also requires at least 5,759 clean soak samples and 86,400 elapsed seconds, the full zero-restart/monotonic independent audit, ten recovered services/two timers/six PM2 apps, every post-reboot fund/buy/weighted-fee/convert/race/claim/sell/discovery/detail/portfolio browser step, at least eight successful live-matched receipts, three listed/nontrivial DOM snapshots, empty logs, and an encrypted off-VM backup restored across nine tables, one artifact and chain 31337 without touching live state. During the active soak it correctly reports all remaining blockers and exits nonzero. An isolated 37-row package passed the original 114 checks; the independent browser bundle expands the real final package to 129 checks. Final closure requires all 129 to pass, including exact remote main and annotated `v0.1.0-rc.1` tag pointing to 8def270.
 
 ## External gates after this milestone
 
