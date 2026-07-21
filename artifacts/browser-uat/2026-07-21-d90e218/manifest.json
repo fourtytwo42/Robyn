@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "evidenceType": "in-app-browser-release-uat",
-  "capturedAt": "2026-07-21T10:38:00Z",
+  "capturedAt": "2026-07-21T10:55:06Z",
   "releaseGitSha": "d90e2187afcf278cdc5d49acaf20f3c23d8ac72a",
   "releasePath": "/opt/robyn/releases/d90e2187afcf278cdc5d49acaf20f3c23d8ac72a",
   "baseUrl": "http://192.168.50.250:3000/",
@@ -24,7 +24,9 @@
     "invalidMetadataRejected": true,
     "permissionlessOneAssetLaunch": true,
     "responsiveMobileAndTablet": true,
-    "accessibilityStates": true
+    "accessibilityStates": true,
+    "secondDistinctWalletTrade": true,
+    "secondWalletRewardClaim": true
   },
   "observedState": {
     "launchName": "Evidence Basket",
@@ -37,7 +39,7 @@
       "mSPY": "0.0173",
       "mETH": "0.01297"
     },
-    "indexedBlock": 156,
+    "indexedBlock": 165,
     "oneAssetLaunch": {
       "name": "Single Asset Evidence",
       "symbol": "ONE",
@@ -65,7 +67,10 @@
     "permissionless-launch-desktop.jpg",
     "portfolio-anonymous-desktop.jpg",
     "portfolio-mobile-390x844.jpg",
-    "portfolio-signed-desktop.jpg"
+    "portfolio-signed-desktop.jpg",
+    "second-wallet-buy-desktop.jpg",
+    "second-wallet-portfolio-desktop.jpg",
+    "second-wallet-sell-desktop.jpg"
   ],
   "domSnapshots": [
     "claimed-sold.dom.txt",
@@ -78,7 +83,11 @@
     "pending-fees.dom.txt",
     "permissionless-launch.dom.txt",
     "portfolio-mobile-390x844.dom.txt",
-    "portfolio.dom.txt"
+    "portfolio.dom.txt",
+    "second-wallet-buy.dom.txt",
+    "second-wallet-claimed.dom.txt",
+    "second-wallet-portfolio.dom.txt",
+    "second-wallet-sell.dom.txt"
   ],
   "transactionEvidence": "transactions.json",
   "receiptEvidence": "receipts.json",
@@ -92,7 +101,8 @@
     "An earlier automation attempt clicked before empty controlled inputs settled and therefore submitted the prior default My Community / MYCO values, producing successful launch 4. It is retained transparently as a browser-automation timing artifact, not counted as invalid-input acceptance.",
     "A one-asset 100/0/0 launch completed as launch 5; all 12 transactions for launches 4 and 5 have successful receipts.",
     "Exact-release responsive checks passed discovery and signed portfolio at 390 by 844 plus the full home/launch surface at 768 by 1024 with zero horizontal overflow and zero warning/error console logs.",
-    "Exact-release accessibility inspection verified a semantic skip link and matching main target, four served focus-style rules, a served reduced-motion media rule, seven text status examples that do not rely on color, and zero warning/error logs. The in-app browser key injector did not advance focus from BODY; that automation limitation is recorded inside the evidence rather than omitted."
+    "Exact-release accessibility inspection verified a semantic skip link and matching main target, four served focus-style rules, a served reduced-motion media rule, seven text status examples that do not rely on color, and zero warning/error logs. The in-app browser key injector did not advance focus from BODY; that automation limitation is recorded inside the evidence rather than omitted.",
+    "A distinct second session wallet funded, bought 990,000 ROBYN, observed weighted pending fees, sold 100,000, received three keeper conversions, claimed mNVDA/mSPY/mETH and reconciled 890,000 ROBYN after portfolio navigation. All nine blocks 157-165 receipts succeeded and browser warn/error logs remained empty."
   ],
   "transactionActions": [
     "fund faucet",
@@ -113,5 +123,8 @@
   "additionalLaunchTransactionEvidence": "additional-launch-transactions.json",
   "additionalLaunchReceiptEvidence": "additional-launch-receipts.json",
   "responsiveEvidence": "responsive-browser-evidence.json",
-  "accessibilityEvidence": "accessibility-browser-evidence.json"
+  "accessibilityEvidence": "accessibility-browser-evidence.json",
+  "secondWalletBrowserEvidence": "second-wallet-browser-evidence.json",
+  "secondWalletTransactionEvidence": "second-wallet-transactions.json",
+  "secondWalletReceiptEvidence": "second-wallet-receipts.json"
 }

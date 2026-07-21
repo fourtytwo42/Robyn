@@ -14,7 +14,7 @@ db00c5e8aa4e12cd391c67ceae7ca0f58f28f0c7d846ef92df405e7d85e5423d  ./invalid-meta
 d36f29ca44c4e22116d28bacaf0c5f0cdb6b05de6a7cda0bbf91905f23ed5c61  ./invalid-weights.dom.txt
 eda6cef7caa622311225404a9b84821fe6459ca38f5a8a89c472a3b6afec63d0  ./keeper-conversion-receipts.json
 8dc25d09fc7e5d322433b18f5afd2431f697549c09bedcc42b568b8eb4e8a3c5  ./keeper-conversions.json
-54a44b998cb3be08766772fbc5280d19f15cc8e92d11f29ebf723ccfd83f0699  ./manifest.json
+a6621302051e83ff707bdcce1ceb07fce9a408a42f3c7562fb2f74488ba8c957  ./manifest.json
 165031fbc301807bb252550c54dc8027a8a90a708bf8563ae594c5b698c0775b  ./one-asset-launch-desktop.jpg
 7b9e6ee3c984adf7094905b6a50fb7106385e68f4fe2115fa126b6707f577542  ./one-asset-launch.dom.txt
 f082b683f4da08dcd3b60bd97f9d5b358c3ddb495d893885fd6a499e5764d50e  ./pending-fees-desktop.jpg
@@ -28,4 +28,14 @@ e29f99783a09951c97a1029d5660c0f47a0bc4e135d4ad78c39432c466abfc10  ./portfolio-mo
 bc10e445fd2beaa68b5950dd51c16417e61f7fa6b1d200104e9bdc73c12d9146  ./portfolio-signed-desktop.jpg
 5bd61e7fa335b8b522043726defff33adf384a9931ed3b14468730bad26966f5  ./receipts.json
 db64381e6ee1c0c2ff642ebd6582622c23254951354478a6cc42bf084e79e48b  ./responsive-browser-evidence.json
+53b825a31ffb206f5a8be0adba794e03cb46d83c8c3928786fbd549c6f73b11f  ./second-wallet-browser-evidence.json
+b0e0f008ba72f19cce3df16c5af44ae81792a5a81db5a1482465356b0dcc6ba9  ./second-wallet-buy-desktop.jpg
+b907a8047ee6686df2605a67e9ff36ec29bec28bf47a34d711d309846c938038  ./second-wallet-buy.dom.txt
+a03ad6cf754fd9f83f4d0f8ee1bf5434fa69e09ba7f8832b693d570c0144e737  ./second-wallet-claimed.dom.txt
+7f9e0fb1b54cdf0b86b41a29331c5507679bb0f2dca12e6859f2c4517d728df7  ./second-wallet-portfolio-desktop.jpg
+e9d336848ffa7ce5f4e4dc5f304b53e00474391eda8821c5d9dd53b0c7fa46d3  ./second-wallet-portfolio.dom.txt
+f8c21f8bc0e58a187c23f730b82eb33ef6e3ee5637ad89c242f6fd7258287fe4  ./second-wallet-receipts.json
+b0e0f008ba72f19cce3df16c5af44ae81792a5a81db5a1482465356b0dcc6ba9  ./second-wallet-sell-desktop.jpg
+2518294e2ff1812e9dade9d4a6e1cb3e569635197fdc00aa5673f6f59ad73320  ./second-wallet-sell.dom.txt
+ae4a08b953707c008ca44cc22f54510aee0db4519c0ab7faeea24f85de842110  ./second-wallet-transactions.json
 89248765be5c7cf8a96c7ae9e0f76d3cbdb2699159deab5e5274a954a4e7184b  ./transactions.json

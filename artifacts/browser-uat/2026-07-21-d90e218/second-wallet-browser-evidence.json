@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-21T10:55:06.864Z",
+  "releaseGitSha": "d90e2187afcf278cdc5d49acaf20f3c23d8ac72a",
+  "surface": "Codex in-app Browser",
+  "firstWallet": "0x23954C7FF3F751cf3C6f2bce085e7A59F937E110",
+  "secondWallet": "0x7169095880B36c1a602340294E8b2E0047b8AD96",
+  "journey": {
+    "freshSessionWallet": true,
+    "funded": true,
+    "boughtGenesis": true,
+    "pendingWeightedFeesObserved": true,
+    "keeperConvertedThreeLegs": true,
+    "soldGenesis": true,
+    "claimedThreeAssets": true,
+    "portfolioReloadReconciled": true
+  },
+  "finalState": {
+    "base": "9099 mUSD",
+    "genesis": "890000 ROBYN",
+    "claimed": {
+      "mNVDA": "0.00863",
+      "mSPY": "0.01727",
+      "mETH": "0.01295"
+    },
+    "indexedBlock": 165
+  },
+  "warnOrErrorLogs": 0,
+  "passed": true
+}

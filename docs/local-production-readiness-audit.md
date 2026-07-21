@@ -34,7 +34,7 @@ Status meanings:
 | Permissionless one-asset launch | PROVEN | one-asset-launch DOM/screenshot, launch 5 ONE at block 156 and six successful launch receipts |
 | Permissionless three-asset launch | PROVEN | EVID browser state, transaction/receipt evidence and immutable 40/40/20 indexed basket |
 | Duplicate asset rejection | PROVEN-DESIGN | the fixed three-slot UI cannot select duplicate assets; exact-candidate factory tests reject duplicate addresses |
-| Buy and sell | PROVEN | signed browser journey, transaction receipts, indexed activity and reconciled 890,000 ROBYN balance |
+| Buy and sell from two distinct wallets | PROVEN | exact-release browser journeys used 0x23954C7F... and 0x71690958...; the second wallet has six successful user receipts, three keeper receipts and a reconciled 890,000 ROBYN portfolio |
 | Fee generation and weighted pending state | PROVEN | pending-fees DOM/screenshot and exact 40/40/20 vault accounting |
 | Bounded keeper conversion and manual race recovery | PROVEN | three successful keeper conversion receipts plus browser-observed keeper/manual race recovery |
 | Partial failure, stale quote and minimum-output protection | PROVEN-DESIGN | exact-candidate contract tests and bounded keeper retry/dead-letter tests; protected testnet conversion router gates |

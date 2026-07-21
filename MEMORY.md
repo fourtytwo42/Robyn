@@ -13,6 +13,8 @@ Durable project context lives here. Update this file whenever information should
 - External gates: public testnet ETH and explicit broadcast authorization are needed for an actual Robinhood Testnet transaction; human alert delivery and independent contract review are required before real-value operation.
 
 ## Current State
+- Last verified 2026-07-21: a distinct exact-release session wallet 0x71690958... funded through the UI, bought 990,000 ROBYN, exposed weighted pending fees, sold 100,000, received all three keeper conversions, claimed mNVDA/mSPY/mETH and reconciled a reloaded 890,000 ROBYN portfolio at indexed block 165. Six wallet and three keeper transactions at blocks 157-165 all succeeded; browser warning/error logs were empty.
+
 - Last verified 2026-07-21: exact release d90e218 browser UAT covers three-asset and one-asset launches, 110-percent basket rejection, whitespace-only metadata rejection before any transaction, buy, weighted fee observation, keeper-race-safe conversion, three-asset claim, sell, discovery and portfolio reconciliation. All 12 additional launch transactions at blocks 145-156 succeeded. The earlier settled-default launch is retained transparently as a browser-automation timing artifact. Sixty-one soak samples through 10:38:43 UTC kept exact release paths, zero restarts, zero alerts, at least 6.51 GB available memory and 33.03 ms maximum observed endpoint latency.
 - Last verified 2026-07-21: exact d90e218 accessibility inspection found the semantic skip link and matching main target, four served focus-style rules, one served reduced-motion media rule, seven text status examples independent of color and zero warning/error logs. The in-app browser key injector did not move focus from BODY, while locator-level Tab reached the skip link and activation verified its target; the structured evidence records that tool limitation explicitly.
 
@@ -180,6 +182,8 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+- 2026-07-21: exact second-wallet checkpoint - d90e218 in-app-browser UAT now proves trading with two distinct session wallets. The new wallet completed fund, buy, pending-fee observation, sell, keeper conversion, three-asset claim and portfolio reload. DOM, three JPEGs, structured state, nine transactions and nine successful receipts are checksummed on the evidence branch.
+
 
 - 2026-07-21: exact responsive and closure-audit checkpoint - in-app-browser checks on d90e218 passed mobile discovery and signed portfolio at 390 by 844 plus the full home/launch surface at 768 by 1024. All three pages had zero horizontal overflow and zero warning/error logs. Dated DOM, JPEG and structured responsive evidence was checksummed. docs/local-production-readiness-audit.md now maps each goal requirement to direct evidence and reserves the soak, reboot, browser regression, backup, final push and tag as explicit incomplete gates.
 
