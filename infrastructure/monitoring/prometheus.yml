@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: robyn-devnet
+    chain_id: "31337"
+rule_files:
+  - /etc/prometheus/robyn-rules.yml
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["127.0.0.1:9090"]
+        labels:
+          component: prometheus
+  - job_name: robyn-vm
+    static_configs:
+      - targets: ["127.0.0.1:9100"]
+        labels:
+          component: vm

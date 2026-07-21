@@ -6,11 +6,11 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
 - Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; lower-level correctness tests pass; no unresolved critical/high defect remains; and the exact release commit and evidence are pushed. Partial, documentation-only, mocked-happy-path-only or unpushed work is not completion.
-- Current task: protocol, complete LAN UX/data plane and scheduled encrypted off-VM backup/restore are live. Monitoring, load/security, protocol hardening and testnet rehearsal are next.
-- Last meaningful change: Added a daily systemd backup that runs without root using PostgreSQL peer auth, a dedicated read-only MinIO account, age encryption and private GitHub release storage; the recovery identity is separately protected outside the VM. Added a clean-target PostgreSQL/artifact/Anvil restore rehearsal.
-- Files touched: backup/install/restore scripts, MinIO read-only policy, backup systemd service/timer, backup/object/data/devnet operations docs, README and MEMORY.
-- Last verification: 2026-07-21 encrypted off-VM asset/checksum upload passed. A clean-target rehearsal in 830 ms compared 9 PostgreSQL tables and 1 artifact, loaded chain 31337 plus factory bytecode, removed temporary targets and left live services healthy. Backup service exposure scored 4.9 OK.
-- Next step: add monitoring/alerts and load/security evidence, then protocol hardening and testnet rehearsal.
+- Current task: protocol, complete LAN UX/data plane, encrypted off-VM backup/restore and the native monitoring stack are live. Full reboot recovery, load/security, protocol hardening and testnet rehearsal are next.
+- Last meaningful change: Added native loopback-only Prometheus, hardened node-exporter and PostgreSQL-backed Grafana, custom application/chain/queue/backup metrics, nine scoped alert rules, dashboard provisioning and incident runbooks.
+- Files touched: monitoring collector/installer, Prometheus/Grafana provisioning, systemd hardening, monitoring and incident docs, README and MEMORY.
+- Last verification: 2026-07-21 both Prometheus targets and the Grafana datasource/dashboard passed; required components were up, lag/divergence/failed jobs were zero, the live alert drill fired with required scope/runbook/last-good-block labels and resolved cleanly, and node-exporter systemd exposure improved from 9.2 UNSAFE to 2.9 OK. All repository release gates passed.
+- Next step: verify cold-start recovery after a full VM reboot, then add load/security evidence, protocol hardening and testnet rehearsal.
 - Blockers: Bags/pons compatibility requires funded transactions; anonymous 0x and 1inch quote calls return 401; no public testnet faucet/canonical Stock Token registry was found; current Alloy website source is unverified; no reusable license/repository was found for Vladdy/HoodETF/BASKET.
 
 ## Current State
@@ -18,6 +18,7 @@ Durable project context lives here. Update this file whenever information should
 - Last verified 2026-07-20: the authoritative workspace is `/home/hendo420/Robyn` on Ubuntu VM `robyn` at `192.168.50.250`; the Windows checkout is control-only and not an execution environment.
 - Last verified 2026-07-21: the repository is a functional controlled-devnet launchpad with browser-operated permissionless launch/trade/convert/claim flows, a persistent six-process PM2 topology, native PostgreSQL/Redis/MinIO and lower-level contract/service tests. It is not yet production-ready or testnet-ready.
 - Last verified 2026-07-21: LAN users can browse launches anonymously, filter by literal name/symbol, exact canonical token, basket size or basket asset, inspect canonical contracts/activity and reconcile held, claimable and cumulatively claimed assets for the tab's session wallet without sending its private key to the API.
+- Last verified 2026-07-21: Prometheus, hardened node-exporter, PostgreSQL-backed Grafana and the 30-second custom collector run natively under systemd on loopback only. Both scrape targets, datasource and dashboard passed; a reversible alert fire/resolve drill passed. External human notification delivery remains required before real-value testnet operation.
 - Last verified 2026-07-21: a persistent daily backup timer encrypts PostgreSQL, Anvil, content-addressed artifacts and configuration, uploads to a private GitHub release, retains seven backup pairs and has a separately protected off-VM recovery identity. Clean-target restore meets the under-four-hour target by a wide margin.
 - Last verified 2026-07-21: the native contract core and devnet fixtures are deployed persistently from `deployments/31337.json`. The faucet-enabled block-45 deployment supports a fully browser-operated genesis buy, weighted fee conversion, transfer-aware multi-asset claim and sell flow.
 - Last verified 2026-07-20: `prd/` is the authoritative product-intent layer. It specifies R0 validation, R1 crypto adapter pilot, R2 Stock Token beta and optional R3 native launchpad; research remains authoritative for external evidence.
@@ -81,6 +82,7 @@ When sources conflict, use this order:
 - Live controlled devnet operations: `docs/devnet-operations.md`. Services are `robyn-anvil.service` and `pm2-hendo420.service`; user RPC is port 8546 and raw privileged RPC is loopback port 8545.
 - Last verified 2026-07-21: Node `24.18.0`, pnpm `11.15.1`, Foundry/Anvil `1.7.1`, Solidity `0.8.30`; run `pnpm install --frozen-lockfile` then `pnpm format && pnpm lint && pnpm typecheck && pnpm test && pnpm build`.
 - The pnpm build-script allowlist permits only pinned transitive Next.js dependencies `sharp` and `unrs-resolver`; do not broaden it without review.
+- Monitoring reference: `docs/monitoring-operations.md`; services are `prometheus`, `prometheus-node-exporter`, `grafana-server` and `robyn-metrics-collector.timer`. Operator UIs remain loopback-only.
 - Operational reference: `docs/vm-runtime-and-operations.md`.
 - Official Stock Token registry: `https://api.robinhood.com/rhj/assets`.
 - Robinhood Chain public RPC: `https://rpc.mainnet.chain.robinhood.com`; mainnet chain ID `4663`.
@@ -446,6 +448,7 @@ When sources conflict, use this order:
 
 ## Completed Work
 
+- 2026-07-21: Installed and verified the native loopback monitoring stack, nine scoped alerts, dashboard, systemd hardening, incident runbooks and a live reversible fire/resolve drill.
 - 2026-07-20: Added the IndexPad-like product refresh covering direct reward launchpads, mainnet basket factories, pre-launch projects and single-token fee-funded reward experiments.
 - 2026-07-20: Completed the documentation coverage audit, added verified testnet operating details, and indexed all saved evidence and reproducibility scripts.
 - 2026-07-20: Completed the Robinhood Chain Services, permissionless-network, RHJ securities, smart-contract, transfer-restriction, and Robyn architecture terms analysis.

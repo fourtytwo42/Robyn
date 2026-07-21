@@ -1,0 +1,94 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [{"title": "Incident runbooks", "type": "link", "url": "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md"}],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "robyn-prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "red"}, {"color": "green", "value": 1}]}}},
+      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["min"], "values": false}},
+      "targets": [{"expr": "min(robyn_component_up)", "refId": "A"}],
+      "title": "Application health",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "robyn-prometheus"},
+      "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}},
+      "targets": [{"expr": "robyn_indexer_lag_blocks", "legendFormat": "index lag", "refId": "A"}, {"expr": "robyn_rpc_divergence_blocks", "legendFormat": "RPC divergence", "refId": "B"}],
+      "title": "Chain freshness",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "robyn-prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}},
+      "targets": [{"expr": "time() - robyn_backup_last_success_timestamp_seconds", "refId": "A"}],
+      "title": "Backup age",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "robyn-prometheus"},
+      "fieldConfig": {"defaults": {"unit": "percentunit"}},
+      "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}},
+      "targets": [{"expr": "node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}", "legendFormat": "disk free", "refId": "A"}, {"expr": "node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes", "legendFormat": "memory available", "refId": "B"}],
+      "title": "VM headroom",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "robyn-prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+      "id": 5,
+      "options": {"legend": {"displayMode": "table", "placement": "bottom"}},
+      "targets": [{"expr": "robyn_indexer_lag_blocks", "legendFormat": "index lag", "refId": "A"}, {"expr": "robyn_rpc_divergence_blocks", "legendFormat": "RPC divergence", "refId": "B"}],
+      "title": "Chain lag over time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "robyn-prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+      "id": 6,
+      "options": {"legend": {"displayMode": "table", "placement": "bottom"}},
+      "targets": [{"expr": "robyn_queue_jobs", "legendFormat": "{{state}}", "refId": "A"}, {"expr": "robyn_job_audit_entries", "legendFormat": "audit {{state}}", "refId": "B"}],
+      "title": "Conversion queue and audit",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "robyn-prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+      "id": 7,
+      "options": {"legend": {"displayMode": "table", "placement": "bottom"}},
+      "targets": [{"expr": "robyn_pm2_process_up", "legendFormat": "{{component}}", "refId": "A"}, {"expr": "robyn_systemd_unit_up", "legendFormat": "{{component}}", "refId": "B"}],
+      "title": "Process state",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "robyn-prometheus"},
+      "fieldConfig": {"defaults": {"unit": "percentunit"}},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+      "id": 8,
+      "options": {"legend": {"displayMode": "table", "placement": "bottom"}},
+      "targets": [{"expr": "node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}", "legendFormat": "disk free", "refId": "A"}, {"expr": "node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes", "legendFormat": "memory available", "refId": "B"}],
+      "title": "Capacity headroom",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 41,
+  "tags": ["robyn", "release-readiness"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Robyn Release Readiness",
+  "uid": "robyn-release-readiness",
+  "version": 1
+}

@@ -1,0 +1,29 @@
+[Unit]
+Description=Collect Robyn release-readiness metrics
+After=network-online.target postgresql.service redis-server.service robyn-anvil.service pm2-hendo420.service
+[Service]
+Type=oneshot
+User=hendo420
+Group=prometheus
+Environment=HOME=/home/hendo420
+ExecStart=/usr/local/sbin/robyn-collect-metrics
+UMask=0027
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=read-only
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ReadOnlyPaths=/home/hendo420/Robyn /var/backups/robyn
+ReadWritePaths=/var/lib/prometheus/node-exporter
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+SystemCallArchitectures=native

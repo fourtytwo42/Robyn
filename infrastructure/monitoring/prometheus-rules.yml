@@ -1,0 +1,147 @@
+groups:
+  - name: robyn-release-readiness
+    interval: 15s
+    rules:
+      - alert: RobynComponentDown
+        expr: robyn_component_up == 0 or robyn_pm2_process_up == 0 or robyn_systemd_unit_up == 0
+        for: 1m
+        labels:
+          {
+            severity: critical,
+            chain_id: "31337",
+            launch: all,
+            asset: all,
+            runbook: component-down,
+          }
+        annotations:
+          summary: "Robyn component {{ $labels.component }} is down"
+          description: 'Chain 31337 component {{ $labels.component }} is unavailable. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#component-down"
+      - alert: RobynIndexerLag
+        expr: robyn_indexer_lag_blocks > 5
+        for: 2m
+        labels:
+          {
+            severity: critical,
+            chain_id: "31337",
+            component: indexer,
+            launch: all,
+            asset: all,
+            runbook: indexer-lag,
+          }
+        annotations:
+          summary: "Robyn indexer is more than five blocks behind"
+          description: 'Lag is {{ $value }} blocks. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
+      - alert: RobynRpcDivergence
+        expr: robyn_rpc_divergence_blocks > 2
+        for: 1m
+        labels:
+          {
+            severity: critical,
+            chain_id: "31337",
+            component: rpc,
+            launch: all,
+            asset: all,
+            runbook: rpc-divergence,
+          }
+        annotations:
+          summary: "Operator and user RPC heads diverge"
+          description: 'Divergence is {{ $value }} blocks. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#rpc-divergence"
+      - alert: RobynDeadLetterOrFailedJob
+        expr: robyn_job_audit_entries{state="dead_letter"} > 0 or robyn_queue_jobs{state="failed"} > 0
+        for: 0m
+        labels:
+          {
+            severity: critical,
+            chain_id: "31337",
+            component: keeper,
+            launch: all,
+            asset: all,
+            runbook: conversion-failure,
+          }
+        annotations:
+          summary: "Robyn conversion job needs operator action"
+          description: 'A failed/dead-letter job exists. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#conversion-failure"
+      - alert: RobynBackupStale
+        expr: time() - robyn_backup_last_success_timestamp_seconds > 108000
+        for: 5m
+        labels:
+          {
+            severity: critical,
+            chain_id: "31337",
+            component: backup,
+            launch: all,
+            asset: all,
+            runbook: backup-stale,
+          }
+        annotations:
+          summary: "Robyn encrypted backup is older than 30 hours"
+          description: 'No current backup is visible. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#backup-stale"
+      - alert: RobynMetricsCollectorStale
+        expr: time() - robyn_monitoring_collected_timestamp_seconds > 120
+        for: 2m
+        labels:
+          {
+            severity: critical,
+            chain_id: "31337",
+            component: monitoring,
+            launch: all,
+            asset: all,
+            runbook: monitoring-stale,
+          }
+        annotations:
+          summary: "Robyn custom metrics are stale"
+          description: 'Collector is stale. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#monitoring-stale"
+      - alert: RobynDiskHeadroomLow
+        expr: node_filesystem_avail_bytes{mountpoint="/",fstype!=""} / node_filesystem_size_bytes{mountpoint="/",fstype!=""} < 0.15
+        for: 5m
+        labels:
+          {
+            severity: critical,
+            chain_id: "31337",
+            component: vm-disk,
+            launch: all,
+            asset: all,
+            runbook: capacity,
+          }
+        annotations:
+          summary: "Robyn VM root disk has less than 15 percent free"
+          description: 'Free ratio is {{ $value }}. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#capacity"
+      - alert: RobynMemoryHeadroomLow
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10
+        for: 5m
+        labels:
+          {
+            severity: critical,
+            chain_id: "31337",
+            component: vm-memory,
+            launch: all,
+            asset: all,
+            runbook: capacity,
+          }
+        annotations:
+          summary: "Robyn VM has less than 10 percent available memory"
+          description: 'Available ratio is {{ $value }}. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#capacity"
+      - alert: RobynMonitoringDrill
+        expr: robyn_alert_drill == 1
+        for: 0m
+        labels:
+          {
+            severity: warning,
+            chain_id: 31337,
+            component: monitoring,
+            launch: all,
+            asset: all,
+            runbook: monitoring-stale,
+          }
+        annotations:
+          summary: Robyn reversible monitoring drill is active
+          description: 'This is an operator-initiated alert drill. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#monitoring-stale
