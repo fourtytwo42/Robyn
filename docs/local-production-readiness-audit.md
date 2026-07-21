@@ -1,6 +1,6 @@
 # Local production-readiness audit
 
-Status: Exact candidate 8def270 is promoted and browser-proven; its fresh uninterrupted soak and post-soak closure gates remain incomplete
+Status: Exact candidate 8def270 is promoted, browser-proven and in its fresh uninterrupted soak; post-soak closure gates remain incomplete
 Candidate commit: 8def270b1856c2bcfcd69d429a8d88def4ab15a8
 Release path: /opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8
 Audit date: 2026-07-21
@@ -59,7 +59,7 @@ Status meanings:
 | PostgreSQL, Redis and MinIO durability | PROVEN | native services, migrations, deterministic index rebuild, Redis fail-closed quota test and MinIO hash/restart test; exact 8def block-180 backup `robyn-state-20260721T113919Z` restored nine PostgreSQL tables, one content-addressed artifact and isolated Anvil state/factory with `liveStateTouched=false`; the encrypted off-VM asset size and SHA-256 matched |
 | Reorg-aware indexing and freshness-labeled API | PROVEN | deterministic destructive rebuild, checkpoint validation, bounded discovery API and live indexed state |
 | Service persistence and recovery | PROVEN | PM2/systemd resurrection, controlled service failure tests and prior VM cold-start evidence |
-| Exact-candidate uninterrupted 24-hour stability | PENDING | d90 was intentionally aborted and cannot count; 8def must start a new 86,400-second run after its exact launch and backup checkpoints |
+| Exact-candidate uninterrupted 24-hour stability | ACTIVE | fresh 8def run started 2026-07-21T11:42:42.706Z after exact browser launch and restorable off-VM backup; first three samples identify the exact release, block 180, six zero-restart processes, zero firing alerts and healthy resources/latencies; completion still requires the full 86,400 seconds |
 | Exact-candidate post-soak VM reboot and recovery | POST-SOAK | reboot only after the soak completes; then require zero failed units, exact release paths, zero unexpected PM2 restarts and reconciled chain/data state |
 | Post-reboot browser regression | POST-SOAK | repeat fund or restored-wallet, buy, conversion/claim, sell, discovery and portfolio checks through the in-app browser |
 | Post-reboot encrypted off-VM backup | POST-SOAK | create, verify and upload a backup whose manifest gitSha is 8def270 after final browser state |

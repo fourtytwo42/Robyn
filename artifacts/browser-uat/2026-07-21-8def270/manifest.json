@@ -74,6 +74,17 @@
     "chainId": 31337,
     "liveStateTouched": false
   },
+  "soak": {
+    "status": "active",
+    "startedAt": "2026-07-21T11:42:42.706Z",
+    "requiredDurationSeconds": 86400,
+    "intervalSeconds": 15,
+    "sampleFile": "soak-20260721T114242706Z.jsonl",
+    "baselineBlock": 180,
+    "baselineRestarts": 0,
+    "baselineFiringAlerts": 0,
+    "releaseGitSha": "8def270b1856c2bcfcd69d429a8d88def4ab15a8"
+  },
   "warningOrErrorLogs": 0,
   "passed": true,
   "notes": [

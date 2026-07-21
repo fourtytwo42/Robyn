@@ -1,0 +1,71 @@
+{
+  "sampledAt": "2026-07-21T11:42:43.387Z",
+  "releasePath": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8",
+  "gitSha": "8def270b1856c2bcfcd69d429a8d88def4ab15a8",
+  "chainBlock": 180,
+  "status": {
+    "service": "robyn-api",
+    "chainId": 31337,
+    "asOfBlock": "180",
+    "indexedAt": "2026-07-21 11:42:43.019768+00",
+    "launchCount": "6",
+    "rawLogCount": "573",
+    "formulaVersion": "native-v1",
+    "keeperStatus": "ok",
+    "keeperUpdatedAt": "2026-07-21 11:42:40.255717+00",
+    "artifactStatus": "ok",
+    "artifactUpdatedAt": "2026-07-21 11:42:42.638803+00"
+  },
+  "firingAlerts": 0,
+  "availableMemoryBytes": 6657736704,
+  "availableDiskBytes": 47201689600,
+  "totalRssBytes": 910082048,
+  "processes": [
+    {
+      "name": "robyn-web",
+      "restartCount": 0,
+      "rssBytes": 217833472,
+      "cwd": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8/apps/web"
+    },
+    {
+      "name": "robyn-rpc-gateway",
+      "restartCount": 0,
+      "rssBytes": 121266176,
+      "cwd": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8"
+    },
+    {
+      "name": "robyn-api",
+      "restartCount": 0,
+      "rssBytes": 89735168,
+      "cwd": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8"
+    },
+    {
+      "name": "robyn-indexer",
+      "restartCount": 0,
+      "rssBytes": 254341120,
+      "cwd": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8"
+    },
+    {
+      "name": "robyn-keeper",
+      "restartCount": 0,
+      "rssBytes": 132624384,
+      "cwd": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8"
+    },
+    {
+      "name": "robyn-artifacts",
+      "restartCount": 0,
+      "rssBytes": 94281728,
+      "cwd": "/opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8"
+    }
+  ],
+  "latenciesMs": {
+    "webHealth": 31.783033000000046,
+    "discovery": 21.69730100000004,
+    "apiHealth": 19.813086999999996,
+    "status": 20.012650000000008,
+    "rpcHealth": 19.082742000000053,
+    "rpcBlock": 19.369191999999998,
+    "artifactHealth": 18.085371999999893,
+    "alerts": 16.418165000000045
+  }
+}
