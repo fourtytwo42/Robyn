@@ -7,25 +7,12 @@ import {
   formatEther,
   http,
   parseEther,
-  type Address,
   type Hex,
 } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-export type Deployment = {
-  chainId: number;
-  gitCommit: string;
-  contracts: {
-    baseAsset: Address;
-    rewardAssets: Address[];
-    factory: Address;
-    marketFactory: Address;
-    genesisToken: Address;
-    genesisVault: Address;
-    genesisMarket: Address;
-  };
-};
+import type { Deployment } from "@/lib/deployment";
 
 type AssetState = {
   symbol: string;

@@ -1,12 +1,13 @@
-import { DevnetConsole, type Deployment } from "@/components/devnet-console";
+import type { Deployment } from "@/lib/deployment";
+import { NetworkConsole } from "@robyn/network-console";
+import { NetworkLaunchpadConsole } from "@robyn/network-launchpad";
 import { SiteHeader } from "@/components/site-header";
-import { LaunchpadConsole } from "@/components/launchpad-console";
 import {
   getDataPlaneHealth,
   getGatewayHealth,
   getHealthStatus,
 } from "@/lib/health";
-import deployment from "../../../../deployments/31337.json";
+import deployment from "@robyn/deployment";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export default async function Home() {
     getDataPlaneHealth(),
   ]);
   const health = getHealthStatus();
+  const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
 
   return (
     <main id="main">
@@ -30,16 +32,20 @@ export default async function Home() {
             Trade a token. Build a basket. Share the upside.
           </h1>
           <p className="lede">
-            Robyn turns market fees into an immutable mix of mock tokenized
-            assets, then distributes the resulting rewards to eligible token
-            holders.
+            Robyn turns market fees into an immutable mix of{" "}
+            {isTestnet ? "testnet mock" : "mock"} tokenized assets, then
+            distributes the resulting rewards to eligible token holders.
           </p>
           <div className="hero-actions">
-            <a className="button primary" href="#devnet-console">
+            <a
+              className="button primary"
+              href={isTestnet ? "#testnet-console" : "#devnet-console"}
+            >
               Try the live flow
             </a>
             <span>
-              Permissionless launch architecture · controlled local chain
+              Permissionless launch architecture ·{" "}
+              {isTestnet ? "Robinhood Chain Testnet" : "controlled local chain"}
             </span>
           </div>
         </div>
@@ -53,15 +59,18 @@ export default async function Home() {
             <ul>
               <li>
                 <span className="swatch nvda" />
-                Mock NVIDIA <strong>40%</strong>
+                {isTestnet ? "Testnet mock NVIDIA" : "Mock NVIDIA"}{" "}
+                <strong>40%</strong>
               </li>
               <li>
                 <span className="swatch cash" />
-                Mock Cash App <strong>40%</strong>
+                {isTestnet ? "Testnet mock S&P 500" : "Mock S&P 500"}{" "}
+                <strong>40%</strong>
               </li>
               <li>
                 <span className="swatch spx" />
-                Mock S&amp;P 500 <strong>20%</strong>
+                {isTestnet ? "Testnet mock Ether" : "Mock Ether"}{" "}
+                <strong>20%</strong>
               </li>
             </ul>
           </div>
@@ -94,13 +103,22 @@ export default async function Home() {
         </div>
       </section>
 
-      <LaunchpadConsole deployment={deployment as Deployment} />
-      <DevnetConsole deployment={deployment as Deployment} />
+      {isTestnet ? (
+        <>
+          <NetworkConsole deployment={deployment as Deployment} />
+          <NetworkLaunchpadConsole deployment={deployment as Deployment} />
+        </>
+      ) : (
+        <>
+          <NetworkLaunchpadConsole deployment={deployment as Deployment} />
+          <NetworkConsole deployment={deployment as Deployment} />
+        </>
+      )}
 
       <section className="notice" aria-label="Development disclaimer">
-        Development network only. Every asset is a mock with no real-world
-        value. This environment is built to prove the full protocol workflow
-        before Robinhood Chain testnet deployment.
+        {isTestnet
+          ? "Robinhood Chain Testnet only. Every displayed basket asset is a project-owned mock with no real-world value."
+          : "Development network only. Every asset is a mock with no real-world value. This environment proves the full protocol workflow before testnet deployment."}
       </section>
     </main>
   );

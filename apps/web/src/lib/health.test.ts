@@ -40,6 +40,26 @@ describe("getHealthStatus", () => {
       });
     });
 
+    it("validates the Robinhood testnet RPC directly", async () => {
+      const request = () =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({ jsonrpc: "2.0", id: 1, result: "0xb626" }),
+            {
+              status: 200,
+            },
+          ),
+        );
+
+      await expect(
+        getGatewayHealth(
+          request,
+          "https://rpc.testnet.chain.robinhood.com",
+          46630,
+        ),
+      ).resolves.toEqual({ status: "ok", chainId: 46630, upstream: "ok" });
+    });
+
     it("fails closed when the gateway is unavailable", async () => {
       const request = () => Promise.reject(new Error("offline"));
 

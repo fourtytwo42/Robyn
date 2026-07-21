@@ -2,7 +2,7 @@
 
 Robyn is a proposed Robinhood Chain launchpad where creators launch community tokens with an immutable, weighted asset basket. A token's creator-fee stream purchases the selected assets, and holders accrue claimable basket rewards.
 
-> **Project status:** Implementation is active. The VM runs a persistent controlled Anvil devnet, restricted user RPC/faucet, browser-operated permissionless launchpad, native PostgreSQL/Redis/MinIO, a reorg-aware indexer, freshness-labeled filtered discovery API, bounded conversion keeper and content-addressed artifact service. Anonymous discovery, canonical launch detail and session-wallet portfolio pages are live alongside the launch-to-claim console. Encrypted off-VM backups, loopback monitoring/alerts, cold-start recovery, the subnet-scoped Nginx/UFW edge and short-duration load/security gates are verified. The 24-hour soak, independent protocol review, immutable release and testnet rehearsal remain in progress.
+> **Project status:** Implementation is active. The VM runs a persistent controlled Anvil devnet, restricted user RPC/faucet, browser-operated permissionless launchpad, native PostgreSQL/Redis/MinIO, a reorg-aware indexer, freshness-labeled filtered discovery API, bounded conversion keeper and content-addressed artifact service. Anonymous discovery, canonical launch detail and session-wallet portfolio pages are live alongside the launch-to-claim console. Encrypted off-VM backups, loopback monitoring/alerts, cold-start recovery, the subnet-scoped Nginx/UFW edge and short-duration load/security gates are verified. Immutable release promotion/rollback is verified and the protected testnet journey plus isolated five-service rehearsal pass. The final candidate reboot/browser pass, uninterrupted 24-hour soak and independent real-value protocol review remain open.
 
 ## Authoritative development environment
 
@@ -40,6 +40,8 @@ The Windows checkout is not an execution environment. It is only a convenience m
 | [Monitoring and incident operations](docs/monitoring-operations.md) | Native Prometheus, node-exporter, Grafana, alert rules and live drill |
 | [Security and capacity operations](docs/security-and-capacity.md) | LAN edge, firewall, static analysis, abuse and contention evidence |
 | [Immutable release operations](docs/release-operations.md) | Exact-commit builds, manifests, atomic promotion and compatible rollback |
+| [Robinhood Testnet operations](docs/testnet-operations.md) | Protected chain-46630 deployment, build, rehearsal, key and rollback procedures |
+| [Protocol security review](docs/protocol-security-review.md) | Threat model, invariant evidence, automated results and finding triage |
 | [`docs/`](docs/) | VM runtime, operating procedures and delivery roadmaps |
 | [Protocol core](docs/protocol-core.md) | Current contract boundaries, invariants, dependency provenance and limitations |
 | [Devnet-to-testnet readiness plan](docs/devnet-to-testnet-readiness-plan.md) | Phase-by-phase implementation, verification and release plan |

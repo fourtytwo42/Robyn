@@ -3,10 +3,12 @@ import type { ReactNode } from "react";
 
 import "./globals.css";
 
+const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
 export const metadata: Metadata = {
-  title: "Robyn | Controlled Devnet",
-  description:
-    "The fee-funded basket launchpad, running on the controlled Robyn Devnet.",
+  title: isTestnet ? "Robyn | Robinhood Testnet" : "Robyn | Controlled Network",
+  description: isTestnet
+    ? "The fee-funded basket launchpad on Robinhood Chain Testnet."
+    : "The fee-funded basket launchpad on the controlled Robyn development network.",
 };
 
 export default function RootLayout({

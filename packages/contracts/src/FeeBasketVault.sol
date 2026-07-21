@@ -91,7 +91,7 @@ contract FeeBasketVault is ReentrancyGuard {
         if (count == 0 || count > MAX_ASSETS || weights_.length != count) {
             revert InvalidAssetCount();
         }
-        uint256 weightTotal;
+        uint256 weightTotal = 0;
         for (uint256 i; i < count; ++i) {
             if (assets_[i] == address(0)) revert InvalidAsset(i);
             for (uint256 j; j < i; ++j) {
@@ -137,7 +137,7 @@ contract FeeBasketVault is ReentrancyGuard {
         baseAsset.safeTransferFrom(msg.sender, address(this), requestedAmount);
         received = baseAsset.balanceOf(address(this)) - beforeBalance;
         if (received == 0) revert InvalidAmount();
-        uint256 assigned;
+        uint256 assigned = 0;
         for (uint256 i = 1; i < legCount; ++i) {
             uint256 allocation = (received * _legs[i].weightBps) / BPS;
             _fundLeg(i, allocation);
@@ -175,7 +175,8 @@ contract FeeBasketVault is ReentrancyGuard {
         uint256 rewardBefore = selected.asset.balanceOf(address(this));
         baseAsset.forceApprove(address(conversionRouter), amount);
         // The function-wide nonReentrant guard is adversarially tested against router callbacks.
-        // slither-disable-next-line reentrancy-balance,reentrancy-no-eth
+        // The router return value is advisory; measured token deltas are authoritative.
+        // slither-disable-next-line reentrancy-balance,reentrancy-no-eth,unused-return
         conversionRouter.swapExactInput(
             address(baseAsset),
             address(selected.asset),

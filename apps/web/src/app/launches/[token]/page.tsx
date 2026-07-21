@@ -23,6 +23,7 @@ export default async function LaunchDetail({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
+  const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
   if (!/^0x[0-9a-fA-F]{40}$/.test(token)) notFound();
   let detail;
   let activity;
@@ -49,7 +50,12 @@ export default async function LaunchDetail({
             </h1>
             <code className="full-address">{launch.token}</code>
           </div>
-          <span className="risk-badge">Experimental · controlled devnet</span>
+          <span className="risk-badge">
+            Experimental ·{" "}
+            {isTestnet
+              ? "Robinhood testnet mocks"
+              : "controlled development network"}
+          </span>
         </header>
 
         <div className="detail-grid">
@@ -58,8 +64,8 @@ export default async function LaunchDetail({
             <h2 id="market-heading">Fixed-price development market</h2>
             <p>
               Trading and reward claiming are operationally separate. The live
-              console revalidates chain 31337 and transaction targets before
-              submitting.
+              console revalidates chain {isTestnet ? "46630" : "31337"} and
+              transaction targets before submitting.
             </p>
             <dl className="address-list">
               <AddressRow label="Market" value={launch.market} />
@@ -67,7 +73,10 @@ export default async function LaunchDetail({
               <AddressRow label="Token" value={launch.token} />
             </dl>
             <div className="action-row">
-              <Link className="button primary" href="/#devnet-console">
+              <Link
+                className="button primary"
+                href={isTestnet ? "/#testnet-console" : "/#devnet-console"}
+              >
                 Open live trading console
               </Link>
               <Link className="button" href="/portfolio">

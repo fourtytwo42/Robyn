@@ -8,6 +8,7 @@ const app = Fastify({
 });
 const { sql } = createDatabase();
 const chainId = Number(process.env.CHAIN_ID ?? "31337");
+const queueName = process.env.ROBYN_QUEUE_NAME ?? "robyn-conversions";
 const port = Number(process.env.PORT ?? "3100");
 const host = process.env.HOST ?? "0.0.0.0";
 
@@ -105,18 +106,21 @@ app.get("/operations", async () => {
   const [keeper, counts, jobs, events] = await Promise.all([
     keeperState(),
     sql.unsafe<{ state: string; count: string }[]>(
-      "SELECT state,count(*)::text count FROM job_audit WHERE queue='robyn-conversions' GROUP BY state ORDER BY state",
+      "SELECT state,count(*)::text count FROM job_audit WHERE queue=$1 GROUP BY state ORDER BY state",
+      [queueName],
     ),
     sql.unsafe(
-      "SELECT idempotency_key,state,attempts,last_error,result,created_at::text,updated_at::text,completed_at::text FROM job_audit WHERE queue='robyn-conversions' ORDER BY updated_at DESC LIMIT 25",
+      "SELECT idempotency_key,state,attempts,last_error,result,created_at::text,updated_at::text,completed_at::text FROM job_audit WHERE queue=$1 ORDER BY updated_at DESC LIMIT 25",
+      [queueName],
     ),
     sql.unsafe(
-      "SELECT event_id::text,idempotency_key,state,attempts,last_error,result,created_at::text FROM job_audit_events WHERE queue='robyn-conversions' ORDER BY event_id DESC LIMIT 50",
+      "SELECT event_id::text,idempotency_key,state,attempts,last_error,result,created_at::text FROM job_audit_events WHERE queue=$1 ORDER BY event_id DESC LIMIT 50",
+      [queueName],
     ),
   ]);
   return {
     service: "robyn-api",
-    queue: "robyn-conversions",
+    queue: queueName,
     ...keeper,
     counts: Object.fromEntries(counts.map((row) => [row.state, row.count])),
     recent: jobs,

@@ -75,22 +75,30 @@ export function LaunchRewardState({
   const [legs, setLegs] = useState<LegState[]>();
   const [chainBlock, setChainBlock] = useState<bigint>();
   const [error, setError] = useState(false);
-  const rpcUrl =
-    typeof window === "undefined"
+  const isTestnet = process.env.NEXT_PUBLIC_ROBYN_NETWORK_MODE === "testnet";
+  const rpcUrl = isTestnet
+    ? (process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
+      "https://rpc.testnet.chain.robinhood.com")
+    : typeof window === "undefined"
       ? "http://127.0.0.1:8546"
       : "http://" + window.location.hostname + ":8546";
   const client = useMemo(
     () =>
       createPublicClient({
         chain: defineChain({
-          id: 31337,
-          name: "Robyn Controlled Devnet",
-          nativeCurrency: { name: "Dev Ether", symbol: "DEV", decimals: 18 },
+          id: isTestnet ? 46630 : 31337,
+          name: isTestnet
+            ? "Robinhood Chain Testnet"
+            : "Robyn Controlled Development Network",
+          nativeCurrency: isTestnet
+            ? { name: "Ether", symbol: "ETH", decimals: 18 }
+            : { name: "Dev Ether", symbol: "DEV", decimals: 18 },
+          testnet: isTestnet,
           rpcUrls: { default: { http: [rpcUrl] } },
         }),
         transport: http(rpcUrl),
       }),
-    [rpcUrl],
+    [isTestnet, rpcUrl],
   );
 
   useEffect(() => {
@@ -141,6 +149,8 @@ export function LaunchRewardState({
     };
   }, [client, vault]);
 
+  const baseSymbol = isTestnet ? "tmUSD" : "mUSD";
+
   if (error)
     return (
       <p className="metric-unavailable">
@@ -160,7 +170,9 @@ export function LaunchRewardState({
           <dl>
             <div>
               <dt>Pending cash</dt>
-              <dd>{units(leg.pendingBase)} mUSD</dd>
+              <dd>
+                {units(leg.pendingBase)} {baseSymbol}
+              </dd>
             </div>
             <div>
               <dt>Purchased / deposited</dt>
@@ -171,7 +183,9 @@ export function LaunchRewardState({
             {detailed ? (
               <div>
                 <dt>Converted base</dt>
-                <dd>{units(leg.consumedBase)} mUSD</dd>
+                <dd>
+                  {units(leg.consumedBase)} {baseSymbol}
+                </dd>
               </div>
             ) : null}
           </dl>

@@ -1,6 +1,6 @@
 # Protocol core
 
-Status: implemented, tested and deployed to the shared controlled devnet
+Status: core and testnet-mock package implemented and security-gated; controlled devnet deployed
 
 Last verified: 2026-07-21
 
@@ -17,7 +17,7 @@ The current native protocol checkpoint proves the core fee-to-holder-reward acco
 7. Holders pull one reward or all available rewards. No creator, factory, treasury or operator reward sweep exists.
 8. The launch creator seals a one-time inventory/pool exclusion set before the first distribution. Excluded balances never dilute eligible holder rewards, and no later mutation is possible.
 
-This is a native reference path for the controlled devnet. The browser-operated genesis market proves the disclosed buy/sell, fee conversion and claim journey. The system does not yet include a production market, upstream launchpad adapter, stock registry/oracle guards, Merkle epochs, keeper, indexer or production quote provider.
+This is the native reference path for the controlled devnet and Robinhood testnet mock package. The browser-operated genesis market proves the disclosed buy/sell, fee conversion and claim journey. A bounded keeper and reorg-aware indexer are implemented; a production market, upstream launchpad adapter, canonical Stock Token registry/oracle guards and production quote provider remain external integration work.
 
 ## Contracts
 
@@ -26,7 +26,7 @@ This is a native reference path for the controlled devnet. The browser-operated 
 | RobynLaunchFactory | Permissionless deployment, public launch registry, chain/version discovery and immutable shared policy |
 | FeeBasketVault | Per-launch/per-leg fee isolation, measured allocation, constrained permissionless conversion and reward deposit |
 | RobynLaunchToken | Fixed ERC-20 supply, transfer-aware multi-asset accumulators and pull claims |
-| FeeBasketAccounting | Earlier conservation primitive retained as a narrow regression reference |
+| FeeBasketAccounting test fixture | Earlier conservation primitive retained under packages/contracts/test/fixtures as a regression reference; it is not production source |
 
 The factory deploys the vault first, passes that address as the token's immutable controller, binds the token to the vault once, and exposes both addresses. Basket assets and weights have no mutation path. Distribution remains disabled until the creator seals the immutable exclusion set through the factory.
 
@@ -78,7 +78,7 @@ forge test --root packages/contracts -vv --gas-report
 forge build --root packages/contracts --sizes
 ~~~
 
-The 2026-07-21 checkpoint passed 21 tests, including two 256-run fuzz properties. Tests cover fee-on-transfer base and reward tokens, duplicate assets, invalid weights, failed route isolation, stale/zero-minimum rejection, unauthorized deposits/rebinding, exclusion sealing, excluded inventory, creator-authorized one-market deployment, devnet buy/sell fee generation, the one-time base faucet, one/three/five reward slots, transfer ordering, multi-asset claims and balance conservation.
+The 2026-07-21 checkpoint passed 28 unit/fuzz/adversarial tests plus four stateful handler invariants. The invariant campaign ran 128 runs at depth 64 (8,192 calls per invariant run-set) with zero handler reverts. Tests cover fee-on-transfer base and reward tokens, duplicate assets, invalid weights, failed route isolation, stale/zero-minimum rejection, unauthorized deposits/rebinding, exclusion sealing, excluded inventory, creator-authorized one-market deployment, devnet buy/sell fee generation, the one-time base faucet, one/three/five reward slots, transfer ordering, multi-asset claims and balance conservation.
 
 Largest production runtime at this checkpoint is RobynLaunchFactory at 21,047 bytes, leaving 3,529 bytes below the 24,576-byte EIP-170 limit. The factory embeds vault and token creation bytecode, so size must remain a release gate.
 
@@ -100,8 +100,7 @@ The following items remain required before Robinhood testnet or any real-value d
 
 ## Required before deployment
 
-- Add formal stateful handler invariants and broader malicious-token/callback fixtures.
-- Decide whether the old standalone accounting primitive remains or is removed after migration.
-- Add mock registry/feed/issuer boundaries and clean-genesis deployment rehearsal.
-- Obtain independent contract security review before any real-value deployment.
-- Treat this checkpoint as unaudited; it is not approved for real assets.
+- The stateful handler invariants, malicious callback fixtures, bounded exclusion set, clean chain-46630 mock deployment and isolated five-service rehearsal are implemented.
+- The old standalone accounting primitive is test-only under packages/contracts/test/fixtures.
+- Obtain an independent contract security review before any real-value deployment.
+- Treat the internal review as non-independent; the package is not approved for real assets.

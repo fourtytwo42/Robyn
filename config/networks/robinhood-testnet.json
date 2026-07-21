@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "name": "Robinhood Chain Testnet",
+  "environment": "robinhood-testnet",
+  "chainId": 46630,
+  "nativeCurrency": {
+    "name": "Ether",
+    "symbol": "ETH",
+    "decimals": 18
+  },
+  "publicRpcUrl": "https://rpc.testnet.chain.robinhood.com",
+  "explorerUrl": "https://explorer.testnet.chain.robinhood.com",
+  "feedUrl": "wss://feed.testnet.chain.robinhood.com",
+  "confirmations": 3,
+  "deployment": {
+    "assetStrategy": "project-owned-testnet-mocks-until-canonical-addresses-are-published",
+    "requiresKeystore": true,
+    "allowsUnlockedAccount": false,
+    "requiresExplicitBroadcast": true,
+    "forbiddenMarkers": [
+      "DEVNET_ONLY",
+      "robyn-devnet",
+      "robyn-devnet-session-key",
+      "generatePrivateKey",
+      "/faucet"
+    ]
+  },
+  "canonicalContracts": {
+    "baseAsset": null,
+    "rewardAssets": [],
+    "conversionRouter": null,
+    "marketFactory": null
+  },
+  "lastVerified": "2026-07-21"
+}

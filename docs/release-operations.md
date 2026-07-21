@@ -23,7 +23,7 @@ scripts/build-release.sh
 
 The builder:
 
-- runs formatting, lint, typecheck, all tests, production build, traceability and the static security gate;
+- runs formatting, lint, typecheck, all tests, production build, traceability, static security, full chain-46630 transaction journey and isolated five-service testnet rehearsal gates;
 - archives the exact Git commit instead of copying the mutable checkout;
 - installs the frozen pnpm lockfile and rebuilds inside staging;
 - records source, lock, dependency, migration, build and gate hashes;

@@ -12,7 +12,7 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Deployment } from "./devnet-console";
+import type { Deployment } from "@/lib/deployment";
 
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
 const factoryAbi = [

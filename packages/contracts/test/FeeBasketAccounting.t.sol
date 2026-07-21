@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import { FeeBasketAccounting, IERC20Minimal } from "../src/FeeBasketAccounting.sol";
+import { FeeBasketAccounting, IERC20Minimal } from "./fixtures/FeeBasketAccounting.sol";
 
 contract MockBaseAsset is IERC20Minimal {
     mapping(address => uint256) public balanceOf;

@@ -12,6 +12,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint8 public constant MAX_REWARD_ASSETS = 5;
+    uint8 public constant MAX_EXCLUDED_ACCOUNTS = 16;
     uint256 public constant MAGNITUDE = 2 ** 128;
     string public constant CONTRACT_VERSION = "1.0.0";
 
@@ -26,6 +27,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     error ExclusionsAlreadySealed();
     error ExclusionsNotSealed();
     error DuplicateExcludedAccount(address account);
+    error TooManyExcludedAccounts(uint256 count);
 
     address public immutable controller;
     address public immutable initializationAuthority;
@@ -91,6 +93,9 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     function sealExclusions(address[] calldata accounts) external {
         if (msg.sender != initializationAuthority) revert Unauthorized();
         if (exclusionsSealed) revert ExclusionsAlreadySealed();
+        if (accounts.length > MAX_EXCLUDED_ACCOUNTS) {
+            revert TooManyExcludedAccounts(accounts.length);
+        }
         for (uint256 i; i < accounts.length; ++i) {
             address account = accounts[i];
             if (account == address(0)) revert InvalidAccount();

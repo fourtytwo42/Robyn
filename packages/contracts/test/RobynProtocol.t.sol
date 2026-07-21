@@ -36,6 +36,35 @@ contract ProtocolMockERC20 is ERC20 {
     }
 }
 
+contract ReentrantRewardToken is ERC20 {
+    RobynLaunchToken public target;
+    uint256 public assetIndex;
+    bool public armed;
+    bool public callbackRejected;
+
+    constructor() ERC20("Reentrant Reward", "REENT") { }
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+
+    function arm(RobynLaunchToken target_, uint256 assetIndex_) external {
+        target = target_;
+        assetIndex = assetIndex_;
+        armed = true;
+    }
+
+    function _update(address from, address to, uint256 value) internal override {
+        if (armed && from == address(target) && to != address(0)) {
+            armed = false;
+            (bool succeeded,) =
+                address(target).call(abi.encodeCall(RobynLaunchToken.claim, assetIndex));
+            callbackRejected = !succeeded;
+        }
+        super._update(from, to, value);
+    }
+}
+
 contract ProtocolMockRouter is IRobynConversionRouter {
     using SafeERC20 for IERC20;
 
@@ -228,6 +257,26 @@ contract RobynProtocolTest {
         require(token.totalRewardsReceived(0) - claimed <= 3, "rounding bound");
     }
 
+    function testMaliciousRewardTokenCannotReenterClaim() public {
+        ReentrantRewardToken maliciousReward = new ReentrantRewardToken();
+        address[] memory assets = new address[](1);
+        assets[0] = address(maliciousReward);
+        RobynLaunchToken guardedToken =
+            new RobynLaunchToken("Guarded", "GRD", address(this), SUPPLY, address(this), assets);
+        guardedToken.sealExclusions(new address[](0));
+        maliciousReward.mint(address(this), 1_000);
+        maliciousReward.approve(address(guardedToken), 1_000);
+        guardedToken.distributeReward(0, 1_000);
+        maliciousReward.arm(guardedToken, 0);
+
+        uint256 claimed = guardedToken.claim(0);
+
+        require(maliciousReward.callbackRejected(), "claim callback entered");
+        require(claimed >= 999 && claimed <= 1_000, "outer claim");
+        require(guardedToken.totalRewardsClaimed(0) == claimed, "claimed accounting");
+        require(maliciousReward.balanceOf(address(guardedToken)) == 1_000 - claimed, "solvency");
+    }
+
     function testMaliciousRouterCallbacksCannotReenterVault() public {
         ProtocolMockERC20 attackBase = new ProtocolMockERC20("Attack Base", "ABASE");
         ProtocolMockERC20 attackReward = new ProtocolMockERC20("Attack Reward", "ARWD");
@@ -326,6 +375,21 @@ contract RobynProtocolTest {
         factory.sealLaunchExclusions(unsealedToken, new address[](0));
         // forge-lint: disable-next-line(block-timestamp)
         require(unsealedVault.convertLeg(0, 400, 400, block.timestamp) == 400, "sealed conversion");
+    }
+
+    function testExclusionListIsBounded() public {
+        (RobynLaunchToken boundedToken,) =
+            factory.createLaunch("Bounded", "BND", SUPPLY, _assets(), _weights());
+        address[] memory exclusions = new address[](17);
+        for (uint256 i; i < exclusions.length; ++i) {
+            // forge-lint: disable-next-line(unsafe-typecast)
+            exclusions[i] = address(uint160(i + 1));
+        }
+
+        try factory.sealLaunchExclusions(boundedToken, exclusions) {
+            revert("oversized exclusion list accepted");
+        } catch { }
+        require(!boundedToken.exclusionsSealed(), "failed seal changed state");
     }
 
     function testExcludedInventoryDoesNotDiluteHolderRewards() public {

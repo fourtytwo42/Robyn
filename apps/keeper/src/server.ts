@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { Queue, Worker, type Job } from "bullmq";
 import { Redis } from "ioredis";
 import {
@@ -8,7 +8,9 @@ import {
   http,
   type Address,
   type Hash,
+  type Hex,
 } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import { createDatabase } from "@robyn/db";
 import { conversionJobId, isLegExecutable } from "./eligibility.js";
 
@@ -27,37 +29,69 @@ type ConvertJob = {
 type ConvertResult = { transactionHash: Hash; inputAmount: string };
 
 const environment = process.env.ROBYN_ENV ?? "";
-if (environment !== "robyn-devnet") {
-  throw new Error("Keeper is fail-closed outside robyn-devnet");
+if (environment !== "robyn-devnet" && environment !== "robinhood-testnet") {
+  throw new Error(
+    "Keeper environment must be robyn-devnet or robinhood-testnet",
+  );
 }
+const isTestnet = environment === "robinhood-testnet";
+const expectedChainId = isTestnet ? 46630 : 31337;
 const manifest = JSON.parse(
   await readFile(
     process.env.ROBYN_MANIFEST ?? "/home/hendo420/Robyn/deployments/31337.json",
     "utf8",
   ),
 ) as Manifest;
-if (manifest.chainId !== 31337) {
-  throw new Error("Devnet keeper requires chain ID 31337");
+if (manifest.chainId !== expectedChainId) {
+  throw new Error(
+    `Keeper manifest chain ${manifest.chainId} does not match ${expectedChainId}`,
+  );
 }
 
-const rpcUrl = process.env.ROBYN_OPERATOR_RPC_URL ?? "http://127.0.0.1:8545";
-const devnetChain = defineChain({
-  id: 31337,
-  name: "Robyn Devnet",
-  nativeCurrency: { name: "Dev Ether", symbol: "DEV", decimals: 18 },
+const rpcUrl =
+  process.env.ROBYN_OPERATOR_RPC_URL ??
+  (isTestnet
+    ? "https://rpc.testnet.chain.robinhood.com"
+    : "http://127.0.0.1:8545");
+const selectedChain = defineChain({
+  id: expectedChainId,
+  name: isTestnet ? "Robinhood Chain Testnet" : "Robyn Devnet",
+  nativeCurrency: isTestnet
+    ? { name: "Ether", symbol: "ETH", decimals: 18 }
+    : { name: "Dev Ether", symbol: "DEV", decimals: 18 },
   rpcUrls: { default: { http: [rpcUrl] } },
+  testnet: true,
 });
 const publicClient = createPublicClient({
-  chain: devnetChain,
+  chain: selectedChain,
   transport: http(rpcUrl),
 });
+let operatorAccount;
+if (isTestnet) {
+  const keyFile = process.env.ROBYN_OPERATOR_KEY_FILE;
+  if (!keyFile)
+    throw new Error("Testnet keeper requires ROBYN_OPERATOR_KEY_FILE");
+  const keyStat = await stat(keyFile);
+  if ((keyStat.mode & 0o077) !== 0) {
+    throw new Error(
+      "Testnet operator key file must not be group/world accessible",
+    );
+  }
+  const key = (await readFile(keyFile, "utf8")).trim();
+  if (!/^0x[0-9a-fA-F]{64}$/.test(key)) {
+    throw new Error("Testnet operator key file is not a private-key hex value");
+  }
+  operatorAccount = privateKeyToAccount(key as Hex);
+}
 const walletClient = createWalletClient({
-  chain: devnetChain,
+  account: operatorAccount,
+  chain: selectedChain,
   transport: http(rpcUrl),
 });
-const accounts = await walletClient.getAddresses();
-const operator = accounts[0];
-if (!operator) throw new Error("No unlocked devnet operator account");
+const operator = isTestnet
+  ? operatorAccount?.address
+  : (await walletClient.getAddresses())[0];
+if (!operator) throw new Error("Keeper operator account is unavailable");
 if ((await publicClient.getChainId()) !== manifest.chainId) {
   throw new Error("Keeper RPC chain mismatch");
 }
@@ -73,7 +107,7 @@ const auditRedis = new Redis(redisUrl.toString(), {
   enableReadyCheck: true,
 });
 await auditRedis.ping();
-const queueName = "robyn-conversions";
+const queueName = process.env.ROBYN_QUEUE_NAME ?? "robyn-conversions";
 const queue = new Queue<ConvertJob, ConvertResult>(queueName, {
   connection,
   defaultJobOptions: {
@@ -318,7 +352,7 @@ async function processConversion(
   const expected = (current.leg.pendingBase * rate) / 10n ** 18n;
   const minimumOutput = (expected * 9_950n) / 10_000n;
   if (rate === 0n || minimumOutput === 0n) {
-    throw new Error("Devnet conversion route is unavailable");
+    throw new Error("Conversion route is unavailable");
   }
   const deadline = current.timestamp + 300n;
   const simulation = await publicClient.simulateContract({

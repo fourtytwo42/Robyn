@@ -16,3 +16,8 @@ allow_paths = ["../../node_modules"]
 line_length = 100
 tab_width = 4
 bracket_spacing = true
+
+[invariant]
+runs = 128
+depth = 64
+fail_on_revert = true

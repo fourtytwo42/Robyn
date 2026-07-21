@@ -326,6 +326,8 @@ Exit gate:
 
 ### Phase 11: Robinhood testnet migration package
 
+Implementation status (2026-07-21): package, protected build, deployment verifier, full transaction rehearsal and isolated five-service rehearsal are implemented and mandatory release gates. Browser UAT of the exact protected candidate and the final exact-release soak remain open. Actual public-testnet broadcast remains separately authorized.
+
 Deliverables:
 
 - separate `robinhood-testnet` chain configuration for chain ID `46630`;

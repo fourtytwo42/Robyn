@@ -26,17 +26,39 @@ export async function getGatewayHealth(
   request: typeof fetch = fetch,
   url: string = process.env.RPC_GATEWAY_HEALTH_URL ??
     "http://127.0.0.1:8546/health",
+  expectedChainId: number = Number(process.env.CHAIN_ID ?? "31337"),
 ): Promise<GatewayHealth> {
   try {
-    const response = await request(url, {
-      cache: "no-store",
-      signal: AbortSignal.timeout(3_000),
-    });
-    if (!response.ok) throw new Error("Gateway health request failed");
+    const isTestnet = expectedChainId === 46630;
+    const response = await request(
+      url,
+      isTestnet
+        ? {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 1,
+              method: "eth_chainId",
+              params: [],
+            }),
+            cache: "no-store",
+            signal: AbortSignal.timeout(3_000),
+          }
+        : { cache: "no-store", signal: AbortSignal.timeout(3_000) },
+    );
+    if (!response.ok) throw new Error("RPC health request failed");
+    if (isTestnet) {
+      const payload = (await response.json()) as { result?: unknown };
+      if (payload.result !== "0xb626") {
+        throw new Error("Testnet RPC chain response was invalid");
+      }
+      return { status: "ok", chainId: expectedChainId, upstream: "ok" };
+    }
     const payload = (await response.json()) as Partial<GatewayHealth>;
     if (
       payload.status !== "ok" ||
-      payload.chainId !== 31337 ||
+      payload.chainId !== expectedChainId ||
       payload.upstream !== "ok"
     ) {
       throw new Error("Gateway health response was invalid");
@@ -49,7 +71,7 @@ export async function getGatewayHealth(
   } catch {
     return {
       status: "degraded",
-      chainId: 31337,
+      chainId: expectedChainId,
       upstream: "unavailable",
     };
   }

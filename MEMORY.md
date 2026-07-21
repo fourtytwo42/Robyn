@@ -5,15 +5,19 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
-- Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; lower-level correctness tests pass; no unresolved critical/high defect remains; and the exact release commit and evidence are pushed. Partial, documentation-only, mocked-happy-path-only or unpushed work is not completion.
-- Current task: exact immutable release 74acfee65a4299bae80bec4887bf9b8853286593 is live, backed up and reboot/browser verified. The exact-release 24-hour soak harness is implemented and short-run verified; commit/build it as the second compatible release, rehearse rollback/forward promotion, then start the real soak while independent review and testnet rehearsal continue.
-- Last meaningful change: Added a native exact-release soak service that records health/latency, PM2 cwd/restarts/RSS, chain/index state, alerts, memory/disk and beginning/end onchain conservation, with hard pass/fail thresholds and durable evidence.
-- Files touched: soak monitor, native systemd unit/installer, release operations documentation and MEMORY.
-- Last verification: 2026-07-21 immutable release 74acfee65a4299bae80bec4887bf9b8853286593 promoted with manifest hash 75a89abe8b2b55024ee968949067ddc1e85e08e0fabf25085f3448d8d4701077, all six process paths bound to it, zero writable files/directories, edge smoke clean and browser discovery/portfolio clean. Its off-VM backup records the same gitSha. A full reboot resurrected the exact release with zero restarts/failed units, block 102/two launches/169 logs intact and browser acceptance clean. The tightened 3.6-second soak test passed four samples, both protocol conservation checks, p95 and resource gates with zero errors.
-- Next step: pass full gates and push the soak harness, build/promote its exact immutable artifact, rehearse rollback to 74acfee65a and forward promotion, then start the real uninterrupted 24-hour soak. External human alert delivery and independent protocol/security review remain required before real-value testing.
-- Blockers: Bags/pons compatibility requires funded transactions; anonymous 0x and 1inch quote calls return 401; no public testnet faucet/canonical Stock Token registry was found; current Alloy website source is unverified; no reusable license/repository was found for Vladdy/HoodETF/BASKET.
+- Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; no unresolved critical/high defect remains; exact release evidence is pushed; and the final exact candidate completes an uninterrupted 24-hour soak.
+- Current task: finish the protected testnet browser UAT, commit and push the protocol/testnet package, build/promote/reboot the exact immutable release, then start its real 24-hour soak.
+- Last meaningful change: implemented stateful invariants and malicious callback coverage, bounded exclusions, protected Robinhood Testnet modules/deployer/verifier/build, full transaction and isolated five-service rehearsals, release-gate integration and security triage.
+- Last verification: 2026-07-21 testnet transaction rehearsal passed faucet, buy, three conversions, claim and sell; isolated web/API/indexer/keeper/artifact rehearsal passed with restricted key file, three keeper conversions, dedicated database cleanup and live devnet preservation. Security audit passed with zero critical/high, zero high/critical dependency advisories and zero secret-history findings.
+- Next step: complete exact protected-candidate browser UAT, full repository gates, commit/push, immutable release build/promotion/reboot/browser verification, off-VM backup and uninterrupted 24-hour soak.
+- External gates: public testnet ETH and explicit broadcast authorization are needed for an actual Robinhood Testnet transaction; human alert delivery and independent contract review are required before real-value operation.
 
 ## Current State
+
+- Last verified 2026-07-21: protected chain-46630 deployment, verification and compile-time web module selection are implemented. Protected builds reject devnet markers, faucet routes and generated session keys, require injected-wallet calls and target Robinhood Testnet chain 46630.
+- Last verified 2026-07-21: the full chain-46630 mock journey and isolated five-service stack rehearsal pass. The rehearsal uses dedicated PostgreSQL database robyn_testnet_rehearsal, Redis DB 1, separate PM2 names/ports/queue and an owner-only operator key file, then removes its processes and preserves devnet health.
+- Last verified 2026-07-21: Foundry passed 28 unit/fuzz/adversarial tests plus four handler invariants at 128 runs and depth 64. Malicious router and reward-token callbacks cannot reenter accounting; exclusions are capped at 16.
+- Last verified 2026-07-21: the fresh release security audit reports zero unresolved critical/high, eight medium, five low and one informational Slither finding; zero high/critical dependency advisories; and zero Git-history secret findings. Medium/low dispositions are documented in docs/protocol-security-review.md.
 
 - Last verified 2026-07-20: the authoritative workspace is `/home/hendo420/Robyn` on Ubuntu VM `robyn` at `192.168.50.250`; the Windows checkout is control-only and not an execution environment.
 - Last verified 2026-07-21: the repository is a functional controlled-devnet launchpad with browser-operated permissionless launch/trade/convert/claim flows, a persistent six-process PM2 topology, native PostgreSQL/Redis/MinIO and lower-level contract/service tests. It is not yet production-ready or testnet-ready.
@@ -467,11 +471,21 @@ When sources conflict, use this order:
 - 2026-06-18: Added structured memory sections and stronger agent rules for context recovery and handoff.
 - 2026-06-18: Added active handoff, project map, verification ledger, source-of-truth ordering, freshness rules, archive guidance, and email privacy rules.
 
+### 2026-07-21 - Protocol hardening and protected testnet package
+
+- Context: Production readiness required stateful financial properties and a fail-closed Robinhood Testnet package, not only unit happy paths.
+- Decision: Keep production core separate from explicit TESTNET_MOCK_ONLY fixtures; require injected wallets in protected builds; refuse real-network unlocked accounts; make transaction and five-service rehearsals immutable release gates.
+- Files: packages/contracts/src/testnet, packages/contracts/test/RobynProtocolInvariant.t.sol, scripts/deploy-testnet.sh, scripts/verify-testnet-deployment.sh, scripts/rehearse-testnet.sh, scripts/rehearse-testnet-stack.sh, scripts/build-testnet-candidate.sh, infrastructure/pm2/ecosystem.testnet.config.cjs, docs/testnet-operations.md, docs/protocol-security-review.md.
+- Commands/tests: Foundry 28 unit/fuzz/adversarial tests; four invariant campaigns at 128 runs/depth 64; protected Next build marker scan; chain-46630 journey; isolated five-service rehearsal; security-audit.sh.
+- Result: All passed; no unresolved critical/high. The actual public-testnet broadcast remains separately authorized and unfunded.
+- Follow-up: Browser UAT exact protected candidate, final release/reboot/backup, uninterrupted 24-hour soak, human alert receiver and independent review before real-value use.
+
 ## Open Follow-ups
 
-- Run a real uninterrupted 24-hour soak against the exact immutable release candidate; the 180-second forced-build contention result is useful capacity evidence but does not satisfy this gate.
-- Configure and test a human alert receiver before real-value testnet operation; local Prometheus/Grafana alert state alone is insufficient.
-- Complete native protocol hardening with stateful handler invariants, malicious callback fixtures and independent review; do not treat the current unaudited checkpoint as real-value ready.
+- Run a real uninterrupted 24-hour soak against the final exact immutable release candidate; short harness tests and forced-build contention do not satisfy this gate.
+- Complete in-app-browser UAT against the exact protected chain-46630 candidate; CLI transaction and service rehearsals do not replace browser acceptance.
+- Configure and test a human alert receiver before unattended public-testnet or real-value operation; local Prometheus/Grafana alert state alone is insufficient.
+- Obtain independent protocol/security review before real-value operation. Stateful invariants and malicious callbacks are now implemented, but the internal engineering review is not independent.
 - Ask Vladdy whether the team will provide a repository/license and whether a native multi-asset mode is planned; current deployed contracts do not expose a safe weighted-basket seam.
 - Reconcile Alloy's current `0x5a5f...10f2` launchpad and `0x0E9705...` index factory with the pinned MIT repository and its older published deployment before treating the repository as exact source for the current app.
 - Obtain HoodETF and BASKET Protocol complete source repositories, licenses and audit status before considering code reuse; do not infer a copying license from Blockscout verification.

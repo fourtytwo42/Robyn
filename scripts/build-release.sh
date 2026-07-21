@@ -16,9 +16,11 @@ target="/opt/robyn/releases/${release_id}"
 security_json="/tmp/robyn-release-security-$$.json"
 gate_log="/tmp/robyn-release-gates-$$.log"
 archive="/tmp/robyn-release-source-$$.tar"
+testnet_journey_json="/tmp/robyn-testnet-journey-$$.json"
+testnet_stack_json="/tmp/robyn-testnet-stack-$$.json"
 
 cleanup() {
-  rm -f "${security_json}" "${gate_log}" "${archive}"
+  rm -f "${security_json}" "${gate_log}" "${archive}" "${testnet_journey_json}" "${testnet_stack_json}"
   if [[ -d "${staging}" ]]; then
     rm -rf "${staging}"
   fi
@@ -54,6 +56,8 @@ trap cleanup EXIT
   pnpm build
   python3 scripts/validate-user-stories.py
   SECURITY_AUDIT_OUTPUT="${security_json}" scripts/security-audit.sh
+  ROBYN_TESTNET_REHEARSAL_EVIDENCE="${testnet_journey_json}" scripts/rehearse-testnet.sh
+  ROBYN_TESTNET_STACK_EVIDENCE="${testnet_stack_json}" scripts/rehearse-testnet-stack.sh
 } 2>&1 | tee "${gate_log}"
 
 mkdir -p "${staging}/release-evidence"
@@ -62,6 +66,8 @@ source_archive_sha="$(sha256sum "${archive}" | cut -d' ' -f1)"
 tar -xf "${archive}" -C "${staging}"
 cp "${security_json}" "${staging}/release-evidence/static-security-audit.json"
 cp "${gate_log}" "${staging}/release-evidence/release-gates.log"
+cp "${testnet_journey_json}" "${staging}/release-evidence/testnet-journey.json"
+cp "${testnet_stack_json}" "${staging}/release-evidence/testnet-stack.json"
 
 (
   cd "${staging}"
@@ -107,7 +113,7 @@ cp "${gate_log}" "${staging}/release-evidence/release-gates.log"
       nodeVersion: $nodeVersion,
       pnpmVersion: $pnpmVersion,
       migrations: $migrations,
-      gates: ["format", "lint", "typecheck", "test", "build", "traceability", "security-audit"]
+      gates: ["format", "lint", "typecheck", "test", "build", "traceability", "security-audit", "testnet-journey", "testnet-stack"]
     }' > release-manifest.json
   sha256sum release-manifest.json > release-manifest.json.sha256
 )

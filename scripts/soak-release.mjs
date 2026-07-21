@@ -287,6 +287,7 @@ try {
     if (Date.now() > finishAt + intervalSeconds * 1000) {
       rememberError("soak sampling delay exceeded one interval");
     }
+    if (aborted) break;
     try {
       finalSample = await collectSample();
       fs.appendFileSync(samplesPath, `${JSON.stringify(finalSample)}\n`);
@@ -383,5 +384,5 @@ try {
   fs.closeSync(lock);
   fs.rmSync(lockPath, { force: true });
   process.stdout.write(`${JSON.stringify(summary)}\n`);
-  if (!passed) process.exitCode = 1;
+  if (!passed && !aborted) process.exitCode = 1;
 }
