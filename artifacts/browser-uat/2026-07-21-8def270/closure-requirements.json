@@ -41,7 +41,15 @@
         {"path": "completedDuration", "equals": true},
         {"path": "aborted", "equals": false},
         {"path": "errorCount", "equals": 0},
-        {"path": "gitSha", "expectedSha": true}
+        {"path": "gitSha", "expectedSha": true},
+        {"path": "requestedDurationSeconds", "minimum": 86400},
+        {"path": "elapsedSeconds", "minimum": 86400},
+        {"path": "sampleCount", "minimum": 5759},
+        {"path": "baselineRestarts", "equals": 0},
+        {"path": "finalRestarts", "equals": 0},
+        {"path": "p95WithinThreshold", "equals": true},
+        {"path": "initialProtocolVerification", "nonEmpty": true},
+        {"path": "finalProtocolVerification", "nonEmpty": true}
       ]
     },
     {
@@ -51,7 +59,14 @@
         {"path": "passed", "equals": true},
         {"path": "completionPending", "equals": false},
         {"path": "mode", "equals": "final"},
-        {"path": "expectedSha", "expectedSha": true}
+        {"path": "expectedSha", "expectedSha": true},
+        {"path": "sampleCount", "minimum": 5759},
+        {"path": "observedSeconds", "minimum": 86380},
+        {"path": "allSamplesExactRelease", "equals": true},
+        {"path": "allProcessSetsComplete", "equals": true},
+        {"path": "allRestartCountsZero", "equals": true},
+        {"path": "allFiringAlertsZero", "equals": true},
+        {"path": "allIndexedStateMonotonic", "equals": true}
       ]
     },
     {
@@ -63,7 +78,15 @@
         {"path": "rehearsalOverrides.allowSameBoot", "equals": false},
         {"path": "rehearsalOverrides.allowActiveSoak", "equals": false},
         {"path": "soakState", "equals": "inactive"},
-        {"path": "expectedSha", "expectedSha": true}
+        {"path": "expectedSha", "expectedSha": true},
+        {"path": "failedUnits", "equals": 0},
+        {"path": "containerServicesDisabled", "equals": true},
+        {"path": "activeEnabledServices", "minimumLength": 10},
+        {"path": "activeEnabledTimers", "minimumLength": 2},
+        {"path": "pm2", "minimumLength": 6},
+        {"path": "healthyPrometheusTargets", "minimum": 2},
+        {"path": "firingAlerts", "equals": 0},
+        {"path": "ufwActiveWithExactLanRules", "equals": true}
       ]
     },
     {
@@ -72,7 +95,22 @@
       "assertions": [
         {"path": "passed", "equals": true},
         {"path": "warningOrErrorLogs", "equals": 0},
-        {"path": "releaseGitSha", "expectedSha": true}
+        {"path": "releaseGitSha", "expectedSha": true},
+        {"path": "chainId", "equals": 31337},
+        {"path": "indexedBlock", "minimum": 180},
+        {"path": "journey.restoredOrFreshWallet", "equals": true},
+        {"path": "journey.funding", "equals": true},
+        {"path": "journey.buy", "equals": true},
+        {"path": "journey.weightedPendingFees", "equals": true},
+        {"path": "journey.convertAllLegs", "equals": true},
+        {"path": "journey.keeperRaceRecovery", "equals": true},
+        {"path": "journey.claimAll", "equals": true},
+        {"path": "journey.sell", "equals": true},
+        {"path": "journey.discovery", "equals": true},
+        {"path": "journey.canonicalDetail", "equals": true},
+        {"path": "journey.portfolioReload", "equals": true},
+        {"path": "domSnapshots", "minimumLength": 3},
+        {"path": "transactionBlocks", "minimumLength": 8}
       ]
     },
     {
@@ -83,7 +121,8 @@
     {
       "file": "post-reboot-browser-receipts.json",
       "kind": "json",
-      "allReceiptStatuses": "0x1"
+      "allReceiptStatuses": "0x1",
+      "minimumReceiptCount": 8
     },
     {
       "file": "post-reboot-backup-evidence.json",
@@ -91,10 +130,17 @@
       "assertions": [
         {"path": "passed", "equals": true},
         {"path": "releaseGitSha", "expectedSha": true},
+        {"path": "backup.encrypted", "equals": true},
+        {"path": "backup.offVmAssetCount", "minimum": 1},
+        {"path": "backup.offVmChecksumAssetCount", "minimum": 1},
+        {"path": "backup.offVmSizeMatched", "equals": true},
         {"path": "backup.offVmDigestMatched", "equals": true},
         {"path": "restoreRehearsal.passed", "equals": true},
         {"path": "restoreRehearsal.gitSha", "expectedSha": true},
-        {"path": "restoreRehearsal.liveStateTouched", "equals": false}
+        {"path": "restoreRehearsal.liveStateTouched", "equals": false},
+        {"path": "restoreRehearsal.databaseTables", "minimum": 9},
+        {"path": "restoreRehearsal.artifacts", "minimum": 1},
+        {"path": "restoreRehearsal.chainId", "equals": 31337}
       ]
     }
   ]

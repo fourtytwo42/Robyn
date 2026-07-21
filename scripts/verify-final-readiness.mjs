@@ -244,13 +244,34 @@ for (const requirement of config.requiredEvidence) {
   }
   for (const assertion of requirement.assertions ?? []) {
     const actual = getPath(payload, assertion.path);
-    const expected = assertion.expectedSha
-      ? config.expectedReleaseGitSha
-      : assertion.equals;
+    const expected = assertion.expectedSha ? config.expectedReleaseGitSha : assertion.equals;
+    let assertionPassed;
+    let expectation;
+    if (assertion.expectedSha || Object.hasOwn(assertion, "equals")) {
+      assertionPassed = sameValue(actual, expected);
+      expectation = `equal ${JSON.stringify(expected)}`;
+    } else if (Object.hasOwn(assertion, "minimum")) {
+      assertionPassed = typeof actual === "number" && actual >= assertion.minimum;
+      expectation = `be at least ${assertion.minimum}`;
+    } else if (Object.hasOwn(assertion, "minimumLength")) {
+      assertionPassed =
+        (Array.isArray(actual) || typeof actual === "string") &&
+        actual.length >= assertion.minimumLength;
+      expectation = `have length at least ${assertion.minimumLength}`;
+    } else if (assertion.nonEmpty === true) {
+      assertionPassed =
+        (typeof actual === "string" && actual.trim().length > 0) ||
+        (Array.isArray(actual) && actual.length > 0) ||
+        (actual && typeof actual === "object" && Object.keys(actual).length > 0);
+      expectation = "be non-empty";
+    } else {
+      assertionPassed = false;
+      expectation = "use a supported assertion operator";
+    }
     check(
       `${requirement.file}:${assertion.path}`,
-      sameValue(actual, expected),
-      `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+      assertionPassed,
+      `expected to ${expectation}, got ${JSON.stringify(actual)}`,
     );
   }
   if (requirement.emptyArray === true) {
@@ -264,10 +285,10 @@ for (const requirement of config.requiredEvidence) {
     check(
       `${requirement.file}:receipt statuses`,
       Array.isArray(payload) &&
-        payload.length > 0 &&
+        payload.length >= (requirement.minimumReceiptCount ?? 1) &&
         payload.every((receipt) =>
           String(receipt.status ?? receipt.receipt?.status).toLowerCase() === "0x1"),
-      "all final browser receipts must succeed",
+      `at least ${requirement.minimumReceiptCount ?? 1} final browser receipts must succeed`,
     );
   }
 }
