@@ -1,3 +1,4 @@
+7219573a213441bae161dd04acf8a1b6f85e240a1bec319c79c17f376b074b30  ./accessibility-browser-evidence.json
 267694547e3a4f2b0a26cd8a50603b6c226289c603155ebf3ae0c1622d57ff39  ./additional-launch-receipts.json
 27ccb6c850890fc3dcbdba88bbd8779c138333f19a6eec38c942c5d0922b2dda  ./additional-launch-transactions.json
 963553f407b46582029d6ee2461bb762da26fe3fbc0549076a15b5859ea8cd2e  ./claimed-sold-desktop.jpg
@@ -13,7 +14,7 @@ db00c5e8aa4e12cd391c67ceae7ca0f58f28f0c7d846ef92df405e7d85e5423d  ./invalid-meta
 d36f29ca44c4e22116d28bacaf0c5f0cdb6b05de6a7cda0bbf91905f23ed5c61  ./invalid-weights.dom.txt
 eda6cef7caa622311225404a9b84821fe6459ca38f5a8a89c472a3b6afec63d0  ./keeper-conversion-receipts.json
 8dc25d09fc7e5d322433b18f5afd2431f697549c09bedcc42b568b8eb4e8a3c5  ./keeper-conversions.json
-cf2757b01362a454a942ab22c54d082b9bafda3101d004b546db5b8842f3cb64  ./manifest.json
+54a44b998cb3be08766772fbc5280d19f15cc8e92d11f29ebf723ccfd83f0699  ./manifest.json
 165031fbc301807bb252550c54dc8027a8a90a708bf8563ae594c5b698c0775b  ./one-asset-launch-desktop.jpg
 7b9e6ee3c984adf7094905b6a50fb7106385e68f4fe2115fa126b6707f577542  ./one-asset-launch.dom.txt
 f082b683f4da08dcd3b60bd97f9d5b358c3ddb495d893885fd6a499e5764d50e  ./pending-fees-desktop.jpg

@@ -44,6 +44,7 @@ Status meanings:
 | Signed portfolio and history after reload | PROVEN | desktop and mobile portfolio DOM/screenshots with restored session-wallet state |
 | Accurate non-backed and mock-asset disclosures | PROVEN | browser snapshots show controlled-development and nonredeemable reward-basket disclosures |
 | Desktop, tablet and mobile responsiveness | PROVEN | desktop transactional screenshots plus responsive-browser-evidence.json at 768 by 1024 and 390 by 844; zero overflow and zero warning/error logs |
+| Keyboard, reduced-motion and non-color-only states | PROVEN-DESIGN | accessibility-browser-evidence.json verifies the semantic skip target, served focus styles, reduced-motion media rule, seven textual status labels and zero warning/error logs; the recorded in-app-browser key-injection limitation is not concealed |
 | PostgreSQL, Redis and MinIO durability | PROVEN | native services, migrations, deterministic index rebuild, Redis fail-closed quota test and MinIO hash/restart test |
 | Reorg-aware indexing and freshness-labeled API | PROVEN | deterministic destructive rebuild, checkpoint validation, bounded discovery API and live indexed state |
 | Service persistence and recovery | PROVEN | PM2/systemd resurrection, controlled service failure tests and prior VM cold-start evidence |
