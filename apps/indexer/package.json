@@ -1,0 +1,1 @@
+{"name":"@robyn/indexer","version":"0.1.0","private":true,"type":"module","scripts":{"build":"tsc -p tsconfig.build.json","start":"node dist/server.js","typecheck":"tsc --noEmit"},"dependencies":{"@robyn/db":"workspace:*","viem":"2.55.4"},"devDependencies":{"@types/node":"24.13.3","typescript":"5.9.3"}}

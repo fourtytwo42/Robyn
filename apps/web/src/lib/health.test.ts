@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { foundationChecks, getGatewayHealth, getHealthStatus } from "./health";
+import {
+  foundationChecks,
+  getDataPlaneHealth,
+  getGatewayHealth,
+  getHealthStatus,
+} from "./health";
 
 describe("getHealthStatus", () => {
   it("returns deterministic service metadata", () => {
@@ -42,6 +47,33 @@ describe("getHealthStatus", () => {
         status: "degraded",
         chainId: 31337,
         upstream: "unavailable",
+      });
+    });
+  });
+
+  describe("getDataPlaneHealth", () => {
+    it("accepts indexed freshness metadata", async () => {
+      const request = () =>
+        Promise.resolve(
+          new Response(JSON.stringify({ asOfBlock: "90", launchCount: "2" }), {
+            status: 200,
+          }),
+        );
+
+      await expect(getDataPlaneHealth(request)).resolves.toEqual({
+        status: "ok",
+        asOfBlock: "90",
+        launchCount: "2",
+      });
+    });
+
+    it("fails closed when indexed data is unavailable", async () => {
+      const request = () => Promise.reject(new Error("offline"));
+
+      await expect(getDataPlaneHealth(request)).resolves.toEqual({
+        status: "degraded",
+        asOfBlock: null,
+        launchCount: "0",
       });
     });
   });

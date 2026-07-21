@@ -1,6 +1,6 @@
 # Native data-plane operations
 
-Status: Foundation implemented; API, indexer, queue workers and artifact service remain in progress
+Status: PostgreSQL schema, reorg-aware indexer and read API implemented; queue workers and artifact service remain in progress
 Last verified: 2026-07-21
 
 ## Native services
@@ -47,9 +47,16 @@ redis-cli ping
 pg_dump -s robyn
 ~~~
 
+## Live indexer and API
+
+The robyn-indexer and robyn-api processes run under PM2 and are saved for systemd resurrection. The indexer stores every canonical devnet block/log from the deployment boundary, verifies its durable checkpoint hash before advancing, resets derived state on disagreement and rebuilds launch projections from the public factory registries.
+
+The read-only API listens on port 3100 and exposes /health, /status, /launches, /launches/{token}, /launches/{token}/activity and /assets. Every chain-derived response includes asOfBlock and indexedAt freshness. Pagination and request limits are bounded.
+
+A destructive derived-data rebuild test truncated blocks, raw logs, launch projections and the checkpoint, restarted the indexer, and reproduced 75 logs plus both launches through block 90. Subsequent API/indexer restarts retained the same results. The live web status surface independently displayed Indexer ok at block 90.
+
 ## Remaining work
 
-- Add the reorg-aware indexer and Fastify read API.
 - Move faucet quota state into Redis with bounded expiry.
 - Add BullMQ workers and durable job audit/dead-letter visibility.
 - Install and harden native MinIO for content-addressed artifacts.

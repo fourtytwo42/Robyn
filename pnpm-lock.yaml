@@ -31,6 +31,38 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  apps/api:
+    dependencies:
+      '@robyn/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      fastify:
+        specifier: 5.10.0
+        version: 5.10.0
+    devDependencies:
+      '@types/node':
+        specifier: 24.13.3
+        version: 24.13.3
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  apps/indexer:
+    dependencies:
+      '@robyn/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      viem:
+        specifier: 2.55.4
+        version: 2.55.4(typescript@5.9.3)(zod@4.4.3)
+    devDependencies:
+      '@types/node':
+        specifier: 24.13.3
+        version: 24.13.3
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   apps/rpc-gateway:
     dependencies:
       fastify:

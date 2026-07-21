@@ -55,6 +55,40 @@ export async function getGatewayHealth(
   }
 }
 
+export type DataPlaneHealth = {
+  status: "ok" | "degraded";
+  asOfBlock: string | null;
+  launchCount: string;
+};
+
+export async function getDataPlaneHealth(
+  request: typeof fetch = fetch,
+  url: string = process.env.DATA_API_STATUS_URL ??
+    "http://127.0.0.1:3100/status",
+): Promise<DataPlaneHealth> {
+  try {
+    const response = await request(url, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(3_000),
+    });
+    if (!response.ok) throw new Error("Data API status request failed");
+    const payload = (await response.json()) as Partial<DataPlaneHealth>;
+    if (
+      typeof payload.asOfBlock !== "string" ||
+      typeof payload.launchCount !== "string"
+    ) {
+      throw new Error("Data API status response was invalid");
+    }
+    return {
+      status: "ok",
+      asOfBlock: payload.asOfBlock,
+      launchCount: payload.launchCount,
+    };
+  } catch {
+    return { status: "degraded", asOfBlock: null, launchCount: "0" };
+  }
+}
+
 export const foundationChecks = [
   "VM-hosted runtime",
   "Controlled Anvil network",

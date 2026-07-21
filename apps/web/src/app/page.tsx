@@ -1,13 +1,20 @@
 import { DevnetConsole, type Deployment } from "@/components/devnet-console";
 import { LaunchpadConsole } from "@/components/launchpad-console";
-import { getGatewayHealth, getHealthStatus } from "@/lib/health";
+import {
+  getDataPlaneHealth,
+  getGatewayHealth,
+  getHealthStatus,
+} from "@/lib/health";
 import Link from "next/link";
 import deployment from "../../../../deployments/31337.json";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const gateway = await getGatewayHealth();
+  const [gateway, dataPlane] = await Promise.all([
+    getGatewayHealth(),
+    getDataPlaneHealth(),
+  ]);
   const health = getHealthStatus();
 
   return (
@@ -84,8 +91,11 @@ export default async function Home() {
         <div>
           Chain <strong>{gateway.chainId}</strong>
         </div>
-        <div>
-          Environment <strong>{health.environment}</strong>
+        <div data-testid="indexer-status">
+          Indexer{" "}
+          <strong>
+            {dataPlane.status} · block {dataPlane.asOfBlock ?? "unavailable"}
+          </strong>
         </div>
       </section>
 
