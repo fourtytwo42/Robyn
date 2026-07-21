@@ -87,7 +87,7 @@ The 2026-07-21 checkpoint verified:
 - LAN access to port 8545 fails while port 8546 succeeds;
 - CORS preflight returns HTTP 204 with POST and content-type allowed;
 - Anvil state survives a controlled systemd restart;
-- PM2 resurrects both applications after a controlled systemd restart; and
+- a full VM reboot restores Anvil, the saved PM2 applications, web and gateway health with the funded balance unchanged; and
 - in-app-browser DOM and console checks show recovered RPC status ok on chain 31337.
 
 ## Remaining production-readiness work
@@ -95,7 +95,6 @@ The 2026-07-21 checkpoint verified:
 - Move faucet limits from process memory to native Redis before untrusted public exposure.
 - Configure TLS/reverse proxy and explicit firewall policy.
 - Promote immutable releases instead of running from the checkout.
-- Complete a full VM reboot recovery test.
 - Add generation/reset tooling and off-VM state backup.
 - Add gateway load/soak tests, structured metrics and alerts.
 - Implement wallet, launch, trade, conversion, reward and claim journeys.
