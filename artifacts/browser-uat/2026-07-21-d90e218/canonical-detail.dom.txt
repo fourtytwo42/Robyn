@@ -1,0 +1,161 @@
+- link "Skip to main content":
+  - /url: "#main"
+- main:
+  - link "Robyn home":
+    - /url: /
+    - generic: R
+    - generic: ROBYN
+  - navigation "Primary navigation":
+    - link "Discover":
+      - /url: /discover
+    - link "Portfolio":
+      - /url: /portfolio
+    - link "Create":
+      - /url: /#devnet-console
+  - generic: Controlled development network
+  - paragraph: "Canonical launch #1"
+  - heading "Robyn Genesis ROBYN" [level=1]
+  - code: "0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5"
+  - generic: Experimental · controlled development network
+  - region "Fixed-price development market":
+    - paragraph: Market
+    - heading "Fixed-price development market" [level=2]
+    - paragraph: Trading and reward claiming are operationally separate. The live console revalidates chain 31337 and transaction targets before submitting.
+    - term: Market
+    - definition:
+      - code: "0xbeaafda2e17fc95e69dc06878039d274e0d2b21a"
+    - term: Creator
+    - definition:
+      - code: "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+    - term: Token
+    - definition:
+      - code: "0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5"
+    - link "Open live trading console":
+      - /url: /#devnet-console
+    - link "View portfolio":
+      - /url: /portfolio
+  - region "Realized onchain reward state":
+    - paragraph: Immutable reward basket
+    - heading "Realized onchain reward state" [level=2]
+    - article:
+      - strong: mNVDA
+      - generic: 40%
+      - term: Pending cash
+      - definition: 0.4 mUSD
+      - term: Purchased / deposited
+      - definition: 21.6 mNVDA
+      - term: Converted base
+      - definition: 21.6 mUSD
+      - code: "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49"
+    - article:
+      - strong: mSPY
+      - generic: 40%
+      - term: Pending cash
+      - definition: 0.4 mUSD
+      - term: Purchased / deposited
+      - definition: 43.2 mSPY
+      - term: Converted base
+      - definition: 21.6 mUSD
+      - code: "0x4826533B4897376654Bb4d4AD88B7faFD0C98528"
+    - article:
+      - strong: mETH
+      - generic: 20%
+      - term: Pending cash
+      - definition: 0.2 mUSD
+      - term: Purchased / deposited
+      - definition: 32.4 mETH
+      - term: Converted base
+      - definition: 10.8 mUSD
+      - code: "0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf"
+    - paragraph: Indexed block 165 · live chain block 165 · realized state only
+  - region "Contracts and indexed provenance":
+    - paragraph: Verify independently
+    - heading "Contracts and indexed provenance" [level=2]
+    - term: Launch token
+    - definition:
+      - code: "0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5"
+    - term: Reward vault
+    - definition:
+      - code: "0xf7b407bd806b9943c1b2281271b27dc3f3bae694"
+    - term: Market
+    - definition:
+      - code: "0xbeaafda2e17fc95e69dc06878039d274e0d2b21a"
+    - term: Creator wallet
+    - definition:
+      - code: "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+    - term: Formula version
+    - definition:
+      - code: native-v1
+    - term: Created block
+    - definition:
+      - code: "74"
+    - term: Indexed through
+    - definition:
+      - code: "165"
+  - region "Canonical logs":
+    - paragraph: Protocol activity
+    - heading "Canonical logs" [level=2]
+    - generic: 20 shown of 50 recent events
+    - list:
+      - generic: Block 74
+      - code: "0xc6a7ecacd0c396ca921b09c5b9cb9a3628ffd6d6172f554d0894e7826075c08b"
+      - generic: Contract 0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5 · topic 0x012d86c4fb833c6fa408e565b7c12185233bae73a6379ff47e4f99be306b0551
+      - generic: Block 165
+      - code: "0xb26b14aabc7421afb212fbe042208c6310258536fd4327204210d8e772cb9fb0"
+      - generic: Contract 0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5 · topic 0xe9d51577f7e72d9f635003ff0981910ec67bc3aaf5199d01824b44233ff38066
+      - generic: Block 165
+      - code: "0xb26b14aabc7421afb212fbe042208c6310258536fd4327204210d8e772cb9fb0"
+      - generic: Contract 0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5 · topic 0xe9d51577f7e72d9f635003ff0981910ec67bc3aaf5199d01824b44233ff38066
+      - generic: Block 165
+      - code: "0xb26b14aabc7421afb212fbe042208c6310258536fd4327204210d8e772cb9fb0"
+      - generic: Contract 0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5 · topic 0xe9d51577f7e72d9f635003ff0981910ec67bc3aaf5199d01824b44233ff38066
+      - generic: Block 164
+      - code: "0xfe361ab853b434614d2bb7794fa56b16868ca0f386fab27519d4ee8cc73b5091"
+      - generic: Contract 0xbeaafda2e17fc95e69dc06878039d274e0d2b21a · topic 0xe029f26dbcf8c42dd2f352c10214a7fc26773dc62482c6241334a0402ac09a80
+      - generic: Block 164
+      - code: "0xfe361ab853b434614d2bb7794fa56b16868ca0f386fab27519d4ee8cc73b5091"
+      - generic: Contract 0xf7b407bd806b9943c1b2281271b27dc3f3bae694 · topic 0x3241546c39a36a693d52c03fb2e62690e3cba82d839682545533c58bc9b9600e
+      - generic: Block 164
+      - code: "0xfe361ab853b434614d2bb7794fa56b16868ca0f386fab27519d4ee8cc73b5091"
+      - generic: Contract 0xf7b407bd806b9943c1b2281271b27dc3f3bae694 · topic 0xc7f5817dd63ece9f8381141d23179e0bbf8e54c1b3c5375b1a40185254cf1a81
+      - generic: Block 164
+      - code: "0xfe361ab853b434614d2bb7794fa56b16868ca0f386fab27519d4ee8cc73b5091"
+      - generic: Contract 0xf7b407bd806b9943c1b2281271b27dc3f3bae694 · topic 0xc7f5817dd63ece9f8381141d23179e0bbf8e54c1b3c5375b1a40185254cf1a81
+      - generic: Block 164
+      - code: "0xfe361ab853b434614d2bb7794fa56b16868ca0f386fab27519d4ee8cc73b5091"
+      - generic: Contract 0xf7b407bd806b9943c1b2281271b27dc3f3bae694 · topic 0xc7f5817dd63ece9f8381141d23179e0bbf8e54c1b3c5375b1a40185254cf1a81
+      - generic: Block 164
+      - code: "0xfe361ab853b434614d2bb7794fa56b16868ca0f386fab27519d4ee8cc73b5091"
+      - generic: Contract 0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5 · topic 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+      - generic: Block 163
+      - code: "0xe6d4e546e365d4742200172c4608c6f788db434d3c64cb75bc271cf201706e0f"
+      - generic: Contract 0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5 · topic 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
+      - generic: Block 162
+      - code: "0x0e2ab3a7b466eb7927773e7b80e3ceac5157d030d6b596b40bd2f15367f9d5db"
+      - generic: Contract 0xf7b407bd806b9943c1b2281271b27dc3f3bae694 · topic 0xba214fbbbe1efd13b6d4a40d8372e205924edf4eaee99ed5429fdf5a59315bc5
+      - generic: Block 162
+      - code: "0x0e2ab3a7b466eb7927773e7b80e3ceac5157d030d6b596b40bd2f15367f9d5db"
+      - generic: Contract 0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5 · topic 0xbb92782c434ca118db7c9d0904c1425ca01d0017cc51b698adc5e87d391ab2b0
+      - generic: Block 161
+      - code: "0x9db7622d6df4119cbb3f26ebca4c150f050a3e7c36eb6b38ac2f561667d79c32"
+      - generic: Contract 0xf7b407bd806b9943c1b2281271b27dc3f3bae694 · topic 0xba214fbbbe1efd13b6d4a40d8372e205924edf4eaee99ed5429fdf5a59315bc5
+      - generic: Block 161
+      - code: "0x9db7622d6df4119cbb3f26ebca4c150f050a3e7c36eb6b38ac2f561667d79c32"
+      - generic: Contract 0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5 · topic 0xbb92782c434ca118db7c9d0904c1425ca01d0017cc51b698adc5e87d391ab2b0
+      - generic: Block 160
+      - code: "0x5f2373c534d8365552e9976bec6d5d1b377e5396a12efc4ae38ebb9ec19acfa5"
+      - generic: Contract 0xf7b407bd806b9943c1b2281271b27dc3f3bae694 · topic 0xba214fbbbe1efd13b6d4a40d8372e205924edf4eaee99ed5429fdf5a59315bc5
+      - generic: Block 160
+      - code: "0x5f2373c534d8365552e9976bec6d5d1b377e5396a12efc4ae38ebb9ec19acfa5"
+      - generic: Contract 0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5 · topic 0xbb92782c434ca118db7c9d0904c1425ca01d0017cc51b698adc5e87d391ab2b0
+      - generic: Block 159
+      - code: "0xcccfd1c35177acdb26586bd28c8c2f7d92de74c93e9bdffbd5ba175f9504f065"
+      - generic: Contract 0xbeaafda2e17fc95e69dc06878039d274e0d2b21a · topic 0xedba86fd2b22962d534e70ad9b0ff8730de46f636146f2bab6a72cbb1ebbcc53
+      - generic: Block 159
+      - code: "0xcccfd1c35177acdb26586bd28c8c2f7d92de74c93e9bdffbd5ba175f9504f065"
+      - generic: Contract 0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5 · topic 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+      - generic: Block 159
+      - code: "0xcccfd1c35177acdb26586bd28c8c2f7d92de74c93e9bdffbd5ba175f9504f065"
+      - generic: Contract 0xf7b407bd806b9943c1b2281271b27dc3f3bae694 · topic 0x3241546c39a36a693d52c03fb2e62690e3cba82d839682545533c58bc9b9600e
+  - region "Reward disclosure": This launch token is not redeemable for the basket. Rewards shown are funded only by mock market fees, and all displayed assets have no real-world value.
+- alert

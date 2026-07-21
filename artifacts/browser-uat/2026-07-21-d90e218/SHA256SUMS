@@ -1,6 +1,9 @@
 7219573a213441bae161dd04acf8a1b6f85e240a1bec319c79c17f376b074b30  ./accessibility-browser-evidence.json
 267694547e3a4f2b0a26cd8a50603b6c226289c603155ebf3ae0c1622d57ff39  ./additional-launch-receipts.json
 27ccb6c850890fc3dcbdba88bbd8779c138333f19a6eec38c942c5d0922b2dda  ./additional-launch-transactions.json
+c1f0f288cc942a7e7e3580ad7353a7d075a7c4b744014c613289009e05b7e0c1  ./canonical-detail-browser-evidence.json
+322667432096a8c44da2c7e90c93a13416d390b398d81c4bd336ebe9049f0c04  ./canonical-detail-desktop.jpg
+ed329830860e7cbc2808d83568b89a2b1e45170124c06d7474020b71e196884a  ./canonical-detail.dom.txt
 963553f407b46582029d6ee2461bb762da26fe3fbc0549076a15b5859ea8cd2e  ./claimed-sold-desktop.jpg
 21f5d8436bb91de8295ecea23d495fdb1c4b6e0e4c21da510129b128334b9b5c  ./claimed-sold.dom.txt
 37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570  ./console.json
@@ -14,7 +17,7 @@ db00c5e8aa4e12cd391c67ceae7ca0f58f28f0c7d846ef92df405e7d85e5423d  ./invalid-meta
 d36f29ca44c4e22116d28bacaf0c5f0cdb6b05de6a7cda0bbf91905f23ed5c61  ./invalid-weights.dom.txt
 eda6cef7caa622311225404a9b84821fe6459ca38f5a8a89c472a3b6afec63d0  ./keeper-conversion-receipts.json
 8dc25d09fc7e5d322433b18f5afd2431f697549c09bedcc42b568b8eb4e8a3c5  ./keeper-conversions.json
-a6621302051e83ff707bdcce1ceb07fce9a408a42f3c7562fb2f74488ba8c957  ./manifest.json
+785873917f90422604cc4524309eb049feb5a45ec9caec68401621d12f94855f  ./manifest.json
 165031fbc301807bb252550c54dc8027a8a90a708bf8563ae594c5b698c0775b  ./one-asset-launch-desktop.jpg
 7b9e6ee3c984adf7094905b6a50fb7106385e68f4fe2115fa126b6707f577542  ./one-asset-launch.dom.txt
 f082b683f4da08dcd3b60bd97f9d5b358c3ddb495d893885fd6a499e5764d50e  ./pending-fees-desktop.jpg

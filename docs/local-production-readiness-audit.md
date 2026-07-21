@@ -40,7 +40,7 @@ Status meanings:
 | Partial failure, stale quote and minimum-output protection | PROVEN-DESIGN | exact-candidate contract tests and bounded keeper retry/dead-letter tests; protected testnet conversion router gates |
 | Multi-asset claim and repeated-claim safety | PROVEN | browser claim of mNVDA, mSPY and mETH plus exact-candidate accumulator tests |
 | Token-transfer reward history | PROVEN-DESIGN | exact-candidate transfer-aware accumulator tests; transfers occur through normal ERC-20 wallet controls rather than a Robyn transfer UI |
-| Anonymous discovery and canonical token detail | PROVEN | desktop and mobile discovery DOM/screenshots, indexed/live block labels and canonical launch links |
+| Anonymous discovery and canonical token detail | PROVEN | desktop and mobile discovery evidence plus canonical-detail-desktop.jpg, canonical-detail.dom.txt and canonical-detail-browser-evidence.json; the exact genesis detail reconciles indexed/live block 165, realized basket state, contract provenance, native-v1 accounting and 20 of 50 recent events with zero browser warning/error logs |
 | Signed portfolio and history after reload | PROVEN | desktop and mobile portfolio DOM/screenshots with restored session-wallet state |
 | Accurate non-backed and mock-asset disclosures | PROVEN | browser snapshots show controlled-development and nonredeemable reward-basket disclosures |
 | Desktop, tablet and mobile responsiveness | PROVEN | desktop transactional screenshots plus responsive-browser-evidence.json at 768 by 1024 and 390 by 844; zero overflow and zero warning/error logs |

@@ -26,7 +26,8 @@
     "responsiveMobileAndTablet": true,
     "accessibilityStates": true,
     "secondDistinctWalletTrade": true,
-    "secondWalletRewardClaim": true
+    "secondWalletRewardClaim": true,
+    "canonicalLaunchDetail": true
   },
   "observedState": {
     "launchName": "Evidence Basket",
@@ -58,6 +59,7 @@
     }
   },
   "screenshots": [
+    "canonical-detail-desktop.jpg",
     "claimed-sold-desktop.jpg",
     "discover-mobile-390x844.jpg",
     "home-tablet-768x1024.jpg",
@@ -73,6 +75,7 @@
     "second-wallet-sell-desktop.jpg"
   ],
   "domSnapshots": [
+    "canonical-detail.dom.txt",
     "claimed-sold.dom.txt",
     "converted.dom.txt",
     "discover-mobile-390x844.dom.txt",
@@ -102,7 +105,8 @@
     "A one-asset 100/0/0 launch completed as launch 5; all 12 transactions for launches 4 and 5 have successful receipts.",
     "Exact-release responsive checks passed discovery and signed portfolio at 390 by 844 plus the full home/launch surface at 768 by 1024 with zero horizontal overflow and zero warning/error console logs.",
     "Exact-release accessibility inspection verified a semantic skip link and matching main target, four served focus-style rules, a served reduced-motion media rule, seven text status examples that do not rely on color, and zero warning/error logs. The in-app browser key injector did not advance focus from BODY; that automation limitation is recorded inside the evidence rather than omitted.",
-    "A distinct second session wallet funded, bought 990,000 ROBYN, observed weighted pending fees, sold 100,000, received three keeper conversions, claimed mNVDA/mSPY/mETH and reconciled 890,000 ROBYN after portfolio navigation. All nine blocks 157-165 receipts succeeded and browser warn/error logs remained empty."
+    "A distinct second session wallet funded, bought 990,000 ROBYN, observed weighted pending fees, sold 100,000, received three keeper conversions, claimed mNVDA/mSPY/mETH and reconciled 890,000 ROBYN after portfolio navigation. All nine blocks 157-165 receipts succeeded and browser warn/error logs remained empty.",
+    "Exact-release canonical genesis detail reconciled indexed and live block 165, displayed realized three-asset state, contract provenance, native-v1 formula and 20 of 50 recent canonical events with zero browser warning/error logs."
   ],
   "transactionActions": [
     "fund faucet",
@@ -126,5 +130,6 @@
   "accessibilityEvidence": "accessibility-browser-evidence.json",
   "secondWalletBrowserEvidence": "second-wallet-browser-evidence.json",
   "secondWalletTransactionEvidence": "second-wallet-transactions.json",
-  "secondWalletReceiptEvidence": "second-wallet-receipts.json"
+  "secondWalletReceiptEvidence": "second-wallet-receipts.json",
+  "canonicalDetailEvidence": "canonical-detail-browser-evidence.json"
 }
