@@ -23,9 +23,16 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     error InvalidAmount();
     error InvalidAssetIndex(uint256 index);
     error NoRewardAvailable();
+    error ExclusionsAlreadySealed();
+    error ExclusionsNotSealed();
+    error DuplicateExcludedAccount(address account);
 
     address public immutable controller;
+    address public immutable initializationAuthority;
     uint256 public immutable rewardAssetCount;
+    uint256 public eligibleSupply;
+    bool public exclusionsSealed;
+    mapping(address => bool) public isExcluded;
     IERC20[] private _rewardAssets;
     uint256[] public magnifiedRewardPerShare;
     uint256[] public pendingWithoutSupply;
@@ -45,6 +52,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     event RewardClaimed(
         address indexed account, uint256 indexed assetIndex, address indexed asset, uint256 amount
     );
+    event ExclusionsSealed(address[] accounts, uint256 eligibleSupply);
 
     constructor(
         string memory name_,
@@ -73,8 +81,25 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
             totalRewardsClaimed.push(0);
         }
         controller = controller_;
+        initializationAuthority = msg.sender;
         rewardAssetCount = count;
         _mint(creator_, initialSupply_);
+    }
+
+    /// @notice Finalizes accounts that never participate in reward supply or claims.
+    /// @dev This one-time call must happen before a controller can distribute any reward.
+    function sealExclusions(address[] calldata accounts) external {
+        if (msg.sender != initializationAuthority) revert Unauthorized();
+        if (exclusionsSealed) revert ExclusionsAlreadySealed();
+        for (uint256 i; i < accounts.length; ++i) {
+            address account = accounts[i];
+            if (account == address(0)) revert InvalidAccount();
+            if (isExcluded[account]) revert DuplicateExcludedAccount(account);
+            isExcluded[account] = true;
+            eligibleSupply -= balanceOf(account);
+        }
+        exclusionsSealed = true;
+        emit ExclusionsSealed(accounts, eligibleSupply);
     }
 
     function rewardAsset(uint256 index) public view returns (address) {
@@ -88,6 +113,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         returns (uint256 received)
     {
         if (msg.sender != controller) revert Unauthorized();
+        if (!exclusionsSealed) revert ExclusionsNotSealed();
         _validateAssetIndex(index);
         if (requestedAmount == 0) revert InvalidAmount();
         IERC20 asset = _rewardAssets[index];
@@ -96,7 +122,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         received = asset.balanceOf(address(this)) - beforeBalance;
         if (received == 0) revert InvalidAmount();
         totalRewardsReceived[index] += received;
-        uint256 supply = totalSupply();
+        uint256 supply = eligibleSupply;
         if (supply == 0) {
             pendingWithoutSupply[index] += received;
             emit RewardReceived(index, address(asset), received, 0, pendingWithoutSupply[index]);
@@ -111,6 +137,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
 
     function accumulativeRewardOf(address account, uint256 index) public view returns (uint256) {
         _validateAssetIndex(index);
+        if (isExcluded[account]) return 0;
         int256 magnified = SafeCast.toInt256(magnifiedRewardPerShare[index] * balanceOf(account))
             + _magnifiedCorrections[account][index];
         if (magnified <= 0) return 0;
@@ -153,6 +180,12 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
             int256 correction = SafeCast.toInt256(magnifiedRewardPerShare[i] * value);
             if (from != address(0)) _magnifiedCorrections[from][i] += correction;
             if (to != address(0)) _magnifiedCorrections[to][i] -= correction;
+        }
+        if (value != 0) {
+            bool fromEligible = from != address(0) && !isExcluded[from];
+            bool toEligible = to != address(0) && !isExcluded[to];
+            if (fromEligible && !toEligible) eligibleSupply -= value;
+            if (!fromEligible && toEligible) eligibleSupply += value;
         }
     }
 

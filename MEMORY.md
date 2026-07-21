@@ -6,11 +6,11 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
 - Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; lower-level correctness tests pass; no unresolved critical/high defect remains; and the exact release commit and evidence are pushed. Partial, documentation-only, mocked-happy-path-only or unpushed work is not completion.
-- Current task: the native protocol contract checkpoint is implemented and passing; documentation, full repository validation and push are in progress.
-- Last meaningful change: Added a permissionless launch factory, isolated immutable fee-basket vault, constrained permissionless conversion, transfer-aware multi-asset launch token rewards, pull claims and adversarial lifecycle tests.
-- Files touched: `packages/contracts/src/`, `packages/contracts/test/RobynProtocol.t.sol`, `docs/protocol-core.md`, pinned workspace dependencies, README and MEMORY.
-- Last verification: 2026-07-21 full format, lint, strict typecheck, Vitest, isolated Anvil, Foundry, build and story gates passed; Foundry passed 16 tests including two 256-run fuzz properties; pnpm audit reports no known vulnerabilities; production contract sizes remain below EIP-170.
-- Next step: finish full repository validation and push this checkpoint, then add production-shaped mock market/fee generation, deployment scripts and a persistent-devnet manifest before wiring the browser journey.
+- Current task: devnet market/asset/router fixtures, immutable eligible-supply exclusions and deployment tooling are implemented and passing; commit/push precedes persistent-chain deployment.
+- Last meaningful change: Added a one-time exclusion seal before reward distribution, deterministic devnet asset/router/market contracts, buy/sell fee-to-vault coverage and loopback unlocked-account deployment/verification scripts.
+- Files touched: `packages/contracts/src/devnet/`, factory/token contracts, `packages/contracts/test/RobynProtocol.t.sol`, `scripts/deploy-devnet-protocol.sh`, `scripts/verify-devnet-deployment.sh`, docs and MEMORY.
+- Last verification: 2026-07-21 full repository and audit gates passed; Foundry passed 19 tests including two 256-run fuzz properties; buy, sell, fee allocation, conversion, excluded market inventory and holder claim passed end to end.
+- Next step: push this validated code checkpoint, deploy it to persistent Anvil, verify the generated manifest and state across service restart, then expose the journey through the app.
 - Blockers: Bags/pons compatibility requires funded transactions; anonymous 0x and 1inch quote calls return 401; no public testnet faucet/canonical Stock Token registry was found; current Alloy website source is unverified; no reusable license/repository was found for Vladdy/HoodETF/BASKET.
 
 ## Current State
@@ -159,6 +159,7 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-21: Devnet trading fixture and eligible-supply correction - 19 Foundry tests passed. One-time exclusion sealing prevents market inventory dilution; a full mock buy/sell generated fees, converted a basket leg and paid a holder claim. Deployment scripts refuse non-31337 chains and require loopback unlocked accounts without storing a private key.
 - 2026-07-21: Native protocol core - full repository gates passed; 16 Foundry tests including 512 aggregate fuzz cases passed; pnpm audit found no known vulnerabilities after exact PostCSS 8.5.20 and esbuild 0.28.1 overrides. Largest runtime was RobynLaunchFactory at 19,588 bytes, 4,988 bytes below EIP-170.
 - 2026-07-21: Controlled devnet infrastructure - native Anvil systemd service enabled and active with five-second state persistence; state balance survived restart. Restricted gateway passed 10 unit/integration tests plus live standard-method, privileged-method rejection, fixed faucet funding, repeat-rate-limit, CORS and LAN port-isolation checks. PM2 systemd restart resurrected web and gateway; in-app browser then showed `ok · chain 31337` with no console warnings/errors. Remaining gaps include Redis-backed limits, TLS/firewall, immutable releases, full VM reboot, backups and load/metrics.
 - 2026-07-21: Full VM reboot recovery - passed from pushed commit dd90518. Host returned with robyn-anvil.service and pm2-hendo420.service enabled/active, robyn-web and robyn-rpc-gateway online, the 10-dev-ETH test balance unchanged, both health endpoints healthy and the in-app browser showing robyn-devnet plus ok on chain 31337 without warnings/errors.

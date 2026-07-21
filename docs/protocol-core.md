@@ -15,8 +15,9 @@ The current native protocol checkpoint proves the core fee-to-holder-reward acco
 5. The launch token measures the second transfer into its reward controller and distributes only what it received.
 6. Transfer corrections preserve already earned rewards for sellers and prevent buyers from receiving pre-purchase distributions.
 7. Holders pull one reward or all available rewards. No creator, factory, treasury or operator reward sweep exists.
+8. The launch creator seals a one-time inventory/pool exclusion set before the first distribution. Excluded balances never dilute eligible holder rewards, and no later mutation is possible.
 
-This is a native reference path for the controlled devnet. It does not yet include a market, upstream launchpad adapter, stock registry/oracle guards, Merkle epochs, keeper, indexer, production quote provider or web transaction journey.
+This is a native reference path for the controlled devnet. A devnet-only fixed-price market now generates disclosed buy/sell fees, but the system does not yet include a production market, upstream launchpad adapter, stock registry/oracle guards, Merkle epochs, keeper, indexer, production quote provider or web transaction journey.
 
 ## Contracts
 
@@ -27,7 +28,17 @@ This is a native reference path for the controlled devnet. It does not yet inclu
 | RobynLaunchToken | Fixed ERC-20 supply, transfer-aware multi-asset accumulators and pull claims |
 | FeeBasketAccounting | Earlier conservation primitive retained as a narrow regression reference |
 
-The factory deploys the vault first, passes that address as the token's immutable controller, binds the token to the vault once, and exposes both addresses. Basket assets and weights have no mutation path.
+The factory deploys the vault first, passes that address as the token's immutable controller, binds the token to the vault once, and exposes both addresses. Basket assets and weights have no mutation path. Distribution remains disabled until the creator seals the immutable exclusion set through the factory.
+
+## Controlled-devnet fixtures
+
+Contracts under packages/contracts/src/devnet are explicit local-network substitutes:
+
+- DevnetMockERC20 provides operator-minted base and reward assets.
+- DevnetConversionRouter provides owner-configured fixed rates and route-failure controls.
+- DevnetFixedPriceMarket provides deterministic one-percent-fee buys/sells and sends every fee to the launch vault.
+
+The market must be excluded before sealing so inventory does not earn rewards. These contracts expose the DEVNET_ONLY marker and are prohibited from Robinhood testnet or real-value manifests.
 
 ## Dependency provenance
 
@@ -50,6 +61,8 @@ The selected version is intentionally pinned instead of floating to the current 
 - Input spend and output/deposit amounts use independent balance-delta measurements.
 - Allowances are exact and cleared after successful external calls.
 - Post-distribution buyers receive none of the earlier reward; sellers retain it.
+- Reward distribution cannot start before exclusions are sealed.
+- Excluded market/pool balances are removed from eligible supply and can never claim.
 - Total claims cannot exceed measured rewards received. Integer division may leave bounded, unswept dust in the token.
 - Claims update state before safe token transfer and are reentrancy guarded.
 
@@ -64,15 +77,23 @@ forge test --root packages/contracts -vv --gas-report
 forge build --root packages/contracts --sizes
 ~~~
 
-The 2026-07-21 checkpoint passed 16 tests, including two 256-run fuzz properties. Tests cover fee-on-transfer base and reward tokens, duplicate assets, invalid weights, failed route isolation, stale/zero-minimum rejection, unauthorized deposits/rebinding, one/three/five reward slots, transfer ordering, multi-asset claims and balance conservation.
+The 2026-07-21 checkpoint passed 19 tests, including two 256-run fuzz properties. Tests cover fee-on-transfer base and reward tokens, duplicate assets, invalid weights, failed route isolation, stale/zero-minimum rejection, unauthorized deposits/rebinding, exclusion sealing, excluded inventory, devnet buy/sell fee generation, one/three/five reward slots, transfer ordering, multi-asset claims and balance conservation.
 
-Largest production runtime at this checkpoint is RobynLaunchFactory at 19,588 bytes, leaving 4,988 bytes below the 24,576-byte EIP-170 limit. The factory embeds vault and token creation bytecode, so size must remain a release gate.
+Largest production runtime at this checkpoint is RobynLaunchFactory at 21,047 bytes, leaving 3,529 bytes below the 24,576-byte EIP-170 limit. The factory embeds vault and token creation bytecode, so size must remain a release gate.
+
+The deployment and live-verification commands are:
+
+~~~bash
+scripts/deploy-devnet-protocol.sh
+scripts/verify-devnet-deployment.sh deployments/31337.json
+~~~
+
+They require loopback operator RPC with an unlocked Anvil account, refuse any chain other than 31337, store no private key, and verify live bytecode and cross-contract relationships.
 
 ## Required before deployment
 
 - Add formal stateful handler invariants and broader malicious-token/callback fixtures.
 - Decide whether the old standalone accounting primitive remains or is removed after migration.
-- Add deployment scripts, deterministic manifest, source/ABI publication and clean-genesis rehearsal.
-- Implement the mock market/fee generator and production-shaped mock conversion/registry/feed boundaries.
+- Add mock registry/feed/issuer boundaries and clean-genesis deployment rehearsal.
 - Obtain independent contract security review before any real-value deployment.
 - Treat this checkpoint as unaudited; it is not approved for real assets.

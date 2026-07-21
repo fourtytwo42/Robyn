@@ -8,6 +8,7 @@ import { FeeBasketVault, IRobynConversionRouter } from "./FeeBasketVault.sol";
 /// @notice Permissionless factory for fixed-supply community tokens and isolated fee vaults.
 contract RobynLaunchFactory {
     error InvalidAddress();
+    error Unauthorized();
 
     string public constant CONTRACT_VERSION = "1.0.0";
     uint256 public immutable chainId;
@@ -18,6 +19,7 @@ contract RobynLaunchFactory {
     uint256 public launchCount;
     mapping(uint256 => address) public launchTokenById;
     mapping(address => address) public vaultByToken;
+    mapping(address => address) public creatorByToken;
 
     event LaunchCreated(
         uint256 indexed launchId,
@@ -26,6 +28,7 @@ contract RobynLaunchFactory {
         address vault,
         bytes32 configurationHash
     );
+    event LaunchExclusionsSealed(address indexed token, address[] accounts);
 
     constructor(
         IERC20 baseAsset_,
@@ -65,8 +68,15 @@ contract RobynLaunchFactory {
         uint256 launchId = ++launchCount;
         launchTokenById[launchId] = address(token);
         vaultByToken[address(token)] = address(vault);
+        creatorByToken[address(token)] = msg.sender;
         bytes32 configurationHash =
             keccak256(abi.encode(block.chainid, address(token), address(vault), assets, weights));
         emit LaunchCreated(launchId, msg.sender, address(token), address(vault), configurationHash);
+    }
+
+    function sealLaunchExclusions(RobynLaunchToken token, address[] calldata accounts) external {
+        if (creatorByToken[address(token)] != msg.sender) revert Unauthorized();
+        token.sealExclusions(accounts);
+        emit LaunchExclusionsSealed(address(token), accounts);
     }
 }

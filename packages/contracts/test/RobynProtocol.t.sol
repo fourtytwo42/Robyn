@@ -7,6 +7,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { RobynLaunchToken } from "../src/RobynLaunchToken.sol";
 import { FeeBasketVault, IRobynConversionRouter } from "../src/FeeBasketVault.sol";
 import { RobynLaunchFactory } from "../src/RobynLaunchFactory.sol";
+import { DevnetFixedPriceMarket } from "../src/devnet/DevnetFixedPriceMarket.sol";
 
 contract ProtocolMockERC20 is ERC20 {
     uint16 public feeBps;
@@ -77,6 +78,24 @@ contract ProtocolActor {
     function claimAll(RobynLaunchToken token) external returns (uint256) {
         return token.claimAll();
     }
+
+    function approveToken(IERC20 asset, address spender, uint256 amount) external {
+        asset.approve(spender, amount);
+    }
+
+    function buy(DevnetFixedPriceMarket market, uint256 amount, uint256 minimumOutput)
+        external
+        returns (uint256)
+    {
+        return market.buy(amount, minimumOutput);
+    }
+
+    function sell(DevnetFixedPriceMarket market, uint256 amount, uint256 minimumOutput)
+        external
+        returns (uint256)
+    {
+        return market.sell(amount, minimumOutput);
+    }
 }
 
 contract RobynProtocolTest {
@@ -99,6 +118,7 @@ contract RobynProtocolTest {
         factory = new RobynLaunchFactory(base, router, 1, 1 days);
         (token, vault) =
             factory.createLaunch("Robyn Community", "ROBYN", SUPPLY, _assets(), _weights());
+        factory.sealLaunchExclusions(token, new address[](0));
         buyer = new ProtocolActor();
 
         for (uint256 i; i < 3; ++i) {
@@ -226,6 +246,81 @@ contract RobynProtocolTest {
         } catch { }
     }
 
+    function testDistributionCannotStartBeforeExclusionsAreSealed() public {
+        (RobynLaunchToken unsealedToken, FeeBasketVault unsealedVault) =
+            factory.createLaunch("Unsealed", "OPEN", SUPPLY, _assets(), _weights());
+        base.approve(address(unsealedVault), type(uint256).max);
+        unsealedVault.recordFees(1_000);
+
+        try unsealedVault.convertLeg(0, 400, 400, block.timestamp) {
+            revert("unsealed distribution");
+        } catch { }
+        require(unsealedVault.leg(0).pendingBase == 400, "unsealed principal");
+
+        factory.sealLaunchExclusions(unsealedToken, new address[](0));
+        // forge-lint: disable-next-line(block-timestamp)
+        require(unsealedVault.convertLeg(0, 400, 400, block.timestamp) == 400, "sealed conversion");
+    }
+
+    function testExcludedInventoryDoesNotDiluteHolderRewards() public {
+        (RobynLaunchToken excludedToken, FeeBasketVault excludedVault) =
+            factory.createLaunch("Excluded", "EXCL", SUPPLY, _assets(), _weights());
+        ProtocolActor inventory = new ProtocolActor();
+        require(excludedToken.transfer(address(inventory), SUPPLY / 2), "inventory transfer");
+        address[] memory exclusions = new address[](1);
+        exclusions[0] = address(inventory);
+        factory.sealLaunchExclusions(excludedToken, exclusions);
+
+        require(excludedToken.eligibleSupply() == SUPPLY / 2, "eligible supply");
+        require(excludedToken.isExcluded(address(inventory)), "excluded");
+        base.approve(address(excludedVault), type(uint256).max);
+        excludedVault.recordFees(1_000);
+        excludedVault.convertLeg(0, 400, 400, block.timestamp);
+
+        uint256 creatorReward = excludedToken.withdrawableRewardOf(address(this), 0);
+        require(creatorReward >= 399 && creatorReward <= 400, "creator diluted");
+        require(excludedToken.withdrawableRewardOf(address(inventory), 0) == 0, "inventory reward");
+        try factory.sealLaunchExclusions(excludedToken, exclusions) {
+            revert("reseal accepted");
+        } catch { }
+    }
+
+    function testDevnetMarketBuySellFeeConversionAndHolderClaim() public {
+        uint256 marketSupply = 1_000 ether;
+        (RobynLaunchToken marketToken, FeeBasketVault marketVault) =
+            factory.createLaunch("Market", "MKT", marketSupply, _assets(), _weights());
+        DevnetFixedPriceMarket market =
+            new DevnetFixedPriceMarket(base, marketToken, marketVault, address(this), 1e18, 100);
+        marketToken.approve(address(market), 500 ether);
+        base.approve(address(market), 1_000 ether);
+        market.seed(500 ether, 1_000 ether);
+        address[] memory exclusions = new address[](1);
+        exclusions[0] = address(market);
+        factory.sealLaunchExclusions(marketToken, exclusions);
+
+        ProtocolActor trader = new ProtocolActor();
+        base.mint(address(trader), 100 ether);
+        trader.approveToken(base, address(market), type(uint256).max);
+        uint256 bought = trader.buy(market, 100 ether, 99 ether);
+        require(bought == 99 ether, "buy output");
+        require(marketToken.balanceOf(address(trader)) == 99 ether, "trader balance");
+        require(marketVault.totalFeesReceived() == 1 ether, "buy fee");
+        require(marketVault.leg(0).pendingBase == 0.4 ether, "buy leg 0");
+
+        marketVault.convertLeg(0, 0.4 ether, 0.4 ether, block.timestamp);
+        uint256 claimable = marketToken.withdrawableRewardOf(address(trader), 0);
+        require(claimable > 0, "trader claimable");
+        require(trader.claim(marketToken, 0) == claimable, "trader claim");
+        require(marketToken.withdrawableRewardOf(address(market), 0) == 0, "market reward");
+
+        trader.approveToken(marketToken, address(market), type(uint256).max);
+        uint256 soldFor = trader.sell(market, 9 ether, 8.91 ether);
+        require(soldFor == 8.91 ether, "sell output");
+        require(marketVault.totalFeesReceived() == 1.09 ether, "total fees");
+        require(base.balanceOf(address(trader)) == 8.91 ether, "trader base");
+        require(marketToken.balanceOf(address(trader)) == 90 ether, "trader token");
+    }
+
     function testClaimAllPaysAllAvailableAssets() public {
         vault.recordFees(1_000);
         vault.convertLeg(0, 400, 400, block.timestamp);
@@ -252,6 +347,7 @@ contract RobynProtocolTest {
         }
         RobynLaunchToken five =
             new RobynLaunchToken("Five", "FIVE", address(this), SUPPLY, address(this), assets);
+        five.sealExclusions(new address[](0));
         for (uint256 i; i < 5; ++i) {
             fiveRewards[i].mint(address(this), 100);
             fiveRewards[i].approve(address(five), 100);
