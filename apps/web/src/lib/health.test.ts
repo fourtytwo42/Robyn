@@ -60,6 +60,7 @@ describe("getHealthStatus", () => {
               asOfBlock: "90",
               launchCount: "2",
               keeperStatus: "ok",
+              artifactStatus: "ok",
             }),
             { status: 200 },
           ),
@@ -70,6 +71,7 @@ describe("getHealthStatus", () => {
         asOfBlock: "90",
         launchCount: "2",
         keeperStatus: "ok",
+        artifactStatus: "ok",
       });
     });
 
@@ -81,6 +83,7 @@ describe("getHealthStatus", () => {
         asOfBlock: null,
         launchCount: "0",
         keeperStatus: "degraded",
+        artifactStatus: "degraded",
       });
     });
   });

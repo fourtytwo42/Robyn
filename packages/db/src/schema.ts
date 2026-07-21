@@ -144,3 +144,18 @@ export const jobAuditEvents = pgTable(
     index("job_audit_events_queue_idx").on(table.queue, table.eventId),
   ],
 );
+
+export const artifacts = pgTable(
+  "artifacts",
+  {
+    sha256: text("sha256").primaryKey(),
+    bucket: text("bucket").notNull(),
+    objectKey: text("object_key").notNull(),
+    byteLength: bigint("byte_length", { mode: "bigint" }).notNull(),
+    contentType: text("content_type").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [uniqueIndex("artifacts_object_key_uq").on(table.objectKey)],
+);

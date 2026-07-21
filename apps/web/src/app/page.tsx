@@ -100,6 +100,9 @@ export default async function Home() {
         <div data-testid="keeper-status">
           Keeper <strong>{dataPlane.keeperStatus}</strong>
         </div>
+        <div data-testid="artifact-status">
+          Artifacts <strong>{dataPlane.artifactStatus}</strong>
+        </div>
       </section>
 
       <LaunchpadConsole deployment={deployment as Deployment} />

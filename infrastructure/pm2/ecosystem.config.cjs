@@ -88,5 +88,23 @@ module.exports = {
       max_memory_restart: "256M",
       time: true,
     },
+    {
+      name: "robyn-artifacts",
+      cwd: "/home/hendo420/Robyn",
+      script: "/bin/bash",
+      args: "scripts/start-artifact-service.sh",
+      env: {
+        NODE_ENV: "production",
+        HOST: "127.0.0.1",
+        PORT: "3200",
+        MAX_ARTIFACT_BYTES: "2097152",
+        PGHOST: "/var/run/postgresql",
+        PGDATABASE: "robyn",
+        PGUSER: "hendo420",
+      },
+      autorestart: true,
+      max_memory_restart: "256M",
+      time: true,
+    },
   ],
 };

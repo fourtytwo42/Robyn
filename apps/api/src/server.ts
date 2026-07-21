@@ -43,33 +43,50 @@ async function keeperState() {
   };
 }
 
+async function artifactState() {
+  const rows = await sql.unsafe<
+    { status: string; updated_at: string; fresh: boolean }[]
+  >(
+    "SELECT status,updated_at::text,(updated_at > now() - interval '30 seconds') fresh FROM service_heartbeats WHERE service='artifact-store'",
+  );
+  return {
+    artifactStatus:
+      rows[0]?.status === "ok" && rows[0].fresh ? "ok" : "degraded",
+    artifactUpdatedAt: rows[0]?.updated_at ?? null,
+  };
+}
+
 app.get("/health", async (_request, reply) => {
-  const [database, state, keeper] = await Promise.all([
+  const [database, state, keeper, artifact] = await Promise.all([
     sql.unsafe<{ ok: number }[]>("SELECT 1 AS ok"),
     freshness(),
     keeperState(),
+    artifactState(),
   ]);
   const healthy =
     database[0]?.ok === 1 &&
     state.asOfBlock !== null &&
-    keeper.keeperStatus === "ok";
+    keeper.keeperStatus === "ok" &&
+    artifact.artifactStatus === "ok";
   return reply.code(healthy ? 200 : 503).send({
     service: "robyn-api",
     status: healthy ? "ok" : "degraded",
     chainId,
     ...state,
     ...keeper,
+    ...artifact,
   });
 });
 
 app.get("/status", async () => {
-  const [state, counts, keeper] = await Promise.all([
+  const [state, counts, keeper, artifact] = await Promise.all([
     freshness(),
     sql.unsafe<{ launches: string; logs: string }[]>(
       "SELECT (SELECT count(*)::text FROM launches WHERE chain_id=$1) launches,(SELECT count(*)::text FROM raw_logs WHERE chain_id=$1) logs",
       [chainId],
     ),
     keeperState(),
+    artifactState(),
   ]);
   return {
     service: "robyn-api",
@@ -79,6 +96,7 @@ app.get("/status", async () => {
     rawLogCount: counts[0]?.logs ?? "0",
     formulaVersion: "native-v1",
     ...keeper,
+    ...artifact,
   };
 });
 
@@ -164,6 +182,21 @@ app.get<{ Params: { token: string }; Querystring: { limit?: string } }>(
       [chainId, [launch[0].token, launch[0].vault, launch[0].market], limit],
     );
     return { data: rows, ...(await freshness()) };
+  },
+);
+
+app.get<{ Params: { sha256: string } }>(
+  "/artifacts/:sha256/metadata",
+  async (request, reply) => {
+    if (!/^[0-9a-f]{64}$/.test(request.params.sha256)) {
+      return reply.code(400).send({ error: "invalid_sha256" });
+    }
+    const rows = await sql.unsafe(
+      "SELECT sha256,bucket,object_key,byte_length::text,content_type,created_at::text FROM artifacts WHERE sha256=$1",
+      [request.params.sha256],
+    );
+    if (!rows[0]) return reply.code(404).send({ error: "artifact_not_found" });
+    return { data: rows[0] };
   },
 );
 

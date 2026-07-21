@@ -2,7 +2,7 @@
 
 Robyn is a proposed Robinhood Chain launchpad where creators launch community tokens with an immutable, weighted asset basket. A token's creator-fee stream purchases the selected assets, and holders accrue claimable basket rewards.
 
-> **Project status:** Implementation is active. The VM runs a persistent controlled Anvil devnet, restricted user RPC/faucet, browser-operated permissionless launchpad, native PostgreSQL/Redis, a reorg-aware indexer, freshness-labeled read API and bounded conversion keeper. The core launch-to-claim experience works for LAN users. Artifact storage, hardening, recovery evidence and testnet rehearsal remain in progress.
+> **Project status:** Implementation is active. The VM runs a persistent controlled Anvil devnet, restricted user RPC/faucet, browser-operated permissionless launchpad, native PostgreSQL/Redis/MinIO, a reorg-aware indexer, freshness-labeled read API, bounded conversion keeper and content-addressed artifact service. The core launch-to-claim experience works for LAN users. Backups, monitoring, dedicated discovery/detail/portfolio UX, security/load evidence and testnet rehearsal remain in progress.
 
 ## Authoritative development environment
 
@@ -28,12 +28,14 @@ The Windows checkout is not an execution environment. It is only a convenience m
 | [`apps/api/`](apps/api/) | Freshness-labeled read API and operator visibility |
 | [`apps/indexer/`](apps/indexer/) | Reorg-aware canonical chain indexer |
 | [`apps/keeper/`](apps/keeper/) | Bounded BullMQ conversion worker and dead-letter recovery |
+| [`apps/artifacts/`](apps/artifacts/) | Loopback content-addressed artifact gateway backed by MinIO |
 | [`packages/db/`](packages/db/) | Shared PostgreSQL schema and ordered migrations |
 | [`packages/contracts/`](packages/contracts/) | Foundry contracts and invariant-focused tests |
 | [`user-stories/`](user-stories/) | Delivery backlog and PRD traceability |
 | [`scripts/`](scripts/) | Reproducible research, validation, market-snapshot, and screenshot tooling |
 | [Controlled devnet operations](docs/devnet-operations.md) | Live Anvil, restricted RPC/faucet and PM2 service operation |
 | [Native data-plane operations](docs/data-plane-operations.md) | PostgreSQL/Redis service, schema, migration and recovery status |
+| [Native object storage](docs/object-storage-operations.md) | MinIO installation, least-privilege access and artifact verification |
 | [`docs/`](docs/) | VM runtime, operating procedures and delivery roadmaps |
 | [Protocol core](docs/protocol-core.md) | Current contract boundaries, invariants, dependency provenance and limitations |
 | [Devnet-to-testnet readiness plan](docs/devnet-to-testnet-readiness-plan.md) | Phase-by-phase implementation, verification and release plan |

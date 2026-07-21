@@ -1,6 +1,6 @@
 # Native data-plane operations
 
-Status: PostgreSQL, Redis, reorg-aware indexing, read API and bounded conversion keeper implemented; artifact service remains in progress
+Status: PostgreSQL, Redis, MinIO, reorg-aware indexing, read API, bounded conversion keeper and content-addressed artifact service implemented
 Last verified: 2026-07-21
 
 ## Native services
@@ -18,7 +18,7 @@ No database password or Redis secret is stored in the repository or PM2 configur
 
 ## Schema and migrations
 
-The shared package is packages/db. Ordered migrations 0001 through 0003 create:
+The shared package is packages/db. Ordered migrations 0001 through 0004 create:
 
 - canonical chain blocks;
 - append-only raw logs with transaction/log identity;
@@ -27,6 +27,7 @@ The shared package is packages/db. Ordered migrations 0001 through 0003 create:
 - bounded-job current state and dead-letter status;
 - append-only job transition history and receipts;
 - service heartbeats; and
+- content-addressed artifact metadata;
 - an idempotent migration ledger.
 
 Run on the VM:
@@ -37,7 +38,7 @@ pnpm --filter @robyn/db build
 pnpm --filter @robyn/db migrate
 ~~~
 
-Every migration is transactional and idempotent. Reapplying the ordered set succeeded on 2026-07-21; the migration ledger records all three versions.
+Every migration is transactional and idempotent. Reapplying the ordered set succeeded on 2026-07-21; the migration ledger records all four versions.
 
 ## Service checks
 
@@ -63,9 +64,16 @@ The RPC gateway uses atomic Redis Lua reservations for its one-address-per-hour 
 
 ## Remaining work
 
-- Install and harden native MinIO for content-addressed artifacts.
 - Add database backup, off-VM copy and destructive restore rehearsal.
 - Add metrics, alerts, kill/restart and deterministic rebuild tests.
+
+## Content-addressed artifacts
+
+The loopback-only `robyn-artifacts` PM2 service stores immutable SHA-256-addressed
+objects in the versioned native MinIO bucket and records their metadata in
+PostgreSQL. Its heartbeat participates in API health, so a MinIO outage makes
+both the artifact service and public API fail closed with HTTP 503 after the
+freshness window. See [Native object storage operations](object-storage-operations.md).
 
 ## Conversion keeper
 
