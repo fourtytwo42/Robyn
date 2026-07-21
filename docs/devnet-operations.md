@@ -51,7 +51,7 @@ pnpm exec pm2 start infrastructure/pm2/ecosystem.config.cjs --update-env
 pnpm exec pm2 save
 ~~~
 
-The generated pm2-hendo420.service is enabled and resurrects the saved process set. Regenerate it after an intentional PM2 path or version change.
+The generated `pm2-hendo420.service` is enabled and resurrects the saved process set. The committed drop-in requires PostgreSQL, Redis, MinIO and Anvil to be active before PM2 starts, preventing application boot races. Install it with `sudo scripts/install-runtime-service-ordering.sh`. Regenerate the base PM2 unit after an intentional PM2 path or version change, then reinstall the drop-in.
 
 Routine checks:
 

@@ -41,6 +41,10 @@ An accepted drill creates a reversible failure in one nonfinancial component, pr
 
 Last verified 2026-07-21: both Prometheus targets were healthy; the custom series passed `promtool check metrics`; all required application components were up; indexed lag and RPC divergence were zero; failed and dead-letter counts were zero; Grafana queried its provisioned Prometheus datasource and exposed the `robyn-release-readiness` dashboard; ports 3001, 9090 and 9100 listened only on loopback. A reversible `RobynMonitoringDrill` alert fired with chain, component, launch, asset, severity, last-good-block and runbook evidence, then resolved to an empty alert set after the metric returned to zero.
 
+## Cold-start verification
+
+Last verified 2026-07-21: after installing explicit PM2 ordering on PostgreSQL, Redis, MinIO and Anvil, a second full VM reboot returned every required native unit active, all six PM2 processes online with zero restarts, block 102 and two launches intact, both monitoring targets healthy, the Grafana datasource healthy, no firing alerts and zero failed systemd units. In-app-browser acceptance reloaded anonymous discovery, canonical launch detail and the session wallet portfolio with live block-102 reward state and no console warnings or errors.
+
 ## Remaining gate
 
-Verify the complete application and monitoring topology after a full VM reboot. Configure an external human notification receiver before real-value testnet operation; the current local evaluator, dashboard and runbooks do not deliver to a person.
+Configure an external human notification receiver before real-value testnet operation; the current local evaluator, dashboard and runbooks do not deliver to a person.

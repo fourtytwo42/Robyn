@@ -61,6 +61,8 @@ promtool check rules /etc/prometheus/robyn-rules.yml
 jq -e '.uid=="robyn-release-readiness"' /var/lib/grafana/dashboards/robyn-release-readiness.json >/dev/null
 systemd-analyze verify /etc/systemd/system/robyn-metrics-collector.service /etc/systemd/system/robyn-metrics-collector.timer
 systemctl disable --now prometheus-node-exporter-apt.timer prometheus-node-exporter-ipmitool-sensor.timer prometheus-node-exporter-mellanox-hca-temp.timer prometheus-node-exporter-nvme.timer prometheus-node-exporter-smartmon.timer >/dev/null 2>&1 || true
+systemctl disable --now openipmi.service >/dev/null 2>&1 || true
+systemctl reset-failed openipmi.service >/dev/null 2>&1 || true
 systemctl daemon-reload
 systemctl enable --now prometheus-node-exporter.service prometheus.service grafana-server.service robyn-metrics-collector.timer
 systemctl start robyn-metrics-collector.service
