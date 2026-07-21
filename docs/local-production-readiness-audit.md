@@ -45,7 +45,7 @@ Status meanings:
 | Accurate non-backed and mock-asset disclosures | PROVEN | browser snapshots show controlled-development and nonredeemable reward-basket disclosures |
 | Desktop, tablet and mobile responsiveness | PROVEN | desktop transactional screenshots plus responsive-browser-evidence.json at 768 by 1024 and 390 by 844; zero overflow and zero warning/error logs |
 | Keyboard, reduced-motion and non-color-only states | PROVEN-DESIGN | accessibility-browser-evidence.json verifies the semantic skip target, served focus styles, reduced-motion media rule, seven textual status labels and zero warning/error logs; the recorded in-app-browser key-injection limitation is not concealed |
-| PostgreSQL, Redis and MinIO durability | PROVEN | native services, migrations, deterministic index rebuild, Redis fail-closed quota test and MinIO hash/restart test |
+| PostgreSQL, Redis and MinIO durability | PROVEN | native services, migrations, deterministic index rebuild, Redis fail-closed quota test and MinIO hash/restart test; exact d90e218 encrypted backup restored nine PostgreSQL tables, one content-addressed artifact and isolated Anvil state/factory with liveStateTouched=false |
 | Reorg-aware indexing and freshness-labeled API | PROVEN | deterministic destructive rebuild, checkpoint validation, bounded discovery API and live indexed state |
 | Service persistence and recovery | PROVEN | PM2/systemd resurrection, controlled service failure tests and prior VM cold-start evidence |
 | Exact-candidate uninterrupted 24-hour stability | ACTIVE | robyn-soak.service started 2026-07-21T10:23:36Z; final summary must pass every sample and the full duration |
