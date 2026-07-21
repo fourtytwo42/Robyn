@@ -76,10 +76,14 @@ Robyn is a launchpad and reward protocol. It is not presented as a brokerage, fu
 | D-017 | UI states use semantic design tokens, text and icons; color never carries financial or operational meaning alone | Settled | Enables accessibility, consistent degraded states and later theming |
 | D-018 | Application code uses a pnpm/Turborepo TypeScript monorepo with Next.js 15, React 19 and Tailwind CSS v4 | Settled | Provides typed shared packages, modern server/client rendering and direct design-token integration |
 | D-019 | Frontend chain and state stack is viem, wagmi, WalletConnect/injected wallets, TanStack Query/Table, Zod and React Hook Form | Settled | Keeps EVM calls typed and separates wallet, remote state, tables and validation concerns |
-| D-020 | Backend uses Fastify services/workers, PostgreSQL with Drizzle, Redis/BullMQ and S3-compatible artifact storage | Settled | Separates request serving from durable indexing, retryable jobs and immutable proof artifacts |
-| D-021 | Testing uses Foundry, Vitest/Testing Library and Playwright with deterministic container/fork integration environments | Settled | Matches contract, domain, component and end-to-end risk boundaries |
-| D-022 | Observability uses OpenTelemetry, Sentry, Prometheus-compatible metrics and Grafana | Settled | Provides correlated diagnostics, error reporting and operational health without making a vendor the source of truth |
-| D-023 | CI/CD uses GitHub Actions, frozen installs and immutable container/artifact promotion; hosting vendor remains deferred | Settled baseline | Makes builds reproducible while preserving provider portability |
+| D-020 | Backend uses Fastify services/workers, native PostgreSQL with Drizzle, native Redis/BullMQ and native MinIO-compatible artifact storage on the project VM | Settled | Separates request serving from durable indexing, retryable jobs and immutable proof artifacts without containers |
+| D-021 | Testing uses Foundry, Vitest/Testing Library and Playwright with deterministic VM-native database, fork and integration environments | Settled | Matches contract, domain, component and end-to-end risk boundaries |
+| D-022 | Observability uses OpenTelemetry, structured local error events, Prometheus-compatible metrics and VM-native Grafana; an external Sentry sink is optional | Settled | Keeps required diagnostics on the VM without making an external vendor the source of truth |
+| D-023 | CI/CD uses a self-hosted GitHub Actions runner on the project VM, frozen installs and immutable build-artifact promotion without containers | Settled baseline | Keeps all project execution on the VM while preserving reproducible releases |
+| D-024 | The `robyn` VM at `192.168.50.250` and `/home/hendo420/Robyn` are the only authoritative development and runtime environment | Settled | The user requires all project work and services to run on the VM, never the workstation |
+| D-025 | Docker, Compose, Kubernetes and container images are prohibited for project development and deployment | Settled | The user requires native VM operation |
+| D-026 | Node services use persistent PM2 startup through systemd; stateful and infrastructure services use native systemd units | Settled | Processes must survive reboot and remain independently operable |
+| D-027 | Any project-operated RPC node, database, queue, object store, monitoring or CI runner runs natively on the project VM | Settled | No Robyn-owned runtime workload is moved to the workstation or another compute host |
 
 ## Assumptions to validate
 

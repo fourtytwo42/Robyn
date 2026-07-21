@@ -4,6 +4,20 @@ Robyn is a proposed Robinhood Chain launchpad where creators launch community to
 
 > **Project status:** Research and product definition are complete. Smart contracts and application code have not been implemented. The next release is an R0 accounting and integration proof using mock assets on Robinhood Chain Testnet.
 
+## Authoritative development environment
+
+All project work runs on the dedicated Ubuntu VM:
+
+- Host: `robyn` at `192.168.50.250`
+- Repository: `/home/hendo420/Robyn`
+- Process model: native VM services only; no Docker or containers
+- Node applications: PM2 with `systemd` startup and saved process state
+- Stateful services: native PostgreSQL, Redis and MinIO managed by `systemd`
+- CI: a self-hosted GitHub Actions runner on the VM when CI is enabled
+- RPC: browser users retain public/wallet RPC paths; any project-operated RPC node runs on the VM
+
+The Windows checkout is not an execution environment. It is only a convenience mirror and SSH/control surface. See [VM runtime and operations](docs/vm-runtime-and-operations.md) for the binding service, persistence, deployment, backup and RPC rules.
+
 ## Repository map
 
 | Path | Purpose |
@@ -12,12 +26,15 @@ Robyn is a proposed Robinhood Chain launchpad where creators launch community to
 | [`prd/`](prd/) | Authoritative product requirements and architecture decisions |
 | [`user-stories/`](user-stories/) | Delivery backlog and PRD traceability |
 | [`scripts/`](scripts/) | Reproducible research, validation, market-snapshot, and screenshot tooling |
+| [`docs/`](docs/) | VM runtime and operating procedures |
 
 The initial implementation will use the monorepo and contract stack defined in [`prd/10-technology-stack-and-repository-architecture.md`](prd/10-technology-stack-and-repository-architecture.md). Product language must describe the launch token as a fee-funded reward token, not an asset-backed or redeemable security.
 
 ## Validate the documentation
 
 ```bash
+ssh hendo420@192.168.50.250
+cd /home/hendo420/Robyn
 python3 scripts/validate-user-stories.py
 ```
 
@@ -90,7 +107,7 @@ The implementation-ready PRD set is indexed in [prd/README.md](prd/README.md). I
 
 ## User-story backlog
 
-The comprehensive delivery backlog is indexed in [user-stories/README.md](user-stories/README.md). It contains 150 stories across ten epic collections, with personas, releases, priorities, dependencies, acceptance criteria, PRD mappings, and a generated [requirement traceability matrix](user-stories/TRACEABILITY.md).
+The comprehensive delivery backlog is indexed in [user-stories/README.md](user-stories/README.md). It contains 151 stories across ten epic collections, with personas, releases, priorities, dependencies, acceptance criteria, PRD mappings, and a generated [requirement traceability matrix](user-stories/TRACEABILITY.md).
 
 ## Verified development endpoints
 

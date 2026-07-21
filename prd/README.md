@@ -1,7 +1,7 @@
 # Robyn launchpad PRD set
 
 Status: Draft for implementation planning  
-Version: 0.3  
+Version: 0.4
 Date: 2026-07-20
 
 ## Purpose
@@ -65,13 +65,16 @@ If documents conflict, use this order:
 
 Research evidence remains authoritative for point-in-time external facts. PRDs are authoritative for the intended product.
 
+All implementation and operations use the authoritative VM-only, no-container model in [Technology stack and repository architecture](10-technology-stack-and-repository-architecture.md) and [VM runtime and operations](../docs/vm-runtime-and-operations.md).
+
+
 ## Current blockers
 
 - Bags and pons contract-recipient behavior has not been proven with funded transactions.
 - Authenticated 0x and 1inch firm Stock Token quotes have not been sampled.
 - No canonical Robinhood testnet Stock Token registry or public faucet was located.
 - Legal treatment of permissionless fee-funded Stock Token distribution requires counsel and written upstream clarification.
-- No application, contracts, deployment environment or git repository currently exists in this folder.
+- The Git repository and VM environment exist, but no application contracts, native data services or persistent PM2 application processes have been implemented yet.
 
 ## Delivery backlog
 

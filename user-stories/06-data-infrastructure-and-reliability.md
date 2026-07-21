@@ -138,7 +138,7 @@ Acceptance criteria:
 - Priority: Must
 - Persona: Platform engineer
 - PRD: INFRA-001, INFRA-007
-- Depends on: Managed secret store
+- Depends on: Root-controlled per-service VM secret storage
 
 As a platform engineer, I want provider/quote/signing secrets isolated and redacted so that browser bundles and logs cannot expose them.
 
@@ -153,15 +153,15 @@ Acceptance criteria:
 - Release: R1
 - Priority: Must
 - Persona: Platform engineer, User
-- PRD: INFRA-002, INFRA-003
-- Depends on: Public plus protected providers
+- PRD: INFRA-002, INFRA-003, INFRA-014
+- Depends on: Public plus independent protected paths; VM-native node if supported and needed
 
 As a platform owner, I want browser-direct routine reads and two independent critical RPC paths so that costs stay low without sacrificing correctness.
 
 Acceptance criteria:
 
 1. Routine wallet reads use public/wallet/user-supplied RPC by default.
-2. Indexing, roots and keeper checks compare independent providers.
+2. Indexing, roots and keeper checks compare independent paths; any project-operated node runs natively on the VM.
 3. Shared-NAT throttling degrades visibly and allows alternate RPC.
 
 ### US-INFRA-003: Run idempotent critical jobs
@@ -185,14 +185,14 @@ Acceptance criteria:
 - Release: R0
 - Priority: Must
 - Persona: Release engineer, Verifier
-- PRD: INFRA-005, INFRA-006
-- Depends on: Pinned toolchain
+- PRD: INFRA-005, INFRA-006, INFRA-011, INFRA-012
+- Depends on: Pinned VM toolchain and authoritative VM checkout
 
 As a verifier, I want clean reproducible deployments and manifests so that live bytecode, roles and proxies match reviewed source.
 
 Acceptance criteria:
 
-1. Clean build uses pinned dependencies and configuration.
+1. Clean build uses pinned dependencies and configuration on the VM without Docker or containers.
 2. Manifest records addresses, bytecode hashes, implementation/admin, roles and transactions per environment.
 3. Mismatch blocks release.
 
@@ -233,14 +233,14 @@ Acceptance criteria:
 - Release: R1
 - Priority: Must
 - Persona: Release engineer
-- PRD: INFRA-010
-- Depends on: Deployment pipeline
+- PRD: INFRA-010, INFRA-013
+- Depends on: VM-native artifact deployment and persistent PM2/systemd services
 
 As a release engineer, I want staged deployment with rollback evidence so that a bad application/service release has bounded impact.
 
 Acceptance criteria:
 
-1. Changes progress through declared environments and automated gates.
+1. Versioned artifacts progress through declared VM environments and automated gates without containers.
 2. Rollback is rehearsed for compatible code/configuration changes.
 3. Irreversible contract deployments use version migration, not a fictitious rollback.
 
@@ -260,3 +260,22 @@ Acceptance criteria:
 2. Exact call simulates before submission and receipt is reconciled afterward.
 3. Compromised keeper key cannot redirect output or edit basket/root policy.
 
+
+### US-INFRA-009: Keep the VM as the sole project runtime
+
+- Release: R0-R1
+- Priority: Must
+- Persona: Platform engineer, Operator
+- PRD: INFRA-011, INFRA-012, INFRA-013, INFRA-014, STACK-020, STACK-021, STACK-022, STACK-023, STACK-024
+- Depends on: Provisioned `robyn` VM and native service runbooks
+
+As an operator, I want every Robyn-owned workload to run natively and persistently on the project VM so that the workstation, containers and undocumented compute hosts cannot become production dependencies.
+
+Acceptance criteria:
+
+1. Workstation audit finds no running project build, test, database, worker, RPC or application process.
+2. VM audit maps every project process to PM2 or an enabled systemd unit and documents its data/configuration paths.
+3. PM2 startup plus saved state and native services survive a controlled reboot with health checks passing afterward.
+4. Docker/container process, manifest, image and registry scans return no project dependency.
+5. A self-hosted RPC node, if introduced, runs on the VM after capacity review and retains an independent external verification path.
+6. The self-hosted CI runner uses a dedicated unprivileged account and rejects untrusted fork workloads.

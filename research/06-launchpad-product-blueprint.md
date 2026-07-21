@@ -343,7 +343,7 @@ A lean prototype can be built by two strong engineers, but a public Stock Token 
 | Web application | Next.js and TypeScript with viem/wagmi for Robinhood Chain wallet interactions. |
 | Indexer and proof service | TypeScript event processor with PostgreSQL, deterministic epoch calculation, and reproducible Merkle trees. |
 | Keeper | Stateless TypeScript workers for threshold checks, quote retrieval, simulation, and transaction submission. |
-| Infrastructure | Public RPC for browser traffic; one small archive-capable endpoint for the indexer, keeper, and monitoring; containerized services, secret manager, metrics, alerts, and an independent backup keeper. |
+| Infrastructure | Public RPC for browser traffic; native services on the dedicated `robyn` VM; PM2 plus systemd persistence; native PostgreSQL, Redis and MinIO; VM-hosted RPC/node software if required and supported; root-controlled secrets, metrics, alerts and an independent external RPC check. |
 | Administration | Safe-style multisig, hardware wallets, and a public timelock for narrowly scoped upgrades. |
 
 ## Indicative effort

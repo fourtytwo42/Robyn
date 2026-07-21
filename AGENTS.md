@@ -12,6 +12,24 @@ This file is the repository-local agent guide. Use the uppercase filename `AGENT
 - If context was compressed, the session was resumed, or prior work is unclear, follow the `Compression Recovery` workflow below.
 - When in doubt, check `MEMORY.md` before assuming project history, user preferences, architecture, setup steps, or unresolved work.
 
+## Authoritative Execution Environment
+
+- The project VM `robyn` at `192.168.50.250` is the only development, test, build, database, service, deployment, and Git execution environment.
+- The authoritative checkout is `/home/hendo420/Robyn` on that VM.
+- The Windows workstation checkout is a convenience mirror and SSH/control surface only. Do not run project builds, tests, package installs, databases, application processes, migrations, keepers, indexers, RPC nodes, or deployments on the workstation.
+- Start project work by connecting to the VM and changing to `/home/hendo420/Robyn`. Verify the VM worktree before editing or running commands.
+- Commit and push from the VM. If a workstation mirror is retained, update it only after the VM branch is pushed.
+
+## VM Runtime Rules
+
+- Do not use Docker, Docker Compose, Kubernetes, containers, or a container registry for this project.
+- Install PostgreSQL, Redis, MinIO, reverse proxy, monitoring, and any other required stateful service directly on the VM and manage native services with `systemd`.
+- Run Node.js application processes under PM2. Commit an ecosystem file, configure PM2 startup through `systemd`, and run `pm2 save` so the declared process set survives reboot.
+- Run any supported self-hosted Robinhood Chain RPC/node software on this VM. If the VM lacks capacity, expand this VM before introducing another runtime host; never move the node to the workstation.
+- Use a self-hosted GitHub Actions runner on this VM if GitHub Actions is enabled. Do not use a GitHub-hosted runner for project builds or tests.
+- Keep service data under documented VM paths, use least-privilege Unix service accounts, and keep credentials out of Git. Backup jobs run from the VM and must copy recoverable data outside the VM's failure domain.
+- Docker happens to be installed on the VM from initial provisioning, but it is not part of the project architecture and must not be used unless the user explicitly reverses this decision.
+
 ## Memory-First Rule
 
 Use `MEMORY.md` as the source of retained project context. If chat history conflicts with `MEMORY.md`, verify the current repo state before acting and update `MEMORY.md` with any correction.

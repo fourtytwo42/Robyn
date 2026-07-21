@@ -150,13 +150,13 @@ Proceed only if at least one is true:
 | Fee/vault/distributor contracts | `PROTO-001` to `PROTO-012` |
 | Constrained conversions | `EXEC-001` to `EXEC-010` |
 | Indexer/API/epoch builder | `DATA-001` to `DATA-010` |
-| Runtime infrastructure | `INFRA-001` to `INFRA-010` |
+| Runtime infrastructure | `INFRA-001` to `INFRA-014` |
 | Security and governance | `SEC-001` to `SEC-014` |
 | Legal/product policy | `LEGAL-001` to `LEGAL-008` |
 | Operations | `OPS-001` to `OPS-008` |
 | Measurement | `ANALYTICS-001` to `ANALYTICS-010` |
 | Visual design system | `DESIGN-001` to `DESIGN-018` |
-| Technology stack | `STACK-001` to `STACK-020` |
+| Technology stack | `STACK-001` to `STACK-024` |
 
 ## End-to-end acceptance scenarios
 

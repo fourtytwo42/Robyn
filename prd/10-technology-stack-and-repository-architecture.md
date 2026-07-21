@@ -30,7 +30,8 @@ packages/
   observability/    Shared logging, metrics and tracing setup
 
 infrastructure/
-  containers/       Container definitions and local composition
+  pm2/              Persistent Node process declarations
+  systemd/           Native service unit templates and overrides
   deployments/      Environment manifests and release records
   monitoring/       Dashboards and alert rules
   runbooks/         Operational procedures
@@ -40,6 +41,13 @@ Applications may deploy separately. Shared packages cannot import an application
 
 ## Runtime and package policy
 
+- The Ubuntu VM `robyn` at `192.168.50.250` is the only development, build, test, service and deployment host.
+- The authoritative checkout is `/home/hendo420/Robyn`; the workstation is an SSH/control client only.
+- Docker, Compose, Kubernetes, container images and container registries are prohibited.
+- Node applications run as separate PM2 processes with a committed ecosystem file, `systemd` startup integration and saved PM2 state.
+- PostgreSQL, Redis, MinIO, monitoring, reverse proxy and any self-hosted RPC node run as native VM services managed by `systemd`.
+- GitHub Actions, when enabled, uses a dedicated self-hosted runner on this VM.
+- Versioned build artifacts and atomic release directories replace container-image promotion.
 - Node.js active LTS at repository initialization, pinned through toolchain files and CI.
 - Strict TypeScript in every Node/browser package.
 - `pnpm` with one committed lockfile; frozen installs in CI.
@@ -83,11 +91,11 @@ Use `viem`, not ethers.js, for first-party chain code. An upstream SDK may carry
 | Database | PostgreSQL |
 | Database toolkit | Drizzle ORM and committed SQL migrations |
 | Durable job queue | Redis plus BullMQ |
-| Object/artifact storage | S3-compatible storage; MinIO for local development |
+| Object/artifact storage | Native MinIO on the project VM through its S3-compatible API |
 | Chain access | `viem` public/wallet clients |
 | Structured logs | OpenTelemetry-compatible JSON logging |
 | Tracing/metrics | OpenTelemetry |
-| Application error reporting | Sentry |
+| Application error reporting | Structured local error events; optional external Sentry sink |
 | Operational metrics | Prometheus-compatible metrics and Grafana dashboards |
 
 Fastify owns HTTP/API concerns only. Indexing, keeper and epoch calculation run as separate processes. BullMQ schedules/retries jobs but is not the financial source of truth. PostgreSQL checkpoints and onchain state establish idempotency.
@@ -112,29 +120,33 @@ Contract packages export ABIs and deployment artifacts into `chain-config` throu
 - Redis contains disposable queue and short-lived coordination state, never sole ownership/reward truth.
 - S3-compatible storage contains immutable content-addressed epoch manifests, ordered leaves and proof bundles.
 - Browser local storage contains only nonsensitive preferences/drafts; no credentials, signatures or executable quotes.
-- Secrets use a managed deployment secret store and are injected only into the service that needs them.
+- VM secrets use root-controlled per-service files or systemd credentials with least-privilege ownership and are injected only into the process that needs them.
+- Service data and secrets live outside the Git checkout; PM2 ecosystem files contain no secret values.
 
 ## Testing pyramid
 
 1. Pure domain tests for epoch/accounting serialization and schema behavior.
 2. Contract unit/fuzz/invariant tests in Foundry.
 3. TypeScript unit/component tests with Vitest and Testing Library.
-4. PostgreSQL/Redis/S3 integration tests using isolated containers.
+4. PostgreSQL/Redis/MinIO integration tests using isolated databases, schemas, buckets and namespaces on the VM-native services.
 5. Mainnet/testnet fork tests for upstream factories, quotes, tokens and feeds.
 6. Playwright end-to-end tests for anonymous, wallet, create, trade and claim states.
 7. Security, accessibility, visual-regression, load, backup/restore and incident drills at release gates.
 
 Tests use deterministic fixtures and pinned block numbers. Financial acceptance does not mock away the boundary being tested.
 
-## Local development and CI/CD
+## VM-native development and CI/CD
 
-- Containerized PostgreSQL, Redis and MinIO for local integration.
-- Application processes run directly for fast development or in containers for parity.
-- GitHub Actions is the baseline CI/CD system once the folder is initialized as a repository.
-- CI runs formatting, lint, typecheck, unit, contract and deterministic epoch tests on pull requests.
-- Protected workflows run fork/E2E/security checks and build immutable container images.
-- Deployments promote the same image/artifact digest across environments.
-- Infrastructure remains provider-agnostic at the application layer. Hosting/cloud vendor selection is deliberately deferred until traffic, region, compliance and operations requirements are known.
+- All installs, builds, tests, migrations and service commands run in `/home/hendo420/Robyn` on the project VM.
+- Native PostgreSQL, Redis and MinIO provide integration dependencies; tests isolate their database/schema/bucket/key namespaces and clean only their assigned fixtures.
+- PM2 runs the web, API, indexer, keeper and epoch builder as separately named processes. `pm2 startup systemd` plus `pm2 save` must be configured and reboot-tested when these processes exist.
+- Native infrastructure services use reviewed `systemd` units with enablement and restart-policy verification.
+- GitHub Actions uses only a labeled self-hosted runner installed on this VM; untrusted fork workflows are prohibited.
+- CI runs formatting, lint, typecheck, unit, contract and deterministic epoch tests on pull requests from the self-hosted runner.
+- Protected workflows run fork/E2E/security checks and produce versioned build artifacts plus a release manifest.
+- Deployments store releases under `/opt/robyn/releases/<release-id>`, atomically update `/opt/robyn/current`, run gated migrations and reload PM2.
+- Rollback selects the previous compatible release directory; contract deployments and incompatible migrations require forward remediation.
+- Capacity checks prevent builds, forks or CI jobs from starving the database and live processes on the shared VM.
 
 ## Observability
 
@@ -142,7 +154,7 @@ Tests use deterministic fixtures and pinned block numbers. Financial acceptance 
 - Logs are structured and redact secrets, signed payloads and unnecessary wallet-correlated metadata.
 - Prometheus metrics cover indexer lag, queue depth, quote results, conversion/claim reconciliation and dependency health.
 - Grafana provides operational dashboards and alert links.
-- Sentry captures application exceptions with privacy filtering and release identifiers.
+- Structured local error events carry privacy-filtered release identifiers; an external Sentry sink is optional and never required for correctness.
 - Onchain transaction hashes, blocks and deployed versions remain primary incident evidence.
 
 ## Stack requirements
@@ -158,26 +170,30 @@ Tests use deterministic fixtures and pinned block numbers. Financial acceptance 
 | STACK-007 | Forms and runtime validation MUST use React Hook Form and shared Zod schemas | MUST | Invalid-input and schema-contract tests |
 | STACK-008 | Price time-series MUST use Lightweight Charts and basket/reward charts MAY use Recharts only with accessible alternatives | MUST | Visual/accessibility review |
 | STACK-009 | The API MUST use Fastify and MUST NOT host long-running indexer, keeper or epoch loops in request handlers | MUST | Process-boundary review |
-| STACK-010 | PostgreSQL with Drizzle and committed SQL migrations MUST store canonical and derived persistent application data | MUST | Migration/rebuild test |
-| STACK-011 | Redis and BullMQ MUST be limited to retryable job/coordination state and MUST NOT be the financial source of truth | MUST | Failure/rebuild test |
-| STACK-012 | Immutable epoch artifacts MUST use content-addressed S3-compatible storage with MinIO local parity | MUST | Hash/restore test |
+| STACK-010 | Native PostgreSQL on the project VM with Drizzle and committed SQL migrations MUST store canonical and derived persistent application data | MUST | Migration/rebuild/service test |
+| STACK-011 | Native Redis on the project VM and BullMQ MUST be limited to retryable job/coordination state and MUST NOT be the financial source of truth | MUST | Failure/rebuild/service test |
+| STACK-012 | Immutable epoch artifacts MUST use content-addressed storage through native MinIO on the project VM | MUST | Hash/restore/service test |
 | STACK-013 | Smart contracts MUST use Solidity, Foundry and a pinned OpenZeppelin release | MUST | Clean contract build and provenance audit |
 | STACK-014 | Contract verification MUST include Forge unit, fuzz, invariant and fork suites | MUST | CI test inventory |
 | STACK-015 | TypeScript tests MUST use Vitest/Testing Library and browser E2E MUST use Playwright | MUST | CI test inventory |
-| STACK-016 | Observability MUST use OpenTelemetry, Sentry privacy filtering, Prometheus-compatible metrics and Grafana dashboards | MUST | Telemetry/alert test |
-| STACK-017 | Provider, signing and quote secrets MUST be injected through managed secret storage and scoped per service | MUST | Deployment/bundle/log scan |
+| STACK-016 | Observability MUST use OpenTelemetry, structured local error reporting, Prometheus-compatible metrics and VM-native Grafana dashboards; an external Sentry sink is optional | MUST | Telemetry/alert test |
+| STACK-017 | Provider, signing and quote secrets MUST use root-controlled VM secret storage or systemd credentials and remain scoped per service | MUST | Deployment/bundle/log scan |
 | STACK-018 | One lockfile, pinned toolchain and frozen CI installs MUST make builds reproducible | MUST | Clean/frozen install test |
-| STACK-019 | Deployments MUST build immutable containers/artifacts and promote the same digest across environments | MUST | Release provenance test |
-| STACK-020 | Cloud/hosting-specific services MUST remain behind standard PostgreSQL, Redis, S3, OpenTelemetry and container interfaces until a provider ADR is approved | SHOULD | Portability review |
+| STACK-019 | Deployments MUST build versioned immutable artifacts on the VM, record hashes/source/test evidence and atomically promote release directories without containers | MUST | Release provenance and rollback test |
+| STACK-020 | All project builds, tests, services, data stores, deployments and Git operations MUST run on the `robyn` VM; the workstation MUST remain control-only | MUST | Environment and process audit |
+| STACK-021 | Docker, Compose, Kubernetes, container images and container registries MUST NOT be used by the project | MUST | Dependency/config/process scan |
+| STACK-022 | Node application processes MUST use a committed PM2 ecosystem, systemd startup integration, saved process state and reboot verification | MUST | Reboot/persistence test |
+| STACK-023 | PostgreSQL, Redis, MinIO, monitoring, reverse proxy and any project-operated RPC node MUST run natively on the VM under systemd | MUST | Service/unit/network audit |
+| STACK-024 | GitHub Actions MUST use a dedicated self-hosted runner on the VM and MUST NOT execute untrusted fork code on the shared host | MUST | Workflow/runner security audit |
 
 ## Explicitly deferred choices
 
-- Cloud/hosting vendor and regions.
-- Managed versus self-hosted PostgreSQL, Redis, object storage, Grafana and OpenTelemetry collector.
-- Container scheduler/serverless platform.
 - CDN and edge provider.
 - Transactional email/notification provider.
+- Native reverse proxy choice between Caddy and Nginx.
+- Off-VM encrypted backup destination.
+- Supported Robinhood Chain node distribution and capacity plan, if a self-hosted RPC node becomes necessary.
 - Final wallet-modal presentation package, provided it uses the settled wagmi/WalletConnect/injected connector layer.
 
-These choices require an architecture decision record before production procurement but do not block repository scaffolding or R0 development.
+The runtime host and native service model are not deferred: the project VM is authoritative and containers are prohibited. The remaining choices require an architecture decision record before production procurement but do not block repository scaffolding or R0 development.
 

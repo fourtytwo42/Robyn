@@ -4,20 +4,20 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
-- Current task: Initial private GitHub repository `fourtytwo42/Robyn` is published with `main` as the default branch and cloned to `/home/hendo420/Robyn` on the project VM.
-- Last meaningful change: Created the repository README/ignore/line-ending baseline, committed the full research/PRD/story corpus, and pushed it to GitHub.
-- Files touched: `.gitattributes`, `.gitignore`, `README.md`, `user-stories/TRACEABILITY.md`, `MEMORY.md`, and repository Git metadata.
-- Last verification: 2026-07-20 VM root reports 60.8 GiB with 49.9 GiB available; Git 2.43.0, GitHub CLI 2.96.0, Node 24.18.0, npm 11.16.0, pnpm 11.15.1, Python 3.12.3, Docker 29.6.2, Compose 5.3.1, Buildx 0.35.0 and Foundry 1.7.1 all execute. Docker is active, enabled and usable by `hendo420` without sudo.
-- Next step: Review/prioritize R0 and Milestone 1 stories, then scaffold the settled monorepo and accounting harness.
+- Current task: VM-only, no-Docker runtime policy is settled and documented across repository guidance, PRDs, stories and operations documentation.
+- Last meaningful change: Made `/home/hendo420/Robyn` on VM `robyn` the sole execution environment; specified PM2/systemd persistence, native PostgreSQL/Redis/MinIO, a VM self-hosted CI runner and VM-hosted RPC nodes when needed.
+- Files touched: `AGENTS.md`, `README.md`, `docs/vm-runtime-and-operations.md`, `prd/00-product-brief-and-decisions.md`, `prd/05-platform-data-and-infrastructure.md`, `prd/07-delivery-plan-and-acceptance.md`, `prd/10-technology-stack-and-repository-architecture.md`, `prd/README.md`, `research/06-launchpad-product-blueprint.md`, `user-stories/06-data-infrastructure-and-reliability.md`, `user-stories/10-technology-stack-and-developer-platform.md`, `user-stories/README.md`, `user-stories/TRACEABILITY.md`, and `MEMORY.md`.
+- Last verification: 2026-07-20 VM validator reports 151 stories covering 178/178 requirements, including STACK-001 through STACK-024 and INFRA-001 through INFRA-014.
+- Next step: Scaffold the settled monorepo and accounting harness on the VM; install native data services only when the first implementation slice requires them and configure PM2 persistence when the first Node process exists.
 - Blockers: Bags/pons compatibility requires funded transactions; anonymous 0x and 1inch quote calls return 401; no public testnet faucet/canonical Stock Token registry was found; current Alloy website source is unverified; no reusable license/repository was found for Vladdy/HoodETF/BASKET.
 
 ## Current State
 
-- Last verified 2026-07-20: this workspace is `C:\Users\hendo420\OneDrive\Documents\GitHub\Robyn`.
+- Last verified 2026-07-20: the authoritative workspace is `/home/hendo420/Robyn` on Ubuntu VM `robyn` at `192.168.50.250`; the Windows checkout is control-only and not an execution environment.
 - The repository currently contains research documentation only; there is no application or smart-contract implementation.
 - Last verified 2026-07-20: `prd/` is the authoritative product-intent layer. It specifies R0 validation, R1 crypto adapter pilot, R2 Stock Token beta and optional R3 native launchpad; research remains authoritative for external evidence.
-- Last verified 2026-07-20: `user-stories/` is the delivery-backlog layer derived from the PRDs. Its generated traceability matrix covers all 170 PRD requirements with 150 stories.
-- Last verified 2026-07-20: settled application stack is pnpm/Turborepo; Next.js 15, React 19, strict TypeScript, Tailwind v4, Radix/shadcn-owned components, viem/wagmi, WalletConnect/injected wallets, TanStack Query/Table, Zod/React Hook Form; Fastify, PostgreSQL/Drizzle, Redis/BullMQ, S3/MinIO; Solidity/Foundry/OpenZeppelin; Vitest/Testing Library/Playwright; OpenTelemetry/Sentry/Prometheus/Grafana; GitHub Actions and immutable containers. Hosting provider is intentionally deferred.
+- Last verified 2026-07-20: `user-stories/` is the delivery-backlog layer derived from the PRDs. Its generated traceability matrix covers all 178 PRD requirements with 151 stories.
+- Last verified 2026-07-20: settled application stack is pnpm/Turborepo; Next.js 15, React 19, strict TypeScript, Tailwind v4, Radix/shadcn-owned components, viem/wagmi, WalletConnect/injected wallets, TanStack Query/Table, Zod/React Hook Form; Fastify; VM-native PostgreSQL/Drizzle, Redis/BullMQ and MinIO; Solidity/Foundry/OpenZeppelin; Vitest/Testing Library/Playwright; OpenTelemetry/local structured errors/Prometheus/Grafana; PM2 plus systemd; and a VM self-hosted GitHub Actions runner. Docker and containers are prohibited.
 - Last verified 2026-07-20: the R1 visual direction is dark-first and restrained with canvas `#0B1020`, teal `#35D0BA` primary, violet `#8B7CF6` secondary, gold `#F2B84B` reward/pending accent, Inter UI typography and IBM Plex Mono for addresses/numbers. The basket is the primary visual concept; a final logo remains unresolved.
 - Last verified 2026-07-20: Alloy provides the closest reusable source implementation for the reward-stream model. Its MIT-licensed `AlloyMeme` has single-asset transfer-aware reward accounting, but production reuse requires a multi-asset rewrite, guarded swaps, a canonical asset allowlist and a new audit.
 - Last verified 2026-07-20: IndexPad has mainnet and testnet deployments for a fee-funded redeemable basket design, but it is not a safe dependency: no professional audit, conflicting/stale documentation, partially verified Blockscout source and a linked GitHub repository that currently returns 404.
@@ -37,12 +37,16 @@ Durable project context lives here. Update this file whenever information should
 - Agents should read `AGENTS.md` often and check `MEMORY.md` whenever context is missing, stale, or uncertain.
 - Use uppercase filenames `AGENTS.md` and `MEMORY.md`.
 - For this project, document research and recommendations in Markdown files in the workspace.
+- Run all project builds, tests, package installs, databases, services, migrations, workers, RPC nodes, deployments and Git operations on the `robyn` VM, never on the Windows workstation.
+- Do not use Docker or containers for this project.
+- Make Node processes persistent with PM2 plus systemd startup and `pm2 save`; make native infrastructure services persistent with systemd.
+- Run any project-operated RPC server, database, queue, object store, monitoring stack or CI runner natively on the VM.
 
 ## Source Of Truth
 
 When sources conflict, use this order:
 
-1. Current files in the workspace.
+1. Current files in `/home/hendo420/Robyn` on the VM.
 2. Latest command output or freshly verified tool output.
 3. This `MEMORY.md` file.
 4. Chat history.
@@ -61,8 +65,11 @@ When sources conflict, use this order:
 
 ## Setup And Commands
 
-- Last verified 2026-07-20: use PowerShell from `C:\Users\hendo420\OneDrive\Documents\GitHub\Robyn`.
-- Last verified 2026-07-20: local and VM repositories use `main`; origin is `https://github.com/fourtytwo42/Robyn.git` and GitHub reports the repository visibility as private.
+- Last verified 2026-07-20: start all work with `ssh hendo420@192.168.50.250`, then `cd /home/hendo420/Robyn` and verify `git status --short --branch`.
+- Last verified 2026-07-20: the VM repository uses `main`; origin is `https://github.com/fourtytwo42/Robyn.git` and GitHub reports the repository visibility as private.
+- Docker/Compose packages were installed before the no-Docker decision, but `docker.service`, `docker.socket` and `containerd.service` are disabled and inactive. They are not part of the project stack; package removal is a separate administrative action.
+- Install PostgreSQL, Redis, MinIO, PM2, monitoring, reverse proxy, self-hosted runner and RPC software natively on the VM only when required by the current implementation slice.
+- Operational reference: `docs/vm-runtime-and-operations.md`.
 - Official Stock Token registry: `https://api.robinhood.com/rhj/assets`.
 - Robinhood Chain public RPC: `https://rpc.mainnet.chain.robinhood.com`; mainnet chain ID `4663`.
 - Robinhood Chain Testnet: chain ID `46630`, public RPC `https://rpc.testnet.chain.robinhood.com`, explorer `https://explorer.testnet.chain.robinhood.com`, feed `wss://feed.testnet.chain.robinhood.com`.
@@ -77,6 +84,7 @@ When sources conflict, use this order:
   - `AGENTS.md`: repository-local agent workflow and memory rules.
   - `MEMORY.md`: durable context store.
   - `README.md`: executive finding and research index.
+  - `docs/vm-runtime-and-operations.md`: binding VM-only execution, native service, PM2/systemd persistence, CI, RPC, deployment, backup and capacity rules.
   - `research/01-chain-and-assets.md`: chain, liquidity, Stock Token, and registry findings.
   - `research/02-launchpads-and-competition.md`: verified launchpad and adjacent-product comparison.
   - `research/03-product-feasibility-and-architecture.md`: recommended product definition and implementation paths.
@@ -141,6 +149,9 @@ When sources conflict, use this order:
 ## Verification Ledger
 
 - 2026-07-20: Initial repository publication - passed; initialized local `main`, committed 105 files as the research/product baseline, created private `fourtytwo42/Robyn`, pushed through the authenticated VM, set `main` as default, and cloned the repository to `/home/hendo420/Robyn`.
+- 2026-07-20: VM-only runtime decision - passed documentation review; `AGENTS.md`, README, PRD decisions, stack/infrastructure requirements, delivery mappings, research blueprint and user stories consistently require the `robyn` VM and prohibit Docker/containers.
+- 2026-07-20: VM-native traceability - passed; `python3 scripts/validate-user-stories.py` ran on the VM and reports 151 stories covering 178/178 requirements, including new PM2/systemd, native-service, self-hosted-runner and VM-hosted-RPC requirements.
+- 2026-07-20: Docker status after policy decision - no containers or images existed; `docker.service`, `docker.socket` and `containerd.service` were stopped and disabled. Packages remain installed for reversible administration but are outside the project architecture.
 - 2026-07-20: Initial repository content validation - passed; secret-pattern scan found no supplied VM password, GitHub token, private key, or password assignment in staged files; Python caches are ignored; `python scripts/validate-user-stories.py` reports 150 stories covering 170/170 requirements.
 - 2026-07-20: VM provisioning - passed; confirmed Ubuntu 24.04.4 LTS host `robyn` at `192.168.50.250`, pinned its SSH ED25519 host key, expanded `/dev/ubuntu-vg/ubuntu-lv` online from 31 GiB to 62 GiB, and verified 60.8 GiB root capacity with 49.9 GiB available.
 - 2026-07-20: VM toolchain - passed; installed official GitHub CLI and Docker apt repositories, checksum-verified official Node 24.18.0 binary, pnpm 11.15.1 through Corepack, and attestation-verified Foundry 1.7.1. Docker is active/enabled and the developer account has working non-sudo access.
@@ -210,14 +221,14 @@ When sources conflict, use this order:
 
 ## Decisions
 
-### 2026-07-20 - Application and Developer Stack Settled
+### 2026-07-20 - Application and Developer Stack Settled (VM runtime updated)
 
 - Context: The user accepted the recommended application stack and requested corresponding PRD updates.
-- Decision: Use pnpm/Turborepo; Next.js 15/React 19/strict TypeScript/Tailwind v4/Radix-shadcn/viem-wagmi frontend; Fastify/PostgreSQL-Drizzle/Redis-BullMQ/S3 backend and workers; Solidity/Foundry/OpenZeppelin contracts; Vitest/Testing Library/Playwright tests; OpenTelemetry/Sentry/Prometheus/Grafana observability; GitHub Actions and immutable container promotion. Defer hosting vendor behind standard interfaces.
+- Decision: Use pnpm/Turborepo; Next.js 15/React 19/strict TypeScript/Tailwind v4/Radix-shadcn/viem-wagmi frontend; Fastify with VM-native PostgreSQL/Drizzle, Redis/BullMQ and MinIO; Solidity/Foundry/OpenZeppelin; Vitest/Testing Library/Playwright; OpenTelemetry/local structured errors/Prometheus/Grafana; PM2/systemd; and a self-hosted GitHub Actions runner on the VM. Docker/containers are prohibited and the workstation is control-only.
 - Files: `prd/10-technology-stack-and-repository-architecture.md`, related platform/delivery/decision PRDs, and `user-stories/10-technology-stack-and-developer-platform.md`.
-- Commands/tests: Regenerated traceability with `python scripts/validate-user-stories.py`; validated unique requirements/stories, links, anchors and encoding.
-- Result: 20 stack requirements and 16 stack stories make repository scaffolding and engineering boundaries implementation-ready.
-- Follow-up: Initialize the git monorepo and implement `US-STACK-001` only when implementation is authorized.
+- Commands/tests: Regenerated traceability on the VM with `python3 scripts/validate-user-stories.py`; validated unique requirements/stories, links, anchors and encoding.
+- Result: 24 stack requirements and the updated stack/infrastructure stories make VM-native repository scaffolding and engineering boundaries implementation-ready.
+- Follow-up: Scaffold `US-STACK-001` on the VM; install native services and persistent PM2 processes only when their implementation slice begins.
 
 ### 2026-07-20 - Dark-First Basket-Forward Visual System
 
@@ -421,6 +432,11 @@ When sources conflict, use this order:
 ## Do Not Forget
 
 - Read `AGENTS.md` and `MEMORY.md` before making future changes in this workspace.
+- `/home/hendo420/Robyn` on VM `robyn` is authoritative. Never run project code, builds, tests, services, databases, migrations, workers, RPC nodes, deployments or Git operations on the Windows workstation.
+- Never use Docker, Docker Compose, Kubernetes, containers, container images or a container registry for this project.
+- When Node services exist, persist them with a committed PM2 ecosystem, systemd startup integration and `pm2 save`, then verify after reboot.
+- Run PostgreSQL, Redis, MinIO, monitoring, reverse proxy, any self-hosted CI runner and any project-operated RPC node natively on the VM under systemd.
+- Backup jobs run on the VM, but recoverable backup copies must leave the VM failure domain.
 - Update `MEMORY.md` after durable discoveries, decisions, fixes, verification results, blocked work, and handoffs.
 - Never store secrets, tokens, passwords, private keys, or sensitive personal data in `MEMORY.md`.
 - Requery the official RHJ registry and launchpad contract parameters before relying on the 2026-07-20 snapshot.

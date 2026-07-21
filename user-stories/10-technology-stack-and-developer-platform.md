@@ -16,7 +16,7 @@ Acceptance criteria:
 
 1. Documented apps/packages exist with enforced dependency direction.
 2. One committed lockfile and pinned toolchain support a clean frozen install.
-3. Root format, lint, typecheck, test and build tasks run dependency-aware in CI.
+3. Root format, lint, typecheck, test and build tasks run dependency-aware on the VM and its self-hosted CI runner.
 
 ### US-STACK-002: Build the web application on settled boundaries
 
@@ -138,7 +138,7 @@ Acceptance criteria:
 - Priority: Must
 - Persona: Data engineer
 - PRD: STACK-010
-- Depends on: Containerized PostgreSQL
+- Depends on: Native PostgreSQL service on the project VM
 
 As a data engineer, I want PostgreSQL with Drizzle and committed SQL migrations so that canonical/derived state is typed, reviewable and recoverable.
 
@@ -154,7 +154,7 @@ Acceptance criteria:
 - Priority: Must
 - Persona: Operator
 - PRD: STACK-011, INFRA-004
-- Depends on: Redis/BullMQ local and production interfaces
+- Depends on: Native Redis service on the project VM
 
 As an operator, I want BullMQ retries coordinated through Redis while financial idempotency remains in PostgreSQL/onchain state so that queue loss cannot alter entitlement.
 
@@ -170,13 +170,13 @@ Acceptance criteria:
 - Priority: Must
 - Persona: Verifier, Platform engineer
 - PRD: STACK-012
-- Depends on: S3-compatible storage and MinIO local environment
+- Depends on: Native MinIO service on the project VM
 
 As a verifier, I want content-addressed epoch artifacts in a standard object interface so that proofs survive application/database replacement.
 
 Acceptance criteria:
 
-1. Local MinIO and production S3-compatible storage pass identical hash/read/write tests.
+1. VM-native MinIO passes hash/read/write, permission and restart tests through the standard S3-compatible interface.
 2. Object key/content verification rejects mutation.
 3. Backup/restore preserves hashes and public retrieval policy.
 
@@ -222,12 +222,12 @@ Acceptance criteria:
 - PRD: STACK-016
 - Depends on: Shared observability package
 
-As an operator, I want OpenTelemetry, Sentry, Prometheus metrics and Grafana dashboards so that failures can be traced without logs becoming financial truth.
+As an operator, I want OpenTelemetry, structured local errors, Prometheus metrics and VM-native Grafana dashboards so that failures can be traced without logs becoming financial truth.
 
 Acceptance criteria:
 
 1. Safe correlation connects request, job, quote, transaction and reconciliation.
-2. Sentry filters secrets/sensitive payloads and tags release version.
+2. Local error events filter secrets/sensitive payloads and tag the release; any external Sentry sink follows the same policy.
 3. Prometheus/Grafana expose service and protocol health with runbook-linked alerts.
 
 ### US-STACK-015: Scope and inject service secrets
@@ -236,29 +236,32 @@ Acceptance criteria:
 - Priority: Must
 - Persona: Security/Platform engineer
 - PRD: STACK-017
-- Depends on: Managed secret-store integration
+- Depends on: Root-controlled per-service VM secret storage
 
 As a security engineer, I want each service to receive only its required secrets so that compromise blast radius is bounded.
 
 Acceptance criteria:
 
 1. Web bundle and unrelated services cannot access provider, quote or signing credentials.
-2. CI/deployment injects secrets at runtime and scans images/logs/artifacts.
+2. VM-native CI/deployment injects secrets at runtime and scans bundles, logs and build artifacts.
 3. Rotation can occur independently per credential/service.
 
-### US-STACK-016: Promote immutable portable releases
+### US-STACK-016: Operate and deploy the VM-native stack
 
 - Release: R0-R1
 - Priority: Must
-- Persona: Release engineer
-- PRD: STACK-019, STACK-020
-- Depends on: GitHub Actions and container registry after repo initialization
+- Persona: Release engineer, Platform engineer
+- PRD: STACK-019, STACK-020, STACK-021, STACK-022, STACK-023, STACK-024, INFRA-011, INFRA-012, INFRA-013, INFRA-014
+- Depends on: Authoritative VM checkout, native system services and self-hosted runner
 
-As a release engineer, I want immutable image/artifact promotion behind standard service interfaces so that environments run reviewed bytes without premature cloud lock-in.
+As a platform owner, I want all project workloads to build and run natively on the authoritative VM with persistent supervision so that the workstation and containers never become hidden dependencies.
 
 Acceptance criteria:
 
-1. GitHub Actions builds once and records digest, source commit, lockfile and test evidence.
-2. The same digest is promoted across environments with environment-specific secrets/configuration.
-3. PostgreSQL, Redis, S3, OpenTelemetry and container interfaces do not depend on an unapproved cloud-only API.
+1. Builds, tests, Git operations and deployments execute only on `/home/hendo420/Robyn` or its versioned release paths on the VM.
+2. Repository, dependency and process scans find no Docker, Compose, Kubernetes, container image or container-registry dependency.
+3. PM2 uses a committed ecosystem file, systemd startup and saved state; a reboot restores every declared Node process.
+4. PostgreSQL, Redis, MinIO, monitoring, reverse proxy and any self-hosted RPC node run as enabled native systemd services.
+5. The dedicated self-hosted GitHub Actions runner executes trusted workflows without unrestricted sudo or untrusted fork code.
+6. Release manifest records source, lockfile, artifact hashes, tests and migrations; atomic release selection and rollback are rehearsed.
 

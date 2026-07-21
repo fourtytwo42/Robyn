@@ -1,7 +1,7 @@
 # Robyn comprehensive user-story set
 
 Status: Draft backlog  
-Version: 0.3  
+Version: 0.4
 Date: 2026-07-20
 
 ## Purpose

@@ -12,18 +12,31 @@ Define the web application, indexing, API, keeper, storage and RPC system requir
 
 ```mermaid
 flowchart TB
-    W["Web client"] --> P["Public Robinhood RPC"]
-    W --> API["Robyn read API"]
+    W["Web client"] --> P["Public/wallet RPC"]
     W --> WAL["Wallet provider"]
-    IDX["Deterministic indexer"] --> ARC["Archive RPC"]
-    IDX --> DB["PostgreSQL"]
+    QUOTE["Authenticated quote providers"]
+    EXT["Independent external RPC"]
+    subgraph VM["robyn VM - native services only"]
+        API["Robyn read API - PM2"]
+        IDX["Deterministic indexer - PM2"]
+        EPOCH["Epoch builder - PM2"]
+        KEEP["Constrained keeper - PM2"]
+        MON["Monitoring/reconciliation - systemd"]
+        ARC["VM RPC node or protected RPC client"]
+        DB["Native PostgreSQL"]
+        OBJ["Native MinIO artifacts/proofs"]
+    end
+    W --> API
+    IDX --> ARC
+    IDX --> DB
     API --> DB
-    EPOCH["Epoch builder"] --> DB
-    EPOCH --> OBJ["Content-addressed manifests/proofs"]
-    KEEP["Constrained keeper"] --> ARC
-    KEEP --> QUOTE["Authenticated quote providers"]
-    MON["Monitoring and reconciliation"] --> ARC
+    EPOCH --> DB
+    EPOCH --> OBJ
+    KEEP --> ARC
+    KEEP --> QUOTE
+    MON --> ARC
     MON --> DB
+    ARC --> EXT
 ```
 
 ## Client
@@ -42,7 +55,9 @@ The client:
 
 ## Indexer
 
-The API, indexer, keeper and epoch builder run as separate strict-TypeScript Node processes. Fastify serves HTTP; PostgreSQL/Drizzle stores persistent canonical and derived data; Redis/BullMQ provides retryable job coordination; S3-compatible storage preserves content-addressed epoch artifacts.
+The API, indexer, keeper and epoch builder run as separate strict-TypeScript PM2 processes on the project VM with persistent `systemd` startup and saved PM2 state. Fastify serves HTTP; native PostgreSQL/Drizzle stores persistent canonical and derived data; native Redis/BullMQ provides retryable job coordination; native MinIO preserves content-addressed epoch artifacts.
+
+All project-owned development, testing, CI, data and runtime processes execute on `robyn` at `192.168.50.250`. Docker and containers are prohibited. Native infrastructure services use `systemd`; the workstation is an SSH/control client only.
 
 The indexer consumes:
 
@@ -113,18 +128,20 @@ Permissionless public triggering is preferred where valid quote data can be safe
 | Wallet balance/current reads | Public RPC from browser | Wallet or user-supplied RPC |
 | Transaction submission | Wallet-configured/public RPC | Wallet provider fallback |
 | Discovery/history | Robyn API/database | Stale cache with freshness warning |
-| Complete event ingestion | Protected archive provider | Second project provider |
-| Epoch construction | Archive provider plus block-hash cross-check | Independent replay provider |
-| Keeper simulation/submission | Protected provider | Secondary provider |
-| Monitoring | Two independent providers | Explorer API for diagnosis only |
+| Complete event ingestion | VM-hosted RPC/archive node when supported, otherwise protected external provider | Independent external provider |
+| Epoch construction | Primary path plus block-hash cross-check | Independent replay provider |
+| Keeper simulation/submission | VM node or protected provider | Independent provider |
+| Monitoring | Primary plus independent external provider | Explorer API for diagnosis only |
 
 Public RPC rate limiting may aggregate users behind a corporate network, VPN or carrier NAT. Client backoff uses jitter, request coalescing and moderate polling. Never silently route all reads through a secret backend endpoint.
+
+If Robinhood publishes a supported node distribution and Robyn needs to operate its own RPC/archive service, it MUST be installed natively on this VM under `systemd` after CPU, memory, storage, IOPS and bandwidth sizing. The independent correctness path remains external so a single VM or client cannot certify itself.
 
 ## Infrastructure requirements
 
 | ID | Requirement | Priority | Verification |
 |---|---|---:|---|
-| INFRA-001 | Provider and quote secrets MUST remain server-side and in a managed secret store | MUST | Build/deployment scan |
+| INFRA-001 | Provider and quote secrets MUST remain server-side in root-controlled VM secret files or systemd credentials scoped per service | MUST | Build/deployment/permission scan |
 | INFRA-002 | Production MUST use at least two independent RPC paths for correctness checks | MUST | Failure drill |
 | INFRA-003 | Routine user reads SHOULD avoid project-paid RPC | SHOULD | Traffic/cost measurement |
 | INFRA-004 | Critical jobs MUST have idempotency keys, bounded retries and dead-letter visibility | MUST | Chaos test |
@@ -134,6 +151,10 @@ Public RPC rate limiting may aggregate users behind a corporate network, VPN or 
 | INFRA-008 | Backups MUST cover raw logs, database, manifests and configuration; restore MUST be rehearsed | MUST | Restore test |
 | INFRA-009 | The system MUST expose health separately for web, API, indexer, epoch builder, keeper, RPC and quote routes | MUST | Observability test |
 | INFRA-010 | Production changes MUST use staged deployment and rollback/runbook evidence | MUST | Release rehearsal |
+| INFRA-011 | All project builds, tests, CI jobs, data stores, services and deployments MUST execute on the `robyn` VM; the workstation MUST remain control-only | MUST | Environment/process audit |
+| INFRA-012 | Project infrastructure MUST NOT use Docker, containers, Kubernetes or container registries | MUST | Package/config/process audit |
+| INFRA-013 | Node applications MUST persist through PM2 plus systemd startup and saved state; native infrastructure services MUST use enabled systemd units | MUST | Reboot/recovery test |
+| INFRA-014 | Any project-operated RPC node MUST run natively on the VM with documented capacity and an independent external verification path | MUST | Node/service/divergence test |
 
 ## Service targets for beta
 
@@ -150,10 +171,10 @@ These are beta targets, not externally promised SLAs.
 
 ## Environments
 
-- Local: deterministic chain or fork plus mocks.
+- VM R0: deterministic chain or fork plus mocks, using native VM services and isolated test namespaces.
 - Robinhood testnet: project mock assets, mock feeds and issuer-control token.
 - Mainnet fork: exact upstream/proxy/exchange integration tests.
 - Mainnet validation: dedicated low-value wallet and contracts, not public.
 - Mainnet beta: capped product exposure after audit and gates.
 
-No mainnet private key is stored in repository files or general CI environment variables. Production operational actions use Safe or scoped managed signing.
+No mainnet private key is stored in repository files, PM2 configuration or general CI environment variables. Production operational actions use Safe or scoped managed signing.
