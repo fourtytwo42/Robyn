@@ -91,6 +91,7 @@
     "postRebootAuditor": "scripts/audit-recovery-state.sh",
     "browserEvidenceAuditor": "scripts/audit-browser-evidence.mjs",
     "backupEvidenceCollector": "scripts/collect-backup-evidence.mjs",
+    "finalVerifierSuccessTest": "scripts/test-final-readiness-verifier.mjs",
     "preRebootBootId": "61d23088-ad4b-4430-a0ad-5eab296d9550",
     "recoveryRehearsalPassed": true,
     "sameBootRejected": true,
