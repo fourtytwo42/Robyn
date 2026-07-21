@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatEther } from "viem";
 import { SiteHeader } from "@/components/site-header";
 import { getLaunches } from "@/lib/data-api";
 import { TokenArt } from "@/components/launchpad-visuals";
@@ -13,6 +14,18 @@ function first(value: string | string[] | undefined) {
 
 function shortAddress(address: string) {
   return address.slice(0, 8) + "…" + address.slice(-6);
+}
+
+function marketAmount(value: string, symbol: string) {
+  const amount = Number(formatEther(BigInt(value)));
+  return (
+    amount.toLocaleString(undefined, {
+      notation: amount >= 1_000 ? "compact" : "standard",
+      maximumFractionDigits: amount >= 1_000 ? 2 : 1,
+    }) +
+    " " +
+    symbol
+  );
 }
 
 export default async function Discover({
@@ -165,6 +178,39 @@ export default async function Discover({
                     </div>
                   </div>
                 </div>
+                {launch.metrics ? (
+                  <dl
+                    className="launch-market-stats"
+                    aria-label={launch.name + " market metrics"}
+                  >
+                    <div>
+                      <dt>Market cap</dt>
+                      <dd>
+                        {marketAmount(
+                          launch.metrics.marketCapBase,
+                          launch.metrics.baseSymbol,
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Total volume</dt>
+                      <dd>
+                        {marketAmount(
+                          launch.metrics.totalVolumeBase,
+                          launch.metrics.baseSymbol,
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Holders</dt>
+                      <dd>{launch.metrics.holderCount.toLocaleString()}</dd>
+                    </div>
+                  </dl>
+                ) : (
+                  <p className="launch-metrics-unavailable">
+                    Market metrics unavailable
+                  </p>
+                )}
                 <Link className="button" href={"/launches/" + launch.token}>
                   View market
                 </Link>

@@ -11,6 +11,14 @@ export type LaunchRecord = {
   created_block: string;
   updated_block: string;
   formula_version: string;
+  metrics?: {
+    marketCapBase: string;
+    liquidityBase: string;
+    totalVolumeBase: string;
+    holderCount: number;
+    tradeCount: number;
+    baseSymbol: string;
+  } | null;
 };
 
 export type LaunchList = {

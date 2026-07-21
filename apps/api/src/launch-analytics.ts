@@ -77,6 +77,7 @@ export function deriveLaunchAnalytics({
   createdTimestamp,
   basePerToken,
   feeBps,
+  initialSupply,
   snapshot,
 }: {
   launch: LaunchIdentity;
@@ -84,6 +85,7 @@ export function deriveLaunchAnalytics({
   createdTimestamp: string | null;
   basePerToken: bigint;
   feeBps: number;
+  initialSupply?: bigint;
   snapshot?: {
     totalSupply: bigint;
     tokenReserve: bigint;
@@ -106,7 +108,7 @@ export function deriveLaunchAnalytics({
     timestamp: string | null;
     transactionHash: Hex;
   }> = [];
-  let totalSupply = 0n;
+  let totalSupply = initialSupply ?? 0n;
   let tokenReserve = 0n;
   let baseReserve = 0n;
   let totalVolume = 0n;
@@ -127,6 +129,8 @@ export function deriveLaunchAnalytics({
       cumulativeVolume: "0",
     },
   ];
+
+  if (initialSupply) addBalance(balances, launch.creator, initialSupply);
 
   for (const log of logs) {
     if (log.address.toLowerCase() === token) {

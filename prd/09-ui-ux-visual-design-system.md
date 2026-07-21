@@ -120,6 +120,7 @@ Primary navigation:
 - The default token browser is compact and responsive: three columns on wide desktop, two on compact desktop/tablet and one on mobile.
 - Token artwork uses a fixed square thumbnail with proportional `object-fit: cover`; artwork MUST NOT be stretched into a mismatched aspect ratio.
 - Browser cards omit pending rewards, converted totals and block-level operational detail; they link to the token page for those metrics, holder data and market detail.
+- Browser cards surface verified market cap, trading volume and holder count beside the basket. They MUST label the actual interval (`Total volume` until a true rolling projection exists) and MUST show an unavailable state instead of fabricated metrics.
 - Public basket labels lead with recognizable asset symbols and names. Contract addresses remain available for identity and verification but do not replace human-readable asset labels.
 - Rankings never rely on raw volume alone.
 

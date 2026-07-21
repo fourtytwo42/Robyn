@@ -62,6 +62,113 @@ const marketViewAbi = [
   },
 ] as const;
 
+type LaunchRow = {
+  launch_id: string;
+  token: string;
+  vault: string;
+  market: string;
+  creator: string;
+  name: string;
+  symbol: string;
+  assets: string[];
+  weights_bps: number[];
+  created_block: string;
+  updated_block: string;
+  formula_version: string;
+};
+
+type DiscoveryMetricLog = AnalyticsLog & { launch_token: string };
+
+let marketConfiguration:
+  Promise<{ basePerToken: bigint; feeBps: number }> | undefined;
+const tokenSupply = new Map<string, Promise<bigint>>();
+
+function getMarketConfiguration(market: Address) {
+  if (marketConfiguration) return marketConfiguration;
+  const pending = Promise.all([
+    rpcClient.readContract({
+      address: market,
+      abi: marketViewAbi,
+      functionName: "basePerToken",
+    }),
+    rpcClient.readContract({
+      address: market,
+      abi: marketViewAbi,
+      functionName: "feeBps",
+    }),
+  ]).then(([basePerToken, feeBps]) => ({
+    basePerToken,
+    feeBps: Number(feeBps),
+  }));
+  marketConfiguration = pending;
+  void pending.catch(() => {
+    marketConfiguration = undefined;
+  });
+  return pending;
+}
+
+function getTokenSupply(token: Address) {
+  const key = token.toLowerCase();
+  const existing = tokenSupply.get(key);
+  if (existing) return existing;
+  const pending = rpcClient.readContract({
+    address: token,
+    abi: erc20ViewAbi,
+    functionName: "totalSupply",
+  });
+  tokenSupply.set(key, pending);
+  void pending.catch(() => tokenSupply.delete(key));
+  return pending;
+}
+
+async function discoveryMetrics(rows: LaunchRow[]) {
+  const metrics = new Map<string, ReturnType<typeof deriveLaunchAnalytics>>();
+  if (rows.length === 0) return metrics;
+  const logs = await sql.unsafe<DiscoveryMetricLog[]>(
+    "WITH targets(launch_token,market) AS (SELECT * FROM unnest($2::text[],$3::text[])), ranked AS (SELECT t.launch_token,l.block_number::text,l.transaction_hash,l.log_index,l.address,l.topics,l.data,b.timestamp::text,row_number() OVER (PARTITION BY t.launch_token ORDER BY l.block_number,l.transaction_index,l.log_index) AS event_number FROM targets t JOIN raw_logs l ON l.chain_id=$1 AND (l.address=t.launch_token OR l.address=t.market) LEFT JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number) SELECT launch_token,block_number,transaction_hash,log_index,address,topics,data,timestamp FROM ranked WHERE event_number<=10001 ORDER BY launch_token,block_number::bigint,log_index",
+    [
+      chainId,
+      rows.map((row) => row.token.toLowerCase()),
+      rows.map((row) => row.market.toLowerCase()),
+    ],
+  );
+  const byToken = new Map<string, AnalyticsLog[]>();
+  for (const log of logs) {
+    const key = log.launch_token.toLowerCase();
+    const tokenLogs = byToken.get(key) ?? [];
+    tokenLogs.push(log);
+    byToken.set(key, tokenLogs);
+  }
+  await Promise.all(
+    rows.map(async (row) => {
+      const key = row.token.toLowerCase();
+      const tokenLogs = byToken.get(key) ?? [];
+      if (tokenLogs.length > 10_000) return;
+      const config = await getMarketConfiguration(row.market as Address);
+      const input = {
+        launch: {
+          token: row.token as Address,
+          market: row.market as Address,
+          creator: row.creator as Address,
+        },
+        logs: tokenLogs,
+        createdTimestamp: null,
+        basePerToken: config.basePerToken,
+        feeBps: config.feeBps,
+      };
+      let metric = deriveLaunchAnalytics(input);
+      if (metric.totalSupply === "0") {
+        metric = deriveLaunchAnalytics({
+          ...input,
+          initialSupply: await getTokenSupply(row.token as Address),
+        });
+      }
+      metrics.set(key, metric);
+    }),
+  );
+  return metrics;
+}
+
 app.addHook("onSend", async (_request, reply, payload) => {
   reply.header("cache-control", "no-store");
   reply.header("x-content-type-options", "nosniff");
@@ -203,12 +310,31 @@ app.get<{
       ...state,
     };
   }
-  const rows = await sql.unsafe<{ launch_id: string }[]>(
+  const rows = await sql.unsafe<LaunchRow[]>(
     "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version FROM launches WHERE chain_id=$1 AND ($2::bigint IS NULL OR launch_id<$2::bigint) AND ($4::text IS NULL OR token=$4 OR strpos(lower(name),$4)>0 OR strpos(lower(symbol),$4)>0) AND ($5::text IS NULL OR assets ? $5) AND ($6::integer IS NULL OR jsonb_array_length(assets)=$6) ORDER BY CASE WHEN token=$4 THEN 0 ELSE 1 END,launch_id DESC LIMIT $3",
     [chainId, before, limit, query, asset, basketSize],
   );
+  const marketMetrics = await discoveryMetrics(rows).catch((error) => {
+    request.log.warn({ error }, "discovery metrics unavailable");
+    return new Map<string, ReturnType<typeof deriveLaunchAnalytics>>();
+  });
   return {
-    data: rows,
+    data: rows.map((row) => {
+      const metric = marketMetrics.get(row.token.toLowerCase());
+      return {
+        ...row,
+        metrics: metric
+          ? {
+              marketCapBase: metric.marketCapBase,
+              liquidityBase: metric.liquidityBase,
+              totalVolumeBase: metric.totalVolumeBase,
+              holderCount: metric.holderCount,
+              tradeCount: metric.tradeCount,
+              baseSymbol: metric.baseSymbol,
+            }
+          : null,
+      };
+    }),
     nextCursor:
       rows.length === limit
         ? (rows.at(-1) as { launch_id: string }).launch_id

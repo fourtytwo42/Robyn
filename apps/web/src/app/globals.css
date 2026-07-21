@@ -1336,6 +1336,44 @@ main > .notice {
   font-size: 0.62rem;
 }
 
+.launch-market-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 0.8rem 0 0;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--line);
+}
+
+.launch-market-stats div {
+  min-width: 0;
+}
+
+.launch-market-stats dt {
+  color: var(--muted);
+  font-size: 0.58rem;
+  letter-spacing: 0.02em;
+}
+
+.launch-market-stats dd {
+  margin: 0.22rem 0 0;
+  overflow: hidden;
+  color: var(--text);
+  font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.launch-metrics-unavailable {
+  margin: 0.8rem 0 0;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
 .launch-card > .button {
   width: 100%;
   min-height: 40px;

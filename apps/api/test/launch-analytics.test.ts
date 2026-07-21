@@ -43,6 +43,37 @@ function row(
 }
 
 describe("launch analytics", () => {
+  it("reconciles an initial supply when constructor mint logs predate indexing", () => {
+    const logs: AnalyticsLog[] = [
+      row(
+        token,
+        encodeEventTopics({
+          abi: transferAbi,
+          eventName: "Transfer",
+          args: { from: creator, to: trader },
+        }),
+        encodeAbiParameters([{ type: "uint256" }], [parseEther("100")]),
+        10,
+      ),
+    ];
+    const result = deriveLaunchAnalytics({
+      launch: { token, market, creator },
+      logs,
+      createdTimestamp: null,
+      basePerToken: parseEther("0.001"),
+      feeBps: 100,
+      initialSupply: parseEther("1000"),
+    });
+
+    expect(result.totalSupply).toBe(parseEther("1000").toString());
+    expect(result.marketCapBase).toBe(parseEther("1").toString());
+    expect(result.holderCount).toBe(2);
+    expect(result.topHolders[0]).toMatchObject({
+      address: creator.toLowerCase(),
+      balance: parseEther("900").toString(),
+    });
+  });
+
   it("binds decoded trade history to the current onchain holder snapshot", () => {
     const logs: AnalyticsLog[] = [
       row(
