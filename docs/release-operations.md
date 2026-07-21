@@ -1,6 +1,6 @@
 # Immutable release operations
 
-Status: implementation in progress
+Status: implemented; exact candidate d90e218 is in the mandatory uninterrupted soak
 
 Robyn application processes run from an exact, read-only release under `/opt/robyn/releases`. The atomic `/opt/robyn/current` symlink selects the active release. The authoritative checkout remains the only build and Git workspace; it is never the production process working directory after migration.
 

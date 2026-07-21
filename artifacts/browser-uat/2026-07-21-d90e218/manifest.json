@@ -22,7 +22,8 @@
     "consoleWarningsOrErrors": 0,
     "invalidBasketWeightRejected": true,
     "invalidMetadataRejected": true,
-    "permissionlessOneAssetLaunch": true
+    "permissionlessOneAssetLaunch": true,
+    "responsiveMobileAndTablet": true
   },
   "observedState": {
     "launchName": "Evidence Basket",
@@ -55,21 +56,27 @@
   },
   "screenshots": [
     "claimed-sold-desktop.jpg",
+    "discover-mobile-390x844.jpg",
+    "home-tablet-768x1024.jpg",
     "invalid-metadata-desktop.jpg",
     "one-asset-launch-desktop.jpg",
     "pending-fees-desktop.jpg",
     "permissionless-launch-desktop.jpg",
     "portfolio-anonymous-desktop.jpg",
+    "portfolio-mobile-390x844.jpg",
     "portfolio-signed-desktop.jpg"
   ],
   "domSnapshots": [
     "claimed-sold.dom.txt",
     "converted.dom.txt",
+    "discover-mobile-390x844.dom.txt",
+    "home-tablet-768x1024.dom.txt",
     "invalid-metadata.dom.txt",
     "invalid-weights.dom.txt",
     "one-asset-launch.dom.txt",
     "pending-fees.dom.txt",
     "permissionless-launch.dom.txt",
+    "portfolio-mobile-390x844.dom.txt",
     "portfolio.dom.txt"
   ],
   "transactionEvidence": "transactions.json",
@@ -82,7 +89,8 @@
     "Invalid 110-percent weights were rejected before any transaction with the documented total-100 validation message.",
     "Whitespace-only name and symbol were deliberately allowed to settle in the controlled inputs, then rejected before any transaction; launch count remained five.",
     "An earlier automation attempt clicked before empty controlled inputs settled and therefore submitted the prior default My Community / MYCO values, producing successful launch 4. It is retained transparently as a browser-automation timing artifact, not counted as invalid-input acceptance.",
-    "A one-asset 100/0/0 launch completed as launch 5; all 12 transactions for launches 4 and 5 have successful receipts."
+    "A one-asset 100/0/0 launch completed as launch 5; all 12 transactions for launches 4 and 5 have successful receipts.",
+    "Exact-release responsive checks passed discovery and signed portfolio at 390 by 844 plus the full home/launch surface at 768 by 1024 with zero horizontal overflow and zero warning/error console logs."
   ],
   "transactionActions": [
     "fund faucet",
@@ -101,5 +109,6 @@
   "keeperConversionEvidence": "keeper-conversions.json",
   "keeperConversionReceiptEvidence": "keeper-conversion-receipts.json",
   "additionalLaunchTransactionEvidence": "additional-launch-transactions.json",
-  "additionalLaunchReceiptEvidence": "additional-launch-receipts.json"
+  "additionalLaunchReceiptEvidence": "additional-launch-receipts.json",
+  "responsiveEvidence": "responsive-browser-evidence.json"
 }

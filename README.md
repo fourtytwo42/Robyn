@@ -2,7 +2,7 @@
 
 Robyn is a proposed Robinhood Chain launchpad where creators launch community tokens with an immutable, weighted asset basket. A token's creator-fee stream purchases the selected assets, and holders accrue claimable basket rewards.
 
-> **Project status:** Implementation is active. The VM runs a persistent controlled Anvil devnet, restricted user RPC/faucet, browser-operated permissionless launchpad, native PostgreSQL/Redis/MinIO, a reorg-aware indexer, freshness-labeled filtered discovery API, bounded conversion keeper and content-addressed artifact service. Anonymous discovery, canonical launch detail and session-wallet portfolio pages are live alongside the launch-to-claim console. Encrypted off-VM backups, loopback monitoring/alerts, cold-start recovery, the subnet-scoped Nginx/UFW edge and short-duration load/security gates are verified. Immutable release promotion/rollback is verified and the protected testnet journey plus isolated five-service rehearsal pass. The final candidate reboot/browser pass, uninterrupted 24-hour soak and independent real-value protocol review remain open.
+> **Project status:** Exact immutable candidate d90e218 is live on the controlled LAN devnet and is completing its mandatory uninterrupted 24-hour soak. Its release gates, promotion, signed desktop journey, one-asset and three-asset launches, invalid-input rejection, responsive mobile/tablet checks, encrypted off-VM backup, protected chain-46630 journey and isolated five-service rehearsal pass. Post-soak reboot/recovery, final browser regression, evidence audit and candidate tag remain before the controlled-LAN goal can close. Independent review and human alert delivery remain later gates before unattended public-testnet or real-value use.
 
 ## Authoritative development environment
 
@@ -42,11 +42,12 @@ The Windows checkout is not an execution environment. It is only a convenience m
 | [Immutable release operations](docs/release-operations.md) | Exact-commit builds, manifests, atomic promotion and compatible rollback |
 | [Robinhood Testnet operations](docs/testnet-operations.md) | Protected chain-46630 deployment, build, rehearsal, key and rollback procedures |
 | [Protocol security review](docs/protocol-security-review.md) | Threat model, invariant evidence, automated results and finding triage |
+| [Local production-readiness audit](docs/local-production-readiness-audit.md) | Requirement-by-requirement evidence and the remaining exact-candidate gates |
 | [`docs/`](docs/) | VM runtime, operating procedures and delivery roadmaps |
 | [Protocol core](docs/protocol-core.md) | Current contract boundaries, invariants, dependency provenance and limitations |
 | [Devnet-to-testnet readiness plan](docs/devnet-to-testnet-readiness-plan.md) | Phase-by-phase implementation, verification and release plan |
 
-The initial implementation will use the monorepo and contract stack defined in [`prd/10-technology-stack-and-repository-architecture.md`](prd/10-technology-stack-and-repository-architecture.md). Product language must describe the launch token as a fee-funded reward token, not an asset-backed or redeemable security.
+The exact candidate uses the monorepo and contract stack defined in [`prd/10-technology-stack-and-repository-architecture.md`](prd/10-technology-stack-and-repository-architecture.md). Product language describes the launch token as a fee-funded reward token, not an asset-backed or redeemable security.
 
 ## Validate the documentation
 

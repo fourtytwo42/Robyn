@@ -38,7 +38,7 @@ All package installs, builds, tests, migrations, contract compilation, forks, br
 | Fastify API | Node.js | PM2 plus `systemd` startup |
 | Indexer | Node.js | PM2 plus `systemd` startup |
 | Keeper | Node.js | PM2 plus `systemd` startup |
-| Epoch builder | Node.js | PM2 plus `systemd` startup |
+| Adapter epoch builder | Future adapter-mode only; absent from the native candidate | PM2 plus `systemd` when that mode is implemented |
 | PostgreSQL | Native Ubuntu package | `systemd` |
 | Redis | Native Ubuntu package | `systemd` |
 | MinIO, when S3-compatible artifacts are needed | Native pinned binary | `systemd` |
@@ -47,18 +47,18 @@ All package installs, builds, tests, migrations, contract compilation, forks, br
 | Self-hosted Robinhood Chain RPC/node, if required and officially supported | Native pinned node release | `systemd` |
 | GitHub Actions runner, when enabled | Native self-hosted runner | `systemd` |
 
-PostgreSQL is the durable application source for raw and derived offchain state. Redis is disposable coordination state. MinIO stores immutable content-addressed epoch artifacts. None of these services may be replaced by an in-memory development-only implementation in a release environment.
+PostgreSQL is the durable application source for raw and derived offchain state. Redis is rebuildable coordination and quota state. MinIO stores immutable content-addressed artifacts; a future adapter mode may also store epoch artifacts there. None of these services may be replaced by an in-memory development-only implementation in a release environment.
 
 ## PM2 persistence
 
-When the first Node application exists:
+The current implementation:
 
-1. Pin PM2 through the workspace or an explicitly recorded global version.
+1. Pins PM2 7.0.3 through the workspace.
 2. Commit `infrastructure/pm2/ecosystem.config.cjs` with one named process per application/worker.
-3. Run each process as a dedicated non-root `robyn` service account.
-4. Configure the generated PM2 startup unit for `systemd`.
-5. Run `pm2 save` after the reviewed process set is online.
-6. Reboot the VM and verify every declared process returns healthy before calling persistence complete.
+3. Runs each application as the non-root `hendo420` PM2 service user.
+4. Uses the generated `pm2-hendo420.service` plus ordering drop-in for `systemd` resurrection.
+5. Saves the reviewed process set with `pm2 save`.
+6. Has passed cold-start recovery; the exact d90e218 candidate will repeat the reboot gate after its uninterrupted soak.
 
 PM2 configuration contains no secrets. Each process receives only its scoped environment file or systemd credential at runtime.
 
@@ -74,7 +74,7 @@ The first implementation environment is the persistent Robyn Devnet described in
 
 - native Anvil on chain ID `31337`, supervised by `robyn-anvil.service`;
 - raw JSON-RPC bound to `127.0.0.1:8545`;
-- a restricted LAN gateway planned at `192.168.50.250:8546`;
+- an implemented restricted LAN gateway at `192.168.50.250:8546`;
 - state outside Git under `/var/lib/robyn/anvil/state.json`;
 - a rate-limited faucet that funds arbitrary development addresses; and
 - production-shaped mock assets, feeds, exchange routes and issuer-control failure modes.
@@ -83,7 +83,7 @@ The LAN gateway must deny privileged Anvil, impersonation, destructive, unsafe d
 
 For devnet browser UAT only, the application may expose an explicitly labeled ephemeral session wallet so the in-app browser can sign transactions without an extension. That connector, its keys, the faucet and chain ID 31337 must be compile-time excluded from testnet/production bundles and confirmed absent by bundle scans.
 
-No Anvil service, gateway or faucet is installed by this planning change.
+The Anvil service, restricted gateway and faucet are implemented and verified on the VM. The native candidate uses transfer-integrated cumulative accounting and therefore does not run an epoch builder.
 
 - Service configuration lives under `/etc`, while repository-owned templates and runbooks live under `infrastructure/`.
 
@@ -91,7 +91,7 @@ No Anvil service, gateway or faucet is installed by this planning change.
 
 Routine browser reads and transaction submission continue to use Robinhood's public RPC, the connected wallet provider, or a user-supplied RPC so ordinary user traffic does not consume VM resources.
 
-Correctness-critical indexing, epoch construction, keeper simulation and reconciliation require two independent RPC views. Start with protected external providers if a supported Robinhood node distribution is unavailable. If Robyn needs to operate its own RPC or archive node and Robinhood provides supported software/snapshots, install it natively on this VM under `systemd`.
+Correctness-critical indexing, keeper simulation and reconciliation require protected RPC capacity; a future adapter-mode epoch builder also requires it. Start with protected external providers if a supported Robinhood node distribution is unavailable. If Robyn needs to operate its own RPC or archive node and Robinhood provides supported software/snapshots, install it natively on this VM under `systemd`.
 
 Before installing a node:
 

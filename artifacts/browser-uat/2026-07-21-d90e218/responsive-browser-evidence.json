@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-21T10:44:13.727Z",
+  "releaseGitSha": "d90e2187afcf278cdc5d49acaf20f3c23d8ac72a",
+  "surface": "Codex in-app Browser",
+  "checks": [
+    {
+      "page": "/discover",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "geometry": {
+        "bodyScrollWidth": 375,
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "scrollWidth": 375
+      },
+      "warnOrErrorLogs": 0
+    },
+    {
+      "page": "/",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "geometry": {
+        "bodyScrollWidth": 753,
+        "innerHeight": 1024,
+        "innerWidth": 768,
+        "scrollWidth": 753
+      },
+      "warnOrErrorLogs": 0
+    },
+    {
+      "page": "/portfolio",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "geometry": {
+        "bodyScrollWidth": 375,
+        "innerHeight": 844,
+        "innerWidth": 390,
+        "scrollWidth": 375
+      },
+      "warnOrErrorLogs": 0,
+      "signedWalletState": true
+    }
+  ],
+  "passed": true
+}

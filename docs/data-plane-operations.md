@@ -72,10 +72,10 @@ A destructive derived-data rebuild test truncated blocks, raw logs, launch proje
 
 The RPC gateway uses atomic Redis Lua reservations for its one-address-per-hour and five-requests-per-source-IP windows. Successful quota state survived a PM2 gateway restart with 3,589 seconds remaining and rejected the repeated address with HTTP 429. When Redis was deliberately stopped, a fresh faucet request failed closed with HTTP 503 before any privileged RPC call; restarting Redis and the gateway restored service. Unit tests retain an injectable in-memory limiter so failure/release semantics remain deterministic.
 
-## Remaining work
+## Continuing release checks
 
 - Keep the scheduled encrypted backup and periodic clean-target restore rehearsal green.
-- Add metrics, alerts, kill/restart and deterministic rebuild tests.
+- Keep the implemented metrics, alerts, kill/restart and deterministic rebuild tests in the release gate and repeat them after material data-plane changes.
 
 ## Content-addressed artifacts
 

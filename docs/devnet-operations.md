@@ -1,6 +1,6 @@
 # Controlled devnet operations
 
-Status: Implemented foundation; not yet a public production environment
+Status: Implemented controlled-LAN candidate; not a public-internet or real-value environment
 Last verified: 2026-07-21
 
 ## Live topology
@@ -8,7 +8,7 @@ Last verified: 2026-07-21
 | Component | Listener | Supervisor | Persistence |
 |---|---|---|---|
 | Robyn web | 0.0.0.0:3000 | PM2 through pm2-hendo420.service | Saved PM2 process list |
-| Restricted RPC and faucet | 0.0.0.0:8546 | PM2 through pm2-hendo420.service | Process restarts; rate windows are currently memory-only |
+| Restricted RPC and faucet | 0.0.0.0:8546 | PM2 through pm2-hendo420.service | Saved process list; atomic Redis quota windows survive process restart |
 | Raw privileged Anvil RPC | 127.0.0.1:8545 | robyn-anvil.service | /var/lib/robyn/anvil/state.json every five seconds and on clean exit |
 
 The raw RPC is loopback-only. LAN users and browser wallets use the restricted gateway. Docker is not involved.
@@ -118,9 +118,9 @@ Last verified 2026-07-21: the current manifest records the self-service-market d
 
 ## Remaining production-readiness work
 
-- Run the exact release candidate through the real 24-hour soak.
-- Promote immutable releases instead of running from the checkout.
+- Allow exact promoted release d90e218 to complete its uninterrupted 24-hour soak.
+- After the soak, reboot and repeat exact-release recovery, browser regression, backup and evidence checks before tagging.
 - Configure TLS if a domain is attached or access leaves the trusted LAN.
 - Complete independent protocol/security review and human alert delivery.
 
-These gaps keep the active production-readiness goal open.
+The first two items keep the controlled-LAN production-readiness goal open. TLS is conditional on leaving the trusted LAN; independent review and human alert delivery are gates before unattended public-testnet or real-value use.

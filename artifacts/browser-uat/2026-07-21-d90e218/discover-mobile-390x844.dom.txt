@@ -1,0 +1,183 @@
+- link "Skip to main content":
+  - /url: "#main"
+- main:
+  - link "Robyn home":
+    - /url: /
+    - generic: R
+    - generic: ROBYN
+  - navigation "Primary navigation":
+    - link "Discover":
+      - /url: /discover
+    - link "Portfolio":
+      - /url: /portfolio
+    - link "Create":
+      - /url: /#devnet-console
+  - generic: Controlled development network
+  - paragraph: Permissionless registry
+  - heading "Discover fee-funded reward tokens." [level=1]
+  - paragraph: Browse without a wallet. Basket configuration comes from the indexed launch registry; pending and purchased amounts are read live from the controlled development chain.
+  - search:
+    - text: Search name, symbol or canonical address
+    - textbox "Search name, symbol or canonical address":
+      - /placeholder: MYCO or 0x…
+    - text: Basket size
+    - combobox "Basket size":
+      - option "Any size" [selected]
+      - option "One asset"
+      - option "Two assets"
+      - option "Three assets"
+    - text: Basket asset
+    - combobox "Basket asset":
+      - option "Any asset" [selected]
+      - option "0x482653…c98528"
+      - option "0x70e0ba…5ffc49"
+      - option "0x99bba6…104acf"
+    - button "Apply filters"
+    - link "Clear":
+      - /url: /discover
+  - strong: "Ranking: newest indexed launch first."
+  - text: Formula
+  - code: native-v1
+  - text: . Raw volume and projected rewards are excluded so self-trading cannot dominate this view.
+  - region "Launch discovery":
+    - article:
+      - text: ONE
+      - heading "Single Asset Evidence" [level=2]
+      - generic: "#5"
+      - link "0xfbf90645b2a75ba27849d99d1cd8aee39227ad77":
+        - /url: /launches/0xfbf90645b2a75ba27849d99d1cd8aee39227ad77
+      - generic "Immutable basket weights":
+        - generic: 0x70e0ba…5ffc49 · 100%
+      - article:
+        - strong: mNVDA
+        - generic: 100%
+        - term: Pending cash
+        - definition: 0 mUSD
+        - term: Purchased / deposited
+        - definition: 0 mNVDA
+      - paragraph: Indexed block 156 · live chain block 156 · realized state only
+      - link "Inspect launch":
+        - /url: /launches/0xfbf90645b2a75ba27849d99d1cd8aee39227ad77
+    - article:
+      - text: MYCO
+      - heading "My Community" [level=2]
+      - generic: "#4"
+      - link "0x7835b0dc65dbe796c3330cd800acb57ce7792299":
+        - /url: /launches/0x7835b0dc65dbe796c3330cd800acb57ce7792299
+      - generic "Immutable basket weights":
+        - generic: 0x70e0ba…5ffc49 · 100%
+      - article:
+        - strong: mNVDA
+        - generic: 100%
+        - term: Pending cash
+        - definition: 0 mUSD
+        - term: Purchased / deposited
+        - definition: 0 mNVDA
+      - paragraph: Indexed block 156 · live chain block 156 · realized state only
+      - link "Inspect launch":
+        - /url: /launches/0x7835b0dc65dbe796c3330cd800acb57ce7792299
+    - article:
+      - text: EVID
+      - heading "Evidence Basket" [level=2]
+      - generic: "#3"
+      - link "0xf8698093ef2a86718040fabcacaf8bf556911301":
+        - /url: /launches/0xf8698093ef2a86718040fabcacaf8bf556911301
+      - generic "Immutable basket weights":
+        - generic: 0x70e0ba…5ffc49 · 40%
+        - generic: 0x482653…c98528 · 40%
+        - generic: 0x99bba6…104acf · 20%
+      - article:
+        - strong: mNVDA
+        - generic: 40%
+        - term: Pending cash
+        - definition: 0 mUSD
+        - term: Purchased / deposited
+        - definition: 0 mNVDA
+      - article:
+        - strong: mSPY
+        - generic: 40%
+        - term: Pending cash
+        - definition: 0 mUSD
+        - term: Purchased / deposited
+        - definition: 0 mSPY
+      - article:
+        - strong: mETH
+        - generic: 20%
+        - term: Pending cash
+        - definition: 0 mUSD
+        - term: Purchased / deposited
+        - definition: 0 mETH
+      - paragraph: Indexed block 156 · live chain block 156 · realized state only
+      - link "Inspect launch":
+        - /url: /launches/0xf8698093ef2a86718040fabcacaf8bf556911301
+    - article:
+      - text: MYCO
+      - heading "My Community" [level=2]
+      - generic: "#2"
+      - link "0xa0372faafe21a4e4e1d0fdc62d1f7be957c08cb2":
+        - /url: /launches/0xa0372faafe21a4e4e1d0fdc62d1f7be957c08cb2
+      - generic "Immutable basket weights":
+        - generic: 0x70e0ba…5ffc49 · 40%
+        - generic: 0x482653…c98528 · 40%
+        - generic: 0x99bba6…104acf · 20%
+      - article:
+        - strong: mNVDA
+        - generic: 40%
+        - term: Pending cash
+        - definition: 0 mUSD
+        - term: Purchased / deposited
+        - definition: 12.04 mNVDA
+      - article:
+        - strong: mSPY
+        - generic: 40%
+        - term: Pending cash
+        - definition: 0 mUSD
+        - term: Purchased / deposited
+        - definition: 24.08 mSPY
+      - article:
+        - strong: mETH
+        - generic: 20%
+        - term: Pending cash
+        - definition: 0 mUSD
+        - term: Purchased / deposited
+        - definition: 18.06 mETH
+      - paragraph: Indexed block 156 · live chain block 156 · realized state only
+      - link "Inspect launch":
+        - /url: /launches/0xa0372faafe21a4e4e1d0fdc62d1f7be957c08cb2
+    - article:
+      - text: ROBYN
+      - heading "Robyn Genesis" [level=2]
+      - generic: "#1"
+      - link "0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5":
+        - /url: /launches/0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5
+      - generic "Immutable basket weights":
+        - generic: 0x70e0ba…5ffc49 · 40%
+        - generic: 0x482653…c98528 · 40%
+        - generic: 0x99bba6…104acf · 20%
+      - article:
+        - strong: mNVDA
+        - generic: 40%
+        - term: Pending cash
+        - definition: 0.4 mUSD
+        - term: Purchased / deposited
+        - definition: 17.2 mNVDA
+      - article:
+        - strong: mSPY
+        - generic: 40%
+        - term: Pending cash
+        - definition: 0.4 mUSD
+        - term: Purchased / deposited
+        - definition: 34.4 mSPY
+      - article:
+        - strong: mETH
+        - generic: 20%
+        - term: Pending cash
+        - definition: 0.2 mUSD
+        - term: Purchased / deposited
+        - definition: 25.8 mETH
+      - paragraph: Indexed block 156 · live chain block 156 · realized state only
+      - link "Inspect launch":
+        - /url: /launches/0xc9a9dce750f11c2c04a29cfbb7ed83576050a3f5
+  - paragraph: Registry indexed at block 156 · 2026-07-21 10:43:20.783705+00
+  - region "Network disclaimer": Development network only. Mock assets have no financial value, and the community token is not redeemable for its reward basket.
+- alert
