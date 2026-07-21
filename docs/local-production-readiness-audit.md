@@ -84,6 +84,18 @@ The final summary is acceptable only if all of the following are true:
 8. available memory and disk never cross their configured floors; and
 9. total/process RSS remains within the bounded allowance without monotonic unbounded growth.
 
+The final raw-stream decision must also pass the independent evidence auditor rather than relying only on the soak producer's summary:
+
+```bash
+node scripts/audit-soak-evidence.mjs \
+  --samples /var/lib/robyn/soak/8def270b1856c2bcfcd69d429a8d88def4ab15a8/soak-20260721T114242706Z.jsonl \
+  --summary /var/lib/robyn/soak/8def270b1856c2bcfcd69d429a8d88def4ab15a8/soak-20260721T114242706Z-summary.json \
+  --expected-sha 8def270b1856c2bcfcd69d429a8d88def4ab15a8 \
+  --expected-release /opt/robyn/releases/8def270b1856c2bcfcd69d429a8d88def4ab15a8
+```
+
+The auditor independently rejects malformed/error samples, SHA/path/process drift, nonzero restarts or alerts, backward chain/index/launch/log state, resource-floor violations, excessive cadence gaps, excessive derived RSS growth, latency p95 breaches and inconsistencies between raw samples and the final summary. Its active-observation and synthetic final-summary paths pass; deliberate error injection is rejected.
+
 ## Closure sequence
 
 1. Audit every soak JSONL sample and the generated final summary.
