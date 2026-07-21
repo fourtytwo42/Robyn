@@ -8,6 +8,7 @@ import { RobynLaunchToken } from "../src/RobynLaunchToken.sol";
 import { FeeBasketVault, IRobynConversionRouter } from "../src/FeeBasketVault.sol";
 import { RobynLaunchFactory } from "../src/RobynLaunchFactory.sol";
 import { DevnetFixedPriceMarket } from "../src/devnet/DevnetFixedPriceMarket.sol";
+import { DevnetMarketFactory } from "../src/devnet/DevnetMarketFactory.sol";
 import { DevnetMockERC20 } from "../src/devnet/DevnetMockERC20.sol";
 
 contract ProtocolMockERC20 is ERC20 {
@@ -331,6 +332,20 @@ contract RobynProtocolTest {
         require(marketVault.totalFeesReceived() == 1.09 ether, "total fees");
         require(base.balanceOf(address(trader)) == 8.91 ether, "trader base");
         require(marketToken.balanceOf(address(trader)) == 90 ether, "trader token");
+    }
+
+    function testDevnetMarketFactoryCreatesOneCreatorOwnedMarket() public {
+        (RobynLaunchToken marketToken,) =
+            factory.createLaunch("Factory Market", "FMKT", SUPPLY, _assets(), _weights());
+        DevnetMarketFactory marketFactory = new DevnetMarketFactory(base, factory, 1e15, 100);
+        DevnetFixedPriceMarket market = marketFactory.createMarket(marketToken);
+
+        require(marketFactory.marketByToken(address(marketToken)) == address(market), "registry");
+        require(market.marketOwner() == address(this), "market owner");
+        require(address(market.launchToken()) == address(marketToken), "market token");
+        try marketFactory.createMarket(marketToken) {
+            revert("duplicate market accepted");
+        } catch { }
     }
 
     function testClaimAllPaysAllAvailableAssets() public {

@@ -17,6 +17,7 @@ readarray -t addresses < <(
     .contracts.rewardAssets[],
     .contracts.conversionRouter,
     .contracts.factory,
+    .contracts.marketFactory,
     .contracts.genesisToken,
     .contracts.genesisVault,
     .contracts.genesisMarket
@@ -32,11 +33,14 @@ done
 base="$(jq -r '.contracts.baseAsset' "$manifest")"
 router="$(jq -r '.contracts.conversionRouter' "$manifest")"
 factory="$(jq -r '.contracts.factory' "$manifest")"
-token="$(jq -r '.contracts.genesisToken' "$manifest")"
+market_factory="$(jq -r '.contracts.marketFactory' "$manifest")"
+token="$(jq -r '.contracts.genesisToken' "$manifest")
 vault="$(jq -r '.contracts.genesisVault' "$manifest")"
 market="$(jq -r '.contracts.genesisMarket' "$manifest")"
 
 test "$(cast call "$factory" "chainId()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "31337"
+test "$(cast call "$market_factory" "launchFactory()(address)" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$factory" | tr '[:upper:]' '[:lower:]')"
+test "$(cast call "$market_factory" "marketByToken(address)(address)" "$token" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$market" | tr '[:upper:]' '[:lower:]')"
 test "$(cast call "$factory" "vaultByToken(address)(address)" "$token" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$vault" | tr '[:upper:]' '[:lower:]')"
 test "$(cast call "$vault" "launchToken()(address)" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$token" | tr '[:upper:]' '[:lower:]')"
 test "$(cast call "$vault" "baseAsset()(address)" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$base" | tr '[:upper:]' '[:lower:]')"

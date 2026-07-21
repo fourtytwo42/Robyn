@@ -50,6 +50,7 @@ spy="$(deploy_contract src/devnet/DevnetMockERC20.sol:DevnetMockERC20 "Mock S&P 
 eth_reward="$(deploy_contract src/devnet/DevnetMockERC20.sol:DevnetMockERC20 "Mock Ether" "mETH" "$deployer" "0")"
 router="$(deploy_contract src/devnet/DevnetConversionRouter.sol:DevnetConversionRouter "$deployer")"
 factory="$(deploy_contract src/RobynLaunchFactory.sol:RobynLaunchFactory "$base" "$router" "1000000000000000000" "86400")"
+market_factory="$(deploy_contract src/devnet/DevnetMarketFactory.sol:DevnetMarketFactory "$base" "$factory" "1000000000000000" "100")"
 
 reward_liquidity="10000000000000000000000000"
 base_liquidity="10000000000000000000000000"
@@ -71,7 +72,8 @@ send_transaction "$factory" "createLaunch(string,string,uint256,address[],uint16
 launch_id="$(cast call "$factory" "launchCount()(uint256)" --rpc-url "$rpc_url")"
 token="$(cast call "$factory" "launchTokenById(uint256)(address)" "$launch_id" --rpc-url "$rpc_url")"
 vault="$(cast call "$factory" "vaultByToken(address)(address)" "$token" --rpc-url "$rpc_url")"
-market="$(deploy_contract src/devnet/DevnetFixedPriceMarket.sol:DevnetFixedPriceMarket "$base" "$token" "$vault" "$deployer" "1000000000000000" "100")"
+send_transaction "$market_factory" "createMarket(address)" "$token"
+market="$(cast call "$market_factory" "marketByToken(address)(address)" "$token" --rpc-url "$rpc_url")"
 
 send_transaction "$token" "approve(address,uint256)" "$market" "$market_token_seed"
 send_transaction "$base" "approve(address,uint256)" "$market" "$market_base_seed"
@@ -82,7 +84,7 @@ block_number="$(cast block-number --rpc-url "$rpc_url")"
 git_commit="$(git rev-parse HEAD)"
 mkdir -p "$(dirname "$manifest")"
 temporary_manifest="$(mktemp "$(dirname "$manifest")/.31337.XXXXXX")"
-jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson blockNumber "$block_number" --arg gitCommit "$git_commit" --arg deployer "$deployer" --arg base "$base" --arg nvda "$nvda" --arg spy "$spy" --arg ethReward "$eth_reward" --arg router "$router" --arg factory "$factory" --arg token "$token" --arg vault "$vault" --arg market "$market" '{
+jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson blockNumber "$block_number" --arg gitCommit "$git_commit" --arg deployer "$deployer" --arg base "$base" --arg nvda "$nvda" --arg spy "$spy" --arg ethReward "$eth_reward" --arg router "$router" --arg factory "$factory" --arg marketFactory "$market_factory" --arg token "$token" --arg vault "$vault" --arg market "$market" '{
     environment: $environment,
     chainId: $chainId,
     deploymentBlock: $blockNumber,
@@ -93,6 +95,7 @@ jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson b
       rewardAssets: [$nvda, $spy, $ethReward],
       conversionRouter: $router,
       factory: $factory,
+      marketFactory: $marketFactory,
       genesisToken: $token,
       genesisVault: $vault,
       genesisMarket: $market

@@ -17,7 +17,7 @@ The current native protocol checkpoint proves the core fee-to-holder-reward acco
 7. Holders pull one reward or all available rewards. No creator, factory, treasury or operator reward sweep exists.
 8. The launch creator seals a one-time inventory/pool exclusion set before the first distribution. Excluded balances never dilute eligible holder rewards, and no later mutation is possible.
 
-This is a native reference path for the controlled devnet. A devnet-only fixed-price market now generates disclosed buy/sell fees, but the system does not yet include a production market, upstream launchpad adapter, stock registry/oracle guards, Merkle epochs, keeper, indexer, production quote provider or web transaction journey.
+This is a native reference path for the controlled devnet. The browser-operated genesis market proves the disclosed buy/sell, fee conversion and claim journey. The system does not yet include a production market, upstream launchpad adapter, stock registry/oracle guards, Merkle epochs, keeper, indexer or production quote provider.
 
 ## Contracts
 
@@ -37,6 +37,7 @@ Contracts under packages/contracts/src/devnet are explicit local-network substit
 - DevnetMockERC20 provides operator-minted base and reward assets.
 - DevnetConversionRouter provides owner-configured fixed rates and route-failure controls.
 - DevnetFixedPriceMarket provides deterministic one-percent-fee buys/sells and sends every fee to the launch vault.
+- DevnetMarketFactory permissionlessly deploys one fixed-policy market for each launch, restricted to that launch's recorded creator.
 
 The market must be excluded before sealing so inventory does not earn rewards. These contracts expose the DEVNET_ONLY marker and are prohibited from Robinhood testnet or real-value manifests.
 
@@ -77,7 +78,7 @@ forge test --root packages/contracts -vv --gas-report
 forge build --root packages/contracts --sizes
 ~~~
 
-The 2026-07-21 checkpoint passed 19 tests, including two 256-run fuzz properties. Tests cover fee-on-transfer base and reward tokens, duplicate assets, invalid weights, failed route isolation, stale/zero-minimum rejection, unauthorized deposits/rebinding, exclusion sealing, excluded inventory, devnet buy/sell fee generation, one/three/five reward slots, transfer ordering, multi-asset claims and balance conservation.
+The 2026-07-21 checkpoint passed 21 tests, including two 256-run fuzz properties. Tests cover fee-on-transfer base and reward tokens, duplicate assets, invalid weights, failed route isolation, stale/zero-minimum rejection, unauthorized deposits/rebinding, exclusion sealing, excluded inventory, creator-authorized one-market deployment, devnet buy/sell fee generation, the one-time base faucet, one/three/five reward slots, transfer ordering, multi-asset claims and balance conservation.
 
 Largest production runtime at this checkpoint is RobynLaunchFactory at 21,047 bytes, leaving 3,529 bytes below the 24,576-byte EIP-170 limit. The factory embeds vault and token creation bytecode, so size must remain a release gate.
 
