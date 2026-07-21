@@ -107,12 +107,13 @@ export default async function Discover({
           </p>
         ) : (
           <section className="discovery-grid" aria-label="Launch discovery">
-            {launches.data.map((launch) => (
+            {launches.data.map((launch, index) => (
               <article className="launch-card" key={launch.token}>
                 <TokenArt
                   symbol={launch.symbol}
                   alt=""
                   className="launch-card-art"
+                  priority={index < 2}
                 />
                 <div className="launch-card-heading">
                   <div>
