@@ -43,7 +43,13 @@ export function TokenArt({
   );
 }
 
-export function BasketAssetArt({ symbol }: { symbol: BasketArtSymbol }) {
+export function BasketAssetArt({
+  symbol,
+  priority = false,
+}: {
+  symbol: BasketArtSymbol;
+  priority?: boolean;
+}) {
   return (
     <Image
       className="basket-asset-art"
@@ -52,6 +58,7 @@ export function BasketAssetArt({ symbol }: { symbol: BasketArtSymbol }) {
       height={160}
       sizes="72px"
       alt={`${symbol} basket asset artwork`}
+      priority={priority}
     />
   );
 }

@@ -165,13 +165,14 @@ export function LaunchRewardState({
 
   return (
     <div className={detailed ? "reward-state detailed" : "reward-state"}>
-      {legs.map((leg) => (
+      {legs.map((leg, index) => (
         <article key={leg.asset}>
           {(
             ["mNVDA", "mSPY", "mETH", "tmNVDA", "tmSPY", "tmETH"] as const
           ).includes(leg.symbol as "mNVDA") ? (
             <BasketAssetArt
               symbol={leg.symbol.replace(/^t/, "") as BasketArtSymbol}
+              priority={detailed && index === 0}
             />
           ) : null}
           <div className="reward-leg-heading">
