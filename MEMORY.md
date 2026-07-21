@@ -4,6 +4,8 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
+- Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; lower-level correctness tests pass; no unresolved critical/high defect remains; and the exact release commit and evidence are pushed. Partial, documentation-only, mocked-happy-path-only or unpushed work is not completion.
 - Current task: controlled-devnet-to-testnet roadmap is settled and documented; no application code or runtime service was created.
 - Last meaningful change: Selected native Anvil chain ID 31337 for the VM-hosted Robyn Devnet, separated persistent human/UAT state from ephemeral automated-test chains, made in-app-browser UAT mandatory for user-facing acceptance and required a GitHub push after every major validated change.
 - Files touched: `AGENTS.md`, `README.md`, `docs/devnet-to-testnet-readiness-plan.md`, `docs/vm-runtime-and-operations.md`, `prd/00-product-brief-and-decisions.md`, `prd/05-platform-data-and-infrastructure.md`, `prd/07-delivery-plan-and-acceptance.md`, `prd/10-technology-stack-and-repository-architecture.md`, `prd/README.md`, `user-stories/10-technology-stack-and-developer-platform.md`, `user-stories/README.md`, `user-stories/TRACEABILITY.md`, and `MEMORY.md`.
