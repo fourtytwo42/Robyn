@@ -24,6 +24,8 @@ The random hostname changes whenever `cloudflared` starts a new Quick Tunnel. Qu
 
 The preview web process must run with `NEXT_PUBLIC_ROBYN_RPC_URL=/rpc`. Production testnet builds continue to use their explicitly supplied Robinhood Chain RPC URL.
 
+The preview API may set `ROBYN_DEMO_MARKET_CHANGES=true` only on chain ID 31337. This adds deterministic, non-zero percentage movements to discovery/ticker summaries for visual demonstrations without changing chain state or canonical fixed-price analytics. The API reports `priceChangeSource: "demo"`, and the flag is ignored on every other chain ID. Never enable this flag for testnet or mainnet.
+
 The shareable preview serves an optimized Next.js production build. It must not run `next dev`:
 
 ```sh

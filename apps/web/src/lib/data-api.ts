@@ -14,6 +14,7 @@ export type LaunchRecord = {
   metrics?: {
     marketCapBase: string;
     priceChangeBps: number;
+    priceChangeSource: "indexed" | "demo";
     liquidityBase: string;
     totalVolumeBase: string;
     holderCount: number;

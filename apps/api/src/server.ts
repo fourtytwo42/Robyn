@@ -3,6 +3,10 @@ import { createDatabase } from "@robyn/db";
 import { createPublicClient, http, type Address } from "viem";
 import { parseDiscoveryQuery, type DiscoveryQuery } from "./discovery-query.js";
 import {
+  demoMarketChangeBps,
+  isDemoMarketChangeEnabled,
+} from "./demo-market-change.js";
+import {
   collectTokenAccounts,
   deriveLaunchAnalytics,
   type AnalyticsLog,
@@ -14,6 +18,10 @@ const app = Fastify({
 });
 const { sql } = createDatabase();
 const chainId = Number(process.env.CHAIN_ID ?? "31337");
+const demoMarketChangesEnabled = isDemoMarketChangeEnabled(
+  chainId,
+  process.env.ROBYN_DEMO_MARKET_CHANGES,
+);
 const queueName = process.env.ROBYN_QUEUE_NAME ?? "robyn-conversions";
 const port = Number(process.env.PORT ?? "3100");
 const host = process.env.HOST ?? "0.0.0.0";
@@ -321,12 +329,16 @@ app.get<{
   return {
     data: rows.map((row) => {
       const metric = marketMetrics.get(row.token.toLowerCase());
+      const priceChangeBps = demoMarketChangesEnabled
+        ? demoMarketChangeBps(row.token as Address)
+        : metric?.priceChangeBps;
       return {
         ...row,
         metrics: metric
           ? {
               marketCapBase: metric.marketCapBase,
-              priceChangeBps: metric.priceChangeBps,
+              priceChangeBps,
+              priceChangeSource: demoMarketChangesEnabled ? "demo" : "indexed",
               liquidityBase: metric.liquidityBase,
               totalVolumeBase: metric.totalVolumeBase,
               holderCount: metric.holderCount,

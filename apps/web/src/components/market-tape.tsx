@@ -32,6 +32,12 @@ export async function MarketTape() {
                 {market.metrics!.baseSymbol}
               </span>
               <small
+                title={
+                  market.metrics!.priceChangeSource === "demo"
+                    ? "Demo market movement"
+                    : "Indexed market movement"
+                }
+                aria-label={`${market.metrics!.priceChangeSource === "demo" ? "Demo" : "Indexed"} market change ${(market.metrics!.priceChangeBps / 100).toFixed(2)} percent`}
                 className={
                   market.metrics!.priceChangeBps > 0
                     ? "market-change positive"
