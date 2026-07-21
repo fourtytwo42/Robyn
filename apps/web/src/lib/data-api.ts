@@ -42,6 +42,54 @@ export type LaunchActivity = {
   indexedAt: string | null;
 };
 
+export type LaunchAnalytics = {
+  data: {
+    formula: string;
+    marketType: string;
+    baseSymbol: string;
+    feeBps: number;
+    priceBasePerToken: string;
+    priceChangeBps: number;
+    marketCapBase: string;
+    liquidityBase: string;
+    totalVolumeBase: string;
+    buyVolumeBase: string;
+    sellVolumeBase: string;
+    totalFeesBase: string;
+    tradeCount: number;
+    uniqueTraderCount: number;
+    holderCount: number;
+    totalSupply: string;
+    circulatingSupply: string;
+    tokenReserve: string;
+    baseReserve: string;
+    topHolders: Array<{
+      address: string;
+      balance: string;
+      shareBps: string;
+      label: string;
+    }>;
+    recentTrades: Array<{
+      side: "buy" | "sell";
+      trader: string;
+      baseAmount: string;
+      tokenAmount: string;
+      feeAmount: string;
+      blockNumber: string;
+      timestamp: string | null;
+      transactionHash: string;
+    }>;
+    chart: Array<{
+      blockNumber: string;
+      timestamp: string | null;
+      price: string;
+      cumulativeVolume: string;
+    }>;
+  };
+  asOfBlock: string | null;
+  indexedAt: string | null;
+};
+
 function apiUrl(path: string) {
   const base = process.env.DATA_API_URL ?? "http://127.0.0.1:3100";
   return new URL(path, base);
@@ -78,5 +126,11 @@ export function getLaunch(token: string): Promise<LaunchDetail> {
 export function getLaunchActivity(token: string): Promise<LaunchActivity> {
   return getJson<LaunchActivity>(
     apiUrl("/launches/" + encodeURIComponent(token) + "/activity?limit=50"),
+  );
+}
+
+export function getLaunchAnalytics(token: string): Promise<LaunchAnalytics> {
+  return getJson<LaunchAnalytics>(
+    apiUrl("/launches/" + encodeURIComponent(token) + "/analytics"),
   );
 }

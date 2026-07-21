@@ -1,6 +1,12 @@
 import Fastify from "fastify";
 import { createDatabase } from "@robyn/db";
+import { createPublicClient, http, type Address } from "viem";
 import { parseDiscoveryQuery, type DiscoveryQuery } from "./discovery-query.js";
+import {
+  collectTokenAccounts,
+  deriveLaunchAnalytics,
+  type AnalyticsLog,
+} from "./launch-analytics.js";
 
 const app = Fastify({
   logger: { level: process.env.LOG_LEVEL ?? "info" },
@@ -11,6 +17,50 @@ const chainId = Number(process.env.CHAIN_ID ?? "31337");
 const queueName = process.env.ROBYN_QUEUE_NAME ?? "robyn-conversions";
 const port = Number(process.env.PORT ?? "3100");
 const host = process.env.HOST ?? "0.0.0.0";
+const rpcClient = createPublicClient({
+  transport: http(
+    process.env.ROBYN_OPERATOR_RPC_URL ?? "http://127.0.0.1:8545",
+  ),
+});
+const erc20ViewAbi = [
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "totalSupply",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+const marketViewAbi = [
+  {
+    type: "function",
+    name: "baseAsset",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "basePerToken",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "feeBps",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint16" }],
+  },
+] as const;
 
 app.addHook("onSend", async (_request, reply, payload) => {
   reply.header("cache-control", "no-store");
@@ -204,6 +254,108 @@ app.get<{ Params: { token: string }; Querystring: { limit?: string } }>(
       [chainId, [launch[0].token, launch[0].vault, launch[0].market], limit],
     );
     return { data: rows, ...(await freshness()) };
+  },
+);
+
+app.get<{ Params: { token: string } }>(
+  "/launches/:token/analytics",
+  async (request, reply) => {
+    if (!/^0x[0-9a-fA-F]{40}$/.test(request.params.token))
+      return reply.code(400).send({ error: "invalid_token" });
+    const launches = await sql.unsafe<
+      {
+        token: string;
+        market: string;
+        creator: string;
+        created_block: string;
+      }[]
+    >(
+      "SELECT token,market,creator,created_block::text FROM launches WHERE chain_id=$1 AND token=$2",
+      [chainId, request.params.token.toLowerCase()],
+    );
+    const launch = launches[0];
+    if (!launch) return reply.code(404).send({ error: "launch_not_found" });
+    const logs = await sql.unsafe<AnalyticsLog[]>(
+      "SELECT l.block_number::text,l.transaction_hash,l.log_index,l.address,l.topics,l.data,b.timestamp::text FROM raw_logs l LEFT JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number WHERE l.chain_id=$1 AND l.address=ANY($2::text[]) ORDER BY l.block_number,l.transaction_index,l.log_index LIMIT 10001",
+      [chainId, [launch.token, launch.market]],
+    );
+    if (logs.length > 10_000) {
+      return reply.code(503).send({ error: "analytics_projection_required" });
+    }
+    const created = await sql.unsafe<{ timestamp: string }[]>(
+      "SELECT timestamp::text FROM chain_blocks WHERE chain_id=$1 AND number=$2",
+      [chainId, launch.created_block],
+    );
+    const tokenAddress = launch.token as Address;
+    const marketAddress = launch.market as Address;
+    const [baseAsset, basePerToken, feeBps, totalSupply] = await Promise.all([
+      rpcClient.readContract({
+        address: marketAddress,
+        abi: marketViewAbi,
+        functionName: "baseAsset",
+      }),
+      rpcClient.readContract({
+        address: marketAddress,
+        abi: marketViewAbi,
+        functionName: "basePerToken",
+      }),
+      rpcClient.readContract({
+        address: marketAddress,
+        abi: marketViewAbi,
+        functionName: "feeBps",
+      }),
+      rpcClient.readContract({
+        address: tokenAddress,
+        abi: erc20ViewAbi,
+        functionName: "totalSupply",
+      }),
+    ]);
+    const accounts = collectTokenAccounts(logs, tokenAddress);
+    accounts.add(launch.creator.toLowerCase());
+    accounts.add(launch.market.toLowerCase());
+    const accountList = [...accounts] as Address[];
+    const [balanceValues, baseReserve] = await Promise.all([
+      Promise.all(
+        accountList.map((address) =>
+          rpcClient.readContract({
+            address: tokenAddress,
+            abi: erc20ViewAbi,
+            functionName: "balanceOf",
+            args: [address],
+          }),
+        ),
+      ),
+      rpcClient.readContract({
+        address: baseAsset,
+        abi: erc20ViewAbi,
+        functionName: "balanceOf",
+        args: [marketAddress],
+      }),
+    ]);
+    const balances = new Map(
+      accountList.map((address, index) => [
+        address.toLowerCase(),
+        balanceValues[index] ?? 0n,
+      ]),
+    );
+    const analytics = deriveLaunchAnalytics({
+      launch: launch as {
+        token: `0x${string}`;
+        market: `0x${string}`;
+        creator: `0x${string}`;
+      },
+      logs,
+      createdTimestamp: created[0]?.timestamp ?? null,
+      basePerToken,
+      feeBps,
+      snapshot: {
+        totalSupply,
+        tokenReserve: balances.get(launch.market.toLowerCase()) ?? 0n,
+        baseReserve,
+        balances,
+      },
+    });
+    return { data: analytics, ...(await freshness()) };
   },
 );
 

@@ -1,11 +1,36 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { formatEther, type Address } from "viem";
+import { NetworkTokenTradePanel } from "@robyn/network-token-trade";
+import deployment from "@robyn/deployment";
 import { LaunchRewardState } from "@/components/launch-reward-state";
+import { TokenMarketChart } from "@/components/token-market-chart";
 import { SiteHeader } from "@/components/site-header";
-import { getLaunch, getLaunchActivity } from "@/lib/data-api";
+import {
+  getLaunch,
+  getLaunchActivity,
+  getLaunchAnalytics,
+} from "@/lib/data-api";
 import { TokenArt } from "@/components/launchpad-visuals";
+import type { Deployment } from "@/lib/deployment";
 
 export const dynamic = "force-dynamic";
+
+function short(address: string) {
+  return address.slice(0, 7) + "…" + address.slice(-5);
+}
+
+function quantity(value: string, maximumFractionDigits = 2) {
+  return Number(formatEther(BigInt(value))).toLocaleString(undefined, {
+    notation:
+      Number(formatEther(BigInt(value))) >= 100_000 ? "compact" : "standard",
+    maximumFractionDigits,
+  });
+}
+
+function metric(value: string, symbol = "mUSD") {
+  return `${quantity(value, 4)} ${symbol}`;
+}
 
 function AddressRow({ label, value }: { label: string; value: string }) {
   return (
@@ -28,124 +53,286 @@ export default async function LaunchDetail({
   if (!/^0x[0-9a-fA-F]{40}$/.test(token)) notFound();
   let detail;
   let activity;
+  let analytics;
   try {
-    [detail, activity] = await Promise.all([
+    [detail, activity, analytics] = await Promise.all([
       getLaunch(token),
       getLaunchActivity(token),
+      getLaunchAnalytics(token),
     ]);
   } catch {
     notFound();
   }
   const launch = detail.data;
+  const market = analytics.data;
 
   return (
     <main id="main">
       <div className="ambient ambient-right" aria-hidden="true" />
       <SiteHeader />
-      <section className="page-shell">
-        <header className="detail-hero">
+      <section className="page-shell token-page-shell">
+        <nav className="token-breadcrumb" aria-label="Breadcrumb">
+          <Link href="/discover">Discover</Link>
+          <span>/</span>
+          <span>${launch.symbol}</span>
+        </nav>
+
+        <header className="detail-hero token-detail-hero">
           <TokenArt
             symbol={launch.symbol}
             className="detail-token-art"
             priority
           />
-          <div>
-            <p className="eyebrow">Canonical launch #{launch.launch_id}</p>
+          <div className="token-identity-copy">
+            <div className="token-title-line">
+              <p className="eyebrow">Canonical launch #{launch.launch_id}</p>
+              <span className="live-chip">Live market</span>
+            </div>
             <h1>
-              {launch.name} <span>{launch.symbol}</span>
+              {launch.name} <span>${launch.symbol}</span>
             </h1>
-            <code className="full-address">{launch.token}</code>
+            <div className="identity-links">
+              <code>{short(launch.token)}</code>
+              <span>Created by {short(launch.creator)}</span>
+              <span>Block {launch.created_block}</span>
+            </div>
           </div>
           <span className="risk-badge">
-            Experimental ·{" "}
-            {isTestnet
-              ? "Robinhood testnet mocks"
-              : "controlled development network"}
+            Experimental · {isTestnet ? "testnet mocks" : "controlled devnet"}
           </span>
         </header>
 
-        <div className="detail-grid">
-          <section className="detail-card" aria-labelledby="market-heading">
-            <p className="card-label">Market</p>
-            <h2 id="market-heading">Fixed-price development market</h2>
-            <p>
-              Trading and reward claiming are operationally separate. The live
-              console revalidates chain {isTestnet ? "46630" : "31337"} and
-              transaction targets before submitting.
-            </p>
-            <dl className="address-list">
-              <AddressRow label="Market" value={launch.market} />
-              <AddressRow label="Creator" value={launch.creator} />
-              <AddressRow label="Token" value={launch.token} />
-            </dl>
-            <div className="action-row">
-              <Link
-                className="button primary"
-                href={isTestnet ? "/#testnet-console" : "/#devnet-console"}
-              >
-                Open live trading console
-              </Link>
-              <Link className="button" href="/portfolio">
-                View portfolio
-              </Link>
-            </div>
-          </section>
+        <section
+          className="token-metric-grid"
+          aria-label="Token market metrics"
+        >
+          {[
+            ["Market cap", metric(market.marketCapBase)],
+            ["Liquidity", metric(market.liquidityBase)],
+            ["Total volume", metric(market.totalVolumeBase)],
+            ["Holder fees", metric(market.totalFeesBase)],
+            ["Holders", market.holderCount.toLocaleString()],
+            ["Trades", market.tradeCount.toLocaleString()],
+          ].map(([label, value]) => (
+            <article key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </article>
+          ))}
+        </section>
 
+        <div className="token-market-layout">
+          <TokenMarketChart analytics={market} symbol={launch.symbol} />
+          <NetworkTokenTradePanel
+            deployment={deployment as Deployment}
+            token={launch.token as Address}
+            market={launch.market as Address}
+            symbol={launch.symbol}
+            feeBps={market.feeBps}
+            basePerToken={market.priceBasePerToken}
+          />
+        </div>
+
+        <div className="token-reward-layout">
           <section
             className="detail-card basket-detail"
             aria-labelledby="basket-heading"
           >
-            <p className="card-label">Immutable reward basket</p>
-            <h2 id="basket-heading">What holders earn</h2>
+            <div className="section-heading compact-heading">
+              <div>
+                <p className="card-label">Immutable reward basket</p>
+                <h2 id="basket-heading">What ${launch.symbol} holders earn</h2>
+              </div>
+              <span className="live-chip">{launch.assets.length} assets</span>
+            </div>
             <LaunchRewardState
               vault={launch.vault}
               indexedBlock={detail.asOfBlock}
               detailed
             />
           </section>
+
+          <section
+            className="detail-card reward-economy-card"
+            aria-labelledby="reward-economy-heading"
+          >
+            <p className="card-label">Reward economy</p>
+            <h2 id="reward-economy-heading">Fees become holder assets</h2>
+            <dl className="economy-metrics">
+              <div>
+                <dt>Total fees generated</dt>
+                <dd>{metric(market.totalFeesBase)}</dd>
+              </div>
+              <div>
+                <dt>Buy volume</dt>
+                <dd>{metric(market.buyVolumeBase)}</dd>
+              </div>
+              <div>
+                <dt>Sell volume</dt>
+                <dd>{metric(market.sellVolumeBase)}</dd>
+              </div>
+              <div>
+                <dt>Unique traders</dt>
+                <dd>{market.uniqueTraderCount}</dd>
+              </div>
+              <div>
+                <dt>Circulating supply</dt>
+                <dd>
+                  {quantity(market.circulatingSupply)} {launch.symbol}
+                </dd>
+              </div>
+              <div>
+                <dt>Market inventory</dt>
+                <dd>
+                  {quantity(market.tokenReserve)} {launch.symbol}
+                </dd>
+              </div>
+            </dl>
+            <p className="metric-source">
+              Derived from canonical indexed events and current onchain balances
+              through block {analytics.asOfBlock ?? "unavailable"}.
+            </p>
+          </section>
         </div>
 
-        <section
-          className="verification-card"
-          aria-labelledby="verification-heading"
-        >
-          <div>
-            <p className="card-label">Verify independently</p>
-            <h2 id="verification-heading">Contracts and indexed provenance</h2>
-          </div>
-          <dl className="address-list verification-list">
-            <AddressRow label="Launch token" value={launch.token} />
-            <AddressRow label="Reward vault" value={launch.vault} />
-            <AddressRow label="Market" value={launch.market} />
-            <AddressRow label="Creator wallet" value={launch.creator} />
-            <AddressRow
-              label="Formula version"
-              value={launch.formula_version}
-            />
-            <AddressRow label="Created block" value={launch.created_block} />
-            <AddressRow
-              label="Indexed through"
-              value={detail.asOfBlock ?? "unavailable"}
-            />
-          </dl>
-        </section>
-
-        <section className="activity-card" aria-labelledby="activity-heading">
-          <div className="section-heading">
-            <div>
-              <p className="card-label">Protocol activity</p>
-              <h2 id="activity-heading">Canonical logs</h2>
+        <div className="token-data-grid">
+          <section
+            className="market-table-card"
+            aria-labelledby="holders-heading"
+          >
+            <div className="section-heading compact-heading">
+              <div>
+                <p className="card-label">Ownership</p>
+                <h2 id="holders-heading">Top holders</h2>
+              </div>
+              <span className="live-chip">
+                {market.holderCount} holder{" "}
+                {market.holderCount === 1 ? "wallet" : "wallets"}
+              </span>
             </div>
-            <span className="live-chip">
-              {Math.min(activity.data.length, 20)} shown
-              {activity.data.length > 20
-                ? " of " + activity.data.length + " recent events"
-                : " recent events"}
+            <div className="token-table-wrap">
+              <table className="token-data-table">
+                <thead>
+                  <tr>
+                    <th>Holder</th>
+                    <th>Balance</th>
+                    <th>Supply</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {market.topHolders.map((holder, index) => (
+                    <tr key={holder.address}>
+                      <td>
+                        <span className="holder-rank">{index + 1}</span>
+                        <code>{short(holder.address)}</code>
+                        <small>{holder.label}</small>
+                      </td>
+                      <td>
+                        {quantity(holder.balance)} {launch.symbol}
+                      </td>
+                      <td>{(Number(holder.shareBps) / 100).toFixed(2)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section
+            className="market-table-card"
+            aria-labelledby="trades-heading"
+          >
+            <div className="section-heading compact-heading">
+              <div>
+                <p className="card-label">Market tape</p>
+                <h2 id="trades-heading">Recent trades</h2>
+              </div>
+              <span className="live-chip">Canonical</span>
+            </div>
+            {market.recentTrades.length === 0 ? (
+              <p className="empty-state">
+                No indexed trades yet. Be the first participant.
+              </p>
+            ) : (
+              <div className="token-table-wrap">
+                <table className="token-data-table trade-table">
+                  <thead>
+                    <tr>
+                      <th>Side</th>
+                      <th>Trader</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {market.recentTrades.slice(0, 10).map((trade) => (
+                      <tr key={trade.transactionHash + trade.blockNumber}>
+                        <td>
+                          <span className={`trade-side ${trade.side}`}>
+                            {trade.side}
+                          </span>
+                        </td>
+                        <td>
+                          <code>{short(trade.trader)}</code>
+                          <small>Block {trade.blockNumber}</small>
+                        </td>
+                        <td>
+                          {metric(trade.baseAmount)}
+                          <small>
+                            {quantity(trade.tokenAmount)} {launch.symbol}
+                          </small>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <details className="advanced-token-details">
+          <summary>
+            <span>
+              <b>Contracts, provenance and raw activity</b>
+              <small>Advanced verification for this launch</small>
             </span>
-          </div>
-          {activity.data.length === 0 ? (
-            <p className="empty-state">No indexed activity is available.</p>
-          ) : (
+            <span>Open details</span>
+          </summary>
+          <section
+            className="verification-card"
+            aria-labelledby="verification-heading"
+          >
+            <div>
+              <p className="card-label">Verify independently</p>
+              <h2 id="verification-heading">Canonical contracts</h2>
+            </div>
+            <dl className="address-list verification-list">
+              <AddressRow label="Launch token" value={launch.token} />
+              <AddressRow label="Reward vault" value={launch.vault} />
+              <AddressRow label="Market" value={launch.market} />
+              <AddressRow label="Creator wallet" value={launch.creator} />
+              <AddressRow
+                label="Formula version"
+                value={launch.formula_version}
+              />
+              <AddressRow label="Analytics formula" value={market.formula} />
+              <AddressRow label="Created block" value={launch.created_block} />
+              <AddressRow
+                label="Indexed through"
+                value={detail.asOfBlock ?? "unavailable"}
+              />
+            </dl>
+          </section>
+          <section className="activity-card" aria-labelledby="activity-heading">
+            <div className="section-heading">
+              <div>
+                <p className="card-label">Protocol activity</p>
+                <h2 id="activity-heading">Canonical logs</h2>
+              </div>
+              <span className="live-chip">
+                {Math.min(activity.data.length, 20)} shown
+              </span>
+            </div>
             <ol className="activity-list">
               {activity.data.slice(0, 20).map((event) => (
                 <li key={event.transaction_hash + ":" + event.log_index}>
@@ -158,13 +345,13 @@ export default async function LaunchDetail({
                 </li>
               ))}
             </ol>
-          )}
-        </section>
+          </section>
+        </details>
 
         <section className="notice" aria-label="Reward disclosure">
-          This launch token is not redeemable for the basket. Rewards shown are
-          funded only by mock market fees, and all displayed assets have no
-          real-world value.
+          This launch token is not redeemable for the basket. Market values and
+          rewards shown here come from mock assets and canonical activity on a
+          development network; they have no real-world value.
         </section>
       </section>
     </main>

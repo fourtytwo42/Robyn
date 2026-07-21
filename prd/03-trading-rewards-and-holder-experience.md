@@ -29,6 +29,15 @@ Make trading and rewards legible enough that a user can answer four questions be
 - Route and transaction target details behind an expandable inspection panel.
 - Balance and allowance state.
 
+### Market intelligence and ownership
+
+- The token page uses the launchpad-standard three-column priority: token identity and metrics, a dominant chart, and a persistent buy/sell panel on wide screens.
+- Market cap, liquidity, volume, trade count, holder count and fees must name their source and must not be synthesized when canonical data is unavailable.
+- The controlled fixed-price market charts its real fixed price and cumulative canonical volume; the UI explicitly explains why the price line is flat.
+- Top-holder balances are reconstructed from complete canonical `Transfer` history. Liquidity inventory is labeled separately from ordinary holder wallets.
+- Recent trades show side, trader, token quantity, base value, block and transaction provenance from decoded market events.
+- Holder/recent-trade tables, reward state and raw verification remain useful without connecting a wallet. Connection authorizes trading rather than unlocking public market information.
+
 ### Reward basket
 
 For each immutable leg:
@@ -137,4 +146,3 @@ No notification may state a guaranteed reward value or create urgency to trade.
 - Charts need text summaries.
 - Fee and reward explanations use dollar examples and exact percentages.
 - The confirmation test asks users to identify whether the token is redeemable. It must not become a dark-pattern quiz that obscures launch.
-

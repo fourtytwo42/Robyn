@@ -21,3 +21,16 @@ declare module "@robyn/network-launchpad" {
 declare module "@robyn/network-portfolio" {
   export function NetworkPortfolioView(): JSX.Element;
 }
+
+declare module "@robyn/network-token-trade" {
+  import type { Address } from "viem";
+  import type { Deployment } from "@/lib/deployment";
+  export function NetworkTokenTradePanel(props: {
+    deployment: Deployment;
+    token: Address;
+    market: Address;
+    symbol: string;
+    feeBps: number;
+    basePerToken: string;
+  }): JSX.Element;
+}
