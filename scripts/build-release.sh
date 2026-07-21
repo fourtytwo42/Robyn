@@ -124,8 +124,16 @@ cp "${testnet_stack_json}" "${staging}/release-evidence/testnet-stack.json"
 
 chmod -R a-w "${staging}"
 "${staging}/scripts/verify-release-immutability.sh" "${staging}"
+chmod u+w "${staging}"
 mv "${staging}" "${target}"
 staging=""
+chmod a-w "${target}"
+if ! "${target}/scripts/verify-release-immutability.sh" "${target}"; then
+  chmod -R u+w "${target}" 2>/dev/null || true
+  rm -rf -- "${target}"
+  echo "final release immutability validation failed" >&2
+  exit 1
+fi
 
 printf 'release=%s\n' "${target}"
 printf 'gitSha=%s\n' "${git_sha}"
