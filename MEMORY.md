@@ -6,14 +6,14 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
 - Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; no unresolved critical/high defect remains; exact release evidence is pushed; and the final exact candidate completes an uninterrupted 24-hour soak.
-- Current task: implement the approved integrated UX, market-intelligence and creator-identity release as one promotion, including responsive repair, indexed time windows, discovery/chart/trading upgrades, guided creation, wallet-owned profiles and sanitized token art.
+- Current task: close the approved integrated UX, market-intelligence and creator-identity release after the user explicitly waived the uninterrupted 24-hour soak.
 - Last meaningful change: signed final-candidate acceptance atomically graduated ROBYN, so commit `a586789f2e852f94008fc087d8a8e0308e94a668` updates the canonical deployment manifest from bonding/6330 bps to the permanent graduated/10000 bps state. The exact deployment verifier passes after subsequent graduated-pool trading.
 - Last verification: 2026-07-22 exact release `a586789f2e852f94008fc087d8a8e0308e94a668` passed all twelve gates, immutable packaging, health-gated promotion and cold reboot. Fresh in-app-browser acceptance passed responsive, discovery with two graduated markets, chart, watchlist, mobile sheet, creator profile/upload/review, signed graduated-pool buy/conversion/claim/live-quote sell, and quarantine fallback/restore with zero warning/error logs. Eight receipts were independently matched to the live chain. A fresh encrypted off-VM backup and isolated restore passed for all 14 tables and eight artifacts.
-- Next step: commit and push the pre-soak evidence branch, create the annotated exact-release tag, install/start the fail-closed uninterrupted 24-hour soak, and perform only read-only independent auditing until it completes.
+- Next step: preserve the truthful aborted-soak evidence and explicit user waiver, push the evidence branch, run the 130-check final verifier without incomplete overrides, and complete the requirement-level audit.
 - External gates: public testnet ETH and explicit broadcast authorization are needed for an actual Robinhood Testnet transaction; human alert delivery and independent contract review are required before real-value operation.
 
 ## Current State
-- Last verified 2026-07-22: final candidate `a586789f2e852f94008fc087d8a8e0308e94a668` is the current immutable release after cold reboot. Recovery audit, complete in-app-browser acceptance, eight live-chain wallet receipts, post-journey deployment verification, media quarantine/restore, encrypted off-VM backup and isolated restore all pass. Only the uninterrupted 24-hour soak and final no-override verifier/requirement audit remain.
+- Last verified 2026-07-22: final candidate `a586789f2e852f94008fc087d8a8e0308e94a668` is the current immutable release after cold reboot. Recovery audit, complete in-app-browser acceptance, eight live-chain wallet receipts, post-journey deployment verification, media quarantine/restore, encrypted off-VM backup and isolated restore all pass. The user explicitly waived the uninterrupted 24-hour soak. Its stopped producer truthfully records 20 healthy samples over 288.503 seconds with `aborted: true`, `completedDuration: false`, and `passed: false`; final verifier and requirement-audit closure remain.
 - Last verified 2026-07-22: the signed exact-release browser journey bought through the bonding curve, waited for the keeper to convert all three weighted reward legs and claimed mNVDA, mSPY and mETH. The homepage `Sell 100k` control then exposed its stale `parseEther("99")` minimum. It now derives a 99% minimum from the market's live `quoteSell` result and uses truthful dynamic confirmation copy; validation and a replacement exact release remain required.
 - Last verified 2026-07-22: full-page in-app-browser inspection at 390x844 caught a visual token-hero clipping defect that document-overflow and nonzero-title-width assertions missed. The final mobile override now changes `.token-detail-hero` from a 76px/two-column grid to one column, gives identity copy full width and uses a 96px square artwork. Validation, replacement exact release and the entire closure sequence remain required.
 - Last verified 2026-07-22: post-reboot in-app-browser acceptance of exact `3f2efbdfbb3e2634b13b69da89e5fc91e918629c` passed responsive, discovery, chart, watchlist and mobile trade-sheet checks, then found the standalone `/create` wallet button only emitted an event whose listener existed on the homepage. `LaunchpadConsole` now owns session-key creation and controlled faucet funding directly; web formatting, lint, typecheck, nine tests and optimized build pass. A replacement exact release and full closure rerun are required.
@@ -545,6 +545,15 @@ When sources conflict, use this order:
 - Context: the user explicitly requested uppercase names for both files.
 - Result: Windows case-safe rename completed and uppercase files were verified by readback.
 
+### 2026-07-22 - Final Release Soak Waived
+
+- Context: The exact immutable release entered its required 24-hour soak after all implementation, reboot, browser, receipt, backup, and restore gates passed.
+- Decision: The user explicitly instructed Codex to skip the soak. Treat this as a release-policy waiver, never as a successful soak.
+- Files: `artifacts/browser-uat/2026-07-22-a586789/soak-waived-*`, `manifest.json`, `closure-requirements.json`, `docs/ux-market-identity-release-audit.md`.
+- Commands/tests: Stopped `robyn-soak.service`; independently preserved and audited 20 exact-release samples over 288.503 seconds; final verifier must run without `--allow-incomplete`.
+- Result: Partial producer evidence has zero errors, alerts, or restarts but truthfully records `aborted: true`, `completedDuration: false`, and `passed: false`.
+- Follow-up: Complete verifier/publication closure. A full soak remains recommended before public-testnet or real-value operation.
+
 ## Known Issues
 
 - Robinhood Chain launched on 2026-07-01, so launchpads, asset lists, fees, contracts, and liquidity are highly volatile and must be reverified before implementation.
@@ -617,7 +626,7 @@ When sources conflict, use this order:
 
 - Before Robinhood Testnet, implement and independently review a production graduation adapter that binds a verified Uniswap/Doppler deployment, exact pool initialization parameters, immutable fee ownership and an immutable LP locker. Do not represent the controlled-devnet no-withdrawal pool as production Uniswap liquidity.
 - Complete and independently verify the now-approved creator metadata subsystem: SIWE-style sessions, sanitized content-addressed images, immutable canonical creator binding, editable profiles, reporting, quarantine/restore and backup coverage. Until that checkpoint lands, the live release still uses curated demo mappings plus a generated fallback.
-- Run a real uninterrupted 24-hour soak against the final exact immutable release candidate; short harness tests and forced-build contention do not satisfy this gate.
+- The user explicitly waived the uninterrupted 24-hour soak for exact release `a586789f2e852f94008fc087d8a8e0308e94a668` on 2026-07-22. Preserve the partial producer record as not passed and do not describe the waiver as equivalent evidence. A full soak remains recommended before public-testnet or real-value operation.
 - Configure and test a human alert receiver before unattended public-testnet or real-value operation; local Prometheus/Grafana alert state alone is insufficient.
 - Obtain independent protocol/security review before real-value operation. Stateful invariants and malicious callbacks are now implemented, but the internal engineering review is not independent.
 - Ask Vladdy whether the team will provide a repository/license and whether a native multi-asset mode is planned; current deployed contracts do not expose a safe weighted-basket seam.

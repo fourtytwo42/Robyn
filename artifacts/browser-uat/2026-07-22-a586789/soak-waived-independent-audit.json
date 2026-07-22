@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-07-22T21:35:37.421Z",
+  "mode": "waived",
+  "passed": true,
+  "completionPending": false,
+  "soakPassed": false,
+  "waiver": {
+    "approved": true,
+    "authority": "user",
+    "approvedAt": "2026-07-22T21:32:24Z",
+    "approvalNote": "user_explicitly_instructed_Codex_to_skip_the_required_24-hour_soak"
+  },
+  "expectedSha": "a586789f2e852f94008fc087d8a8e0308e94a668",
+  "expectedRelease": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668",
+  "soakState": "inactive",
+  "sampleCount": 20,
+  "observedSeconds": 288.503,
+  "firstSampledAt": "2026-07-22T21:27:20.353Z",
+  "lastSampledAt": "2026-07-22T21:32:08.856Z",
+  "requestedDurationSeconds": 86400,
+  "producerElapsedSeconds": 304.82,
+  "allSamplesExactRelease": true,
+  "allProcessSetsComplete": true,
+  "allRestartCountsZero": true,
+  "allFiringAlertsZero": true,
+  "allIndexedStateMonotonic": true,
+  "checks": [
+    {
+      "name": "sample stream nonempty",
+      "passed": true,
+      "detail": "sampleCount=20"
+    },
+    {
+      "name": "producer sample count",
+      "passed": true,
+      "detail": "summary=20, observed=20"
+    },
+    {
+      "name": "producer recorded abort",
+      "passed": true,
+      "detail": "aborted=true"
+    },
+    {
+      "name": "producer did not claim duration",
+      "passed": true,
+      "detail": "completedDuration=false, passed=false"
+    },
+    {
+      "name": "producer error-free before waiver",
+      "passed": true,
+      "detail": "errorCount=0"
+    },
+    {
+      "name": "producer exact release",
+      "passed": true,
+      "detail": "gitSha=a586789f2e852f94008fc087d8a8e0308e94a668, releasePath=/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+    },
+    {
+      "name": "producer restarts zero",
+      "passed": true,
+      "detail": "baseline=0, final=0"
+    },
+    {
+      "name": "producer latency threshold",
+      "passed": true,
+      "detail": "p95WithinThreshold must be true"
+    },
+    {
+      "name": "all samples exact release",
+      "passed": true,
+      "detail": "every sample must bind to the exact immutable release"
+    },
+    {
+      "name": "all process sets complete",
+      "passed": true,
+      "detail": "every sample must contain the exact six-process set"
+    },
+    {
+      "name": "all restart counts zero",
+      "passed": true,
+      "detail": "every sampled PM2 restart count must be zero"
+    },
+    {
+      "name": "all firing alerts zero",
+      "passed": true,
+      "detail": "every sample must report zero firing alerts"
+    },
+    {
+      "name": "indexed state monotonic",
+      "passed": true,
+      "detail": "chain and indexed block heights must not regress"
+    }
+  ],
+  "digests": {
+    "samples": "66f15a4ce6389733a8012012c7c802e305c3c9e2764c0e9b12901f4f3ba782a5",
+    "summary": "de998e82b8d093f8feff9159c26de992781a62cdd6a7471bf6f73a763d76ec3e"
+  }
+}

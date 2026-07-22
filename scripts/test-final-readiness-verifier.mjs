@@ -138,6 +138,10 @@ try {
     for (const assertion of requirement.assertions ?? []) {
       setPath(payload, assertion.path, assertionValue(assertion, expectedSha));
     }
+    if (requirement.file === "manifest.json" && config.soakDisposition === "waived") {
+      payload.soak ??= {};
+      payload.soak.waiver = { approved: true, authority: "user" };
+    }
     writeJson(filename, payload);
   }
 

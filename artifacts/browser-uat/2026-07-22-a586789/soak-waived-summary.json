@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "releaseId": "a586789f2e852f94008fc087d8a8e0308e94a668",
+  "gitSha": "a586789f2e852f94008fc087d8a8e0308e94a668",
+  "releasePath": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668",
+  "startedAt": "2026-07-22T21:27:19.044Z",
+  "finishedAt": "2026-07-22T21:32:23.864Z",
+  "requestedDurationSeconds": 86400,
+  "elapsedSeconds": 304.82,
+  "intervalSeconds": 15,
+  "sampleCount": 20,
+  "errorCount": 0,
+  "errors": [],
+  "aborted": true,
+  "completedDuration": false,
+  "baselineRestarts": 0,
+  "finalRestarts": 0,
+  "rssGrowthBytes": 86769664,
+  "maximumObservedRss": 1280217088,
+  "maximumEndpointP95Ms": 500,
+  "p95WithinThreshold": true,
+  "initialProtocolVerification": "Verified devnet deployment at block 180",
+  "minimumObservedMemory": 6341349376,
+  "minimumObservedDisk": 38157066240,
+  "endpointP95Ms": {
+    "artifactHealth": 6.265466999999262,
+    "alerts": 3.725823999993736,
+    "webHealth": 4.511085999998613,
+    "rpcHealth": 6.13231900000028,
+    "apiHealth": 5.5265589999980875,
+    "rpcBlock": 5.00682500000039,
+    "status": 5.782203999999183,
+    "discovery": 96.19802999999956
+  },
+  "baseline": {
+    "sampledAt": "2026-07-22T21:27:20.353Z",
+    "releasePath": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668",
+    "gitSha": "a586789f2e852f94008fc087d8a8e0308e94a668",
+    "chainBlock": 180,
+    "status": {
+      "service": "robyn-api",
+      "chainId": 31337,
+      "asOfBlock": "180",
+      "indexedAt": "2026-07-22 21:27:19.078914+00",
+      "launchCount": "7",
+      "rawLogCount": "927",
+      "formulaVersion": "native-v1",
+      "keeperStatus": "ok",
+      "keeperUpdatedAt": "2026-07-22 21:27:19.736915+00",
+      "artifactStatus": "ok",
+      "artifactUpdatedAt": "2026-07-22 21:27:18.995902+00"
+    },
+    "firingAlerts": 0,
+    "availableMemoryBytes": 6456229888,
+    "availableDiskBytes": 38157475840,
+    "totalRssBytes": 1193447424,
+    "processes": [
+      {
+        "name": "robyn-web",
+        "restartCount": 0,
+        "rssBytes": 230633472,
+        "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668/apps/web"
+      },
+      {
+        "name": "robyn-rpc-gateway",
+        "restartCount": 0,
+        "rssBytes": 150614016,
+        "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+      },
+      {
+        "name": "robyn-api",
+        "restartCount": 0,
+        "rssBytes": 234041344,
+        "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+      },
+      {
+        "name": "robyn-indexer",
+        "restartCount": 0,
+        "rssBytes": 234999808,
+        "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+      },
+      {
+        "name": "robyn-keeper",
+        "restartCount": 0,
+        "rssBytes": 239316992,
+        "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+      },
+      {
+        "name": "robyn-artifacts",
+        "restartCount": 0,
+        "rssBytes": 103841792,
+        "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+      }
+    ],
+    "latenciesMs": {
+      "webHealth": 35.97905900000001,
+      "discovery": 105.73614799999996,
+      "apiHealth": 18.157090000000153,
+      "status": 20.846943999999894,
+      "rpcHealth": 17.374298999999837,
+      "rpcBlock": 17.433021000000053,
+      "artifactHealth": 12.802274000000125,
+      "alerts": 14.500477000000046
+    }
+  },
+  "finalSample": {
+    "sampledAt": "2026-07-22T21:32:08.856Z",
+    "releasePath": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668",
+    "gitSha": "a586789f2e852f94008fc087d8a8e0308e94a668",
+    "chainBlock": 180,
+    "status": {
+      "service": "robyn-api",
+      "chainId": 31337,
+      "asOfBlock": "180",
+      "indexedAt": "2026-07-22 21:32:06.122158+00",
+      "launchCount": "7",
+      "rawLogCount": "927",
+      "formulaVersion": "native-v1",
+      "keeperStatus": "ok",
+      "keeperUpdatedAt": "2026-07-22 21:32:07.487826+00",
+      "artifactStatus": "ok",
+      "artifactUpdatedAt": "2026-07-22 21:31:59.135966+00"
+    },
+    "firingAlerts": 0,
+    "availableMemoryBytes": 6369353728,
+    "availableDiskBytes": 38157066240,
+    "totalRssBytes": 1280217088,
+    "processes": [
+      {
+        "name": "robyn-web",
+        "restartCount": 0,
+        "rssBytes": 231419904,
+        "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668/apps/web"
+      },
+      {
+        "name": "robyn-rpc-gateway",
+        "restartCount": 0,
+        "rssBytes": 150614016,
+        "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+      },
+      {
+        "name": "robyn-api",
+        "restartCount": 0,
+        "rssBytes": 285814784,
+        "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+      },
+      {
+        "name": "robyn-indexer",
+        "restartCount": 0,
+        "rssBytes": 254660608,
+        "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+      },
+      {
+        "name": "robyn-keeper",
+        "restartCount": 0,
+        "rssBytes": 253210624,
+        "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+      },
+      {
+        "name": "robyn-artifacts",
+        "restartCount": 0,
+        "rssBytes": 104497152,
+        "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+      }
+    ],
+    "latenciesMs": {
+      "webHealth": 3.0753509999485686,
+      "discovery": 70.29877899994608,
+      "apiHealth": 4.230452999996487,
+      "status": 4.276339999982156,
+      "rpcHealth": 3.142809999990277,
+      "rpcBlock": 2.950053000007756,
+      "artifactHealth": 4.12769599998137,
+      "alerts": 2.4052140000276268
+    }
+  },
+  "passed": false
+}

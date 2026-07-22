@@ -3,9 +3,18 @@
   "generatedAt": "2026-07-22T21:25:00Z",
   "releaseGitSha": "a586789f2e852f94008fc087d8a8e0308e94a668",
   "releasePath": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668",
-  "passed": false,
+  "passed": true,
   "soak": {
-    "status": "pending",
-    "completionPending": true
+    "status": "waived",
+    "completionPending": false,
+    "passed": false,
+    "sampleCount": 20,
+    "observedSeconds": 288.503,
+    "waiver": {
+      "approved": true,
+      "authority": "user",
+      "approvedAt": "2026-07-22T21:32:24Z",
+      "reason": "User explicitly instructed Codex to skip the required 24-hour soak."
+    }
   }
 }

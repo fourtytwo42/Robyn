@@ -302,10 +302,17 @@ if (fs.existsSync(manifestPath)) {
     `manifest=${manifest.releaseGitSha}`,
   );
   check("manifest passed", manifest.passed === true, "manifest passed must be true");
+  const expectedSoakDisposition = config.soakDisposition ?? "passed";
+  const soakDispositionValid =
+    manifest.soak?.status === expectedSoakDisposition &&
+    manifest.soak?.completionPending === false &&
+    (expectedSoakDisposition !== "waived" ||
+      (manifest.soak?.waiver?.approved === true &&
+        manifest.soak?.waiver?.authority === "user"));
   check(
-    "manifest soak passed",
-    manifest.soak?.status === "passed" && manifest.soak?.completionPending === false,
-    `soak status=${manifest.soak?.status ?? "missing"}`,
+    "manifest soak disposition",
+    soakDispositionValid,
+    `expected=${expectedSoakDisposition}, actual=${manifest.soak?.status ?? "missing"}`,
   );
 }
 

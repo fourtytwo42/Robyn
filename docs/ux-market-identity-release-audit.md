@@ -2,7 +2,9 @@
 
 Last verified: 2026-07-22
 
-This audit maps the approved integrated release to implemented code and current controlled-devnet evidence. `PROVEN` means the requirement passed code-level and/or live browser verification. `RELEASE-GATE` means the evidence cannot be complete until the required uninterrupted soak finishes. External Robinhood Testnet broadcast and real-value review remain later gates.
+Status: Release accepted with user-approved soak waiver
+
+This audit maps the approved integrated release to implemented code and current controlled-devnet evidence. `PROVEN` means the requirement passed code-level and/or live browser verification. `WAIVED` means the user explicitly accepted the identified release risk without claiming that the omitted gate passed. External Robinhood Testnet broadcast and real-value review remain later gates.
 
 ## Responsive and navigation
 
@@ -67,7 +69,7 @@ This audit maps the approved integrated release to implemented code and current 
 | Backup/restore coverage | PROVEN | Backup dynamically dumps every public table and all MinIO objects; restore checks every table row count and every content hash, covering the new schema without a static allowlist. |
 | Immutable release gate includes creator data plane | PROVEN | New gate validates five tables, anonymous session, canonical profile/metadata, and active WebP bytes; its live run passed with 2 profiles, 11 media assets, 6 bindings, 2 reports, and 4 audit rows. |
 | Exact immutable release, reboot, post-reboot browser evidence, encrypted off-VM restore | PROVEN | Exact `a586789f2e852f94008fc087d8a8e0308e94a668` passed all 12 release gates and immutable packaging, cold-reboot recovery, full Codex in-app-browser regression against the stable graduated state, eight independently matched wallet receipts, post-journey deployment verification, media quarantine/restore, encrypted off-VM backup, and isolated restore of 14 tables plus eight artifacts. Evidence is under `artifacts/browser-uat/2026-07-22-a586789/`. |
-| Uninterrupted 24-hour soak | RELEASE-GATE | Must start only after exact-release promotion, reboot, browser regression, and off-VM restore evidence are complete. |
+| Uninterrupted 24-hour soak | WAIVED | The user explicitly instructed Codex to skip this gate on 2026-07-22. The stopped producer truthfully records `aborted: true`, `completedDuration: false`, and `passed: false`. All 20 preserved samples over 288.503 seconds bound to exact release `a586789f2e852f94008fc087d8a8e0308e94a668`, with zero errors, alerts, or restarts; this short observation is not represented as a 24-hour soak. |
 
 ## Current quality gates
 
@@ -75,4 +77,4 @@ This audit maps the approved integrated release to implemented code and current 
 - Foundry passes 29 unit/fuzz/adversarial tests and four invariants at 128 runs and 8,192 calls each.
 - Protected chain-46630 build excludes devnet wallet/faucet/session-key markers and retains injected-wallet markers; the controlled-devnet build was restored afterward.
 - The exact-release in-app-browser console has zero warning or error entries after the interactive acceptance run.
-- No unresolved critical or high implementation defect is known. The uninterrupted soak and post-soak no-override closure remain mandatory before goal completion.
+- No unresolved critical or high implementation defect is known. The 24-hour soak was explicitly waived by the user and remains recorded as not passed; the final no-override verifier must validate the waiver disposition and all other closure evidence before completion.
