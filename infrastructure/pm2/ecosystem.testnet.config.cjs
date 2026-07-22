@@ -14,6 +14,8 @@ const rpcUrl =
 const operatorKeyFile = required("ROBYN_OPERATOR_KEY_FILE");
 const nodeBinary = "/opt/node-v24.18.0-linux-x64/bin/node";
 const database = process.env.ROBYN_TESTNET_DATABASE || "robyn_testnet";
+const authOrigins =
+  process.env.ROBYN_TESTNET_AUTH_ORIGINS || "http://127.0.0.1:3012";
 
 module.exports = {
   apps: [
@@ -48,6 +50,11 @@ module.exports = {
         PORT: "3111",
         CHAIN_ID: "46630",
         ROBYN_QUEUE_NAME: "robyn-conversions-testnet",
+        ROBYN_AUTH_ORIGINS: authOrigins,
+        ROBYN_ARTIFACT_SERVICE_URL: "http://127.0.0.1:3210",
+        ROBYN_OPERATOR_RPC_URL: rpcUrl,
+        ROBYN_MANIFEST: manifest,
+        REDIS_URL: "redis://127.0.0.1:6379/1",
         PGHOST: "/var/run/postgresql",
         PGDATABASE: database,
         PGUSER: "hendo420",
