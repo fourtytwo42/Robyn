@@ -14,6 +14,7 @@ import {
 import { TokenArt } from "@/components/launchpad-visuals";
 import type { Deployment } from "@/lib/deployment";
 import { rewardAssetMetadata } from "@/lib/reward-assets";
+import { TokenActions } from "@/components/token-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -158,6 +159,14 @@ export default async function LaunchDetail({
             </span>
           </div>
         </header>
+
+        <TokenActions
+          chainId={deployment.chainId}
+          token={launch.token}
+          symbol={launch.symbol}
+          creator={launch.creator}
+          createdBlock={launch.created_block}
+        />
 
         <section
           className="token-metric-grid"
@@ -353,6 +362,7 @@ export default async function LaunchDetail({
           <section
             className="market-table-card"
             aria-labelledby="trades-heading"
+            id="recent-trades"
           >
             <div className="section-heading compact-heading">
               <div>

@@ -10,7 +10,7 @@ function units(value: string) {
 }
 
 function compact(value: number) {
-  return value.toLocaleString(undefined, {
+  return value.toLocaleString("en-US", {
     notation: Math.abs(value) >= 10_000 ? "compact" : "standard",
     maximumFractionDigits:
       Math.abs(value) < 0.01 ? 8 : Math.abs(value) < 1 ? 4 : 2,
@@ -19,11 +19,13 @@ function compact(value: number) {
 
 function timeLabel(timestamp: string | null, blockNumber: string) {
   if (!timestamp) return `Block ${blockNumber}`;
-  return new Date(timestamp).toLocaleString(undefined, {
+  return new Date(timestamp).toLocaleString("en-US", {
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: "UTC",
+    timeZoneName: "short",
   });
 }
 

@@ -2151,6 +2151,70 @@ main > .notice {
   color: var(--reward);
 }
 
+.token-actions {
+  position: relative;
+  margin: -0.25rem 0 0.85rem;
+}
+
+.token-actions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.token-actions button,
+.token-actions a,
+.creator-proof button {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(11, 17, 31, 0.72);
+  padding: 0.42rem 0.7rem;
+  color: var(--muted);
+  font:
+    700 0.66rem/1 "IBM Plex Mono",
+    ui-monospace,
+    monospace;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.token-actions button:hover,
+.token-actions button:focus-visible,
+.token-actions a:hover,
+.token-actions a:focus-visible,
+.token-actions button[aria-pressed="true"] {
+  border-color: rgba(53, 208, 186, 0.4);
+  color: var(--primary);
+}
+
+.creator-proof {
+  display: grid;
+  gap: 0.45rem;
+  max-width: 620px;
+  margin-top: 0.55rem;
+  border: 1px solid rgba(53, 208, 186, 0.24);
+  border-radius: 0.75rem;
+  background: rgba(7, 12, 24, 0.94);
+  padding: 0.75rem;
+}
+
+.creator-proof code {
+  overflow-wrap: anywhere;
+  color: var(--primary);
+  font-size: 0.68rem;
+}
+
+.creator-proof span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.creator-proof button {
+  justify-self: start;
+}
+
 .token-hero-quote .market-change {
   font:
     800 0.7rem/1.2 "IBM Plex Mono",
@@ -2361,6 +2425,16 @@ main > .notice {
 .token-trade-panel {
   position: sticky;
   top: 1rem;
+}
+
+.trade-panel-layer {
+  display: contents;
+}
+
+.trade-sheet-backdrop,
+.trade-sheet-heading,
+.mobile-trade-bar {
+  display: none;
 }
 
 .trade-tabs {
@@ -3176,6 +3250,156 @@ main > .notice {
 
 /* Keep responsive token rules after the launchpad layer's desktop overrides. */
 @media (max-width: 760px) {
+  .token-page-shell {
+    padding-bottom: 5.5rem;
+  }
+
+  .trade-panel-layer {
+    position: fixed;
+    z-index: 60;
+    inset: 0;
+    display: block;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .trade-panel-layer.open {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .trade-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    border: 0;
+    background: rgba(2, 5, 12, 0.72);
+    opacity: 0;
+    transition: opacity 160ms ease;
+  }
+
+  .trade-panel-layer.open .trade-sheet-backdrop {
+    opacity: 1;
+  }
+
+  .trade-panel-layer .token-trade-panel {
+    position: absolute;
+    inset: auto 0 0;
+    max-height: min(82vh, 700px);
+    overflow-y: auto;
+    border-radius: 1.15rem 1.15rem 0 0;
+    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+    transform: translateY(105%);
+    transition: transform 190ms ease;
+  }
+
+  .trade-panel-layer.open .token-trade-panel {
+    transform: translateY(0);
+  }
+
+  .trade-sheet-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .trade-sheet-heading strong {
+    font-size: 0.82rem;
+  }
+
+  .trade-sheet-close {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    padding: 0.4rem 0.65rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .trade-discard-confirm {
+    position: sticky;
+    z-index: 2;
+    bottom: 0;
+    display: grid;
+    gap: 0.55rem;
+    margin: 0.8rem -0.25rem -0.25rem;
+    border: 1px solid rgba(255, 143, 143, 0.35);
+    border-radius: 0.75rem;
+    background: #111521;
+    padding: 0.8rem;
+  }
+
+  .trade-discard-confirm p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.7rem;
+  }
+
+  .trade-discard-confirm div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .trade-discard-confirm button {
+    min-height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .trade-discard-confirm .trade-confirm-discard {
+    border-color: rgba(255, 143, 143, 0.4);
+    color: #ffadad;
+  }
+
+  .mobile-trade-bar {
+    position: fixed;
+    z-index: 50;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
+    border-top: 1px solid var(--line);
+    background: rgba(6, 10, 21, 0.96);
+    padding: 0.65rem max(1rem, env(safe-area-inset-left))
+      calc(0.65rem + env(safe-area-inset-bottom));
+    backdrop-filter: blur(16px);
+  }
+
+  .mobile-trade-bar button {
+    min-height: 48px;
+    border: 1px solid rgba(53, 208, 186, 0.4);
+    border-radius: 0.7rem;
+    background: var(--primary);
+    color: var(--on-brand);
+    font:
+      800 0.78rem/1 "IBM Plex Mono",
+      ui-monospace,
+      monospace;
+    cursor: pointer;
+  }
+
+  .mobile-trade-bar button.sell {
+    border-color: rgba(255, 143, 143, 0.38);
+    background: rgba(255, 143, 143, 0.12);
+    color: #ffadad;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .trade-sheet-backdrop,
+    .trade-panel-layer .token-trade-panel {
+      transition: none;
+    }
+  }
+
   .discovery-page {
     padding-top: 1.15rem;
   }

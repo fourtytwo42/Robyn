@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { Deployment } from "@/lib/deployment";
+import { ResponsiveTradePanel } from "@/components/responsive-trade-panel";
 
 const erc20Abi = [
   {
@@ -246,7 +247,15 @@ export function NetworkTokenTradePanel({
   }
 
   return (
-    <aside className="token-trade-panel" aria-labelledby="trade-panel-heading">
+    <ResponsiveTradePanel
+      symbol={symbol}
+      side={side}
+      onSideChange={(value) => {
+        setSide(value);
+        setInput(value === "buy" ? "100" : "10000");
+      }}
+      dirty={input !== (side === "buy" ? "100" : "10000")}
+    >
       <div className="trade-tabs" role="tablist" aria-label="Trade side">
         {(["buy", "sell"] as const).map((value) => (
           <button
@@ -332,6 +341,6 @@ export function NetworkTokenTradePanel({
       <p className="transaction-status" role="status">
         {status}
       </p>
-    </aside>
+    </ResponsiveTradePanel>
   );
 }

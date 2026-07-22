@@ -14,7 +14,7 @@ type TapeMarket = {
 
 function compactBase(value: string) {
   const amount = Number(formatEther(BigInt(value)));
-  return amount.toLocaleString(undefined, {
+  return amount.toLocaleString("en-US", {
     notation: "compact",
     maximumFractionDigits: 2,
   });
