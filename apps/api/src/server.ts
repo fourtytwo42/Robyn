@@ -302,6 +302,29 @@ async function discoveryMetrics(rows: LaunchRow[]) {
       const tokenLogs = byToken.get(key) ?? [];
       if (tokenLogs.length > 10_000) return;
       const config = await getMarketConfiguration(row.market as Address);
+      const activeLiquidityAddress =
+        config.marketPhase === "graduated" && config.graduatedPool
+          ? config.graduatedPool
+          : (row.market as Address);
+      const baseAssetAddress = await rpcClient.readContract({
+        address: row.market as Address,
+        abi: marketViewAbi,
+        functionName: "baseAsset",
+      });
+      const [tokenReserve, baseReserve] = await Promise.all([
+        rpcClient.readContract({
+          address: row.token as Address,
+          abi: erc20ViewAbi,
+          functionName: "balanceOf",
+          args: [activeLiquidityAddress],
+        }),
+        rpcClient.readContract({
+          address: baseAssetAddress,
+          abi: erc20ViewAbi,
+          functionName: "balanceOf",
+          args: [activeLiquidityAddress],
+        }),
+      ]);
       const input = {
         launch: {
           token: row.token as Address,
@@ -312,6 +335,7 @@ async function discoveryMetrics(rows: LaunchRow[]) {
         createdTimestamp: null,
         basePerToken: config.basePerToken,
         feeBps: config.feeBps,
+        reserveSnapshot: { tokenReserve, baseReserve },
       };
       let metric = deriveLaunchAnalytics({ ...input, lifecycle: config });
       if (metric.totalSupply === "0") {

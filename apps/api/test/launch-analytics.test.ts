@@ -146,4 +146,23 @@ describe("launch analytics", () => {
       new Set([creator.toLowerCase(), trader.toLowerCase()]),
     );
   });
+
+  it("uses canonical reserve snapshots when indexed history starts after seeding", () => {
+    const result = deriveLaunchAnalytics({
+      launch: { token, market, creator },
+      logs: [],
+      createdTimestamp: null,
+      basePerToken: parseEther("0.002"),
+      feeBps: 100,
+      initialSupply: parseEther("1000"),
+      reserveSnapshot: {
+        tokenReserve: parseEther("300"),
+        baseReserve: parseEther("400"),
+      },
+    });
+
+    expect(result.tokenReserve).toBe(parseEther("300").toString());
+    expect(result.baseReserve).toBe(parseEther("400").toString());
+    expect(result.liquidityBase).toBe(parseEther("400.6").toString());
+  });
 });

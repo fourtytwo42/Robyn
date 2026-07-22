@@ -79,6 +79,7 @@ export function deriveLaunchAnalytics({
   basePerToken,
   feeBps,
   initialSupply,
+  reserveSnapshot,
   snapshot,
   lifecycle,
 }: {
@@ -88,6 +89,10 @@ export function deriveLaunchAnalytics({
   basePerToken: bigint;
   feeBps: number;
   initialSupply?: bigint;
+  reserveSnapshot?: {
+    tokenReserve: bigint;
+    baseReserve: bigint;
+  };
   lifecycle?: {
     marketPhase: "legacy_fixed" | "bonding" | "graduated";
     graduationProgressBps: number;
@@ -230,6 +235,11 @@ export function deriveLaunchAnalytics({
     } catch {
       continue;
     }
+  }
+
+  if (reserveSnapshot) {
+    tokenReserve = reserveSnapshot.tokenReserve;
+    baseReserve = reserveSnapshot.baseReserve;
   }
 
   if (snapshot) {

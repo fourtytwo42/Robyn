@@ -41,6 +41,10 @@ redis-cli -n 0 FLUSHDB >/dev/null
 ROBYN_FORCE_DEPLOY=true "$repo_root/scripts/deploy-devnet-protocol.sh"
 "$repo_root/scripts/seed-devnet-demo.sh"
 corepack pnpm build
+# The deployment manifest is a compile-time web module and Turbo may have a
+# valid source cache from before the reset. Run Next directly to bind the new
+# contract generation into the served artifacts.
+corepack pnpm --filter @robyn/web build
 
 node "$pm2_bin" delete all >/dev/null 2>&1 || true
 ROBYN_RELEASE_ROOT="$repo_root" node "$pm2_bin" start "$repo_root/infrastructure/pm2/ecosystem.config.cjs" >/dev/null

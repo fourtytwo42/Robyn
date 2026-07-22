@@ -138,7 +138,7 @@ The verifier checks:
 
 Devnet-only contracts under packages/contracts/src/devnet must never appear in a Robinhood testnet manifest. Testnet release checks will reject the DEVNET_ONLY marker and controlled-chain identifiers.
 
-Last verified 2026-07-21: the current manifest records the self-service-market deployment created at block 74 from commit d31c68f. Its mock base token gives each address one 10,000 mUSD claim while reward-asset faucets remain disabled. Manifest bytecode, launch/market factory links, exclusion state, base-faucet policy and accounting verification pass against the live chain.
+Last verified 2026-07-21: the shared controlled devnet was reset to a fresh bonding-generation deployment whose manifest begins at block 19. It contains exactly five curated launches and 28 real seeded buy/sell transactions: ROBYN, SOAK, ONE and MYCO remain at distinct bonding progress levels, while EVID has graduated and includes post-graduation pool trades. Discovery, home and token-detail surfaces contain no legacy fixed-price launch. Manifest bytecode, launch/factory links, active-liquidity balances, exclusion state, base-faucet policy and accounting verification pass against the live chain.
 
 ## Remaining production-readiness work
 
