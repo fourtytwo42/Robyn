@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 type WatchItem = { chainId: number; token: string };
 const watchlistKey = "robyn-watchlist:v1";
@@ -29,12 +30,22 @@ export function TokenActions({
   symbol,
   creator,
   createdBlock,
+  creatorProfile,
 }: {
   chainId: number;
   token: string;
   symbol: string;
   creator: string;
   createdBlock: string;
+  creatorProfile?: {
+    displayName: string;
+    bio: string;
+    website: string | null;
+    xUrl: string | null;
+    telegramUrl: string | null;
+    discordUrl: string | null;
+    avatarMediaId: string | null;
+  };
 }) {
   const canonicalToken = token.toLowerCase();
   const [watched, setWatched] = useState(false);
@@ -116,6 +127,40 @@ export function TokenActions({
       </div>
       {proofOpen ? (
         <aside className="creator-proof" aria-label="Canonical creator proof">
+          {creatorProfile ? (
+            <div className="creator-profile-summary">
+              {creatorProfile.avatarMediaId ? (
+                <Image
+                  src={`/api/media/${creatorProfile.avatarMediaId}`}
+                  width={56}
+                  height={56}
+                  alt=""
+                  unoptimized
+                />
+              ) : null}
+              <span>
+                <b>{creatorProfile.displayName}</b>
+                <small>
+                  Wallet-owned profile · social links not externally verified
+                </small>
+              </span>
+              {creatorProfile.bio ? <p>{creatorProfile.bio}</p> : null}
+              <nav aria-label="Creator links">
+                {[
+                  ["Website", creatorProfile.website],
+                  ["X", creatorProfile.xUrl],
+                  ["Telegram", creatorProfile.telegramUrl],
+                  ["Discord", creatorProfile.discordUrl],
+                ].map(([label, url]) =>
+                  url ? (
+                    <a href={url} target="_blank" rel="noreferrer" key={label}>
+                      {label}
+                    </a>
+                  ) : null,
+                )}
+              </nav>
+            </div>
+          ) : null}
           <strong>Factory-recorded creator</strong>
           <code>{creator}</code>
           <span>

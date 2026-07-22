@@ -159,3 +159,102 @@ export const artifacts = pgTable(
   },
   (table) => [uniqueIndex("artifacts_object_key_uq").on(table.objectKey)],
 );
+
+export const mediaAssets = pgTable(
+  "media_assets",
+  {
+    mediaId: text("media_id").primaryKey(),
+    chainId: integer("chain_id").notNull(),
+    ownerAddress: text("owner_address").notNull(),
+    artifactSha256: text("artifact_sha256").notNull(),
+    purpose: text("purpose").notNull(),
+    status: text("status").notNull().default("active"),
+    width: integer("width").notNull().default(1024),
+    height: integer("height").notNull().default(1024),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("media_assets_owner_idx").on(
+      table.chainId,
+      table.ownerAddress,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const creatorProfiles = pgTable(
+  "creator_profiles",
+  {
+    chainId: integer("chain_id").notNull(),
+    address: text("address").notNull(),
+    displayName: text("display_name").notNull(),
+    bio: text("bio").notNull().default(""),
+    website: text("website"),
+    xUrl: text("x_url"),
+    telegramUrl: text("telegram_url"),
+    discordUrl: text("discord_url"),
+    avatarMediaId: text("avatar_media_id"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.chainId, table.address] })],
+);
+
+export const launchMetadataBindings = pgTable(
+  "launch_metadata_bindings",
+  {
+    chainId: integer("chain_id").notNull(),
+    token: text("token").notNull(),
+    creatorAddress: text("creator_address").notNull(),
+    mediaId: text("media_id").notNull(),
+    boundAt: timestamp("bound_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.chainId, table.token] }),
+    uniqueIndex("launch_metadata_media_uq").on(table.mediaId),
+  ],
+);
+
+export const mediaReports = pgTable(
+  "media_reports",
+  {
+    reportId: bigserial("report_id", { mode: "bigint" }).primaryKey(),
+    mediaId: text("media_id").notNull(),
+    reporterAddress: text("reporter_address"),
+    reason: text("reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("media_reports_media_idx").on(table.mediaId, table.createdAt),
+  ],
+);
+
+export const mediaModerationAudit = pgTable(
+  "media_moderation_audit",
+  {
+    auditId: bigserial("audit_id", { mode: "bigint" }).primaryKey(),
+    mediaId: text("media_id").notNull(),
+    operator: text("operator").notNull(),
+    action: text("action").notNull(),
+    reason: text("reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("moderation_audit_media_idx").on(table.mediaId, table.createdAt),
+  ],
+);

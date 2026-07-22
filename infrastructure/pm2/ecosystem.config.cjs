@@ -52,6 +52,10 @@ module.exports = {
         HOST: "127.0.0.1",
         PORT: "3101",
         CHAIN_ID: "31337",
+        REDIS_URL: "redis://127.0.0.1:6379",
+        ROBYN_AUTH_ORIGINS:
+          "http://192.168.50.250:3000,http://127.0.0.1:3002,http://localhost:3002",
+        ROBYN_ARTIFACT_SERVICE_URL: "http://127.0.0.1:3200",
         PGHOST: "/var/run/postgresql",
         PGDATABASE: "robyn",
         PGUSER: "hendo420",

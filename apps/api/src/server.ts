@@ -1,4 +1,6 @@
 import Fastify from "fastify";
+import cookie from "@fastify/cookie";
+import { Redis } from "ioredis";
 import { readFile } from "node:fs/promises";
 import { createDatabase } from "@robyn/db";
 import { createPublicClient, http, type Address } from "viem";
@@ -16,11 +18,18 @@ import {
   deriveLaunchAnalytics,
   type AnalyticsLog,
 } from "./launch-analytics.js";
+import { registerCreatorRoutes } from "./creator-routes.js";
 
 const app = Fastify({
   logger: { level: process.env.LOG_LEVEL ?? "info" },
-  bodyLimit: 64 * 1024,
+  bodyLimit: 2 * 1024 * 1024,
 });
+await app.register(cookie);
+app.addContentTypeParser(
+  ["image/jpeg", "image/png", "image/webp"],
+  { parseAs: "buffer", bodyLimit: 2 * 1024 * 1024 },
+  (_request, body, done) => done(null, body),
+);
 const { sql } = createDatabase();
 const chainId = Number(process.env.CHAIN_ID ?? "31337");
 const demoMarketChangesEnabled = isDemoMarketChangeEnabled(
@@ -30,6 +39,20 @@ const demoMarketChangesEnabled = isDemoMarketChangeEnabled(
 const queueName = process.env.ROBYN_QUEUE_NAME ?? "robyn-conversions";
 const port = Number(process.env.PORT ?? "3100");
 const host = process.env.HOST ?? "0.0.0.0";
+const redis = new Redis(process.env.REDIS_URL ?? "redis://127.0.0.1:6379", {
+  enableOfflineQueue: false,
+  maxRetriesPerRequest: 1,
+});
+const allowedOrigins = new Set(
+  (process.env.ROBYN_AUTH_ORIGINS ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean),
+);
+if (allowedOrigins.size === 0)
+  throw new Error("ROBYN_AUTH_ORIGINS is required");
+const artifactServiceUrl =
+  process.env.ROBYN_ARTIFACT_SERVICE_URL ?? "http://127.0.0.1:3200";
 const rpcClient = createPublicClient({
   transport: http(
     process.env.ROBYN_OPERATOR_RPC_URL ?? "http://127.0.0.1:8545",
@@ -181,6 +204,28 @@ async function hydrateMarkets<T extends { token: string; market: string }>(
       market: await resolveLaunchMarket(row.token, row.market),
     })),
   );
+}
+
+async function launchMetadataMap(tokens: string[]) {
+  if (tokens.length === 0) return new Map<string, Record<string, unknown>>();
+  const rows = await sql.unsafe<
+    Array<{
+      token: string;
+      media_id: string;
+      media_status: string;
+      display_name: string | null;
+      bio: string | null;
+      website: string | null;
+      x_url: string | null;
+      telegram_url: string | null;
+      discord_url: string | null;
+      avatar_media_id: string | null;
+    }>
+  >(
+    "SELECT b.token,b.media_id,m.status media_status,p.display_name,p.bio,p.website,p.x_url,p.telegram_url,p.discord_url,p.avatar_media_id FROM launch_metadata_bindings b JOIN media_assets m ON m.media_id=b.media_id LEFT JOIN creator_profiles p ON p.chain_id=b.chain_id AND p.address=b.creator_address WHERE b.chain_id=$1 AND b.token=ANY($2::text[])",
+    [chainId, tokens],
+  );
+  return new Map(rows.map((row) => [row.token.toLowerCase(), row]));
 }
 
 type MarketConfiguration = {
@@ -523,10 +568,13 @@ app.get<{
       .send({ error: "ranked_projection_capacity_exceeded" });
   }
   const rows = await hydrateMarkets(storedRows);
-  const marketMetrics = await discoveryMetrics(rows).catch((error) => {
-    request.log.warn({ error }, "discovery metrics unavailable");
-    return new Map<string, ReturnType<typeof deriveLaunchAnalytics>>();
-  });
+  const [marketMetrics, metadata] = await Promise.all([
+    discoveryMetrics(rows).catch((error) => {
+      request.log.warn({ error }, "discovery metrics unavailable");
+      return new Map<string, ReturnType<typeof deriveLaunchAnalytics>>();
+    }),
+    launchMetadataMap(rows.map((row) => row.token)),
+  ]);
   const data = rows.map((row) => {
     const metric = marketMetrics.get(row.token.toLowerCase());
     const priceChangeBps = demoMarketChangesEnabled
@@ -534,6 +582,7 @@ app.get<{
       : metric?.priceChangeBps;
     return {
       ...row,
+      metadata: metadata.get(row.token.toLowerCase()) ?? null,
       metrics: metric
         ? {
             marketCapBase: metric.marketCapBase,
@@ -658,7 +707,14 @@ app.get<{ Params: { token: string } }>(
     );
     const rows = await hydrateMarkets(storedRows);
     if (!rows[0]) return reply.code(404).send({ error: "launch_not_found" });
-    return { data: rows[0], ...(await freshness()) };
+    const metadata = await launchMetadataMap([rows[0].token]);
+    return {
+      data: {
+        ...rows[0],
+        metadata: metadata.get(rows[0].token.toLowerCase()) ?? null,
+      },
+      ...(await freshness()),
+    };
   },
 );
 
@@ -820,8 +876,18 @@ app.get("/assets", async () => {
   };
 });
 
+await registerCreatorRoutes(app, {
+  chainId,
+  sql,
+  redis,
+  rpcClient,
+  allowedOrigins,
+  artifactServiceUrl,
+});
+
 const close = async () => {
   await app.close();
+  redis.disconnect();
   await sql.end();
 };
 process.on("SIGTERM", () => void close());

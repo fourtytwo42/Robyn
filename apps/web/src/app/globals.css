@@ -2215,6 +2215,56 @@ main > .notice {
   justify-self: start;
 }
 
+.creator-profile-summary {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.7rem;
+}
+
+.creator-profile-summary img {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.creator-profile-summary span,
+.creator-profile-summary p,
+.creator-profile-summary nav {
+  min-width: 0;
+}
+
+.creator-profile-summary b,
+.creator-profile-summary small {
+  display: block;
+}
+
+.creator-profile-summary small {
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.6rem;
+}
+
+.creator-profile-summary p,
+.creator-profile-summary nav {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.creator-profile-summary nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.creator-profile-summary nav a {
+  min-height: 28px;
+  padding: 0.35rem 0.55rem;
+}
+
 .token-hero-quote .market-change {
   font:
     800 0.7rem/1.2 "IBM Plex Mono",

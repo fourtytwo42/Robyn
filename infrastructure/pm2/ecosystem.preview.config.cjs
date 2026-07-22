@@ -19,6 +19,10 @@ module.exports = {
         PGDATABASE: "robyn",
         PGUSER: "hendo420",
         ROBYN_DEMO_MARKET_CHANGES: "true",
+        REDIS_URL: "redis://127.0.0.1:6379",
+        ROBYN_AUTH_ORIGINS:
+          "https://fridge-bikini-arrangement-cottage.trycloudflare.com,http://127.0.0.1:3003,http://localhost:3003",
+        ROBYN_ARTIFACT_SERVICE_URL: "http://127.0.0.1:3200",
       },
       autorestart: true,
       max_memory_restart: "384M",

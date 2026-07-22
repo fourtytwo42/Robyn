@@ -39,6 +39,9 @@ export function MarketCard({
         badge={phase}
         launchNumber={launch.launch_id}
         priority={priority}
+        {...(launch.metadata?.media_status === "active"
+          ? { artworkSrc: `/api/media/${launch.metadata.media_id}` }
+          : {})}
       />
       <div className="market-card-copy">
         <div

@@ -11,6 +11,18 @@ export type LaunchRecord = {
   created_block: string;
   updated_block: string;
   formula_version: string;
+  metadata?: {
+    token: string;
+    media_id: string;
+    media_status: "active" | "quarantined";
+    display_name: string | null;
+    bio: string | null;
+    website: string | null;
+    x_url: string | null;
+    telegram_url: string | null;
+    discord_url: string | null;
+    avatar_media_id: string | null;
+  } | null;
   metrics?: {
     marketCapBase: string;
     priceChangeBps: number;

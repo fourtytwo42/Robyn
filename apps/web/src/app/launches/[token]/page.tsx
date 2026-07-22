@@ -110,6 +110,9 @@ export default async function LaunchDetail({
             symbol={launch.symbol}
             className="detail-token-art"
             priority
+            {...(launch.metadata?.media_status === "active"
+              ? { artworkSrc: `/api/media/${launch.metadata.media_id}` }
+              : {})}
           />
           <div className="token-identity-copy">
             <div className="token-title-line">
@@ -123,7 +126,10 @@ export default async function LaunchDetail({
             </h1>
             <div className="identity-links">
               <code>{short(launch.token)}</code>
-              <span>Created by {short(launch.creator)}</span>
+              <span>
+                Created by{" "}
+                {launch.metadata?.display_name ?? short(launch.creator)}
+              </span>
               <span>Block {launch.created_block}</span>
             </div>
             <div
@@ -166,6 +172,19 @@ export default async function LaunchDetail({
           symbol={launch.symbol}
           creator={launch.creator}
           createdBlock={launch.created_block}
+          {...(launch.metadata?.display_name
+            ? {
+                creatorProfile: {
+                  displayName: launch.metadata.display_name,
+                  bio: launch.metadata.bio ?? "",
+                  website: launch.metadata.website,
+                  xUrl: launch.metadata.x_url,
+                  telegramUrl: launch.metadata.telegram_url,
+                  discordUrl: launch.metadata.discord_url,
+                  avatarMediaId: launch.metadata.avatar_media_id,
+                },
+              }
+            : {})}
         />
 
         <section

@@ -7,6 +7,7 @@ export function sha256Hex(content: Uint8Array): string {
 const allowedContentTypes = new Set([
   "application/json",
   "application/octet-stream",
+  "image/webp",
   "text/plain",
 ]);
 

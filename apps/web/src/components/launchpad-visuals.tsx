@@ -21,16 +21,19 @@ export function TokenArt({
   alt,
   className = "token-art",
   priority = false,
+  artworkSrc,
 }: {
   symbol: string;
   alt?: string;
   className?: string;
   priority?: boolean;
+  artworkSrc?: string;
 }) {
   return (
     <Image
       className={className}
       src={
+        artworkSrc ??
         tokenArt[symbol.toUpperCase()] ??
         "/assets/launchpad/token-fallback.webp"
       }
@@ -39,6 +42,7 @@ export function TokenArt({
       sizes="(max-width: 720px) 42vw, 240px"
       alt={alt ?? `${symbol} token artwork`}
       priority={priority}
+      unoptimized={Boolean(artworkSrc)}
     />
   );
 }
@@ -49,16 +53,23 @@ export function TokenCardArt({
   badge,
   launchNumber,
   priority = false,
+  artworkSrc,
 }: {
   symbol: string;
   name: string;
   badge: string;
   launchNumber: string;
   priority?: boolean;
+  artworkSrc?: string;
 }) {
   return (
     <div className="market-art-wrap">
-      <TokenArt symbol={symbol} alt="" priority={priority} />
+      <TokenArt
+        symbol={symbol}
+        alt=""
+        priority={priority}
+        artworkSrc={artworkSrc}
+      />
       <div className="market-art-badges">
         <span className="demo-badge">{badge}</span>
         <span className="market-launch-number">#{launchNumber}</span>

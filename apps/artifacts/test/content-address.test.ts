@@ -28,6 +28,7 @@ describe("content addressing", () => {
     expect(normalizeArtifactContentType(" Application/JSON ")).toBe(
       "application/json",
     );
+    expect(normalizeArtifactContentType("image/webp")).toBe("image/webp");
   });
 
   it("rejects active and parameterized media types", () => {
