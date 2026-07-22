@@ -23,8 +23,8 @@ readarray -t addresses < <(
     .contracts.genesisMarket,
     (.contracts.genesisGraduatedPool // empty),
     (.contracts.bondingMarketFactory // empty),
-    (.bondingDemos[]?.market // empty),
-    (.bondingDemos[]?.graduatedPool // empty)
+    ((.bondingDemos // .demoLaunches // [])[] | .market),
+    ((.bondingDemos // .demoLaunches // [])[] | .graduatedPool)
   ' "$manifest"
 )
 for address in "${addresses[@]}"; do
@@ -90,7 +90,7 @@ if [[ "$(jq -r '.market.type // "legacy-fixed"' "$manifest")" == "bonding-curve-
       test "$progress" -gt 0
       test "$progress" -lt 10000
     fi
-  done < <(jq -r '.bondingDemos[] | [.market,.graduatedPool,.phase] | @tsv' "$manifest")
+  done < <(jq -r '(.bondingDemos // .demoLaunches // [])[] | [.market,.graduatedPool,.phase] | @tsv' "$manifest")
 else
   test "$(cast call "$market" "basePerToken()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "1000000000000000"
 fi

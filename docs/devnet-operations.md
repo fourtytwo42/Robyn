@@ -104,6 +104,30 @@ scripts/verify-devnet-deployment.sh deployments/31337.json
 
 Deployment uses the first Anvil unlocked account through loopback operator RPC. No private key is exported or stored. The deployment script refuses every chain ID except 31337 and returns the existing verified deployment unless ROBYN_FORCE_DEPLOY=true is explicitly set.
 
+## Bonding-only demo generation reset
+
+`scripts/reset-devnet-demo.sh` is the explicit operator path for replacing the shared controlled-network generation. It is destructive to the current Anvil state, indexed projections, keeper jobs and faucet quotas. It first creates and uploads an encrypted off-VM backup, refuses a dirty worktree or non-loopback/non-31337 RPC, and requires the exact confirmation value below.
+
+~~~bash
+cd /home/hendo420/Robyn
+ROBYN_CONFIRM_DEMO_RESET=RESET_ROBYN_DEVNET scripts/reset-devnet-demo.sh
+~~~
+
+The reset then:
+
+1. stops the PM2 application topology;
+2. resets only the loopback Anvil chain;
+3. truncates chain-derived PostgreSQL tables while retaining migrations and content-addressed artifacts;
+4. clears Redis devnet quotas and obsolete keeper jobs;
+5. deploys a fresh bonding-generation protocol;
+6. seeds five curated demo tokens and 28 real buy/sell transactions across six unlocked development accounts;
+7. builds the application, restores both LAN and public-preview PM2 processes and saves the process set; and
+8. verifies the manifest plus both read APIs and web surfaces.
+
+The seeded dataset intentionally contains no fixed-price markets. ROBYN, SOAK, ONE and MYCO remain at distinct bonding progress levels, while EVID proves automatic graduation and post-graduation pool trading. Basket configurations include both one-asset and three-asset launches. `scripts/seed-devnet-demo.sh` refuses any registry that is not a fresh one-launch deployment so it cannot accidentally append duplicate demo history.
+
+This operator reset is never part of an automated test. Seed validation uses an isolated temporary Anvil process on a separate loopback port.
+
 The verifier checks:
 
 - bytecode at every declared address;
