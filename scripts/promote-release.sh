@@ -8,8 +8,15 @@ current="${root}/current"
 previous="${root}/previous"
 history=/var/lib/robyn/release-history
 pm2_home=/home/hendo420/.pm2
+operator_user="${ROBYN_OPERATOR_USER:-hendo420}"
 legacy_root="${ROBYN_LEGACY_ROOT:-/home/hendo420/Robyn}"
 pm2_bin="${target}/node_modules/.bin/pm2"
+
+[[ "${EUID}" -eq 0 ]] || {
+  echo "run promotion as root" >&2
+  exit 1
+}
+id "${operator_user}" >/dev/null
 
 [[ -d "${target}" ]] || {
   echo "unknown release: ${target}" >&2
@@ -34,11 +41,15 @@ atomic_link() {
   mv -Tf "${temporary}" "${link}"
 }
 
+as_operator() {
+  runuser -u "${operator_user}" -- env PM2_HOME="${pm2_home}" "$@"
+}
+
 switch_processes() {
   local process_root="${1}"
   local ecosystem="${2}"
-  PM2_HOME="${pm2_home}" "${pm2_bin}" delete all >/dev/null 2>&1 || true
-  ROBYN_RELEASE_ROOT="${process_root}" PM2_HOME="${pm2_home}" "${pm2_bin}" start "${ecosystem}"
+  as_operator "${pm2_bin}" delete all >/dev/null 2>&1 || true
+  as_operator env ROBYN_RELEASE_ROOT="${process_root}" "${pm2_bin}" start "${ecosystem}"
 }
 
 rollback_failed_promotion() {
@@ -49,7 +60,7 @@ rollback_failed_promotion() {
     rm -f "${current}"
     switch_processes "${legacy_root}" "${legacy_root}/infrastructure/pm2/ecosystem.config.cjs"
   fi
-  PM2_HOME="${pm2_home}" "${pm2_bin}" save --force
+  as_operator "${pm2_bin}" save --force
 }
 
 atomic_link "${target}" "${current}"
@@ -60,7 +71,7 @@ fi
 
 healthy=false
 for _ in $(seq 1 30); do
-  if "${target}/scripts/verify-release.sh" "${current}" >/tmp/robyn-release-verify.json 2>/dev/null; then
+  if runuser -u "${operator_user}" -- "${target}/scripts/verify-release.sh" "${current}" >/tmp/robyn-release-verify.json 2>/dev/null; then
     healthy=true
     break
   fi
@@ -76,7 +87,7 @@ fi
 if [[ -n "${old_target}" && "${old_target}" != "${target}" ]]; then
   atomic_link "${old_target}" "${previous}"
 fi
-PM2_HOME="${pm2_home}" "${pm2_bin}" save --force
+as_operator "${pm2_bin}" save --force
 
 mkdir -p "${history}"
 history_file="${history}/$(date -u +%Y%m%dT%H%M%SZ)-promote-${release_id}.json"
