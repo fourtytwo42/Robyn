@@ -2961,3 +2961,29 @@ main > .notice {
     padding-top: 0.8rem;
   }
 }
+
+/* Keep responsive token rules after the launchpad layer's desktop overrides. */
+@media (max-width: 760px) {
+  .token-detail-hero {
+    grid-template-columns: 76px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .token-identity-copy {
+    min-width: 0;
+  }
+
+  .token-detail-hero h1 {
+    width: auto;
+    font-size: clamp(1.75rem, 9vw, 2.6rem);
+    overflow-wrap: anywhere;
+  }
+
+  .token-hero-quote {
+    grid-column: 1 / -1;
+    justify-items: start;
+    width: 100%;
+    border-top: 1px solid var(--line);
+    padding-top: 0.8rem;
+  }
+}
