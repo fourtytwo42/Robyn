@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-07-22T21:24:21.440Z",
+  "expectedSha": "a586789f2e852f94008fc087d8a8e0308e94a668",
+  "browser": "Codex in-app browser",
+  "wallet": "0x3f529006f7cFd62F8796A8ae3c26296F5B312290",
+  "chainId": 31337,
+  "indexedBlock": 180,
+  "receiptCount": 8,
+  "uniqueReceiptCount": 8,
+  "liveReceiptsMatched": 8,
+  "snapshotCount": 3,
+  "browserLogCount": 0,
+  "allReceiptsSuccessful": true,
+  "allReceiptSendersMatchWallet": true,
+  "allSnapshotsListedAndNontrivial": true,
+  "passed": true
+}

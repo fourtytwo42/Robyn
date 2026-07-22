@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-22T21:23:30Z",
+  "passed": true,
+  "releaseGitSha": "a586789f2e852f94008fc087d8a8e0308e94a668",
+  "releasePath": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668",
+  "browser": "Codex in-app browser",
+  "origin": "http://192.168.50.250:3000",
+  "wallet": "0x3f529006f7cFd62F8796A8ae3c26296F5B312290",
+  "chainId": 31337,
+  "indexedBlock": 180,
+  "warningOrErrorLogs": 0,
+  "journey": {
+    "restoredOrFreshWallet": true,
+    "funding": true,
+    "buy": true,
+    "weightedPendingFees": true,
+    "convertAllLegs": true,
+    "keeperRaceRecovery": true,
+    "claimAll": true,
+    "sell": true,
+    "liveQuoteSell": true,
+    "discovery": true,
+    "canonicalDetail": true,
+    "portfolioReload": true,
+    "creatorAuthentication": true,
+    "creatorProfile": true,
+    "sanitizedArtworkUpload": true,
+    "guidedDraftPersistence": true,
+    "quarantineFallbackAndRestore": true
+  },
+  "responsive": {
+    "desktop": {"routes": 5, "horizontalOverflow": 0, "rateLimited": false},
+    "tablet768x1024": {"routes": 5, "horizontalOverflow": 0, "rateLimited": false},
+    "mobile390x844": {"routes": 5, "horizontalOverflow": 0, "rateLimited": false, "tokenTitleWidth": 309, "tokenHeroGrid": "309px"}
+  },
+  "interaction": {
+    "functionalBoardViews": true,
+    "collapsedMobileFilters": true,
+    "fourFilterComboboxes": true,
+    "keyboardChartTooltip": true,
+    "watchlistReloadPersistence": true,
+    "mobileSheetScrollLock": true,
+    "mobileSheetDiscardGuard": true,
+    "draftDiscardGuard": true,
+    "graduatedMarketTrading": true
+  },
+  "domSnapshots": [
+    "final-discover-a586.dom.txt",
+    "final-journey-a586.dom.txt",
+    "final-create-a586.dom.txt"
+  ],
+  "artifacts": [
+    "final-discover-a586.dom.txt",
+    "final-journey-a586.dom.txt",
+    "final-create-a586.dom.txt",
+    "post-reboot-browser-receipts.json",
+    "post-reboot-browser-transactions.json"
+  ],
+  "transactionBlocks": [170, 171, 172, 173, 174, 178, 179, 180],
+  "verification": {
+    "successfulReceipts": 8,
+    "browserWarningOrErrorLogs": 0,
+    "allReceiptsBoundToWallet": true,
+    "allReceiptsBoundToLiveChain": true,
+    "canonicalManifestStillVerifiedAfterJourney": true
+  }
+}

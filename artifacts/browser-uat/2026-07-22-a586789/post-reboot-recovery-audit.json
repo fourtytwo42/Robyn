@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-07-22T21:18:34Z",
+  "expectedSha": "a586789f2e852f94008fc087d8a8e0308e94a668",
+  "expectedRelease": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668",
+  "previousBootId": "43b77aec-6dee-44ec-aec8-e0c57944b903",
+  "bootId": "4074b9b3-c035-4c5c-a102-05a6d3c155ac",
+  "rebootProven": true,
+  "rehearsalOverrides": {
+    "allowSameBoot": false,
+    "allowActiveSoak": false
+  },
+  "soakState": "inactive",
+  "failedUnits": 0,
+  "activeEnabledServices": [
+    "grafana-server.service",
+    "minio.service",
+    "nginx.service",
+    "pm2-hendo420.service",
+    "postgresql.service",
+    "postgresql@16-main.service",
+    "prometheus-node-exporter.service",
+    "prometheus.service",
+    "redis-server.service",
+    "robyn-anvil.service"
+  ],
+  "activeEnabledTimers": [
+    "robyn-backup.timer",
+    "robyn-metrics-collector.timer"
+  ],
+  "containerServicesDisabled": true,
+  "releaseVerification": {
+    "verifiedAt": "2026-07-22T21:18:32Z",
+    "releasePath": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668",
+    "gitSha": "a586789f2e852f94008fc087d8a8e0308e94a668",
+    "appCount": 6,
+    "chainBlock": "0xac",
+    "status": {
+      "service": "robyn-api",
+      "chainId": 31337,
+      "asOfBlock": "172",
+      "indexedAt": "2026-07-22 21:18:31.210167+00",
+      "launchCount": "7",
+      "rawLogCount": "863",
+      "formulaVersion": "native-v1",
+      "keeperStatus": "ok",
+      "keeperUpdatedAt": "2026-07-22 21:18:29.864317+00",
+      "artifactStatus": "ok",
+      "artifactUpdatedAt": "2026-07-22 21:18:29.39166+00"
+    },
+    "immutability": {
+      "schemaVersion": 1,
+      "releasePath": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668",
+      "writablePaths": 0,
+      "sharedHardlinks": 0,
+      "externalSymlinks": 0,
+      "regularFiles": 45753,
+      "symlinks": 1774,
+      "passed": true
+    },
+    "creatorDataPlane": {
+      "schemaVersion": 1,
+      "passed": true,
+      "chainId": 31337,
+      "token": "0x23db4a08f2272df049a4932a4cc3a6dc1002b33e",
+      "creator": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+      "mediaId": "4874eec2-6945-4040-9829-fc09e790685d",
+      "anonymousSessionIsNull": true,
+      "activeMediaContentType": "image/webp",
+      "tableCounts": {
+        "creatorProfiles": 5,
+        "mediaAssets": 15,
+        "launchBindings": 6,
+        "mediaReports": 2,
+        "moderationAudit": 12
+      }
+    }
+  },
+  "pm2": [
+    {
+      "name": "robyn-web",
+      "status": "online",
+      "restartCount": 0,
+      "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668/apps/web"
+    },
+    {
+      "name": "robyn-rpc-gateway",
+      "status": "online",
+      "restartCount": 0,
+      "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+    },
+    {
+      "name": "robyn-api",
+      "status": "online",
+      "restartCount": 0,
+      "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+    },
+    {
+      "name": "robyn-indexer",
+      "status": "online",
+      "restartCount": 0,
+      "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+    },
+    {
+      "name": "robyn-keeper",
+      "status": "online",
+      "restartCount": 0,
+      "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+    },
+    {
+      "name": "robyn-artifacts",
+      "status": "online",
+      "restartCount": 0,
+      "cwd": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668"
+    }
+  ],
+  "chainBlock": 172,
+  "indexedStatus": {
+    "service": "robyn-api",
+    "chainId": 31337,
+    "asOfBlock": "172",
+    "indexedAt": "2026-07-22 21:18:31.210167+00",
+    "launchCount": "7",
+    "rawLogCount": "863",
+    "formulaVersion": "native-v1",
+    "keeperStatus": "ok",
+    "keeperUpdatedAt": "2026-07-22 21:18:29.864317+00",
+    "artifactStatus": "ok",
+    "artifactUpdatedAt": "2026-07-22 21:18:29.39166+00"
+  },
+  "healthyPrometheusTargets": 2,
+  "firingAlerts": 0,
+  "expectedLanListeners": [
+    22,
+    3000,
+    3100,
+    8546
+  ],
+  "loopbackOnlyListeners": [
+    3001,
+    3002,
+    3101,
+    3200,
+    5432,
+    6379,
+    8545,
+    8547,
+    9000,
+    9090,
+    9100
+  ],
+  "ufwActiveWithExactLanRules": true,
+  "passed": true
+}

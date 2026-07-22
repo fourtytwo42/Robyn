@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-22T21:25:00Z",
+  "releaseGitSha": "a586789f2e852f94008fc087d8a8e0308e94a668",
+  "releasePath": "/opt/robyn/releases/a586789f2e852f94008fc087d8a8e0308e94a668",
+  "passed": false,
+  "soak": {
+    "status": "pending",
+    "completionPending": true
+  }
+}
