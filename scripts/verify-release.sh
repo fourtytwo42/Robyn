@@ -40,6 +40,7 @@ curl -fsS http://127.0.0.1:3002/api/health >/dev/null
 status_json="$(curl -fsS http://127.0.0.1:3101/status)"
 curl -fsS http://127.0.0.1:8547/health >/dev/null
 curl -fsS http://127.0.0.1:3200/health >/dev/null
+creator_data_plane="$(ROBYN_REPO_ROOT="${release_real}" "${release_real}/scripts/verify-creator-data-plane.sh")"
 
 chain_block="$(curl -fsS http://127.0.0.1:8547 \
   -H 'content-type: application/json' \
@@ -53,6 +54,7 @@ jq -n \
   --argjson status "${status_json}" \
   --argjson appCount "${app_count}" \
   --argjson immutability "${immutability_json}" \
+  --argjson creatorDataPlane "${creator_data_plane}" \
   '{
     verifiedAt: $verifiedAt,
     releasePath: $releasePath,
@@ -60,5 +62,6 @@ jq -n \
     appCount: $appCount,
     chainBlock: $chainBlock,
     status: $status,
-    immutability: $immutability
+    immutability: $immutability,
+    creatorDataPlane: $creatorDataPlane
   }'

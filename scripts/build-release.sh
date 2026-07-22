@@ -57,6 +57,7 @@ trap cleanup EXIT
   pnpm typecheck
   pnpm test
   pnpm build
+  scripts/verify-creator-data-plane.sh
   python3 scripts/validate-user-stories.py
   SECURITY_AUDIT_OUTPUT="${security_json}" scripts/security-audit.sh
   ROBYN_TESTNET_REHEARSAL_EVIDENCE="${testnet_journey_json}" scripts/rehearse-testnet.sh
@@ -117,7 +118,7 @@ cp "${testnet_stack_json}" "${staging}/release-evidence/testnet-stack.json"
       pnpmVersion: $pnpmVersion,
       packageImportMethod: "copy",
       migrations: $migrations,
-      gates: ["format", "lint", "pm2-config", "immutability-validator", "typecheck", "test", "build", "traceability", "security-audit", "testnet-journey", "testnet-stack"]
+      gates: ["format", "lint", "pm2-config", "immutability-validator", "typecheck", "test", "build", "creator-data-plane", "traceability", "security-audit", "testnet-journey", "testnet-stack"]
     }' > release-manifest.json
   sha256sum release-manifest.json > release-manifest.json.sha256
 )
