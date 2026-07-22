@@ -158,8 +158,12 @@ async function collectSample() {
   ]);
 
   const discoveryBody = await discovery.response.text();
-  if (!discoveryBody.includes("Controlled development network")) {
-    throw new Error("discovery response is missing the controlled development network label");
+  const hasApprovedNetworkDisclosure = [
+    "Controlled development network",
+    "Development network only",
+  ].some((label) => discoveryBody.includes(label));
+  if (!hasApprovedNetworkDisclosure) {
+    throw new Error("discovery response is missing an approved development network label");
   }
 
   const status = await statusResult.response.json();
