@@ -43,6 +43,34 @@ export function TokenArt({
   );
 }
 
+export function TokenCardArt({
+  symbol,
+  name,
+  badge,
+  launchNumber,
+  priority = false,
+}: {
+  symbol: string;
+  name: string;
+  badge: string;
+  launchNumber: string;
+  priority?: boolean;
+}) {
+  return (
+    <div className="market-art-wrap">
+      <TokenArt symbol={symbol} alt="" priority={priority} />
+      <div className="market-art-badges">
+        <span className="demo-badge">{badge}</span>
+        <span className="market-launch-number">#{launchNumber}</span>
+      </div>
+      <div className="market-art-identity">
+        <strong>{name}</strong>
+        <span>${symbol}</span>
+      </div>
+    </div>
+  );
+}
+
 export function BasketAssetArt({
   symbol,
   priority = false,

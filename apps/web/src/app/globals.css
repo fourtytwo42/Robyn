@@ -194,6 +194,10 @@
   transform: translateY(-3px);
   border-color: rgba(53, 208, 186, 0.52);
 }
+.market-card:focus-visible {
+  outline: 3px solid rgba(53, 208, 186, 0.42);
+  outline-offset: 3px;
+}
 .market-art-wrap {
   position: relative;
   aspect-ratio: 1.18;
@@ -1824,6 +1828,18 @@ main > .notice {
   margin-bottom: 14px;
   border-radius: 14px;
   object-fit: cover;
+}
+
+.portfolio-card > .market-art-wrap,
+.launch-list article > .market-art-wrap {
+  margin-bottom: 14px;
+  aspect-ratio: 1.18;
+  border-radius: 14px;
+}
+
+.portfolio-card > .market-art-wrap .market-art-identity,
+.launch-list article > .market-art-wrap .market-art-identity {
+  padding-bottom: 12px;
 }
 
 .launch-art-preview {

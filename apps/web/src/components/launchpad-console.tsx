@@ -13,7 +13,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Deployment } from "@/lib/deployment";
-import { TokenArt } from "@/components/launchpad-visuals";
+import { TokenArt, TokenCardArt } from "@/components/launchpad-visuals";
 
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
 const factoryAbi = [
@@ -659,16 +659,12 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
         <div className="launch-list" aria-label="Launch registry">
           {launches.map((launch) => (
             <article key={launch.token}>
-              <TokenArt
+              <TokenCardArt
                 symbol={launch.symbol}
-                alt=""
-                className="launch-list-art"
+                name={launch.name}
+                badge="Live market"
+                launchNumber={launch.id.toString()}
               />
-              <div>
-                <span className="asset-symbol">{launch.symbol}</span>
-                <span className="weight">#{launch.id.toString()}</span>
-              </div>
-              <h3>{launch.name}</h3>
               <p>
                 {amount(launch.balance)} {launch.symbol} in this wallet
               </p>

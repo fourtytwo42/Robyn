@@ -6,9 +6,9 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
 - Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; no unresolved critical/high defect remains; exact release evidence is pushed; and the final exact candidate completes an uninterrupted 24-hour soak.
-- Current task: the controlled devnet has a clean five-token bonding-generation dataset with 28 real seeded buy/sell transactions, and the homepage showcase is a compact information-dense market browser with unchanged large artwork.
-- Last meaningful change: compressed homepage basket chips, metrics, lifecycle rail and action spacing without removing any market information or changing the 239px desktop artwork footprint.
-- Last verification: 2026-07-21 web formatting, lint, strict typecheck, nine tests and optimized build passed. Public in-app-browser UAT measured all four cards at 452px instead of 518px, with identical card/action bounds, unchanged 239px artwork, all required data present, no horizontal overflow and no Legacy content.
+- Current task: the controlled devnet has a clean five-token bonding-generation dataset with 28 real seeded trades, and all collection surfaces now use one canonical token-card visual language.
+- Last meaningful change: extracted the homepage market card into a shared component used by Home and Markets, then reused its large artwork header, overlaid identity, phase badge and launch number in Portfolio and both devnet/testnet interactive registries.
+- Last verification: 2026-07-21 web formatting, lint, strict typecheck, nine tests and optimized build passed. Public in-app-browser UAT measured four aligned 452px homepage cards and five aligned 460px Markets cards, confirmed all information remained present, found zero old discovery-card nodes, no horizontal overflow and no Legacy content.
 - Next step: cut a new immutable exact release from the fresh-generation commit, independently verify it, then run the required uninterrupted 24-hour soak. The retired `8def270` runtime is no longer the stable deployment because this reset intentionally replaced its chain and indexed state.
 - External gates: public testnet ETH and explicit broadcast authorization are needed for an actual Robinhood Testnet transaction; human alert delivery and independent contract review are required before real-value operation.
 
@@ -191,6 +191,8 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-21: Canonical cross-page token-card checkpoint - `MarketCard` now supplies one implementation for Home and Markets, while `TokenCardArt` supplies the same large image, overlay identity, phase/context badge and launch number to Portfolio and both interactive registries. Web formatting, lint, strict typecheck, nine tests and optimized build passed. Public in-app-browser UAT showed four aligned homepage cards, five aligned Markets cards, complete basket/market/lifecycle information, zero old discovery-card nodes, no overflow and no Legacy content.
 
 - 2026-07-21: Compact homepage showcase checkpoint - reduced the information panel from about 277px to 211px while preserving the 239px large artwork and every basket, market-cap, volume, holder, lifecycle, progress and raised/liquidity field. Web formatting, lint, strict typecheck, nine tests and optimized build passed. Public in-app-browser geometry measured four identical 284.5 by 452.3 cards and identical action baselines, with no legacy content or horizontal overflow.
 
