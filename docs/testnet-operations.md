@@ -1,14 +1,14 @@
 # Robinhood Chain Testnet operations
 
-Status: deployment package and isolated local rehearsal implemented; no public testnet transaction has been authorized
+Status: deployment package, isolated local rehearsal, and persistent deployer wallet implemented; official faucet funding is pending browser verification
 
-Last verified: 2026-07-21
+Last verified: 2026-07-22
 
 ## Boundary
 
 Robinhood Chain Testnet uses chain ID `46630` (`0xb626`). The checked-in default RPC is `https://rpc.testnet.chain.robinhood.com` and the explorer is `https://explorer.testnet.chain.robinhood.com/`. The public RPC, chain ID and explorer were rechecked on 2026-07-21.
 
-The current package deliberately deploys testnet mock base/reward assets, a deterministic conversion router and a fixed-price market because no official public testnet Stock Token registry or faucet has been located. These contracts expose `TESTNET_MOCK_ONLY = "robinhood-testnet-mock"`. They are rehearsal infrastructure, not representations of stocks, ETFs, issuer instruments or real prices.
+The current package deliberately deploys testnet mock base/reward assets, a deterministic conversion router and a fixed-price market because no canonical testnet Stock Token registry has been validated for application integration. Robinhood now operates an official faucet that advertises 0.01 testnet ETH plus five testnet units each of TSLA, AMZN, PLTR, NFLX, and AMD per eligible daily request. Faucet availability does not establish canonical contract provenance for Robyn. The package contracts expose `TESTNET_MOCK_ONLY = "robinhood-testnet-mock"`; they are rehearsal infrastructure, not representations of stocks, ETFs, issuer instruments or real prices.
 
 Actual public-testnet broadcast is a separate authorized operation. It requires funded testnet ETH and a protected operator keystore. Never copy a development private key into an environment file, PM2 configuration, Git, shell history or deployment manifest.
 
@@ -65,6 +65,31 @@ For LAN-only rehearsal, set the public data API URL to the LAN edge actually exp
 
 ## Real public-testnet deployment
 
+### Persistent deployer wallet
+
+The dedicated testnet-only deployer address is `0xecc5d6d032ADc9ca9E0F4042128067b8366da17A`. Its encrypted Foundry keystore, separately permissioned password, public address, and non-secret environment pointers live under:
+
+~~~text
+/home/hendo420/.config/robyn/wallets/robinhood-testnet-deployer/
+~~~
+
+An age-encrypted recovery archive and checksum live under:
+
+~~~text
+/home/hendo420/.local/share/robyn-wallet-backups/
+~~~
+
+Both directories and all operational secret files are owner-only. The recovery archive was decrypted into an isolated temporary directory and reproduced the same public address. Never display, commit, copy into PM2, or place in shell history the keystore password, decrypted key, or recovery contents. This is a disposable testnet wallet and must never receive real assets.
+
+Check the wallet identity, permissions, chain, and public balance without exposing secrets:
+
+~~~bash
+cd /home/hendo420/Robyn
+scripts/check-robinhood-testnet-wallet.sh
+~~~
+
+The official funding route is [Robinhood Chain Testnet Faucet](https://faucet.testnet.chain.robinhood.com/). Its browser security checkpoint and any CAPTCHA or eligibility step must be completed interactively; do not bypass or automate those controls. Last verified 2026-07-22, the wallet balance was zero pending the first faucet request.
+
 Prerequisites:
 
 - exact candidate commit is clean and pushed to `origin/main`;
@@ -99,7 +124,7 @@ Rollback stops and deletes only the five testnet PM2 processes, preserves devnet
 
 ## Remaining external gates
 
-- Public testnet ETH funding route.
+- Obtain and verify enough official faucet ETH in the dedicated deployer wallet; 0.01 testnet ETH is advertised per eligible daily request.
 - Recheck for canonical testnet Stock Token, ETF, stablecoin, registry and oracle addresses.
 - Human alert receiver for unattended operation.
 - Independent contract security review before any real-value asset use.
