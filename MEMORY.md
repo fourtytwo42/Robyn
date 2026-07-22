@@ -6,13 +6,22 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: completed 2026-07-22 — securely persist and fund a dedicated Robinhood Chain Testnet deployer wallet and prove no-broadcast deployment readiness without exposing secrets.
 - Goal completion standard: the encrypted operational wallet and recovery bundle survive isolated restore, owner-only permissions pass, the official chain-46630 balance is sufficient for deployment plus testing, and the workflow is documented and pushed without committing key material.
-- Current task: production graduation is specified as an atomic move into locked canonical Uniswap v3 liquidity with uninterrupted trading through the Robyn interface; implementation remains on feature branch `codex/uniswap-auto-graduation` and no public-testnet broadcast is authorized.
-- Last meaningful change: settled the production venue and UX: the threshold-reaching buy must mint the Uniswap v3 position directly into an immutable fee-collecting/no-withdrawal locker, then the same token-page Buy/Sell controls automatically switch from the curve to that pool.
-- Last verification: 2026-07-22 the current chain-31337 app already proves automatic graduation and continuous Robyn-interface trading through `DevnetLockedLiquidityPool`, but that contract is only a local AMM rehearsal and is not Uniswap. The production `UniswapV3GraduationAdapter` and `RewardFeePositionLocker` are specified but not implemented.
-- Next step: implement the versioned adapter/locker and local canonical-v3 rehearsal, verify chain-46630 DEX provenance, then run atomic graduation, post-graduation trade, fee-harvest and holder-claim acceptance before any public-testnet broadcast.
+- Current task: wire the implemented canonical Uniswap v3 graduation contracts into deployment, indexing, API, and the same token-page trade controls on feature branch `codex/uniswap-auto-graduation`; no public-testnet broadcast is authorized.
+- Last meaningful change: implemented `UniswapV3BondingCurveMarket`, `UniswapV3GraduationAdapter`, and `RewardFeePositionLocker`, including direct immutable NFT custody, price-continuity checks, same-market post-graduation swaps, permissionless fee harvest, and pool/locker reward exclusions.
+- Last verification: 2026-07-22 all 38 Foundry tests and size checks pass. An explicit no-broadcast fork test against Robinhood mainnet chain 4663 created a real pool through the official factory, minted a real position through the official position manager, traded both directions through official SwapRouter02, harvested both fee sides, routed WETH fees to the basket vault, and kept launch-token fees sequestered.
+- Next step: add a versioned native-market factory/deployment manifest, teach the indexer/API/web to bind the canonical pool and locker, rebuild the VM release, and run full in-app-browser regression on chain 31337 before considering chain 46630.
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-22 - Canonical Uniswap graduation contract checkpoint
+
+- Implemented: `packages/contracts/src/uniswap/UniswapV3BondingCurveMarket.sol`, `UniswapV3GraduationAdapter.sol`, `RewardFeePositionLocker.sol`, and minimal pinned interfaces. The threshold-reaching buy refunds excess input and atomically creates/initializes liquidity; any graduation failure reverts the whole purchase.
+- Custody: the canonical Uniswap v3 position NFT is minted directly to a locker with no approval, transfer, rescue, or liquidity-decrease selector. Canonical `NonfungiblePositionManager` uses direct ERC-721 `_mint`, so the adapter explicitly calls `bindPosition` after verifying locker ownership and position metadata; the receiver callback remains fail-closed defense for safe transfers.
+- Fees: quote-side pool fees are permissionlessly collected and passed to `FeeBasketVault.recordFees`; launch-token-side fees remain permanently in the excluded locker. LP principal and residual liquidity are not withdrawable. Reported pool fee is nominal; protocol fee activation can reduce the LP share actually harvested.
+- Compatibility: Robinhood deploys official `SwapRouter02`, whose `exactInputSingle` struct omits the legacy deadline field. The canonical fork regression caught and fixed the original legacy-router ABI mismatch.
+- Verification: `forge fmt --check`, 38 Foundry tests, invariants, and `forge build --sizes` pass. Explicit `ROBINHOOD_MAINNET_RPC_URL=https://rpc.mainnet.chain.robinhood.com forge test --match-contract RobinhoodUniswapGraduationForkTest` passes against official chain-4663 factory `0x1f7d...2EfA`, position manager `0x7399...E0D3`, SwapRouter02 `0xCaf6...5cb2`, QuoterV2 `0x33e8...A9E7`, and WETH `0x0Bd7...AD73`; it is a local fork and performs no broadcast.
+- Remaining gate: these contracts are not yet selected by the persistent chain-31337 deployment or application data plane. Chain-46630 deployment remains prohibited until canonical testnet DEX addresses/code hashes are independently established and the user explicitly authorizes broadcasting.
 
 ### 2026-07-22 - Canonical Uniswap graduation decision
 
