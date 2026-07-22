@@ -155,6 +155,16 @@ const marketAbi = [
     ],
     outputs: [{ name: "baseOutput", type: "uint256" }],
   },
+  {
+    type: "function",
+    name: "quoteSell",
+    stateMutability: "view",
+    inputs: [{ name: "tokenInput", type: "uint256" }],
+    outputs: [
+      { name: "feeAmount", type: "uint256" },
+      { name: "baseOutput", type: "uint256" },
+    ],
+  },
 ] as const;
 
 const emptyState: WalletState = {
@@ -493,15 +503,24 @@ export function DevnetConsole({ deployment }: { deployment: Deployment }) {
             }),
           );
         }
+        const [, quotedBaseOutput] = await publicClient.readContract({
+          address: deployment.contracts.genesisMarket,
+          abi: marketAbi,
+          functionName: "quoteSell",
+          args: [input],
+        });
+        const minimumBaseOutput = (quotedBaseOutput * 99n) / 100n;
         await submit(
           await walletClient.writeContract({
             address: deployment.contracts.genesisMarket,
             abi: marketAbi,
             functionName: "sell",
-            args: [input, parseEther("99")],
+            args: [input, minimumBaseOutput],
           }),
         );
-        setStatus("Sold 100,000 ROBYN for 99 mUSD after the disclosed 1% fee.");
+        setStatus(
+          `Sold 100,000 ROBYN against the live ${compact(quotedBaseOutput)} mUSD quote.`,
+        );
       },
     );
   }
