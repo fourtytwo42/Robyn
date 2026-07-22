@@ -50,8 +50,8 @@
       "vault": "0x61c36a8d610163660E21a8b7359e1Cac0C9133e1",
       "market": "0x3B02fF1e626Ed7a8fd6eC5299e2C54e1421B626B",
       "graduatedPool": "0xB877880CAf59Ad50d8800F382fe47b45A8861330",
-      "phase": "bonding",
-      "progressBps": 6330,
+      "phase": "graduated",
+      "progressBps": 10000,
       "seededTrades": 7
     },
     {
