@@ -317,6 +317,13 @@ export function DevnetConsole({ deployment }: { deployment: Deployment }) {
     setStatus("Session wallet cleared from this browser session.");
   }
 
+  useEffect(() => {
+    const requested = () => createWallet();
+    window.addEventListener("robyn-request-wallet-create", requested);
+    return () =>
+      window.removeEventListener("robyn-request-wallet-create", requested);
+  }, []);
+
   const execute = useCallback(
     async (label: string, action: () => Promise<void>) => {
       setBusy(true);
@@ -368,6 +375,13 @@ export function DevnetConsole({ deployment }: { deployment: Deployment }) {
       setStatus("Wallet funded with 10 DEV and 10,000 mUSD.");
     });
   }
+
+  useEffect(() => {
+    const requested = () => void fundWallet();
+    window.addEventListener("robyn-request-wallet-fund", requested);
+    return () =>
+      window.removeEventListener("robyn-request-wallet-fund", requested);
+  });
 
   async function buy() {
     if (!account || !walletClient) return;

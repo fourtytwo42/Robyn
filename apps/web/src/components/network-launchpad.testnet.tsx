@@ -10,10 +10,12 @@ import {
   parseEther,
   type Address,
   type EIP1193Provider,
+  type Hex,
 } from "viem";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Deployment } from "@/lib/deployment";
-import { TokenArt, TokenCardArt } from "@/components/launchpad-visuals";
+import { TokenCardArt } from "@/components/launchpad-visuals";
+import { GuidedLaunchWizard } from "@/components/guided-launch-wizard";
 
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
 const factoryAbi = [
@@ -361,7 +363,28 @@ export function NetworkLaunchpadConsole({
     [publicClient, walletClient],
   );
 
-  async function createLaunch() {
+  async function bindArtwork(token: Address, mediaId?: string) {
+    if (!mediaId) return;
+    setStatus("Binding sanitized artwork to the canonical launch...");
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const response = await fetch(`/api/launches/${token}/metadata`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mediaId }),
+      });
+      if (response.ok) return;
+      if (response.status !== 404)
+        throw new Error(
+          ((await response.json()) as { error?: string }).error ??
+            "artwork_binding_failed",
+        );
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    throw new Error("Launch succeeded, but artwork indexing timed out.");
+  }
+
+  async function createLaunch(artworkMediaId?: string) {
     if (!account || !walletClient)
       return setStatus("Connect and fund a testnet wallet first.");
     if (!name.trim() || !/^[A-Z0-9]{2,8}$/.test(symbol.trim().toUpperCase()))
@@ -465,10 +488,11 @@ export function NetworkLaunchpadConsole({
         args: [token, [market]],
         account,
       });
+      await refresh();
+      await bindArtwork(token, artworkMediaId);
       setStatus(
         "Launch complete. Its market is live and basket rules are immutable.",
       );
-      await refresh();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Launch failed.");
     } finally {
@@ -595,82 +619,39 @@ export function NetworkLaunchpadConsole({
         </span>
       </div>
       <div className="launch-layout">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            void createLaunch();
+        <GuidedLaunchWizard
+          account={account}
+          busy={busy}
+          name={name}
+          setName={setName}
+          symbol={symbol}
+          setSymbol={setSymbol}
+          weights={weights}
+          setWeights={setWeights}
+          status={status}
+          walletHint="Connect a wallet in the testnet panel above first."
+          walletActionLabel={account ? "Refresh wallet" : "Connect wallet"}
+          onWalletAction={async () => {
+            if (!provider) throw new Error("No injected wallet was found.");
+            await provider.request({ method: "eth_requestAccounts" });
+            window.dispatchEvent(new Event("robyn-testnet-wallet-change"));
           }}
-          className="launch-form"
-        >
-          <div className="launch-art-preview">
-            <TokenArt symbol={symbol} alt="" priority />
-            <div>
-              <strong>Token artwork preview</strong>
-              <span>
-                Known demos use curated art. New launches receive Robyn&apos;s
-                generative fallback until custom metadata is enabled.
-              </span>
-            </div>
-          </div>
-          <label>
-            Token name
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              maxLength={32}
-            />
-          </label>
-          <label>
-            Symbol
-            <input
-              value={symbol}
-              onChange={(event) => setSymbol(event.target.value.toUpperCase())}
-              maxLength={8}
-            />
-          </label>
-          <fieldset>
-            <legend>Basket weights (must total 100%)</legend>
-            {["tmNVDA", "tmSPY", "tmETH"].map((asset, index) => (
-              <label key={asset}>
-                {asset}
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={weights[index]}
-                  onChange={(event) =>
-                    setWeights(
-                      weights.map((value, offset) =>
-                        offset === index ? Number(event.target.value) : value,
-                      ),
-                    )
-                  }
-                />
-              </label>
-            ))}
-          </fieldset>
-          <p
-            className={
-              weights.reduce((a, b) => a + b, 0) === 100
-                ? "weight-total valid"
-                : "weight-total"
-            }
-          >
-            Total {weights.reduce((a, b) => a + b, 0)}%
-          </p>
-          <button
-            className="button primary"
-            type="submit"
-            disabled={busy || !account}
-          >
-            Launch token and market
-          </button>
-          {!account ? (
-            <p className="form-hint">
-              Connect a wallet in the testnet panel above first.
-            </p>
-          ) : null}
-        </form>
+          assetSymbols={["tmNVDA", "tmSPY", "tmETH"]}
+          marketSummary="Seeded testnet mock market"
+          signMessage={async (message) => {
+            if (!provider || !account)
+              throw new Error("Connect a testnet wallet first.");
+            const request = provider.request as (args: {
+              method: string;
+              params: readonly unknown[];
+            }) => Promise<unknown>;
+            return (await request({
+              method: "personal_sign",
+              params: [message, account],
+            })) as Hex;
+          }}
+          onLaunch={createLaunch}
+        />
         <div className="launch-list" aria-label="Launch registry">
           {launches.map((launch) => (
             <article key={launch.token}>

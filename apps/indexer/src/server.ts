@@ -195,7 +195,7 @@ async function rebuildLaunches(asOfBlock: bigint) {
       ? BigInt(found[0].block_number)
       : BigInt(manifest.deploymentBlock);
     await sql.unsafe(
-      "INSERT INTO launches (chain_id,launch_id,token,vault,market,creator,name,symbol,assets,weights_bps,created_block,updated_block,formula_version) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12,'native-v1') ON CONFLICT (chain_id,token) DO UPDATE SET market=EXCLUDED.market,name=EXCLUDED.name,symbol=EXCLUDED.symbol,assets=EXCLUDED.assets,weights_bps=EXCLUDED.weights_bps,updated_block=EXCLUDED.updated_block",
+      "INSERT INTO launches (chain_id,launch_id,token,vault,market,creator,name,symbol,assets,weights_bps,created_block,updated_block,formula_version) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12,'native-v1') ON CONFLICT (chain_id,token) DO UPDATE SET market=EXCLUDED.market,name=EXCLUDED.name,symbol=EXCLUDED.symbol,assets=EXCLUDED.assets,weights_bps=EXCLUDED.weights_bps,created_block=EXCLUDED.created_block,updated_block=EXCLUDED.updated_block",
       [
         manifest.chainId,
         id.toString(),

@@ -31,6 +31,7 @@ export function TokenActions({
   creator,
   createdBlock,
   creatorProfile,
+  mediaId,
 }: {
   chainId: number;
   token: string;
@@ -46,10 +47,14 @@ export function TokenActions({
     discordUrl: string | null;
     avatarMediaId: string | null;
   };
+  mediaId?: string;
 }) {
   const canonicalToken = token.toLowerCase();
   const [watched, setWatched] = useState(false);
   const [proofOpen, setProofOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reporting, setReporting] = useState(false);
   const [status, setStatus] = useState("");
 
   useEffect(() => {
@@ -101,6 +106,32 @@ export function TokenActions({
     }
   }
 
+  async function reportMedia() {
+    if (!mediaId || reportReason.trim().length < 10) return;
+    setReporting(true);
+    try {
+      const response = await fetch(`/api/media/${mediaId}/reports`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ reason: reportReason }),
+      });
+      const body = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(body.error ?? "report_failed");
+      setReportReason("");
+      setReportOpen(false);
+      setStatus(
+        "Artwork report recorded for operator review. The report does not automatically hide media.",
+      );
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : "Artwork report failed.",
+      );
+    } finally {
+      setReporting(false);
+    }
+  }
+
   return (
     <section className="token-actions" aria-label="Token actions">
       <div>
@@ -124,6 +155,15 @@ export function TokenActions({
           Creator proof
         </button>
         <a href="#recent-trades">Recent activity</a>
+        {mediaId ? (
+          <button
+            type="button"
+            aria-expanded={reportOpen}
+            onClick={() => setReportOpen((value) => !value)}
+          >
+            Report artwork
+          </button>
+        ) : null}
       </div>
       {proofOpen ? (
         <aside className="creator-proof" aria-label="Canonical creator proof">
@@ -175,7 +215,36 @@ export function TokenActions({
           </button>
         </aside>
       ) : null}
-      <p className="sr-only" role="status">
+      {reportOpen && mediaId ? (
+        <aside className="media-report" aria-label="Report token artwork">
+          <label>
+            Why should an operator review this artwork?
+            <textarea
+              minLength={10}
+              maxLength={500}
+              value={reportReason}
+              onChange={(event) => setReportReason(event.target.value)}
+            />
+          </label>
+          <p>
+            Reports are recorded for operator review and do not automatically
+            hide artwork.
+          </p>
+          <div className="action-row">
+            <button
+              type="button"
+              disabled={reporting || reportReason.trim().length < 10}
+              onClick={() => void reportMedia()}
+            >
+              {reporting ? "Sending…" : "Submit report"}
+            </button>
+            <button type="button" onClick={() => setReportOpen(false)}>
+              Cancel
+            </button>
+          </div>
+        </aside>
+      ) : null}
+      <p className={status ? "token-action-status" : "sr-only"} role="status">
         {status}
       </p>
     </section>

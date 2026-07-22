@@ -172,6 +172,10 @@ export default async function LaunchDetail({
           symbol={launch.symbol}
           creator={launch.creator}
           createdBlock={launch.created_block}
+          {...(launch.metadata?.media_status === "active" &&
+          launch.metadata.media_id
+            ? { mediaId: launch.metadata.media_id }
+            : {})}
           {...(launch.metadata?.display_name
             ? {
                 creatorProfile: {
