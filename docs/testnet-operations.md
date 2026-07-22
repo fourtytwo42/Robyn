@@ -1,6 +1,6 @@
 # Robinhood Chain Testnet operations
 
-Status: deployment package, isolated local rehearsal, and persistent deployer wallet implemented; official faucet funding and off-VM recovery verification passed
+Status: funded persistent deployer and no-broadcast readiness verification passed; public-testnet deployment still requires explicit authorization
 
 Last verified: 2026-07-22
 
@@ -79,7 +79,7 @@ An age-encrypted recovery archive and checksum live under:
 /home/hendo420/.local/share/robyn-wallet-backups/
 ~~~
 
-Both directories and all operational secret files are owner-only. The recovery archive was decrypted into an isolated temporary directory and reproduced the same public address. Never display, commit, copy into PM2, or place in shell history the keystore password, decrypted key, or recovery contents. This is a disposable testnet wallet and must never receive real assets.
+Both directories and all operational secret files are owner-only. The recovery archive was decrypted into an isolated temporary directory and reproduced the same public address. The encrypted archive and checksum were also uploaded to the private `fourtytwo42/Robyn` GitHub release `robyn-state-backups`; a fresh download matched SHA-256 `22f901854fd9f39e6cf09d21dcc9acec3245cabd4d1c6aade9cc6be54c4afed8` and independently restored the same address. Never display, commit, copy into PM2, or place in shell history the keystore password, decrypted key, or recovery contents. This is a disposable testnet wallet and must never receive real assets.
 
 Check the wallet identity, permissions, chain, and public balance without exposing secrets:
 
@@ -100,6 +100,8 @@ scripts/check-robinhood-testnet-deployment-readiness.sh
 ~~~
 
 The default readiness floor is 0.005 ETH, more than 32 times the measured execution-only requirement at the current gas price. Override it only by increasing `ROBYN_TESTNET_MIN_DEPLOYER_BALANCE_WEI`; never lower the committed floor to force a pass.
+
+Last verified 2026-07-22, the no-broadcast checker passed from clean, pushed `main` with 0.01 ETH, 65 times measured execution-only headroom, and no public transaction. The actual encrypted keystore then deployed and verified the complete 20-transaction package on an isolated temporary chain-46630 instance using `ROBYN_TESTNET_KEYSTORE` and `ROBYN_TESTNET_PASSWORD_FILE`. This proves the real signer/configuration path without spending testnet funds. A public deployment remains a separate irreversible action requiring explicit user authorization.
 
 Prerequisites:
 
