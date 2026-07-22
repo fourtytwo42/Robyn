@@ -36,6 +36,13 @@ ufw --force enable
 
 systemctl is-active --quiet nginx.service
 curl -fsS http://127.0.0.1:3000/api/health >/dev/null
+rpc_block="$({
+  curl -fsS \
+    -H 'content-type: application/json' \
+    --data '{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}' \
+    http://127.0.0.1:3000/rpc
+} | jq -er '.result')"
+[[ "${rpc_block}" =~ ^0x[0-9a-fA-F]+$ ]]
 curl -fsS http://127.0.0.1:3100/health >/dev/null
 curl -fsS http://127.0.0.1:8546/health >/dev/null
 ss -ltn | grep -q '127.0.0.1:3002'

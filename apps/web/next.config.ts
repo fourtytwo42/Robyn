@@ -14,6 +14,12 @@ const suffix = networkMode === "testnet" ? "testnet" : "devnet";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Exact releases are intentionally read-only. Disable the runtime image
+  // optimizer so Next never attempts to create .next/cache/images inside an
+  // immutable release; uploaded artwork is already sanitized and re-encoded.
+  images: {
+    unoptimized: true,
+  },
   webpack(config) {
     config.resolve.alias["@robyn/deployment"] = deploymentPath;
     config.resolve.alias["@robyn/network-console"] = path.resolve(
