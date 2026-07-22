@@ -10,7 +10,7 @@ import {
   type Address,
   type Hex,
 } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Deployment } from "@/lib/deployment";
 import { TokenCardArt } from "@/components/launchpad-visuals";
@@ -120,6 +120,22 @@ const erc20Abi = [
     outputs: [{ type: "uint256" }],
   },
 ] as const;
+const baseFaucetAbi = [
+  {
+    type: "function",
+    name: "faucetClaimed",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "address" }],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "claimFaucet",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "recipient", type: "address" }],
+    outputs: [],
+  },
+] as const;
 const marketAbi = [
   {
     type: "function",
@@ -205,6 +221,17 @@ type Launch = {
 function amount(value: bigint) {
   return Number(formatEther(value)).toLocaleString(undefined, {
     maximumFractionDigits: 2,
+  });
+}
+
+function requestFaucet(url: string, address: Address) {
+  return new Promise<number>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("POST", url);
+    request.setRequestHeader("content-type", "application/json");
+    request.onload = () => resolve(request.status);
+    request.onerror = () => reject(new Error("Dev ETH faucet unavailable."));
+    request.send(JSON.stringify({ address }));
   });
 }
 
@@ -366,6 +393,47 @@ export function LaunchpadConsole({
     },
     [publicClient, walletClient],
   );
+
+  async function manageSessionWallet() {
+    if (!account) {
+      const key = generatePrivateKey();
+      window.sessionStorage.setItem("robyn-devnet-session-key", key);
+      setPrivateKey(key);
+      window.dispatchEvent(new Event("robyn-wallet-change"));
+      setStatus("Session wallet created. Fund it with dev-only assets.");
+      return;
+    }
+    if (!walletClient) return;
+    setBusy(true);
+    try {
+      setStatus("Funding dev ETH and 10,000 mUSD...");
+      const faucetStatus = await requestFaucet("/rpc/faucet", account.address);
+      if ((faucetStatus < 200 || faucetStatus >= 300) && faucetStatus !== 429)
+        throw new Error("Dev ETH faucet unavailable.");
+      const alreadyClaimed = await publicClient.readContract({
+        address: deployment.contracts.baseAsset,
+        abi: baseFaucetAbi,
+        functionName: "faucetClaimed",
+        args: [account.address],
+      });
+      if (!alreadyClaimed) {
+        await submit({
+          address: deployment.contracts.baseAsset,
+          abi: baseFaucetAbi,
+          functionName: "claimFaucet",
+          args: [account.address],
+          account,
+        });
+      }
+      setStatus("Wallet funded with 10 DEV and 10,000 mUSD.");
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : "Wallet funding failed.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function bindArtwork(token: Address, mediaId?: string) {
     if (!mediaId) return;
@@ -621,19 +689,11 @@ export function LaunchpadConsole({
           weights={weights}
           setWeights={setWeights}
           status={status}
-          walletHint="Create a session wallet in the live market panel below first."
+          walletHint="Create a browser-session wallet, then fund it with controlled devnet assets."
           walletActionLabel={
             account ? "Fund session wallet" : "Create session wallet"
           }
-          onWalletAction={() => {
-            window.dispatchEvent(
-              new Event(
-                account
-                  ? "robyn-request-wallet-fund"
-                  : "robyn-request-wallet-create",
-              ),
-            );
-          }}
+          onWalletAction={() => void manageSessionWallet()}
           signMessage={async (message) => {
             if (!account) throw new Error("Create a session wallet first.");
             return account.signMessage({ message });
