@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-07-22T21:09:25Z",
+  "releaseGitSha": "c41205edf169b990ce03a602b0aec82f64e14274",
+  "backup": {
+    "name": "robyn-state-20260722T210925Z.tar.zst.age",
+    "sizeBytes": 1502732,
+    "sha256": "125c6089d6846a2a900eb991915c3a7a0e2594d042a7b6b6d86046941d7f8605",
+    "encrypted": true,
+    "offVmRelease": "robyn-state-backups",
+    "offVmAssetCount": 1,
+    "offVmChecksumAssetCount": 1,
+    "offVmSizeMatched": true,
+    "offVmDigestMatched": true
+  },
+  "restoreRehearsal": {
+    "passed": true,
+    "databaseTables": 14,
+    "artifacts": 8,
+    "chainId": 31337,
+    "factory": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "gitSha": "c41205edf169b990ce03a602b0aec82f64e14274",
+    "liveStateTouched": false
+  },
+  "passed": true
+}

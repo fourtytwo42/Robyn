@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-22T21:07:30Z",
+  "passed": true,
+  "releaseGitSha": "c41205edf169b990ce03a602b0aec82f64e14274",
+  "releasePath": "/opt/robyn/releases/c41205edf169b990ce03a602b0aec82f64e14274",
+  "browser": "Codex in-app browser",
+  "origin": "http://192.168.50.250:3000",
+  "wallet": "0x3f529006f7cFd62F8796A8ae3c26296F5B312290",
+  "chainId": 31337,
+  "indexedBlock": 172,
+  "warningOrErrorLogs": 0,
+  "journey": {
+    "restoredOrFreshWallet": true,
+    "funding": true,
+    "buy": true,
+    "weightedPendingFees": true,
+    "convertAllLegs": true,
+    "keeperRaceRecovery": true,
+    "claimAll": true,
+    "sell": true,
+    "liveQuoteSell": true,
+    "discovery": true,
+    "canonicalDetail": true,
+    "portfolioReload": true,
+    "creatorAuthentication": true,
+    "creatorProfile": true,
+    "sanitizedArtworkUpload": true,
+    "guidedDraftPersistence": true,
+    "quarantineFallbackAndRestore": true
+  },
+  "responsive": {
+    "desktop": {"routes": 5, "horizontalOverflow": 0, "rateLimited": false},
+    "tablet768x1024": {"routes": 5, "horizontalOverflow": 0, "rateLimited": false},
+    "mobile390x844": {"routes": 5, "horizontalOverflow": 0, "rateLimited": false, "tokenTitleWidth": 309, "tokenHeroGrid": "309px"}
+  },
+  "interaction": {
+    "functionalBoardViews": true,
+    "collapsedMobileFilters": true,
+    "fourFilterComboboxes": true,
+    "keyboardChartTooltip": true,
+    "watchlistReloadPersistence": true,
+    "mobileSheetScrollLock": true,
+    "mobileSheetDiscardGuard": true,
+    "draftDiscardGuard": true
+  },
+  "domSnapshots": [
+    "final-discover-c412.dom.txt",
+    "final-journey-c412.dom.txt",
+    "final-create-c412.dom.txt"
+  ],
+  "artifacts": [
+    "final-discover-c412.dom.txt",
+    "final-journey-c412.dom.txt",
+    "final-create-c412.dom.txt",
+    "final-mobile-c412.png",
+    "final-discover-c412.png",
+    "post-reboot-browser-receipts.json",
+    "post-reboot-browser-transactions.json"
+  ],
+  "transactionBlocks": [157, 166, 167, 168, 169, 170, 171, 172],
+  "verification": {
+    "successfulReceipts": 8,
+    "browserWarningOrErrorLogs": 0,
+    "allReceiptsBoundToWallet": true,
+    "allReceiptsBoundToLiveChain": true
+  }
+}

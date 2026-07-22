@@ -1,0 +1,139 @@
+- link "Skip to main content":
+  - /url: "#main"
+- main:
+  - link "Robyn home":
+    - /url: /
+    - generic: ROBYN
+  - navigation "Primary navigation":
+    - link "Markets":
+      - /url: /discover
+    - link "Portfolio":
+      - /url: /portfolio
+    - link "Create":
+      - /url: /create
+  - generic: Local devnet
+  - link "Launch a token":
+    - /url: /create
+  - complementary "Indexed 24 hour reward market tape":
+    - generic: 24h reward markets
+    - link "$ART22 4.31K mUSD Indexed 24 hour change 45.69 percent":
+      - /url: /launches/0xcd2a5abcf58518eb401c2e103e0fc89970d19bd7
+      - strong: $ART22
+      - generic: 4.31K mUSD
+      - generic "Indexed 24 hour change 45.69 percent": +45.69%
+    - link "$UAT22 4.31K mUSD Indexed 24 hour change 45.69 percent":
+      - /url: /launches/0xe994a15087d98970f7027d22f1bae0ee5dcfb2a0
+      - strong: $UAT22
+      - generic: 4.31K mUSD
+      - generic "Indexed 24 hour change 45.69 percent": +45.69%
+    - link "$MYCO 19.14K mUSD Indexed 24 hour change 22.16 percent":
+      - /url: /launches/0x7ffacd7f90cc330ffd99dbf6c88673f0727ec79b
+      - strong: $MYCO
+      - generic: 19.14K mUSD
+      - generic "Indexed 24 hour change 22.16 percent": +22.16%
+    - link "$EVID 36.49K mUSD Indexed 24 hour change -1.14 percent":
+      - /url: /launches/0xed46de7a5f16d09b02ff3890db11c91316196182
+      - strong: $EVID
+      - generic: 36.49K mUSD
+      - generic "Indexed 24 hour change -1.14 percent": "-1.14%"
+    - link "$ONE 4.53K mUSD Indexed 24 hour change 20.58 percent":
+      - /url: /launches/0x1c8d7d133c0c4ac780fc1a4f71913fb6625f7de5
+      - strong: $ONE
+      - generic: 4.53K mUSD
+      - generic "Indexed 24 hour change 20.58 percent": +20.58%
+    - link "$SOAK 8.53K mUSD Indexed 24 hour change 13.01 percent":
+      - /url: /launches/0x6743e5c6e1b453372507e8dfd6ca53508721425b
+      - strong: $SOAK
+      - generic: 8.53K mUSD
+      - generic "Indexed 24 hour change 13.01 percent": +13.01%
+    - link "$ROBYN 30.4K mUSD Indexed 24 hour change 107.50 percent":
+      - /url: /launches/0x23db4a08f2272df049a4932a4cc3a6dc1002b33e
+      - strong: $ROBYN
+      - generic: 30.4K mUSD
+      - generic "Indexed 24 hour change 107.50 percent": +107.50%
+    - link:
+      - /url: /launches/0xcd2a5abcf58518eb401c2e103e0fc89970d19bd7
+      - strong: $ART22
+      - generic: 4.31K mUSD
+      - generic: +45.69%
+    - link:
+      - /url: /launches/0xe994a15087d98970f7027d22f1bae0ee5dcfb2a0
+      - strong: $UAT22
+      - generic: 4.31K mUSD
+      - generic: +45.69%
+    - link:
+      - /url: /launches/0x7ffacd7f90cc330ffd99dbf6c88673f0727ec79b
+      - strong: $MYCO
+      - generic: 19.14K mUSD
+      - generic: +22.16%
+    - link:
+      - /url: /launches/0xed46de7a5f16d09b02ff3890db11c91316196182
+      - strong: $EVID
+      - generic: 36.49K mUSD
+      - generic: "-1.14%"
+    - link:
+      - /url: /launches/0x1c8d7d133c0c4ac780fc1a4f71913fb6625f7de5
+      - strong: $ONE
+      - generic: 4.53K mUSD
+      - generic: +20.58%
+    - link:
+      - /url: /launches/0x6743e5c6e1b453372507e8dfd6ca53508721425b
+      - strong: $SOAK
+      - generic: 8.53K mUSD
+      - generic: +13.01%
+    - link:
+      - /url: /launches/0x23db4a08f2272df049a4932a4cc3a6dc1002b33e
+      - strong: $ROBYN
+      - generic: 30.4K mUSD
+      - generic: +107.50%
+    - button "Pause"
+  - region "Create a token holders want to earn with.":
+    - paragraph: Permissionless launchpad
+    - heading "Create a token holders want to earn with." [level=2]
+    - paragraph: Choose its immutable mock-asset reward basket, launch on a bonding curve, then let trading activity fund rewards holders can claim. Completed curves graduate automatically into locked liquidity.
+    - generic: 7 live launches
+    - region "Build the token holders want to earn with.":
+      - paragraph: Three guided steps
+      - heading "Build the token holders want to earn with." [level=2]
+      - paragraph: Your saved draft stays in this browser while you review token identity, immutable basket weights, and the final onchain launch.
+      - button "Start launch"
+    - dialog "Review and launch":
+      - paragraph: Create on Robyn
+      - heading "Review and launch" [level=2]
+      - button "Close launch setup": ×
+      - navigation "Launch progress":
+        - button "01 Token and artwork":
+          - generic: "01"
+          - generic: Token and artwork
+        - button "02 Reward basket":
+          - generic: "02"
+          - generic: Reward basket
+        - button "03 Review and launch":
+          - generic: "03"
+          - generic: Review and launch
+      - generic: Token
+      - strong: My Community · $MYCO
+      - generic: Supply
+      - strong: 1,000,000,000 fixed
+      - generic: Market
+      - strong: Bonding curve → locked liquidity
+      - generic: Reward basket
+      - strong: mNVDA 40% · mSPY 40% · mETH 20%
+      - generic: Artwork
+      - strong: Sanitized custom artwork
+      - paragraph: Basket weights and token artwork cannot be changed after the canonical creator binds them. Mock assets have no real-world value.
+      - button "Launch token and market"
+      - status: Create or fund a session wallet, then launch.
+      - complementary "Live token card preview":
+        - img "MYCO token artwork preview"
+        - generic: Live preview
+        - strong: My Community
+        - generic: $MYCO
+        - generic "Preview basket weights"
+        - generic: mNVDA 40%
+        - generic: mSPY 40%
+        - generic: mETH 20%
+      - button "Back"
+    - status: Create or fund a session wallet, then launch.
+  - region "Network disclaimer": Controlled development network only. Every asset is a mock with no real-world value.
+- alert

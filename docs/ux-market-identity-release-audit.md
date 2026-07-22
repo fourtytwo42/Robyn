@@ -2,13 +2,13 @@
 
 Last verified: 2026-07-22
 
-This audit maps the approved integrated release to implemented code and current controlled-devnet evidence. `PROVEN` means the requirement passed code-level and/or live browser verification. `RELEASE-GATE` means implementation is complete but the evidence must be rebound to the new immutable release after promotion and reboot. External Robinhood Testnet broadcast and real-value review remain later gates.
+This audit maps the approved integrated release to implemented code and current controlled-devnet evidence. `PROVEN` means the requirement passed code-level and/or live browser verification. `RELEASE-GATE` means the evidence cannot be complete until the required uninterrupted soak finishes. External Robinhood Testnet broadcast and real-value review remain later gates.
 
 ## Responsive and navigation
 
 | Requirement | Status | Evidence |
 | --- | --- | --- |
-| Mobile token detail stacks without zero-width text or overflow | PROVEN | In-app-browser matrix at 390x844 measured a 213px ART22 title and no horizontal overflow. Final responsive rules are source-ordered last in `apps/web/src/app/globals.css`. |
+| Mobile token detail stacks without zero-width text or overflow | PROVEN | Exact-release in-app-browser matrix at 390x844 measured a 309px single-column ART22 identity/title and no horizontal overflow. Final responsive rules are source-ordered last in `apps/web/src/app/globals.css`. |
 | Compact Markets hero, visible search and collapsible filters | PROVEN | Mobile Markets first card begins at 608px. Filters collapse to a 40px control and expand to the inline 423px advanced panel. |
 | Applied-filter chips and clear-all | PROVEN | Search-only ART22 acceptance renders `Search: ART22`, `Clear all`, `Filters (1)`, and one result. |
 | Auto-moving, scrollable, pausable ticker with reduced-motion behavior | PROVEN | `MarketTapeClient` exposes an accessible Pause control, horizontal tape links, duplicated animation rail, and reduced-motion CSS. |
@@ -66,7 +66,7 @@ This audit maps the approved integrated release to implemented code and current 
 | Artwork resolution order | PROVEN | Active binding, curated controlled-devnet asset, then generated fallback is implemented and browser-tested. |
 | Backup/restore coverage | PROVEN | Backup dynamically dumps every public table and all MinIO objects; restore checks every table row count and every content hash, covering the new schema without a static allowlist. |
 | Immutable release gate includes creator data plane | PROVEN | New gate validates five tables, anonymous session, canonical profile/metadata, and active WebP bytes; its live run passed with 2 profiles, 11 media assets, 6 bindings, 2 reports, and 4 audit rows. |
-| Exact immutable release, reboot, post-reboot browser evidence, encrypted off-VM restore | RELEASE-GATE | Must be produced against the final main-branch SHA after this audit is committed. |
+| Exact immutable release, reboot, post-reboot browser evidence, encrypted off-VM restore | PROVEN | Exact `c41205edf169b990ce03a602b0aec82f64e14274` passed all 12 release gates and immutable packaging, cold-reboot recovery, full Codex in-app-browser regression, eight independently matched wallet receipts, media quarantine/restore, encrypted off-VM backup, and isolated restore of 14 tables plus eight artifacts. Evidence is under `artifacts/browser-uat/2026-07-22-c41205e/`. |
 | Uninterrupted 24-hour soak | RELEASE-GATE | Must start only after exact-release promotion, reboot, browser regression, and off-VM restore evidence are complete. |
 
 ## Current quality gates
@@ -74,5 +74,5 @@ This audit maps the approved integrated release to implemented code and current 
 - Formatting, lint, strict typecheck, all service tests, Anvil smoke, and optimized builds pass.
 - Foundry passes 29 unit/fuzz/adversarial tests and four invariants at 128 runs and 8,192 calls each.
 - Protected chain-46630 build excludes devnet wallet/faucet/session-key markers and retains injected-wallet markers; the controlled-devnet build was restored afterward.
-- The public in-app-browser console has zero warning or error entries after the interactive acceptance run.
-- No unresolved critical or high implementation defect is known. Exact-release operational gates above remain mandatory before goal closure.
+- The exact-release in-app-browser console has zero warning or error entries after the interactive acceptance run.
+- No unresolved critical or high implementation defect is known. The uninterrupted soak and post-soak no-override closure remain mandatory before goal completion.

@@ -1,0 +1,384 @@
+- link "Skip to main content":
+  - /url: "#main"
+- main:
+  - link "Robyn home":
+    - /url: /
+    - generic: ROBYN
+  - navigation "Primary navigation":
+    - link "Markets":
+      - /url: /discover
+    - link "Portfolio":
+      - /url: /portfolio
+    - link "Create":
+      - /url: /create
+  - generic: Local devnet
+  - link "Launch a token":
+    - /url: /create
+  - complementary "Indexed 24 hour reward market tape":
+    - generic: 24h reward markets
+    - link "$ART22 4.31K mUSD Indexed 24 hour change 45.69 percent":
+      - /url: /launches/0xcd2a5abcf58518eb401c2e103e0fc89970d19bd7
+      - strong: $ART22
+      - generic: 4.31K mUSD
+      - generic "Indexed 24 hour change 45.69 percent": +45.69%
+    - link "$UAT22 4.31K mUSD Indexed 24 hour change 45.69 percent":
+      - /url: /launches/0xe994a15087d98970f7027d22f1bae0ee5dcfb2a0
+      - strong: $UAT22
+      - generic: 4.31K mUSD
+      - generic "Indexed 24 hour change 45.69 percent": +45.69%
+    - link "$MYCO 19.14K mUSD Indexed 24 hour change 22.16 percent":
+      - /url: /launches/0x7ffacd7f90cc330ffd99dbf6c88673f0727ec79b
+      - strong: $MYCO
+      - generic: 19.14K mUSD
+      - generic "Indexed 24 hour change 22.16 percent": +22.16%
+    - link "$EVID 36.49K mUSD Indexed 24 hour change -1.14 percent":
+      - /url: /launches/0xed46de7a5f16d09b02ff3890db11c91316196182
+      - strong: $EVID
+      - generic: 36.49K mUSD
+      - generic "Indexed 24 hour change -1.14 percent": "-1.14%"
+    - link "$ONE 4.53K mUSD Indexed 24 hour change 20.58 percent":
+      - /url: /launches/0x1c8d7d133c0c4ac780fc1a4f71913fb6625f7de5
+      - strong: $ONE
+      - generic: 4.53K mUSD
+      - generic "Indexed 24 hour change 20.58 percent": +20.58%
+    - link "$SOAK 8.53K mUSD Indexed 24 hour change 13.01 percent":
+      - /url: /launches/0x6743e5c6e1b453372507e8dfd6ca53508721425b
+      - strong: $SOAK
+      - generic: 8.53K mUSD
+      - generic "Indexed 24 hour change 13.01 percent": +13.01%
+    - link "$ROBYN 30.4K mUSD Indexed 24 hour change 107.50 percent":
+      - /url: /launches/0x23db4a08f2272df049a4932a4cc3a6dc1002b33e
+      - strong: $ROBYN
+      - generic: 30.4K mUSD
+      - generic "Indexed 24 hour change 107.50 percent": +107.50%
+    - link:
+      - /url: /launches/0xcd2a5abcf58518eb401c2e103e0fc89970d19bd7
+      - strong: $ART22
+      - generic: 4.31K mUSD
+      - generic: +45.69%
+    - link:
+      - /url: /launches/0xe994a15087d98970f7027d22f1bae0ee5dcfb2a0
+      - strong: $UAT22
+      - generic: 4.31K mUSD
+      - generic: +45.69%
+    - link:
+      - /url: /launches/0x7ffacd7f90cc330ffd99dbf6c88673f0727ec79b
+      - strong: $MYCO
+      - generic: 19.14K mUSD
+      - generic: +22.16%
+    - link:
+      - /url: /launches/0xed46de7a5f16d09b02ff3890db11c91316196182
+      - strong: $EVID
+      - generic: 36.49K mUSD
+      - generic: "-1.14%"
+    - link:
+      - /url: /launches/0x1c8d7d133c0c4ac780fc1a4f71913fb6625f7de5
+      - strong: $ONE
+      - generic: 4.53K mUSD
+      - generic: +20.58%
+    - link:
+      - /url: /launches/0x6743e5c6e1b453372507e8dfd6ca53508721425b
+      - strong: $SOAK
+      - generic: 8.53K mUSD
+      - generic: +13.01%
+    - link:
+      - /url: /launches/0x23db4a08f2272df049a4932a4cc3a6dc1002b33e
+      - strong: $ROBYN
+      - generic: 30.4K mUSD
+      - generic: +107.50%
+    - button "Pause"
+  - region "Every token launches with rewards.":
+    - paragraph: Fair launches · built-in reward baskets
+    - heading "Every token launches with rewards." [level=1]
+    - paragraph: Every Robyn token has its own immutable mix of mock stock and crypto rewards. Discover a community, trade its market, then claim the basket assets its activity creates.
+    - link "Launch a token":
+      - /url: /create
+    - link "Explore markets":
+      - /url: /discover
+    - generic: Permissionless launch architecture · controlled local chain
+    - complementary "Robyn genesis market":
+      - img "ROBYN token artwork"
+      - generic: Live reward basket
+      - strong: Robyn Genesis
+      - generic: ROBYN
+      - paragraph: Holders earn 40% mNVDA / 40% mSPY / 20% mETH.
+  - region "Launchpad activity":
+    - article:
+      - generic: Live markets
+      - strong: "7"
+    - article:
+      - generic: Reward assets
+      - strong: "3"
+    - article:
+      - generic: Indexed volume
+      - strong: 24.66K mUSD
+    - article:
+      - generic: Basket rules
+      - strong: Immutable
+  - region "Choose the rewards you want to earn.":
+    - paragraph: Live & rising
+    - heading "Choose the rewards you want to earn." [level=2]
+    - link "View all markets →":
+      - /url: /discover
+    - 'link "Bonding #1 Robyn Genesis $ROBYN Immutable basket weights Robyn Genesis market metrics Bonding 95.6% 6.22K mUSD raised +107.50% 24h View market →"':
+      - /url: /launches/0x23db4a08f2272df049a4932a4cc3a6dc1002b33e
+      - generic: Bonding
+      - generic: "#1"
+      - strong: Robyn Genesis
+      - generic: $ROBYN
+      - generic "Immutable basket weights":
+        - generic "Mock NVIDIA 40%": mNVDA · 40%
+        - generic "Mock S&P 500 40%": mSPY · 40%
+        - generic "Mock Ether 20%": mETH · 20%
+      - generic "Robyn Genesis market metrics":
+        - term: Market cap
+        - definition: 30.4K mUSD
+        - term: 24h volume
+        - definition: 2.13K mUSD
+        - term: Holders
+        - definition: "9"
+      - generic: Bonding
+      - strong: 95.6%
+      - generic: 6.22K mUSD raised
+      - generic: +107.50% 24h
+      - generic: View market →
+    - 'link "Bonding #2 Soak Society $SOAK Immutable basket weights Soak Society market metrics Bonding 35.0% 2.27K mUSD raised +13.01% 24h View market →"':
+      - /url: /launches/0x6743e5c6e1b453372507e8dfd6ca53508721425b
+      - generic: Bonding
+      - generic: "#2"
+      - strong: Soak Society
+      - generic: $SOAK
+      - generic "Immutable basket weights":
+        - generic "Mock NVIDIA 25%": mNVDA · 25%
+        - generic "Mock S&P 500 50%": mSPY · 50%
+        - generic "Mock Ether 25%": mETH · 25%
+      - generic "Soak Society market metrics":
+        - term: Market cap
+        - definition: 8.53K mUSD
+        - term: 24h volume
+        - definition: 35 mUSD
+        - term: Holders
+        - definition: "4"
+      - generic: Bonding
+      - strong: 35.0%
+      - generic: 2.27K mUSD raised
+      - generic: +13.01% 24h
+      - generic: View market →
+    - 'link "Bonding #3 NVIDIA Orbit $ONE Immutable basket weights NVIDIA Orbit market metrics Bonding 16.4% 1.07K mUSD raised +20.58% 24h View market →"':
+      - /url: /launches/0x1c8d7d133c0c4ac780fc1a4f71913fb6625f7de5
+      - generic: Bonding
+      - generic: "#3"
+      - strong: NVIDIA Orbit
+      - generic: $ONE
+      - generic "Immutable basket weights":
+        - generic "Mock NVIDIA 100%": mNVDA · 100%
+      - generic "NVIDIA Orbit market metrics":
+        - term: Market cap
+        - definition: 4.53K mUSD
+        - term: 24h volume
+        - definition: 45 mUSD
+        - term: Holders
+        - definition: "3"
+      - generic: Bonding
+      - strong: 16.4%
+      - generic: 1.07K mUSD raised
+      - generic: +20.58% 24h
+      - generic: View market →
+    - 'link "Graduated #4 Evidence Engine $EVID Immutable basket weights Evidence Engine market metrics Graduated 100.0% Liquidity locked · pool trading live -1.14% 24h View market →"':
+      - /url: /launches/0xed46de7a5f16d09b02ff3890db11c91316196182
+      - generic: Graduated
+      - generic: "#4"
+      - strong: Evidence Engine
+      - generic: $EVID
+      - generic "Immutable basket weights":
+        - generic "Mock NVIDIA 20%": mNVDA · 20%
+        - generic "Mock S&P 500 30%": mSPY · 30%
+        - generic "Mock Ether 50%": mETH · 50%
+      - generic "Evidence Engine market metrics":
+        - term: Market cap
+        - definition: 36.49K mUSD
+        - term: 24h volume
+        - definition: 55 mUSD
+        - term: Holders
+        - definition: "7"
+      - generic: Graduated
+      - strong: 100.0%
+      - generic: Liquidity locked · pool trading live
+      - generic: "-1.14% 24h"
+      - generic: View market →
+  - region "Available reward basket assets":
+    - paragraph: Inside the basket
+    - heading "Recognizable rewards, earned by holding." [level=2]
+    - article:
+      - img "mNVDA basket asset artwork"
+      - strong: mNVDA
+      - generic: Mock NVIDIA
+      - generic: 40%
+    - article:
+      - img "mSPY basket asset artwork"
+      - strong: mSPY
+      - generic: Mock S&P 500
+      - generic: 40%
+    - article:
+      - img "mETH basket asset artwork"
+      - strong: mETH
+      - generic: Mock Ether
+      - generic: 20%
+  - region "System status":
+    - text: Web
+    - strong: ok
+    - text: RPC
+    - strong: ok
+    - text: Chain
+    - strong: "31337"
+    - text: Indexer
+    - strong: ok · block 165
+    - text: Keeper
+    - strong: ok
+    - text: Artifacts
+    - strong: ok
+  - region "Create a token holders want to earn with.":
+    - paragraph: Permissionless launchpad
+    - heading "Create a token holders want to earn with." [level=2]
+    - paragraph: Choose its immutable mock-asset reward basket, launch on a bonding curve, then let trading activity fund rewards holders can claim. Completed curves graduate automatically into locked liquidity.
+    - generic: 7 live launches
+    - region "Build the token holders want to earn with.":
+      - paragraph: Three guided steps
+      - heading "Build the token holders want to earn with." [level=2]
+      - paragraph: Your saved draft stays in this browser while you review token identity, immutable basket weights, and the final onchain launch.
+      - button "Start launch"
+    - generic "Launch registry":
+      - article:
+        - generic: Live market
+        - generic: "#7"
+        - strong: Artwork Acceptance
+        - generic: $ART22
+        - paragraph: 0 ART22 in this wallet
+        - code: 0xCD2a5abc...D19bD7
+        - button "Buy 990k"
+        - button "Sell 10k" [disabled]
+        - button "Convert"
+        - button "Claim"
+      - article:
+        - generic: Live market
+        - generic: "#6"
+        - strong: UAT Reward Basket
+        - generic: $UAT22
+        - paragraph: 0 UAT22 in this wallet
+        - code: 0xe994a150...CFB2A0
+        - button "Buy 990k"
+        - button "Sell 10k" [disabled]
+        - button "Convert"
+        - button "Claim"
+      - article:
+        - generic: Live market
+        - generic: "#5"
+        - strong: My Community
+        - generic: $MYCO
+        - paragraph: 0 MYCO in this wallet
+        - code: 0x7fFAcD7f...7ec79b
+        - button "Buy 990k"
+        - button "Sell 10k" [disabled]
+        - button "Convert"
+        - button "Claim"
+      - article:
+        - generic: Live market
+        - generic: "#4"
+        - strong: Evidence Engine
+        - generic: $EVID
+        - paragraph: 0 EVID in this wallet
+        - code: 0xEd46dE7A...196182
+        - button "Buy 990k"
+        - button "Sell 10k" [disabled]
+        - button "Convert"
+        - button "Claim"
+      - article:
+        - generic: Live market
+        - generic: "#3"
+        - strong: NVIDIA Orbit
+        - generic: $ONE
+        - paragraph: 0 ONE in this wallet
+        - code: 0x1c8d7d13...5F7De5
+        - button "Buy 990k"
+        - button "Sell 10k" [disabled]
+        - button "Convert"
+        - button "Claim"
+      - article:
+        - generic: Live market
+        - generic: "#2"
+        - strong: Soak Society
+        - generic: $SOAK
+        - paragraph: 0 SOAK in this wallet
+        - code: 0x6743E5c6...21425B
+        - button "Buy 990k"
+        - button "Sell 10k" [disabled]
+        - button "Convert"
+        - button "Claim"
+      - article:
+        - generic: Live market
+        - generic: "#1"
+        - strong: Robyn Genesis
+        - generic: $ROBYN
+        - paragraph: 0 ROBYN in this wallet
+        - code: 0x23dB4a08...02B33E
+        - button "Buy 990k"
+        - button "Sell 10k" [disabled]
+        - button "Convert"
+        - button "Claim"
+    - status: Create or fund a session wallet, then launch.
+  - region "Trade ROBYN. Earn its 40 / 40 / 20 basket.":
+    - paragraph: Live genesis market
+    - heading "Trade ROBYN. Earn its 40 / 40 / 20 basket." [level=2]
+    - generic: Live - block state
+    - text: Session wallet
+    - code: "0x3f529006f7cFd62F8796A8ae3c26296F5B312290"
+    - button "Clear wallet"
+    - generic "Wallet balances":
+      - article:
+        - text: Dev gas
+        - strong: 9.9975 DEV
+      - article:
+        - text: Trading cash
+        - strong: 8,718.93 mUSD
+      - article:
+        - text: Community token
+        - strong: 45,744,746 ROBYN
+    - generic "Genesis market actions":
+      - button "1. Fund wallet"
+      - button "2. Buy ROBYN"
+      - button "3. Convert fees" [disabled]
+      - button "4. Claim rewards" [disabled]
+      - button "Sell 100k"
+      - button "Refresh"
+    - generic "Immutable reward basket":
+      - article:
+        - generic: mNVDA
+        - generic: 40%
+        - term: Pending fees
+        - definition: 0.013 mUSD
+        - term: Claimable
+        - definition: 0 mNVDA
+        - term: Wallet rewards
+        - definition: 0.2531 mNVDA
+      - article:
+        - generic: mSPY
+        - generic: 40%
+        - term: Pending fees
+        - definition: 0.013 mUSD
+        - term: Claimable
+        - definition: 0 mSPY
+        - term: Wallet rewards
+        - definition: 0.5062 mSPY
+      - article:
+        - generic: mETH
+        - generic: 20%
+        - term: Pending fees
+        - definition: 0.5872 mUSD
+        - term: Claimable
+        - definition: 0 mETH
+        - term: Wallet rewards
+        - definition: 0.2799 mETH
+    - status: Sold 100,000 ROBYN against the live 3.2159 mUSD quote.
+    - paragraph: ROBYN is not redeemable for this basket. Rewards shown here are funded only by mock trading fees on a development network and have no financial value.
+  - region "Development disclaimer": Development network only. Every asset is a mock with no real-world value. This environment proves the full protocol workflow before testnet deployment.
+- alert
