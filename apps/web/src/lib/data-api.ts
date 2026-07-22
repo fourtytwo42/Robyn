@@ -15,8 +15,16 @@ export type LaunchRecord = {
     marketCapBase: string;
     priceChangeBps: number;
     priceChangeSource: "indexed" | "demo";
+    change24hBps: number | null;
+    change7dBps: number | null;
     liquidityBase: string;
     totalVolumeBase: string;
+    volume24hBase: string;
+    volume7dBase: string;
+    buyVolume24hBase: string;
+    sellVolume24hBase: string;
+    tradeCount24h: number;
+    uniqueTraders24h: number;
     holderCount: number;
     tradeCount: number;
     baseSymbol: string;
@@ -72,9 +80,17 @@ export type LaunchAnalytics = {
     feeBps: number;
     priceBasePerToken: string;
     priceChangeBps: number;
+    change24hBps: number | null;
+    change7dBps: number | null;
     marketCapBase: string;
     liquidityBase: string;
     totalVolumeBase: string;
+    volume24hBase: string;
+    volume7dBase: string;
+    buyVolume24hBase: string;
+    sellVolume24hBase: string;
+    tradeCount24h: number;
+    uniqueTraders24h: number;
     buyVolumeBase: string;
     sellVolumeBase: string;
     totalFeesBase: string;
@@ -85,6 +101,8 @@ export type LaunchAnalytics = {
     circulatingSupply: string;
     tokenReserve: string;
     baseReserve: string;
+    graduationBlock: string | null;
+    graduationTimestamp: string | null;
     topHolders: Array<{
       address: string;
       balance: string;
@@ -106,6 +124,11 @@ export type LaunchAnalytics = {
       timestamp: string | null;
       price: string;
       cumulativeVolume: string;
+      eventType: "launch" | "trade" | "graduation";
+      side: "buy" | "sell" | null;
+      baseAmount: string;
+      transactionHash: string | null;
+      logIndex: number;
     }>;
   };
   asOfBlock: string | null;
@@ -128,6 +151,9 @@ export async function getLaunches(
     q?: string;
     asset?: string;
     basketSize?: string;
+    sort?: string;
+    window?: string;
+    phase?: string;
   } = {},
 ): Promise<LaunchList> {
   const url = apiUrl("/launches");
@@ -136,6 +162,9 @@ export async function getLaunches(
   if (filters.asset) url.searchParams.set("asset", filters.asset);
   if (filters.basketSize)
     url.searchParams.set("basketSize", filters.basketSize);
+  if (filters.sort) url.searchParams.set("sort", filters.sort);
+  if (filters.window) url.searchParams.set("window", filters.window);
+  if (filters.phase) url.searchParams.set("phase", filters.phase);
   return getJson<LaunchList>(url);
 }
 

@@ -13,6 +13,7 @@ const marketEvents = parseAbi([
   "event LiquiditySeeded(address indexed provider,uint256 tokenAmount,uint256 baseAmount)",
   "event Bought(address indexed buyer,uint256 baseInput,uint256 feeAmount,uint256 tokenOutput)",
   "event Sold(address indexed seller,uint256 tokenInput,uint256 feeAmount,uint256 baseOutput)",
+  "event Graduated(address indexed pool,uint256 tokenLiquidity,uint256 baseLiquidity,uint256 finalCurvePrice)",
 ]);
 
 export type AnalyticsLog = {
@@ -82,6 +83,7 @@ export function deriveLaunchAnalytics({
   reserveSnapshot,
   snapshot,
   lifecycle,
+  nowMs = Date.now(),
 }: {
   launch: LaunchIdentity;
   logs: AnalyticsLog[];
@@ -107,6 +109,7 @@ export function deriveLaunchAnalytics({
     baseReserve: bigint;
     balances: Map<string, bigint>;
   };
+  nowMs?: number;
 }) {
   const token = launch.token.toLowerCase();
   const market = launch.market.toLowerCase();
@@ -123,6 +126,7 @@ export function deriveLaunchAnalytics({
     blockNumber: string;
     timestamp: string | null;
     transactionHash: Hex;
+    price: string;
   }> = [];
   let totalSupply = initialSupply ?? 0n;
   let tokenReserve = 0n;
@@ -137,14 +141,26 @@ export function deriveLaunchAnalytics({
     timestamp: string | null;
     price: string;
     cumulativeVolume: string;
+    eventType: "launch" | "trade" | "graduation";
+    side: "buy" | "sell" | null;
+    baseAmount: string;
+    transactionHash: Hex | null;
+    logIndex: number;
   }> = [
     {
       blockNumber: "0",
       timestamp: isoTime(createdTimestamp),
       price: basePerToken.toString(),
       cumulativeVolume: "0",
+      eventType: "launch",
+      side: null,
+      baseAmount: "0",
+      transactionHash: null,
+      logIndex: 0,
     },
   ];
+  let graduationBlock: string | null = null;
+  let graduationTimestamp: string | null = null;
 
   if (initialSupply) addBalance(balances, launch.creator, initialSupply);
 
@@ -179,6 +195,23 @@ export function deriveLaunchAnalytics({
         baseReserve += decoded.args.baseAmount;
         continue;
       }
+      if (decoded.eventName === "Graduated") {
+        graduationBlock = log.block_number;
+        graduationTimestamp = isoTime(log.timestamp);
+        chart.push({
+          blockNumber: log.block_number,
+          timestamp: graduationTimestamp,
+          price: decoded.args.finalCurvePrice.toString(),
+          cumulativeVolume: cumulativeVolume.toString(),
+          eventType: "graduation",
+          side: null,
+          baseAmount: "0",
+          transactionHash: log.transaction_hash,
+          logIndex: log.log_index,
+        });
+        continue;
+      }
+      let executionPrice: bigint;
       if (decoded.eventName === "Bought") {
         const { buyer, baseInput, feeAmount, tokenOutput } = decoded.args;
         tokenReserve -= tokenOutput;
@@ -188,6 +221,7 @@ export function deriveLaunchAnalytics({
         totalFees += feeAmount;
         cumulativeVolume += baseInput;
         traders.add(buyer.toLowerCase());
+        executionPrice = ((baseInput - feeAmount) * 10n ** 18n) / tokenOutput;
         trades.push({
           side: "buy",
           trader: buyer,
@@ -197,6 +231,7 @@ export function deriveLaunchAnalytics({
           blockNumber: log.block_number,
           timestamp: isoTime(log.timestamp),
           transactionHash: log.transaction_hash,
+          price: executionPrice.toString(),
         });
       } else if (decoded.eventName === "Sold") {
         const { seller, tokenInput, feeAmount, baseOutput } = decoded.args;
@@ -208,6 +243,7 @@ export function deriveLaunchAnalytics({
         totalFees += feeAmount;
         cumulativeVolume += grossBase;
         traders.add(seller.toLowerCase());
+        executionPrice = (baseOutput * 10n ** 18n) / tokenInput;
         trades.push({
           side: "sell",
           trader: seller,
@@ -217,20 +253,21 @@ export function deriveLaunchAnalytics({
           blockNumber: log.block_number,
           timestamp: isoTime(log.timestamp),
           transactionHash: log.transaction_hash,
+          price: executionPrice.toString(),
         });
       } else {
         continue;
       }
-      const executionPrice =
-        decoded.eventName === "Bought"
-          ? ((decoded.args.baseInput - decoded.args.feeAmount) * 10n ** 18n) /
-            decoded.args.tokenOutput
-          : (decoded.args.baseOutput * 10n ** 18n) / decoded.args.tokenInput;
       chart.push({
         blockNumber: log.block_number,
         timestamp: isoTime(log.timestamp),
         price: executionPrice.toString(),
         cumulativeVolume: cumulativeVolume.toString(),
+        eventType: "trade",
+        side: decoded.eventName === "Bought" ? "buy" : "sell",
+        baseAmount: trades.at(-1)?.baseAmount ?? "0",
+        transactionHash: log.transaction_hash,
+        logIndex: log.log_index,
       });
     } catch {
       continue;
@@ -271,6 +308,44 @@ export function deriveLaunchAnalytics({
       ? 0
       : Number(((basePerToken - firstTradePrice) * 10_000n) / firstTradePrice);
 
+  const windowMetrics = (windowMs: number) => {
+    const cutoff = nowMs - windowMs;
+    const timestamped = trades.flatMap((trade) => {
+      if (!trade.timestamp) return [];
+      const time = Date.parse(trade.timestamp);
+      return Number.isFinite(time) ? [{ ...trade, time }] : [];
+    });
+    const inWindow = timestamped.filter((trade) => trade.time >= cutoff);
+    const beforeWindow = timestamped.filter((trade) => trade.time < cutoff);
+    const baseline = beforeWindow.at(-1) ?? inWindow[0];
+    const baselinePrice = baseline ? BigInt(baseline.price) : null;
+    const changeBps =
+      inWindow.length === 0 || baselinePrice === null || baselinePrice === 0n
+        ? null
+        : Number(((basePerToken - baselinePrice) * 10_000n) / baselinePrice);
+    let volume = 0n;
+    let buy = 0n;
+    let sell = 0n;
+    const windowTraders = new Set<string>();
+    for (const trade of inWindow) {
+      const amount = BigInt(trade.baseAmount);
+      volume += amount;
+      if (trade.side === "buy") buy += amount;
+      else sell += amount;
+      windowTraders.add(trade.trader.toLowerCase());
+    }
+    return {
+      changeBps,
+      volumeBase: volume.toString(),
+      buyVolumeBase: buy.toString(),
+      sellVolumeBase: sell.toString(),
+      tradeCount: inWindow.length,
+      uniqueTraders: windowTraders.size,
+    };
+  };
+  const metrics24h = windowMetrics(24 * 60 * 60 * 1000);
+  const metrics7d = windowMetrics(7 * 24 * 60 * 60 * 1000);
+
   return {
     formula: "canonical-events-plus-onchain-state-v1",
     marketType:
@@ -291,11 +366,19 @@ export function deriveLaunchAnalytics({
     feeBps,
     priceBasePerToken: basePerToken.toString(),
     priceChangeBps,
+    change24hBps: metrics24h.changeBps,
+    change7dBps: metrics7d.changeBps,
     marketCapBase: marketCapBase.toString(),
     liquidityBase: liquidityBase.toString(),
     totalVolumeBase: totalVolume.toString(),
     buyVolumeBase: buyVolume.toString(),
     sellVolumeBase: sellVolume.toString(),
+    volume24hBase: metrics24h.volumeBase,
+    volume7dBase: metrics7d.volumeBase,
+    buyVolume24hBase: metrics24h.buyVolumeBase,
+    sellVolume24hBase: metrics24h.sellVolumeBase,
+    tradeCount24h: metrics24h.tradeCount,
+    uniqueTraders24h: metrics24h.uniqueTraders,
     totalFeesBase: totalFees.toString(),
     tradeCount: trades.length,
     uniqueTraderCount: traders.size,
@@ -304,6 +387,8 @@ export function deriveLaunchAnalytics({
     circulatingSupply: circulatingSupply.toString(),
     tokenReserve: tokenReserve.toString(),
     baseReserve: baseReserve.toString(),
+    graduationBlock,
+    graduationTimestamp,
     topHolders: positiveBalances.slice(0, 10).map(([address, balance]) => ({
       address,
       balance: balance.toString(),

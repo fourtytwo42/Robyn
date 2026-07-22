@@ -2,7 +2,11 @@ import Fastify from "fastify";
 import { readFile } from "node:fs/promises";
 import { createDatabase } from "@robyn/db";
 import { createPublicClient, http, type Address } from "viem";
-import { parseDiscoveryQuery, type DiscoveryQuery } from "./discovery-query.js";
+import {
+  encodeDiscoveryCursor,
+  parseDiscoveryQuery,
+  type DiscoveryQuery,
+} from "./discovery-query.js";
 import {
   demoMarketChangeBps,
   isDemoMarketChangeEnabled,
@@ -473,11 +477,15 @@ app.get<{
   const {
     limit,
     before,
+    cursor,
     query,
     asset,
     basketSize,
     invalidCursor,
     invalidCanonicalAddress,
+    sort,
+    window,
+    phase,
   } = parseDiscoveryQuery(request.query);
   if (invalidCursor) {
     return reply.code(400).send({ error: "invalid_cursor" });
@@ -488,53 +496,153 @@ app.get<{
       data: [],
       nextCursor: null,
       queryStatus: "invalid_address",
-      filters: { q: query, asset, basketSize },
+      filters: { q: query, asset, basketSize, sort, window, phase },
       ...state,
     };
   }
+  const rankedRequest =
+    cursor !== null ||
+    request.query.sort !== undefined ||
+    request.query.window !== undefined ||
+    request.query.phase !== undefined;
+  const candidateLimit = rankedRequest ? 1001 : limit;
   const storedRows = await sql.unsafe<LaunchRow[]>(
     "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version FROM launches WHERE chain_id=$1 AND ($2::bigint IS NULL OR launch_id::bigint<$2::bigint) AND ($4::text IS NULL OR token=$4 OR strpos(lower(name),$4)>0 OR strpos(lower(symbol),$4)>0) AND ($5::text IS NULL OR assets ? $5) AND ($6::integer IS NULL OR jsonb_array_length(assets)=$6) ORDER BY CASE WHEN token=$4 THEN 0 ELSE 1 END,launch_id::bigint DESC LIMIT $3",
-    [chainId, before, limit, query, asset, basketSize],
+    [
+      chainId,
+      rankedRequest ? null : before,
+      candidateLimit,
+      query,
+      asset,
+      basketSize,
+    ],
   );
+  if (rankedRequest && storedRows.length === candidateLimit) {
+    return reply
+      .code(503)
+      .send({ error: "ranked_projection_capacity_exceeded" });
+  }
   const rows = await hydrateMarkets(storedRows);
   const marketMetrics = await discoveryMetrics(rows).catch((error) => {
     request.log.warn({ error }, "discovery metrics unavailable");
     return new Map<string, ReturnType<typeof deriveLaunchAnalytics>>();
   });
+  const data = rows.map((row) => {
+    const metric = marketMetrics.get(row.token.toLowerCase());
+    const priceChangeBps = demoMarketChangesEnabled
+      ? demoMarketChangeBps(row.token as Address)
+      : metric?.priceChangeBps;
+    return {
+      ...row,
+      metrics: metric
+        ? {
+            marketCapBase: metric.marketCapBase,
+            priceChangeBps,
+            priceChangeSource: demoMarketChangesEnabled ? "demo" : "indexed",
+            change24hBps: metric.change24hBps,
+            change7dBps: metric.change7dBps,
+            liquidityBase: metric.liquidityBase,
+            totalVolumeBase: metric.totalVolumeBase,
+            volume24hBase: metric.volume24hBase,
+            volume7dBase: metric.volume7dBase,
+            buyVolume24hBase: metric.buyVolume24hBase,
+            sellVolume24hBase: metric.sellVolume24hBase,
+            tradeCount24h: metric.tradeCount24h,
+            uniqueTraders24h: metric.uniqueTraders24h,
+            holderCount: metric.holderCount,
+            tradeCount: metric.tradeCount,
+            baseSymbol: metric.baseSymbol,
+            marketPhase: metric.marketPhase,
+            graduationProgressBps: metric.graduationProgressBps,
+            graduationThresholdBase: metric.graduationThresholdBase,
+            baseRaised: metric.baseRaised,
+            remainingCurveTokens: metric.remainingCurveTokens,
+            graduatedPool: metric.graduatedPool,
+          }
+        : null,
+    };
+  });
+  const visible = data.filter((row) => {
+    if (!row.metrics) return phase === "all";
+    if (sort === "near_graduation")
+      return row.metrics.marketPhase === "bonding";
+    if (sort === "graduated") return row.metrics.marketPhase === "graduated";
+    return phase === "all" || row.metrics.marketPhase === phase;
+  });
+  const amountForWindow = (row: (typeof visible)[number]) => {
+    if (!row.metrics) return 0n;
+    if (window === "24h") return BigInt(row.metrics.volume24hBase);
+    if (window === "7d") return BigInt(row.metrics.volume7dBase);
+    return BigInt(row.metrics.totalVolumeBase);
+  };
+  const compareBigInt = (left: bigint, right: bigint) =>
+    left === right ? 0 : left > right ? -1 : 1;
+  visible.sort((left, right) => {
+    if (sort === "new")
+      return Number(BigInt(right.launch_id) - BigInt(left.launch_id));
+    if (sort === "near_graduation") {
+      const progress =
+        (right.metrics?.graduationProgressBps ?? 0) -
+        (left.metrics?.graduationProgressBps ?? 0);
+      if (progress !== 0) return progress;
+    } else if (sort === "market_cap") {
+      const marketCap = compareBigInt(
+        BigInt(left.metrics?.marketCapBase ?? "0"),
+        BigInt(right.metrics?.marketCapBase ?? "0"),
+      );
+      if (marketCap !== 0) return marketCap;
+    } else {
+      const volume = compareBigInt(
+        sort === "trending"
+          ? BigInt(left.metrics?.volume24hBase ?? "0")
+          : amountForWindow(left),
+        sort === "trending"
+          ? BigInt(right.metrics?.volume24hBase ?? "0")
+          : amountForWindow(right),
+      );
+      if (volume !== 0) return volume;
+      if (sort === "trending") {
+        const traders =
+          (right.metrics?.uniqueTraders24h ?? 0) -
+          (left.metrics?.uniqueTraders24h ?? 0);
+        if (traders !== 0) return traders;
+        const trades =
+          (right.metrics?.tradeCount24h ?? 0) -
+          (left.metrics?.tradeCount24h ?? 0);
+        if (trades !== 0) return trades;
+      }
+    }
+    return Number(BigInt(right.launch_id) - BigInt(left.launch_id));
+  });
+  const cursorIndex = cursor
+    ? visible.findIndex((row) => row.launch_id === cursor.launchId)
+    : -1;
+  if (cursor && cursorIndex < 0) {
+    return reply.code(400).send({ error: "stale_cursor" });
+  }
+  const pageStart = cursorIndex + 1;
+  const page = rankedRequest
+    ? visible.slice(pageStart, pageStart + limit)
+    : visible;
+  const hasMore = rankedRequest
+    ? visible.length > pageStart + page.length
+    : rows.length === limit;
+  const lastRow = page.at(-1);
   return {
-    data: rows.map((row) => {
-      const metric = marketMetrics.get(row.token.toLowerCase());
-      const priceChangeBps = demoMarketChangesEnabled
-        ? demoMarketChangeBps(row.token as Address)
-        : metric?.priceChangeBps;
-      return {
-        ...row,
-        metrics: metric
-          ? {
-              marketCapBase: metric.marketCapBase,
-              priceChangeBps,
-              priceChangeSource: demoMarketChangesEnabled ? "demo" : "indexed",
-              liquidityBase: metric.liquidityBase,
-              totalVolumeBase: metric.totalVolumeBase,
-              holderCount: metric.holderCount,
-              tradeCount: metric.tradeCount,
-              baseSymbol: metric.baseSymbol,
-              marketPhase: metric.marketPhase,
-              graduationProgressBps: metric.graduationProgressBps,
-              graduationThresholdBase: metric.graduationThresholdBase,
-              baseRaised: metric.baseRaised,
-              remainingCurveTokens: metric.remainingCurveTokens,
-              graduatedPool: metric.graduatedPool,
-            }
-          : null,
-      };
-    }),
+    data: page,
     nextCursor:
-      rows.length === limit
-        ? (rows.at(-1) as { launch_id: string }).launch_id
+      hasMore && lastRow
+        ? rankedRequest
+          ? encodeDiscoveryCursor({
+              launchId: lastRow.launch_id,
+              sort,
+              window,
+              phase,
+            })
+          : lastRow.launch_id
         : null,
     queryStatus: "ok",
-    filters: { q: query, asset, basketSize },
+    filters: { q: query, asset, basketSize, sort, window, phase },
     ...state,
   };
 });

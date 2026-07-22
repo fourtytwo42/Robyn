@@ -322,13 +322,35 @@
   font-size: 0.65rem;
 }
 .home-market-action {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   margin-top: auto;
   padding-top: 8px;
   color: #73e6d6;
   font-size: 0.72rem;
   font-weight: 750;
   text-align: right;
+}
+
+.home-market-action .market-change {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-align: left;
+}
+
+.market-change.positive {
+  color: #50d7a5;
+}
+
+.market-change.negative {
+  color: #ff8f8f;
+}
+
+.market-change.neutral {
+  color: #8895ad;
 }
 .basket-asset-rail {
   display: grid;
@@ -1292,15 +1314,47 @@ main > .notice {
 
 .filter-bar {
   display: grid;
-  grid-template-columns:
-    minmax(240px, 2fr) repeat(2, minmax(150px, 1fr))
-    auto auto;
+  grid-template-columns: minmax(240px, 1fr) auto;
   gap: 0.75rem;
   align-items: end;
   border: 1px solid var(--line);
   border-radius: 1rem;
   background: rgba(18, 26, 47, 0.72);
   padding: 1rem;
+}
+
+.filter-advanced {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr)) auto auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.mobile-filter-toggle {
+  display: none;
+}
+
+.applied-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  margin-top: 0.65rem;
+}
+
+.applied-filter-chips span,
+.applied-filter-chips a {
+  border: 1px solid rgba(53, 208, 186, 0.22);
+  border-radius: 999px;
+  background: rgba(53, 208, 186, 0.07);
+  padding: 0.34rem 0.62rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-decoration: none;
+}
+
+.applied-filter-chips a {
+  color: var(--primary);
 }
 
 .filter-bar label {
@@ -2077,6 +2131,33 @@ main > .notice {
   overflow-wrap: anywhere;
 }
 
+.decision-basket {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+}
+
+.decision-basket span {
+  border: 1px solid rgba(242, 184, 75, 0.22);
+  border-radius: 999px;
+  background: rgba(242, 184, 75, 0.07);
+  padding: 0.3rem 0.52rem;
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.decision-basket b {
+  color: var(--reward);
+}
+
+.token-hero-quote .market-change {
+  font:
+    800 0.7rem/1.2 "IBM Plex Mono",
+    ui-monospace,
+    monospace;
+}
+
 .token-market-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
@@ -2143,11 +2224,47 @@ main > .notice {
   color: var(--on-brand);
 }
 
+.chart-range-tabs {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  margin-top: 0.65rem;
+}
+
+.chart-range-tabs button {
+  min-width: 44px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  padding: 0.32rem 0.55rem;
+  color: var(--muted);
+  font:
+    750 0.64rem/1 "IBM Plex Mono",
+    ui-monospace,
+    monospace;
+  cursor: pointer;
+}
+
+.chart-range-tabs button.active {
+  border-color: rgba(53, 208, 186, 0.35);
+  background: rgba(53, 208, 186, 0.1);
+  color: var(--primary);
+}
+
 .chart-canvas {
+  position: relative;
   margin-top: 0.75rem;
   border-radius: 0.75rem;
   background: linear-gradient(180deg, rgba(53, 208, 186, 0.04), transparent);
   overflow: hidden;
+}
+
+.chart-axis-label {
+  fill: #7f8ca5;
+  font:
+    600 10px/1 "IBM Plex Mono",
+    ui-monospace,
+    monospace;
 }
 
 .chart-canvas svg {
@@ -2173,6 +2290,57 @@ main > .notice {
   fill: var(--canvas);
   stroke: var(--primary);
   stroke-width: 3;
+}
+
+.chart-point.trade.buy {
+  stroke: #50d7a5;
+}
+
+.chart-point.trade.sell {
+  stroke: #ff8f8f;
+}
+
+.chart-point.graduation {
+  stroke: var(--reward);
+}
+
+.chart-point:focus-visible {
+  outline: none;
+  stroke-width: 6;
+}
+
+.graduation-marker {
+  stroke: var(--reward);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 5;
+}
+
+.chart-tooltip {
+  position: absolute;
+  z-index: 2;
+  top: 0.65rem;
+  left: 0.65rem;
+  display: grid;
+  gap: 0.18rem;
+  max-width: calc(100% - 1.3rem);
+  border: 1px solid rgba(53, 208, 186, 0.3);
+  border-radius: 0.65rem;
+  background: rgba(5, 9, 20, 0.94);
+  padding: 0.55rem 0.7rem;
+  color: var(--text);
+  font-size: 0.68rem;
+  pointer-events: none;
+}
+
+.chart-tooltip strong {
+  color: var(--primary);
+  text-transform: capitalize;
+}
+
+.chart-tooltip small,
+.chart-tooltip code {
+  color: var(--muted);
+  font-size: 0.62rem;
 }
 
 .chart-foot {
@@ -2521,12 +2689,55 @@ main > .notice {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: stretch;
   min-height: 46px;
   border-bottom: 1px solid var(--line);
   background: rgba(6, 10, 21, 0.84);
   overflow: hidden;
+}
+
+.market-tape-runner {
+  display: flex;
+  width: max-content;
+  animation: market-tape-scroll 42s linear infinite;
+}
+
+.market-tape.tape-paused .market-tape-runner,
+.market-tape-track:focus-within .market-tape-runner,
+.market-tape-track:hover .market-tape-runner {
+  animation-play-state: paused;
+}
+
+.market-tape-pause {
+  min-width: 64px;
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: rgba(10, 16, 30, 0.94);
+  color: var(--muted);
+  font:
+    750 0.65rem/1 "IBM Plex Mono",
+    ui-monospace,
+    monospace;
+  cursor: pointer;
+}
+
+.market-tape-pause:hover,
+.market-tape-pause:focus-visible {
+  color: var(--primary);
+  background: rgba(53, 208, 186, 0.08);
+}
+
+@keyframes market-tape-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .market-tape-runner {
+    animation: none;
+  }
 }
 
 .market-tape-label {
@@ -2734,6 +2945,7 @@ main > .notice {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 750;
+  text-decoration: none;
 }
 
 .board-tab.active {
@@ -2964,6 +3176,90 @@ main > .notice {
 
 /* Keep responsive token rules after the launchpad layer's desktop overrides. */
 @media (max-width: 760px) {
+  .discovery-page {
+    padding-top: 1.15rem;
+  }
+
+  .discovery-hero {
+    gap: 0.45rem;
+    margin-bottom: 1rem;
+  }
+
+  .discovery-hero h1 {
+    font-size: clamp(1.75rem, 9vw, 2.45rem);
+    line-height: 0.98;
+  }
+
+  .discovery-hero .lede {
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .filter-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.55rem;
+    padding: 0.7rem;
+  }
+
+  .filter-search {
+    min-width: 0;
+  }
+
+  .filter-search input {
+    min-height: 40px;
+  }
+
+  .mobile-filter-toggle {
+    display: inline-flex;
+    min-height: 40px;
+    align-self: end;
+  }
+
+  .filter-advanced {
+    display: none;
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr;
+    padding-top: 0.25rem;
+  }
+
+  .filter-bar.filters-open .filter-advanced {
+    display: grid;
+  }
+
+  .market-board-toolbar {
+    align-items: start;
+    gap: 0.7rem;
+  }
+
+  .market-board-toolbar > div {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .board-tab {
+    flex: 0 0 auto;
+    padding-inline: 0.65rem;
+    white-space: nowrap;
+  }
+
+  .market-tape {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .market-tape-label {
+    display: none;
+  }
+
+  .market-tape-track a {
+    min-width: 164px;
+  }
+
+  .market-tape-pause {
+    min-width: 54px;
+  }
+
   .token-detail-hero {
     grid-template-columns: 76px minmax(0, 1fr);
     align-items: start;

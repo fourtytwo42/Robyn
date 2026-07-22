@@ -85,9 +85,9 @@ export function MarketCard({
                 </dd>
               </div>
               <div>
-                <dt>Volume</dt>
+                <dt>24h volume</dt>
                 <dd>
-                  {marketAmount(metrics.totalVolumeBase, metrics.baseSymbol)}
+                  {marketAmount(metrics.volume24hBase, metrics.baseSymbol)}
                 </dd>
               </div>
               <div>
@@ -121,7 +121,28 @@ export function MarketCard({
         ) : (
           <p className="home-market-phase-note">Market metrics unavailable</p>
         )}
-        <span className="home-market-action">View market →</span>
+        <span className="home-market-action">
+          {metrics ? (
+            <b
+              className={
+                metrics.change24hBps === null
+                  ? "market-change flat"
+                  : metrics.change24hBps > 0
+                    ? "market-change up"
+                    : metrics.change24hBps < 0
+                      ? "market-change down"
+                      : "market-change flat"
+              }
+            >
+              {metrics.change24hBps === null
+                ? "— 24h"
+                : `${metrics.change24hBps > 0 ? "+" : ""}${(
+                    metrics.change24hBps / 100
+                  ).toFixed(2)}% 24h`}
+            </b>
+          ) : null}
+          <span>View market →</span>
+        </span>
       </div>
     </Link>
   );

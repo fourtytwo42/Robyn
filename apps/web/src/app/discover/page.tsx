@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { getLaunches } from "@/lib/data-api";
 import { MarketCard } from "@/components/market-card";
+import { DiscoveryControls } from "@/components/discovery-controls";
 import { rewardAssetMetadata } from "@/lib/reward-assets";
 import deployment from "@robyn/deployment";
 
@@ -9,6 +10,19 @@ export const dynamic = "force-dynamic";
 
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
+}
+
+function marketViewHref(
+  filters: Record<string, string>,
+  view: { sort: string; phase?: string },
+) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value && key !== "sort" && key !== "phase") params.set(key, value);
+  }
+  params.set("sort", view.sort);
+  params.set("phase", view.phase ?? "all");
+  return `/discover?${params.toString()}`;
 }
 
 export default async function Discover({
@@ -22,6 +36,9 @@ export default async function Discover({
     q: first(query.q).trim(),
     asset: first(query.asset),
     basketSize: first(query.basketSize),
+    sort: first(query.sort) || "trending",
+    window: first(query.window) || "24h",
+    phase: first(query.phase) || "all",
   };
   const [launches, allLaunches] = await Promise.all([
     getLaunches(filters),
@@ -36,6 +53,17 @@ export default async function Discover({
       rewardAssetMetadata(asset, deployment.contracts.rewardAssets, isTestnet),
     ]),
   );
+  const assetOptions = assets.map((asset) => ({
+    value: asset,
+    symbol: assetMetadata.get(asset.toLowerCase())?.symbol ?? "Asset",
+    name: assetMetadata.get(asset.toLowerCase())?.name ?? "Unverified asset",
+  }));
+  const views = [
+    { label: "Trending", sort: "trending" },
+    { label: "New", sort: "new" },
+    { label: "Near graduation", sort: "near_graduation", phase: "bonding" },
+    { label: "Graduated", sort: "graduated", phase: "graduated" },
+  ];
 
   return (
     <main id="main">
@@ -52,52 +80,28 @@ export default async function Discover({
           </p>
         </header>
 
-        <form className="filter-bar" role="search">
-          <label>
-            Search name, symbol or canonical address
-            <input
-              name="q"
-              defaultValue={filters.q}
-              placeholder="MYCO or 0x…"
-            />
-          </label>
-          <label>
-            Basket size
-            <select name="basketSize" defaultValue={filters.basketSize}>
-              <option value="">Any size</option>
-              <option value="1">One asset</option>
-              <option value="2">Two assets</option>
-              <option value="3">Three assets</option>
-            </select>
-          </label>
-          <label>
-            Basket asset
-            <select name="asset" defaultValue={filters.asset}>
-              <option value="">Any asset</option>
-              {assets.map((asset) => (
-                <option value={asset} key={asset}>
-                  {assetMetadata.get(asset.toLowerCase())?.symbol} —{" "}
-                  {assetMetadata.get(asset.toLowerCase())?.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button className="button primary" type="submit">
-            Apply filters
-          </button>
-          <Link className="button ghost" href="/discover">
-            Clear
-          </Link>
-        </form>
+        <DiscoveryControls filters={filters} assets={assetOptions} />
 
         <div className="market-board-toolbar" aria-label="Market board status">
           <div>
-            <span className="board-tab active">All markets</span>
-            <span className="board-tab">Reward baskets</span>
+            {views.map((view) => {
+              const active =
+                filters.sort === view.sort &&
+                filters.phase === (view.phase ?? "all");
+              return (
+                <Link
+                  className={`board-tab ${active ? "active" : ""}`}
+                  href={marketViewHref(filters, view)}
+                  key={view.sort}
+                >
+                  {view.label}
+                </Link>
+              );
+            })}
           </div>
           <p>
             <strong>{launches.data.length} listed</strong>
-            <span>Newest indexed first · native-v1</span>
+            <span>{filters.window} indexed window · native-v1</span>
           </p>
         </div>
 

@@ -13,6 +13,7 @@ import {
 } from "@/lib/data-api";
 import { TokenArt } from "@/components/launchpad-visuals";
 import type { Deployment } from "@/lib/deployment";
+import { rewardAssetMetadata } from "@/lib/reward-assets";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,11 @@ function metric(value: string, symbol = "mUSD") {
 
 function priceMetric(value: string, symbol = "mUSD") {
   return `${quantity(value, 8)} ${symbol}`;
+}
+
+function changeLabel(value: number | null) {
+  if (value === null) return "Insufficient history";
+  return `${value > 0 ? "+" : ""}${(value / 100).toFixed(2)}%`;
 }
 
 function marketPhaseLabel(phase: "legacy_fixed" | "bonding" | "graduated") {
@@ -75,6 +81,17 @@ export default async function LaunchDetail({
   }
   const launch = detail.data;
   const market = analytics.data;
+  const basket = launch.assets.map((asset, index) => ({
+    ...rewardAssetMetadata(asset, deployment.contracts.rewardAssets, isTestnet),
+    address: asset,
+    weight: launch.weights_bps[index] ?? 0,
+  }));
+  const windowVolume = BigInt(market.volume24hBase);
+  const buyShare =
+    windowVolume === 0n
+      ? null
+      : Number((BigInt(market.buyVolume24hBase) * 10_000n) / windowVolume) /
+        100;
 
   return (
     <main id="main">
@@ -108,6 +125,16 @@ export default async function LaunchDetail({
               <span>Created by {short(launch.creator)}</span>
               <span>Block {launch.created_block}</span>
             </div>
+            <div
+              className="decision-basket"
+              aria-label="Reward basket composition"
+            >
+              {basket.map((asset) => (
+                <span key={asset.address}>
+                  <b>{asset.symbol}</b> {(asset.weight / 100).toFixed(0)}%
+                </span>
+              ))}
+            </div>
           </div>
           <div className="token-hero-quote">
             <span>Market cap</span>
@@ -115,6 +142,17 @@ export default async function LaunchDetail({
             <small>
               Price {priceMetric(market.priceBasePerToken)} / {launch.symbol}
             </small>
+            <span
+              className={`market-change ${
+                market.change24hBps === null || market.change24hBps === 0
+                  ? "neutral"
+                  : market.change24hBps > 0
+                    ? "positive"
+                    : "negative"
+              }`}
+            >
+              {changeLabel(market.change24hBps)} 24h
+            </span>
             <span className="risk-badge">
               {isTestnet ? "Testnet mocks" : "Controlled devnet"}
             </span>
@@ -127,11 +165,16 @@ export default async function LaunchDetail({
         >
           {[
             ["Price", priceMetric(market.priceBasePerToken)],
-            ["Liquidity", metric(market.liquidityBase)],
-            ["Total volume", metric(market.totalVolumeBase)],
-            ["Holder fees", metric(market.totalFeesBase)],
-            ["Holders", market.holderCount.toLocaleString()],
-            ["Trades", market.tradeCount.toLocaleString()],
+            ["24h change", changeLabel(market.change24hBps)],
+            ["24h volume", metric(market.volume24hBase)],
+            [
+              "24h buy / sell",
+              buyShare === null
+                ? "No window trades"
+                : `${buyShare.toFixed(0)}% / ${(100 - buyShare).toFixed(0)}%`,
+            ],
+            ["Lifecycle", marketPhaseLabel(market.marketPhase)],
+            ["24h traders", market.uniqueTraders24h.toLocaleString()],
           ].map(([label, value]) => (
             <article key={label}>
               <span>{label}</span>
