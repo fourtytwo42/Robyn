@@ -521,8 +521,10 @@ export function GuidedLaunchWizard(props: WizardProps) {
     marketSummary = "Bonding curve → locked liquidity",
   } = props;
   const [open, setOpen] = useState(openByDefault);
+  const [rendered, setRendered] = useState(openByDefault);
   const [step, setStep] = useState(1);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [draftVersion, setDraftVersion] = useState(0);
   const [artworkMediaId, setArtworkMediaId] = useState<string>();
   const [artworkPreview, setArtworkPreview] = useState<string>();
   const titleId = useId();
@@ -537,7 +539,8 @@ export function GuidedLaunchWizard(props: WizardProps) {
     name !== "My Community" ||
     symbol !== "MYCO" ||
     weights.join(",") !== "40,40,20" ||
-    Boolean(artworkMediaId);
+    Boolean(artworkMediaId) ||
+    Boolean(artworkPreview);
 
   useEffect(() => {
     if (!open) return;
@@ -600,13 +603,20 @@ export function GuidedLaunchWizard(props: WizardProps) {
         <button
           className="button primary"
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            setRendered(true);
+            setOpen(true);
+          }}
         >
           Start launch
         </button>
       </section>
-      {open ? (
-        <div className="launch-modal-backdrop" role="presentation">
+      {rendered ? (
+        <div
+          className="launch-modal-backdrop"
+          role="presentation"
+          hidden={!open}
+        >
           <div
             className="launch-modal"
             role="dialog"
@@ -695,6 +705,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
                     />
                   </label>
                   <CreatorSetup
+                    key={draftVersion}
                     account={account}
                     signMessage={signMessage}
                     mediaId={artworkMediaId}
@@ -899,6 +910,8 @@ export function GuidedLaunchWizard(props: WizardProps) {
                       setSymbol("MYCO");
                       setWeights([40, 40, 20]);
                       setArtworkMediaId(undefined);
+                      setArtworkPreview(undefined);
+                      setDraftVersion((value) => value + 1);
                       setStep(1);
                       setConfirmDiscard(false);
                       setOpen(false);

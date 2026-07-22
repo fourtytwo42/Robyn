@@ -16,6 +16,7 @@ declare module "@robyn/network-launchpad" {
   export function NetworkLaunchpadConsole(props: {
     deployment: Deployment;
     openByDefault?: boolean;
+    showRegistry?: boolean;
   }): JSX.Element;
 }
 

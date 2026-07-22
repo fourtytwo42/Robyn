@@ -21,8 +21,12 @@ export function DiscoveryControls({
 }) {
   const [expanded, setExpanded] = useState(false);
   const active = [
+    filters.q ? `Search: ${filters.q}` : null,
     filters.asset ? "Basket asset" : null,
     filters.basketSize ? `${filters.basketSize} assets` : null,
+    filters.sort !== "trending"
+      ? `Sort: ${filters.sort.replaceAll("_", " ")}`
+      : null,
     filters.phase !== "all" ? filters.phase : null,
     filters.window !== "24h" ? filters.window : null,
   ].filter(Boolean) as string[];

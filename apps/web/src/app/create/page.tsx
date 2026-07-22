@@ -1,8 +1,6 @@
 import type { Deployment } from "@/lib/deployment";
 import { NetworkLaunchpadConsole } from "@robyn/network-launchpad";
-import { NetworkConsole } from "@robyn/network-console";
 import { SiteHeader } from "@/components/site-header";
-import { TokenArt } from "@/components/launchpad-visuals";
 import deployment from "@robyn/deployment";
 
 export const dynamic = "force-dynamic";
@@ -14,57 +12,11 @@ export default function CreateLaunch() {
     <main id="main">
       <div className="ambient ambient-right" aria-hidden="true" />
       <SiteHeader />
-      <section className="create-hero" aria-labelledby="create-heading">
-        <div>
-          <p className="eyebrow">Create on Robyn</p>
-          <h1 id="create-heading">
-            Launch a token with its own reward basket.
-          </h1>
-          <p className="lede">
-            Choose the stock and crypto rewards holders can earn. Trading fees
-            automatically build the basket, and its selected weights cannot be
-            changed after launch.
-          </p>
-          <div className="create-steps" aria-label="Launch steps">
-            <span>
-              <b>01</b> Token
-            </span>
-            <span>
-              <b>02</b> Basket
-            </span>
-            <span>
-              <b>03</b> Launch
-            </span>
-          </div>
-        </div>
-        <aside
-          className="create-preview-card"
-          aria-label="Example launch preview"
-        >
-          <TokenArt
-            symbol="MYCO"
-            alt="Example community token artwork"
-            priority
-          />
-          <div>
-            <span className="hot-chip">Preview</span>
-            <h2>Your token. Your basket.</h2>
-            <p>
-              Choose up to three reward assets and lock their weights at launch.
-            </p>
-            <div className="basket-weight-bar" aria-hidden="true">
-              <i className="weight-1" style={{ width: "40%" }} />
-              <i className="weight-2" style={{ width: "40%" }} />
-              <i className="weight-3" style={{ width: "20%" }} />
-            </div>
-          </div>
-        </aside>
-      </section>
       <NetworkLaunchpadConsole
         deployment={deployment as Deployment}
         openByDefault
+        showRegistry={false}
       />
-      <NetworkConsole deployment={deployment as Deployment} />
       <section className="notice" aria-label="Network disclaimer">
         {isTestnet
           ? "Robinhood Chain Testnet only. Project-owned mock assets have no real-world value."

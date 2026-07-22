@@ -211,9 +211,11 @@ function amount(value: bigint) {
 export function LaunchpadConsole({
   deployment,
   openByDefault,
+  showRegistry = true,
 }: {
   deployment: Deployment;
   openByDefault?: boolean;
+  showRegistry?: boolean;
 }) {
   const [privateKey, setPrivateKey] = useState<Hex>();
   const [launches, setLaunches] = useState<Launch[]>([]);
@@ -639,54 +641,56 @@ export function LaunchpadConsole({
           onLaunch={createLaunch}
           openByDefault={openByDefault}
         />
-        <div className="launch-list" aria-label="Launch registry">
-          {launches.map((launch) => (
-            <article key={launch.token}>
-              <TokenCardArt
-                symbol={launch.symbol}
-                name={launch.name}
-                badge="Live market"
-                launchNumber={launch.id.toString()}
-              />
-              <p>
-                {amount(launch.balance)} {launch.symbol} in this wallet
-              </p>
-              <code>
-                {launch.token.slice(0, 10)}...{launch.token.slice(-6)}
-              </code>
-              <div className="action-row">
-                <button
-                  className="button"
-                  disabled={busy || !account}
-                  onClick={() => void act(launch, "buy")}
-                >
-                  Buy 990k
-                </button>
-                <button
-                  className="button ghost"
-                  disabled={busy || launch.balance < parseEther("10000")}
-                  onClick={() => void act(launch, "sell")}
-                >
-                  Sell 10k
-                </button>
-                <button
-                  className="button ghost"
-                  disabled={busy || !account}
-                  onClick={() => void act(launch, "convert")}
-                >
-                  Convert
-                </button>
-                <button
-                  className="button ghost"
-                  disabled={busy || !account}
-                  onClick={() => void act(launch, "claim")}
-                >
-                  Claim
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
+        {showRegistry ? (
+          <div className="launch-list" aria-label="Launch registry">
+            {launches.map((launch) => (
+              <article key={launch.token}>
+                <TokenCardArt
+                  symbol={launch.symbol}
+                  name={launch.name}
+                  badge="Live market"
+                  launchNumber={launch.id.toString()}
+                />
+                <p>
+                  {amount(launch.balance)} {launch.symbol} in this wallet
+                </p>
+                <code>
+                  {launch.token.slice(0, 10)}...{launch.token.slice(-6)}
+                </code>
+                <div className="action-row">
+                  <button
+                    className="button"
+                    disabled={busy || !account}
+                    onClick={() => void act(launch, "buy")}
+                  >
+                    Buy 990k
+                  </button>
+                  <button
+                    className="button ghost"
+                    disabled={busy || launch.balance < parseEther("10000")}
+                    onClick={() => void act(launch, "sell")}
+                  >
+                    Sell 10k
+                  </button>
+                  <button
+                    className="button ghost"
+                    disabled={busy || !account}
+                    onClick={() => void act(launch, "convert")}
+                  >
+                    Convert
+                  </button>
+                  <button
+                    className="button ghost"
+                    disabled={busy || !account}
+                    onClick={() => void act(launch, "claim")}
+                  >
+                    Claim
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
       </div>
       <p
         className="transaction-status"
