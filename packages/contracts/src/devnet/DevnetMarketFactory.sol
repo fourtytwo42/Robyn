@@ -5,9 +5,9 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { RobynLaunchFactory } from "../RobynLaunchFactory.sol";
 import { RobynLaunchToken } from "../RobynLaunchToken.sol";
 import { FeeBasketVault } from "../FeeBasketVault.sol";
-import { DevnetFixedPriceMarket } from "./DevnetFixedPriceMarket.sol";
+import { DevnetBondingCurveMarket } from "./DevnetBondingCurveMarket.sol";
 
-/// @notice Permissionless fixed-price market deployer for controlled-devnet launches only.
+/// @notice Permissionless bonding-curve market deployer for controlled-devnet launches only.
 contract DevnetMarketFactory {
     string public constant DEVNET_ONLY = "robyn-devnet";
 
@@ -17,7 +17,11 @@ contract DevnetMarketFactory {
 
     IERC20 public immutable baseAsset;
     RobynLaunchFactory public immutable launchFactory;
-    uint256 public immutable basePerToken;
+    uint256 public immutable curveTokenAllocation;
+    uint256 public immutable graduationTokenAllocation;
+    uint256 public immutable initialVirtualTokenReserve;
+    uint256 public immutable initialVirtualBaseReserve;
+    uint256 public immutable graduationThresholdBase;
     uint16 public immutable feeBps;
     mapping(address => address) public marketByToken;
 
@@ -26,28 +30,50 @@ contract DevnetMarketFactory {
     constructor(
         IERC20 baseAsset_,
         RobynLaunchFactory launchFactory_,
-        uint256 basePerToken_,
+        uint256 curveTokenAllocation_,
+        uint256 graduationTokenAllocation_,
+        uint256 initialVirtualTokenReserve_,
+        uint256 initialVirtualBaseReserve_,
+        uint256 graduationThresholdBase_,
         uint16 feeBps_
     ) {
         if (
             address(baseAsset_) == address(0) || address(launchFactory_) == address(0)
-                || basePerToken_ == 0 || feeBps_ == 0 || feeBps_ > 1_000
-                || address(launchFactory_.baseAsset()) != address(baseAsset_)
+                || curveTokenAllocation_ == 0 || graduationTokenAllocation_ == 0
+                || initialVirtualTokenReserve_ <= curveTokenAllocation_
+                || initialVirtualBaseReserve_ == 0 || graduationThresholdBase_ == 0 || feeBps_ == 0
+                || feeBps_ > 1_000 || address(launchFactory_.baseAsset()) != address(baseAsset_)
         ) revert InvalidConfiguration();
         baseAsset = baseAsset_;
         launchFactory = launchFactory_;
-        basePerToken = basePerToken_;
+        curveTokenAllocation = curveTokenAllocation_;
+        graduationTokenAllocation = graduationTokenAllocation_;
+        initialVirtualTokenReserve = initialVirtualTokenReserve_;
+        initialVirtualBaseReserve = initialVirtualBaseReserve_;
+        graduationThresholdBase = graduationThresholdBase_;
         feeBps = feeBps_;
     }
 
-    function createMarket(RobynLaunchToken token) external returns (DevnetFixedPriceMarket market) {
+    function createMarket(RobynLaunchToken token)
+        external
+        returns (DevnetBondingCurveMarket market)
+    {
         if (launchFactory.creatorByToken(address(token)) != msg.sender) revert Unauthorized();
         if (marketByToken[address(token)] != address(0)) revert MarketAlreadyExists();
         address vaultAddress = launchFactory.vaultByToken(address(token));
         if (vaultAddress == address(0)) revert InvalidConfiguration();
 
-        market = new DevnetFixedPriceMarket(
-            baseAsset, token, FeeBasketVault(vaultAddress), msg.sender, basePerToken, feeBps
+        market = new DevnetBondingCurveMarket(
+            baseAsset,
+            token,
+            FeeBasketVault(vaultAddress),
+            msg.sender,
+            curveTokenAllocation,
+            graduationTokenAllocation,
+            initialVirtualTokenReserve,
+            initialVirtualBaseReserve,
+            graduationThresholdBase,
+            feeBps
         );
         marketByToken[address(token)] = address(market);
         emit MarketCreated(msg.sender, address(token), address(market));

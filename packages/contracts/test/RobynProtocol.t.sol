@@ -8,6 +8,8 @@ import { RobynLaunchToken } from "../src/RobynLaunchToken.sol";
 import { FeeBasketVault, IRobynConversionRouter } from "../src/FeeBasketVault.sol";
 import { RobynLaunchFactory } from "../src/RobynLaunchFactory.sol";
 import { DevnetFixedPriceMarket } from "../src/devnet/DevnetFixedPriceMarket.sol";
+import { DevnetBondingCurveMarket } from "../src/devnet/DevnetBondingCurveMarket.sol";
+import { DevnetLockedLiquidityPool } from "../src/devnet/DevnetLockedLiquidityPool.sol";
 import { DevnetMarketFactory } from "../src/devnet/DevnetMarketFactory.sol";
 import { DevnetMockERC20 } from "../src/devnet/DevnetMockERC20.sol";
 
@@ -164,6 +166,11 @@ contract ProtocolActor {
 }
 
 contract RobynProtocolTest {
+    uint256 private constant CURVE_ALLOCATION = 800_000_000 ether;
+    uint256 private constant GRADUATION_ALLOCATION = 200_000_000 ether;
+    uint256 private constant INITIAL_VIRTUAL_TOKEN = 1_066_666_666_666_666_666_666_666_666;
+    uint256 private constant INITIAL_VIRTUAL_BASE = 2_166_666_666_666_666_666_667;
+    uint256 private constant GRADUATION_TARGET = 6_500 ether;
     uint256 private constant SUPPLY = 1_000_000_000 ether;
 
     ProtocolMockERC20 private base;
@@ -465,8 +472,17 @@ contract RobynProtocolTest {
     function testDevnetMarketFactoryCreatesOneCreatorOwnedMarket() public {
         (RobynLaunchToken marketToken,) =
             factory.createLaunch("Factory Market", "FMKT", SUPPLY, _assets(), _weights());
-        DevnetMarketFactory marketFactory = new DevnetMarketFactory(base, factory, 1e15, 100);
-        DevnetFixedPriceMarket market = marketFactory.createMarket(marketToken);
+        DevnetMarketFactory marketFactory = new DevnetMarketFactory(
+            base,
+            factory,
+            CURVE_ALLOCATION,
+            GRADUATION_ALLOCATION,
+            INITIAL_VIRTUAL_TOKEN,
+            INITIAL_VIRTUAL_BASE,
+            GRADUATION_TARGET,
+            100
+        );
+        DevnetBondingCurveMarket market = marketFactory.createMarket(marketToken);
 
         require(marketFactory.marketByToken(address(marketToken)) == address(market), "registry");
         require(market.marketOwner() == address(this), "market owner");
@@ -474,6 +490,64 @@ contract RobynProtocolTest {
         try marketFactory.createMarket(marketToken) {
             revert("duplicate market accepted");
         } catch { }
+    }
+
+    function testDevnetBondingCurveGraduatesAndKeepsBasketFees() public {
+        (RobynLaunchToken marketToken, FeeBasketVault marketVault) =
+            factory.createLaunch("Curve Market", "CRVE", SUPPLY, _assets(), _weights());
+        DevnetMarketFactory marketFactory = new DevnetMarketFactory(
+            base,
+            factory,
+            CURVE_ALLOCATION,
+            GRADUATION_ALLOCATION,
+            INITIAL_VIRTUAL_TOKEN,
+            INITIAL_VIRTUAL_BASE,
+            GRADUATION_TARGET,
+            100
+        );
+        DevnetBondingCurveMarket market = marketFactory.createMarket(marketToken);
+        DevnetLockedLiquidityPool pool = market.graduatedPool();
+
+        marketToken.approve(address(market), SUPPLY);
+        market.seed(SUPPLY, 0);
+        address[] memory exclusions = new address[](2);
+        exclusions[0] = address(market);
+        exclusions[1] = address(pool);
+        factory.sealLaunchExclusions(marketToken, exclusions);
+
+        base.mint(address(this), 12_000 ether);
+        base.approve(address(market), type(uint256).max);
+        uint256 firstBuy = market.buy(1_000 ether, 1);
+        require(firstBuy > 0, "curve buy");
+        require(market.graduationProgressBps() > 0, "curve progress");
+        require(!market.graduated(), "graduated early");
+
+        marketToken.approve(address(market), firstBuy / 10);
+        uint256 sellOutput = market.sell(firstBuy / 10, 1);
+        require(sellOutput > 0, "curve sell");
+
+        uint256 baseBeforeFinalBuy = base.balanceOf(address(this));
+        market.buy(10_000 ether, 1);
+        require(base.balanceOf(address(this)) > baseBeforeFinalBuy - 10_000 ether, "no refund");
+        require(market.graduated(), "not graduated");
+        require(market.graduationProgressBps() == 10_000, "graduation progress");
+        require(pool.initialized(), "pool not initialized");
+        require(marketToken.balanceOf(address(pool)) == GRADUATION_ALLOCATION, "locked tokens");
+        require(base.balanceOf(address(pool)) >= GRADUATION_TARGET - 2, "locked base");
+        require(marketVault.totalFeesReceived() > 0, "basket fees");
+        require(marketToken.withdrawableRewardOf(address(pool), 0) == 0, "pool reward");
+
+        uint256 postBuy = market.buy(100 ether, 1);
+        marketToken.approve(address(market), postBuy);
+        require(market.sell(postBuy, 1) > 0, "post graduation sell");
+
+        try pool.initialize() {
+            revert("pool reinitialized");
+        } catch { }
+        try pool.buyFor(address(this), 1 ether, 1) {
+            revert("direct pool buy accepted");
+        } catch { }
+        require(market.graduated(), "graduation reversed");
     }
 
     function testClaimAllPaysAllAvailableAssets() public {
