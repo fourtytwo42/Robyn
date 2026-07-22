@@ -11,6 +11,7 @@ import {
   validateCreatorChallenge,
 } from "./creator-auth.js";
 import { sanitizeCreatorImage } from "./creator-media.js";
+import { consumeWalletUpload } from "./creator-rate-limit.js";
 import {
   validateCreatorProfile,
   validateReportReason,
@@ -321,10 +322,8 @@ export async function registerCreatorRoutes(
       const purpose = request.query.purpose;
       if (purpose !== "token" && purpose !== "avatar")
         return reply.code(400).send({ error: "invalid_media_purpose" });
-      const rateKey = `robyn:media:uploads:${chainId}:${session.address}:${Math.floor(Date.now() / 3_600_000)}`;
-      const uploadCount = await redis.incr(rateKey);
-      if (uploadCount === 1) await redis.expire(rateKey, 3700);
-      if (uploadCount > 10)
+      const upload = await consumeWalletUpload(redis, chainId, session.address);
+      if (!upload.allowed)
         return reply.code(429).send({ error: "wallet_upload_rate_limited" });
       if (!Buffer.isBuffer(request.body))
         return reply.code(415).send({ error: "supported_image_body_required" });

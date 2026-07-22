@@ -204,8 +204,10 @@ function amount(value: bigint) {
 
 export function NetworkLaunchpadConsole({
   deployment,
+  openByDefault,
 }: {
   deployment: Deployment;
+  openByDefault?: boolean;
 }) {
   const [account, setAccount] = useState<Address>();
   const [launches, setLaunches] = useState<Launch[]>([]);
@@ -651,6 +653,7 @@ export function NetworkLaunchpadConsole({
             })) as Hex;
           }}
           onLaunch={createLaunch}
+          openByDefault={openByDefault}
         />
         <div className="launch-list" aria-label="Launch registry">
           {launches.map((launch) => (

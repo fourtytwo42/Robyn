@@ -60,7 +60,10 @@ export default function CreateLaunch() {
           </div>
         </aside>
       </section>
-      <NetworkLaunchpadConsole deployment={deployment as Deployment} />
+      <NetworkLaunchpadConsole
+        deployment={deployment as Deployment}
+        openByDefault
+      />
       <NetworkConsole deployment={deployment as Deployment} />
       <section className="notice" aria-label="Network disclaimer">
         {isTestnet

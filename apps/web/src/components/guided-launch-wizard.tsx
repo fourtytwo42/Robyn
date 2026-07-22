@@ -22,6 +22,7 @@ type WizardProps = {
   marketSummary?: string;
   signMessage: (message: string) => Promise<Hex>;
   onLaunch: (artworkMediaId?: string) => Promise<void>;
+  openByDefault?: boolean;
 };
 
 type Session = { address: Address; chainId: number };
@@ -515,10 +516,11 @@ export function GuidedLaunchWizard(props: WizardProps) {
     onWalletAction,
     signMessage,
     onLaunch,
+    openByDefault = false,
     assetSymbols = ["mNVDA", "mSPY", "mETH"],
     marketSummary = "Bonding curve → locked liquidity",
   } = props;
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(openByDefault);
   const [step, setStep] = useState(1);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [artworkMediaId, setArtworkMediaId] = useState<string>();

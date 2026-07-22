@@ -3846,6 +3846,83 @@ main > .notice {
   }
 }
 
+/* The launchpad layer defines the desktop hero after the original mobile
+   rules. Keep this final override last so a narrow viewport never inherits the
+   two-column minimums and collapses the copy into a zero-width column. */
+@media (max-width: 680px) {
+  .product-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    padding: 1.4rem 0 1rem;
+  }
+
+  .hero-copy h1 {
+    margin: 0.45rem 0 0.7rem;
+    font-size: clamp(2.45rem, 12vw, 3.35rem);
+    line-height: 0.95;
+  }
+
+  .hero-copy .lede {
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .hero-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin-top: 1.1rem;
+  }
+
+  .hero-actions .hero-network-copy {
+    grid-column: 1 / -1;
+  }
+
+  .hero-token-card {
+    min-height: 210px;
+    border-radius: 20px;
+  }
+
+  .hero-token-overlay {
+    inset: auto 16px 14px;
+  }
+
+  .hero-token-overlay > div {
+    margin: 8px 0 3px;
+  }
+
+  .hero-token-overlay strong {
+    font-size: 1.2rem;
+  }
+
+  .hero-token-overlay p {
+    margin: 0;
+    font-size: 0.75rem;
+  }
+
+  .launchpad-stats {
+    gap: 0.45rem;
+    margin-bottom: 1.4rem;
+  }
+
+  .launchpad-stats article {
+    padding: 0.65rem 0.7rem;
+  }
+
+  .market-radar {
+    margin-top: 1rem;
+  }
+
+  .launchpad-heading {
+    gap: 0.55rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .launchpad-heading h2 {
+    font-size: 1.55rem;
+  }
+}
+
 /* Keep responsive token rules after the launchpad layer's desktop overrides. */
 @media (max-width: 760px) {
   .token-page-shell {

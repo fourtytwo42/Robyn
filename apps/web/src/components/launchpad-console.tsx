@@ -208,7 +208,13 @@ function amount(value: bigint) {
   });
 }
 
-export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
+export function LaunchpadConsole({
+  deployment,
+  openByDefault,
+}: {
+  deployment: Deployment;
+  openByDefault?: boolean;
+}) {
   const [privateKey, setPrivateKey] = useState<Hex>();
   const [launches, setLaunches] = useState<Launch[]>([]);
   const [name, setName] = useState("My Community");
@@ -631,6 +637,7 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
             return account.signMessage({ message });
           }}
           onLaunch={createLaunch}
+          openByDefault={openByDefault}
         />
         <div className="launch-list" aria-label="Launch registry">
           {launches.map((launch) => (
