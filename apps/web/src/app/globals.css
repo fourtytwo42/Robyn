@@ -4160,12 +4160,19 @@ main > .notice {
   }
 
   .token-detail-hero {
-    grid-template-columns: 76px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
+    gap: 0.9rem;
   }
 
   .token-identity-copy {
     min-width: 0;
+    width: 100%;
+  }
+
+  .token-detail-hero .detail-token-art {
+    width: 96px;
+    height: 96px;
   }
 
   .token-detail-hero h1 {
