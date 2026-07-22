@@ -1,6 +1,6 @@
 # Robinhood Chain Testnet operations
 
-Status: deployment package, isolated local rehearsal, and persistent deployer wallet implemented; official faucet funding is pending browser verification
+Status: deployment package, isolated local rehearsal, and persistent deployer wallet implemented; official faucet funding and off-VM recovery verification passed
 
 Last verified: 2026-07-22
 
@@ -88,9 +88,18 @@ cd /home/hendo420/Robyn
 scripts/check-robinhood-testnet-wallet.sh
 ~~~
 
-The official funding route is [Robinhood Chain Testnet Faucet](https://faucet.testnet.chain.robinhood.com/). Its browser security checkpoint and any CAPTCHA or eligibility step must be completed interactively; do not bypass or automate those controls. Last verified 2026-07-22, the wallet balance was zero pending the first faucet request.
+The official funding route is [Robinhood Chain Testnet Faucet](https://faucet.testnet.chain.robinhood.com/). Its browser security checkpoint and any CAPTCHA or eligibility step must be completed interactively; do not bypass or automate those controls. Last verified 2026-07-22, the official RPC and Robinhood Blockscout API both reported a 0.01 ETH deployer balance after one faucet request.
 
 An isolated full-bundle measurement deployed all contracts and completed initialization in 20 transactions using 15,352,146 gas. At the live 2026-07-22 public-testnet gas price of 10,000,000 wei, that is 0.00015352146 ETH of execution cost. One advertised 0.01 ETH faucet claim therefore provides about 65 times the measured execution-only requirement. Arbitrum L1 data fees are not reproduced by local Anvil, so retain the remaining balance for that overhead and repeated tests rather than treating it as disposable. Funding is considered sufficient when the official RPC confirms the full 0.01 ETH claim.
+
+Run the complete no-broadcast readiness check before authorizing deployment. It verifies the wallet identity and permissions, official chain and balance, clean/pushed Git state, contract build and marker policy, and a fresh isolated gas measurement:
+
+~~~bash
+cd /home/hendo420/Robyn
+scripts/check-robinhood-testnet-deployment-readiness.sh
+~~~
+
+The default readiness floor is 0.005 ETH, more than 32 times the measured execution-only requirement at the current gas price. Override it only by increasing `ROBYN_TESTNET_MIN_DEPLOYER_BALANCE_WEI`; never lower the committed floor to force a pass.
 
 Prerequisites:
 
@@ -126,7 +135,7 @@ Rollback stops and deletes only the five testnet PM2 processes, preserves devnet
 
 ## Remaining external gates
 
-- Obtain and verify enough official faucet ETH in the dedicated deployer wallet; 0.01 testnet ETH is advertised per eligible daily request.
+- Preserve at least the 0.005 ETH readiness floor in the dedicated deployer wallet until deployment and testnet acceptance are complete.
 - Recheck for canonical testnet Stock Token, ETF, stablecoin, registry and oracle addresses.
 - Human alert receiver for unattended operation.
 - Independent contract security review before any real-value asset use.

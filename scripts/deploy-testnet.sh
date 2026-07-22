@@ -29,10 +29,10 @@ if [[ "$rehearsal" == "true" ]]; then
   deployer="$(cast rpc eth_accounts --rpc-url "$rpc_url" | jq -er '.[0]')"
   wallet_args=(--from "$deployer" --unlocked)
 else
-  keystore="${ROBYN_KEYSTORE:-}"
-  password_file="${ROBYN_PASSWORD_FILE:-}"
+  keystore="${ROBYN_TESTNET_KEYSTORE:-${ROBYN_KEYSTORE:-}}"
+  password_file="${ROBYN_TESTNET_PASSWORD_FILE:-${ROBYN_PASSWORD_FILE:-}}"
   if [[ -z "$keystore" || -z "$password_file" || ! -f "$keystore" || ! -f "$password_file" ]]; then
-    echo "ROBYN_KEYSTORE and ROBYN_PASSWORD_FILE must name readable files" >&2
+    echo "ROBYN_TESTNET_KEYSTORE and ROBYN_TESTNET_PASSWORD_FILE must name readable files" >&2
     exit 1
   fi
   if [[ -n "$(git status --porcelain)" ]] || [[ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]]; then
