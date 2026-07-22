@@ -3,6 +3,8 @@
 Status: Architecture decision for controlled-devnet implementation  
 Date: 2026-07-21
 
+For the 2026-07-22 platform-by-platform and onchain comparison, see [Robinhood Chain launchpad bonding curves and graduation](18-robinhood-launchpad-graduation-study.md).
+
 ## Decision
 
 Robyn will add a native launch lifecycle with a constant-product bonding curve and an automatic, irreversible graduation into locked AMM liquidity. Trading fees continue to fund the launch's immutable holder reward basket in both phases.

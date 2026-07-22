@@ -6,13 +6,22 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: completed 2026-07-22 — securely persist and fund a dedicated Robinhood Chain Testnet deployer wallet and prove no-broadcast deployment readiness without exposing secrets.
 - Goal completion standard: the encrypted operational wallet and recovery bundle survive isolated restore, owner-only permissions pass, the official chain-46630 balance is sufficient for deployment plus testing, and the workflow is documented and pushed without committing key material.
-- Current task: no required wallet-funding work remains; await explicit authorization before any irreversible public-testnet deployment.
-- Last meaningful change: added repeatable wallet and deployment-readiness checks, standardized `ROBYN_TESTNET_KEYSTORE` and `ROBYN_TESTNET_PASSWORD_FILE` with legacy fallbacks, and proved the actual encrypted signer through an isolated full deployment.
-- Last verification: 2026-07-22 official RPC and Robinhood Blockscout independently reported 0.01 ETH for deployer `0xecc5d6d032ADc9ca9E0F4042128067b8366da17A`. The no-broadcast readiness checker passed with 65x execution-only headroom. The private off-VM encrypted recovery asset passed fresh download, digest, decrypt, and address recovery. The actual keystore completed and verified the 20-transaction package on isolated chain 46630. Security audit and gitleaks passed without high/critical findings or secret leaks.
-- Next step: only after explicit user authorization, execute the protected public-testnet deployment and retain transaction/verification evidence. Do not interpret wallet funding as broadcast authorization.
+- Current task: Robinhood Chain launchpad graduation research is documented; no public-testnet broadcast is authorized.
+- Last meaningful change: classified true curve-to-DEX migrations versus pool-native milestone systems across twelve Robinhood launchpad products, verified deployed sources for key factories/lockers, independently bound a graduated Circus launch to its live canonical Uniswap v3 pool, and compared those mechanisms with Robyn.
+- Last verification: 2026-07-22 Uniswap v3 is the dominant verified mainnet graduation destination; vladlaunch documents SushiSwap v3, Rooket documents v4, and Robinfun claims v2. The canonical mainnet Uniswap v3 factory, position manager, router, and WETH addresses are not contracts at the identical chain-46630 addresses. Robyn's local bonding/graduation works, but its production DEX adapter and immutable reward-fee LP locker remain unimplemented.
+- Next step: select WETH versus USDG, confirm canonical testnet DEX infrastructure, then implement and independently review the production graduation adapter and reward-fee locker before public-testnet broadcast.
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-22 - Robinhood launchpad graduation research
+
+- Context: The user asked whether competing Robinhood Chain launchpads move to a DEX, which DEX they use, how their curves work, and whether Robyn matches.
+- Result: `research/18-robinhood-launchpad-graduation-study.md` compares twelve products and separates internal curve-to-DEX migration from pool-native milestone systems. Circus, hood.fun, and Robinlaunch use or document Uniswap v3 graduation; vladlaunch uses SushiSwap v3; Rooket documents Uniswap v4; Robinfun claims Uniswap v2. pons, LaunchHood, NOXA Fun, LootPad, Robin Launchpad, and Circus Fair Open do not perform a conventional migration.
+- Onchain evidence: verified source was inspected for Robinlaunch, pons, and LaunchHood components. Circus RH67 was independently resolved through the canonical mainnet Uniswap v3 factory to a live 1% WETH pool with nonzero liquidity.
+- Robyn comparison: the local 1B/800M/200M virtual-reserve curve and atomic threshold transition are consistent with the dominant true-graduation pattern. Robyn differs by using local mUSD and sending pre/post-graduation fees to a weighted holder reward basket. Its current graduated pool is a local rehearsal, not a production DEX adapter.
+- Testnet finding: Robinhood publishes chain-46630 RPC/explorer details but no canonical testnet Uniswap address table found in this pass. The canonical mainnet WETH, v3 factory, position manager, and router addresses are not contracts at those same addresses on testnet. Arbitrary testnet contracts with matching names are not acceptable provenance.
+- Follow-up: decide WETH versus USDG from real routing/liquidity evidence; verify canonical chain-46630 DEX contracts; implement a versioned v3 adapter and no-withdrawal fee-collecting position locker; simulate price continuity and independently review both contracts.
 
 ### Robinhood Testnet Deployer Wallet Inventory
 

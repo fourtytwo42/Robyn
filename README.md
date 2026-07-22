@@ -132,6 +132,9 @@ The recommended initial product is the first model. Use language such as “bask
 - [Live contract and integration due diligence](research/13-live-contract-and-integration-due-diligence.md)
 - [Liquidity, traction, and reward economics](research/14-liquidity-traction-and-economics.md)
 - [Security, legal, operations, and validation plan](research/15-security-legal-operations-validation-plan.md)
+- [Circus launchpad UX study](research/16-circus-launchpad-ux-study.md)
+- [Bonding curve and graduation design](research/17-bonding-curve-and-graduation-design.md)
+- [Robinhood Chain launchpad bonding curves and graduation](research/18-robinhood-launchpad-graduation-study.md)
 
 ## Product requirements
 
