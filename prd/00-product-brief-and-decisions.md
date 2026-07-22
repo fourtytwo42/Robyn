@@ -85,6 +85,7 @@ Robyn is a launchpad and reward protocol. It is not presented as a brokerage, fu
 | D-029 | Every user-facing story requires Codex in-app-browser acceptance evidence in addition to the appropriate VM-native lower-level tests | Settled | Verifies complete real user journeys without weakening contract, service or data correctness tests |
 | D-030 | Every major validated change is committed and pushed from the authoritative VM; incomplete or risky work remains on feature branches and main stays deployable | Settled | Keeps GitHub current and preserves recoverable, reviewable checkpoints |
 | D-031 | Holder-facing acquisition copy leads with each token's reward basket; creator-fee routing is supporting mechanism copy and remains prominent in creation/economics surfaces | Settled | Communicates the holder benefit first without implying that the launch token is collateral-backed or redeemable |
+| D-032 | A completed native Robyn curve graduates atomically into a canonical Uniswap v3 pool whose position NFT is permanently locked; Robyn continues to quote and submit pool trades through the same token interface | Settled | Matches the proven Robinhood Chain launch pattern while preserving a seamless Robyn trading experience and post-graduation basket-fee funding |
 | D-023 | CI/CD uses a self-hosted GitHub Actions runner on the project VM, frozen installs and immutable build-artifact promotion without containers | Settled baseline | Keeps all project execution on the VM while preserving reproducible releases |
 | D-024 | The `robyn` VM at `192.168.50.250` and `/home/hendo420/Robyn` are the only authoritative development and runtime environment | Settled | The user requires all project work and services to run on the VM, never the workstation |
 | D-025 | Docker, Compose, Kubernetes and container images are prohibited for project development and deployment | Settled | The user requires native VM operation |
@@ -108,7 +109,7 @@ These do not block the validation build but must be resolved before adapter MVP 
 
 - Brand name and public domain.
 - Final logo and brand mark.
-- Production virtual reserves, starting/terminal FDV and canonical Robinhood Chain graduation adapter parameters. Controlled devnet uses the fixed policy in `research/17-bonding-curve-and-graduation-design.md`.
+- Production virtual reserves, starting/terminal FDV, quote asset, Uniswap v3 fee tier, tick range and exact chain deployment parameters. Controlled devnet uses the fixed policy in `research/17-bonding-curve-and-graduation-design.md`.
 - Epoch cadence and challenge delay.
 - Minimum claim amount and whether claims may combine assets.
 - Initial crypto asset allowlist.
@@ -133,6 +134,9 @@ These do not block the validation build but must be resolved before adapter MVP 
 ## Native bonding and graduation decision (2026-07-21)
 
 - New Robyn-native launches use a constant-product bonding curve followed by an automatic, irreversible graduation into locked AMM liquidity.
+- Production graduation creates or initializes the factory-bound canonical Uniswap v3 pair in the threshold-reaching buy, mints its liquidity position directly to an immutable no-withdrawal locker and records the pool, position and locked amounts. There is no creator, keeper or trader migration transaction.
+- The token remains tradable on Robyn after graduation. The same buy/sell interface switches from curve quoting/execution to the bound Uniswap v3 quote/router path using canonical onchain phase state; users do not need to leave Robyn or manually select a venue.
 - The curve and graduated venue both route their configured trading-fee share to the launch's existing immutable reward basket.
 - Controlled devnet uses 1B fixed supply, an 800M curve allocation, a 200M graduation allocation, 1% fee and 6,500 mUSD target. Production virtual reserves remain gated on economic simulation and review.
+- The controlled-devnet pool remains a local rehearsal and must not be described as Uniswap. Public testnet/mainnet activation remains fail-closed until the exact factory, position manager, router/quoter, wrapped quote asset, fee tier, code hashes and locker behavior are independently verified for that chain.
 - Existing fixed-price devnet launches remain readable as `legacy_fixed`; they are not silently relabeled or rewritten.

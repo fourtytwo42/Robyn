@@ -7,7 +7,9 @@ For the 2026-07-22 platform-by-platform and onchain comparison, see [Robinhood C
 
 ## Decision
 
-Robyn will add a native launch lifecycle with a constant-product bonding curve and an automatic, irreversible graduation into locked AMM liquidity. Trading fees continue to fund the launch's immutable holder reward basket in both phases.
+Robyn will use a native launch lifecycle with a constant-product bonding curve and an automatic, irreversible graduation into a canonical Uniswap v3 pool. The threshold-reaching buy performs the migration atomically, and the liquidity position NFT is minted directly to an immutable no-withdrawal fee-collecting locker. Trading fees continue to fund the launch's immutable holder reward basket in both phases.
+
+The token remains tradable through the Robyn interface after graduation. The token-page Buy/Sell controls derive the canonical phase onchain and switch from the curve to the bound Uniswap quote/router path without asking the user to migrate, choose a venue or leave Robyn. Direct Uniswap trades remain possible and are indexed into the same market history.
 
 This is a real protocol state machine. The interface must never calculate graduation from arbitrary volume, invented market cap, or demo percentages.
 
@@ -51,6 +53,8 @@ stateDiagram-v2
 | Bonding | Robyn curve | Constant product with virtual reserves | Curve inventory and reserve held by immutable market | Routed to the immutable basket vault |
 | Graduated | Canonical AMM pool | Pool reserves | LP position permanently locked | Pool fee share routed to the same basket vault |
 
+For production, `Canonical AMM pool` means the factory-bound Uniswap v3 pool for the immutable launch token/quote-asset pair. The local controlled-devnet pool is only an interface-compatible rehearsal.
+
 ## Controlled-devnet policy
 
 - Fixed token supply: 1,000,000,000 tokens.
@@ -85,6 +89,21 @@ Exact production virtual reserves must be chosen by a checked-in economic simula
 - Binds the pool fee receiver to the existing launch reward vault.
 - Records the venue, pool, locker, migrated amounts and transaction in one canonical event.
 - Does not accept arbitrary tokens, recipients, routers, fee tiers or price ranges at initialization time.
+
+### `UniswapV3GraduationAdapter`
+
+- Is configured before launch with the exact canonical factory, position manager, router/quoter, wrapped quote asset, fee tier, tick range, locker implementation and expected code hashes.
+- In the threshold-reaching buy, validates or initializes the canonical pair at the simulated terminal curve price and mints the position directly to the bound locker.
+- Cannot accept caller-selected tokens, pool, price, range, router, position recipient or fee recipient.
+- Exposes the canonical pool and locker for the indexer and token page and provides the Robyn trade path after graduation.
+- Treats a pre-existing pool as an explicit validated state, not as permission to overwrite price or seed an attacker-controlled venue.
+
+### `RewardFeePositionLocker`
+
+- Receives exactly one bound Uniswap v3 position and exposes no principal decrease, NFT transfer, approval, arbitrary call, proxy upgrade or launch-pair rescue path.
+- Allows bounded permissionless collection of accrued position fees and routes the configured value into the launch's immutable basket vault.
+- Uses an explicit policy for launch-token-side fees, with no operator-selected recipient or swap route.
+- Emits position binding, fee collection and basket-funding balance deltas for independent reconciliation.
 
 ### Launch token
 
@@ -128,6 +147,7 @@ The indexer derives history from canonical curve-state and graduation events. It
 - Discovery cards show both the reward-basket weight rail and a compact graduation rail. They answer different questions and neither replaces the other.
 - The token page shows phase, current progress, amount raised, amount remaining, curve price, estimated price impact, migration destination and locked-liquidity proof.
 - Buy/sell controls quote the active venue and refresh after each confirmed transaction.
+- The controls remain in the same place after graduation and automatically switch to the bound Uniswap v3 quote/router path. They label that state `Trading on Uniswap v3 through Robyn` and require no separate venue or migration action.
 - A graduated token visibly switches from `Bonding` to `Graduated`, links the pool and lock receipt, and never continues showing a mutable progress bar.
 - Discovery supports `Bonding` and `Graduated` filters.
 - Creation previews fixed supply, curve allocation, migration allocation, threshold, fee routing and the automatic migration behavior before signature.
@@ -140,7 +160,7 @@ The indexer derives history from canonical curve-state and graduation events. It
 4. Extend create, discovery, detail, trade and portfolio interfaces.
 5. Deploy a new controlled-devnet factory without deleting the current chain or user-created launches; retain legacy fixed-market reads during migration.
 6. Exercise an accelerated launch through buy, sell, threshold, graduation, post-graduation trade, fee conversion and holder claim in the in-app browser.
-7. Before Robinhood testnet, verify the exact Uniswap/Doppler deployment, fee ownership, pool initialization, locker and price-range strategy, then replace the local adapter.
+7. Before Robinhood testnet, verify the exact Uniswap v3 deployment, fee ownership, pool initialization, locker and price-range strategy, then replace the local adapter. Do not accept explorer-name matches as canonical provenance.
 
 ## Implemented controlled-devnet status
 

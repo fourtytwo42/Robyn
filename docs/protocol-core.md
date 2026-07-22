@@ -4,6 +4,8 @@ Status: core and testnet-mock package implemented and security-gated; controlled
 
 Last verified: 2026-07-21
 
+Production graduation decision updated: 2026-07-22
+
 ## Scope
 
 The current native protocol checkpoint proves the core fee-to-holder-reward accounting path:
@@ -18,6 +20,19 @@ The current native protocol checkpoint proves the core fee-to-holder-reward acco
 8. The launch creator seals a one-time inventory/pool exclusion set before the first distribution. Excluded balances never dilute eligible holder rewards, and no later mutation is possible.
 
 This is the native reference path for the controlled devnet and Robinhood testnet mock package. The browser-operated genesis market proves the disclosed buy/sell, fee conversion and claim journey. A bounded keeper and reorg-aware indexer are implemented; a production market, upstream launchpad adapter, canonical Stock Token registry/oracle guards and production quote provider remain external integration work.
+
+## Production graduation target
+
+The production native lifecycle is now fixed to automatic Uniswap v3 graduation:
+
+1. The threshold-reaching buy completes the capped curve purchase and refund.
+2. In that same transaction, the pre-bound adapter validates or initializes the canonical token/quote Uniswap v3 pool at the approved terminal price.
+3. Graduation liquidity is minted directly as a position NFT to an immutable no-withdrawal locker.
+4. The locker retains principal permanently but permits bounded fee collection into the launch's existing basket vault.
+5. The Robyn token page keeps the same Buy/Sell controls and switches their quote/execution path from the curve to the bound Uniswap pool based on canonical onchain phase state.
+6. The indexer consumes both Robyn-submitted and direct pool swaps so charts, volume and activity remain truthful.
+
+The deployed `DevnetLockedLiquidityPool` already proves the lifecycle and continuous-interface behavior on chain 31337, but it is not Uniswap. Robinhood testnet/mainnet manifests must fail closed until the exact canonical Uniswap factory, position manager, router/quoter, quote asset, fee tier and code hashes are verified and the adapter/locker implementation passes independent review.
 
 ## Contracts
 

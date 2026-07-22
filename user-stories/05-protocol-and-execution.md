@@ -290,14 +290,15 @@ Acceptance criteria:
 - PRD: PROTO-014, PROTO-015, PROTO-016
 - Depends on: Completed curve and canonical graduation adapter
 
-As a holder, I want a completed curve migrated permissionlessly into locked liquidity so that no creator or operator can delay, redirect or reverse graduation.
+As a holder, I want the threshold-reaching purchase to migrate the completed curve atomically into locked canonical Uniswap v3 liquidity so that no creator, operator or later keeper transaction can delay, redirect or reverse graduation.
 
 Acceptance criteria:
 
-1. Graduation reverts below the immutable threshold and can be called by anyone at or above it.
-2. The adapter fixes token, quote asset, venue, pool parameters, recipient and locker before launch.
-3. A successful migration happens once, records exact amounts and cannot be reversed.
-4. Failure leaves the completed curve recoverable without losing user or reward funds.
+1. Graduation cannot occur below the immutable threshold and executes inside the threshold-reaching buy.
+2. The adapter fixes token, quote asset, canonical Uniswap contracts, pool parameters, position recipient and locker before launch.
+3. The final purchase, excess refund, pool validation/initialization, position mint and graduation record either all succeed once or all revert.
+4. The position NFT is minted directly to a locker with no principal-withdraw, transfer, approval, arbitrary-call or fee-recipient mutation path.
+5. Failure leaves the prior complete curve state and all user/reward balances intact.
 
 ### US-CURVE-003: Preserve fair transfer and reward behavior
 
@@ -311,7 +312,25 @@ As a holder, I want pre-graduation trading constrained to the curve and basket f
 
 Acceptance criteria:
 
-1. Before graduation, only explicitly approved protocol flows can move tokens between wallets and market inventory.
-2. Graduation permanently enables ordinary transfers.
-3. Curve and post-graduation fees enter the same immutable basket vault.
+1. Ordinary holder transfers remain enabled in both phases while Robyn creates only the canonical curve venue before graduation.
+2. Curve and collectible post-graduation pool fees enter the same immutable basket vault.
+3. Pool and locker balances remain permanently excluded from holder reward eligibility.
 4. Transfer-aware reward accounting remains solvent across the phase transition.
+
+### US-CURVE-004: Continue trading through Robyn after graduation
+
+- Release: R1
+- Priority: Must
+- Persona: Trader, Verifier
+- PRD: PROTO-019, PROTO-020, PROTO-021, PROTO-022, PROTO-023, PROTO-024
+- Depends on: Canonical Uniswap v3 adapter, immutable position locker and pool event indexing
+
+As a trader, I want the same Robyn token page to keep quoting and executing trades after graduation so that I do not have to migrate, choose a DEX or leave the launchpad.
+
+Acceptance criteria:
+
+1. The token page derives `bonding` or `graduated` from canonical onchain state and keeps one Buy/Sell interaction surface.
+2. Before graduation it quotes and trades through the Robyn curve; after graduation it quotes and trades through the pre-bound canonical Uniswap v3 pool.
+3. The graduated state identifies `Trading on Uniswap v3 through Robyn` and links the canonical pool, locker and graduation transaction.
+4. Direct Uniswap pool swaps and Robyn-submitted swaps appear in one reorg-aware indexed chart, volume and activity history.
+5. Browser acceptance proves a threshold-crossing buy, immediate post-graduation buy and sell, fee collection into the basket vault and holder claim without navigating away.

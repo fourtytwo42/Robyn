@@ -33,7 +33,7 @@ flowchart LR
 
 Replace the upstream token/factory dependency and Merkle ownership calculation with a Robyn launch token that updates per-asset magnified correction state on every mint, burn and transfer. Fee conversion and pull claims remain isolated from trading.
 
-The native release also adds the protocol-defined curve and graduation lifecycle in `research/17-bonding-curve-and-graduation-design.md`. The curve is a constant-product market with immutable parameters. Reaching its onchain threshold closes the curve and permits exactly one permissionless, irreversible migration into canonical locked liquidity. Both phases route the configured fee share to the same launch reward vault.
+The native release also adds the protocol-defined curve and graduation lifecycle in `research/17-bonding-curve-and-graduation-design.md`. The curve is a constant-product market with immutable parameters. The threshold-reaching buy atomically closes the curve, creates or initializes the pre-bound canonical Uniswap v3 pool and mints its position directly into an immutable no-withdrawal locker. Robyn then routes the same token-page trade controls through that pool. Both phases route the configured fee share to the same launch reward vault.
 
 ## Adapter components
 
@@ -100,6 +100,12 @@ Basket address/weight arrays are immutable. Asset pause or delisting changes exe
 | PROTO-016 | Curve and graduated liquidity MUST have no privileged withdrawal path | MUST | Role/bytecode review |
 | PROTO-017 | Ordinary token transfers MUST remain enabled across bonding and graduation, while Robyn creates only the canonical curve venue before graduation and reward accounting remains solvent across transfers | MUST | Transfer/accounting invariant tests |
 | PROTO-018 | Curve and post-graduation trading fees MUST remain bound to the launch's immutable basket vault | MUST | Cross-phase fee invariant |
+| PROTO-019 | Production graduation MUST bind the canonical Uniswap v3 factory, position manager, router/quoter, quote asset, fee tier, initial price, tick range and locker before the launch can accept a trade | MUST | Constructor/configuration and code-hash tests |
+| PROTO-020 | The threshold-reaching buy MUST atomically perform the final curve purchase, cap/refund excess input, initialize or validate the canonical pool, mint the liquidity position to its locker and record graduation, or revert the entire transaction | MUST | Failure-injection and balance-delta tests |
+| PROTO-021 | The locked Uniswap position MUST have no owner/admin path to withdraw principal, transfer or approve the position NFT, change its pool, or redirect its configured basket-fee recipient | MUST | Bytecode, selector, role and adversarial review |
+| PROTO-022 | The locker MUST support bounded permissionless fee collection and route the configured collectible fee value to the same immutable launch basket vault without exposing principal | MUST | Cross-phase fee, hostile-caller and balance-delta tests |
+| PROTO-023 | After graduation, Robyn's canonical trade interface MUST quote and execute through the bound Uniswap pool without requiring a separate migration, venue-selection or external-site step | MUST | Contract integration and browser transaction test |
+| PROTO-024 | The indexer MUST ingest canonical pool swaps and locker fee collections so direct Uniswap trades and Robyn-submitted trades produce one truthful market and reward history | MUST | Reorg-aware indexed-event integration test |
 
 ## Adapter epoch calculation
 

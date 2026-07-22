@@ -6,13 +6,21 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: completed 2026-07-22 — securely persist and fund a dedicated Robinhood Chain Testnet deployer wallet and prove no-broadcast deployment readiness without exposing secrets.
 - Goal completion standard: the encrypted operational wallet and recovery bundle survive isolated restore, owner-only permissions pass, the official chain-46630 balance is sufficient for deployment plus testing, and the workflow is documented and pushed without committing key material.
-- Current task: Robinhood Chain launchpad graduation research is documented; no public-testnet broadcast is authorized.
-- Last meaningful change: classified true curve-to-DEX migrations versus pool-native milestone systems across twelve Robinhood launchpad products, verified deployed sources for key factories/lockers, independently bound a graduated Circus launch to its live canonical Uniswap v3 pool, and compared those mechanisms with Robyn.
-- Last verification: 2026-07-22 Uniswap v3 is the dominant verified mainnet graduation destination; vladlaunch documents SushiSwap v3, Rooket documents v4, and Robinfun claims v2. The canonical mainnet Uniswap v3 factory, position manager, router, and WETH addresses are not contracts at the identical chain-46630 addresses. Robyn's local bonding/graduation works, but its production DEX adapter and immutable reward-fee LP locker remain unimplemented.
-- Next step: select WETH versus USDG, confirm canonical testnet DEX infrastructure, then implement and independently review the production graduation adapter and reward-fee locker before public-testnet broadcast.
+- Current task: production graduation is specified as an atomic move into locked canonical Uniswap v3 liquidity with uninterrupted trading through the Robyn interface; implementation remains on feature branch `codex/uniswap-auto-graduation` and no public-testnet broadcast is authorized.
+- Last meaningful change: settled the production venue and UX: the threshold-reaching buy must mint the Uniswap v3 position directly into an immutable fee-collecting/no-withdrawal locker, then the same token-page Buy/Sell controls automatically switch from the curve to that pool.
+- Last verification: 2026-07-22 the current chain-31337 app already proves automatic graduation and continuous Robyn-interface trading through `DevnetLockedLiquidityPool`, but that contract is only a local AMM rehearsal and is not Uniswap. The production `UniswapV3GraduationAdapter` and `RewardFeePositionLocker` are specified but not implemented.
+- Next step: implement the versioned adapter/locker and local canonical-v3 rehearsal, verify chain-46630 DEX provenance, then run atomic graduation, post-graduation trade, fee-harvest and holder-claim acceptance before any public-testnet broadcast.
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-22 - Canonical Uniswap graduation decision
+
+- Decision: Native Robyn launches graduate automatically in the threshold-reaching buy into the pre-bound canonical Uniswap v3 token/quote pool. The liquidity position NFT is minted directly to an immutable no-withdrawal locker that can collect configured fees into the launch's existing basket vault.
+- UX: The token remains tradable on Robyn. The same token-page Buy/Sell controls switch from curve quotes/execution to the bound Uniswap quote/router path from canonical phase state; no separate migration, venue-selection or external-site action is required. Direct pool trades are indexed into the same market history.
+- Current implementation boundary: chain 31337 already proves atomic graduation and post-graduation trading through `DevnetLockedLiquidityPool`. It must remain labeled as a local rehearsal, not Uniswap.
+- Required implementation: versioned `UniswapV3GraduationAdapter`, immutable `RewardFeePositionLocker`, pool-squatting and code-hash checks, terminal-price continuity simulation, canonical pool/locker indexing, direct-swap ingestion and browser acceptance through graduation, pool buy/sell, fee collection and holder claim.
+- Testnet gate: no public-testnet broadcast until canonical chain-46630 factory, position manager, router/quoter, wrapped quote asset, fee tier and code hashes are independently verified. Identically named explorer contracts are insufficient provenance.
 
 ### 2026-07-22 - Robinhood launchpad graduation research
 
