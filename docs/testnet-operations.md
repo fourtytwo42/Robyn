@@ -90,6 +90,8 @@ scripts/check-robinhood-testnet-wallet.sh
 
 The official funding route is [Robinhood Chain Testnet Faucet](https://faucet.testnet.chain.robinhood.com/). Its browser security checkpoint and any CAPTCHA or eligibility step must be completed interactively; do not bypass or automate those controls. Last verified 2026-07-22, the wallet balance was zero pending the first faucet request.
 
+An isolated full-bundle measurement deployed all contracts and completed initialization in 20 transactions using 15,352,146 gas. At the live 2026-07-22 public-testnet gas price of 10,000,000 wei, that is 0.00015352146 ETH of execution cost. One advertised 0.01 ETH faucet claim therefore provides about 65 times the measured execution-only requirement. Arbitrum L1 data fees are not reproduced by local Anvil, so retain the remaining balance for that overhead and repeated tests rather than treating it as disposable. Funding is considered sufficient when the official RPC confirms the full 0.01 ETH claim.
+
 Prerequisites:
 
 - exact candidate commit is clean and pushed to `origin/main`;
