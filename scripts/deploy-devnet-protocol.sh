@@ -50,13 +50,17 @@ spy="$(deploy_contract src/devnet/DevnetMockERC20.sol:DevnetMockERC20 "Mock S&P 
 eth_reward="$(deploy_contract src/devnet/DevnetMockERC20.sol:DevnetMockERC20 "Mock Ether" "mETH" "$deployer" "0")"
 router="$(deploy_contract src/devnet/DevnetConversionRouter.sol:DevnetConversionRouter "$deployer")"
 factory="$(deploy_contract src/RobynLaunchFactory.sol:RobynLaunchFactory "$base" "$router" "1000000000000000000" "86400")"
-market_factory="$(deploy_contract src/devnet/DevnetMarketFactory.sol:DevnetMarketFactory "$base" "$factory" "1000000000000000" "100")"
+curve_token_allocation="800000000000000000000000000"
+graduation_token_allocation="200000000000000000000000000"
+initial_virtual_token_reserve="1066666666666666666666666666"
+initial_virtual_base_reserve="2166666666666666666667"
+graduation_threshold_base="6500000000000000000000"
+market_factory="$(deploy_contract src/devnet/DevnetMarketFactory.sol:DevnetMarketFactory "$base" "$factory" "$curve_token_allocation" "$graduation_token_allocation" "$initial_virtual_token_reserve" "$initial_virtual_base_reserve" "$graduation_threshold_base" "100")"
 
 reward_liquidity="10000000000000000000000000"
 base_liquidity="10000000000000000000000000"
 initial_supply="1000000000000000000000000000"
-market_token_seed="500000000000000000000000000"
-market_base_seed="1000000000000000000000000"
+market_token_seed="$initial_supply"
 
 send_transaction "$base" "mint(address,uint256)" "$deployer" "$base_liquidity"
 for reward in "$nvda" "$spy" "$eth_reward"; do
@@ -76,15 +80,15 @@ send_transaction "$market_factory" "createMarket(address)" "$token"
 market="$(cast call "$market_factory" "marketByToken(address)(address)" "$token" --rpc-url "$rpc_url")"
 
 send_transaction "$token" "approve(address,uint256)" "$market" "$market_token_seed"
-send_transaction "$base" "approve(address,uint256)" "$market" "$market_base_seed"
-send_transaction "$market" "seed(uint256,uint256)" "$market_token_seed" "$market_base_seed"
-send_transaction "$factory" "sealLaunchExclusions(address,address[])" "$token" "[$market]"
+send_transaction "$market" "seed(uint256,uint256)" "$market_token_seed" "0"
+pool="$(cast call "$market" "graduatedPool()(address)" --rpc-url "$rpc_url")"
+send_transaction "$factory" "sealLaunchExclusions(address,address[])" "$token" "[$market,$pool]"
 
 block_number="$(cast block-number --rpc-url "$rpc_url")"
 git_commit="$(git rev-parse HEAD)"
 mkdir -p "$(dirname "$manifest")"
 temporary_manifest="$(mktemp "$(dirname "$manifest")/.31337.XXXXXX")"
-jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson blockNumber "$block_number" --arg gitCommit "$git_commit" --arg deployer "$deployer" --arg base "$base" --arg nvda "$nvda" --arg spy "$spy" --arg ethReward "$eth_reward" --arg router "$router" --arg factory "$factory" --arg marketFactory "$market_factory" --arg token "$token" --arg vault "$vault" --arg market "$market" '{
+jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson blockNumber "$block_number" --arg gitCommit "$git_commit" --arg deployer "$deployer" --arg base "$base" --arg nvda "$nvda" --arg spy "$spy" --arg ethReward "$eth_reward" --arg router "$router" --arg factory "$factory" --arg marketFactory "$market_factory" --arg token "$token" --arg vault "$vault" --arg market "$market" --arg pool "$pool" --arg curveTokens "$curve_token_allocation" --arg graduationTokens "$graduation_token_allocation" --arg virtualTokens "$initial_virtual_token_reserve" --arg virtualBase "$initial_virtual_base_reserve" --arg threshold "$graduation_threshold_base" '{
     environment: $environment,
     chainId: $chainId,
     deploymentBlock: $blockNumber,
@@ -98,14 +102,23 @@ jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson b
       marketFactory: $marketFactory,
       genesisToken: $token,
       genesisVault: $vault,
-      genesisMarket: $market
+      genesisMarket: $market,
+      genesisGraduatedPool: $pool
     },
     genesisBasket: [
       {symbol: "mNVDA", weightBps: 4000},
       {symbol: "mSPY", weightBps: 4000},
       {symbol: "mETH", weightBps: 2000}
     ],
-    market: {basePerToken: "1000000000000000", feeBps: 100}
+    market: {
+      type: "bonding-curve-v1",
+      feeBps: 100,
+      curveTokenAllocation: $curveTokens,
+      graduationTokenAllocation: $graduationTokens,
+      initialVirtualTokenReserve: $virtualTokens,
+      initialVirtualBaseReserve: $virtualBase,
+      graduationThresholdBase: $threshold
+    }
   }' >"$temporary_manifest"
 mv "$temporary_manifest" "$manifest"
 

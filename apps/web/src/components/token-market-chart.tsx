@@ -10,7 +10,7 @@ function units(value: string) {
 function compact(value: number) {
   return value.toLocaleString(undefined, {
     notation: value >= 10_000 ? "compact" : "standard",
-    maximumFractionDigits: value < 1 ? 4 : 2,
+    maximumFractionDigits: value < 0.01 ? 8 : value < 1 ? 4 : 2,
   });
 }
 
@@ -47,7 +47,10 @@ export function TokenMarketChart({
   const path = points
     .map((point, index) => `${index === 0 ? "M" : "L"}${point.x},${point.y}`)
     .join(" ");
-  const last = points.at(-1)?.value ?? 0;
+  const last =
+    mode === "price"
+      ? units(analytics.priceBasePerToken)
+      : (points.at(-1)?.value ?? 0);
 
   return (
     <section

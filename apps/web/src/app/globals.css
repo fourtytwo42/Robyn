@@ -13,6 +13,89 @@
   --reward: #f2b84b;
 }
 
+.graduation-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+  gap: 2rem;
+  align-items: center;
+  margin: 1rem 0 1.35rem;
+  padding: 1.35rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 36%, var(--line));
+  border-radius: 18px;
+  background:
+    radial-gradient(
+      circle at 90% 15%,
+      rgba(53, 208, 186, 0.12),
+      transparent 42%
+    ),
+    var(--surface);
+}
+
+.graduation-copy h2 {
+  margin: 0.2rem 0 0.55rem;
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+}
+
+.graduation-copy p:last-child,
+.graduation-rail small {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.graduation-rail {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.graduation-rail > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.graduation-rail strong {
+  color: var(--primary);
+  font-family: var(--font-mono), monospace;
+  font-size: 1.25rem;
+}
+
+.graduation-track {
+  position: relative;
+  overflow: hidden;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.graduation-track i {
+  display: block;
+  height: 100%;
+  min-width: 3px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--secondary), var(--primary));
+  box-shadow: 0 0 18px rgba(53, 208, 186, 0.32);
+}
+
+.compact-graduation {
+  gap: 0.38rem;
+  padding: 0.7rem 0 0.15rem;
+  border-top: 1px solid var(--line);
+}
+
+.compact-graduation > div:first-child,
+.compact-graduation small {
+  font-size: 0.76rem;
+}
+
+@media (max-width: 760px) {
+  .graduation-card {
+    grid-template-columns: 1fr;
+    gap: 1.1rem;
+  }
+}
+
 /* Launchpad visual system */
 .hero-token-card {
   position: relative;

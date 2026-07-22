@@ -29,6 +29,7 @@ type LaunchIdentity = {
   token: Address;
   market: Address;
   creator: Address;
+  liquidityPool?: Address;
 };
 
 function addBalance(
@@ -79,6 +80,7 @@ export function deriveLaunchAnalytics({
   feeBps,
   initialSupply,
   snapshot,
+  lifecycle,
 }: {
   launch: LaunchIdentity;
   logs: AnalyticsLog[];
@@ -86,6 +88,14 @@ export function deriveLaunchAnalytics({
   basePerToken: bigint;
   feeBps: number;
   initialSupply?: bigint;
+  lifecycle?: {
+    marketPhase: "legacy_fixed" | "bonding" | "graduated";
+    graduationProgressBps: number;
+    graduationThresholdBase: bigint;
+    baseRaised: bigint;
+    remainingCurveTokens: bigint;
+    graduatedPool: Address | null;
+  };
   snapshot?: {
     totalSupply: bigint;
     tokenReserve: bigint;
@@ -96,6 +106,7 @@ export function deriveLaunchAnalytics({
   const token = launch.token.toLowerCase();
   const market = launch.market.toLowerCase();
   const creator = launch.creator.toLowerCase();
+  const liquidityPool = launch.liquidityPool?.toLowerCase();
   const balances = new Map<string, bigint>();
   const traders = new Set<string>();
   const trades: Array<{
@@ -205,10 +216,15 @@ export function deriveLaunchAnalytics({
       } else {
         continue;
       }
+      const executionPrice =
+        decoded.eventName === "Bought"
+          ? ((decoded.args.baseInput - decoded.args.feeAmount) * 10n ** 18n) /
+            decoded.args.tokenOutput
+          : (decoded.args.baseOutput * 10n ** 18n) / decoded.args.tokenInput;
       chart.push({
         blockNumber: log.block_number,
         timestamp: isoTime(log.timestamp),
-        price: basePerToken.toString(),
+        price: executionPrice.toString(),
         cumulativeVolume: cumulativeVolume.toString(),
       });
     } catch {
@@ -229,19 +245,42 @@ export function deriveLaunchAnalytics({
   const positiveBalances = [...balances.entries()]
     .filter(([, balance]) => balance > 0n)
     .sort((a, b) => (a[1] === b[1] ? 0 : a[1] > b[1] ? -1 : 1));
-  const holders = positiveBalances.filter(([address]) => address !== market);
-  const circulatingSupply = totalSupply - (balances.get(market) ?? 0n);
+  const holders = positiveBalances.filter(
+    ([address]) => address !== market && address !== liquidityPool,
+  );
+  const circulatingSupply =
+    totalSupply -
+    (balances.get(market) ?? 0n) -
+    (liquidityPool ? (balances.get(liquidityPool) ?? 0n) : 0n);
   const marketCapBase = (totalSupply * basePerToken) / 10n ** 18n;
   const liquidityBase =
     baseReserve + (tokenReserve * basePerToken) / 10n ** 18n;
+  const firstTradePrice = chart[1] ? BigInt(chart[1].price) : basePerToken;
+  const priceChangeBps =
+    firstTradePrice === 0n
+      ? 0
+      : Number(((basePerToken - firstTradePrice) * 10_000n) / firstTradePrice);
 
   return {
     formula: "canonical-events-plus-onchain-state-v1",
-    marketType: "fixed-price-development-market",
+    marketType:
+      lifecycle?.marketPhase === "bonding"
+        ? "constant-product-bonding-curve"
+        : lifecycle?.marketPhase === "graduated"
+          ? "locked-constant-product-pool"
+          : "fixed-price-development-market",
+    marketPhase: lifecycle?.marketPhase ?? "legacy_fixed",
+    graduationProgressBps: lifecycle?.graduationProgressBps ?? 10_000,
+    graduationThresholdBase: (
+      lifecycle?.graduationThresholdBase ?? 0n
+    ).toString(),
+    baseRaised: (lifecycle?.baseRaised ?? 0n).toString(),
+    remainingCurveTokens: (lifecycle?.remainingCurveTokens ?? 0n).toString(),
+    graduatedPool: lifecycle?.graduatedPool ?? null,
     baseSymbol: "mUSD",
     feeBps,
     priceBasePerToken: basePerToken.toString(),
-    priceChangeBps: 0,
+    priceChangeBps,
     marketCapBase: marketCapBase.toString(),
     liquidityBase: liquidityBase.toString(),
     totalVolumeBase: totalVolume.toString(),
@@ -263,11 +302,13 @@ export function deriveLaunchAnalytics({
           ? "0"
           : ((balance * 10_000n) / totalSupply).toString(),
       label:
-        address === market
-          ? "Liquidity pool"
-          : address === creator
-            ? "Creator"
-            : "Holder",
+        address === liquidityPool
+          ? "Locked liquidity"
+          : address === market
+            ? "Liquidity pool"
+            : address === creator
+              ? "Creator"
+              : "Holder",
     })),
     recentTrades: trades.slice(-50).reverse(),
     chart: chart.length > 120 ? [chart[0], ...chart.slice(-119)] : chart,

@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import { readFile } from "node:fs/promises";
 import { createDatabase } from "@robyn/db";
 import { createPublicClient, http, type Address } from "viem";
 import { parseDiscoveryQuery, type DiscoveryQuery } from "./discovery-query.js";
@@ -30,6 +31,18 @@ const rpcClient = createPublicClient({
     process.env.ROBYN_OPERATOR_RPC_URL ?? "http://127.0.0.1:8545",
   ),
 });
+const deployment = JSON.parse(
+  await readFile(
+    process.env.ROBYN_MANIFEST ?? "/home/hendo420/Robyn/deployments/31337.json",
+    "utf8",
+  ),
+) as {
+  contracts: {
+    marketFactory: Address;
+    legacyMarketFactories?: Address[];
+  };
+};
+const zeroAddress = "0x0000000000000000000000000000000000000000";
 const erc20ViewAbi = [
   {
     type: "function",
@@ -68,6 +81,57 @@ const marketViewAbi = [
     inputs: [],
     outputs: [{ type: "uint16" }],
   },
+  {
+    type: "function",
+    name: "graduated",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "graduatedPool",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "graduationProgressBps",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "graduationThresholdBase",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "baseRaised",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "realCurveTokenReserve",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+const marketFactoryViewAbi = [
+  {
+    type: "function",
+    name: "marketByToken",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "address" }],
+  },
 ] as const;
 
 type LaunchRow = {
@@ -87,13 +151,50 @@ type LaunchRow = {
 
 type DiscoveryMetricLog = AnalyticsLog & { launch_token: string };
 
-let marketConfiguration:
-  Promise<{ basePerToken: bigint; feeBps: number }> | undefined;
+async function resolveLaunchMarket(token: string, storedMarket: string) {
+  if (storedMarket.toLowerCase() !== zeroAddress) return storedMarket;
+  for (const factory of [
+    deployment.contracts.marketFactory,
+    ...(deployment.contracts.legacyMarketFactories ?? []),
+  ]) {
+    const market = await rpcClient.readContract({
+      address: factory,
+      abi: marketFactoryViewAbi,
+      functionName: "marketByToken",
+      args: [token as Address],
+    });
+    if (market.toLowerCase() !== zeroAddress) return market.toLowerCase();
+  }
+  return storedMarket;
+}
+
+async function hydrateMarkets<T extends { token: string; market: string }>(
+  rows: T[],
+) {
+  return Promise.all(
+    rows.map(async (row) => ({
+      ...row,
+      market: await resolveLaunchMarket(row.token, row.market),
+    })),
+  );
+}
+
+type MarketConfiguration = {
+  basePerToken: bigint;
+  feeBps: number;
+  marketPhase: "legacy_fixed" | "bonding" | "graduated";
+  graduationProgressBps: number;
+  graduationThresholdBase: bigint;
+  baseRaised: bigint;
+  remainingCurveTokens: bigint;
+  graduatedPool: Address | null;
+};
 const tokenSupply = new Map<string, Promise<bigint>>();
 
-function getMarketConfiguration(market: Address) {
-  if (marketConfiguration) return marketConfiguration;
-  const pending = Promise.all([
+async function getMarketConfiguration(
+  market: Address,
+): Promise<MarketConfiguration> {
+  const [basePerToken, feeBps] = await Promise.all([
     rpcClient.readContract({
       address: market,
       abi: marketViewAbi,
@@ -104,15 +205,63 @@ function getMarketConfiguration(market: Address) {
       abi: marketViewAbi,
       functionName: "feeBps",
     }),
-  ]).then(([basePerToken, feeBps]) => ({
-    basePerToken,
-    feeBps: Number(feeBps),
-  }));
-  marketConfiguration = pending;
-  void pending.catch(() => {
-    marketConfiguration = undefined;
-  });
-  return pending;
+  ]);
+  try {
+    const [graduated, graduatedPool, progress, threshold, raised, remaining] =
+      await Promise.all([
+        rpcClient.readContract({
+          address: market,
+          abi: marketViewAbi,
+          functionName: "graduated",
+        }),
+        rpcClient.readContract({
+          address: market,
+          abi: marketViewAbi,
+          functionName: "graduatedPool",
+        }),
+        rpcClient.readContract({
+          address: market,
+          abi: marketViewAbi,
+          functionName: "graduationProgressBps",
+        }),
+        rpcClient.readContract({
+          address: market,
+          abi: marketViewAbi,
+          functionName: "graduationThresholdBase",
+        }),
+        rpcClient.readContract({
+          address: market,
+          abi: marketViewAbi,
+          functionName: "baseRaised",
+        }),
+        rpcClient.readContract({
+          address: market,
+          abi: marketViewAbi,
+          functionName: "realCurveTokenReserve",
+        }),
+      ]);
+    return {
+      basePerToken,
+      feeBps: Number(feeBps),
+      marketPhase: graduated ? "graduated" : "bonding",
+      graduationProgressBps: Number(progress),
+      graduationThresholdBase: threshold,
+      baseRaised: raised,
+      remainingCurveTokens: remaining,
+      graduatedPool,
+    };
+  } catch {
+    return {
+      basePerToken,
+      feeBps: Number(feeBps),
+      marketPhase: "legacy_fixed",
+      graduationProgressBps: 10_000,
+      graduationThresholdBase: 0n,
+      baseRaised: 0n,
+      remainingCurveTokens: 0n,
+      graduatedPool: null,
+    };
+  }
 }
 
 function getTokenSupply(token: Address) {
@@ -164,11 +313,12 @@ async function discoveryMetrics(rows: LaunchRow[]) {
         basePerToken: config.basePerToken,
         feeBps: config.feeBps,
       };
-      let metric = deriveLaunchAnalytics(input);
+      let metric = deriveLaunchAnalytics({ ...input, lifecycle: config });
       if (metric.totalSupply === "0") {
         metric = deriveLaunchAnalytics({
           ...input,
           initialSupply: await getTokenSupply(row.token as Address),
+          lifecycle: config,
         });
       }
       metrics.set(key, metric);
@@ -318,10 +468,11 @@ app.get<{
       ...state,
     };
   }
-  const rows = await sql.unsafe<LaunchRow[]>(
-    "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version FROM launches WHERE chain_id=$1 AND ($2::bigint IS NULL OR launch_id<$2::bigint) AND ($4::text IS NULL OR token=$4 OR strpos(lower(name),$4)>0 OR strpos(lower(symbol),$4)>0) AND ($5::text IS NULL OR assets ? $5) AND ($6::integer IS NULL OR jsonb_array_length(assets)=$6) ORDER BY CASE WHEN token=$4 THEN 0 ELSE 1 END,launch_id DESC LIMIT $3",
+  const storedRows = await sql.unsafe<LaunchRow[]>(
+    "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version FROM launches WHERE chain_id=$1 AND ($2::bigint IS NULL OR launch_id::bigint<$2::bigint) AND ($4::text IS NULL OR token=$4 OR strpos(lower(name),$4)>0 OR strpos(lower(symbol),$4)>0) AND ($5::text IS NULL OR assets ? $5) AND ($6::integer IS NULL OR jsonb_array_length(assets)=$6) ORDER BY CASE WHEN token=$4 THEN 0 ELSE 1 END,launch_id::bigint DESC LIMIT $3",
     [chainId, before, limit, query, asset, basketSize],
   );
+  const rows = await hydrateMarkets(storedRows);
   const marketMetrics = await discoveryMetrics(rows).catch((error) => {
     request.log.warn({ error }, "discovery metrics unavailable");
     return new Map<string, ReturnType<typeof deriveLaunchAnalytics>>();
@@ -344,6 +495,12 @@ app.get<{
               holderCount: metric.holderCount,
               tradeCount: metric.tradeCount,
               baseSymbol: metric.baseSymbol,
+              marketPhase: metric.marketPhase,
+              graduationProgressBps: metric.graduationProgressBps,
+              graduationThresholdBase: metric.graduationThresholdBase,
+              baseRaised: metric.baseRaised,
+              remainingCurveTokens: metric.remainingCurveTokens,
+              graduatedPool: metric.graduatedPool,
             }
           : null,
       };
@@ -363,10 +520,11 @@ app.get<{ Params: { token: string } }>(
   async (request, reply) => {
     if (!/^0x[0-9a-fA-F]{40}$/.test(request.params.token))
       return reply.code(400).send({ error: "invalid_token" });
-    const rows = await sql.unsafe(
+    const storedRows = await sql.unsafe<LaunchRow[]>(
       "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version FROM launches WHERE chain_id=$1 AND token=$2",
       [chainId, request.params.token.toLowerCase()],
     );
+    const rows = await hydrateMarkets(storedRows);
     if (!rows[0]) return reply.code(404).send({ error: "launch_not_found" });
     return { data: rows[0], ...(await freshness()) };
   },
@@ -377,12 +535,13 @@ app.get<{ Params: { token: string }; Querystring: { limit?: string } }>(
   async (request, reply) => {
     if (!/^0x[0-9a-fA-F]{40}$/.test(request.params.token))
       return reply.code(400).send({ error: "invalid_token" });
-    const launch = await sql.unsafe<
+    const storedLaunch = await sql.unsafe<
       { token: string; vault: string; market: string }[]
     >(
       "SELECT token,vault,market FROM launches WHERE chain_id=$1 AND token=$2",
       [chainId, request.params.token.toLowerCase()],
     );
+    const launch = await hydrateMarkets(storedLaunch);
     if (!launch[0]) return reply.code(404).send({ error: "launch_not_found" });
     const limit = Math.min(
       Math.max(Number(request.query.limit ?? "50"), 1),
@@ -401,7 +560,7 @@ app.get<{ Params: { token: string } }>(
   async (request, reply) => {
     if (!/^0x[0-9a-fA-F]{40}$/.test(request.params.token))
       return reply.code(400).send({ error: "invalid_token" });
-    const launches = await sql.unsafe<
+    const storedLaunches = await sql.unsafe<
       {
         token: string;
         market: string;
@@ -412,6 +571,7 @@ app.get<{ Params: { token: string } }>(
       "SELECT token,market,creator,created_block::text FROM launches WHERE chain_id=$1 AND token=$2",
       [chainId, request.params.token.toLowerCase()],
     );
+    const launches = await hydrateMarkets(storedLaunches);
     const launch = launches[0];
     if (!launch) return reply.code(404).send({ error: "launch_not_found" });
     const logs = await sql.unsafe<AnalyticsLog[]>(
@@ -427,22 +587,13 @@ app.get<{ Params: { token: string } }>(
     );
     const tokenAddress = launch.token as Address;
     const marketAddress = launch.market as Address;
-    const [baseAsset, basePerToken, feeBps, totalSupply] = await Promise.all([
+    const [baseAsset, config, totalSupply] = await Promise.all([
       rpcClient.readContract({
         address: marketAddress,
         abi: marketViewAbi,
         functionName: "baseAsset",
       }),
-      rpcClient.readContract({
-        address: marketAddress,
-        abi: marketViewAbi,
-        functionName: "basePerToken",
-      }),
-      rpcClient.readContract({
-        address: marketAddress,
-        abi: marketViewAbi,
-        functionName: "feeBps",
-      }),
+      getMarketConfiguration(marketAddress),
       rpcClient.readContract({
         address: tokenAddress,
         abi: erc20ViewAbi,
@@ -452,7 +603,12 @@ app.get<{ Params: { token: string } }>(
     const accounts = collectTokenAccounts(logs, tokenAddress);
     accounts.add(launch.creator.toLowerCase());
     accounts.add(launch.market.toLowerCase());
+    if (config.graduatedPool) accounts.add(config.graduatedPool.toLowerCase());
     const accountList = [...accounts] as Address[];
+    const activeLiquidityAddress =
+      config.marketPhase === "graduated" && config.graduatedPool
+        ? config.graduatedPool
+        : marketAddress;
     const [balanceValues, baseReserve] = await Promise.all([
       Promise.all(
         accountList.map((address) =>
@@ -468,7 +624,7 @@ app.get<{ Params: { token: string } }>(
         address: baseAsset,
         abi: erc20ViewAbi,
         functionName: "balanceOf",
-        args: [marketAddress],
+        args: [activeLiquidityAddress],
       }),
     ]);
     const balances = new Map(
@@ -478,18 +634,22 @@ app.get<{ Params: { token: string } }>(
       ]),
     );
     const analytics = deriveLaunchAnalytics({
-      launch: launch as {
-        token: `0x${string}`;
-        market: `0x${string}`;
-        creator: `0x${string}`;
+      launch: {
+        token: launch.token as Address,
+        market: launch.market as Address,
+        creator: launch.creator as Address,
+        ...(config.graduatedPool
+          ? { liquidityPool: config.graduatedPool }
+          : {}),
       },
       logs,
       createdTimestamp: created[0]?.timestamp ?? null,
-      basePerToken,
-      feeBps,
+      basePerToken: config.basePerToken,
+      feeBps: config.feeBps,
+      lifecycle: config,
       snapshot: {
         totalSupply,
-        tokenReserve: balances.get(launch.market.toLowerCase()) ?? 0n,
+        tokenReserve: balances.get(activeLiquidityAddress.toLowerCase()) ?? 0n,
         baseReserve,
         balances,
       },

@@ -98,7 +98,7 @@ Basket address/weight arrays are immutable. Asset pause or delisting changes exe
 | PROTO-014 | Graduation MUST be threshold-gated, permissionless, idempotent, atomic and irreversible | MUST | Unit/fuzz/adversarial tests |
 | PROTO-015 | Graduation calldata MUST NOT permit arbitrary asset, pool, recipient, locker, router or fee-tier selection | MUST | Calldata mutation suite |
 | PROTO-016 | Curve and graduated liquidity MUST have no privileged withdrawal path | MUST | Role/bytecode review |
-| PROTO-017 | Pre-graduation transfers MUST be restricted to approved protocol flow; transfers become permanently permissionless after graduation | MUST | Transfer-state tests |
+| PROTO-017 | Ordinary token transfers MUST remain enabled across bonding and graduation, while Robyn creates only the canonical curve venue before graduation and reward accounting remains solvent across transfers | MUST | Transfer/accounting invariant tests |
 | PROTO-018 | Curve and post-graduation trading fees MUST remain bound to the launch's immutable basket vault | MUST | Cross-phase fee invariant |
 
 ## Adapter epoch calculation

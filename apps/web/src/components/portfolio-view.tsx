@@ -116,11 +116,7 @@ export function PortfolioView() {
   const [positions, setPositions] = useState<Position[]>();
   const [indexedBlock, setIndexedBlock] = useState<string | null>(null);
   const [status, setStatus] = useState("Reading this browser session wallet.");
-  const rpcUrl =
-    typeof window === "undefined"
-      ? "http://127.0.0.1:8546"
-      : (process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
-        "http://" + window.location.hostname + ":8546");
+  const rpcUrl = "/rpc";
   const client = useMemo(
     () =>
       createPublicClient({

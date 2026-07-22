@@ -20,6 +20,12 @@ export type LaunchRecord = {
     holderCount: number;
     tradeCount: number;
     baseSymbol: string;
+    marketPhase: "legacy_fixed" | "bonding" | "graduated";
+    graduationProgressBps: number;
+    graduationThresholdBase: string;
+    baseRaised: string;
+    remainingCurveTokens: string;
+    graduatedPool: string | null;
   } | null;
 };
 
@@ -56,6 +62,12 @@ export type LaunchAnalytics = {
   data: {
     formula: string;
     marketType: string;
+    marketPhase: "legacy_fixed" | "bonding" | "graduated";
+    graduationProgressBps: number;
+    graduationThresholdBase: string;
+    baseRaised: string;
+    remainingCurveTokens: string;
+    graduatedPool: string | null;
     baseSymbol: string;
     feeBps: number;
     priceBasePerToken: string;

@@ -20,7 +20,11 @@ readarray -t addresses < <(
     .contracts.marketFactory,
     .contracts.genesisToken,
     .contracts.genesisVault,
-    .contracts.genesisMarket
+    .contracts.genesisMarket,
+    (.contracts.genesisGraduatedPool // empty),
+    (.contracts.bondingMarketFactory // empty),
+    (.bondingDemos[]?.market // empty),
+    (.bondingDemos[]?.graduatedPool // empty)
   ' "$manifest"
 )
 for address in "${addresses[@]}"; do
@@ -40,7 +44,14 @@ market="$(jq -r '.contracts.genesisMarket' "$manifest")"
 
 test "$(cast call "$factory" "chainId()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "31337"
 test "$(cast call "$market_factory" "launchFactory()(address)" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$factory" | tr '[:upper:]' '[:lower:]')"
-test "$(cast call "$market_factory" "marketByToken(address)(address)" "$token" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$market" | tr '[:upper:]' '[:lower:]')"
+resolved_market="$(cast call "$market_factory" "marketByToken(address)(address)" "$token" --rpc-url "$rpc_url")"
+if [[ "$resolved_market" == "0x0000000000000000000000000000000000000000" ]]; then
+  while read -r legacy_factory; do
+    resolved_market="$(cast call "$legacy_factory" "marketByToken(address)(address)" "$token" --rpc-url "$rpc_url")"
+    [[ "$resolved_market" != "0x0000000000000000000000000000000000000000" ]] && break
+  done < <(jq -r '.contracts.legacyMarketFactories[]?' "$manifest")
+fi
+test "$(echo "$resolved_market" | tr '[:upper:]' '[:lower:]')" = "$(echo "$market" | tr '[:upper:]' '[:lower:]')"
 test "$(cast call "$factory" "vaultByToken(address)(address)" "$token" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$vault" | tr '[:upper:]' '[:lower:]')"
 test "$(cast call "$vault" "launchToken()(address)" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$token" | tr '[:upper:]' '[:lower:]')"
 test "$(cast call "$vault" "baseAsset()(address)" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$base" | tr '[:upper:]' '[:lower:]')"
@@ -61,6 +72,27 @@ for index in 0 1 2; do
 done
 
 test "$(cast call "$market" "feeBps()(uint16)" --rpc-url "$rpc_url" | awk '{print $1}')" = "100"
-test "$(cast call "$market" "basePerToken()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "1000000000000000"
+
+if [[ "$(jq -r '.market.type // "legacy-fixed"' "$manifest")" == "bonding-curve-v1" ]]; then
+  bonding_factory="$(jq -r '.contracts.bondingMarketFactory // .contracts.marketFactory' "$manifest")"
+  test "$(cast call "$bonding_factory" "curveTokenAllocation()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "$(jq -r '.market.curveTokenAllocation' "$manifest")"
+  test "$(cast call "$bonding_factory" "graduationThresholdBase()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "$(jq -r '.market.graduationThresholdBase' "$manifest")"
+  while read -r demo_market demo_pool expected_phase; do
+    test "$(cast call "$demo_market" "seeded()(bool)" --rpc-url "$rpc_url")" = "true"
+    test "$(cast call "$demo_market" "graduatedPool()(address)" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$demo_pool" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$expected_phase" == "graduated" ]]; then
+      test "$(cast call "$demo_market" "graduated()(bool)" --rpc-url "$rpc_url")" = "true"
+      test "$(cast call "$demo_pool" "initialized()(bool)" --rpc-url "$rpc_url")" = "true"
+      test "$(cast call "$demo_market" "graduationProgressBps()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "10000"
+    else
+      test "$(cast call "$demo_market" "graduated()(bool)" --rpc-url "$rpc_url")" = "false"
+      progress="$(cast call "$demo_market" "graduationProgressBps()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')"
+      test "$progress" -gt 0
+      test "$progress" -lt 10000
+    fi
+  done < <(jq -r '.bondingDemos[] | [.market,.graduatedPool,.phase] | @tsv' "$manifest")
+else
+  test "$(cast call "$market" "basePerToken()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "1000000000000000"
+fi
 
 echo "Verified devnet deployment at block $(cast block-number --rpc-url "$rpc_url")"

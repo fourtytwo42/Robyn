@@ -32,5 +32,6 @@ declare module "@robyn/network-token-trade" {
     symbol: string;
     feeBps: number;
     basePerToken: string;
+    marketPhase: "legacy_fixed" | "bonding" | "graduated";
   }): JSX.Element;
 }

@@ -122,6 +122,13 @@ const erc20Abi = [
 const marketAbi = [
   {
     type: "function",
+    name: "graduatedPool",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
     name: "seed",
     stateMutability: "nonpayable",
     inputs: [{ type: "uint256" }, { type: "uint256" }],
@@ -210,11 +217,7 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
     "Create or fund a session wallet, then launch.",
   );
   const [busy, setBusy] = useState(false);
-  const rpcUrl =
-    typeof window === "undefined"
-      ? "http://127.0.0.1:8546"
-      : (process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
-        "http://" + window.location.hostname + ":8546");
+  const rpcUrl = "/rpc";
   const chain = useMemo(
     () =>
       defineChain({
@@ -261,7 +264,7 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
         functionName: "launchTokenById",
         args: [id],
       });
-      const [vault, creator, market, tokenName, tokenSymbol, balance] =
+      const [vault, creator, tokenName, tokenSymbol, balance] =
         await Promise.all([
           publicClient.readContract({
             address: deployment.contracts.factory,
@@ -273,12 +276,6 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
             address: deployment.contracts.factory,
             abi: factoryAbi,
             functionName: "creatorByToken",
-            args: [token],
-          }),
-          publicClient.readContract({
-            address: deployment.contracts.marketFactory,
-            abi: marketFactoryAbi,
-            functionName: "marketByToken",
             args: [token],
           }),
           publicClient.readContract({
@@ -300,6 +297,24 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
               })
             : Promise.resolve(0n),
         ]);
+      let market = await publicClient.readContract({
+        address: deployment.contracts.marketFactory,
+        abi: marketFactoryAbi,
+        functionName: "marketByToken",
+        args: [token],
+      });
+      if (market === ZERO) {
+        for (const legacyFactory of deployment.contracts
+          .legacyMarketFactories ?? []) {
+          market = await publicClient.readContract({
+            address: legacyFactory,
+            abi: marketFactoryAbi,
+            functionName: "marketByToken",
+            args: [token],
+          });
+          if (market !== ZERO) break;
+        }
+      }
       records.push({
         id,
         token,
@@ -316,6 +331,7 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
     account,
     deployment.contracts.factory,
     deployment.contracts.marketFactory,
+    deployment.contracts.legacyMarketFactories,
     publicClient,
   ]);
 
@@ -363,19 +379,9 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
         (item): item is { asset: Address; weight: number } =>
           item.weight > 0 && item.asset !== undefined,
       );
-    const baseBalance = await publicClient.readContract({
-      address: deployment.contracts.baseAsset,
-      abi: erc20Abi,
-      functionName: "balanceOf",
-      args: [account.address],
-    });
-    if (baseBalance < parseEther("500"))
-      return setStatus(
-        "Fund the wallet first; launch seeding requires 500 mUSD.",
-      );
     setBusy(true);
     try {
-      setStatus("1/7 Creating token and immutable basket...");
+      setStatus("1/5 Creating token and immutable basket...");
       await submit({
         address: deployment.contracts.factory,
         abi: factoryAbi,
@@ -400,7 +406,7 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
         functionName: "launchTokenById",
         args: [id],
       });
-      setStatus("2/7 Deploying the fixed-policy market...");
+      setStatus("2/5 Deploying its bonding curve and locked pool...");
       await submit({
         address: deployment.contracts.marketFactory,
         abi: marketFactoryAbi,
@@ -414,40 +420,37 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
         functionName: "marketByToken",
         args: [token],
       });
-      setStatus("3/7 Approving market inventory...");
+      setStatus("3/5 Approving the fixed one-billion-token supply...");
       await submit({
         address: token,
         abi: erc20Abi,
         functionName: "approve",
-        args: [market, parseEther("500000000")],
+        args: [market, parseEther("1000000000")],
         account,
       });
-      setStatus("4/7 Approving base liquidity...");
-      await submit({
-        address: deployment.contracts.baseAsset,
-        abi: erc20Abi,
-        functionName: "approve",
-        args: [market, parseEther("500")],
-        account,
-      });
-      setStatus("5/7 Seeding token and base liquidity...");
+      setStatus("4/5 Seeding curve inventory and graduation reserves...");
       await submit({
         address: market,
         abi: marketAbi,
         functionName: "seed",
-        args: [parseEther("500000000"), parseEther("500")],
+        args: [parseEther("1000000000"), 0n],
         account,
       });
-      setStatus("6/7 Sealing the market inventory exclusion...");
+      const graduatedPool = await publicClient.readContract({
+        address: market,
+        abi: marketAbi,
+        functionName: "graduatedPool",
+      });
+      setStatus("5/5 Sealing curve and locked-pool reward exclusions...");
       await submit({
         address: deployment.contracts.factory,
         abi: factoryAbi,
         functionName: "sealLaunchExclusions",
-        args: [token, [market]],
+        args: [token, [market, graduatedPool]],
         account,
       });
       setStatus(
-        "Launch complete. Its market is live and basket rules are immutable.",
+        "Launch complete. Its bonding curve is live, graduation is automatic, and basket rules are immutable.",
       );
       await refresh();
     } catch (error) {
@@ -567,8 +570,9 @@ export function LaunchpadConsole({ deployment }: { deployment: Deployment }) {
             Create a token holders want to earn with.
           </h2>
           <p>
-            Choose its immutable mock-asset reward basket, seed a market, then
-            let trading activity fund rewards holders can claim.
+            Choose its immutable mock-asset reward basket, launch on a bonding
+            curve, then let trading activity fund rewards holders can claim.
+            Completed curves graduate automatically into locked liquidity.
           </p>
         </div>
         <span className="live-chip">

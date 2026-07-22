@@ -28,6 +28,12 @@ function marketAmount(value: string, symbol: string) {
   );
 }
 
+function phaseLabel(phase: "legacy_fixed" | "bonding" | "graduated") {
+  if (phase === "bonding") return "Bonding";
+  if (phase === "graduated") return "Graduated";
+  return "Legacy market";
+}
+
 export default async function Discover({
   searchParams,
 }: {
@@ -140,7 +146,11 @@ export default async function Discover({
                       className="launch-card-art"
                       priority={index < 4}
                     />
-                    <span>{launch.assets.length} asset basket</span>
+                    <span>
+                      {launch.metrics
+                        ? phaseLabel(launch.metrics.marketPhase)
+                        : `${launch.assets.length} asset basket`}
+                    </span>
                   </div>
                   <div className="launch-card-copy">
                     <div className="launch-card-heading">
@@ -193,33 +203,60 @@ export default async function Discover({
                   </div>
                 </div>
                 {launch.metrics ? (
-                  <dl
-                    className="launch-market-stats"
-                    aria-label={launch.name + " market metrics"}
-                  >
-                    <div>
-                      <dt>Market cap</dt>
-                      <dd>
-                        {marketAmount(
-                          launch.metrics.marketCapBase,
-                          launch.metrics.baseSymbol,
-                        )}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Total volume</dt>
-                      <dd>
-                        {marketAmount(
-                          launch.metrics.totalVolumeBase,
-                          launch.metrics.baseSymbol,
-                        )}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Holders</dt>
-                      <dd>{launch.metrics.holderCount.toLocaleString()}</dd>
-                    </div>
-                  </dl>
+                  <>
+                    <dl
+                      className="launch-market-stats"
+                      aria-label={launch.name + " market metrics"}
+                    >
+                      <div>
+                        <dt>Market cap</dt>
+                        <dd>
+                          {marketAmount(
+                            launch.metrics.marketCapBase,
+                            launch.metrics.baseSymbol,
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Total volume</dt>
+                        <dd>
+                          {marketAmount(
+                            launch.metrics.totalVolumeBase,
+                            launch.metrics.baseSymbol,
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Holders</dt>
+                        <dd>{launch.metrics.holderCount.toLocaleString()}</dd>
+                      </div>
+                    </dl>
+                    {launch.metrics.marketPhase !== "legacy_fixed" ? (
+                      <div className="graduation-rail compact-graduation">
+                        <div>
+                          <span>{phaseLabel(launch.metrics.marketPhase)}</span>
+                          <strong>
+                            {(
+                              launch.metrics.graduationProgressBps / 100
+                            ).toFixed(1)}
+                            %
+                          </strong>
+                        </div>
+                        <div className="graduation-track" aria-hidden="true">
+                          <i
+                            style={{
+                              width: `${Math.min(100, launch.metrics.graduationProgressBps / 100)}%`,
+                            }}
+                          />
+                        </div>
+                        <small>
+                          {launch.metrics.marketPhase === "graduated"
+                            ? "Liquidity locked. Trading continues in the graduated pool."
+                            : `${marketAmount(launch.metrics.baseRaised, launch.metrics.baseSymbol)} raised toward graduation`}
+                        </small>
+                      </div>
+                    ) : null}
+                  </>
                 ) : (
                   <p className="launch-metrics-unavailable">
                     Market metrics unavailable

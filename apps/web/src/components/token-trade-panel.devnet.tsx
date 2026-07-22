@@ -47,6 +47,20 @@ const marketAbi = [
     inputs: [{ type: "uint256" }, { type: "uint256" }],
     outputs: [{ type: "uint256" }],
   },
+  {
+    type: "function",
+    name: "quoteBuy",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [{ type: "uint256" }, { type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "quoteSell",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [{ type: "uint256" }, { type: "uint256" }],
+  },
 ] as const;
 
 function compact(value: bigint) {
@@ -62,6 +76,7 @@ export function NetworkTokenTradePanel({
   symbol,
   feeBps,
   basePerToken,
+  marketPhase,
 }: {
   deployment: Deployment;
   token: Address;
@@ -69,6 +84,7 @@ export function NetworkTokenTradePanel({
   symbol: string;
   feeBps: number;
   basePerToken: string;
+  marketPhase: "legacy_fixed" | "bonding" | "graduated";
 }) {
   const router = useRouter();
   const [side, setSide] = useState<"buy" | "sell">("buy");
@@ -78,11 +94,8 @@ export function NetworkTokenTradePanel({
   const [tokenBalance, setTokenBalance] = useState(0n);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("Enter an amount to preview the trade.");
-  const rpcUrl =
-    typeof window === "undefined"
-      ? "http://127.0.0.1:8546"
-      : (process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
-        "http://" + window.location.hostname + ":8546");
+  const [quotedOutput, setQuotedOutput] = useState<number | null>(null);
+  const rpcUrl = "/rpc";
   const chain = useMemo(
     () =>
       defineChain({
@@ -117,6 +130,34 @@ export function NetworkTokenTradePanel({
         ? (parsed * afterFee) / price
         : parsed * price * afterFee
       : 0;
+
+  useEffect(() => {
+    if (
+      !Number.isFinite(parsed) ||
+      parsed <= 0 ||
+      marketPhase === "legacy_fixed"
+    ) {
+      setQuotedOutput(null);
+      return;
+    }
+    let active = true;
+    void publicClient
+      .readContract({
+        address: market,
+        abi: marketAbi,
+        functionName: side === "buy" ? "quoteBuy" : "quoteSell",
+        args: [parseEther(input)],
+      })
+      .then(([, amount]) => {
+        if (active) setQuotedOutput(Number(formatEther(amount)));
+      })
+      .catch(() => {
+        if (active) setQuotedOutput(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [input, market, marketPhase, parsed, publicClient, side]);
 
   useEffect(() => {
     const stored = window.sessionStorage.getItem("robyn-devnet-session-key");
@@ -259,10 +300,19 @@ export function NetworkTokenTradePanel({
       <div className="trade-receive">
         <span>You receive approximately</span>
         <strong>
-          {output.toLocaleString(undefined, { maximumFractionDigits: 2 })}{" "}
+          {(quotedOutput ?? output).toLocaleString(undefined, {
+            maximumFractionDigits: 2,
+          })}{" "}
           {side === "buy" ? symbol : "mUSD"}
         </strong>
-        <small>Fixed devnet price · {(feeBps / 100).toFixed(2)}% fee</small>
+        <small>
+          {marketPhase === "bonding"
+            ? "Bonding curve quote"
+            : marketPhase === "graduated"
+              ? "Graduated locked-pool quote"
+              : "Legacy fixed-price quote"}{" "}
+          · {(feeBps / 100).toFixed(2)}% fee
+        </small>
       </div>
       {account ? (
         <button

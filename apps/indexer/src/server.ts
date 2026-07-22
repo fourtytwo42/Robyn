@@ -5,7 +5,11 @@ import { createDatabase } from "@robyn/db";
 type Manifest = {
   chainId: number;
   deploymentBlock: number;
-  contracts: { factory: Address; marketFactory: Address };
+  contracts: {
+    factory: Address;
+    marketFactory: Address;
+    legacyMarketFactories?: Address[];
+  };
 };
 const manifest = JSON.parse(
   await readFile(
@@ -61,6 +65,24 @@ const marketFactoryAbi = [
     outputs: [{ type: "address" }],
   },
 ] as const;
+const zeroAddress = "0x0000000000000000000000000000000000000000";
+
+async function resolveMarket(token: Address) {
+  const factories = [
+    manifest.contracts.marketFactory,
+    ...(manifest.contracts.legacyMarketFactories ?? []),
+  ];
+  for (const factory of factories) {
+    const market = await client.readContract({
+      address: factory,
+      abi: marketFactoryAbi,
+      functionName: "marketByToken",
+      args: [token],
+    });
+    if (market.toLowerCase() !== zeroAddress) return market;
+  }
+  return zeroAddress as Address;
+}
 const tokenAbi = [
   {
     type: "function",
@@ -132,12 +154,7 @@ async function rebuildLaunches(asOfBlock: bigint) {
         functionName: "creatorByToken",
         args: [token],
       }),
-      client.readContract({
-        address: manifest.contracts.marketFactory,
-        abi: marketFactoryAbi,
-        functionName: "marketByToken",
-        args: [token],
-      }),
+      resolveMarket(token),
       client.readContract({
         address: token,
         abi: tokenAbi,

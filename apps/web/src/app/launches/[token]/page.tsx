@@ -32,6 +32,16 @@ function metric(value: string, symbol = "mUSD") {
   return `${quantity(value, 4)} ${symbol}`;
 }
 
+function priceMetric(value: string, symbol = "mUSD") {
+  return `${quantity(value, 8)} ${symbol}`;
+}
+
+function marketPhaseLabel(phase: "legacy_fixed" | "bonding" | "graduated") {
+  if (phase === "bonding") return "Bonding curve";
+  if (phase === "graduated") return "Graduated";
+  return "Legacy fixed market";
+}
+
 function AddressRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
@@ -86,7 +96,9 @@ export default async function LaunchDetail({
           <div className="token-identity-copy">
             <div className="token-title-line">
               <p className="eyebrow">Canonical launch #{launch.launch_id}</p>
-              <span className="live-chip">Live market</span>
+              <span className="live-chip">
+                {marketPhaseLabel(market.marketPhase)}
+              </span>
             </div>
             <h1>
               {launch.name} <span>${launch.symbol}</span>
@@ -101,7 +113,7 @@ export default async function LaunchDetail({
             <span>Market cap</span>
             <strong>{metric(market.marketCapBase)}</strong>
             <small>
-              Price {metric(market.priceBasePerToken)} / {launch.symbol}
+              Price {priceMetric(market.priceBasePerToken)} / {launch.symbol}
             </small>
             <span className="risk-badge">
               {isTestnet ? "Testnet mocks" : "Controlled devnet"}
@@ -114,7 +126,7 @@ export default async function LaunchDetail({
           aria-label="Token market metrics"
         >
           {[
-            ["Price", metric(market.priceBasePerToken)],
+            ["Price", priceMetric(market.priceBasePerToken)],
             ["Liquidity", metric(market.liquidityBase)],
             ["Total volume", metric(market.totalVolumeBase)],
             ["Holder fees", metric(market.totalFeesBase)],
@@ -128,6 +140,55 @@ export default async function LaunchDetail({
           ))}
         </section>
 
+        {market.marketPhase !== "legacy_fixed" ? (
+          <section
+            className="graduation-card"
+            aria-labelledby="graduation-heading"
+          >
+            <div className="graduation-copy">
+              <p className="card-label">Launch lifecycle</p>
+              <h2 id="graduation-heading">
+                {market.marketPhase === "graduated"
+                  ? "Graduated to locked liquidity"
+                  : "Climbing the bonding curve"}
+              </h2>
+              <p>
+                {market.marketPhase === "graduated"
+                  ? "The curve sold out atomically. Its remaining token allocation and raised mUSD now trade in a permanently locked local pool."
+                  : "Every buy moves the price along the curve. When the curve allocation sells out, the market automatically moves its reserved tokens and raised mUSD into locked liquidity."}
+              </p>
+            </div>
+            <div className="graduation-rail">
+              <div>
+                <span>{metric(market.baseRaised)} raised</span>
+                <strong>
+                  {(market.graduationProgressBps / 100).toFixed(1)}%
+                </strong>
+              </div>
+              <div
+                className="graduation-track"
+                role="progressbar"
+                aria-label="Graduation progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={market.graduationProgressBps / 100}
+              >
+                <i
+                  style={{
+                    width: `${Math.min(100, market.graduationProgressBps / 100)}%`,
+                  }}
+                />
+              </div>
+              <small>
+                Target {metric(market.graduationThresholdBase)}
+                {market.marketPhase === "bonding"
+                  ? ` · ${quantity(market.remainingCurveTokens)} ${launch.symbol} remain on curve`
+                  : " · migration complete and irreversible"}
+              </small>
+            </div>
+          </section>
+        ) : null}
+
         <div className="token-market-layout">
           <TokenMarketChart analytics={market} symbol={launch.symbol} />
           <NetworkTokenTradePanel
@@ -137,6 +198,7 @@ export default async function LaunchDetail({
             symbol={launch.symbol}
             feeBps={market.feeBps}
             basePerToken={market.priceBasePerToken}
+            marketPhase={market.marketPhase}
           />
         </div>
 
@@ -317,6 +379,12 @@ export default async function LaunchDetail({
               <AddressRow label="Launch token" value={launch.token} />
               <AddressRow label="Reward vault" value={launch.vault} />
               <AddressRow label="Market" value={launch.market} />
+              {market.graduatedPool ? (
+                <AddressRow
+                  label="Graduated liquidity pool"
+                  value={market.graduatedPool}
+                />
+              ) : null}
               <AddressRow label="Creator wallet" value={launch.creator} />
               <AddressRow
                 label="Formula version"

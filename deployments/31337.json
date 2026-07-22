@@ -2,7 +2,7 @@
   "environment": "robyn-devnet",
   "chainId": 31337,
   "deploymentBlock": 74,
-  "gitCommit": "d31c68ff8bcb15f3ed37414baab43c3c3221915e",
+  "gitCommit": "48e85dfea1b09257ac9c271ceb9578b8265776d6",
   "deployer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
   "contracts": {
     "baseAsset": "0x998abeb3E57409262aE5b751f60747921B33613E",
@@ -13,10 +13,14 @@
     ],
     "conversionRouter": "0x0E801D84Fa97b50751Dbf25036d067dCf18858bF",
     "factory": "0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf",
-    "marketFactory": "0x9d4454B023096f34B160D6B654540c56A1F81688",
+    "marketFactory": "0x367761085BF3C12e5DA2Df99AC6E1a824612b8fb",
     "genesisToken": "0xc9A9DCE750f11c2c04a29CFbB7eD83576050a3F5",
     "genesisVault": "0xf7b407BD806B9943C1b2281271B27DC3F3baE694",
-    "genesisMarket": "0xBeaAFDA2E17fC95E69Dc06878039d274E0d2B21A"
+    "genesisMarket": "0xBeaAFDA2E17fC95E69Dc06878039d274E0d2B21A",
+    "legacyMarketFactories": [
+      "0x9d4454B023096f34B160D6B654540c56A1F81688"
+    ],
+    "bondingMarketFactory": "0x367761085BF3C12e5DA2Df99AC6E1a824612b8fb"
   },
   "genesisBasket": [
     {
@@ -33,7 +37,31 @@
     }
   ],
   "market": {
-    "basePerToken": "1000000000000000",
-    "feeBps": 100
-  }
+    "type": "bonding-curve-v1",
+    "feeBps": 100,
+    "curveTokenAllocation": "800000000000000000000000000",
+    "graduationTokenAllocation": "200000000000000000000000000",
+    "initialVirtualTokenReserve": "1066666666666666666666666666",
+    "initialVirtualBaseReserve": "2166666666666666666667",
+    "graduationThresholdBase": "6500000000000000000000"
+  },
+  "bondingDeploymentBlock": 231,
+  "bondingDemos": [
+    {
+      "launchId": "9",
+      "token": "0x332c7FbC5c4ECC9867f845476F4A264E685BdF71",
+      "vault": "0x860aA38d65a6C782E661ad05A70EE0B5cF8Ee782",
+      "market": "0x985ab7E0663EbfF2E0F523f975D7D5A81bB9E42d",
+      "graduatedPool": "0x548a99bfC51cF0c7E6190E70d9bA99d10F12f55D",
+      "phase": "bonding"
+    },
+    {
+      "launchId": "10",
+      "token": "0xc17E182B5839cABEf427dF32c4E11B86b6D7bA39",
+      "vault": "0x0E8937A868f43ddd2dD9981D01995Ef3CDc2c1FA",
+      "market": "0x916522eC14d58cB6619cE4467ceB25Faec643B2b",
+      "graduatedPool": "0x36A7C24B9CEeaB9E66DA930c384d1b31080a49f0",
+      "phase": "graduated"
+    }
+  ]
 }

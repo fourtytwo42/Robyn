@@ -7,6 +7,7 @@ import {
   formatEther,
   http,
   parseEther,
+  type Address,
   type Hex,
 } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
@@ -192,17 +193,24 @@ function compact(value: bigint, digits = 4) {
   });
 }
 
+function requestFaucet(url: string, address: Address) {
+  return new Promise<number>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("POST", url);
+    request.setRequestHeader("content-type", "application/json");
+    request.onload = () => resolve(request.status);
+    request.onerror = () => reject(new Error("Dev ETH faucet unavailable."));
+    request.send(JSON.stringify({ address }));
+  });
+}
+
 export function DevnetConsole({ deployment }: { deployment: Deployment }) {
   const [privateKey, setPrivateKey] = useState<Hex>();
   const [state, setState] = useState<WalletState>(emptyState);
   const [status, setStatus] = useState("Create a session wallet to begin.");
   const [busy, setBusy] = useState(false);
 
-  const rpcUrl =
-    typeof window === "undefined"
-      ? "http://127.0.0.1:8546"
-      : (process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
-        "http://" + window.location.hostname + ":8546");
+  const rpcUrl = "/rpc";
   const chain = useMemo(
     () =>
       defineChain({
@@ -335,12 +343,11 @@ export function DevnetConsole({ deployment }: { deployment: Deployment }) {
   async function fundWallet() {
     if (!account || !walletClient) return;
     await execute("Funding dev ETH and 10,000 mUSD&", async () => {
-      const response = await fetch(rpcUrl.replace(/\/$/, "") + "/faucet", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ address: account.address }),
-      });
-      if (!response.ok && response.status !== 429)
+      const faucetStatus = await requestFaucet(
+        rpcUrl.replace(/\/$/, "") + "/faucet",
+        account.address,
+      );
+      if ((faucetStatus < 200 || faucetStatus >= 300) && faucetStatus !== 429)
         throw new Error("Dev ETH faucet unavailable.");
       const alreadyClaimed = await publicClient.readContract({
         address: deployment.contracts.baseAsset,

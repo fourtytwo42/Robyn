@@ -10,8 +10,11 @@ export type Deployment = {
     conversionRouter?: Address;
     factory: Address;
     marketFactory: Address;
+    legacyMarketFactories?: Address[];
+    bondingMarketFactory?: Address;
     genesisToken: Address;
     genesisVault: Address;
     genesisMarket: Address;
+    genesisGraduatedPool?: Address;
   };
 };
