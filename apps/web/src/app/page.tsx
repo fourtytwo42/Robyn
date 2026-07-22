@@ -28,6 +28,16 @@ function compactBase(value: string) {
   });
 }
 
+function marketAmount(value: string, symbol: string) {
+  return `${compactBase(value)} ${symbol}`;
+}
+
+function phaseLabel(phase: "legacy_fixed" | "bonding" | "graduated") {
+  if (phase === "bonding") return "Bonding";
+  if (phase === "graduated") return "Graduated";
+  return "Legacy market";
+}
+
 export default async function Home() {
   const [gateway, dataPlane, launches] = await Promise.all([
     getGatewayHealth(),
@@ -135,28 +145,44 @@ export default async function Home() {
                   alt=""
                   priority={market.symbol === "ROBYN"}
                 />
-                <span className="demo-badge">Live demo</span>
+                <div className="market-art-badges">
+                  <span className="demo-badge">
+                    {market.metrics
+                      ? phaseLabel(market.metrics.marketPhase)
+                      : "Live market"}
+                  </span>
+                  <span className="market-launch-number">
+                    #{market.launch_id}
+                  </span>
+                </div>
+                <div className="market-art-identity">
+                  <strong>{market.name}</strong>
+                  <span>${market.symbol}</span>
+                </div>
               </div>
               <div className="market-card-copy">
-                <div className="market-title-row">
-                  <div>
-                    <strong>{market.name}</strong>
-                    <span>${market.symbol}</span>
-                  </div>
-                  <span className="market-up">#{market.launch_id}</span>
+                <div
+                  className="home-market-basket"
+                  aria-label="Immutable basket weights"
+                >
+                  {market.assets.map((asset, index) => {
+                    const metadata = rewardAssetMetadata(
+                      asset,
+                      deployment.contracts.rewardAssets,
+                      isTestnet,
+                    );
+                    const weight = (market.weights_bps[index] ?? 0) / 100;
+                    return (
+                      <span
+                        key={asset}
+                        title={metadata.name}
+                        aria-label={`${metadata.name} ${weight}%`}
+                      >
+                        {metadata.symbol} · {weight}%
+                      </span>
+                    );
+                  })}
                 </div>
-                <p>
-                  {market.assets
-                    .map((asset, index) => {
-                      const metadata = rewardAssetMetadata(
-                        asset,
-                        deployment.contracts.rewardAssets,
-                        isTestnet,
-                      );
-                      return `${metadata.symbol} ${(market.weights_bps[index] ?? 0) / 100}%`;
-                    })
-                    .join(" / ")}
-                </p>
                 <div className="basket-weight-bar" aria-hidden="true">
                   {market.weights_bps.map((weight, index) => (
                     <i
@@ -166,20 +192,71 @@ export default async function Home() {
                     />
                   ))}
                 </div>
-                <div className="market-stats">
-                  <span>
-                    MC{" "}
-                    {market.metrics
-                      ? compactBase(market.metrics.marketCapBase)
-                      : "—"}
-                  </span>
-                  <strong>
-                    Vol{" "}
-                    {market.metrics
-                      ? compactBase(market.metrics.totalVolumeBase)
-                      : "—"}
-                  </strong>
-                </div>
+                {market.metrics ? (
+                  <>
+                    <dl
+                      className="home-market-stats"
+                      aria-label={`${market.name} market metrics`}
+                    >
+                      <div>
+                        <dt>Market cap</dt>
+                        <dd>
+                          {marketAmount(
+                            market.metrics.marketCapBase,
+                            market.metrics.baseSymbol,
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Volume</dt>
+                        <dd>
+                          {marketAmount(
+                            market.metrics.totalVolumeBase,
+                            market.metrics.baseSymbol,
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Holders</dt>
+                        <dd>{market.metrics.holderCount.toLocaleString()}</dd>
+                      </div>
+                    </dl>
+                    {market.metrics.marketPhase !== "legacy_fixed" ? (
+                      <div className="graduation-rail home-graduation-rail">
+                        <div>
+                          <span>{phaseLabel(market.metrics.marketPhase)}</span>
+                          <strong>
+                            {(
+                              market.metrics.graduationProgressBps / 100
+                            ).toFixed(1)}
+                            %
+                          </strong>
+                        </div>
+                        <div className="graduation-track" aria-hidden="true">
+                          <i
+                            style={{
+                              width: `${Math.min(100, market.metrics.graduationProgressBps / 100)}%`,
+                            }}
+                          />
+                        </div>
+                        <small>
+                          {market.metrics.marketPhase === "graduated"
+                            ? "Liquidity locked · pool trading live"
+                            : `${marketAmount(market.metrics.baseRaised, market.metrics.baseSymbol)} raised`}
+                        </small>
+                      </div>
+                    ) : (
+                      <div className="home-market-phase-note">
+                        Legacy fixed-price market
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="home-market-phase-note">
+                    Market metrics unavailable
+                  </p>
+                )}
+                <span className="home-market-action">View market →</span>
               </div>
             </Link>
           ))}

@@ -7,9 +7,9 @@ Durable project context lives here. Update this file whenever information should
 - Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
 - Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; no unresolved critical/high defect remains; exact release evidence is pushed; and the final exact candidate completes an uninterrupted 24-hour soak.
 - Current task: finish and certify the Circus-informed launchpad and bonding/graduation UX on `feat/launchpad-visual-system`; the previous exact-candidate soak remains retired because these are material protocol and UI changes.
-- Last meaningful change: normalized discovery cards with a dedicated bottom-anchored action region so one-asset, three-asset, bonding, graduated and legacy content cannot move the `View market` button within a grid row.
-- Last verification: 2026-07-21 web formatting, lint, strict typecheck, nine tests and optimized build passed. The rebuilt public preview returned HTTP 200, and in-app-browser geometry proved every `View market` button had the identical top and bottom coordinate within each four-card desktop row despite mixed content. Stable release `8def270b1856c2bcfcd69d429a8d88def4ab15a8` remains unchanged at `http://192.168.50.250:3000`.
-- Next step: commit/push the card-alignment fix, then build/promote a new immutable exact release, repeat backup/recovery gates and start a fresh uninterrupted 24-hour soak.
+- Last meaningful change: brought the homepage `Choose the rewards you want to earn` cards to discovery-card information parity while retaining the larger unique artwork. Phase and launch number overlay the image; basket chips, immutable weight rail, market cap, volume, holders, phase status and the bottom-aligned market action remain structured below it.
+- Last verification: 2026-07-21 web formatting, lint, strict typecheck, nine tests and optimized build passed. The rebuilt public preview returned HTTP 200. In-app-browser DOM and geometry verified all four homepage cards expose the expected metrics and basket labels, use 283 by 239 artwork, share the same card height and align the market action exactly despite the one-asset versus three-asset baskets. Stable release `8def270b1856c2bcfcd69d429a8d88def4ab15a8` remains unchanged at `http://192.168.50.250:3000`.
+- Next step: commit/push the homepage-card parity change, then build/promote a new immutable exact release, repeat backup/recovery gates and start a fresh uninterrupted 24-hour soak.
 - External gates: public testnet ETH and explicit broadcast authorization are needed for an actual Robinhood Testnet transaction; human alert delivery and independent contract review are required before real-value operation.
 
 ## Current State
@@ -192,6 +192,8 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-21: Homepage market-card parity checkpoint - the four large-art showcase cards now expose lifecycle, launch number, named basket weights, segmented rail, market cap, volume, holders, phase status and a bottom-aligned market action. Web formatting, lint, strict typecheck, nine tests and optimized build passed. Public in-app-browser geometry measured equal 283 by 239 art, equal card bounds and equal action coordinates for ROBYN, SOAK, ONE and EVID; the single-asset ONE card remained aligned without fabricated placeholders.
 
 - 2026-07-21: Discovery-card alignment checkpoint - the card is explicitly full-height and its dedicated action wrapper uses auto top margin plus fixed spacing. Web formatting, lint, strict typecheck, nine tests and optimized build passed. Public in-app-browser geometry showed identical button coordinates for all four cards in row one, all four cards in row two and all three cards in row three across mixed one/three-asset and bonding/graduated/legacy content.
 
@@ -509,6 +511,8 @@ When sources conflict, use this order:
 - The canonical Stock Token implementation is beacon-upgradeable and includes role-based pause, mint, burn, and `adminBurn` controls.
 
 ## Completed Work
+
+- 2026-07-21: Aligned the homepage token showcase with the Markets information model while preserving its larger visual treatment and unique curated token art. Rich mobile cards switch to one column below 680px for legible metrics and artwork.
 
 - 2026-07-21: Anchored every discovery-card `View market` action to the bottom of its stretched grid card, preserving a consistent gap without forcing lifecycle placeholders or artificial basket rows.
 
