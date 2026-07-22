@@ -1317,6 +1317,7 @@ main > .notice {
 .launch-card {
   display: flex;
   flex-direction: column;
+  height: 100%;
   padding: 0.9rem;
   border-radius: 0.9rem;
 }
@@ -1457,10 +1458,15 @@ main > .notice {
   font-size: 0.65rem;
 }
 
-.launch-card > .button {
+.launch-card-action {
+  display: flex;
+  margin-top: auto;
+  padding-top: 0.8rem;
+}
+
+.launch-card-action > .button {
   width: 100%;
   min-height: 40px;
-  margin-top: 0.8rem;
 }
 
 .reward-state {

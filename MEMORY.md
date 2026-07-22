@@ -6,10 +6,10 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: deliver a production-ready, fully usable Robyn release on the controlled VM-hosted Anvil network and a rehearsed, testnet-safe Robinhood Chain deployment package ready for real-world testing.
 - Goal completion standard: every intended launch, trade, fee-conversion, accounting, reward, claim, failure-recovery, persistence, security and operational path works and is verified; all user-facing acceptance passes through the in-app browser; no unresolved critical/high defect remains; exact release evidence is pushed; and the final exact candidate completes an uninterrupted 24-hour soak.
-- Current task: finish and certify the native bonding-curve and automatic-graduation feature on `feat/launchpad-visual-system`; the previous exact-candidate soak remains retired because this is another material protocol and UI change.
-- Last meaningful change: pushed `98e0e46e79ac8b758006f4ba65bb3af70d4f42d7`, completing the constant-product curve, automatic threshold-reaching migration, no-withdrawal local graduated pool, lifecycle-aware API/indexing, discovery/detail/trade/create UX and non-destructive factory upgrade while retaining legacy market reads.
-- Last verification: 2026-07-21 full format, lint, strict typecheck, service tests, isolated Anvil smoke, optimized build and deployment verification passed at block 246; Foundry passed 29 tests plus four 128-run invariants. In-app-browser acceptance on the rebuilt public preview created BBT, bought CURVE with an exact onchain quote, observed progress increase, and displayed GRAD at 100% with its locked pool. Stable release `8def270b1856c2bcfcd69d429a8d88def4ab15a8` remains unchanged at `http://192.168.50.250:3000`.
-- Next step: complete the full repository gate, commit/push this feature, then build/promote a new immutable exact release, repeat backup/recovery gates and start a fresh uninterrupted 24-hour soak.
+- Current task: finish and certify the Circus-informed launchpad and bonding/graduation UX on `feat/launchpad-visual-system`; the previous exact-candidate soak remains retired because these are material protocol and UI changes.
+- Last meaningful change: normalized discovery cards with a dedicated bottom-anchored action region so one-asset, three-asset, bonding, graduated and legacy content cannot move the `View market` button within a grid row.
+- Last verification: 2026-07-21 web formatting, lint, strict typecheck, nine tests and optimized build passed. The rebuilt public preview returned HTTP 200, and in-app-browser geometry proved every `View market` button had the identical top and bottom coordinate within each four-card desktop row despite mixed content. Stable release `8def270b1856c2bcfcd69d429a8d88def4ab15a8` remains unchanged at `http://192.168.50.250:3000`.
+- Next step: commit/push the card-alignment fix, then build/promote a new immutable exact release, repeat backup/recovery gates and start a fresh uninterrupted 24-hour soak.
 - External gates: public testnet ETH and explicit broadcast authorization are needed for an actual Robinhood Testnet transaction; human alert delivery and independent contract review are required before real-value operation.
 
 ## Current State
@@ -192,6 +192,8 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-21: Discovery-card alignment checkpoint - the card is explicitly full-height and its dedicated action wrapper uses auto top margin plus fixed spacing. Web formatting, lint, strict typecheck, nine tests and optimized build passed. Public in-app-browser geometry showed identical button coordinates for all four cards in row one, all four cards in row two and all three cards in row three across mixed one/three-asset and bonding/graduated/legacy content.
 
 - 2026-07-21: Bonding-curve and graduation checkpoint - full format, lint, strict typecheck, service tests, isolated Anvil smoke and optimized build passed. Twenty-nine Foundry tests and four 128-run invariants covered quote rounding, reserve conservation, final-buy refunds, one-time atomic graduation, post-graduation trading, fee routing, locked-liquidity access denial and reward exclusions. Deployment verification passed at block 246. Public in-app-browser UAT created BBT, bought CURVE and changed its progress, rendered GRAD at 100% with the locked pool and verified the same-origin faucet.
 
@@ -507,6 +509,8 @@ When sources conflict, use this order:
 - The canonical Stock Token implementation is beacon-upgradeable and includes role-based pause, mint, burn, and `adminBurn` controls.
 
 ## Completed Work
+
+- 2026-07-21: Anchored every discovery-card `View market` action to the bottom of its stretched grid card, preserving a consistent gap without forcing lifecycle placeholders or artificial basket rows.
 
 - 2026-07-21: Implemented a Pump/Circus-style native launch lifecycle for the controlled network: constant-product bonding trades, reserve-derived progress, exact final-buy refund, automatic atomic graduation, a pre-bound no-withdrawal local pool, cross-phase basket fees, lifecycle analytics and complete create/discovery/detail/trade UI. This local pool is a rehearsal dependency, not the Robinhood-testnet production AMM adapter.
 

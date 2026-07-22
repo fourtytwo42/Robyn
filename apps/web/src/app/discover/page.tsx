@@ -262,9 +262,11 @@ export default async function Discover({
                     Market metrics unavailable
                   </p>
                 )}
-                <Link className="button" href={"/launches/" + launch.token}>
-                  View market
-                </Link>
+                <div className="launch-card-action">
+                  <Link className="button" href={"/launches/" + launch.token}>
+                    View market
+                  </Link>
+                </div>
               </article>
             ))}
           </section>
