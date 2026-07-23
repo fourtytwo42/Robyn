@@ -50,11 +50,33 @@ build_one() {
     >"${output}/${side}-contracts.log"
   pnpm list --depth Infinity --json >"${output}/${side}-dependencies.json"
   pnpm licenses list --json >"${output}/${side}-licenses.json"
+  node scripts/generate-cyclonedx-sbom.mjs \
+    "${output}/${side}-dependencies.json" \
+    "${output}/${side}-cyclonedx-sbom.json" \
+    "${git_sha}"
 
   find apps packages -type f \
     \( -path '*/dist/*' -o -path '*/.next/*' \) \
-    ! -path '*/.next/cache/*' ! -name trace -print0 |
-    sort -z | xargs -0 sha256sum >"${output}/${side}-application.sha256"
+    ! -path '*/.next/cache/*' ! -name trace -print0 | sort -z |
+    while IFS= read -r -d '' application_file; do
+      case "${application_file}" in
+        *.json)
+          if jq -e . "${application_file}" >/dev/null 2>&1; then
+            digest="$(jq -cS . "${application_file}" | sha256sum | cut -d' ' -f1)"
+          else
+            digest="$(sha256sum "${application_file}" | cut -d' ' -f1)"
+          fi
+          ;;
+        *client-reference-manifest.js)
+          manifest_json="$(sed -E 's/^.*]=//' "${application_file}")"
+          digest="$(jq -cS . <<<"${manifest_json}" | sha256sum | cut -d' ' -f1)"
+          ;;
+        *)
+          digest="$(sha256sum "${application_file}" | cut -d' ' -f1)"
+          ;;
+      esac
+      printf '%s  %s\n' "${digest}" "${application_file}"
+    done >"${output}/${side}-application.sha256"
   find packages/contracts/contracts-out -type f -name '*.json' -print0 |
     sort -z |
     while IFS= read -r -d '' artifact; do
@@ -68,6 +90,12 @@ build_one() {
     find packages/db/migrations scripts infrastructure -type f -print0
     printf '%s\0' package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json
   } | sort -z | xargs -0 sha256sum >"${output}/${side}-operations.sha256"
+  jq -cS . "${output}/${side}-dependencies.json" \
+    >"${output}/${side}-dependencies.canonical.json"
+  jq -cS . "${output}/${side}-licenses.json" \
+    >"${output}/${side}-licenses.canonical.json"
+  jq -cS . "${output}/${side}-cyclonedx-sbom.json" \
+    >"${output}/${side}-cyclonedx-sbom.canonical.json"
 }
 
 build_one a
@@ -87,8 +115,9 @@ compare() {
 compare application.sha256
 compare contracts-semantic.sha256
 compare operations.sha256
-compare dependencies.json
-compare licenses.json
+compare dependencies.canonical.json
+compare licenses.canonical.json
+compare cyclonedx-sbom.canonical.json
 
 cd "${work}"
 PORT=3300 HOSTNAME=127.0.0.1 \
@@ -136,11 +165,13 @@ jq -n \
       "Next BUILD_ID is the exact Git SHA",
       "TZ=UTC, LC_ALL=C and SOURCE_DATE_EPOCH=commit timestamp",
       "Next cache and trace telemetry are excluded",
+      "JSON and Next client-reference manifests are canonicalized by recursively sorting object keys while preserving array order",
+      "CycloneDX 1.5 SBOM content is derived from the exact pnpm dependency graph and release commit",
       "contract comparison selects ABI, creation bytecode, runtime bytecode and storage layout and excludes absolute-path metadata"
     ],
     comparisons:{
       applicationBundles:true,contractSemantics:true,operations:true,
-      dependencyGraph:true,licenses:true,secondArtifactServed:true
+      dependencyGraph:true,licenses:true,cycloneDxSbom:true,secondArtifactServed:true
     },
     passed:true
   }' >"${output}/summary.json"

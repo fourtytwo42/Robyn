@@ -33,8 +33,10 @@ Durable project context lives here. Update this file whenever information should
 - Reproducibility uses two independent clean archives and fresh pnpm stores
   built sequentially at the same fixed source root. This normalizes absolute
   source paths embedded by Next/Foundry. Next BUILD_ID is the Git SHA; cache,
-  trace telemetry and absolute-path-only Solidity JSON metadata are excluded
-  and all rules are recorded in evidence.
+  trace telemetry and absolute-path-only Solidity JSON metadata are excluded.
+  JSON object keys and Next client-reference objects are canonicalized while
+  arrays preserve order. The gate emits and compares a deterministic CycloneDX
+  1.5 SBOM; all normalization rules are recorded in evidence.
 
 - Completed goal: schema-v4 contracts and every mapped product action on the
   controlled local network are validated; deterministic hundreds-user

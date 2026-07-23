@@ -50,11 +50,13 @@ explicit normalization because Next and Foundry artifact containers embed
 absolute source paths.
 
 The gate compares application bundles, ABI, creation/runtime bytecode, storage
-layouts, operations/migrations, dependency graphs and license inventory.
-Next cache/trace telemetry and absolute-path-only Solidity metadata are
-excluded. It temporarily serves the second clean build on loopback port 3300
-and verifies the development-network disclosure. Every normalization is
-recorded in the checksummed summary.
+layouts, operations/migrations, dependency graphs, license inventory and a
+deterministic CycloneDX 1.5 SBOM. JSON object keys and Next client-reference
+objects are canonicalized recursively while array order is preserved. Next
+cache/trace telemetry and absolute-path-only Solidity metadata are excluded.
+It temporarily serves the second clean build on loopback port 3300 and verifies
+the development-network disclosure. Every normalization is recorded in the
+checksummed summary.
 
 ## Alert evidence
 
