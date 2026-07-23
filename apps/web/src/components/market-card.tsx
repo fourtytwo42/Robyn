@@ -40,7 +40,9 @@ export function MarketCard({
         launchNumber={launch.launch_id}
         priority={priority}
         {...(launch.metadata?.media_status === "active"
-          ? { artworkSrc: `/api/media/${launch.metadata.media_id}` }
+          ? {
+              artworkSrc: `/api/media/${launch.metadata.media_id}?cid=${launch.metadata.optimized_webp_cid ?? "active"}`,
+            }
           : {})}
       />
       <div className="market-card-copy">
