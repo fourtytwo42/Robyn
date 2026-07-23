@@ -21,7 +21,7 @@ type WizardProps = {
   assetSymbols?: [string, string, string];
   marketSummary?: string;
   signMessage: (message: string) => Promise<Hex>;
-  onLaunch: (artworkMediaId?: string) => Promise<void>;
+  onLaunch: (artworkMediaId?: string, description?: string) => Promise<void>;
   launchedToken?: Address;
   onStartAnother?: () => void;
   openByDefault?: boolean;
@@ -530,6 +530,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [draftVersion, setDraftVersion] = useState(0);
   const [artworkMediaId, setArtworkMediaId] = useState<string>();
+  const [description, setDescription] = useState("");
   const [artworkPreview, setArtworkPreview] = useState<string>();
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -543,6 +544,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
     name !== "My Community" ||
     symbol !== "MYCO" ||
     weights.join(",") !== "40,40,20" ||
+    Boolean(description) ||
     Boolean(artworkMediaId) ||
     Boolean(artworkPreview);
 
@@ -708,6 +710,17 @@ export function GuidedLaunchWizard(props: WizardProps) {
                       autoComplete="off"
                     />
                   </label>
+                  <label>
+                    Description <span className="muted">(optional)</span>
+                    <textarea
+                      value={description}
+                      onChange={(event) => setDescription(event.target.value)}
+                      maxLength={280}
+                      rows={3}
+                      placeholder="What makes this reward basket worth following?"
+                    />
+                    <small>{description.length}/280</small>
+                  </label>
                   <CreatorSetup
                     key={draftVersion}
                     account={account}
@@ -801,7 +814,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
                       !validToken ||
                       !validBasket
                     }
-                    onClick={() => void onLaunch(artworkMediaId)}
+                    onClick={() => void onLaunch(artworkMediaId, description)}
                   >
                     {launchedToken
                       ? "Launch complete"
@@ -940,6 +953,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
                       setSymbol("MYCO");
                       setWeights([40, 40, 20]);
                       setArtworkMediaId(undefined);
+                      setDescription("");
                       setArtworkPreview(undefined);
                       setDraftVersion((value) => value + 1);
                       setStep(1);

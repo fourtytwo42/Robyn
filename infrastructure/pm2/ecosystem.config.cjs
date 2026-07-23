@@ -57,6 +57,7 @@ module.exports = {
         ROBYN_AUTH_ORIGINS:
           "http://192.168.50.250:3000,http://127.0.0.1:3002,http://localhost:3002",
         ROBYN_ARTIFACT_SERVICE_URL: "http://127.0.0.1:3200",
+        ROBYN_IPFS_API_URL: "http://127.0.0.1:5001",
         PGHOST: "/var/run/postgresql",
         PGDATABASE: "robyn",
         PGUSER: "hendo420",
@@ -114,7 +115,7 @@ module.exports = {
         NODE_ENV: "production",
         HOST: "127.0.0.1",
         PORT: "3200",
-        MAX_ARTIFACT_BYTES: "2097152",
+        MAX_ARTIFACT_BYTES: "8388608",
         PGHOST: "/var/run/postgresql",
         PGDATABASE: "robyn",
         PGUSER: "hendo420",

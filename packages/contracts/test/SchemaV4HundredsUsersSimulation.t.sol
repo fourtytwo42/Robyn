@@ -470,6 +470,7 @@ contract SchemaV4HundredsUsersSimulationTest {
             symbol: "SIM",
             assets: assets,
             weights: weights,
+            metadataUri: "ipfs://bafkreif2akiscaildcwr6zeux4w6i2s5kmibuf6j4jvcrbozme2q",
             userSalt: bytes32(salt)
         });
     }

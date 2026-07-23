@@ -65,7 +65,7 @@ done
 gas_price_wei="$(cast gas-price --rpc-url "$public_rpc")"
 execution_cost_wei=$((total_gas * gas_price_wei))
 coordinator="$(jq -er '.contracts.atomicLaunchCoordinator' "$manifest")"
-launch_topic="$(cast keccak 'AtomicLaunchCreated(uint256,address,address,address,address,address,address,address,bytes32,bytes32)')"
+launch_topic="$(cast keccak 'AtomicLaunchCreated(uint256,address,address,address,address,address,address,address,bytes32,bytes32,bytes32)')"
 launch_filter="$(jq -nc --arg address "$coordinator" --arg topic "$launch_topic" '{fromBlock:"0x0",toBlock:"latest",address:$address,topics:[$topic]}')"
 launch_tx="$(cast rpc eth_getLogs "$launch_filter" --rpc-url "$local_rpc" | jq -er '.[0].transactionHash')"
 atomic_launch_gas_raw="$(cast receipt "$launch_tx" --rpc-url "$local_rpc" --json | jq -er '.gasUsed')"

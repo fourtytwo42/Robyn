@@ -55,6 +55,7 @@ if (allowedOrigins.size === 0)
   throw new Error("ROBYN_AUTH_ORIGINS is required");
 const artifactServiceUrl =
   process.env.ROBYN_ARTIFACT_SERVICE_URL ?? "http://127.0.0.1:3200";
+const ipfsApiUrl = process.env.ROBYN_IPFS_API_URL ?? "http://127.0.0.1:5001";
 const rpcClient = createPublicClient({
   transport: http(
     process.env.ROBYN_OPERATOR_RPC_URL ?? "http://127.0.0.1:8545",
@@ -261,7 +262,7 @@ async function launchMetadataMap(tokens: string[]) {
       avatar_media_id: string | null;
     }>
   >(
-    "SELECT b.token,b.media_id,m.status media_status,p.display_name,p.bio,p.website,p.x_url,p.telegram_url,p.discord_url,p.avatar_media_id FROM launch_metadata_bindings b JOIN media_assets m ON m.media_id=b.media_id LEFT JOIN creator_profiles p ON p.chain_id=b.chain_id AND p.address=b.creator_address WHERE b.chain_id=$1 AND b.token=ANY($2::text[])",
+    "SELECT b.token,b.media_id,b.metadata_cid,b.metadata_uri,b.verification_status,m.status media_status,m.canonical_png_cid,m.optimized_webp_cid,p.display_name,p.bio,p.website,p.x_url,p.telegram_url,p.discord_url,p.avatar_media_id FROM launch_metadata_bindings b JOIN media_assets m ON m.media_id=b.media_id LEFT JOIN creator_profiles p ON p.chain_id=b.chain_id AND p.address=b.creator_address WHERE b.chain_id=$1 AND b.token=ANY($2::text[])",
     [chainId, tokens],
   );
   return new Map(rows.map((row) => [row.token.toLowerCase(), row]));
@@ -1028,6 +1029,34 @@ app.get("/assets", async () => {
   };
 });
 
+app.get("/token-list", async () => {
+  const rows = await sql.unsafe<
+    {
+      token: string;
+      name: string;
+      symbol: string;
+      canonical_png_cid: string;
+    }[]
+  >(
+    "SELECT l.token,l.name,l.symbol,m.canonical_png_cid FROM launches l JOIN launch_metadata_bindings b ON b.chain_id=l.chain_id AND b.token=l.token JOIN media_assets m ON m.media_id=b.media_id WHERE l.chain_id=$1 AND m.status='active' AND b.verification_status='robyn-sanitized' AND m.canonical_png_cid IS NOT NULL ORDER BY l.launch_id",
+    [chainId],
+  );
+  return {
+    name: "Robyn verified tokens",
+    timestamp: new Date().toISOString(),
+    version: { major: 1, minor: 0, patch: rows.length },
+    keywords: ["robyn", "reward-basket", "erc1046"],
+    tokens: rows.map((row) => ({
+      chainId,
+      address: row.token,
+      name: row.name,
+      symbol: row.symbol,
+      decimals: 18,
+      logoURI: `ipfs://${row.canonical_png_cid}`,
+    })),
+  };
+});
+
 await registerCreatorRoutes(app, {
   chainId,
   sql,
@@ -1035,6 +1064,13 @@ await registerCreatorRoutes(app, {
   rpcClient,
   allowedOrigins,
   artifactServiceUrl,
+  ipfsApiUrl,
+  ...(process.env.ROBYN_REMOTE_PIN_URL
+    ? { remotePinUrl: process.env.ROBYN_REMOTE_PIN_URL }
+    : {}),
+  ...(process.env.ROBYN_REMOTE_PIN_TOKEN
+    ? { remotePinToken: process.env.ROBYN_REMOTE_PIN_TOKEN }
+    : {}),
 });
 registerDaoRoutes(app, rpcClient, deployment);
 

@@ -143,6 +143,22 @@ export default async function LaunchDetail({
                 </span>
               ))}
             </div>
+            {launch.metadata?.metadata_cid ? (
+              <div className="identity-links">
+                <span>
+                  {launch.metadata.verification_status === "robyn-sanitized"
+                    ? "Robyn-verified media"
+                    : "External metadata"}
+                </span>
+                <a
+                  href={`/ipfs/${launch.metadata.metadata_cid}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  IPFS {short(launch.metadata.metadata_cid)}
+                </a>
+              </div>
+            ) : null}
           </div>
           <div className="token-hero-quote">
             <span>Market cap</span>

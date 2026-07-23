@@ -245,3 +245,35 @@ groups:
           summary: Robyn release soak failed
           description: The latest recorded one-shot soak result is unsuccessful.
           runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/release-operations.md#run-the-exact-release-soak
+      - alert: RobynIpfsPinFailure
+        expr: robyn_ipfs_pins{state="failed"} > 0 or robyn_ipfs_stale_objects > 0
+        for: 5m
+        labels:
+          {
+            severity: critical,
+            chain_id: "31337",
+            component: ipfs,
+            launch: all,
+            asset: metadata,
+            runbook: ipfs-pinning,
+          }
+        annotations:
+          summary: Robyn IPFS durability is degraded
+          description: A local or remote pin failed or remained incomplete past its bounded interval.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/ipfs-token-metadata.md
+      - alert: RobynIpfsPreparationStale
+        expr: robyn_ipfs_stale_preparations > 0
+        for: 15m
+        labels:
+          {
+            severity: warning,
+            chain_id: "31337",
+            component: ipfs,
+            launch: all,
+            asset: metadata,
+            runbook: ipfs-pinning,
+          }
+        annotations:
+          summary: Prepared Robyn token metadata remains unbound
+          description: At least one prepared metadata document remained unbound for more than 24 hours.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/ipfs-token-metadata.md

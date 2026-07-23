@@ -172,6 +172,36 @@ contract AtomicLaunchCoordinatorTest {
         require(launchFactory.launchCount() == 2, "launch count");
     }
 
+    function testMetadataUriIsImmutableAndAffectsPredictedAddress() public {
+        RobynLaunchFactoryV2.LaunchRequest memory firstRequest = _request(bytes32(uint256(51)));
+        (address firstPrediction,,) =
+            coordinator.predictLaunchAddresses(address(this), firstRequest);
+        firstRequest.metadataUri =
+        "ipfs://bafkreibys2cv4ijpoedcl7qdbi5u66wuwedwg3lsc6pios3wcyaoyz7cau";
+        (address secondPrediction,,) =
+            coordinator.predictLaunchAddresses(address(this), firstRequest);
+        require(firstPrediction != secondPrediction, "metadata not in create2");
+        (RobynLaunchToken token,,) = coordinator.createLaunch(firstRequest);
+        require(
+            keccak256(bytes(token.tokenURI())) == keccak256(bytes(firstRequest.metadataUri)),
+            "token uri"
+        );
+    }
+
+    function testInvalidMetadataUriRollsBackEverything() public {
+        RobynLaunchFactoryV2.LaunchRequest memory request = _request(bytes32(uint256(52)));
+        request.metadataUri = "https://mutable.example/token.json";
+        (address predictedToken, address predictedVault, bytes32 launchSaltHash) =
+            coordinator.predictLaunchAddresses(address(this), request);
+        try coordinator.createLaunch(request) {
+            revert("invalid metadata accepted");
+        } catch { }
+        require(launchFactory.launchCount() == 0, "launch count changed");
+        require(predictedToken.code.length == 0, "token persisted");
+        require(predictedVault.code.length == 0, "vault persisted");
+        require(!launchFactory.usedLaunchSalt(launchSaltHash), "salt persisted");
+    }
+
     function testAtomicLaunchStillGraduates() public {
         (RobynLaunchToken token,, UniswapV3BondingCurveMarket market) =
             coordinator.createLaunch(_request(bytes32(uint256(7))));
@@ -193,7 +223,12 @@ contract AtomicLaunchCoordinatorTest {
         uint16[] memory weights = new uint16[](1);
         weights[0] = 10_000;
         request = RobynLaunchFactoryV2.LaunchRequest({
-            name: "Atomic Launch", symbol: "ATOM", assets: assets, weights: weights, userSalt: salt
+            name: "Atomic Launch",
+            symbol: "ATOM",
+            assets: assets,
+            weights: weights,
+            metadataUri: "ipfs://bafkreif2akiscaildcwr6zeux4w6i2s5kmibuf6j4jvcrbozme2q",
+            userSalt: salt
         });
     }
 }

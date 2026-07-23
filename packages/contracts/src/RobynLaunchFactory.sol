@@ -7,6 +7,8 @@ import { FeeBasketVault, IRobynConversionRouter } from "./FeeBasketVault.sol";
 
 /// @notice Permissionless factory for fixed-supply community tokens and isolated fee vaults.
 contract RobynLaunchFactory {
+    string private constant LEGACY_METADATA_URI =
+        "ipfs://bafkreif2akiscaildcwr6zeux4w6i2s5kmibuf6j4jvcrbozme2q";
     error InvalidAddress();
     error Unauthorized();
 
@@ -62,8 +64,9 @@ contract RobynLaunchFactory {
             minimumConversionBase,
             maximumPendingDelay
         );
-        token =
-            new RobynLaunchToken(name, symbol, msg.sender, initialSupply, address(vault), assets);
+        token = new RobynLaunchToken(
+            name, symbol, msg.sender, initialSupply, address(vault), assets, LEGACY_METADATA_URI
+        );
         vault.bindLaunchToken(token);
         uint256 launchId = ++launchCount;
         launchTokenById[launchId] = address(token);

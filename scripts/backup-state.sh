@@ -32,7 +32,7 @@ done
 test -r "${recipient_file}"
 test -r "${backup_env}"
 install -d -m 0700 "${backup_root}"
-install -d -m 0700 "${work}/database" "${work}/anvil" "${work}/artifacts" "${work}/configuration"
+install -d -m 0700 "${work}/database" "${work}/anvil" "${work}/artifacts" "${work}/configuration" "${work}/ipfs"
 
 git_sha="$(git -C "${repo}" rev-parse HEAD)"
 git_status="$(git -C "${repo}" status --porcelain)"
@@ -50,6 +50,11 @@ done < <(psql -d robyn -Atqc "SELECT tablename FROM pg_tables WHERE schemaname='
 curl -fsS -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"anvil_dumpState","params":[]}' http://127.0.0.1:8545 |
   jq -er '.result' >"${work}/anvil/state.json"
 cp "${repo}/deployments/31337.json" "${work}/anvil/deployment.json"
+sudo -n -u robyn-ipfs env IPFS_PATH=/var/lib/robyn-ipfs \
+  /usr/local/bin/ipfs pin ls --type=recursive --quiet |
+  sort >"${work}/ipfs/pins.txt"
+/usr/local/bin/ipfs version --number >"${work}/ipfs/kubo-version.txt"
+pin_count="$(wc -l <"${work}/ipfs/pins.txt")"
 
 # shellcheck disable=SC1090
 source "${backup_env}"
@@ -72,8 +77,9 @@ cp "${repo}/pnpm-lock.yaml" "${work}/configuration/"
 systemctl cat robyn-anvil.service >"${work}/configuration/robyn-anvil.service"
 systemctl cat minio.service >"${work}/configuration/minio.service"
 systemctl cat pm2-hendo420.service >"${work}/configuration/pm2-hendo420.service"
+systemctl cat robyn-ipfs.service >"${work}/configuration/robyn-ipfs.service"
 
-jq -n --arg createdAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg gitSha "${git_sha}" --arg host "$(hostname)" --argjson artifactCount "${artifact_count}" '{schemaVersion:1,createdAt:$createdAt,gitSha:$gitSha,host:$host,chainId:31337,database:"robyn",artifactCount:$artifactCount,secretsIncluded:false}' >"${work}/manifest.json"
+jq -n --arg createdAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg gitSha "${git_sha}" --arg host "$(hostname)" --argjson artifactCount "${artifact_count}" --argjson ipfsPinCount "${pin_count}" '{schemaVersion:2,createdAt:$createdAt,gitSha:$gitSha,host:$host,chainId:31337,database:"robyn",artifactCount:$artifactCount,ipfsPinCount:$ipfsPinCount,ipfsRecovery:"readd-minio-and-verify-cids",secretsIncluded:false}' >"${work}/manifest.json"
 (
   cd "${work}"
   checksum_tmp="$(mktemp)"

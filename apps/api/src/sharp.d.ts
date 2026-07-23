@@ -4,10 +4,12 @@ declare module "sharp" {
     width?: number;
     height?: number;
     pages?: number;
+    hasAlpha?: boolean;
   };
 
   type Sharp = {
     metadata(): Promise<Metadata>;
+    clone(): Sharp;
     rotate(): Sharp;
     resize(
       width: number,
@@ -15,6 +17,11 @@ declare module "sharp" {
       options: { fit: "cover"; position: "centre" },
     ): Sharp;
     webp(options: { quality: number; effort: number }): Sharp;
+    png(options: {
+      compressionLevel: number;
+      adaptiveFiltering: boolean;
+      palette: boolean;
+    }): Sharp;
     toBuffer(): Promise<Buffer>;
   };
 

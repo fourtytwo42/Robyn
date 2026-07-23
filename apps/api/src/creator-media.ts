@@ -72,18 +72,31 @@ export async function sanitizeCreatorImage(
   )
     throw new Error("image_dimensions_out_of_range");
   if ((metadata.pages ?? 1) !== 1) throw new Error("animated_image_rejected");
-  const output = await sharp(input, {
+  const pixels = sharp(input, {
     animated: false,
     failOn: "error",
     limitInputPixels: maxInputPixels,
     sequentialRead: true,
   })
     .rotate()
-    .resize(1024, 1024, { fit: "cover", position: "centre" })
-    .webp({ quality: 88, effort: 5 })
-    .toBuffer();
+    .resize(1024, 1024, { fit: "cover", position: "centre" });
+  const [png, webp] = await Promise.all([
+    pixels
+      .clone()
+      .png({
+        compressionLevel: 9,
+        adaptiveFiltering: false,
+        palette: false,
+      })
+      .toBuffer(),
+    pixels.clone().webp({ quality: 88, effort: 5 }).toBuffer(),
+  ]);
   return {
-    output,
+    // Keep the old field until all pre-IPFS clients have migrated.
+    output: webp,
+    png,
+    webp,
+    hasAlpha: metadata.hasAlpha === true,
     width: 1024,
     height: 1024,
     contentType: "image/webp" as const,

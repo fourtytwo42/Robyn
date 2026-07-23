@@ -26,6 +26,10 @@ else
   [[ -z "$(git status --porcelain)" && "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || { echo "Real testnet deployment requires clean exact origin/main" >&2; exit 1; }
   deployer="$(cast wallet address --keystore "$keystore" --password-file "$password_file")"
   wallet_args=(--keystore "$keystore" --password-file "$password_file")
+  [[ -n "${ROBYN_REMOTE_PIN_URL:-}" && -n "${ROBYN_REMOTE_PIN_TOKEN:-}" ]] || {
+    echo "Protected testnet deployment requires configured remote IPFS pinning" >&2
+    exit 1
+  }
 fi
 
 forge build --root packages/contracts >/dev/null
@@ -158,7 +162,8 @@ send_transaction "$router" 'setRate(address,address,uint256)' "$base" "$nvda" "1
 send_transaction "$router" 'setRate(address,address,uint256)' "$base" "$spy" "2000000000000000000"
 send_transaction "$router" 'setRate(address,address,uint256)' "$base" "$eth_reward" "3000000000000000000"
 genesis_salt="$(cast keccak "robyn-chain-46630-genesis-$(git rev-parse HEAD)")"
-send_transaction "$coordinator" 'createLaunch((string,string,address[],uint16[],bytes32))' "(\"Robyn Testnet Genesis\",\"tROBYN\",[$nvda,$spy,$eth_reward],[4000,4000,2000],$genesis_salt)"
+fallback_metadata_uri="ipfs://bafkreibys2cv4ijpoedcl7qdbi5u66wuwedwg3lsc6pios3wcyaoyz7cau"
+send_transaction "$coordinator" 'createLaunch((string,string,address[],uint16[],string,bytes32))' "(\"Robyn Testnet Genesis\",\"tROBYN\",[$nvda,$spy,$eth_reward],[4000,4000,2000],\"$fallback_metadata_uri\",$genesis_salt)"
 
 launch_id="$(cast call "$factory" 'launchCount()(uint256)' --rpc-url "$rpc_url")"
 token="$(cast call "$factory" 'launchTokenById(uint256)(address)' "$launch_id" --rpc-url "$rpc_url")"
@@ -175,6 +180,18 @@ uniswap_json="$(jq '{factory:.contracts.factory,positionManager:.contracts.posit
 mkdir -p "$(dirname "$manifest")"
 tmp="$(mktemp "$(dirname "$manifest")/.46630.XXXXXX")"
 jq -n --argjson chainId 46630 --argjson blockNumber "$block_number" --arg gitCommit "$git_commit" --arg deployer "$deployer" --arg guardian "$guardian" --arg dexHash "$dex_hash" --arg allocationHash "$allocation_hash" --arg base "$base" --arg weth "$wrapped_native" --arg nvda "$nvda" --arg spy "$spy" --arg ethReward "$eth_reward" --arg router "$router" --arg factory "$factory" --arg launchDeployer "$launch_deployer" --arg marketFactory "$market_factory" --arg coordinator "$coordinator" --arg adapterDeployer "$adapter_deployer" --arg marketDeployer "$market_deployer" --arg token "$token" --arg vault "$vault" --arg market "$market" --arg adapter "$adapter" --arg pool "$pool" --arg locker "$locker" --arg timelock "$timelock" --arg governor "$governor" --arg rdao "$rdao" --arg feeRouter "$fee_router" --arg nativeConverter "$native_converter" --arg nativePool "$native_pool" --argjson allocation "$allocation_json" --argjson uniswap "$uniswap_json" --arg curveTokens "$curve_tokens" --arg graduationTokens "$graduation_tokens" --arg virtualTokens "$virtual_tokens" --arg virtualBase "$virtual_base" --arg threshold "$threshold" --arg initialPrice "$initial_price" --argjson poolFee "$pool_fee" '{schemaVersion:4,environment:"robinhood-testnet",chainId:$chainId,deploymentBlock:$blockNumber,gitCommit:$gitCommit,gitSha:$gitCommit,deployer:$deployer,assetStrategy:"project-owned-testnet-mocks",mockOnly:true,dexProvenanceManifestSha256:$dexHash,contracts:{baseAsset:$base,wrappedNative:$weth,rewardAssets:[$nvda,$spy,$ethReward],conversionRouter:$router,factory:$factory,launchDeployer:$launchDeployer,marketFactory:$marketFactory,atomicLaunchCoordinator:$coordinator,daoToken:$rdao,governor:$governor,timelock:$timelock,guardian:$guardian,protocolFeeRouter:$feeRouter,nativeFeeConverter:$nativeConverter,nativeConversionPool:$nativePool,adapterDeployer:$adapterDeployer,marketDeployer:$marketDeployer,genesisToken:$token,genesisVault:$vault,genesisMarket:$market,genesisGraduationAdapter:$adapter,genesisPositionLocker:$locker,genesisGraduatedPool:$pool},localUniswapV3:$uniswap,dao:{tokenName:"Robyn DAO",tokenSymbol:"RDAO",fixedSupply:"1000000000000000000000000000",initialAllocationManifestSha256:$allocationHash,allocation:$allocation.allocations,feePolicy:{basketBps:5000,creatorBps:2500,daoRewardsBps:2000,treasuryBps:500},creatorRewardsAccounting:"per-token-v2",governance:{votingDelaySeconds:86400,votingPeriodSeconds:259200,timelockSeconds:172800,quorumBps:1000,proposalThresholdBps:100},conversion:{twapWindowSeconds:60,maximumPriceImpactBps:100,maximumTickDeviation:100}},genesisBasket:[{symbol:"tmNVDA",weightBps:4000},{symbol:"tmSPY",weightBps:4000},{symbol:"tmETH",weightBps:2000}],market:{type:"uniswap-v3-bonding-curve-v1",liquidityVenue:"robyn-controlled-uniswap-v3-testnet",feeBps:100,poolFeePips:$poolFee,tickLower:-887200,tickUpper:887200,initialBasePerTokenX18:$initialPrice,minimumUseBps:9900,maximumPriceDeviationBps:100,curveTokenAllocation:$curveTokens,graduationTokenAllocation:$graduationTokens,initialVirtualTokenReserve:$virtualTokens,initialVirtualBaseReserve:$virtualBase,graduationThresholdBase:$threshold}}' >"$tmp"
-mv "$tmp" "$manifest"
+ipfs_tmp="${tmp}.ipfs"
+jq --arg fallbackMetadataUri "$fallback_metadata_uri" '
+  .schemaVersion = 5
+  | .ipfsMetadata = {
+      standard: "ERC-1046",
+      cidVersion: 1,
+      kuboVersion: "0.42.0",
+      localPolicy: "pinned-no-fetch",
+      remotePinRequired: true,
+      fallbackMetadataUri: $fallbackMetadataUri
+    }
+' "$tmp" >"$ipfs_tmp"
+mv "$ipfs_tmp" "$manifest"
 ROBYN_TESTNET_RPC_URL="$rpc_url" scripts/verify-testnet-deployment.sh "$manifest"
 echo "Wrote $manifest"

@@ -167,6 +167,10 @@ export const mediaAssets = pgTable(
     chainId: integer("chain_id").notNull(),
     ownerAddress: text("owner_address").notNull(),
     artifactSha256: text("artifact_sha256").notNull(),
+    canonicalPngSha256: text("canonical_png_sha256"),
+    canonicalPngCid: text("canonical_png_cid"),
+    optimizedWebpCid: text("optimized_webp_cid"),
+    hasAlpha: boolean("has_alpha").notNull().default(false),
     purpose: text("purpose").notNull(),
     status: text("status").notNull().default("active"),
     width: integer("width").notNull().default(1024),
@@ -216,6 +220,10 @@ export const launchMetadataBindings = pgTable(
     token: text("token").notNull(),
     creatorAddress: text("creator_address").notNull(),
     mediaId: text("media_id").notNull(),
+    preparationId: text("preparation_id"),
+    metadataCid: text("metadata_cid"),
+    metadataUri: text("metadata_uri"),
+    verificationStatus: text("verification_status").notNull().default("legacy"),
     boundAt: timestamp("bound_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -223,6 +231,64 @@ export const launchMetadataBindings = pgTable(
   (table) => [
     primaryKey({ columns: [table.chainId, table.token] }),
     uniqueIndex("launch_metadata_media_uq").on(table.mediaId),
+  ],
+);
+
+export const ipfsPins = pgTable(
+  "ipfs_pins",
+  {
+    cid: text("cid").primaryKey(),
+    objectKind: text("object_kind").notNull(),
+    artifactSha256: text("artifact_sha256").notNull(),
+    localStatus: text("local_status").notNull().default("queued"),
+    remoteStatus: text("remote_status").notNull().default("queued"),
+    remoteRequestId: text("remote_request_id"),
+    attempts: integer("attempts").notNull().default(0),
+    lastError: text("last_error"),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("ipfs_pins_status_idx").on(
+      table.localStatus,
+      table.remoteStatus,
+      table.updatedAt,
+    ),
+  ],
+);
+
+export const preparedTokenMetadata = pgTable(
+  "prepared_token_metadata",
+  {
+    preparationId: text("preparation_id").primaryKey(),
+    chainId: integer("chain_id").notNull(),
+    ownerAddress: text("owner_address").notNull(),
+    mediaId: text("media_id").notNull(),
+    name: text("name").notNull(),
+    symbol: text("symbol").notNull(),
+    description: text("description").notNull().default(""),
+    metadataArtifactSha256: text("metadata_artifact_sha256").notNull(),
+    metadataCid: text("metadata_cid").notNull(),
+    metadataUri: text("metadata_uri").notNull(),
+    status: text("status").notNull().default("ready"),
+    boundToken: text("bound_token"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    boundAt: timestamp("bound_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("prepared_metadata_owner_idx").on(
+      table.chainId,
+      table.ownerAddress,
+      table.createdAt,
+    ),
   ],
 );
 

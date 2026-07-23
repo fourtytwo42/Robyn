@@ -202,6 +202,26 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-23 - Immutable IPFS token metadata release in progress
+
+- Context: The product owner authorized stopping the active eight-hour soak to
+  implement immutable ERC-1046 metadata and IPFS-hosted token artwork.
+- Decision: Preserve the interrupted run as
+  `incomplete-superseded-by-ipfs-release`; deploy fresh local protocol
+  contracts because token CREATE2 inputs and coordinator events change.
+- Infrastructure: Official checksum-verified Kubo 0.42.0 runs natively as
+  `robyn-ipfs.service`. Its RPC and gateway bind only to loopback, its gateway
+  has `NoFetch=true`, and swarm port 4001 remains available.
+- Branch: `codex/ipfs-token-metadata`.
+- Evidence: The superseded soak is checksummed under
+  `/home/hendo420/robyn-evidence/ipfs-release-superseded-soak-20260723T153100Z/`.
+- Security: Remote pin credentials belong only in `/etc/robyn/ipfs.env`; none
+  are present in Git or memory. Local devnet may disclose remote pins as
+  pending, while protected testnet requires a configured remote pin provider.
+- Follow-up: Finish the schema-v5 contracts/data plane/UI, reset and reseed
+  devnet, complete browser and recovery acceptance, then start a fresh
+  one-shot eight-hour soak.
+
 ### 2026-07-23 - First full-soak failure and fail-closed correction
 
 - Context: The exact-release soak remained active after the keeper restarted

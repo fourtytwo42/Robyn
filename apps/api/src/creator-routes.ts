@@ -13,6 +13,11 @@ import {
 import { sanitizeCreatorImage } from "./creator-media.js";
 import { consumeWalletUpload } from "./creator-rate-limit.js";
 import {
+  addAndPinIpfs,
+  canonicalTokenMetadata,
+  requestRemotePin,
+} from "./ipfs.js";
+import {
   validateCreatorProfile,
   validateReportReason,
 } from "./profile-validation.js";
@@ -20,6 +25,15 @@ import {
 type DatabaseSql = ReturnType<typeof createDatabase>["sql"];
 type Session = { address: Address; chainId: number; origin: string };
 const sessionCookie = "robyn_creator_session";
+const tokenUriAbi = [
+  {
+    type: "function",
+    name: "tokenURI",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "string" }],
+  },
+] as const;
 
 function header(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -113,10 +127,66 @@ export async function registerCreatorRoutes(
     rpcClient: PublicClient;
     allowedOrigins: ReadonlySet<string>;
     artifactServiceUrl: string;
+    ipfsApiUrl: string;
+    remotePinUrl?: string;
+    remotePinToken?: string;
   },
 ) {
-  const { chainId, sql, redis, rpcClient, allowedOrigins, artifactServiceUrl } =
-    options;
+  const {
+    chainId,
+    sql,
+    redis,
+    rpcClient,
+    allowedOrigins,
+    artifactServiceUrl,
+    ipfsApiUrl,
+    remotePinUrl,
+    remotePinToken,
+  } = options;
+
+  async function storeArtifact(bytes: Buffer, contentType: string) {
+    const response = await fetch(new URL("/artifacts", artifactServiceUrl), {
+      method: "PUT",
+      headers: {
+        "content-type": "application/octet-stream",
+        "x-artifact-content-type": contentType,
+      },
+      body: Uint8Array.from(bytes),
+    });
+    if (!response.ok) throw new Error(`artifact_store_${response.status}`);
+    const stored = (await response.json()) as {
+      data?: { sha256?: string };
+    };
+    if (!stored.data?.sha256)
+      throw new Error("artifact_store_invalid_response");
+    return stored.data.sha256;
+  }
+
+  async function recordPin(input: {
+    cid: string;
+    objectKind: string;
+    artifactSha256: string;
+    name: string;
+  }) {
+    const remote = await requestRemotePin(
+      input.cid,
+      input.name,
+      remotePinUrl,
+      remotePinToken,
+    );
+    await sql.unsafe(
+      "INSERT INTO ipfs_pins(cid,object_kind,artifact_sha256,local_status,remote_status,remote_request_id,attempts,last_error,verified_at) VALUES($1,$2,$3,'pinned',$4,$5,1,$6,now()) ON CONFLICT(cid) DO UPDATE SET local_status='pinned',remote_status=EXCLUDED.remote_status,remote_request_id=COALESCE(EXCLUDED.remote_request_id,ipfs_pins.remote_request_id),attempts=ipfs_pins.attempts+1,last_error=EXCLUDED.last_error,verified_at=now(),updated_at=now()",
+      [
+        input.cid,
+        input.objectKind,
+        input.artifactSha256,
+        remote.state,
+        remote.requestId ?? null,
+        remote.error ?? null,
+      ],
+    );
+    return remote.state;
+  }
 
   app.post<{ Body: { address?: unknown } }>(
     "/auth/nonce",
@@ -336,30 +406,172 @@ export async function registerCreatorRoutes(
       } catch (error) {
         return reply.code(400).send({ error: mediaError(error) });
       }
-      const storedResponse = await fetch(
-        new URL("/artifacts", artifactServiceUrl),
-        {
-          method: "PUT",
-          headers: {
-            "content-type": "application/octet-stream",
-            "x-artifact-content-type": sanitized.contentType,
-          },
-          body: Uint8Array.from(sanitized.output),
-        },
-      );
-      if (!storedResponse.ok)
-        throw new Error(`artifact_store_${storedResponse.status}`);
-      const stored = (await storedResponse.json()) as {
-        data?: { sha256?: string };
-      };
-      if (!stored.data?.sha256)
-        throw new Error("artifact_store_invalid_response");
+      const [webpSha256, pngSha256] = await Promise.all([
+        storeArtifact(sanitized.webp, "image/webp"),
+        storeArtifact(sanitized.png, "image/png"),
+      ]);
+      const [webpCid, pngCid] = await Promise.all([
+        addAndPinIpfs(sanitized.webp, "token.webp", ipfsApiUrl),
+        addAndPinIpfs(sanitized.png, "token.png", ipfsApiUrl),
+      ]);
+      const [webpRemoteStatus, pngRemoteStatus] = await Promise.all([
+        recordPin({
+          cid: webpCid,
+          objectKind: "token-webp",
+          artifactSha256: webpSha256,
+          name: `robyn-${chainId}-token-webp`,
+        }),
+        recordPin({
+          cid: pngCid,
+          objectKind: "token-png",
+          artifactSha256: pngSha256,
+          name: `robyn-${chainId}-token-png`,
+        }),
+      ]);
       const mediaId = randomUUID();
       const rows = await sql.unsafe(
-        "INSERT INTO media_assets(media_id,chain_id,owner_address,artifact_sha256,purpose,status,width,height) VALUES($1,$2,$3,$4,$5,'active',1024,1024) RETURNING media_id,chain_id,owner_address,artifact_sha256,purpose,status,width,height,created_at::text",
-        [mediaId, chainId, session.address, stored.data.sha256, purpose],
+        "INSERT INTO media_assets(media_id,chain_id,owner_address,artifact_sha256,canonical_png_sha256,canonical_png_cid,optimized_webp_cid,has_alpha,purpose,status,width,height) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,'active',1024,1024) RETURNING media_id,chain_id,owner_address,artifact_sha256,canonical_png_sha256,canonical_png_cid,optimized_webp_cid,has_alpha,purpose,status,width,height,created_at::text",
+        [
+          mediaId,
+          chainId,
+          session.address,
+          webpSha256,
+          pngSha256,
+          pngCid,
+          webpCid,
+          sanitized.hasAlpha,
+          purpose,
+        ],
       );
-      return reply.code(201).send({ data: rows[0] });
+      return reply.code(201).send({
+        data: {
+          ...rows[0],
+          png_uri: `ipfs://${pngCid}`,
+          webp_uri: `ipfs://${webpCid}`,
+          local_pin_status: "pinned",
+          remote_pin_status:
+            webpRemoteStatus === "pinned" && pngRemoteStatus === "pinned"
+              ? "pinned"
+              : webpRemoteStatus === "failed" || pngRemoteStatus === "failed"
+                ? "failed"
+                : "queued",
+        },
+      });
+    },
+  );
+
+  app.post<{ Body: unknown }>(
+    "/launch-metadata/prepare",
+    async (request, reply) => {
+      const session = await requireSession(
+        request,
+        reply,
+        redis,
+        chainId,
+        allowedOrigins,
+      );
+      if (!session) return;
+      let body: Record<string, unknown>;
+      try {
+        body = bodyObject(request.body);
+      } catch (error) {
+        return reply.code(400).send({
+          error: error instanceof Error ? error.message : "invalid_request",
+        });
+      }
+      if (
+        typeof body.mediaId !== "string" ||
+        typeof body.name !== "string" ||
+        typeof body.symbol !== "string" ||
+        (body.description !== undefined && typeof body.description !== "string")
+      )
+        return reply.code(400).send({ error: "invalid_metadata_request" });
+      const media = await sql.unsafe<
+        {
+          media_id: string;
+          canonical_png_cid: string;
+          optimized_webp_cid: string;
+          has_alpha: boolean;
+        }[]
+      >(
+        "SELECT media_id,canonical_png_cid,optimized_webp_cid,has_alpha FROM media_assets WHERE media_id=$1 AND chain_id=$2 AND owner_address=$3 AND purpose='token' AND status='active'",
+        [body.mediaId, chainId, session.address],
+      );
+      if (!media[0]?.canonical_png_cid || !media[0].optimized_webp_cid)
+        return reply.code(400).send({ error: "ipfs_token_media_required" });
+      let metadataBytes: Buffer;
+      try {
+        metadataBytes = canonicalTokenMetadata({
+          name: body.name,
+          symbol: body.symbol,
+          ...(typeof body.description === "string"
+            ? { description: body.description }
+            : {}),
+          pngCid: media[0].canonical_png_cid,
+          webpCid: media[0].optimized_webp_cid,
+          hasAlpha: media[0].has_alpha,
+        });
+      } catch (error) {
+        return reply.code(400).send({
+          error: error instanceof Error ? error.message : "invalid_metadata",
+        });
+      }
+      const artifactSha256 = await storeArtifact(
+        metadataBytes,
+        "application/json",
+      );
+      const metadataCid = await addAndPinIpfs(
+        metadataBytes,
+        "token.json",
+        ipfsApiUrl,
+      );
+      const remoteStatus = await recordPin({
+        cid: metadataCid,
+        objectKind: "token-metadata",
+        artifactSha256,
+        name: `robyn-${chainId}-${body.symbol}-metadata`,
+      });
+      const preparationId = randomUUID();
+      const metadataUri = `ipfs://${metadataCid}`;
+      const rows = await sql.unsafe(
+        "INSERT INTO prepared_token_metadata(preparation_id,chain_id,owner_address,media_id,name,symbol,description,metadata_artifact_sha256,metadata_cid,metadata_uri,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'ready') RETURNING preparation_id,media_id,name,symbol,description,metadata_cid,metadata_uri,status,created_at::text,expires_at::text",
+        [
+          preparationId,
+          chainId,
+          session.address,
+          body.mediaId,
+          body.name.trim(),
+          body.symbol.trim(),
+          typeof body.description === "string" ? body.description.trim() : "",
+          artifactSha256,
+          metadataCid,
+          metadataUri,
+        ],
+      );
+      return reply.code(201).send({
+        data: {
+          ...rows[0],
+          local_pin_status: "pinned",
+          remote_pin_status: remoteStatus,
+        },
+      });
+    },
+  );
+
+  app.get<{ Params: { preparationId: string } }>(
+    "/launch-metadata/:preparationId",
+    async (request, reply) => {
+      if (!/^[0-9a-f-]{36}$/.test(request.params.preparationId))
+        return reply.code(400).send({ error: "invalid_preparation_id" });
+      const rows = await sql.unsafe(
+        "SELECT p.preparation_id,p.media_id,p.name,p.symbol,p.description,p.metadata_cid,p.metadata_uri,p.status,p.bound_token,p.created_at::text,p.expires_at::text,i.local_status,i.remote_status,i.last_error FROM prepared_token_metadata p JOIN ipfs_pins i ON i.cid=p.metadata_cid WHERE p.preparation_id=$1 AND p.chain_id=$2",
+        [request.params.preparationId, chainId],
+      );
+      if (!rows[0])
+        return reply
+          .code(404)
+          .send({ error: "metadata_preparation_not_found" });
+      return reply.send({ data: rows[0] });
     },
   );
 
@@ -408,8 +620,13 @@ export async function registerCreatorRoutes(
         return reply.code(400).send({ error: "invalid_token" });
       const token = request.params.token.toLowerCase();
       const body = bodyObject(request.body);
-      if (typeof body.mediaId !== "string")
-        return reply.code(400).send({ error: "media_id_required" });
+      if (
+        typeof body.mediaId !== "string" &&
+        typeof body.preparationId !== "string"
+      )
+        return reply
+          .code(400)
+          .send({ error: "media_or_preparation_id_required" });
       const launch = await sql.unsafe<{ creator: string }[]>(
         "SELECT creator FROM launches WHERE chain_id=$1 AND token=$2",
         [chainId, token],
@@ -418,16 +635,63 @@ export async function registerCreatorRoutes(
         return reply.code(404).send({ error: "launch_not_found" });
       if (launch[0].creator.toLowerCase() !== session.address)
         return reply.code(403).send({ error: "canonical_creator_required" });
+      const preparation =
+        typeof body.preparationId === "string"
+          ? await sql.unsafe<
+              {
+                preparation_id: string;
+                media_id: string;
+                metadata_cid: string;
+                metadata_uri: string;
+                status: string;
+              }[]
+            >(
+              "SELECT preparation_id,media_id,metadata_cid,metadata_uri,status FROM prepared_token_metadata WHERE preparation_id=$1 AND chain_id=$2 AND owner_address=$3 AND status='ready' AND expires_at>now()",
+              [body.preparationId, chainId, session.address],
+            )
+          : [];
+      const mediaId =
+        preparation[0]?.media_id ??
+        (typeof body.mediaId === "string" ? body.mediaId : "");
       const media = await sql.unsafe<{ media_id: string }[]>(
         "SELECT media_id FROM media_assets WHERE media_id=$1 AND chain_id=$2 AND owner_address=$3 AND purpose='token' AND status='active'",
-        [body.mediaId, chainId, session.address],
+        [mediaId, chainId, session.address],
       );
       if (!media[0])
         return reply.code(400).send({ error: "invalid_token_media" });
-      const inserted = await sql.unsafe(
-        "INSERT INTO launch_metadata_bindings(chain_id,token,creator_address,media_id) VALUES($1,$2,$3,$4) ON CONFLICT(chain_id,token) DO NOTHING RETURNING chain_id,token,creator_address,media_id,bound_at::text",
-        [chainId, token, session.address, body.mediaId],
-      );
+      if (typeof body.preparationId === "string" && !preparation[0])
+        return reply.code(400).send({ error: "invalid_metadata_preparation" });
+      if (preparation[0]) {
+        const onchainUri = await rpcClient.readContract({
+          address: token as Address,
+          abi: tokenUriAbi,
+          functionName: "tokenURI",
+        });
+        if (onchainUri !== preparation[0].metadata_uri)
+          return reply.code(409).send({ error: "onchain_metadata_mismatch" });
+      }
+      const inserted = await sql.begin(async (transaction) => {
+        const rows = await transaction.unsafe(
+          "INSERT INTO launch_metadata_bindings(chain_id,token,creator_address,media_id,preparation_id,metadata_cid,metadata_uri,verification_status) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(chain_id,token) DO NOTHING RETURNING chain_id,token,creator_address,media_id,preparation_id,metadata_cid,metadata_uri,verification_status,bound_at::text",
+          [
+            chainId,
+            token,
+            session.address,
+            mediaId,
+            preparation[0]?.preparation_id ?? null,
+            preparation[0]?.metadata_cid ?? null,
+            preparation[0]?.metadata_uri ?? null,
+            preparation[0] ? "robyn-sanitized" : "legacy",
+          ],
+        );
+        if (rows[0] && preparation[0]) {
+          await transaction.unsafe(
+            "UPDATE prepared_token_metadata SET status='bound',bound_token=$1,bound_at=now() WHERE preparation_id=$2 AND status='ready'",
+            [token, preparation[0].preparation_id],
+          );
+        }
+        return rows;
+      });
       if (!inserted[0])
         return reply.code(409).send({ error: "launch_metadata_immutable" });
       return reply.code(201).send({ data: inserted[0] });
@@ -440,7 +704,7 @@ export async function registerCreatorRoutes(
       if (!/^0x[0-9a-fA-F]{40}$/.test(request.params.token))
         return reply.code(400).send({ error: "invalid_token" });
       const rows = await sql.unsafe(
-        "SELECT b.chain_id,b.token,b.creator_address,b.media_id,b.bound_at::text,m.status,p.display_name,p.bio,p.website,p.x_url,p.telegram_url,p.discord_url,p.avatar_media_id FROM launch_metadata_bindings b JOIN media_assets m ON m.media_id=b.media_id LEFT JOIN creator_profiles p ON p.chain_id=b.chain_id AND p.address=b.creator_address WHERE b.chain_id=$1 AND b.token=$2",
+        "SELECT b.chain_id,b.token,b.creator_address,b.media_id,b.preparation_id,b.metadata_cid,b.metadata_uri,b.verification_status,b.bound_at::text,m.status,m.canonical_png_cid,m.optimized_webp_cid,p.display_name,p.bio,p.website,p.x_url,p.telegram_url,p.discord_url,p.avatar_media_id,ip.local_status,ip.remote_status FROM launch_metadata_bindings b JOIN media_assets m ON m.media_id=b.media_id LEFT JOIN creator_profiles p ON p.chain_id=b.chain_id AND p.address=b.creator_address LEFT JOIN ipfs_pins ip ON ip.cid=b.metadata_cid WHERE b.chain_id=$1 AND b.token=$2",
         [chainId, request.params.token.toLowerCase()],
       );
       if (!rows[0])

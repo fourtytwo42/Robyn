@@ -16,7 +16,7 @@ import { UniswapV3MarketFactoryV3 } from "./uniswap/UniswapV3MarketFactoryV3.sol
 contract RobynDaoLaunchCoordinator is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    string public constant CONTRACT_VERSION = "3.0.0";
+    string public constant CONTRACT_VERSION = "4.0.0";
 
     error InvalidConfiguration();
     error AtomicLaunchInvariant();
@@ -31,6 +31,7 @@ contract RobynDaoLaunchCoordinator is ReentrancyGuard {
         address locker;
         bytes32 configurationHash;
         bytes32 launchSaltHash;
+        bytes32 metadataUriHash;
     }
 
     RobynLaunchFactoryV2 public immutable launchFactory;
@@ -48,7 +49,8 @@ contract RobynDaoLaunchCoordinator is ReentrancyGuard {
         address pool,
         address locker,
         bytes32 configurationHash,
-        bytes32 launchSaltHash
+        bytes32 launchSaltHash,
+        bytes32 metadataUriHash
     );
 
     constructor(
@@ -85,6 +87,7 @@ contract RobynDaoLaunchCoordinator is ReentrancyGuard {
         artifacts.vault = created.vault;
         artifacts.configurationHash = created.configurationHash;
         artifacts.launchSaltHash = created.launchSaltHash;
+        artifacts.metadataUriHash = keccak256(bytes(request.metadataUri));
         artifacts.market = marketFactory.createMarketFor(artifacts.token, msg.sender, address(this));
         artifacts.adapter = artifacts.market.graduationAdapter();
         artifacts.pool = artifacts.market.graduatedPool();
@@ -135,7 +138,8 @@ contract RobynDaoLaunchCoordinator is ReentrancyGuard {
             artifacts.pool,
             artifacts.locker,
             artifacts.configurationHash,
-            artifacts.launchSaltHash
+            artifacts.launchSaltHash,
+            artifacts.metadataUriHash
         );
         return (artifacts.token, artifacts.vault, artifacts.market);
     }

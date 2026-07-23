@@ -22,6 +22,11 @@ export type LaunchRecord = {
     telegram_url: string | null;
     discord_url: string | null;
     avatar_media_id: string | null;
+    metadata_cid: string | null;
+    metadata_uri: string | null;
+    verification_status: "robyn-sanitized" | "external" | "legacy";
+    canonical_png_cid: string | null;
+    optimized_webp_cid: string | null;
   } | null;
   metrics?: {
     marketCapBase: string;

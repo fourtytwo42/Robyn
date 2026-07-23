@@ -29,6 +29,7 @@ const atomicLaunchCoordinatorAbi = [
           { name: "symbol", type: "string" },
           { name: "assets", type: "address[]" },
           { name: "weights", type: "uint16[]" },
+          { name: "metadataUri", type: "string" },
           { name: "userSalt", type: "bytes32" },
         ],
       },
@@ -49,6 +50,7 @@ const atomicLaunchCoordinatorAbi = [
       { indexed: false, name: "locker", type: "address" },
       { indexed: false, name: "configurationHash", type: "bytes32" },
       { indexed: false, name: "launchSaltHash", type: "bytes32" },
+      { indexed: false, name: "metadataUriHash", type: "bytes32" },
     ],
   },
 ] as const;
@@ -381,15 +383,19 @@ export function NetworkLaunchpadConsole({
     [isWrongChain, publicClient, walletClient],
   );
 
-  async function bindArtwork(token: Address, mediaId?: string) {
-    if (!mediaId) return;
-    setStatus("Binding sanitized artwork to the canonical launch...");
+  async function bindArtwork(
+    token: Address,
+    mediaId?: string,
+    preparationId?: string,
+  ) {
+    if (!mediaId && !preparationId) return;
+    setStatus("Verifying immutable IPFS metadata against the launch...");
     for (let attempt = 0; attempt < 40; attempt++) {
       const response = await fetch(`/api/launches/${token}/metadata`, {
         method: "POST",
         credentials: "same-origin",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ mediaId }),
+        body: JSON.stringify({ mediaId, preparationId }),
       });
       if (response.ok) return;
       if (response.status !== 404)
@@ -402,7 +408,7 @@ export function NetworkLaunchpadConsole({
     throw new Error("Launch succeeded, but artwork indexing timed out.");
   }
 
-  async function createLaunch(artworkMediaId?: string) {
+  async function createLaunch(artworkMediaId?: string, description?: string) {
     if (!account || !walletClient)
       return setStatus("Connect and fund a testnet wallet first.");
     if (!name.trim() || !/^[A-Z0-9]{2,8}$/.test(symbol.trim().toUpperCase()))
@@ -428,11 +434,42 @@ export function NetworkLaunchpadConsole({
       const coordinator = deployment.contracts.atomicLaunchCoordinator;
       if (!coordinator)
         throw new Error("Atomic launch coordinator is not configured.");
+      if (!artworkMediaId)
+        throw new Error(
+          "Add token artwork so immutable IPFS metadata can be prepared.",
+        );
+      setStatus("Pinning sanitized artwork and preparing ERC-1046 metadata...");
+      const preparedResponse = await fetch("/api/launch-metadata/prepare", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          mediaId: artworkMediaId,
+          name: name.trim(),
+          symbol: symbol.trim().toUpperCase(),
+          description: description?.trim() ?? "",
+        }),
+      });
+      const preparedBody = (await preparedResponse.json()) as {
+        data?: {
+          preparation_id: string;
+          metadata_uri: string;
+          remote_pin_status: string;
+        };
+        error?: string;
+      };
+      if (!preparedResponse.ok || !preparedBody.data)
+        throw new Error(preparedBody.error ?? "metadata_preparation_failed");
+      if (preparedBody.data.remote_pin_status !== "pinned")
+        throw new Error(
+          "Protected testnet launch requires verified redundant IPFS pinning.",
+        );
       const request = {
         name: name.trim(),
         symbol: symbol.trim().toUpperCase(),
         assets: basket.map((item) => item.asset),
         weights: basket.map((item) => item.weight * 100),
+        metadataUri: preparedBody.data.metadata_uri,
         userSalt: randomLaunchSalt(),
       } as const;
       setStatus("Simulating the complete atomic launch...");
@@ -461,7 +498,11 @@ export function NetworkLaunchpadConsole({
       setStatus("Waiting for the canonical launch to be indexed...");
       await refresh();
       try {
-        await bindArtwork(token, artworkMediaId);
+        await bindArtwork(
+          token,
+          artworkMediaId,
+          preparedBody.data.preparation_id,
+        );
       } catch (metadataError) {
         setStatus(
           `Onchain launch succeeded, but artwork binding needs attention: ${metadataError instanceof Error ? metadataError.message : "unknown metadata error"}`,

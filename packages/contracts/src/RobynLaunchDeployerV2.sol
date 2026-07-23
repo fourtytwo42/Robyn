@@ -14,6 +14,16 @@ contract RobynLaunchDeployerV2 {
     address public immutable initializer;
     address public controller;
 
+    struct TokenRequest {
+        string name;
+        string symbol;
+        address supplyRecipient;
+        uint256 initialSupply;
+        address vault;
+        address[] assets;
+        string tokenUri;
+    }
+
     constructor() {
         initializer = msg.sender;
     }
@@ -48,18 +58,19 @@ contract RobynLaunchDeployerV2 {
         );
     }
 
-    function deployToken(
-        bytes32 salt,
-        string calldata name,
-        string calldata symbol,
-        address supplyRecipient,
-        uint256 initialSupply,
-        address vault,
-        address[] calldata assets
-    ) external returns (RobynLaunchToken token) {
+    function deployToken(bytes32 salt, TokenRequest calldata request)
+        external
+        returns (RobynLaunchToken token)
+    {
         if (msg.sender != controller) revert Unauthorized();
         token = new RobynLaunchToken{ salt: salt }(
-            name, symbol, supplyRecipient, initialSupply, vault, assets
+            request.name,
+            request.symbol,
+            request.supplyRecipient,
+            request.initialSupply,
+            request.vault,
+            request.assets,
+            request.tokenUri
         );
     }
 
@@ -94,19 +105,23 @@ contract RobynLaunchDeployerV2 {
         return _create2Address(salt, initCodeHash);
     }
 
-    function predictToken(
-        bytes32 salt,
-        string calldata name,
-        string calldata symbol,
-        address supplyRecipient,
-        uint256 initialSupply,
-        address vault,
-        address[] calldata assets
-    ) external view returns (address) {
+    function predictToken(bytes32 salt, TokenRequest calldata request)
+        external
+        view
+        returns (address)
+    {
         bytes32 initCodeHash = keccak256(
             abi.encodePacked(
                 type(RobynLaunchToken).creationCode,
-                abi.encode(name, symbol, supplyRecipient, initialSupply, vault, assets)
+                abi.encode(
+                    request.name,
+                    request.symbol,
+                    request.supplyRecipient,
+                    request.initialSupply,
+                    request.vault,
+                    request.assets,
+                    request.tokenUri
+                )
             )
         );
         return _create2Address(salt, initCodeHash);

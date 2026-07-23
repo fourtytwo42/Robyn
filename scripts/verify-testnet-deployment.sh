@@ -6,7 +6,7 @@ manifest="${1:-$repo_root/deployments/46630.json}"
 rpc_url="${ROBYN_TESTNET_RPC_URL:-https://rpc.testnet.chain.robinhood.com}"
 export PATH="$HOME/.foundry/bin:$PATH"
 
-jq -e '.schemaVersion == 4 and .environment == "robinhood-testnet" and .chainId == 46630 and .mockOnly == true and .assetStrategy == "project-owned-testnet-mocks" and .market.liquidityVenue == "robyn-controlled-uniswap-v3-testnet" and .dao.creatorRewardsAccounting == "per-token-v2"' "$manifest" >/dev/null
+jq -e '.schemaVersion == 5 and .environment == "robinhood-testnet" and .chainId == 46630 and .mockOnly == true and .assetStrategy == "project-owned-testnet-mocks" and .market.liquidityVenue == "robyn-controlled-uniswap-v3-testnet" and .dao.creatorRewardsAccounting == "per-token-v2" and .ipfsMetadata.standard == "ERC-1046" and .ipfsMetadata.remotePinRequired == true' "$manifest" >/dev/null
 jq -e '. as $manifest |
   (.dao.initialAllocationManifestSha256 | test("^[0-9a-f]{64}$")) and
   (.dao.allocation | type == "array" and length > 1) and

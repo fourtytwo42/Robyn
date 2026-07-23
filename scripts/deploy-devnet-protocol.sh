@@ -153,9 +153,10 @@ send_transaction "$router" "setRate(address,address,uint256)" "$base" "$spy" "20
 send_transaction "$router" "setRate(address,address,uint256)" "$base" "$eth_reward" "3000000000000000000"
 
 genesis_salt="$(cast keccak 'robyn-devnet-genesis-v3-dao')"
+fallback_metadata_uri="ipfs://bafkreibys2cv4ijpoedcl7qdbi5u66wuwedwg3lsc6pios3wcyaoyz7cau"
 send_transaction "$coordinator" \
-  "createLaunch((string,string,address[],uint16[],bytes32))" \
-  "(\"Robyn Genesis\",\"ROBYN\",[$nvda,$spy,$eth_reward],[4000,4000,2000],$genesis_salt)"
+  "createLaunch((string,string,address[],uint16[],string,bytes32))" \
+  "(\"Robyn Genesis\",\"ROBYN\",[$nvda,$spy,$eth_reward],[4000,4000,2000],\"$fallback_metadata_uri\",$genesis_salt)"
 
 launch_id="$(cast call "$factory" "launchCount()(uint256)" --rpc-url "$rpc_url")"
 token="$(cast call "$factory" "launchTokenById(uint256)(address)" "$launch_id" --rpc-url "$rpc_url")"
@@ -169,8 +170,8 @@ block_number="$(cast block-number --rpc-url "$rpc_url")"
 git_commit="$(git rev-parse HEAD)"
 mkdir -p "$(dirname "$manifest")"
 temporary_manifest="$(mktemp "$(dirname "$manifest")/.31337.XXXXXX")"
-jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson blockNumber "$block_number" --arg gitCommit "$git_commit" --arg deployer "$deployer" --arg base "$base" --arg weth "$weth" --arg nvda "$nvda" --arg spy "$spy" --arg ethReward "$eth_reward" --arg router "$router" --arg factory "$factory" --arg launchDeployer "$launch_deployer" --arg marketFactory "$market_factory" --arg coordinator "$coordinator" --arg adapterDeployer "$adapter_deployer" --arg marketDeployer "$market_deployer" --arg token "$token" --arg vault "$vault" --arg market "$market" --arg adapter "$adapter" --arg locker "$locker" --arg pool "$pool" --arg timelock "$timelock" --arg governor "$governor" --arg rdao "$rdao" --arg feeRouter "$fee_router" --arg nativeConverter "$native_converter" --arg nativePool "$native_pool" --argjson localUniswapV3 "$uniswap_json" --arg curveTokens "$curve_token_allocation" --arg graduationTokens "$graduation_token_allocation" --arg virtualTokens "$initial_virtual_token_reserve" --arg virtualBase "$initial_virtual_base_reserve" --arg threshold "$graduation_threshold_base" --arg initialPrice "$initial_base_per_token_x18" --argjson poolFee "$pool_fee_pips" --arg tickLower "$tick_lower" --arg tickUpper "$tick_upper" --arg minimumUse "$minimum_use_bps" --arg maximumDeviation "$maximum_price_deviation_bps" --arg twapWindow "$twap_window_seconds" --arg maximumConversionImpact "$maximum_conversion_price_impact_bps" --arg maximumTickDeviation "$maximum_conversion_tick_deviation" '{
-    schemaVersion: 4,
+jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson blockNumber "$block_number" --arg gitCommit "$git_commit" --arg deployer "$deployer" --arg base "$base" --arg weth "$weth" --arg nvda "$nvda" --arg spy "$spy" --arg ethReward "$eth_reward" --arg router "$router" --arg factory "$factory" --arg launchDeployer "$launch_deployer" --arg marketFactory "$market_factory" --arg coordinator "$coordinator" --arg adapterDeployer "$adapter_deployer" --arg marketDeployer "$market_deployer" --arg token "$token" --arg vault "$vault" --arg market "$market" --arg adapter "$adapter" --arg locker "$locker" --arg pool "$pool" --arg timelock "$timelock" --arg governor "$governor" --arg rdao "$rdao" --arg feeRouter "$fee_router" --arg nativeConverter "$native_converter" --arg nativePool "$native_pool" --arg fallbackMetadataUri "$fallback_metadata_uri" --argjson localUniswapV3 "$uniswap_json" --arg curveTokens "$curve_token_allocation" --arg graduationTokens "$graduation_token_allocation" --arg virtualTokens "$initial_virtual_token_reserve" --arg virtualBase "$initial_virtual_base_reserve" --arg threshold "$graduation_threshold_base" --arg initialPrice "$initial_base_per_token_x18" --argjson poolFee "$pool_fee_pips" --arg tickLower "$tick_lower" --arg tickUpper "$tick_upper" --arg minimumUse "$minimum_use_bps" --arg maximumDeviation "$maximum_price_deviation_bps" --arg twapWindow "$twap_window_seconds" --arg maximumConversionImpact "$maximum_conversion_price_impact_bps" --arg maximumTickDeviation "$maximum_conversion_tick_deviation" '{
+    schemaVersion: 5,
     environment: $environment,
     chainId: $chainId,
     deploymentBlock: $blockNumber,
@@ -202,6 +203,14 @@ jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson b
       genesisGraduatedPool: $pool
     },
     localUniswapV3: $localUniswapV3,
+    ipfsMetadata: {
+      standard: "ERC-1046",
+      cidVersion: 1,
+      kuboVersion: "0.42.0",
+      localPolicy: "pinned-no-fetch",
+      remotePinRequiredForTestnet: true,
+      fallbackMetadataUri: $fallbackMetadataUri
+    },
     dao: {
       tokenName: "Robyn DAO",
       tokenSymbol: "RDAO",

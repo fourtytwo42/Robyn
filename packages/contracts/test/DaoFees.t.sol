@@ -160,7 +160,13 @@ contract DaoFeesTest {
         weights[0] = 10_000;
         vault = new FeeBasketVault(base, basketConverter, address(this), assets, weights, 1, 1);
         launchToken = new RobynLaunchToken(
-            "Launch", "LCH", address(locker), 1_000_000_000 ether, address(vault), assets
+            "Launch",
+            "LCH",
+            address(locker),
+            1_000_000_000 ether,
+            address(vault),
+            assets,
+            "ipfs://bafkreif2akiscaildcwr6zeux4w6i2s5kmibuf6j4jvcrbozme2q"
         );
         vault.bindLaunchToken(launchToken);
 
@@ -361,7 +367,13 @@ contract DaoFeesTest {
         launchMarket = new DaoFeeActor();
         launchLocker = new DaoFeeActor();
         token = new RobynLaunchToken(
-            name, symbol, address(launchLocker), 1_000_000_000 ether, address(launchVault), assets
+            name,
+            symbol,
+            address(launchLocker),
+            1_000_000_000 ether,
+            address(launchVault),
+            assets,
+            "ipfs://bafkreif2akiscaildcwr6zeux4w6i2s5kmibuf6j4jvcrbozme2q"
         );
         launchVault.bindLaunchToken(token);
         router.registerLaunch(

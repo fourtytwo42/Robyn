@@ -14,7 +14,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     uint8 public constant MAX_REWARD_ASSETS = 5;
     uint8 public constant MAX_EXCLUDED_ACCOUNTS = 16;
     uint256 public constant MAGNITUDE = 2 ** 128;
-    string public constant CONTRACT_VERSION = "1.0.0";
+    string public constant CONTRACT_VERSION = "2.0.0";
 
     error Unauthorized();
     error InvalidAssetCount();
@@ -28,6 +28,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     error ExclusionsNotSealed();
     error DuplicateExcludedAccount(address account);
     error TooManyExcludedAccounts(uint256 count);
+    error InvalidTokenUri();
 
     address public immutable controller;
     address public immutable initializationAuthority;
@@ -43,6 +44,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     uint256[] public totalRewardsClaimed;
     mapping(address => mapping(uint256 => int256)) private _magnifiedCorrections;
     mapping(address => mapping(uint256 => uint256)) private _withdrawn;
+    string private _tokenUri;
 
     event RewardReceived(
         uint256 indexed assetIndex,
@@ -62,12 +64,14 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         address creator_,
         uint256 initialSupply_,
         address controller_,
-        address[] memory rewardAssets_
+        address[] memory rewardAssets_,
+        string memory tokenUri_
     ) ERC20(name_, symbol_) {
         if (creator_ == address(0) || controller_ == address(0)) {
             revert InvalidAccount();
         }
         if (initialSupply_ == 0) revert InvalidAmount();
+        _validateTokenUri(tokenUri_);
         uint256 count = rewardAssets_.length;
         if (count == 0 || count > MAX_REWARD_ASSETS) revert InvalidAssetCount();
         for (uint256 i; i < count; ++i) {
@@ -85,7 +89,13 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         controller = controller_;
         initializationAuthority = msg.sender;
         rewardAssetCount = count;
+        _tokenUri = tokenUri_;
         _mint(creator_, initialSupply_);
+    }
+
+    /// @notice Immutable ERC-1046 metadata URI committed during CREATE2 launch.
+    function tokenURI() external view returns (string memory) {
+        return _tokenUri;
     }
 
     /// @notice Finalizes accounts that never participate in reward supply or claims.
@@ -196,5 +206,19 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
 
     function _validateAssetIndex(uint256 index) private view {
         if (index >= rewardAssetCount) revert InvalidAssetIndex(index);
+    }
+
+    function _validateTokenUri(string memory value) private pure {
+        bytes memory uri = bytes(value);
+        if (
+            uri.length < 28 || uri.length > 140 || uri[0] != "i" || uri[1] != "p" || uri[2] != "f"
+                || uri[3] != "s" || uri[4] != ":" || uri[5] != "/" || uri[6] != "/" || uri[7] != "b"
+        ) revert InvalidTokenUri();
+        for (uint256 i = 8; i < uri.length; ++i) {
+            bytes1 character = uri[i];
+            bool lowercase = character >= "a" && character <= "z";
+            bool digit = character >= "2" && character <= "7";
+            if (!lowercase && !digit) revert InvalidTokenUri();
+        }
     }
 }

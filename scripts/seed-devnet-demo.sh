@@ -84,9 +84,10 @@ create_launch() {
   local name="$1" symbol="$2" assets="$3" weights="$4"
   local id token vault market adapter locker pool salt
   salt="$(cast keccak "robyn-devnet-demo-v2:$symbol")"
+  local metadata_uri="ipfs://bafkreibys2cv4ijpoedcl7qdbi5u66wuwedwg3lsc6pios3wcyaoyz7cau"
   send_as "$deployer" "$coordinator" \
-    'createLaunch((string,string,address[],uint16[],bytes32))' \
-    "(\"$name\",\"$symbol\",$assets,$weights,$salt)"
+    'createLaunch((string,string,address[],uint16[],string,bytes32))' \
+    "(\"$name\",\"$symbol\",$assets,$weights,\"$metadata_uri\",$salt)"
   id="$(cast call "$factory" 'launchCount()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')"
   token="$(cast call "$factory" 'launchTokenById(uint256)(address)' "$id" --rpc-url "$rpc_url")"
   vault="$(cast call "$factory" 'vaultByToken(address)(address)' "$token" --rpc-url "$rpc_url")"

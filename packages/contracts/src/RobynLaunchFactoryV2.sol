@@ -20,6 +20,7 @@ contract RobynLaunchFactoryV2 {
         string symbol;
         address[] assets;
         uint16[] weights;
+        string metadataUri;
         bytes32 userSalt;
     }
 
@@ -31,7 +32,7 @@ contract RobynLaunchFactoryV2 {
         bytes32 launchSaltHash;
     }
 
-    string public constant CONTRACT_VERSION = "2.0.0";
+    string public constant CONTRACT_VERSION = "3.0.0";
     uint256 public immutable chainId;
     IERC20 public immutable baseAsset;
     IRobynConversionRouter public immutable conversionRouter;
@@ -123,15 +124,16 @@ contract RobynLaunchFactoryV2 {
             minimumConversionBase,
             maximumPendingDelay
         );
-        created.token = launchDeployer.deployToken(
-            tokenSalt,
-            request.name,
-            request.symbol,
-            supplyRecipient,
-            initialSupply,
-            address(created.vault),
-            request.assets
-        );
+        RobynLaunchDeployerV2.TokenRequest memory tokenRequest = RobynLaunchDeployerV2.TokenRequest({
+            name: request.name,
+            symbol: request.symbol,
+            supplyRecipient: supplyRecipient,
+            initialSupply: initialSupply,
+            vault: address(created.vault),
+            assets: request.assets,
+            tokenUri: request.metadataUri
+        });
+        created.token = launchDeployer.deployToken(tokenSalt, tokenRequest);
         created.vault.bindLaunchToken(created.token);
         created.launchId = ++launchCount;
         launchTokenById[created.launchId] = address(created.token);
@@ -186,15 +188,16 @@ contract RobynLaunchFactoryV2 {
             maximumPendingDelay
         );
         bytes32 tokenSalt = keccak256(abi.encode(launchSaltHash, keccak256("ROBYN_TOKEN_V2")));
-        predictedToken = launchDeployer.predictToken(
-            tokenSalt,
-            request.name,
-            request.symbol,
-            supplyRecipient,
-            initialSupply,
-            predictedVault,
-            request.assets
-        );
+        RobynLaunchDeployerV2.TokenRequest memory tokenRequest = RobynLaunchDeployerV2.TokenRequest({
+            name: request.name,
+            symbol: request.symbol,
+            supplyRecipient: supplyRecipient,
+            initialSupply: initialSupply,
+            vault: predictedVault,
+            assets: request.assets,
+            tokenUri: request.metadataUri
+        });
+        predictedToken = launchDeployer.predictToken(tokenSalt, tokenRequest);
     }
 
     function _launchSaltHash(address creator, uint256 initialSupply, LaunchRequest calldata request)
@@ -212,6 +215,7 @@ contract RobynLaunchFactoryV2 {
                 initialSupply,
                 request.assets,
                 request.weights,
+                keccak256(bytes(request.metadataUri)),
                 request.userSalt
             )
         );

@@ -29,11 +29,27 @@ redis_count() {
 printf '# HELP robyn_monitoring_collected_timestamp_seconds Unix timestamp of the last successful collector run.\n# TYPE robyn_monitoring_collected_timestamp_seconds gauge\n' >"${tmp}"
 metric "robyn_monitoring_collected_timestamp_seconds" "$(date +%s)"
 printf '# HELP robyn_systemd_unit_up Whether a required native systemd unit is active.\n# TYPE robyn_systemd_unit_up gauge\n' >>"${tmp}"
-for unit in postgresql redis-server minio robyn-anvil pm2-hendo420 robyn-backup.timer prometheus prometheus-alertmanager prometheus-node-exporter grafana-server robyn-alert-receiver; do
+for unit in postgresql redis-server minio robyn-ipfs robyn-anvil pm2-hendo420 robyn-backup.timer prometheus prometheus-alertmanager prometheus-node-exporter grafana-server robyn-alert-receiver; do
   value=0
   systemctl is-active --quiet "${unit}" && value=1
   metric "robyn_systemd_unit_up{chain_id=\"31337\",component=\"${unit}\",launch=\"all\",asset=\"all\"}" "${value}"
 done
+
+ipfs_local_pinned="$(psql -d robyn -Atqc "SELECT count(*) FROM ipfs_pins WHERE local_status='pinned'" 2>/dev/null || printf '0')"
+ipfs_local_failed="$(psql -d robyn -Atqc "SELECT count(*) FROM ipfs_pins WHERE local_status='failed'" 2>/dev/null || printf '0')"
+ipfs_remote_failed="$(psql -d robyn -Atqc "SELECT count(*) FROM ipfs_pins WHERE remote_status='failed'" 2>/dev/null || printf '0')"
+ipfs_stale="$(psql -d robyn -Atqc "SELECT count(*) FROM ipfs_pins WHERE (local_status<>'pinned' OR remote_status IN ('queued','pinning','failed')) AND updated_at < now() - interval '15 minutes'" 2>/dev/null || printf '0')"
+prepared_stale="$(psql -d robyn -Atqc "SELECT count(*) FROM prepared_token_metadata WHERE status='ready' AND created_at < now() - interval '24 hours'" 2>/dev/null || printf '0')"
+for value_name in ipfs_local_pinned ipfs_local_failed ipfs_remote_failed ipfs_stale prepared_stale; do
+  value="${!value_name}"
+  [[ "${value}" =~ ^[0-9]+$ ]] || printf -v "${value_name}" '0'
+done
+printf '# HELP robyn_ipfs_pins IPFS objects by durability state.\n# TYPE robyn_ipfs_pins gauge\n' >>"${tmp}"
+metric "robyn_ipfs_pins{chain_id=\"31337\",component=\"ipfs\",scope=\"local\",state=\"pinned\"}" "${ipfs_local_pinned}"
+metric "robyn_ipfs_pins{chain_id=\"31337\",component=\"ipfs\",scope=\"local\",state=\"failed\"}" "${ipfs_local_failed}"
+metric "robyn_ipfs_pins{chain_id=\"31337\",component=\"ipfs\",scope=\"remote\",state=\"failed\"}" "${ipfs_remote_failed}"
+metric "robyn_ipfs_stale_objects{chain_id=\"31337\",component=\"ipfs\"}" "${ipfs_stale}"
+metric "robyn_ipfs_stale_preparations{chain_id=\"31337\",component=\"ipfs\"}" "${prepared_stale}"
 
 pm2_json="$(cd "${repo}" && pnpm exec pm2 jlist 2>/dev/null || printf '[]')"
 printf '# HELP robyn_pm2_process_up Whether a declared PM2 process is online.\n# TYPE robyn_pm2_process_up gauge\n# HELP robyn_pm2_process_restarts PM2 restart count for a declared process.\n# TYPE robyn_pm2_process_restarts gauge\n' >>"${tmp}"

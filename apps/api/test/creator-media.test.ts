@@ -13,9 +13,15 @@ describe("creator media sanitization", () => {
       .png()
       .toBuffer();
     const result = await sanitizeCreatorImage(source, "image/png");
-    const metadata = await sharp(result.output).metadata();
-    expect(metadata).toMatchObject({
+    const webpMetadata = await sharp(result.webp).metadata();
+    const pngMetadata = await sharp(result.png).metadata();
+    expect(webpMetadata).toMatchObject({
       format: "webp",
+      width: 1024,
+      height: 1024,
+    });
+    expect(pngMetadata).toMatchObject({
+      format: "png",
       width: 1024,
       height: 1024,
     });

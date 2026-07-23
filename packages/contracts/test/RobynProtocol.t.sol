@@ -268,8 +268,15 @@ contract RobynProtocolTest {
         ReentrantRewardToken maliciousReward = new ReentrantRewardToken();
         address[] memory assets = new address[](1);
         assets[0] = address(maliciousReward);
-        RobynLaunchToken guardedToken =
-            new RobynLaunchToken("Guarded", "GRD", address(this), SUPPLY, address(this), assets);
+        RobynLaunchToken guardedToken = new RobynLaunchToken(
+            "Guarded",
+            "GRD",
+            address(this),
+            SUPPLY,
+            address(this),
+            assets,
+            "ipfs://bafkreif2akiscaildcwr6zeux4w6i2s5kmibuf6j4jvcrbozme2q"
+        );
         guardedToken.sealExclusions(new address[](0));
         maliciousReward.mint(address(this), 1_000);
         maliciousReward.approve(address(guardedToken), 1_000);
@@ -574,8 +581,15 @@ contract RobynProtocolTest {
             fiveRewards[i] = new ProtocolMockERC20("Reference", "REF");
             assets[i] = address(fiveRewards[i]);
         }
-        RobynLaunchToken five =
-            new RobynLaunchToken("Five", "FIVE", address(this), SUPPLY, address(this), assets);
+        RobynLaunchToken five = new RobynLaunchToken(
+            "Five",
+            "FIVE",
+            address(this),
+            SUPPLY,
+            address(this),
+            assets,
+            "ipfs://bafkreif2akiscaildcwr6zeux4w6i2s5kmibuf6j4jvcrbozme2q"
+        );
         five.sealExclusions(new address[](0));
         for (uint256 i; i < 5; ++i) {
             fiveRewards[i].mint(address(this), 100);

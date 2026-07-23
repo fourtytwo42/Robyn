@@ -76,7 +76,7 @@ const marketFactoryAbi = [
 ] as const;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const atomicLaunchEvent = parseAbiItem(
-  "event AtomicLaunchCreated(uint256 indexed launchId,address indexed creator,address indexed token,address vault,address market,address adapter,address pool,address locker,bytes32 configurationHash,bytes32 launchSaltHash)",
+  "event AtomicLaunchCreated(uint256 indexed launchId,address indexed creator,address indexed token,address vault,address market,address adapter,address pool,address locker,bytes32 configurationHash,bytes32 launchSaltHash,bytes32 metadataUriHash)",
 );
 const marketStateAbi = [
   {
