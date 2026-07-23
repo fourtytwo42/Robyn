@@ -59,8 +59,15 @@ Durable project context lives here. Update this file whenever information should
   Anvil response exceeded viem's 10 MiB response limit. The endpoint now scans
   backward in bounded 250-block windows until it collects the newest 100
   matching logs, preventing response size from growing with chain history. A
-  replacement exact release, live endpoint proof and fresh soak remain in
-  progress. Last verified 2026-07-23.
+  replacement exact release
+  `6493520c66965d631541170feadf3b81fcafa66b` served 100 newest events in
+  168 ms against the accumulated 67,000-plus-log chain with all six PM2
+  restart counters at zero. Nine obsolete, reconstructible exact-release
+  directories were removed after resolving and preserving the active and
+  rollback targets, increasing root-disk headroom from 14.2% to 36%. Their
+  checksummed soak evidence remains outside the release directories. A final
+  memory-only release commit and fresh soak remain in progress. Last verified
+  2026-07-23.
 - Baseline checkpoint: exact release `691e8cf` was clean and healthy; encrypted
   backup `robyn-state-20260723T070046Z` restored 14 tables, eight artifacts and
   chain state in isolation with `liveStateTouched=false`.
