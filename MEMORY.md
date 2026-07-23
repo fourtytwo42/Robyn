@@ -8,11 +8,13 @@ Durable project context lives here. Update this file whenever information should
   branch `codex/ipfs-token-metadata`, promote one exact release, prove backup,
   isolated restore and reboot recovery, then start a fresh one-shot eight-hour
   soak. No Robinhood Testnet rehearsal or broadcast is authorized.
-- Current checkpoint: pushed commit `75f58dd7ea9b1b29329269767731f41edb7ceebc`
-  passes repository, Foundry, security, live-deployment, CID reconciliation,
-  512-wallet economic and reproducible-build gates. In-app-browser acceptance
-  created launch `0x2a482c145e1b64ef58257cd93574bac7f41b4b0a`
-  through the full sanitized upload and single atomic launch flow.
+- Current checkpoint: the immutable IPFS release and its repeatable-read backup
+  correction pass repository, Foundry, security, live-deployment, CID
+  reconciliation, 512-wallet economic, reproducible-build, encrypted backup,
+  isolated restore and reboot-recovery gates. In-app-browser acceptance created
+  launch `0x2a482c145e1b64ef58257cd93574bac7f41b4b0a` through the full sanitized
+  upload and single atomic launch flow. Freeze and promote the final memory
+  checkpoint, then start the fresh one-shot eight-hour soak.
 - Baseline checkpoint: exact release `691e8cf` was clean and healthy; encrypted
   backup `robyn-state-20260723T070046Z` restored 14 tables, eight artifacts and
   chain state in isolation with `liveStateTouched=false`.
@@ -228,11 +230,24 @@ Durable project context lives here. Update this file whenever information should
   ownership drift; `install-lan-edge.sh` now restores both directories for the
   configured worker. The accepted browser launch is bound to metadata CID
   `bafkreif2hh2qb2rm37fw2yxjzoqr2hiq6pv4tzcvy4yuulqys7mf6m5bie`.
-- Validation: Exact commit `75f58dd7...` passed format, lint, strict typecheck,
+- Validation: The final implementation passed format, lint, strict typecheck,
   application tests, Anvil smoke, 72 Foundry tests, optimized builds, gitleaks,
   dependency audit, Slither high-severity gate, live deployment verification,
   25-pin reconciliation, the 512-wallet/32-launch/25,000-action economic
   campaign and two-clean-archive reproducibility comparison.
+- Recovery: The first IPFS-era restore found that `pg_dump` and its table-count
+  manifest used different live snapshots. `backup-state.sh` now exports one
+  repeatable-read PostgreSQL snapshot for both and refuses to back up a commit
+  other than the exact served release. Backup
+  `robyn-state-20260723T163851Z.tar.zst.age` restored 16 tables, 27 artifacts
+  and 25 application CIDv1 pins with chain/API/keeper/browser smoke and
+  `liveStateTouched=false`. The live keeper was paused only while proving the
+  unchanged-live-state assertion, then restored and persisted with zero PM2
+  restarts.
+- Reboot: Native Anvil, PostgreSQL, Redis, MinIO, Kubo, Nginx, Prometheus,
+  Alertmanager, local alert receiver and all six exact-release PM2 processes
+  recovered. Kubo 0.42.0 retained its pins and post-reboot in-app-browser
+  rendering of the accepted token remained verified.
 - Checkpoint: The schema-v5 contracts/data plane/UI are implemented and the
   controlled devnet was reset and reseeded with five token-specific immutable
   metadata documents. All five live token bindings are `robyn-sanitized`, and
