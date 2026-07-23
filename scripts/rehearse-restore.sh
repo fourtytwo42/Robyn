@@ -280,7 +280,7 @@ while IFS=$'\t' read -r expected_cid artifact_sha; do
 done <"${restore}/ipfs/pin-artifacts.tsv"
 curl -fsS -X POST \
   http://127.0.0.1:15001/api/v0/pin/ls?type=recursive |
-  jq -r '.Keys | keys[]' |
+  jq -r '.Keys | keys[] | select(test("^b[a-z2-7]{20,120}$"))' |
   sort >"${work}/restored-pins.txt"
 cmp -s "${restore}/ipfs/pins.txt" "${work}/restored-pins.txt"
 

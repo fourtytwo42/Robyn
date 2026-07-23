@@ -84,8 +84,10 @@ The controlled milestone recovery target is under four hours. The measured clean
 # IPFS recovery policy
 
 Kubo's blockstore is intentionally excluded from encrypted backups. Before
-backup, `scripts/reconcile-ipfs-pins.sh` proves that every recursive local pin
-maps to exact content-addressed bytes in MinIO and an `ipfs_pins` database row.
+backup, `scripts/reconcile-ipfs-pins.sh` proves that every recursive CIDv1
+application pin maps to exact content-addressed bytes in MinIO and an
+`ipfs_pins` database row. Kubo's internal CIDv0 MFS root is not application
+content and is recreated by `ipfs init`.
 The backup contains `ipfs/pins.txt` plus `ipfs/pin-artifacts.tsv`.
 
 The isolated restore starts an empty offline Kubo repository on alternate

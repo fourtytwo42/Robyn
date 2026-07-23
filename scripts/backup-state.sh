@@ -54,7 +54,7 @@ curl -fsS -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"m
 cp "${repo}/deployments/31337.json" "${work}/anvil/deployment.json"
 curl -fsS -X POST \
   "http://127.0.0.1:5001/api/v0/pin/ls?type=recursive" |
-  jq -r '.Keys | keys[]' |
+  jq -r '.Keys | keys[] | select(test("^b[a-z2-7]{20,120}$"))' |
   sort >"${work}/ipfs/pins.txt"
 /usr/local/bin/ipfs version --number >"${work}/ipfs/kubo-version.txt"
 pin_count="$(wc -l <"${work}/ipfs/pins.txt")"

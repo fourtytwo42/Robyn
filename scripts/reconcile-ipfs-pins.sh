@@ -12,7 +12,7 @@ work="$(mktemp -d /var/tmp/robyn-ipfs-reconcile.XXXXXX)"
 trap 'rm -rf -- "${work}"' EXIT
 
 curl -fsS -X POST "${ipfs_api_url}/api/v0/pin/ls?type=recursive" |
-  jq -r '.Keys | keys[]' |
+  jq -r '.Keys | keys[] | select(test("^b[a-z2-7]{20,120}$"))' |
   sort >"${work}/kubo-pins.txt"
 
 while IFS= read -r cid; do
