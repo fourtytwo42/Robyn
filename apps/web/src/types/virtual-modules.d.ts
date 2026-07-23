@@ -57,3 +57,14 @@ declare module "@robyn/network-token-trade" {
     marketPhase: "legacy_fixed" | "bonding" | "graduated";
   }): JSX.Element;
 }
+
+declare module "@robyn/network-wallet-provider" {
+  import type { ReactNode } from "react";
+  export function NetworkWalletProvider(props: {
+    children: ReactNode;
+  }): JSX.Element;
+}
+
+declare module "@robyn/network-wallet-control" {
+  export function NetworkWalletControl(): JSX.Element;
+}

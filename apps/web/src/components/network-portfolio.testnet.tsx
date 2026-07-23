@@ -2,16 +2,10 @@
 
 import Link from "next/link";
 import { TokenCardArt } from "@/components/launchpad-visuals";
-import {
-  createPublicClient,
-  defineChain,
-  formatEther,
-  http,
-  type Address,
-  type EIP1193Provider,
-} from "viem";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { formatEther, type Address } from "viem";
+import { useCallback, useEffect, useState } from "react";
 import type { LaunchList, LaunchRecord } from "@/lib/data-api";
+import { useRobynTestnetWallet } from "./robyn-testnet-wallet";
 
 const tokenAbi = [
   {
@@ -111,53 +105,23 @@ function amount(value: bigint) {
 }
 
 export function NetworkPortfolioView() {
-  const [wallet, setWallet] = useState<Address>();
+  const {
+    account: wallet,
+    publicClient: client,
+    connect,
+  } = useRobynTestnetWallet();
   const [positions, setPositions] = useState<Position[]>();
   const [indexedBlock, setIndexedBlock] = useState<string | null>(null);
   const [status, setStatus] = useState("Reading the connected testnet wallet.");
-  const rpcUrl =
-    process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
-    "https://rpc.testnet.chain.robinhood.com";
-  const client = useMemo(
-    () =>
-      createPublicClient({
-        chain: defineChain({
-          id: 46630,
-          name: "Robinhood Chain Testnet",
-          nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-          rpcUrls: { default: { http: [rpcUrl] } },
-          testnet: true,
-        }),
-        transport: http(rpcUrl),
-      }),
-    [rpcUrl],
-  );
-
   const refresh = useCallback(async () => {
-    const provider = (window as Window & { ethereum?: EIP1193Provider })
-      .ethereum;
-    if (!provider) {
-      setWallet(undefined);
+    if (!wallet || !client) {
       setPositions([]);
-      setStatus("No injected EVM wallet was detected.");
+      setStatus("Connect a testnet wallet to view its portfolio.");
       return;
     }
-    const accounts = await provider.request({ method: "eth_accounts" });
-    const account =
-      Array.isArray(accounts) && typeof accounts[0] === "string"
-        ? (accounts[0] as Address)
-        : undefined;
-    if (!account) {
-      setWallet(undefined);
-      setPositions([]);
-      setStatus("Connect a testnet wallet from the home page first.");
-      return;
-    }
-    setWallet(account);
+    const account = wallet;
     setStatus("Loading held tokens and reward state…");
-    const dataApiUrl =
-      process.env.NEXT_PUBLIC_DATA_API_URL ??
-      "http://" + window.location.hostname + ":3111";
+    const dataApiUrl = process.env.NEXT_PUBLIC_DATA_API_URL ?? "/api";
     const response = await fetch(dataApiUrl + "/launches?limit=100", {
       cache: "no-store",
     });
@@ -244,16 +208,13 @@ export function NetworkPortfolioView() {
       ),
     );
     setStatus("Portfolio reconciled from live contract state.");
-  }, [client]);
+  }, [client, wallet]);
 
   useEffect(() => {
     void refresh().catch(() => {
       setStatus("Portfolio state is temporarily unavailable.");
       setPositions(undefined);
     });
-    window.addEventListener("robyn-testnet-wallet-change", refresh);
-    return () =>
-      window.removeEventListener("robyn-testnet-wallet-change", refresh);
   }, [refresh]);
 
   if (!wallet) {
@@ -261,13 +222,13 @@ export function NetworkPortfolioView() {
       <section className="empty-state portfolio-empty" aria-live="polite">
         <h2>No connected testnet wallet</h2>
         <p>
-          Public discovery remains available. Connect an injected wallet from
-          the testnet console to see its cross-launch positions.
+          Public discovery remains available. Connect any supported self-custody
+          wallet to see its cross-launch positions.
         </p>
         <div className="action-row">
-          <Link className="button primary" href="/#testnet-console">
+          <button className="button primary" type="button" onClick={connect}>
             Connect wallet
-          </Link>
+          </button>
           <Link className="button" href="/discover">
             Browse anonymously
           </Link>

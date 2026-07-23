@@ -38,7 +38,11 @@ pnpm --filter @robyn/api build >/dev/null
 pnpm --filter @robyn/indexer build >/dev/null
 pnpm --filter @robyn/keeper build >/dev/null
 pnpm --filter @robyn/artifacts build >/dev/null
-ROBYN_TESTNET_RPC_URL="$rpc_url" ROBYN_TESTNET_BUILD_OUTPUT="$work/web-build" scripts/build-testnet-candidate.sh "$manifest" >/dev/null
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID="00000000000000000000000000000000" \
+NEXT_PUBLIC_APP_URL="https://testnet-candidate.robyn.invalid" \
+ROBYN_TESTNET_BROWSER_RPC_URL="https://rpc.testnet.chain.robinhood.com" \
+ROBYN_TESTNET_BUILD_OUTPUT="$work/web-build" \
+  scripts/build-testnet-candidate.sh "$manifest" >/dev/null
 rm -rf apps/web/.next
 cp -a "$work/web-build/.next" apps/web/.next
 [[ "$database" == "robyn_testnet_rehearsal" ]] || { echo "Unsafe rehearsal database name" >&2; exit 1; }

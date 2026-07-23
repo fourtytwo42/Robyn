@@ -4,6 +4,11 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Current task: the approved multi-wallet connection release is implemented on branch `codex/multi-wallet`; no Robinhood Testnet transaction was broadcast.
+- Current checkpoint: protected testnet components use one RainbowKit/wagmi connection layer for Create, trading, Portfolio, creator rewards, DAO and governance. Devnet retains the generated/restored session wallet through compile-time aliases.
+- External gate: final WalletConnect/Robinhood Wallet acceptance still requires a real WalletConnect project ID, a stable registered HTTPS origin, and phone approval. The build-only fake project ID proves compilation and responsive modal behavior only.
+- Next step: review/merge the branch, provide the production WalletConnect configuration, then run the documented real-device no-transaction acceptance matrix.
+
 - Current task: implement token-specific creator-native rewards and the unified Portfolio creator dashboard on branch `codex/token-creator-rewards`; public Robinhood Testnet broadcasting remains unauthorized.
 - Current checkpoint: token-specific creator rewards are complete on controlled schema-v4 devnet. Token-page claims, Portfolio individual/Claim All/advanced controls, wallet-gated visibility, LAN/public HTTPS routing, responsive acceptance, full validation and isolated chain-46630 rehearsal pass. No public testnet broadcast occurred.
 - Next step: commit and push the final browser/keeper/deployment hardening checkpoint, then review/merge the branch. Before any public testnet transaction, separately authorize broadcast and reverify funding, DEX manifest, exact commit and protected build.
@@ -22,6 +27,16 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-23 - Multi-wallet connection release
+
+- Added pinned RainbowKit `2.2.11`, wagmi `2.19.5`, TanStack Query `5.101.4` and existing viem `2.55.4` behind testnet-only provider/control aliases. EIP-6963 discovery, WalletConnect, wrong-chain gating, reconnect and one active connector now drive every testnet transaction surface.
+- Robinhood Wallet is presented through standard WalletConnect without an invented deep link. MetaMask, Rabby, Coinbase Wallet, Rainbow, Trust, Safe and Ledger connectors are configured, but compatibility remains conditional on each wallet accepting custom chain `46630`.
+- Account changes/disconnects invalidate the previous SIWE session. Wallet connection and SIWE remain separate. No recovery phrase/private key UI or storage was introduced.
+- Protected builds require a 32-character WalletConnect project ID, HTTPS app URL and public HTTPS browser RPC, add a bounded WalletConnect CSP, and scan selected server/static output for devnet key/faucet markers. Build evidence schema 2 records `rainbowkit-wagmi` and public-RPC validation.
+- Verification: web lint, strict typecheck and 13 unit tests pass. A protected chain-46630 candidate compiled cleanly with build-only metadata; in-app-browser acceptance proved connector grouping, Escape close, no page overflow and usable 390x844 presentation. Expected Reown allowlist errors remain with the fake project/domain and are the explicit external acceptance gate.
+- The dependency audit exposed high findings in Next.js, transitive `ws` and transitive `axios`. Next is patched to `15.5.21`; bounded pnpm overrides select `ws` `8.21.0` only for vulnerable v8 ranges and `axios` `1.18.0` only for the vulnerable range. Production audit now has zero high/critical findings and one moderate finding.
+- The optimized devnet build was restored, both persistent web services restarted, PM2 state saved, and browser verification confirmed the devnet session-wallet control rather than testnet wallet code.
 
 ### 2026-07-23 - Token-specific creator rewards final acceptance
 

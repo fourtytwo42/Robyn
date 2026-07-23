@@ -1,22 +1,18 @@
 "use client";
 
 import {
-  createPublicClient,
-  createWalletClient,
-  custom,
   decodeEventLog,
-  defineChain,
   formatEther,
-  http,
   parseEther,
   type Address,
-  type EIP1193Provider,
   type Hex,
 } from "viem";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Deployment } from "@/lib/deployment";
 import { TokenCardArt } from "@/components/launchpad-visuals";
 import { GuidedLaunchWizard } from "@/components/guided-launch-wizard";
+import { useRobynTestnetWallet } from "./robyn-testnet-wallet";
+import { normalizeWalletError } from "@/lib/wallet-policy";
 
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
 const atomicLaunchCoordinatorAbi = [
@@ -273,7 +269,14 @@ export function NetworkLaunchpadConsole({
   openByDefault?: boolean;
   showRegistry?: boolean;
 }) {
-  const [account, setAccount] = useState<Address>();
+  const {
+    account,
+    publicClient,
+    walletClient,
+    connect,
+    isWrongChain,
+    switchToRobinhoodTestnet,
+  } = useRobynTestnetWallet();
   const [launches, setLaunches] = useState<Launch[]>([]);
   const [name, setName] = useState("My Community");
   const [symbol, setSymbol] = useState("MYCO");
@@ -282,57 +285,8 @@ export function NetworkLaunchpadConsole({
     "Connect and fund a testnet wallet, then launch.",
   );
   const [busy, setBusy] = useState(false);
-  const rpcUrl =
-    process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
-    "https://rpc.testnet.chain.robinhood.com";
-  const chain = useMemo(
-    () =>
-      defineChain({
-        id: 46630,
-        name: "Robinhood Chain Testnet",
-        nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-        rpcUrls: { default: { http: [rpcUrl] } },
-        testnet: true,
-      }),
-    [rpcUrl],
-  );
-  const publicClient = useMemo(
-    () => createPublicClient({ chain, transport: http(rpcUrl) }),
-    [chain, rpcUrl],
-  );
-  const provider = useMemo(
-    () =>
-      typeof window === "undefined"
-        ? undefined
-        : (window as Window & { ethereum?: EIP1193Provider }).ethereum,
-    [],
-  );
-  const walletClient = useMemo(
-    () =>
-      provider && account
-        ? createWalletClient({ account, chain, transport: custom(provider) })
-        : undefined,
-    [account, chain, provider],
-  );
-
-  const loadWallet = useCallback(() => {
-    if (!provider) {
-      setAccount(undefined);
-      return;
-    }
-    void provider
-      .request({ method: "eth_accounts" })
-      .then((accounts) => {
-        const selected =
-          Array.isArray(accounts) && typeof accounts[0] === "string"
-            ? (accounts[0] as Address)
-            : undefined;
-        setAccount(selected);
-      })
-      .catch(() => setAccount(undefined));
-  }, [provider]);
-
   const refresh = useCallback(async () => {
+    if (!publicClient) return;
     const count = await publicClient.readContract({
       address: deployment.contracts.factory,
       abi: factoryAbi,
@@ -406,13 +360,6 @@ export function NetworkLaunchpadConsole({
   ]);
 
   useEffect(() => {
-    loadWallet();
-    window.addEventListener("robyn-testnet-wallet-change", loadWallet);
-    return () =>
-      window.removeEventListener("robyn-testnet-wallet-change", loadWallet);
-  }, [loadWallet]);
-
-  useEffect(() => {
     void refresh().catch(() => setStatus("Unable to load launch registry."));
   }, [refresh]);
 
@@ -421,13 +368,16 @@ export function NetworkLaunchpadConsole({
       request: Parameters<NonNullable<typeof walletClient>["writeContract"]>[0],
     ) => {
       if (!walletClient) throw new Error("Connect a testnet wallet first.");
+      if (isWrongChain)
+        throw new Error("Switch to Robinhood Testnet before launching.");
+      if (!publicClient) throw new Error("Public RPC client is unavailable.");
       const hash = await walletClient.writeContract(request);
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success")
         throw new Error("Transaction reverted.");
       return receipt;
     },
-    [publicClient, walletClient],
+    [isWrongChain, publicClient, walletClient],
   );
 
   async function bindArtwork(token: Address, mediaId?: string) {
@@ -655,26 +605,36 @@ export function NetworkLaunchpadConsole({
           weights={weights}
           setWeights={setWeights}
           status={status}
-          walletHint="Connect a wallet in the testnet panel above first."
-          walletActionLabel={account ? "Refresh wallet" : "Connect wallet"}
+          walletHint={
+            isWrongChain
+              ? "Switch the connected wallet to Robinhood Testnet."
+              : "Connect a supported self-custody wallet."
+          }
+          walletActionLabel={
+            isWrongChain
+              ? "Switch network"
+              : account
+                ? "Refresh wallet"
+                : "Connect wallet"
+          }
           onWalletAction={async () => {
-            if (!provider) throw new Error("No injected wallet was found.");
-            await provider.request({ method: "eth_requestAccounts" });
-            window.dispatchEvent(new Event("robyn-testnet-wallet-change"));
+            try {
+              if (!account) await connect();
+              else if (isWrongChain) await switchToRobinhoodTestnet();
+              else await refresh();
+            } catch (error) {
+              setStatus(normalizeWalletError(error));
+            }
           }}
           assetSymbols={["tmNVDA", "tmSPY", "tmETH"]}
           marketSummary="Seeded testnet mock market"
           signMessage={async (message) => {
-            if (!provider || !account)
+            if (!walletClient || !account || isWrongChain)
               throw new Error("Connect a testnet wallet first.");
-            const request = provider.request as (args: {
-              method: string;
-              params: readonly unknown[];
-            }) => Promise<unknown>;
-            return (await request({
-              method: "personal_sign",
-              params: [message, account],
-            })) as Hex;
+            return walletClient.signMessage({
+              account,
+              message,
+            });
           }}
           onLaunch={createLaunch}
           openByDefault={openByDefault}

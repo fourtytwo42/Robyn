@@ -1,19 +1,10 @@
 "use client";
 
-import {
-  createPublicClient,
-  createWalletClient,
-  custom,
-  defineChain,
-  formatEther,
-  http,
-  parseEther,
-  type Address,
-  type EIP1193Provider,
-  type Hex,
-} from "viem";
-import { useCallback, useMemo, useState } from "react";
+import { formatEther, parseEther, type Hex } from "viem";
+import { useCallback, useEffect, useState } from "react";
 import type { Deployment } from "@/lib/deployment";
+import { useRobynTestnetWallet } from "./robyn-testnet-wallet";
+import { normalizeWalletError } from "@/lib/wallet-policy";
 
 const erc20Abi = [
   {
@@ -122,7 +113,6 @@ const marketAbi = [
   },
 ] as const;
 
-type BrowserEthereum = EIP1193Provider | undefined;
 type AssetState = {
   symbol: string;
   pending: bigint;
@@ -153,54 +143,24 @@ function compact(value: bigint) {
   });
 }
 
-function browserProvider(): BrowserEthereum {
-  if (typeof window === "undefined") return undefined;
-  return (window as Window & { ethereum?: EIP1193Provider }).ethereum;
-}
-
 export function NetworkConsole({ deployment }: { deployment: Deployment }) {
-  const [account, setAccount] = useState<Address>();
+  const {
+    account,
+    publicClient,
+    walletClient,
+    connect: openWalletModal,
+    isWrongChain,
+    switchToRobinhoodTestnet,
+  } = useRobynTestnetWallet();
   const [state, setState] = useState<WalletState>(emptyState);
   const [status, setStatus] = useState(
-    "Connect an injected wallet on Robinhood Chain Testnet.",
+    "Connect a supported self-custody wallet on Robinhood Chain Testnet.",
   );
   const [busy, setBusy] = useState(false);
-  const rpcUrl =
-    process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
-    "https://rpc.testnet.chain.robinhood.com";
-  const chain = useMemo(
-    () =>
-      defineChain({
-        id: 46630,
-        name: "Robinhood Chain Testnet",
-        nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-        rpcUrls: { default: { http: [rpcUrl] } },
-        blockExplorers: {
-          default: {
-            name: "Robinhood Testnet Explorer",
-            url: "https://explorer.testnet.chain.robinhood.com",
-          },
-        },
-        testnet: true,
-      }),
-    [rpcUrl],
-  );
-  const publicClient = useMemo(
-    () => createPublicClient({ chain, transport: http(rpcUrl) }),
-    [chain, rpcUrl],
-  );
-  const provider = browserProvider();
-  const walletClient = useMemo(
-    () =>
-      provider && account
-        ? createWalletClient({ account, chain, transport: custom(provider) })
-        : undefined,
-    [account, chain, provider],
-  );
 
   const refresh = useCallback(
     async (selected = account) => {
-      if (!selected) return;
+      if (!selected || !publicClient) return;
       const [eth, base, token, ...values] = await Promise.all([
         publicClient.getBalance({ address: selected }),
         publicClient.readContract({
@@ -251,58 +211,29 @@ export function NetworkConsole({ deployment }: { deployment: Deployment }) {
     [account, deployment.contracts, publicClient],
   );
 
+  useEffect(() => {
+    if (!account || isWrongChain) {
+      setState(emptyState);
+      return;
+    }
+    void refresh(account);
+  }, [account, isWrongChain, refresh]);
+
   async function connect() {
-    if (!provider)
-      return setStatus(
-        "No injected EVM wallet was detected. Install or enable a wallet, then retry.",
-      );
     setBusy(true);
     try {
-      try {
-        await provider.request({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: "0xb626" }],
-        });
-      } catch {
-        await provider.request({
-          method: "wallet_addEthereumChain",
-          params: [
-            {
-              chainId: "0xb626",
-              chainName: "Robinhood Chain Testnet",
-              nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-              rpcUrls: [rpcUrl],
-              blockExplorerUrls: [
-                "https://explorer.testnet.chain.robinhood.com",
-              ],
-            },
-          ],
-        });
-      }
-      const accounts = await provider.request({
-        method: "eth_requestAccounts",
-      });
-      const selected =
-        Array.isArray(accounts) && typeof accounts[0] === "string"
-          ? (accounts[0] as Address)
-          : undefined;
-      if (!selected) throw new Error("The wallet did not return an account.");
-      setAccount(selected);
-      await refresh(selected);
-      window.dispatchEvent(new Event("robyn-testnet-wallet-change"));
-      setStatus(
-        "Wallet connected. Confirm that it has testnet ETH before sending transactions.",
-      );
+      if (!account) await openWalletModal();
+      else if (isWrongChain) await switchToRobinhoodTestnet();
+      else await refresh(account);
     } catch (error) {
-      setStatus(
-        error instanceof Error ? error.message : "Wallet connection failed.",
-      );
+      setStatus(normalizeWalletError(error));
     } finally {
       setBusy(false);
     }
   }
 
   async function submit(hashPromise: Promise<Hex>) {
+    if (!publicClient) throw new Error("Public RPC client is unavailable.");
     const hash = await hashPromise;
     const receipt = await publicClient.waitForTransactionReceipt({
       hash,
@@ -312,7 +243,13 @@ export function NetworkConsole({ deployment }: { deployment: Deployment }) {
   }
 
   async function execute(label: string, action: () => Promise<void>) {
-    if (!account || !walletClient) return setStatus("Connect a wallet first.");
+    if (!account || !walletClient || isWrongChain) {
+      return setStatus(
+        isWrongChain
+          ? "Switch to Robinhood Testnet before sending a transaction."
+          : "Connect a wallet first.",
+      );
+    }
     setBusy(true);
     setStatus(label);
     try {

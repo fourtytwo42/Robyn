@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MarketTape } from "@/components/market-tape";
+import { NetworkWalletControl } from "@robyn/network-wallet-control";
 
 export function SiteHeader() {
   const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
@@ -30,6 +31,7 @@ export function SiteHeader() {
             <span className="status-dot" aria-hidden="true" />
             {isTestnet ? "Robinhood Testnet" : "Local devnet"}
           </span>
+          <NetworkWalletControl />
           <Link className="button primary header-launch-button" href="/create">
             Launch a token
           </Link>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { NetworkWalletProvider } from "@robyn/network-wallet-provider";
 
 import "./globals.css";
 
@@ -20,7 +21,7 @@ export default function RootLayout({
         <a className="skip-link" href="#main">
           Skip to main content
         </a>
-        {children}
+        <NetworkWalletProvider>{children}</NetworkWalletProvider>
       </body>
     </html>
   );

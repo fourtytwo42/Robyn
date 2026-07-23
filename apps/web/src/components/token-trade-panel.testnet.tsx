@@ -1,26 +1,12 @@
 "use client";
 
-import {
-  createPublicClient,
-  createWalletClient,
-  custom,
-  defineChain,
-  formatEther,
-  http,
-  parseEther,
-  type Address,
-  type EIP1193Provider,
-} from "viem";
+import { formatEther, parseEther, type Address } from "viem";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Deployment } from "@/lib/deployment";
 import { ResponsiveTradePanel } from "@/components/responsive-trade-panel";
-
-declare global {
-  interface Window {
-    ethereum?: EIP1193Provider;
-  }
-}
+import { useRobynTestnetWallet } from "./robyn-testnet-wallet";
+import { normalizeWalletError } from "@/lib/wallet-policy";
 
 const erc20Abi = [
   {
@@ -79,30 +65,19 @@ export function NetworkTokenTradePanel({
   const router = useRouter();
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [input, setInput] = useState("100");
-  const [account, setAccount] = useState<Address>();
+  const {
+    account,
+    publicClient,
+    walletClient,
+    connect,
+    isWrongChain,
+    switchToRobinhoodTestnet,
+  } = useRobynTestnetWallet();
   const [baseBalance, setBaseBalance] = useState(0n);
   const [tokenBalance, setTokenBalance] = useState(0n);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState(
     "Connect an injected testnet wallet to trade.",
-  );
-  const rpcUrl =
-    process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
-    "https://rpc.testnet.chain.robinhood.com";
-  const chain = useMemo(
-    () =>
-      defineChain({
-        id: deployment.chainId,
-        name: "Robinhood Chain Testnet",
-        nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-        rpcUrls: { default: { http: [rpcUrl] } },
-        testnet: true,
-      }),
-    [deployment.chainId, rpcUrl],
-  );
-  const publicClient = useMemo(
-    () => createPublicClient({ chain, transport: http(rpcUrl) }),
-    [chain, rpcUrl],
   );
   const parsed = Number(input);
   const price = Number(formatEther(BigInt(basePerToken)));
@@ -115,6 +90,7 @@ export function NetworkTokenTradePanel({
       : 0;
 
   async function refresh(address: Address) {
+    if (!publicClient) return;
     const [base, held] = await Promise.all([
       publicClient.readContract({
         address: deployment.contracts.baseAsset,
@@ -133,41 +109,36 @@ export function NetworkTokenTradePanel({
     setTokenBalance(held);
   }
 
-  async function connect() {
-    if (!window.ethereum) {
-      setStatus("No injected EVM wallet is available in this browser.");
+  useEffect(() => {
+    if (!account || isWrongChain) {
+      setBaseBalance(0n);
+      setTokenBalance(0n);
       return;
     }
+    void refresh(account).then(() =>
+      setStatus("Wallet connected. Enter an amount to trade."),
+    );
+    // publicClient is stable for the configured chain.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account, isWrongChain, token]);
+
+  async function requestWallet() {
     try {
-      await window.ethereum.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: `0x${deployment.chainId.toString(16)}` }],
-      });
-      const accounts = (await window.ethereum.request({
-        method: "eth_requestAccounts",
-      })) as Address[];
-      if (!accounts[0]) throw new Error("Wallet did not return an account.");
-      setAccount(accounts[0]);
-      await refresh(accounts[0]);
-      setStatus("Wallet connected. Enter an amount to trade.");
+      if (!account) return await connect();
+      if (isWrongChain) return await switchToRobinhoodTestnet();
     } catch (error) {
-      setStatus(
-        error instanceof Error ? error.message : "Wallet connection failed.",
-      );
+      setStatus(normalizeWalletError(error));
     }
   }
 
   async function submit() {
-    if (!account || !window.ethereum) return connect();
+    if (!account || isWrongChain || !walletClient || !publicClient) {
+      return requestWallet();
+    }
     if (!Number.isFinite(parsed) || parsed <= 0) {
       setStatus("Enter an amount greater than zero.");
       return;
     }
-    const walletClient = createWalletClient({
-      account,
-      chain,
-      transport: custom(window.ethereum),
-    });
     setBusy(true);
     try {
       const amount = parseEther(input);
@@ -271,13 +242,17 @@ export function NetworkTokenTradePanel({
       <button
         className="button primary trade-submit"
         disabled={busy}
-        onClick={account ? submit : connect}
+        onClick={
+          account && !isWrongChain && walletClient ? submit : requestWallet
+        }
       >
         {busy
           ? "Submitting…"
-          : account
-            ? `${side === "buy" ? "Buy" : "Sell"} ${symbol}`
-            : "Connect wallet"}
+          : isWrongChain
+            ? "Switch to Robinhood Testnet"
+            : account
+              ? `${side === "buy" ? "Buy" : "Sell"} ${symbol}`
+              : "Connect wallet"}
       </button>
       <p className="transaction-status" role="status">
         {status}

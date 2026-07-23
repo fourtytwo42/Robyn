@@ -11,10 +11,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "next": "15.5.20",
+    "@rainbow-me/rainbowkit": "2.2.11",
+    "@tanstack/react-query": "5.101.4",
+    "@x402/core": "2.19.0",
+    "@x402/evm": "2.19.0",
+    "@x402/extensions": "2.19.0",
+    "@x402/svm": "2.19.0",
+    "next": "15.5.21",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "viem": "2.55.4"
+    "viem": "2.55.4",
+    "wagmi": "2.19.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.6",
@@ -23,7 +30,8 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "eslint": "9.39.5",
-    "eslint-config-next": "15.5.20",
+    "eslint-config-next": "15.5.21",
+    "eslint-plugin-react-hooks": "5.2.0",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "vitest": "4.1.10"

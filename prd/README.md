@@ -30,6 +30,8 @@ The documents distinguish the first shippable product from the eventual native l
 | [08 - Analytics and experimentation](08-analytics-and-experimentation.md) | Product events, dashboards, success metrics, user research and launch experiments |
 | [09 - UI/UX and visual design system](09-ui-ux-visual-design-system.md) | Palette, typography, layout, information hierarchy, components, motion, content and design QA |
 | [10 - Technology stack and repository architecture](10-technology-stack-and-repository-architecture.md) | Monorepo, frontend, backend, contracts, data, testing, observability and deployment baseline |
+| [11 - DAO, governance and protocol fees](11-dao-governance-and-protocol-fees.md) | Governance token, fee policy, rewards and treasury |
+| [12 - Multi-wallet connection](12-multi-wallet-connection.md) | Shared testnet connectors, wallet UX, SIWE invalidation and release configuration |
 
 ## Requirement namespace
 
@@ -52,6 +54,7 @@ The implementation sequence and evidence gates are defined in [Devnet-to-testnet
 | `ANALYTICS-` | Measurement and experimentation |
 | `DESIGN-` | Visual system, interaction patterns and design QA |
 | `STACK-` | Application technologies, repository boundaries and toolchain |
+| `WALLET-` | External wallet connection, chain state and identity-session boundaries |
 
 `MUST`, `SHOULD`, and `MAY` have their usual product-requirement meaning. Any change to a `MUST` requirement requires an entry in the decision register.
 

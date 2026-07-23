@@ -11,6 +11,10 @@ const deploymentPath =
   process.env.ROBYN_DEPLOYMENT_PATH ??
   path.resolve(webRoot, "../../deployments/31337.json");
 const suffix = networkMode === "testnet" ? "testnet" : "devnet";
+const publicRpcUrl =
+  process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
+  "https://rpc.testnet.chain.robinhood.com";
+const rpcOrigin = new URL(publicRpcUrl, "http://localhost").origin;
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -20,7 +24,36 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  async headers() {
+    if (networkMode !== "testnet") return [];
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "connect-src 'self'",
+              rpcOrigin,
+              "https://relay.walletconnect.com",
+              "wss://relay.walletconnect.com",
+              "https://*.walletconnect.com",
+              "wss://*.walletconnect.com",
+              "https://*.walletconnect.org",
+              "wss://*.walletconnect.org",
+            ].join(" "),
+          },
+        ],
+      },
+    ];
+  },
   webpack(config) {
+    if (networkMode === "testnet") {
+      // Optional React Native persistence and pretty-print logging are not
+      // browser capabilities. Their callers provide web-safe fallbacks.
+      config.resolve.alias["@react-native-async-storage/async-storage"] = false;
+      config.resolve.alias["pino-pretty"] = false;
+    }
     config.resolve.alias["@robyn/deployment"] = deploymentPath;
     config.resolve.alias["@robyn/network-console"] = path.resolve(
       webRoot,
@@ -49,6 +82,14 @@ const nextConfig: NextConfig = {
     config.resolve.alias["@robyn/network-token-trade"] = path.resolve(
       webRoot,
       `src/components/token-trade-panel.${suffix}.tsx`,
+    );
+    config.resolve.alias["@robyn/network-wallet-provider"] = path.resolve(
+      webRoot,
+      `src/components/network-wallet-provider.${suffix}.tsx`,
+    );
+    config.resolve.alias["@robyn/network-wallet-control"] = path.resolve(
+      webRoot,
+      `src/components/network-wallet-control.${suffix}.tsx`,
     );
     return config;
   },

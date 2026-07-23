@@ -171,3 +171,12 @@ The protocol manifest is schema version 2 and records the coordinator, helper de
 `scripts/deploy-testnet.sh` deploys the RDAO, Governor, Timelock, guardian, `RobynProtocolFeeRouterV2`, bounded native converter, fresh factory, and DAO coordinator after the separately verified Robyn-controlled Uniswap suite. `scripts/verify-testnet-deployment.sh` requires schema version 4, `per-token-v2` provenance, and the expanded launch fee-account layout. `scripts/rehearse-testnet.sh` proves a bounded native conversion plus token-attributed creator and RDAO claims on isolated chain 46630. These commands do not authorize a public broadcast.
 
 Before any later authorized public transaction, verify the creator-reward endpoint against the frozen manifest, simulate `claimCreatorFees(genesisToken)`, confirm the caller equals the canonical launch creator, and prove the sum of per-token claimable creator balances equals `totalCreatorNativeLiability`.
+# WalletConnect release configuration
+
+Protected web builds require:
+
+- `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`: the 32-character public project ID from WalletConnect/Reown.
+- `NEXT_PUBLIC_APP_URL`: the exact stable HTTPS origin registered for that project.
+- `ROBYN_TESTNET_BROWSER_RPC_URL`: a public HTTPS chain-46630 RPC. Loopback and RFC1918 addresses are rejected.
+
+The ephemeral Quick Tunnel is suitable for visual previews but not final WalletConnect acceptance. Follow [Multi-wallet architecture and operations](multi-wallet-architecture.md) for Robinhood Wallet, installed EIP-6963, reconnect, chain-switch and SIWE invalidation acceptance. These are no-transaction tests unless a separate broadcast authorization is provided.
