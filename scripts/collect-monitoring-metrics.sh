@@ -38,7 +38,19 @@ done
 ipfs_local_pinned="$(psql -d robyn -Atqc "SELECT count(*) FROM ipfs_pins WHERE local_status='pinned'" 2>/dev/null || printf '0')"
 ipfs_local_failed="$(psql -d robyn -Atqc "SELECT count(*) FROM ipfs_pins WHERE local_status='failed'" 2>/dev/null || printf '0')"
 ipfs_remote_failed="$(psql -d robyn -Atqc "SELECT count(*) FROM ipfs_pins WHERE remote_status='failed'" 2>/dev/null || printf '0')"
-ipfs_stale="$(psql -d robyn -Atqc "SELECT count(*) FROM ipfs_pins WHERE (local_status<>'pinned' OR remote_status IN ('queued','pinning','failed')) AND updated_at < now() - interval '15 minutes'" 2>/dev/null || printf '0')"
+remote_pin_configured=0
+if [[ -r /etc/robyn/ipfs.env ]]; then
+  # shellcheck disable=SC1091
+  source /etc/robyn/ipfs.env
+  if [[ -n "${IPFS_PINNING_ENDPOINT:-}" && -n "${IPFS_PINNING_TOKEN:-}" ]]; then
+    remote_pin_configured=1
+  fi
+fi
+if [[ "${remote_pin_configured}" == "1" ]]; then
+  ipfs_stale="$(psql -d robyn -Atqc "SELECT count(*) FROM ipfs_pins WHERE (local_status<>'pinned' OR remote_status IN ('queued','pinning','failed')) AND updated_at < now() - interval '15 minutes'" 2>/dev/null || printf '0')"
+else
+  ipfs_stale="$(psql -d robyn -Atqc "SELECT count(*) FROM ipfs_pins WHERE (local_status<>'pinned' OR remote_status='failed') AND updated_at < now() - interval '15 minutes'" 2>/dev/null || printf '0')"
+fi
 prepared_stale="$(psql -d robyn -Atqc "SELECT count(*) FROM prepared_token_metadata WHERE status='ready' AND created_at < now() - interval '24 hours'" 2>/dev/null || printf '0')"
 for value_name in ipfs_local_pinned ipfs_local_failed ipfs_remote_failed ipfs_stale prepared_stale; do
   value="${!value_name}"
