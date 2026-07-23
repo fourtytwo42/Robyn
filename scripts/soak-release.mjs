@@ -59,6 +59,7 @@ const checksumPath = path.join(outputDir, `soak-${runId}-SHA256SUMS`);
 fs.mkdirSync(outputDir, { recursive: true, mode: 0o700 });
 const lock = fs.openSync(lockPath, "wx", 0o600);
 fs.writeFileSync(lock, `${process.pid}\n${startedAt.toISOString()}\n`);
+fs.writeFileSync(samplesPath, "", { flag: "wx", mode: 0o600 });
 fs.writeFileSync(workloadPath, "", { flag: "wx", mode: 0o600 });
 
 const pm2Binary = path.join(releasePath, "node_modules/.bin/pm2");
@@ -324,24 +325,27 @@ function runWriteWorkload() {
 
 async function runActorReads() {
   const token = manifestLaunches[actorCursor % manifestLaunches.length]?.token;
-  const paths = [
-    "/",
-    "/discover",
-    "/portfolio",
-    "/dao",
-    token ? `/launches/${token}` : "/discover",
-    "/api/launches?limit=20",
-    "/api/dao",
-    "/api/dao/activity",
-    "/api/dao/members",
-    "/api/assets",
+  const requests = [
+    { base: "http://127.0.0.1:3002", path: "/" },
+    { base: "http://127.0.0.1:3002", path: "/discover" },
+    { base: "http://127.0.0.1:3002", path: "/portfolio" },
+    { base: "http://127.0.0.1:3002", path: "/dao" },
+    {
+      base: "http://127.0.0.1:3002",
+      path: token ? `/launches/${token}` : "/discover",
+    },
+    { base: "http://127.0.0.1:3101", path: "/launches?limit=20" },
+    { base: "http://127.0.0.1:3101", path: "/dao" },
+    { base: "http://127.0.0.1:3101", path: "/dao/activity" },
+    { base: "http://127.0.0.1:3101", path: "/dao/members" },
+    { base: "http://127.0.0.1:3101", path: "/assets" },
   ];
   await Promise.all(
-    paths.map(async (requestPath, offset) => {
+    requests.map(async (request, offset) => {
       const actor = (actorCursor + offset) % actorCount;
       const result = await timedFetch(
-        `actor:${requestPath.split("?")[0]}`,
-        `http://127.0.0.1:3002${requestPath}`,
+        `actor:${request.path.split("?")[0]}`,
+        `${request.base}${request.path}`,
         {
           headers: {
             "user-agent": `robyn-soak-actor/${actor}`,
@@ -353,7 +357,7 @@ async function runActorReads() {
       actorRequestCount += 1;
     }),
   );
-  actorCursor = (actorCursor + paths.length) % actorCount;
+  actorCursor = (actorCursor + requests.length) % actorCount;
 }
 
 function percentile(values, percentileValue) {

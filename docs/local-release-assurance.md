@@ -86,6 +86,18 @@ loopback Alertmanager and requires firing plus resolved webhook delivery for
 all declared alert routes. The receiver is append-only and local. No external
 human notification is claimed.
 
+## Browser acceptance
+
+The root-agent acceptance record is
+`docs/assurance/uat-root-2026-07-23.md`. It binds the served Git SHA, wallet,
+viewports, tasks and transaction hashes for holder, creator, trader, DAO and
+mobile workflows.
+
+Independent persona testing remains a separate gate. A subagent run is not
+credited unless that agent can use the Codex in-app browser and returns its own
+wallet, transactions, screenshots, console evidence and observations. Runtime
+unavailability is recorded as blocked, never as a pass.
+
 ## Deferred gates
 
 The following remain explicit future gates: public Robinhood Testnet rehearsal

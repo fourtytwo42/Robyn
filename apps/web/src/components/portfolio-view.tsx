@@ -4,6 +4,7 @@ import Link from "next/link";
 import { TokenCardArt } from "@/components/launchpad-visuals";
 import {
   createPublicClient,
+  createWalletClient,
   defineChain,
   formatEther,
   http,
@@ -49,6 +50,13 @@ const tokenAbi = [
     stateMutability: "view",
     inputs: [{ type: "address" }, { type: "uint256" }],
     outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "claimAll",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
   },
 ] as const;
 
@@ -111,21 +119,24 @@ function amount(value: bigint) {
   });
 }
 
+const devnetChain = defineChain({
+  id: 31337,
+  name: "Robyn Controlled Devnet",
+  nativeCurrency: { name: "Dev Ether", symbol: "DEV", decimals: 18 },
+  rpcUrls: { default: { http: ["/rpc"] } },
+});
+
 export function PortfolioView() {
   const [wallet, setWallet] = useState<Address>();
   const [positions, setPositions] = useState<Position[]>();
   const [indexedBlock, setIndexedBlock] = useState<string | null>(null);
+  const [claimingToken, setClaimingToken] = useState<Address>();
   const [status, setStatus] = useState("Reading this browser session wallet.");
   const rpcUrl = "/rpc";
   const client = useMemo(
     () =>
       createPublicClient({
-        chain: defineChain({
-          id: 31337,
-          name: "Robyn Controlled Devnet",
-          nativeCurrency: { name: "Dev Ether", symbol: "DEV", decimals: 18 },
-          rpcUrls: { default: { http: [rpcUrl] } },
-        }),
+        chain: devnetChain,
         transport: http(rpcUrl),
       }),
     [rpcUrl],
@@ -230,6 +241,48 @@ export function PortfolioView() {
     setStatus("Portfolio reconciled from live contract state.");
   }, [client]);
 
+  const claimRewards = useCallback(
+    async (position: Position) => {
+      const stored = window.sessionStorage.getItem("robyn-devnet-session-key");
+      if (!stored?.startsWith("0x")) {
+        setStatus("The session wallet is no longer available.");
+        return;
+      }
+      const account = privateKeyToAccount(stored as Hex);
+      const token = position.launch.token as Address;
+      setClaimingToken(token);
+      setStatus(`Simulating ${position.launch.symbol} reward claim…`);
+      try {
+        const { request } = await client.simulateContract({
+          account,
+          address: token,
+          abi: tokenAbi,
+          functionName: "claimAll",
+        });
+        const walletClient = createWalletClient({
+          account,
+          chain: devnetChain,
+          transport: http(rpcUrl),
+        });
+        const hash = await walletClient.writeContract(request);
+        setStatus(`Claim submitted: ${hash.slice(0, 12)}…`);
+        const receipt = await client.waitForTransactionReceipt({ hash });
+        if (receipt.status !== "success") throw new Error("Claim reverted.");
+        setStatus(
+          `${position.launch.symbol} basket rewards claimed to the session wallet.`,
+        );
+        await refresh();
+      } catch (error) {
+        setStatus(
+          error instanceof Error ? error.message : "Reward claim failed.",
+        );
+      } finally {
+        setClaimingToken(undefined);
+      }
+    },
+    [client, refresh, rpcUrl],
+  );
+
   useEffect(() => {
     void refresh().catch(() => {
       setStatus("Portfolio state is temporarily unavailable.");
@@ -326,6 +379,18 @@ export function PortfolioView() {
               >
                 Inspect allocation evidence
               </Link>
+              <button
+                className="button primary"
+                disabled={
+                  claimingToken !== undefined ||
+                  !position.rewards.some((reward) => reward.claimable > 0n)
+                }
+                onClick={() => void claimRewards(position)}
+              >
+                {claimingToken === position.launch.token
+                  ? "Claiming…"
+                  : `Claim ${position.launch.symbol} rewards`}
+              </button>
             </article>
           ))}
         </section>

@@ -45,6 +45,24 @@ Durable project context lives here. Update this file whenever information should
   trade/eligible-claim cycles. It must not advance chain time. Preserve its
   checksummed evidence, then remove `robyn-soak.service`; no recurring schedule
   remains.
+- Immutable candidate `b7127d09878c7a9d193fb9264e20882a010b6232` was built,
+  promoted and served with six zero-restart PM2 processes. Root in-app-browser
+  UAT created/funded wallet `0xD673...46E8`, traded graduated ROBYN, atomically
+  launched RASS, traded it through the mobile sheet, exercised DAO views and
+  delegation, and claimed holder rewards with zero browser warnings/errors.
+- UAT found a medium discoverability defect: Portfolio showed claimable holder
+  basket rewards without an action. `PortfolioView` now simulates, submits and
+  confirms a per-launch `claimAll()` and refreshes authoritative state.
+- Three requested independent UAT subagents were blocked because their runtimes
+  did not provide the Codex in-app browser. They produced no wallet, transaction
+  or screenshot evidence. Root serialized UAT does not close that independent
+  gate; do not report it passed without browser-capable independent evidence or
+  an explicit product-owner waiver.
+- The first short soak attempt failed closed on two harness defects: API actor
+  paths were sent to the Next port and an early failure omitted the samples
+  file before checksum generation. Actor API reads now use port 3101 and both
+  JSONL evidence files are created before validation. A two-second regression
+  passed with 100 actors, zero alerts/errors/restarts and checksums.
 - Isolated recovery now builds the backup-recorded commit and restores native
   PostgreSQL, Redis, MinIO and Anvil on alternate paths/ports, then starts web,
   API, indexer, keeper and artifacts for smoke checks. It fingerprints the live
@@ -604,6 +622,15 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-23: Root-agent release browser UAT on immutable candidate `b7127d0`
+  passed discovery, graduated and bonding trading, charts, Portfolio, atomic
+  launch, creator-only accounting, DAO views/delegation, holder claims and
+  `390x844` mobile trading. The wallet and transaction hashes are bound in
+  `docs/assurance/uat-root-2026-07-23.md`; browser warning/error logs were empty.
+  Portfolio claim discoverability was the single medium finding and was fixed.
+  Three independent browser persona agents remain blocked by missing in-app
+  browser capability and are not counted as a pass.
+
 - 2026-07-22: Mobile trading and token-actions checkpoint - web lint, strict typecheck, nine tests and optimized build passed. Public in-app-browser 390x844 acceptance proved a visible fixed Buy/Sell bar, modal sheet/focus entry, body scroll lock, accessible discard confirmation with value preservation, confirmed close/focus return, local watchlist persistence and truthful creator proof. Browser UAT found locale-dependent chart hydration text; explicit en-US/UTC chart and ticker formatting removed the mismatch, and a fresh verification tab had zero warnings/errors.
 
 - 2026-07-22: Market-intelligence checkpoint - API strict typecheck and 16 tests, web lint/strict typecheck and nine tests, both optimized builds, PM2 restart/persistence and live API smoke passed. Public in-app-browser UAT at 390x844 proved first-card visibility, collapsed/expanded filters, no horizontal overflow, nonzero token title width, a single-column market layout, range controls and a keyboard chart tooltip; browser logs contained zero warnings/errors. Five timestamped canonical demo buys now expose nonzero 24h volume and indexed change for every demo token.
@@ -998,8 +1025,12 @@ When sources conflict, use this order:
 ## Open Follow-ups
 
 - Before Robinhood Testnet, independently review the implemented production graduation adapter, immutable LP locker, atomic coordinator and fee router; recheck for an official chain-46630 Uniswap deployment. If none exists, deploy and freeze the separately verified Robyn-controlled test-only DEX manifest before protocol broadcast.
-- Complete and independently verify the now-approved creator metadata subsystem: SIWE-style sessions, sanitized content-addressed images, immutable canonical creator binding, editable profiles, reporting, quarantine/restore and backup coverage. Until that checkpoint lands, the live release still uses curated demo mappings plus a generated fallback.
-- The user explicitly waived the 24-hour soak for this release. Do not represent the shorter validation runs as a completed soak; require a new explicit decision before treating soak evidence as a future release gate.
+- Complete independent browser-persona UAT when subagent runtimes expose the
+  Codex in-app browser, or obtain an explicit product-owner waiver. Root-agent
+  serialized UAT is complete but is not independent.
+- Complete the one explicitly started uninterrupted eight-hour soak. Short
+  harness regressions are not soak completion and must never be described as
+  such.
 - Configure and test a human alert receiver before unattended public-testnet or real-value operation; local Prometheus/Grafana alert state alone is insufficient.
 - Obtain independent protocol/security review before real-value operation. Stateful invariants and malicious callbacks are now implemented, but the internal engineering review is not independent.
 - Ask Vladdy whether the team will provide a repository/license and whether a native multi-asset mode is planned; current deployed contracts do not expose a safe weighted-basket seam.
