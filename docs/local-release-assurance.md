@@ -25,6 +25,14 @@ Unexplained accounting drift stops the program. Restore the baseline in
 isolation, diagnose the defect, add regression coverage, and rerun every
 affected gate.
 
+`scripts/rehearse-restore.sh` decrypts and verifies the selected off-VM backup,
+restores PostgreSQL, Redis, MinIO and Anvil into alternate native ports and
+directories, checks out and builds the recorded commit, starts isolated web,
+API, indexer, keeper and artifact processes, and runs API, contract, keeper and
+browser-HTTP smoke checks. It fingerprints the live release link, deployment,
+chain state and database before and after and fails if any live state changed.
+This remains same-host isolation, not proof of total-host recovery.
+
 ## Chaos runner
 
 Run only from the authoritative VM:

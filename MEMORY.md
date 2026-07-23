@@ -45,6 +45,12 @@ Durable project context lives here. Update this file whenever information should
   trade/eligible-claim cycles. It must not advance chain time. Preserve its
   checksummed evidence, then remove `robyn-soak.service`; no recurring schedule
   remains.
+- Isolated recovery now builds the backup-recorded commit and restores native
+  PostgreSQL, Redis, MinIO and Anvil on alternate paths/ports, then starts web,
+  API, indexer, keeper and artifacts for smoke checks. It fingerprints the live
+  release link, deployment, chain state and non-heartbeat database data before
+  and after and fails on drift. Same-VM isolation still does not prove total
+  host-loss recovery.
 
 - Completed goal: schema-v4 contracts and every mapped product action on the
   controlled local network are validated; deterministic hundreds-user
