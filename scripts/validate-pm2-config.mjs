@@ -57,6 +57,12 @@ for (const app of apps) {
   if (app.autorestart !== true) {
     throw new Error(`${app.name} must have PM2 autorestart enabled`);
   }
+  if (
+    (app.name === "robyn-api" || app.name === "robyn-api-testnet") &&
+    app.env?.NODE_OPTIONS !== "--max-old-space-size=256"
+  ) {
+    throw new Error(`${app.name} must use the reviewed V8 heap limit`);
+  }
 }
 
 for (const name of minimums.keys()) {

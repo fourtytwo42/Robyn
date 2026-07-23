@@ -518,7 +518,7 @@ async function discoveryMetrics(rows: LaunchRow[]) {
 
 const discoveryMetricsCache = new SingleFlightTtlCache<
   Map<string, ReturnType<typeof deriveLaunchAnalytics>>
->(3_000, 16);
+>(3_000, 4);
 
 function cachedDiscoveryMetrics(rows: LaunchRow[]) {
   const key = rows

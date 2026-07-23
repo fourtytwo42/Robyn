@@ -13,10 +13,20 @@ export class SingleFlightTtlCache<Value> {
     }
   }
 
+  get size() {
+    return this.entries.size;
+  }
+
+  private pruneExpired(now: number) {
+    for (const [key, entry] of this.entries) {
+      if (entry.expiresAt <= now) this.entries.delete(key);
+    }
+  }
+
   get(key: string, loader: () => Promise<Value>, now = Date.now()) {
+    this.pruneExpired(now);
     const existing = this.entries.get(key);
     if (existing && existing.expiresAt > now) return existing.promise;
-    if (existing) this.entries.delete(key);
 
     while (this.entries.size >= this.maximumEntries) {
       const oldest = this.entries.keys().next().value;

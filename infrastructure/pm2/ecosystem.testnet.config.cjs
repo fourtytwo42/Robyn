@@ -46,6 +46,7 @@ module.exports = {
       args: path.join(releaseRoot, "apps/api/dist/server.js"),
       env: {
         NODE_ENV: "production",
+        NODE_OPTIONS: "--max-old-space-size=256",
         HOST: "127.0.0.1",
         PORT: "3111",
         CHAIN_ID: "46630",

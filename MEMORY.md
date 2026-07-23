@@ -16,6 +16,13 @@ Durable project context lives here. Update this file whenever information should
   preparation, atomic creation, indexing, immutable binding, bonding,
   graduation, post-graduation trading and eligible claims. Freeze and promote
   this changed harness, then start the fresh one-shot eight-hour soak.
+- Latest soak result: exact release `5844cf333757e6313e7db0a8cd615fd9f5f94389`
+  failed closed after 1h01m when `robyn-api` crossed its 384 MiB PM2 ceiling
+  and restarted. Before failure it completed 1,220 actor requests, 73
+  transactions, three new immutable-IPFS launches and one graduation with zero
+  alerts, accounting failures or endpoint-SLO failures. The replacement must
+  prove the cache-retention fix under a dense multi-launch workload before the
+  eight-hour clock restarts.
 - Baseline checkpoint: exact release `691e8cf` was clean and healthy; encrypted
   backup `robyn-state-20260723T070046Z` restored 14 tables, eight artifacts and
   chain state in isolation with `liveStateTouched=false`.
@@ -211,6 +218,32 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-23 - Realistic-soak API memory correction
+
+- Context: The first realistic eight-hour soak failed after 3,710 seconds when
+  `robyn-api` RSS reached 415,289,344 bytes against its 402,653,184-byte PM2
+  ceiling. API RSS rose from 180 MiB to 396 MiB as three launches were added.
+- Cause: `SingleFlightTtlCache` removed an expired value only when that same key
+  was requested again. Each newly indexed launch changed the discovery key, so
+  expired generations retained complete decoded-log analytics projections.
+- Decision: Prune every expired cache entry before each access, reduce the
+  discovery analytics cache from 16 to four entries, and set a reviewed
+  256-MiB V8 old-space limit inside the existing 384-MiB API process budget so
+  garbage collection occurs before the external PM2 kill threshold.
+- Files: `apps/api/src/single-flight-cache.ts`,
+  `apps/api/test/single-flight-cache.test.ts`, `apps/api/src/server.ts`,
+  `infrastructure/pm2/ecosystem.config.cjs`,
+  `infrastructure/pm2/ecosystem.testnet.config.cjs`,
+  `scripts/validate-pm2-config.mjs`.
+- Tests: 37 API tests pass, including two new cache-generation regressions;
+  strict API typecheck, PM2 configuration validation, formatting and diff
+  checks pass.
+- Evidence: The invalid soak summary and checksums remain under
+  `/var/lib/robyn/soak/5844cf333757e6313e7db0a8cd615fd9f5f94389/`.
+- Follow-up: Run full gates, commit and push, build/promote a replacement exact
+  release, run a dense multi-launch memory regression, and only then restart
+  the full eight-hour soak.
 
 ### 2026-07-23 - Realistic-use soak workload
 
