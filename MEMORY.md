@@ -74,6 +74,12 @@ Durable project context lives here. Update this file whenever information should
   workload now retries only explicit pre-broadcast nonce-contention errors up
   to five times, records `workloadNonceRetryCount`, and still fails immediately
   on reverts, timeouts, ambiguous submission failures, alerts or restarts.
+- The next 63-transaction dense regression showed that the monitoring rule
+  separately treated every BullMQ `failed`-set entry as a critical terminal
+  failure even when durable `job_audit` correctly said `retrying`. The terminal
+  alert now uses durable `dead_letter` state; BullMQ queue counts remain
+  observable, and safely retrying work escalates through
+  `RobynConversionStale` if it cannot progress.
 - Immutable candidate `b7127d09878c7a9d193fb9264e20882a010b6232` was built,
   promoted and served with six zero-restart PM2 processes. Root in-app-browser
   UAT created/funded wallet `0xD673...46E8`, traded graduated ROBYN, atomically

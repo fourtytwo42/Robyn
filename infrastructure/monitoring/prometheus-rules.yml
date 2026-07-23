@@ -50,7 +50,11 @@ groups:
           description: 'Divergence is {{ $value }} blocks. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#rpc-divergence"
       - alert: RobynDeadLetterOrFailedJob
-        expr: robyn_job_audit_entries{state="dead_letter"} > 0 or robyn_queue_jobs{state="failed"} > 0 or robyn_assurance_drill{alert="RobynDeadLetterOrFailedJob"} == 1
+        # BullMQ's failed set also contains protocol conversions waiting for the
+        # scanner's bounded safe retry. Durable dead_letter state is the
+        # authoritative terminal-failure signal; retrying work is covered by
+        # RobynConversionStale if it cannot make progress.
+        expr: robyn_job_audit_entries{state="dead_letter"} > 0 or robyn_assurance_drill{alert="RobynDeadLetterOrFailedJob"} == 1
         for: 0m
         labels:
           {
