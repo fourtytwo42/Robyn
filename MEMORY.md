@@ -62,6 +62,19 @@ Durable project context lives here. Update this file whenever information should
   after graduation, and otherwise requires bounded nonterminal progress.
 - The repaired verifier passed the exercised schema-v4 devnet at block 1961.
 
+### 2026-07-23 - Large exercised-state restore repair
+
+- Encrypted off-VM backup creation passed for the exercised chain, 14 database
+  tables and eight content-addressed artifacts.
+- Isolated restore initially failed closed because the 6.8 MiB encrypted state
+  contained an Anvil `anvil_dumpState` payload larger than Anvil's default 2
+  MiB JSON-RPC request limit. Direct `--load-state` is not compatible with the
+  encoded dump-state payload.
+- `scripts/rehearse-restore.sh` now starts only the isolated restore Anvil with
+  `--no-request-size-limit`, then uses the canonical `anvil_loadState` RPC.
+  Checksum, decryption, all database row counts, artifact hashes, chain ID and
+  factory bytecode passed; the rehearsal reported `liveStateTouched=false`.
+
 ### 2026-07-23 - Built-browser lifecycle and defect checkpoint
 
 - Codex in-app-browser acceptance against the optimized LAN build completed

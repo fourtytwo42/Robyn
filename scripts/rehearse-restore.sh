@@ -68,7 +68,12 @@ if [[ "${artifact_count}" != "${manifest_artifacts}" ]]; then
   exit 1
 fi
 
-anvil --host 127.0.0.1 --port 18545 --chain-id 31337 --silent >"${work}/anvil.log" 2>&1 &
+anvil \
+  --host 127.0.0.1 \
+  --port 18545 \
+  --chain-id 31337 \
+  --no-request-size-limit \
+  --silent >"${work}/anvil.log" 2>&1 &
 anvil_pid=$!
 for _ in {1..30}; do
   if curl -fsS -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' http://127.0.0.1:18545 >"${work}/chain.json" 2>/dev/null; then
