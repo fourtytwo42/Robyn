@@ -29,7 +29,20 @@ done
 [[ "$(cast chain-id --rpc-url "$rpc_url")" == "46630" ]]
 
 manifest="$work/46630.json"
-ROBYN_TESTNET_RPC_URL="$rpc_url" ROBYN_TESTNET_MANIFEST="$manifest" ROBYN_TESTNET_REHEARSAL=true ROBYN_ALLOW_UNLOCKED_REHEARSAL=true ROBYN_TESTNET_BROADCAST=true scripts/deploy-testnet.sh >/dev/null
+dex_manifest="$work/46630-uniswap-v3.json"
+ROBYN_TESTNET_RPC_URL="$rpc_url" \
+ROBYN_TESTNET_DEX_MANIFEST="$dex_manifest" \
+ROBYN_TESTNET_REHEARSAL=true \
+ROBYN_ALLOW_UNLOCKED_REHEARSAL=true \
+ROBYN_TESTNET_DEX_BROADCAST=true \
+  scripts/deploy-testnet-uniswap-v3.sh >/dev/null
+ROBYN_TESTNET_RPC_URL="$rpc_url" \
+ROBYN_TESTNET_MANIFEST="$manifest" \
+ROBYN_TESTNET_DEX_MANIFEST="$dex_manifest" \
+ROBYN_TESTNET_REHEARSAL=true \
+ROBYN_ALLOW_UNLOCKED_REHEARSAL=true \
+ROBYN_TESTNET_BROADCAST=true \
+  scripts/deploy-testnet.sh >/dev/null
 jq -er '.private_keys[0]' "$work/anvil.json" > "$work/operator.key"
 chmod 600 "$work/operator.key"
 

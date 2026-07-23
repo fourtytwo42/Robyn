@@ -35,6 +35,22 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-23 - Protected testnet stack rehearsal repair
+
+- The schema-v4 protocol-only chain-46630 rehearsal passed, including atomic
+  launch, graduation, post-graduation trading, all three basket conversions,
+  holder claims, bounded native conversion, creator claim, RDAO claim and
+  deployment verification.
+- The first full application-stack rehearsal then failed closed because
+  `scripts/rehearse-testnet-stack.sh` still invoked the protocol deployment
+  without first deploying and supplying the required verified DEX manifest.
+- The stack rehearsal now deploys the pinned Robyn-controlled test-only
+  Uniswap v3 suite first and supplies its manifest to the protocol deployment.
+  The rerun passed with isolated chain 46630, isolated PostgreSQL, protected
+  web build, API, indexer, keeper and artifact services, three keeper
+  conversions, cleanup, and preserved devnet health.
+- No public Robinhood Testnet transaction was broadcast.
+
 ### 2026-07-23 - Built-browser lifecycle and defect checkpoint
 
 - Codex in-app-browser acceptance against the optimized LAN build completed
