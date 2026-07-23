@@ -39,9 +39,18 @@ type PublicProfile = {
 };
 
 async function responseData<T>(response: Response): Promise<T> {
-  const body = (await response.json()) as { data?: T; error?: string };
+  const rawBody = await response.text();
+  let body: { data?: T; error?: string } = {};
+  try {
+    body = JSON.parse(rawBody) as { data?: T; error?: string };
+  } catch {
+    if (!response.ok) {
+      throw new Error(`request_failed_${response.status}`);
+    }
+    throw new Error("invalid_api_response");
+  }
   if (!response.ok || body.data === undefined)
-    throw new Error(body.error ?? "request_failed");
+    throw new Error(body.error ?? `request_failed_${response.status}`);
   return body.data;
 }
 

@@ -23,7 +23,9 @@ if [[ -z "${nginx_worker_user}" ]] || ! id "${nginx_worker_user}" >/dev/null 2>&
 fi
 
 install -d -m 0755 /etc/systemd/system/nginx.service.d
-install -d -o "${nginx_worker_user}" -g root -m 0700 /var/lib/nginx/body
+install -d -o "${nginx_worker_user}" -g root -m 0700 \
+  /var/lib/nginx/body \
+  /var/lib/nginx/proxy
 install -m 0644 "${repo}/infrastructure/nginx/robyn.conf" /etc/nginx/conf.d/robyn.conf
 install -m 0644 "${repo}/infrastructure/systemd/nginx-robyn.conf" /etc/systemd/system/nginx.service.d/robyn.conf
 if [[ -L /etc/nginx/sites-enabled/default ]]; then
