@@ -19,6 +19,7 @@ import {
   type AnalyticsLog,
 } from "./launch-analytics.js";
 import { registerCreatorRoutes } from "./creator-routes.js";
+import { registerDaoRoutes } from "./dao-routes.js";
 
 const app = Fastify({
   logger: { level: process.env.LOG_LEVEL ?? "info" },
@@ -64,9 +65,16 @@ const deployment = JSON.parse(
     "utf8",
   ),
 ) as {
+  deploymentBlock: number;
   contracts: {
     marketFactory: Address;
     legacyMarketFactories?: Address[];
+    daoToken: Address;
+    governor: Address;
+    timelock: Address;
+    guardian: Address;
+    protocolFeeRouter: Address;
+    nativeFeeConverter: Address;
   };
 };
 const zeroAddress = "0x0000000000000000000000000000000000000000";
@@ -1010,6 +1018,7 @@ await registerCreatorRoutes(app, {
   allowedOrigins,
   artifactServiceUrl,
 });
+registerDaoRoutes(app, rpcClient, deployment);
 
 const close = async () => {
   await app.close();

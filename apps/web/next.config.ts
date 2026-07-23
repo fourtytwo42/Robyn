@@ -34,6 +34,10 @@ const nextConfig: NextConfig = {
       webRoot,
       `src/components/network-portfolio.${suffix}.tsx`,
     );
+    config.resolve.alias["@robyn/network-dao"] = path.resolve(
+      webRoot,
+      `src/components/network-dao.${suffix}.tsx`,
+    );
     config.resolve.alias["@robyn/network-token-trade"] = path.resolve(
       webRoot,
       `src/components/token-trade-panel.${suffix}.tsx`,

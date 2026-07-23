@@ -17,6 +17,7 @@ type Manifest = {
     marketFactory: Address;
     legacyMarketFactories?: Address[];
     atomicLaunchCoordinator?: Address;
+    protocolFeeRouter?: Address;
   };
 };
 const manifest = JSON.parse(
@@ -93,6 +94,32 @@ const tokenStateAbi = [
     stateMutability: "view",
     inputs: [],
     outputs: [{ type: "bool" }],
+  },
+] as const;
+const feeRouterStateAbi = [
+  {
+    type: "function",
+    name: "launchAccount",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "creator", type: "address" },
+          { name: "vault", type: "address" },
+          { name: "market", type: "address" },
+          { name: "locker", type: "address" },
+          { name: "pendingCreatorBase", type: "uint256" },
+          { name: "pendingDaoRewardBase", type: "uint256" },
+          { name: "pendingTreasuryBase", type: "uint256" },
+          { name: "cumulativeBaseFees", type: "uint256" },
+          { name: "cumulativeLaunchFeesConverted", type: "uint256" },
+          { name: "cumulativeNativeConverted", type: "uint256" },
+          { name: "registered", type: "bool" },
+        ],
+      },
+    ],
   },
 ] as const;
 
@@ -254,6 +281,23 @@ async function rebuildLaunches(asOfBlock: bigint) {
         }),
       ]);
       if (!seeded || !exclusionsSealed) continue;
+      if (manifest.contracts.protocolFeeRouter) {
+        const feeAccount = await client.readContract({
+          address: manifest.contracts.protocolFeeRouter,
+          abi: feeRouterStateAbi,
+          functionName: "launchAccount",
+          args: [token],
+        });
+        if (
+          !feeAccount.registered ||
+          feeAccount.creator.toLowerCase() !== creator.toLowerCase() ||
+          feeAccount.vault.toLowerCase() !== vault.toLowerCase() ||
+          feeAccount.market.toLowerCase() !== market.toLowerCase() ||
+          feeAccount.locker.toLowerCase() !==
+            String(atomic.args.locker).toLowerCase()
+        )
+          continue;
+      }
     }
     const countLegs = await client.readContract({
       address: vault,
@@ -300,7 +344,11 @@ async function rebuildLaunches(asOfBlock: bigint) {
         JSON.stringify(weights),
         created.toString(),
         asOfBlock.toString(),
-        atomic ? "native-v2-atomic" : "native-v1",
+        atomic && manifest.contracts.protocolFeeRouter
+          ? "native-v3-dao-atomic"
+          : atomic
+            ? "native-v2-atomic"
+            : "native-v1",
       ],
     );
   }

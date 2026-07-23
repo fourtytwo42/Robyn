@@ -24,6 +24,14 @@ declare module "@robyn/network-portfolio" {
   export function NetworkPortfolioView(): JSX.Element;
 }
 
+declare module "@robyn/network-dao" {
+  import type { Deployment } from "@/lib/deployment";
+  export function NetworkDaoView(props: {
+    deployment: Deployment;
+    proposalId?: string;
+  }): JSX.Element;
+}
+
 declare module "@robyn/network-token-trade" {
   import type { Address } from "viem";
   import type { Deployment } from "@/lib/deployment";

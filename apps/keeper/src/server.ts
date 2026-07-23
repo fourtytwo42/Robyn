@@ -16,8 +16,14 @@ import { conversionJobId, isLegExecutable } from "./eligibility.js";
 
 type Manifest = {
   chainId: number;
-  contracts: { factory: Address };
-  market?: { type?: string };
+  contracts: {
+    factory: Address;
+    baseAsset?: Address;
+    wrappedNative?: Address;
+    protocolFeeRouter?: Address;
+    nativeFeeConverter?: Address;
+  };
+  market?: { type?: string; poolFeePips?: number };
 };
 type ConvertJob = {
   kind?: "convert";
@@ -37,9 +43,16 @@ type HarvestJob = {
   locker: Address;
   observedBlock: string;
 };
-type KeeperJob = ConvertJob | HarvestJob;
+type ProtocolConversionJob = {
+  kind: "protocol-native" | "protocol-launch";
+  idempotencyKey: string;
+  token: Address;
+  locker: Address;
+  observedAmount: string;
+};
+type KeeperJob = ConvertJob | HarvestJob | ProtocolConversionJob;
 type KeeperResult = {
-  operation: "convert" | "harvest";
+  operation: "convert" | "harvest" | "protocol-native" | "protocol-launch";
   transactionHash: Hash;
   inputAmount: string;
   launchTokenFees?: string;
@@ -136,6 +149,12 @@ const queue = new Queue<KeeperJob, KeeperResult>(queueName, {
 });
 const { sql } = createDatabase();
 const scanMs = Number(process.env.KEEPER_SCAN_MS ?? "5000");
+const minimumProtocolBase = BigInt(
+  process.env.KEEPER_MINIMUM_PROTOCOL_BASE ?? "10000000000000000",
+);
+const minimumLaunchFees = BigInt(
+  process.env.KEEPER_MINIMUM_LAUNCH_FEES ?? "1000000000000",
+);
 let stopping = false;
 
 const vaultAbi = [
@@ -235,6 +254,20 @@ const positionLockerAbi = [
   { type: "error", name: "EmptyHarvest", inputs: [] },
   {
     type: "function",
+    name: "pendingLaunchTokenFees",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "convertLaunchFees",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "uint256" }, { type: "uint256" }, { type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
     name: "positionBound",
     stateMutability: "view",
     inputs: [],
@@ -246,6 +279,53 @@ const positionLockerAbi = [
     stateMutability: "nonpayable",
     inputs: [],
     outputs: [{ type: "uint256" }, { type: "uint256" }],
+  },
+] as const;
+const protocolFeeRouterAbi = [
+  {
+    type: "function",
+    name: "launchAccount",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "creator", type: "address" },
+          { name: "vault", type: "address" },
+          { name: "market", type: "address" },
+          { name: "locker", type: "address" },
+          { name: "pendingCreatorBase", type: "uint256" },
+          { name: "pendingDaoRewardBase", type: "uint256" },
+          { name: "pendingTreasuryBase", type: "uint256" },
+          { name: "cumulativeBaseFees", type: "uint256" },
+          { name: "cumulativeLaunchFeesConverted", type: "uint256" },
+          { name: "cumulativeNativeConverted", type: "uint256" },
+          { name: "registered", type: "bool" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "convertPendingToNative",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "address" }, { type: "uint256" }, { type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+const nativeConverterAbi = [
+  {
+    type: "function",
+    name: "minimumSafeOutput",
+    stateMutability: "nonpayable",
+    inputs: [
+      { type: "address" },
+      { type: "address" },
+      { type: "uint24" },
+      { type: "uint256" },
+    ],
+    outputs: [{ type: "uint256" }],
   },
 ] as const;
 
@@ -324,6 +404,12 @@ async function scan() {
     if (manifest.market?.type === "uniswap-v3-bonding-curve-v1") {
       await enqueueHarvest(launch);
     }
+    if (
+      manifest.contracts.protocolFeeRouter &&
+      manifest.contracts.nativeFeeConverter
+    ) {
+      await enqueueProtocolConversions(launch);
+    }
     const count = await publicClient.readContract({
       address: launch.vault,
       abi: vaultAbi,
@@ -364,6 +450,90 @@ async function scan() {
     }
   }
   await heartbeat();
+}
+
+async function safeMinimum(
+  tokenIn: Address,
+  tokenOut: Address,
+  amount: bigint,
+) {
+  const converter = manifest.contracts.nativeFeeConverter;
+  const fee = manifest.market?.poolFeePips;
+  if (!converter || !fee)
+    throw new Error("Protocol converter configuration is missing");
+  const simulation = await publicClient.simulateContract({
+    address: converter,
+    abi: nativeConverterAbi,
+    functionName: "minimumSafeOutput",
+    args: [tokenIn, tokenOut, fee, amount],
+    account: operator,
+  });
+  return simulation.result;
+}
+
+async function enqueueProtocolConversions(launch: {
+  token: Address;
+  vault: Address;
+  market: Address;
+}) {
+  const router = manifest.contracts.protocolFeeRouter;
+  const base = manifest.contracts.baseAsset;
+  const wrappedNative = manifest.contracts.wrappedNative;
+  if (!router || !base || !wrappedNative) return;
+  const account = await publicClient.readContract({
+    address: router,
+    abi: protocolFeeRouterAbi,
+    functionName: "launchAccount",
+    args: [launch.token],
+  });
+  if (!account.registered) return;
+  const nativePending =
+    account.pendingCreatorBase +
+    account.pendingDaoRewardBase +
+    account.pendingTreasuryBase;
+  if (nativePending >= minimumProtocolBase) {
+    try {
+      await safeMinimum(base, wrappedNative, nativePending);
+      const key = `protocol-native-${launch.token.toLowerCase()}-${nativePending}`;
+      const payload: ProtocolConversionJob = {
+        kind: "protocol-native",
+        idempotencyKey: key,
+        token: launch.token,
+        locker: account.locker,
+        observedAmount: nativePending.toString(),
+      };
+      if (!(await queue.getJob(key))) {
+        await audit(key, "queued", 0, payload);
+        await queue.add("convert-protocol-native", payload, { jobId: key });
+      }
+    } catch {
+      // A fresh or unsafe TWAP remains queued onchain for the next scan.
+    }
+  }
+  const pendingLaunch = await publicClient.readContract({
+    address: account.locker,
+    abi: positionLockerAbi,
+    functionName: "pendingLaunchTokenFees",
+  });
+  if (pendingLaunch >= minimumLaunchFees) {
+    try {
+      await safeMinimum(launch.token, base, pendingLaunch);
+      const key = `protocol-launch-${account.locker.toLowerCase()}-${pendingLaunch}`;
+      const payload: ProtocolConversionJob = {
+        kind: "protocol-launch",
+        idempotencyKey: key,
+        token: launch.token,
+        locker: account.locker,
+        observedAmount: pendingLaunch.toString(),
+      };
+      if (!(await queue.getJob(key))) {
+        await audit(key, "queued", 0, payload);
+        await queue.add("convert-launch-fees", payload, { jobId: key });
+      }
+    } catch {
+      // Unsafe liquidity or TWAP data deliberately leaves fees for retry.
+    }
+  }
 }
 
 async function enqueueHarvest(launch: {
@@ -532,11 +702,108 @@ async function processHarvest(
   };
 }
 
+async function processProtocolConversion(
+  job: Job<ProtocolConversionJob, KeeperResult>,
+): Promise<KeeperResult> {
+  await audit(
+    job.data.idempotencyKey,
+    "active",
+    job.attemptsMade + 1,
+    job.data,
+  );
+  const router = manifest.contracts.protocolFeeRouter;
+  const base = manifest.contracts.baseAsset;
+  const wrappedNative = manifest.contracts.wrappedNative;
+  if (!router || !base || !wrappedNative)
+    throw new Error("Protocol conversion configuration is missing");
+  const block = await publicClient.getBlock();
+  const deadline = block.timestamp + 300n;
+  if (job.data.kind === "protocol-launch") {
+    const pending = await publicClient.readContract({
+      address: job.data.locker,
+      abi: positionLockerAbi,
+      functionName: "pendingLaunchTokenFees",
+    });
+    if (pending < minimumLaunchFees)
+      return {
+        operation: "protocol-launch",
+        transactionHash: ("0x" + "0".repeat(64)) as Hash,
+        inputAmount: "0",
+      };
+    const minimum = await safeMinimum(job.data.token, base, pending);
+    const simulation = await publicClient.simulateContract({
+      address: job.data.locker,
+      abi: positionLockerAbi,
+      functionName: "convertLaunchFees",
+      args: [pending, minimum, deadline],
+      account: operator,
+    });
+    const transactionHash = await walletClient.writeContract(
+      simulation.request,
+    );
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: transactionHash,
+      timeout: 30_000,
+    });
+    if (receipt.status !== "success")
+      throw new Error("Launch fee conversion reverted");
+    return {
+      operation: "protocol-launch",
+      transactionHash,
+      inputAmount: pending.toString(),
+    };
+  }
+  const feeAccount = await publicClient.readContract({
+    address: router,
+    abi: protocolFeeRouterAbi,
+    functionName: "launchAccount",
+    args: [job.data.token],
+  });
+  const pending =
+    feeAccount.pendingCreatorBase +
+    feeAccount.pendingDaoRewardBase +
+    feeAccount.pendingTreasuryBase;
+  if (pending < minimumProtocolBase)
+    return {
+      operation: "protocol-native",
+      transactionHash: ("0x" + "0".repeat(64)) as Hash,
+      inputAmount: "0",
+    };
+  const minimum = await safeMinimum(base, wrappedNative, pending);
+  const simulation = await publicClient.simulateContract({
+    address: router,
+    abi: protocolFeeRouterAbi,
+    functionName: "convertPendingToNative",
+    args: [job.data.token, minimum, deadline],
+    account: operator,
+  });
+  const transactionHash = await walletClient.writeContract(simulation.request);
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash: transactionHash,
+    timeout: 30_000,
+  });
+  if (receipt.status !== "success")
+    throw new Error("Protocol native conversion reverted");
+  return {
+    operation: "protocol-native",
+    transactionHash,
+    inputAmount: pending.toString(),
+  };
+}
+
 async function processKeeperJob(
   job: Job<KeeperJob, KeeperResult>,
 ): Promise<KeeperResult> {
   if (job.data.kind === "harvest") {
     return processHarvest(job as Job<HarvestJob, KeeperResult>);
+  }
+  if (
+    job.data.kind === "protocol-native" ||
+    job.data.kind === "protocol-launch"
+  ) {
+    return processProtocolConversion(
+      job as Job<ProtocolConversionJob, KeeperResult>,
+    );
   }
   return processConversion(job as Job<ConvertJob, KeeperResult>);
 }

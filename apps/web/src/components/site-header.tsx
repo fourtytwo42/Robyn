@@ -22,6 +22,7 @@ export function SiteHeader() {
         <nav className="site-nav" aria-label="Primary navigation">
           <Link href="/discover">Markets</Link>
           <Link href="/portfolio">Portfolio</Link>
+          <Link href="/dao">DAO</Link>
           <Link href="/create">Create</Link>
         </nav>
         <div className="header-actions">

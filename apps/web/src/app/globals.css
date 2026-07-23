@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./dao.css";
 
 :root {
   color-scheme: dark;

@@ -5,7 +5,7 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - Current task: implementing the approved RDAO governance and immutable 50/25/20/5 protocol-fee release on branch `codex/dao-governance-fees`; public testnet broadcasting remains unauthorized.
-- Current checkpoint: fixed-supply `RobynDaoToken`, timestamp-based `RobynGovernor`, immutable fee router, TWAP/price-impact guarded native converter, fee-aware market/locker bindings, and fresh v3 market factory/coordinator compile. New fee and governance lifecycle tests pass; deployment/app integration remains in progress.
+- Current checkpoint: the fixed-supply RDAO/governance/fee stack, schema-v3 deployment/verifier, DAO-aware indexer/API, permissionless conversion keeper jobs, and responsive `/dao` plus proposal interfaces compile and pass targeted tests. Persistent chain reset, demo reseed, browser acceptance, docs, and testnet manifest freeze remain.
 - Deployment checkpoint: schema-v3 local deployment now creates and seeds WETH/base conversion liquidity, deploys RDAO/Governor/Timelock/router/converter, binds v3 launch contracts, seals reward exclusions, assigns/renounces timelock roles, creates genesis atomically, and passes the expanded verifier on an isolated chain-31337 rehearsal.
 - Economic invariant: every collectible fee allocates 50% to the launch basket, 25% to creator native claims, 20% to RDAO-holder native claims, and 5% to the timelock treasury. Existing launch splits and baskets are immutable.
 - DAO decisions: RDAO is fully transferable and fixed at 1B; token balance controls instant native rewards, delegated checkpoints control votes; 1-day delay, 3-day vote, 2-day timelock, 10% quorum, 1% proposal threshold; guardian may pause conversion and cancel queued operations only.
@@ -28,6 +28,14 @@ Durable project context lives here. Update this file whenever information should
 - Verification: the full pre-existing Foundry suite remains green. New tests prove 50/25/20/5 conservation, treasury reward exclusion, transfer-aware claims, creator claims, launch-token fee conversion, fixed supply, and the complete propose/vote/queue/timelock-execute lifecycle.
 - Follow-up: integrate deployment scripts/manifests, add v3 atomic fixture coverage, index DAO/fee events, build the DAO UI, reset/reseed local chain, and run browser acceptance.
 - Deployment rehearsal: `deploy-devnet-protocol.sh` and `verify-devnet-deployment.sh` passed from a fresh isolated Anvil chain through schema-v3 block 49. The controlled persistent devnet has not yet been reset; application/indexer compatibility must land first.
+
+### 2026-07-22 - DAO application and automation checkpoint
+
+- API: `/dao`, `/dao/proposals`, proposal detail, members, and activity read authoritative RDAO, Governor, Timelock, fee-router, treasury, proposal/vote, and per-launch fee state from contracts and logs.
+- Indexer: schema-v3 launches are exposed only when the coordinator event, factory mappings, seeded market, sealed exclusions, and fee-router creator/vault/market/locker registration all agree.
+- Keeper: permissionless jobs now harvest LP fees, retry unsafe launch-token-to-base conversion, and retry queued base-to-native conversion using the converter's TWAP and quoter-enforced safe minimum. Default batch floors are configurable through `KEEPER_MINIMUM_PROTOCOL_BASE` and `KEEPER_MINIMUM_LAUNCH_FEES`.
+- Web: `/dao` provides Overview, Rewards, Governance, Treasury, Members, and Activity views; `/dao/proposals/[id]` selects an onchain proposal. Controls simulate then claim, claim-to, delegate, propose, vote, queue, and execute. Devnet and protected-testnet wallet adapters remain separate so the session private-key path cannot enter testnet bundles.
+- Verification: API tests (28), keeper tests (4), API/indexer/keeper/web strict typechecks, keeper/web lint, and optimized devnet web build pass. Persistent services still point to schema-v2 until the intentional reset/reseed checkpoint.
 
 ### 2026-07-22 - Atomic app, indexer, and chain-46630 rehearsal
 
