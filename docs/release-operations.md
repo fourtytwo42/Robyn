@@ -64,13 +64,29 @@ explicit command above. Its eight-hour run is bound to the selected release and
 uses 100 stable actor identities for mixed market, portfolio, DAO, asset and
 token reads. Every ten samples it performs bounded real buys/sells and any
 currently eligible holder, creator and RDAO claims; the permissionless keeper
-continues conversions. It fails if the symlink changes, an app leaves that
-immutable directory, a process restarts, health or onchain conservation fails,
-indexed state moves backward, an alert fires, p95 exceeds 500 ms, resource
-floors are crossed or RSS grows beyond the bounded allowance. Thirty-second
-samples, transaction hashes, the final summary and SHA-256 evidence are mode
-`0600` under `/var/lib/robyn/soak/<release-id>/`. A shortened run validates the
-harness only and never satisfies the release gate.
+continues conversions.
+
+Every four write cycles, one rotating creator persona also completes the real
+launch path: SIWE authentication, sanitized artwork upload, local IPFS pinning,
+immutable ERC-1046 metadata preparation, one atomic launch transaction,
+receipt-derived token identification, indexer confirmation, one-time metadata
+binding, and live bonding trades. Every second generated token is bought
+through graduation and sold again through the graduated venue. New launches
+join subsequent actor reads and ordinary trade/claim rotation. With the default
+timing this creates at most 23 new launches during eight hours, remains within
+the per-wallet upload rate limit, and exercises both bonding and graduated
+populations. It does not advance chain time, so multi-day Governor lifecycle
+completion remains covered by deterministic contract/browser tests rather than
+fabricated during the soak.
+
+The run fails if the symlink changes, an app leaves that immutable directory, a
+process restarts, health or onchain conservation fails, indexed state moves
+backward, an alert fires, p95 exceeds 500 ms, resource floors are crossed or
+RSS grows beyond the bounded allowance. Thirty-second samples, transaction
+hashes, metadata CIDs, launch-lifecycle events, the final summary and SHA-256
+evidence are mode `0600` under
+`/var/lib/robyn/soak/<release-id>/`. A shortened run validates the harness only
+and never satisfies the release gate.
 
 After the completed evidence is preserved:
 

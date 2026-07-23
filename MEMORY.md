@@ -11,10 +11,11 @@ Durable project context lives here. Update this file whenever information should
 - Current checkpoint: the immutable IPFS release and its repeatable-read backup
   correction pass repository, Foundry, security, live-deployment, CID
   reconciliation, 512-wallet economic, reproducible-build, encrypted backup,
-  isolated restore and reboot-recovery gates. In-app-browser acceptance created
-  launch `0x2a482c145e1b64ef58257cd93574bac7f41b4b0a` through the full sanitized
-  upload and single atomic launch flow. Freeze and promote the final memory
-  checkpoint, then start the fresh one-shot eight-hour soak.
+  isolated restore and reboot-recovery gates. The soak workload now performs
+  real creator authentication, sanitized upload, local IPFS pinning, ERC-1046
+  preparation, atomic creation, indexing, immutable binding, bonding,
+  graduation, post-graduation trading and eligible claims. Freeze and promote
+  this changed harness, then start the fresh one-shot eight-hour soak.
 - Baseline checkpoint: exact release `691e8cf` was clean and healthy; encrypted
   backup `robyn-state-20260723T070046Z` restored 14 tables, eight artifacts and
   chain state in isolation with `liveStateTouched=false`.
@@ -51,10 +52,12 @@ Durable project context lives here. Update this file whenever information should
   protected VM-only input whose SHA-256, but never contents, is recorded in
   evidence. All normalization rules are recorded.
 - Final soak policy is one manually started, non-enabled eight-hour run with
-  30-second samples, 100 stable read actors and bounded five-minute onchain
-  trade/eligible-claim cycles. It must not advance chain time. Preserve its
-  checksummed evidence, then remove `robyn-soak.service`; no recurring schedule
-  remains.
+  30-second samples, 100 stable read actors, bounded five-minute onchain
+  trade/eligible-claim cycles and one full creator launch lifecycle every four
+  write cycles. Every second generated launch graduates and receives a
+  post-graduation trade. The default is capped at 23 new launches. It must not
+  advance chain time. Preserve its checksummed evidence, then remove
+  `robyn-soak.service`; no recurring schedule remains.
 - The first full eight-hour attempt on `49e8013...` was stopped after 3h41m
   and is invalid. It completed 33 workload cycles and 165 transactions but the
   keeper crossed its undersized 256 MiB PM2 cap 11 times. The runner also
@@ -208,6 +211,31 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-23 - Realistic-use soak workload
+
+- Context: The product owner rejected a read-heavy soak and required simulated
+  real creation, trading and related user behavior during the eight-hour run.
+- Decision: Keep 100 stable read personas and five-minute normal trade/claim
+  cycles, then add a full creator lifecycle every four write cycles. Rotate six
+  funded creators, locally pin sanitized artwork and metadata, derive the token
+  only from its atomic receipt, wait for indexing, bind immutable metadata and
+  add the new market to subsequent traffic. Graduate every second created
+  launch and immediately prove post-graduation selling.
+- Files: `scripts/soak-release.mjs`, `scripts/soak-policy.mjs`,
+  `scripts/soak-policy.test.mjs`, `docs/release-operations.md`,
+  `docs/local-release-assurance.md`.
+- Commands/tests: Seven Node policy tests and Prettier pass. A 22-second live
+  rehearsal performed 27 transactions, one authenticated/pinned/atomic launch,
+  one graduation, one post-graduation sell, one profile update, five ordinary
+  write cycles and 60 actor reads with zero errors, alerts or restarts.
+- Result: The default eight-hour workload is bounded to at most 23 new
+  launches, stays below wallet upload-rate limits, records transaction hashes
+  and CIDs, and fails closed on any incomplete lifecycle. The first rehearsal
+  caught quoted Foundry string decoding before binding; the decoder was fixed
+  and the resulting preparation was independently bound to its canonical token.
+- Follow-up: Commit and push, build and promote the exact changed release,
+  verify the served artifact, then explicitly start the fresh eight-hour soak.
 
 ### 2026-07-23 - Immutable IPFS token metadata release in progress
 

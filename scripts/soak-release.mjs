@@ -2,11 +2,15 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import {
   assertProcessContinuity,
   isRetryableNonceError,
+  maximumCreatedLaunches,
+  realisticSoakSymbol,
+  shouldCreateLaunch,
+  shouldGraduateLaunch,
 } from "./soak-policy.mjs";
 
 const durationSeconds = Number(process.env.SOAK_DURATION_SECONDS ?? "28800");
@@ -28,6 +32,14 @@ const maximumEndpointP95Ms = Number(
 const writeEverySamples = Number(
   process.env.SOAK_WRITE_EVERY_SAMPLES ?? "10",
 );
+const launchEveryWrites = Number(
+  process.env.SOAK_LAUNCH_EVERY_WRITES ?? "4",
+);
+const graduateEveryLaunches = Number(
+  process.env.SOAK_GRADUATE_EVERY_LAUNCHES ?? "2",
+);
+const publicApiBase =
+  process.env.SOAK_PUBLIC_API_BASE ?? "http://192.168.50.250:3000/api";
 
 if (
   !Number.isFinite(durationSeconds) ||
@@ -35,7 +47,11 @@ if (
   !Number.isFinite(intervalSeconds) ||
   intervalSeconds <= 0 ||
   !Number.isInteger(writeEverySamples) ||
-  writeEverySamples <= 0
+  writeEverySamples <= 0 ||
+  !Number.isInteger(launchEveryWrites) ||
+  launchEveryWrites <= 0 ||
+  !Number.isInteger(graduateEveryLaunches) ||
+  graduateEveryLaunches <= 0
 ) {
   throw new Error(
     "soak duration, interval and write cadence must be positive numbers",
@@ -77,6 +93,7 @@ const pm2Binary = path.join(releasePath, "node_modules/.bin/pm2");
 const endpointLatencies = new Map();
 const errors = [];
 const manifestLaunches = deployment.demoLaunches ?? [];
+const workloadLaunches = [...manifestLaunches];
 const castBinary = "/home/hendo420/.foundry/bin/cast";
 const operatorRpc = "http://127.0.0.1:8545";
 const maximumUint256 =
@@ -86,6 +103,10 @@ let actorCursor = 0;
 let actorRequestCount = 0;
 let workloadTransactionCount = 0;
 let workloadCycleCount = 0;
+let createdLaunchCount = 0;
+let graduatedLaunchCount = 0;
+let metadataPreparationCount = 0;
+let profileUpdateCount = 0;
 let workloadNonceRetryCount = 0;
 let errorCount = 0;
 let sampleCount = 0;
@@ -160,7 +181,18 @@ function castCall(address, signature, ...args) {
   ).trim();
 }
 
-function castSend(sender, address, signature, ...args) {
+function castStringCall(address, signature, ...args) {
+  const output = castCall(address, signature, ...args);
+  try {
+    const value = JSON.parse(output);
+    if (typeof value === "string") return value;
+  } catch {
+    // Fall through to a fail-closed error with the original output.
+  }
+  throw new Error(`invalid cast string: ${output}`);
+}
+
+function castSendReceipt(sender, address, signature, ...args) {
   let output;
   for (let attempt = 1; attempt <= 5; attempt += 1) {
     try {
@@ -195,7 +227,11 @@ function castSend(sender, address, signature, ...args) {
     throw new Error(`workload transaction reverted: ${signature}`);
   }
   workloadTransactionCount += 1;
-  return receipt.transactionHash;
+  return receipt;
+}
+
+function castSend(sender, address, signature, ...args) {
+  return castSendReceipt(sender, address, signature, ...args).transactionHash;
 }
 
 function firstInteger(output) {
@@ -239,23 +275,226 @@ function appendWorkload(event) {
   );
 }
 
-function runWriteWorkload() {
-  if (manifestLaunches.length === 0) throw new Error("soak has no launch workload");
-  const accounts = unlockedAccounts();
-  if (accounts.length < 7) throw new Error("soak requires seven unlocked devnet accounts");
-  const launch = manifestLaunches[workloadCycleCount % manifestLaunches.length];
-  const trader = accounts[1 + (workloadCycleCount % 6)];
+function castFromUtf8(value) {
+  return execFileSync(castBinary, ["from-utf8", value], {
+    encoding: "utf8",
+    maxBuffer: 1024 * 1024,
+  }).trim();
+}
+
+async function jsonResponse(response, operation) {
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(
+      `${operation} returned HTTP ${response.status}: ${JSON.stringify(body)}`,
+    );
+  }
+  return body;
+}
+
+async function authenticateCreator(address) {
+  const nonceResponse = await fetch(`${publicApiBase}/auth/nonce`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ address }),
+    signal: AbortSignal.timeout(5000),
+  });
+  const nonce = await jsonResponse(nonceResponse, "creator nonce");
+  const message = nonce.data.message;
+  const signature = JSON.parse(
+    execFileSync(
+      castBinary,
+      [
+        "rpc",
+        "eth_sign",
+        address,
+        castFromUtf8(message),
+        "--rpc-url",
+        operatorRpc,
+      ],
+      { encoding: "utf8", maxBuffer: 1024 * 1024 },
+    ),
+  );
+  const verifyResponse = await fetch(`${publicApiBase}/auth/verify`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ message, signature }),
+    signal: AbortSignal.timeout(5000),
+  });
+  await jsonResponse(verifyResponse, "creator verification");
+  const cookie = verifyResponse.headers.get("set-cookie")?.split(";")[0];
+  if (!cookie) throw new Error("creator verification did not set a session cookie");
+  return cookie;
+}
+
+async function authenticatedJson(pathname, cookie, options = {}) {
+  const response = await fetch(`${publicApiBase}${pathname}`, {
+    ...options,
+    headers: {
+      cookie,
+      ...(options.body && !Buffer.isBuffer(options.body)
+        ? { "content-type": "application/json" }
+        : {}),
+      ...options.headers,
+    },
+    signal: AbortSignal.timeout(15000),
+  });
+  return jsonResponse(response, pathname);
+}
+
+async function waitForLaunchIndex(token) {
+  for (let attempt = 1; attempt <= 30; attempt += 1) {
+    const response = await fetch(`http://127.0.0.1:3101/launches/${token}`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (response.ok) return;
+    if (response.status !== 404) {
+      throw new Error(`launch indexing returned HTTP ${response.status}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error(`launch ${token} was not indexed within 15 seconds`);
+}
+
+function coordinatorLaunchFromReceipt(receipt, coordinator) {
+  const log = receipt.logs?.find(
+    (entry) =>
+      entry.address?.toLowerCase() === coordinator.toLowerCase() &&
+      Array.isArray(entry.topics) &&
+      entry.topics.length === 4,
+  );
+  const tokenTopic = log?.topics?.[3];
+  if (!/^0x[0-9a-fA-F]{64}$/.test(tokenTopic ?? "")) {
+    throw new Error("atomic launch receipt is missing the indexed token");
+  }
+  return `0x${tokenTopic.slice(-40)}`;
+}
+
+async function createRealisticLaunch(accounts) {
+  createdLaunchCount += 1;
+  const sequence = createdLaunchCount;
+  const creator = accounts[1 + ((sequence - 1) % 6)];
+  const name = `Robyn Soak ${sequence}`;
+  const symbol = realisticSoakSymbol(sequence);
+  const cookie = await authenticateCreator(creator);
+  const artworkNames = [
+    "token-soak.webp",
+    "token-orbit.webp",
+    "token-signal.webp",
+    "token-lucky.webp",
+    "token-robyn.webp",
+  ];
+  const artworkPath = path.join(
+    releasePath,
+    "apps/web/public/assets/launchpad",
+    artworkNames[(sequence - 1) % artworkNames.length],
+  );
+  const media = await authenticatedJson("/media?purpose=token", cookie, {
+    method: "POST",
+    headers: { "content-type": "image/webp" },
+    body: fs.readFileSync(artworkPath),
+  });
+  const preparation = await authenticatedJson(
+    "/launch-metadata/prepare",
+    cookie,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        mediaId: media.data.media_id,
+        name,
+        symbol,
+        description:
+          "A realistic-use soak launch with immutable reward-basket metadata.",
+      }),
+    },
+  );
+  metadataPreparationCount += 1;
+  const salt = `0x${randomBytes(32).toString("hex")}`;
+  const coordinator = deployment.contracts.atomicLaunchCoordinator;
+  const tuple = `(${name},${symbol},[${deployment.contracts.rewardAssets.join(",")}],[4000,4000,2000],${preparation.data.metadata_uri},${salt})`;
+  const receipt = castSendReceipt(
+    creator,
+    coordinator,
+    "createLaunch((string,string,address[],uint16[],string,bytes32))",
+    tuple,
+  );
+  const token = coordinatorLaunchFromReceipt(receipt, coordinator);
+  const market = castCall(
+    deployment.contracts.marketFactory,
+    "marketByToken(address)(address)",
+    token,
+  );
+  const vault = castCall(
+    deployment.contracts.factory,
+    "vaultByToken(address)(address)",
+    token,
+  );
+  const onchainMetadataUri = castStringCall(token, "tokenURI()(string)");
+  if (onchainMetadataUri !== preparation.data.metadata_uri) {
+    throw new Error(`tokenURI mismatch for realistic launch ${token}`);
+  }
+  await waitForLaunchIndex(token);
+  const binding = await authenticatedJson(`/launches/${token}/metadata`, cookie, {
+    method: "POST",
+    body: JSON.stringify({
+      mediaId: media.data.media_id,
+      preparationId: preparation.data.preparation_id,
+    }),
+  });
+  if (binding.data.verification_status !== "robyn-sanitized") {
+    throw new Error(`metadata binding is not Robyn-sanitized for ${token}`);
+  }
+  if (sequence <= 6) {
+    await authenticatedJson("/profile", cookie, {
+      method: "PUT",
+      body: JSON.stringify({
+        displayName: `Soak Creator ${sequence}`,
+        bio: "Automated realistic-use persona on the controlled development network.",
+      }),
+    });
+    profileUpdateCount += 1;
+  }
+  const launch = {
+    name,
+    symbol,
+    creator,
+    token,
+    market,
+    vault,
+    metadataUri: preparation.data.metadata_uri,
+    metadataCid: preparation.data.metadata_cid,
+    mediaId: media.data.media_id,
+    preparationId: preparation.data.preparation_id,
+    createdBySoak: true,
+  };
+  workloadLaunches.push(launch);
+  appendWorkload({
+    kind: "atomic-launch",
+    sequence,
+    creator,
+    token,
+    market,
+    vault,
+    transaction: receipt.transactionHash,
+    metadataUri: launch.metadataUri,
+    metadataCid: launch.metadataCid,
+    localPinStatus: media.data.local_pin_status,
+    remotePinStatus: media.data.remote_pin_status,
+  });
+  return launch;
+}
+
+function tradeLaunch(launch, trader, buyAmount, sellDivisor = 20n) {
   const baseAsset = deployment.contracts.baseAsset;
   const transactions = [];
   const baseAllowance = firstInteger(
     castCall(baseAsset, "allowance(address,address)(uint256)", trader, launch.market),
   );
-  if (baseAllowance < 10n ** 18n) {
+  if (baseAllowance < buyAmount) {
     transactions.push(
       castSend(trader, baseAsset, "approve(address,uint256)", launch.market, maximumUint256),
     );
   }
-  const buyAmount = 10n ** 18n;
   const buyQuote = castCall(
     launch.market,
     "quoteBuy(uint256)(uint256,uint256)",
@@ -278,7 +517,7 @@ function runWriteWorkload() {
   const tokenBalance = firstInteger(
     castCall(launch.token, "balanceOf(address)(uint256)", trader),
   );
-  const sellAmount = tokenBalance / 20n;
+  const sellAmount = tokenBalance / sellDivisor;
   if (sellAmount > 0n) {
     const tokenAllowance = firstInteger(
       castCall(
@@ -319,6 +558,54 @@ function runWriteWorkload() {
       ),
     );
   }
+  return { transactions, sellAmount };
+}
+
+async function runWriteWorkload() {
+  if (workloadLaunches.length === 0) throw new Error("soak has no launch workload");
+  const accounts = unlockedAccounts();
+  if (accounts.length < 7) throw new Error("soak requires seven unlocked devnet accounts");
+  const nextCycle = workloadCycleCount + 1;
+  let lifecycleLaunch;
+  if (shouldCreateLaunch(nextCycle, launchEveryWrites)) {
+    lifecycleLaunch = await createRealisticLaunch(accounts);
+    const graduate = shouldGraduateLaunch(
+      createdLaunchCount,
+      graduateEveryLaunches,
+    );
+    const lifecycleTrader = accounts[1 + (createdLaunchCount % 6)];
+    const lifecycleTrade = tradeLaunch(
+      lifecycleLaunch,
+      lifecycleTrader,
+      graduate ? 7_000n * 10n ** 18n : 25n * 10n ** 18n,
+      50n,
+    );
+    const graduated =
+      castCall(lifecycleLaunch.market, "graduated()(bool)") === "true";
+    if (graduate && !graduated) {
+      throw new Error(`realistic launch ${lifecycleLaunch.token} did not graduate`);
+    }
+    if (graduated) graduatedLaunchCount += 1;
+    appendWorkload({
+      kind: "launch-lifecycle",
+      sequence: createdLaunchCount,
+      actor: lifecycleTrader,
+      token: lifecycleLaunch.token,
+      market: lifecycleLaunch.market,
+      transactions: lifecycleTrade.transactions,
+      expectedGraduation: graduate,
+      graduated,
+      postTradeSell: lifecycleTrade.sellAmount > 0n,
+    });
+  }
+  const launch = workloadLaunches[workloadCycleCount % workloadLaunches.length];
+  const trader = accounts[1 + (workloadCycleCount % 6)];
+  const buyAmount = 10n ** 18n;
+  const { transactions, sellAmount } = tradeLaunch(
+    launch,
+    trader,
+    buyAmount,
+  );
 
   const rewardCount = Number(
     firstInteger(castCall(launch.token, "rewardAssetCount()(uint256)")),
@@ -395,7 +682,7 @@ function runWriteWorkload() {
 }
 
 async function runActorReads() {
-  const token = manifestLaunches[actorCursor % manifestLaunches.length]?.token;
+  const token = workloadLaunches[actorCursor % workloadLaunches.length]?.token;
   const requests = [
     { base: "http://127.0.0.1:3002", path: "/" },
     { base: "http://127.0.0.1:3002", path: "/discover" },
@@ -608,7 +895,7 @@ try {
     if (aborted) break;
     try {
       if (sampleCount > 0 && sampleCount % writeEverySamples === 0) {
-        runWriteWorkload();
+        await runWriteWorkload();
       }
       finalSample = await collectSample();
       fs.appendFileSync(samplesPath, `${JSON.stringify(finalSample)}\n`);
@@ -683,10 +970,22 @@ try {
     elapsedSeconds,
     intervalSeconds,
     writeEverySamples,
+    launchEveryWrites,
+    graduateEveryLaunches,
+    maximumPlannedCreatedLaunches: maximumCreatedLaunches(
+      durationSeconds,
+      intervalSeconds,
+      writeEverySamples,
+      launchEveryWrites,
+    ),
     sampleCount,
     actorCount,
     actorRequestCount,
     workloadCycleCount,
+    createdLaunchCount,
+    graduatedLaunchCount,
+    metadataPreparationCount,
+    profileUpdateCount,
     workloadTransactionCount,
     workloadNonceRetryCount,
     workloadPath,

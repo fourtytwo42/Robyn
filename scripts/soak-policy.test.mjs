@@ -3,7 +3,11 @@ import test from "node:test";
 import {
   assertProcessContinuity,
   isRetryableNonceError,
+  maximumCreatedLaunches,
   processRestartChanges,
+  realisticSoakSymbol,
+  shouldCreateLaunch,
+  shouldGraduateLaunch,
 } from "./soak-policy.mjs";
 
 const baseline = [
@@ -58,4 +62,29 @@ test("only retries explicit pre-broadcast nonce contention", () => {
   );
   assert.equal(isRetryableNonceError(new Error("execution reverted")), false);
   assert.equal(isRetryableNonceError(new Error("request timed out")), false);
+});
+
+test("schedules bounded realistic launch and graduation lifecycles", () => {
+  assert.equal(shouldCreateLaunch(3, 4), false);
+  assert.equal(shouldCreateLaunch(4, 4), true);
+  assert.equal(shouldCreateLaunch(8, 4), true);
+  assert.equal(shouldGraduateLaunch(1, 2), false);
+  assert.equal(shouldGraduateLaunch(2, 2), true);
+  assert.equal(maximumCreatedLaunches(8 * 60 * 60, 30, 10, 4), 23);
+});
+
+test("creates valid deterministic display symbols without reusing salts", () => {
+  assert.equal(realisticSoakSymbol(1), "R0001");
+  assert.equal(realisticSoakSymbol(35), "R000Z");
+  assert.match(realisticSoakSymbol(36), /^[A-Z0-9]{2,8}$/);
+  assert.throws(() => realisticSoakSymbol(0), /positive integer/);
+});
+
+test("rejects invalid realistic workload policy values", () => {
+  assert.throws(() => shouldCreateLaunch(0, 4), /positive integer/);
+  assert.throws(() => shouldGraduateLaunch(1, 0), /positive integer/);
+  assert.throws(
+    () => maximumCreatedLaunches(0, 30, 10, 4),
+    /must be positive/,
+  );
 });

@@ -20,8 +20,13 @@ The soak samples every 30 seconds, rotates mixed reads across 100 stable actor
 identities, and executes bounded real trading and eligible claim activity every
 five minutes. Every write quotes the canonical market immediately before
 submission and applies a 99% minimum output for both bonding and graduated
-trades. It does not advance chain time. Preserve the checksummed evidence, then
-remove the static soak unit with `scripts/remove-soak-service.sh`.
+trades. Every 20 minutes a rotating creator also authenticates, sanitizes and
+pins artwork, prepares immutable metadata, atomically launches a token, waits
+for canonical indexing, binds its metadata, and trades it. Every second new
+launch graduates and receives a post-graduation sell. The default eight-hour
+policy permits at most 23 created launches. It does not advance chain time.
+Preserve the checksummed evidence, then remove the static soak unit with
+`scripts/remove-soak-service.sh`.
 
 Unexplained accounting drift stops the program. Restore the baseline in
 isolation, diagnose the defect, add regression coverage, and rerun every
