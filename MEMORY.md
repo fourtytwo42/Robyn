@@ -35,8 +35,9 @@ Durable project context lives here. Update this file whenever information should
   source paths embedded by Next/Foundry. Next BUILD_ID is the Git SHA; cache,
   trace telemetry and absolute-path-only Solidity JSON metadata are excluded.
   JSON object keys and Next client-reference objects are canonicalized while
-  arrays preserve order. The gate emits and compares a deterministic CycloneDX
-  1.5 SBOM. Next preview/Server Actions cryptographic values come from a
+  application arrays preserve order; semantically unordered license-inventory
+  arrays are sorted. The gate emits and compares a deterministic CycloneDX 1.5
+  SBOM. Next preview/Server Actions cryptographic values come from a
   protected VM-only input whose SHA-256, but never contents, is recorded in
   evidence. All normalization rules are recorded.
 

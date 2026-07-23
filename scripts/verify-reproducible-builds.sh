@@ -102,7 +102,8 @@ build_one() {
   } | sort -z | xargs -0 sha256sum >"${output}/${side}-operations.sha256"
   jq -cS . "${output}/${side}-dependencies.json" \
     >"${output}/${side}-dependencies.canonical.json"
-  jq -cS . "${output}/${side}-licenses.json" \
+  jq -cS 'walk(if type == "array" then sort_by(tostring) else . end)' \
+    "${output}/${side}-licenses.json" \
     >"${output}/${side}-licenses.canonical.json"
   jq -cS . "${output}/${side}-cyclonedx-sbom.json" \
     >"${output}/${side}-cyclonedx-sbom.canonical.json"
@@ -179,6 +180,7 @@ jq -n \
       "TZ=UTC, LC_ALL=C and SOURCE_DATE_EPOCH=commit timestamp",
       "Next cache and trace telemetry are excluded",
       "JSON and Next client-reference manifests are canonicalized by recursively sorting object keys while preserving array order",
+      "license inventory arrays are sorted because pnpm license traversal order is not semantically meaningful",
       "CycloneDX 1.5 SBOM content is derived from the exact pnpm dependency graph and release commit",
       "contract comparison selects ABI, creation bytecode, runtime bytecode and storage layout and excludes absolute-path metadata"
     ],

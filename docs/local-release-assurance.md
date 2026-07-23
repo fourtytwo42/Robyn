@@ -54,6 +54,8 @@ layouts, operations/migrations, dependency graphs, license inventory and a
 deterministic CycloneDX 1.5 SBOM. JSON object keys and Next client-reference
 objects are canonicalized recursively while array order is preserved. Next
 cache/trace telemetry and absolute-path-only Solidity metadata are excluded.
+License-inventory arrays are sorted because package traversal order has no
+semantic meaning.
 It temporarily serves the second clean build on loopback port 3300 and verifies
 the development-network disclosure. Every normalization is recorded in the
 checksummed summary.
