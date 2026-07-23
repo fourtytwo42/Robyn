@@ -14,6 +14,13 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-22 - Atomic local deployment tooling
+
+- Devnet deployment now creates `RobynLaunchDeployerV2`, `RobynLaunchFactoryV2`, `UniswapV3MarketFactoryV2`, and `RobynAtomicLaunchCoordinator`, performs all one-time bindings, and creates genesis through one coordinator transaction.
+- Demo seeding creates every launch through the coordinator with deterministic local-only salts; the deployment manifest is schema version 2 and records the coordinator and CREATE2 helper.
+- Verification checks coordinator/factory/helper bindings, code presence, coordinator exclusion, zero residual token balance and allowance, seeded markets, and sealed exclusions.
+- An isolated chain-31337 rehearsal deployed and verified the v2 stack, seeded five demos with 28 trades, and passed final verification at block 94. The persistent devnet has not yet been reset because web and indexer integration must land first.
+
 ### 2026-07-22 - Atomic launch contract core
 
 - Contracts: `RobynLaunchFactoryV2` begins inactive and accepts creation/sealing only from its one-time-bound coordinator. `UniswapV3MarketFactoryV2` follows the same pattern. `RobynAtomicLaunchCoordinator` creates the launch, market, pool, inventory seed and five reward exclusions in one reverting transaction.

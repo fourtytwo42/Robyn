@@ -14,6 +14,7 @@ deployer="$(jq -r '.deployer' "$manifest")"
 base="$(jq -r '.contracts.baseAsset' "$manifest")"
 factory="$(jq -r '.contracts.factory' "$manifest")"
 market_factory="$(jq -r '.contracts.marketFactory' "$manifest")"
+coordinator="$(jq -er '.contracts.atomicLaunchCoordinator' "$manifest")"
 nvda="$(jq -r '.contracts.rewardAssets[0]' "$manifest")"
 spy="$(jq -r '.contracts.rewardAssets[1]' "$manifest")"
 eth_reward="$(jq -r '.contracts.rewardAssets[2]' "$manifest")"
@@ -81,19 +82,18 @@ record_launch() {
 
 create_launch() {
   local name="$1" symbol="$2" assets="$3" weights="$4"
-  local id token vault market adapter locker pool
-  send_as "$deployer" "$factory" 'createLaunch(string,string,uint256,address[],uint16[])' "$name" "$symbol" "$initial_supply" "$assets" "$weights"
+  local id token vault market adapter locker pool salt
+  salt="$(cast keccak "robyn-devnet-demo-v2:$symbol")"
+  send_as "$deployer" "$coordinator" \
+    'createLaunch((string,string,address[],uint16[],bytes32))' \
+    "(\"$name\",\"$symbol\",$assets,$weights,$salt)"
   id="$(cast call "$factory" 'launchCount()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')"
   token="$(cast call "$factory" 'launchTokenById(uint256)(address)' "$id" --rpc-url "$rpc_url")"
   vault="$(cast call "$factory" 'vaultByToken(address)(address)' "$token" --rpc-url "$rpc_url")"
-  send_as "$deployer" "$market_factory" 'createMarket(address)' "$token"
   market="$(cast call "$market_factory" 'marketByToken(address)(address)' "$token" --rpc-url "$rpc_url")"
   adapter="$(cast call "$market_factory" 'adapterByToken(address)(address)' "$token" --rpc-url "$rpc_url")"
   pool="$(cast call "$market" 'graduatedPool()(address)' --rpc-url "$rpc_url")"
   locker="$(cast call "$market" 'positionLocker()(address)' --rpc-url "$rpc_url")"
-  send_as "$deployer" "$token" 'approve(address,uint256)' "$market" "$initial_supply"
-  send_as "$deployer" "$market" 'seed(uint256,uint256)' "$initial_supply" 0
-  send_as "$deployer" "$factory" 'sealLaunchExclusions(address,address[])' "$token" "[$market,$adapter,$locker,$pool]"
   printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$token" "$vault" "$market" "$adapter" "$locker" "$pool"
 }
 

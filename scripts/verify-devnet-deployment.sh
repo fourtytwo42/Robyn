@@ -17,7 +17,9 @@ readarray -t addresses < <(
     .contracts.rewardAssets[],
     .contracts.conversionRouter,
     .contracts.factory,
+    (.contracts.launchDeployer // empty),
     .contracts.marketFactory,
+    (.contracts.atomicLaunchCoordinator // empty),
     (.contracts.adapterDeployer // empty),
     (.contracts.marketDeployer // empty),
     .contracts.genesisToken,
@@ -48,12 +50,19 @@ base="$(jq -r '.contracts.baseAsset' "$manifest")"
 router="$(jq -r '.contracts.conversionRouter' "$manifest")"
 factory="$(jq -r '.contracts.factory' "$manifest")"
 market_factory="$(jq -r '.contracts.marketFactory' "$manifest")"
+coordinator="$(jq -er '.contracts.atomicLaunchCoordinator' "$manifest")"
+launch_deployer="$(jq -er '.contracts.launchDeployer' "$manifest")"
 token="$(jq -r '.contracts.genesisToken' "$manifest")"
 vault="$(jq -r '.contracts.genesisVault' "$manifest")"
 market="$(jq -r '.contracts.genesisMarket' "$manifest")"
 
 test "$(cast call "$factory" "chainId()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "31337"
 test "$(cast call "$market_factory" "launchFactory()(address)" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$factory" | tr '[:upper:]' '[:lower:]')"
+test "$(cast call "$factory" 'coordinator()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$coordinator" | tr '[:upper:]' '[:lower:]')"
+test "$(cast call "$market_factory" 'coordinator()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$coordinator" | tr '[:upper:]' '[:lower:]')"
+test "$(cast call "$coordinator" 'launchFactory()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$factory" | tr '[:upper:]' '[:lower:]')"
+test "$(cast call "$coordinator" 'marketFactory()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$market_factory" | tr '[:upper:]' '[:lower:]')"
+test "$(cast call "$launch_deployer" 'controller()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$factory" | tr '[:upper:]' '[:lower:]')"
 resolved_market="$(cast call "$market_factory" "marketByToken(address)(address)" "$token" --rpc-url "$rpc_url")"
 if [[ "$resolved_market" == "0x0000000000000000000000000000000000000000" ]]; then
   while read -r legacy_factory; do
@@ -68,6 +77,9 @@ test "$(cast call "$vault" "baseAsset()(address)" --rpc-url "$rpc_url" | tr '[:u
 test "$(cast call "$vault" "conversionRouter()(address)" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$router" | tr '[:upper:]' '[:lower:]')"
 test "$(cast call "$token" "exclusionsSealed()(bool)" --rpc-url "$rpc_url")" = "true"
 test "$(cast call "$token" "isExcluded(address)(bool)" "$market" --rpc-url "$rpc_url")" = "true"
+test "$(cast call "$token" 'isExcluded(address)(bool)' "$coordinator" --rpc-url "$rpc_url")" = "true"
+test "$(cast call "$token" 'balanceOf(address)(uint256)' "$coordinator" --rpc-url "$rpc_url" | awk '{print $1}')" = "0"
+test "$(cast call "$token" 'allowance(address,address)(uint256)' "$coordinator" "$market" --rpc-url "$rpc_url" | awk '{print $1}')" = "0"
 test "$(cast call "$base" "faucetAmount()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "10000000000000000000000"
 test "$(cast call "$vault" "legCount()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "3"
 pending="$(cast call "$vault" "totalPendingBase()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')"
