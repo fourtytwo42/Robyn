@@ -1,0 +1,160 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.30;
+
+import {RobynAtomicLaunchCoordinator} from "../src/RobynAtomicLaunchCoordinator.sol";
+import {RobynLaunchDeployerV2} from "../src/RobynLaunchDeployerV2.sol";
+import {RobynLaunchFactoryV2} from "../src/RobynLaunchFactoryV2.sol";
+import {RobynLaunchToken} from "../src/RobynLaunchToken.sol";
+import {UniswapV3AdapterDeployer} from "../src/uniswap/UniswapV3AdapterDeployer.sol";
+import {UniswapV3BondingCurveMarket} from "../src/uniswap/UniswapV3BondingCurveMarket.sol";
+import {UniswapV3MarketDeployer} from "../src/uniswap/UniswapV3MarketDeployer.sol";
+import {UniswapV3MarketFactoryV2} from "../src/uniswap/UniswapV3MarketFactoryV2.sol";
+import {
+    GraduationMockConversionRouter,
+    GraduationMockERC20,
+    GraduationMockFactory,
+    GraduationMockPositionManager,
+    GraduationMockQuoter,
+    GraduationMockSwapRouter
+} from "./UniswapGraduation.t.sol";
+
+contract AtomicLaunchCoordinatorTest {
+    uint256 private constant SUPPLY = 2_666 ether;
+    uint24 private constant POOL_FEE = 10_000;
+
+    GraduationMockERC20 private base;
+    GraduationMockERC20 private reward;
+    GraduationMockConversionRouter private conversionRouter;
+    GraduationMockFactory private uniswapFactory;
+    RobynLaunchDeployerV2 private launchDeployer;
+    RobynLaunchFactoryV2 private launchFactory;
+    UniswapV3AdapterDeployer private adapterDeployer;
+    UniswapV3MarketDeployer private marketDeployer;
+    UniswapV3MarketFactoryV2 private marketFactory;
+    RobynAtomicLaunchCoordinator private coordinator;
+
+    function setUp() public {
+        base = new GraduationMockERC20("Mock USD", "mUSD");
+        reward = new GraduationMockERC20("Mock Stock", "mSTOCK");
+        conversionRouter = new GraduationMockConversionRouter();
+        launchDeployer = new RobynLaunchDeployerV2();
+        launchFactory = new RobynLaunchFactoryV2(base, conversionRouter, launchDeployer, 1, 1 days);
+        uniswapFactory = new GraduationMockFactory();
+        GraduationMockPositionManager positionManager = new GraduationMockPositionManager(uniswapFactory);
+        GraduationMockSwapRouter swapRouter = new GraduationMockSwapRouter();
+        GraduationMockQuoter quoter = new GraduationMockQuoter();
+        adapterDeployer = new UniswapV3AdapterDeployer();
+        marketDeployer = new UniswapV3MarketDeployer();
+        UniswapV3BondingCurveMarket.CurveConfig memory curve = UniswapV3BondingCurveMarket.CurveConfig({
+            curveTokenAllocation: 2_000 ether,
+            graduationTokenAllocation: 666 ether,
+            initialVirtualTokenReserve: 3_000 ether,
+            initialVirtualBaseReserve: 333 ether,
+            graduationThresholdBase: 666 ether,
+            curveFeeBps: 100
+        });
+        UniswapV3MarketFactoryV2.FactoryDexConfig memory dex = UniswapV3MarketFactoryV2.FactoryDexConfig({
+            factory: uniswapFactory,
+            positionManager: positionManager,
+            swapRouter: swapRouter,
+            quoter: quoter,
+            poolFee: POOL_FEE,
+            tickLower: -887_200,
+            tickUpper: 887_200,
+            initialBasePerTokenX18: 1 ether,
+            minimumUseBps: 9_900,
+            maximumPriceDeviationBps: 100
+        });
+        marketFactory = new UniswapV3MarketFactoryV2(base, launchFactory, adapterDeployer, marketDeployer, curve, dex);
+        coordinator = new RobynAtomicLaunchCoordinator(launchFactory, marketFactory);
+        launchDeployer.bindController(address(launchFactory));
+        adapterDeployer.bindController(address(marketFactory));
+        marketDeployer.bindController(address(marketFactory));
+        launchFactory.bindCoordinator(address(coordinator));
+        marketFactory.bindCoordinator(address(coordinator));
+    }
+
+    function testAtomicLaunchCreatesSeededCanonicalMarket() public {
+        RobynLaunchFactoryV2.LaunchRequest memory request = _request(bytes32(uint256(1)));
+        (address predictedToken, address predictedVault, bytes32 launchSaltHash) =
+            coordinator.predictLaunchAddresses(address(this), request);
+        (RobynLaunchToken token,, UniswapV3BondingCurveMarket market) = coordinator.createLaunch(request);
+
+        require(address(token) == predictedToken, "token prediction");
+        require(launchFactory.vaultByToken(address(token)) == predictedVault, "vault prediction");
+        require(launchFactory.usedLaunchSalt(launchSaltHash), "salt unused");
+        require(launchFactory.creatorByToken(address(token)) == address(this), "creator");
+        require(marketFactory.marketByToken(address(token)) == address(market), "market mapping");
+        require(market.seeded(), "not seeded");
+        require(token.balanceOf(address(market)) == SUPPLY, "inventory");
+        require(token.balanceOf(address(coordinator)) == 0, "coordinator balance");
+        require(token.allowance(address(coordinator), address(market)) == 0, "allowance");
+        require(token.exclusionsSealed(), "exclusions");
+        require(token.isExcluded(address(market)), "market inclusion");
+        require(token.isExcluded(address(market.graduationAdapter())), "adapter inclusion");
+        require(token.isExcluded(market.graduatedPool()), "pool inclusion");
+        require(token.isExcluded(market.positionLocker()), "locker inclusion");
+        require(token.isExcluded(address(coordinator)), "coordinator inclusion");
+    }
+
+    function testDuplicateSaltRevertsWithoutChangingLaunchCount() public {
+        RobynLaunchFactoryV2.LaunchRequest memory request = _request(bytes32(uint256(2)));
+        coordinator.createLaunch(request);
+        try coordinator.createLaunch(request) {
+            revert("duplicate salt accepted");
+        } catch {}
+        require(launchFactory.launchCount() == 1, "launch count changed");
+    }
+
+    function testPoolPrecreationRevertsTheEntireLaunch() public {
+        RobynLaunchFactoryV2.LaunchRequest memory request = _request(bytes32(uint256(3)));
+        (address predictedToken, address predictedVault, bytes32 launchSaltHash) =
+            coordinator.predictLaunchAddresses(address(this), request);
+        uniswapFactory.createPool(address(base), predictedToken, POOL_FEE);
+
+        try coordinator.createLaunch(request) {
+            revert("squatted pool accepted");
+        } catch {}
+        require(launchFactory.launchCount() == 0, "launch persisted");
+        require(predictedToken.code.length == 0, "token persisted");
+        require(predictedVault.code.length == 0, "vault persisted");
+        require(!launchFactory.usedLaunchSalt(launchSaltHash), "salt persisted");
+        require(marketFactory.marketByToken(predictedToken) == address(0), "market persisted");
+    }
+
+    function testFactoriesRejectDirectCreationAfterBinding() public {
+        RobynLaunchFactoryV2.LaunchRequest memory request = _request(bytes32(uint256(4)));
+        try launchFactory.createLaunchFor(address(this), address(this), SUPPLY, request) {
+            revert("direct launch accepted");
+        } catch {}
+        require(launchFactory.launchCount() == 0, "direct launch persisted");
+    }
+
+    function testDistinctSaltsCreateDistinctConcurrentLaunches() public {
+        (RobynLaunchToken first,,) = coordinator.createLaunch(_request(bytes32(uint256(5))));
+        (RobynLaunchToken second,,) = coordinator.createLaunch(_request(bytes32(uint256(6))));
+        require(address(first) != address(second), "same token");
+        require(launchFactory.launchCount() == 2, "launch count");
+    }
+
+    function testAtomicLaunchStillGraduates() public {
+        (RobynLaunchToken token,, UniswapV3BondingCurveMarket market) =
+            coordinator.createLaunch(_request(bytes32(uint256(7))));
+        base.mint(address(this), 1_000 ether);
+        base.approve(address(market), 1_000 ether);
+        market.buy(1_000 ether, 1);
+        require(market.graduated(), "not graduated");
+        require(token.balanceOf(market.graduatedPool()) != 0, "pool token liquidity");
+        require(base.balanceOf(market.graduatedPool()) != 0, "pool base liquidity");
+    }
+
+    function _request(bytes32 salt) private view returns (RobynLaunchFactoryV2.LaunchRequest memory request) {
+        address[] memory assets = new address[](1);
+        assets[0] = address(reward);
+        uint16[] memory weights = new uint16[](1);
+        weights[0] = 10_000;
+        request = RobynLaunchFactoryV2.LaunchRequest({
+            name: "Atomic Launch", symbol: "ATOM", assets: assets, weights: weights, userSalt: salt
+        });
+    }
+}

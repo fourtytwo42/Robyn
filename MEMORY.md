@@ -6,13 +6,21 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: completed 2026-07-22 — securely persist and fund a dedicated Robinhood Chain Testnet deployer wallet and prove no-broadcast deployment readiness without exposing secrets.
 - Goal completion standard: the encrypted operational wallet and recovery bundle survive isolated restore, owner-only permissions pass, the official chain-46630 balance is sufficient for deployment plus testing, and the workflow is documented and pushed without committing key material.
-- Current task: completed the chain-31337 canonical Uniswap v3 graduation promotion and live in-app-browser acceptance on feature branch `codex/uniswap-auto-graduation`; no public-testnet broadcast is authorized.
-- Last meaningful change: promoted the size-bounded `UniswapV3MarketFactory` architecture, pinned official local Uniswap artifacts, four-address reward exclusions, canonical pool/locker API and UI data, direct pool-swap indexing, and automatic audited keeper fee harvests to the persistent served chain.
-- Last verification: 2026-07-22 all formatting, lint, typecheck, service tests, optimized builds, Anvil smoke, 40 Foundry tests, EIP-170 size gates, and the explicit chain-4663 no-broadcast fork pass. Persistent browser acceptance proved mobile/desktop graduated-market rendering, the guided create dialog, and a confirmed 100 mUSD post-graduation EVID buy from a fresh funded session wallet with zero browser warnings/errors.
-- Next step: independently review the contracts and add an atomic public launch coordinator before public deployment; independently establish canonical chain-46630 DEX provenance before requesting explicit broadcast authorization.
+- Current task: implementing the atomic-launch and Robinhood Testnet Uniswap release on feature branch `codex/uniswap-auto-graduation`; no public-testnet broadcast is authorized.
+- Last meaningful change: added the v2 coordinator-only CREATE2 launch factory, size-bounded launch helper, coordinator-only Uniswap market factory, and one-transaction launch/market/seed/exclusion coordinator.
+- Last verification: 2026-07-22 all 46 Foundry tests pass. New coverage proves predicted addresses, exact supply custody, zero residual coordinator allowance/balance, direct-call rejection, duplicate salt rejection, concurrent launch identity, complete rollback against a pre-created pool, and successful graduation.
+- Next step: integrate the coordinator into local/testnet deployment tooling, web creation, indexer canonicality, manifests, verification, documentation, and served browser acceptance.
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-22 - Atomic launch contract core
+
+- Contracts: `RobynLaunchFactoryV2` begins inactive and accepts creation/sealing only from its one-time-bound coordinator. `UniswapV3MarketFactoryV2` follows the same pattern. `RobynAtomicLaunchCoordinator` creates the launch, market, pool, inventory seed and five reward exclusions in one reverting transaction.
+- Address safety: launch vaults and tokens use creator/configuration/user-salt-bound CREATE2 addresses. The browser must generate a fresh nonzero random salt; reused salts fail closed, and the adapter still rejects any pre-existing canonical pool.
+- Size: `RobynLaunchDeployerV2` owns the CREATE2 creation bytecode and token exclusion authority, leaving `RobynLaunchFactoryV2` at 6,685 bytes with 17,891 bytes of EIP-170 margin. The helper itself is 21,046 bytes.
+- Verification: `forge test --root packages/contracts` passes 46 tests including six new atomic coordinator tests and all existing accounting, malicious-callback, graduation, fork and invariant suites.
+- Follow-up: deployment scripts and application code still use the prior multi-transaction ABI until the remaining release checkpoints are completed and the persistent devnet is intentionally reset.
 
 ### 2026-07-22 - Local canonical Uniswap deployment and automatic fee harvest
 
