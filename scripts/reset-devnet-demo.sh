@@ -34,6 +34,14 @@ cast rpc anvil_setBalance "$operator" \
 
 psql -d robyn -v ON_ERROR_STOP=1 <<'SQL'
 TRUNCATE TABLE
+  media_moderation_audit,
+  media_reports,
+  launch_metadata_bindings,
+  prepared_token_metadata,
+  creator_profiles,
+  media_assets,
+  ipfs_pins,
+  artifacts,
   job_audit_events,
   job_audit,
   service_heartbeats,
@@ -58,16 +66,43 @@ ROBYN_RELEASE_ROOT="$repo_root" node "$pm2_bin" start "$repo_root/infrastructure
 node "$pm2_bin" start "$repo_root/infrastructure/pm2/ecosystem.preview.config.cjs" >/dev/null
 node "$pm2_bin" save --force >/dev/null
 
+services_ready=0
 for _ in $(seq 1 40); do
   if "$repo_root/scripts/verify-devnet-deployment.sh" "$repo_root/deployments/31337.json" >/dev/null 2>&1 && \
     curl -fsS http://127.0.0.1:3101/status >/dev/null 2>&1 && \
     curl -fsS http://127.0.0.1:3103/status >/dev/null 2>&1 && \
     curl -fsS http://127.0.0.1:3003/ >/dev/null 2>&1; then
-    echo "Controlled devnet reset and bonding-only demo seed completed"
+    services_ready=1
+    break
+  fi
+  sleep 2
+done
+
+if [[ "${services_ready}" != "1" ]]; then
+  echo "Reset completed but service verification timed out" >&2
+  exit 1
+fi
+
+"$repo_root/scripts/seed-devnet-creator-metadata.sh"
+"$repo_root/scripts/pin-token-list.sh"
+# The token-list CID is part of schema-v5 and the API loads the manifest once
+# at startup. Rebuild the manifest-consuming web bundle and restart readers.
+corepack pnpm --filter @robyn/web build
+node "$pm2_bin" restart "$repo_root/infrastructure/pm2/ecosystem.config.cjs" \
+  --only robyn-api,robyn-web --update-env >/dev/null
+node "$pm2_bin" save --force >/dev/null
+
+for _ in $(seq 1 40); do
+  if ROBYN_REQUIRE_TOKEN_LIST=1 \
+      "$repo_root/scripts/verify-devnet-deployment.sh" \
+      "$repo_root/deployments/31337.json" >/dev/null 2>&1 && \
+    curl -fsS http://127.0.0.1:3101/token-list/status |
+      jq -e '.data.cid != null' >/dev/null 2>&1; then
+    echo "Controlled devnet reset and immutable-metadata demo seed completed"
     exit 0
   fi
   sleep 2
 done
 
-echo "Reset completed but service verification timed out" >&2
+echo "Immutable metadata reseed verification timed out" >&2
 exit 1

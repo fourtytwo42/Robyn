@@ -216,7 +216,10 @@ jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson b
       kuboVersion: "0.42.0",
       localPolicy: "pinned-no-fetch",
       remotePinRequiredForTestnet: true,
-      fallbackMetadataUri: $fallbackMetadataUri
+      fallbackMetadataUri: $fallbackMetadataUri,
+      tokenListCid: null,
+      tokenListUri: null,
+      tokenListStablePath: "/api/token-list"
     },
     dao: {
       tokenName: "Robyn DAO",

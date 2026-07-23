@@ -60,7 +60,10 @@
     "kuboVersion": "0.42.0",
     "localPolicy": "pinned-no-fetch",
     "remotePinRequiredForTestnet": true,
-    "fallbackMetadataUri": "ipfs://bafkreibys2cv4ijpoedcl7qdbi5u66wuwedwg3lsc6pios3wcyaoyz7cau"
+    "fallbackMetadataUri": "ipfs://bafkreibys2cv4ijpoedcl7qdbi5u66wuwedwg3lsc6pios3wcyaoyz7cau",
+    "tokenListCid": "bafkreihkor6hmeqvoh447svrlpdph7ft7ml25d6vx34ddxhvuygsg4qshe",
+    "tokenListUri": "ipfs://bafkreihkor6hmeqvoh447svrlpdph7ft7ml25d6vx34ddxhvuygsg4qshe",
+    "tokenListStablePath": "/api/token-list"
   },
   "dao": {
     "tokenName": "Robyn DAO",

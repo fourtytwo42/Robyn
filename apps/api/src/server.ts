@@ -55,7 +55,8 @@ if (allowedOrigins.size === 0)
   throw new Error("ROBYN_AUTH_ORIGINS is required");
 const artifactServiceUrl =
   process.env.ROBYN_ARTIFACT_SERVICE_URL ?? "http://127.0.0.1:3200";
-const ipfsApiUrl = process.env.ROBYN_IPFS_API_URL ?? "http://127.0.0.1:5001";
+const ipfsApiUrl =
+  process.env.ROBYN_IPFS_API_URL ?? "http://127.0.0.1:5001";
 const rpcClient = createPublicClient({
   transport: http(
     process.env.ROBYN_OPERATOR_RPC_URL ?? "http://127.0.0.1:8545",
@@ -77,6 +78,11 @@ const deployment = JSON.parse(
     guardian: Address;
     protocolFeeRouter: Address;
     nativeFeeConverter: Address;
+  };
+  ipfsMetadata?: {
+    tokenListCid?: string | null;
+    tokenListUri?: string | null;
+    tokenListStablePath?: string;
   };
 };
 const zeroAddress = "0x0000000000000000000000000000000000000000";
@@ -1041,9 +1047,13 @@ app.get("/token-list", async () => {
     "SELECT l.token,l.name,l.symbol,m.canonical_png_cid FROM launches l JOIN launch_metadata_bindings b ON b.chain_id=l.chain_id AND b.token=l.token JOIN media_assets m ON m.media_id=b.media_id WHERE l.chain_id=$1 AND m.status='active' AND b.verification_status='robyn-sanitized' AND m.canonical_png_cid IS NOT NULL ORDER BY l.launch_id",
     [chainId],
   );
+  const [version] = await sql.unsafe<{ timestamp: string }[]>(
+    "SELECT coalesce(max(b.bound_at),to_timestamp(0))::text AS timestamp FROM launch_metadata_bindings b WHERE b.chain_id=$1 AND b.verification_status='robyn-sanitized'",
+    [chainId],
+  );
   return {
     name: "Robyn verified tokens",
-    timestamp: new Date().toISOString(),
+    timestamp: new Date(version?.timestamp ?? 0).toISOString(),
     version: { major: 1, minor: 0, patch: rows.length },
     keywords: ["robyn", "reward-basket", "erc1046"],
     tokens: rows.map((row) => ({
@@ -1056,6 +1066,15 @@ app.get("/token-list", async () => {
     })),
   };
 });
+
+app.get("/token-list/status", async () => ({
+  data: {
+    cid: deployment.ipfsMetadata?.tokenListCid ?? null,
+    uri: deployment.ipfsMetadata?.tokenListUri ?? null,
+    stablePath:
+      deployment.ipfsMetadata?.tokenListStablePath ?? "/api/token-list",
+  },
+}));
 
 await registerCreatorRoutes(app, {
   chainId,

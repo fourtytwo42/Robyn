@@ -12,6 +12,12 @@ test "$(jq -r '.chainId' "$manifest")" = "31337"
 test "$(jq -r '.schemaVersion' "$manifest")" = "5"
 test "$(jq -r '.ipfsMetadata.standard' "$manifest")" = "ERC-1046"
 test "$(jq -r '.ipfsMetadata.kuboVersion' "$manifest")" = "0.42.0"
+if [[ "${ROBYN_REQUIRE_TOKEN_LIST:-0}" == "1" ]]; then
+  token_list_cid="$(jq -er '.ipfsMetadata.tokenListCid' "$manifest")"
+  [[ "${token_list_cid}" =~ ^b[a-z2-7]{20,120}$ ]]
+  test "$(jq -r '.ipfsMetadata.tokenListUri' "$manifest")" = "ipfs://${token_list_cid}"
+  test "$(jq -r '.ipfsMetadata.tokenListStablePath' "$manifest")" = "/api/token-list"
+fi
 test "$(jq -r '.dao.creatorRewardsAccounting' "$manifest")" = "per-token-v2"
 test "$(cast chain-id --rpc-url "$rpc_url")" = "31337"
 
