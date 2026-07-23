@@ -51,6 +51,12 @@ Durable project context lives here. Update this file whenever information should
   release link, deployment, chain state and non-heartbeat database data before
   and after and fails on drift. Same-VM isolation still does not prove total
   host-loss recovery.
+- The immutable release gate exposed creator-metadata drift after the last
+  controlled chain reset: PostgreSQL still held bindings for retired token
+  addresses. `scripts/seed-devnet-creator-metadata.sh` authenticated as the
+  canonical demo creator and bound curated sanitized artwork to all five
+  current launches. The creator data-plane verifier now targets the immutable
+  API port 3101 by default and passes for the current genesis token.
 
 - Completed goal: schema-v4 contracts and every mapped product action on the
   controlled local network are validated; deterministic hundreds-user

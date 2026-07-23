@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="${ROBYN_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-api_url="${ROBYN_API_URL:-http://127.0.0.1:3100}"
+api_url="${ROBYN_API_URL:-http://127.0.0.1:3101}"
 database="${ROBYN_DATABASE:-robyn}"
 deployment="${ROBYN_DEPLOYMENT_PATH:-${repo_root}/deployments/31337.json}"
 
