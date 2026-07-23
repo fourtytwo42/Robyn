@@ -52,6 +52,15 @@ Durable project context lives here. Update this file whenever information should
   resets a stable row's work-start time only when a completed/superseded stream
   is genuinely requeued; retry age remains continuous. A replacement exact
   release and live age/drain proof remain in progress.
+- Exact release `8788843ef0c5e3bf994e9d330fc89a3783b72c0f` promoted with
+  zero PM2 restarts, no alerts, a bounded stable-ID queue and database-wide
+  pending-age monitoring. Its first soak failed closed after 37 seconds when
+  `/dao/activity` requested every DAO log since deployment and the growing
+  Anvil response exceeded viem's 10 MiB response limit. The endpoint now scans
+  backward in bounded 250-block windows until it collects the newest 100
+  matching logs, preventing response size from growing with chain history. A
+  replacement exact release, live endpoint proof and fresh soak remain in
+  progress. Last verified 2026-07-23.
 - Baseline checkpoint: exact release `691e8cf` was clean and healthy; encrypted
   backup `robyn-state-20260723T070046Z` restored 14 tables, eight artifacts and
   chain state in isolation with `liveStateTouched=false`.
