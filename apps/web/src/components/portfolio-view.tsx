@@ -268,10 +268,10 @@ export function PortfolioView() {
         setStatus(`Claim submitted: ${hash.slice(0, 12)}…`);
         const receipt = await client.waitForTransactionReceipt({ hash });
         if (receipt.status !== "success") throw new Error("Claim reverted.");
+        await refresh();
         setStatus(
           `${position.launch.symbol} basket rewards claimed to the session wallet.`,
         );
-        await refresh();
       } catch (error) {
         setStatus(
           error instanceof Error ? error.message : "Reward claim failed.",
