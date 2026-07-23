@@ -1,5 +1,11 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalPassThroughEnv": [
+    "ROBYN_BUILD_ID",
+    "SOURCE_DATE_EPOCH",
+    "TZ",
+    "LC_ALL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

@@ -16,8 +16,12 @@ const publicRpcUrl =
   "https://rpc.testnet.chain.robinhood.com";
 const rpcOrigin = new URL(publicRpcUrl, "http://localhost").origin;
 
+const reproducibleBuildId = process.env.ROBYN_BUILD_ID;
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  ...(reproducibleBuildId
+    ? { generateBuildId: async () => reproducibleBuildId }
+    : {}),
   // Exact releases are intentionally read-only. Disable the runtime image
   // optimizer so Next never attempts to create .next/cache/images inside an
   // immutable release; uploaded artwork is already sanitized and re-encoded.

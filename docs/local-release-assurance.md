@@ -41,6 +41,21 @@ Every event records the exact Git SHA, UTC time, scenario, phase, result and
 detail. Raw evidence and SHA-256 manifests are written beneath
 `/var/backups/robyn/chaos/`.
 
+## Reproducible builds
+
+Run `scripts/verify-reproducible-builds.sh` from a clean pushed commit. It
+extracts the same Git archive twice, uses separate fresh pnpm stores, and
+builds each archive at the same fixed source root. This fixed root is an
+explicit normalization because Next and Foundry artifact containers embed
+absolute source paths.
+
+The gate compares application bundles, ABI, creation/runtime bytecode, storage
+layouts, operations/migrations, dependency graphs and license inventory.
+Next cache/trace telemetry and absolute-path-only Solidity metadata are
+excluded. It temporarily serves the second clean build on loopback port 3300
+and verifies the development-network disclosure. Every normalization is
+recorded in the checksummed summary.
+
 ## Alert evidence
 
 `scripts/verify-alert-delivery.sh` injects reversible synthetic alerts into
