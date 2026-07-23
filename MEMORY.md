@@ -81,6 +81,10 @@ Durable project context lives here. Update this file whenever information should
   duplicate audit events. The keeper now selects only `dead_letter` jobs for
   this one-time transition, with a regression test proving an already
   superseded observation cannot be processed again.
+- A transient-systemd recovery run exposed Git's root-owned safe-directory
+  rejection while cloning the operator repository. Recovery source clone,
+  checkout and cleanliness verification now always run as unprivileged
+  `hendo420`, independent of the invoking root environment.
 - The immutable release gate exposed creator-metadata drift after the last
   controlled chain reset: PostgreSQL still held bindings for retired token
   addresses. `scripts/seed-devnet-creator-metadata.sh` authenticated as the
@@ -158,7 +162,9 @@ Durable project context lives here. Update this file whenever information should
 - Commands/tests: Keeper Vitest 7/7, keeper strict typecheck, Prettier check.
 - Result: The repeated-audit root cause is fixed and volatile database
   normalization is limited to `service_heartbeats` and
-  `indexer_checkpoints`. Full isolated restore rerun remains pending.
+  `indexer_checkpoints`. A direct isolated restore passed all gates with
+  `liveStateTouched=false`; transient-systemd browser hold then exposed and
+  fixed operator ownership for the clean source checkout.
 - Follow-up: Rebuild/promote the exact pushed checkpoint, create a new
   encrypted off-VM backup, and rerun isolated CLI plus in-app-browser recovery.
 

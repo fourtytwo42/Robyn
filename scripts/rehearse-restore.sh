@@ -171,13 +171,15 @@ if [[ "$(jq -r '.result' "${work}/code.json")" == "0x" ]]; then
 fi
 
 source_dir="${work}/source"
-git clone --quiet --no-checkout /home/hendo420/Robyn "${source_dir}"
-git -C "${source_dir}" checkout --quiet --detach "${git_sha}"
-if [[ -n "$(git -C "${source_dir}" status --porcelain)" ]]; then
+install -d -o hendo420 -g hendo420 -m 0700 "${source_dir}"
+runuser -u hendo420 -- git clone --quiet --no-checkout \
+  /home/hendo420/Robyn "${source_dir}"
+runuser -u hendo420 -- git -C "${source_dir}" checkout \
+  --quiet --detach "${git_sha}"
+if [[ -n "$(runuser -u hendo420 -- git -C "${source_dir}" status --porcelain)" ]]; then
   echo "Recovery source checkout is dirty." >&2
   exit 1
 fi
-chown -R hendo420:hendo420 "${source_dir}"
 if ! runuser -u hendo420 -- env \
   HOME=/home/hendo420 \
   TZ=UTC \
