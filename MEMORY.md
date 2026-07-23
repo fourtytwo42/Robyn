@@ -248,6 +248,11 @@ Durable project context lives here. Update this file whenever information should
   Alertmanager, local alert receiver and all six exact-release PM2 processes
   recovered. Kubo 0.42.0 retained its pins and post-reboot in-app-browser
   rendering of the accepted token remained verified.
+- Monitoring: Controlled devnet does not label queued remote pins stale when
+  `/etc/robyn/ipfs.env` has no Pinning Service endpoint/token. Local failures
+  and remote `failed` objects still alert; queued/pinning remote objects become
+  stale when a provider is configured. The live metric returned zero and all
+  17 Prometheus rules were healthy before the final soak candidate.
 - Checkpoint: The schema-v5 contracts/data plane/UI are implemented and the
   controlled devnet was reset and reseeded with five token-specific immutable
   metadata documents. All five live token bindings are `robyn-sanitized`, and
