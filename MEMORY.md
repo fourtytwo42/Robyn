@@ -22,6 +22,10 @@ Durable project context lives here. Update this file whenever information should
   no longer matches authoritative onchain pending work transition to
   `superseded`; their original failure remains in append-only audit events.
   Matching unresolved work remains a dead letter and continues alerting.
+- Chaos runner is fail-closed and requires a clean exact pushed commit. Live
+  faults are limited to recoverable one-at-a-time PM2/native-service
+  interruptions; reorg and corrupt-input cases use isolated ports/paths.
+  Evidence is checksummed under `/var/backups/robyn/chaos/`.
 
 - Completed goal: schema-v4 contracts and every mapped product action on the
   controlled local network are validated; deterministic hundreds-user
