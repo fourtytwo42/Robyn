@@ -20,27 +20,49 @@ async function add(bytes, filename) {
   return parsed.Hash;
 }
 
-const webp = await readFile(
-  new URL("../apps/web/public/assets/launchpad/token-fallback.webp", import.meta.url),
-);
-const png = await sharp(webp)
-  .resize(1024, 1024, { fit: "cover", position: "centre" })
+const [, , sourceArgument, nameArgument, symbolArgument, descriptionArgument] =
+  process.argv;
+const source = sourceArgument
+  ? await readFile(sourceArgument)
+  : await readFile(
+      new URL(
+        "../apps/web/public/assets/launchpad/token-fallback.webp",
+        import.meta.url,
+      ),
+    );
+const name = nameArgument ?? "Robyn Launch";
+const symbol = symbolArgument ?? "ROBYN";
+const description = descriptionArgument ?? "A Robyn reward-basket token.";
+const decoded = sharp(source, {
+  animated: false,
+  failOn: "error",
+  limitInputPixels: 4096 * 4096,
+  sequentialRead: true,
+})
+  .rotate()
+  .resize(1024, 1024, { fit: "cover", position: "centre" });
+const png = await decoded
+  .clone()
   .png({ compressionLevel: 9, adaptiveFiltering: false, palette: false })
   .toBuffer();
-const pngCid = await add(png, "robyn-fallback.png");
-const webpCid = await add(webp, "robyn-fallback.webp");
+const webp = await decoded
+  .clone()
+  .webp({ quality: 88, effort: 5 })
+  .toBuffer();
+const pngCid = await add(png, `${symbol.toLowerCase()}-token.png`);
+const webpCid = await add(webp, `${symbol.toLowerCase()}-token.webp`);
 const metadata = Buffer.from(
   JSON.stringify({
     interop: { erc1046: true },
-    name: "Robyn Launch",
-    symbol: "ROBYN",
+    name,
+    symbol,
     decimals: 18,
-    description: "A Robyn reward-basket token.",
+    ...(description ? { description } : {}),
     image: `ipfs://${pngCid}`,
     images: [`ipfs://${webpCid}`],
   }),
 );
-const metadataCid = await add(metadata, "robyn-fallback-token.json");
+const metadataCid = await add(metadata, `${symbol.toLowerCase()}-token.json`);
 process.stdout.write(
   JSON.stringify(
     {

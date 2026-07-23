@@ -40,17 +40,20 @@ declare -A art=(
 )
 
 first_media=""
-while IFS=$'\t' read -r token symbol; do
+while IFS=$'\t' read -r token symbol name; do
   if curl -fsS "$base_url/launches/$token/metadata" >/dev/null 2>&1; then
     continue
   fi
   media_id="$(upload token "$repo_root/apps/web/public/assets/launchpad/${art[$symbol]}")"
   [[ -n "$first_media" ]] || first_media="$media_id"
-  bind_body="$(jq -cn --arg mediaId "$media_id" '{mediaId:$mediaId}')"
+  prepare_body="$(jq -cn --arg mediaId "$media_id" --arg name "$name" --arg symbol "$symbol" --arg description "$([[ "$symbol" == "ROBYN" ]] && printf '%s' 'The original Robyn reward-basket community token.' || printf '%s' 'A curated Robyn controlled-devnet reward-basket token.')" '{mediaId:$mediaId,name:$name,symbol:$symbol,description:$description}')"
+  preparation_id="$(curl -fsS -b "$work/cookies" -H 'content-type: application/json' --data "$prepare_body" \
+    "$base_url/launch-metadata/prepare" | jq -er '.data.preparation_id')"
+  bind_body="$(jq -cn --arg mediaId "$media_id" --arg preparationId "$preparation_id" '{mediaId:$mediaId,preparationId:$preparationId}')"
   curl -fsS -b "$work/cookies" -H 'content-type: application/json' --data "$bind_body" \
     "$base_url/launches/$token/metadata" >"$work/binding.json"
   test "$(jq -r '.data.media_id' "$work/binding.json")" = "$media_id"
-done < <(jq -r '.demoLaunches[] | [.token,.symbol] | @tsv' "$manifest")
+done < <(jq -r '.demoLaunches[] | [.token,.symbol,.name] | @tsv' "$manifest")
 
 test "$(curl -fsS "$base_url/profiles/$address" | jq -r '.data.avatar_media_id')" = "$avatar_id"
 if [[ -n "$first_media" ]]; then

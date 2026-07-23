@@ -55,6 +55,13 @@ cleanup() {
 }
 trap cleanup EXIT
 
+declare -A token_art=(
+  [SOAK]="token-soak.webp"
+  [ONE]="token-orbit.webp"
+  [EVID]="token-signal.webp"
+  [MYCO]="token-lucky.webp"
+)
+
 record_launch() {
   local name="$1" symbol="$2" token="$3" vault="$4" market="$5" adapter="$6" locker="$7" pool="$8" trades="$9"
   local graduated progress phase
@@ -82,9 +89,15 @@ record_launch() {
 
 create_launch() {
   local name="$1" symbol="$2" assets="$3" weights="$4"
-  local id token vault market adapter locker pool salt
+  local id token vault market adapter locker pool salt metadata_uri
   salt="$(cast keccak "robyn-devnet-demo-v2:$symbol")"
-  local metadata_uri="ipfs://bafkreibys2cv4ijpoedcl7qdbi5u66wuwedwg3lsc6pios3wcyaoyz7cau"
+  metadata_uri="$(
+    node scripts/pin-fallback-metadata.mjs \
+      "apps/web/public/assets/launchpad/${token_art[$symbol]}" \
+      "$name" "$symbol" \
+      "A curated Robyn controlled-devnet reward-basket token." |
+      jq -er '.metadataUri'
+  )"
   send_as "$deployer" "$coordinator" \
     'createLaunch((string,string,address[],uint16[],string,bytes32))' \
     "(\"$name\",\"$symbol\",$assets,$weights,\"$metadata_uri\",$salt)"

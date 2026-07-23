@@ -154,9 +154,16 @@ send_transaction "$router" "setRate(address,address,uint256)" "$base" "$eth_rewa
 
 genesis_salt="$(cast keccak 'robyn-devnet-genesis-v3-dao')"
 fallback_metadata_uri="ipfs://bafkreibys2cv4ijpoedcl7qdbi5u66wuwedwg3lsc6pios3wcyaoyz7cau"
+genesis_metadata_uri="$(
+  node scripts/pin-fallback-metadata.mjs \
+    apps/web/public/assets/launchpad/token-robyn.webp \
+    "Robyn Genesis" "ROBYN" \
+    "The original Robyn reward-basket community token." |
+    jq -er '.metadataUri'
+)"
 send_transaction "$coordinator" \
   "createLaunch((string,string,address[],uint16[],string,bytes32))" \
-  "(\"Robyn Genesis\",\"ROBYN\",[$nvda,$spy,$eth_reward],[4000,4000,2000],\"$fallback_metadata_uri\",$genesis_salt)"
+  "(\"Robyn Genesis\",\"ROBYN\",[$nvda,$spy,$eth_reward],[4000,4000,2000],\"$genesis_metadata_uri\",$genesis_salt)"
 
 launch_id="$(cast call "$factory" "launchCount()(uint256)" --rpc-url "$rpc_url")"
 token="$(cast call "$factory" "launchTokenById(uint256)(address)" "$launch_id" --rpc-url "$rpc_url")"
