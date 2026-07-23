@@ -67,6 +67,13 @@ Durable project context lives here. Update this file whenever information should
   seconds before succeeding, which fired two critical alert series. The
   failure-state policy and its tests were corrected before restarting the
   release process; no eight-hour soak was started from that candidate.
+- Exact release `3ddc0cef14ee6bb14eddc388685abbf632fcad50`
+  then failed closed after 22 workload transactions because creator/DAO claims
+  and the keeper can legitimately use the same controlled-devnet unlocked
+  account. A concurrent keeper transaction produced `nonce too low`. The soak
+  workload now retries only explicit pre-broadcast nonce-contention errors up
+  to five times, records `workloadNonceRetryCount`, and still fails immediately
+  on reverts, timeouts, ambiguous submission failures, alerts or restarts.
 - Immutable candidate `b7127d09878c7a9d193fb9264e20882a010b6232` was built,
   promoted and served with six zero-restart PM2 processes. Root in-app-browser
   UAT created/funded wallet `0xD673...46E8`, traded graduated ROBYN, atomically

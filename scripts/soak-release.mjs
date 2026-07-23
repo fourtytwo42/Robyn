@@ -4,7 +4,10 @@ import os from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { assertProcessContinuity } from "./soak-policy.mjs";
+import {
+  assertProcessContinuity,
+  isRetryableNonceError,
+} from "./soak-policy.mjs";
 
 const durationSeconds = Number(process.env.SOAK_DURATION_SECONDS ?? "28800");
 const intervalSeconds = Number(process.env.SOAK_INTERVAL_SECONDS ?? "30");
@@ -83,6 +86,7 @@ let actorCursor = 0;
 let actorRequestCount = 0;
 let workloadTransactionCount = 0;
 let workloadCycleCount = 0;
+let workloadNonceRetryCount = 0;
 let errorCount = 0;
 let sampleCount = 0;
 let minimumObservedMemory = Number.POSITIVE_INFINITY;
@@ -157,24 +161,36 @@ function castCall(address, signature, ...args) {
 }
 
 function castSend(sender, address, signature, ...args) {
-  const receipt = JSON.parse(
-    execFileSync(
-      castBinary,
-      [
-        "send",
-        address,
-        signature,
-        ...args,
-        "--from",
-        sender,
-        "--unlocked",
-        "--rpc-url",
-        operatorRpc,
-        "--json",
-      ],
-      { encoding: "utf8", maxBuffer: 1024 * 1024 },
-    ),
-  );
+  let output;
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      output = execFileSync(
+        castBinary,
+        [
+          "send",
+          address,
+          signature,
+          ...args,
+          "--from",
+          sender,
+          "--unlocked",
+          "--rpc-url",
+          operatorRpc,
+          "--json",
+        ],
+        { encoding: "utf8", maxBuffer: 1024 * 1024 },
+      );
+      break;
+    } catch (error) {
+      if (attempt === 5 || !isRetryableNonceError(error)) throw error;
+      workloadNonceRetryCount += 1;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200);
+    }
+  }
+  if (!output) {
+    throw new Error(`workload transaction did not return: ${signature}`);
+  }
+  const receipt = JSON.parse(output);
   if (receipt.status !== "0x1" && receipt.status !== 1) {
     throw new Error(`workload transaction reverted: ${signature}`);
   }
@@ -672,6 +688,7 @@ try {
     actorRequestCount,
     workloadCycleCount,
     workloadTransactionCount,
+    workloadNonceRetryCount,
     workloadPath,
     errorCount,
     errors,

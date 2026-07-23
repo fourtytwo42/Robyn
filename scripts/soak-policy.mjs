@@ -34,3 +34,17 @@ export function assertProcessContinuity(baselineProcesses, currentProcesses) {
     throw new Error(`PM2 process continuity failed: ${changes.join("; ")}`);
   }
 }
+
+export function isRetryableNonceError(error) {
+  const message =
+    error instanceof Error
+      ? [
+          error.message,
+          "stderr" in error ? String(error.stderr ?? "") : "",
+          "stdout" in error ? String(error.stdout ?? "") : "",
+        ].join("\n")
+      : String(error);
+  return /nonce too low|nonce has already been used|replacement transaction underpriced/i.test(
+    message,
+  );
+}

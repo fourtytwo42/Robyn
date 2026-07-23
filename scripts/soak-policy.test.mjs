@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   assertProcessContinuity,
+  isRetryableNonceError,
   processRestartChanges,
 } from "./soak-policy.mjs";
 
@@ -43,4 +44,18 @@ test("rejects PM2 process replacement that resets or changes membership", () => 
       ),
     /robyn-web restarts changed 3 -> 0; robyn-keeper disappeared; robyn-api appeared/,
   );
+});
+
+test("only retries explicit pre-broadcast nonce contention", () => {
+  assert.equal(isRetryableNonceError(new Error("nonce too low")), true);
+  assert.equal(
+    isRetryableNonceError(new Error("nonce has already been used")),
+    true,
+  );
+  assert.equal(
+    isRetryableNonceError(new Error("replacement transaction underpriced")),
+    true,
+  );
+  assert.equal(isRetryableNonceError(new Error("execution reverted")), false);
+  assert.equal(isRetryableNonceError(new Error("request timed out")), false);
 });
