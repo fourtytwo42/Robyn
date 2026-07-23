@@ -35,6 +35,8 @@ cleanup() {
   if [[ -n "${active_service}" ]]; then
     systemctl start "${active_service}" >/dev/null 2>&1 || true
   fi
+  systemctl start pm2-hendo420.service >/dev/null 2>&1 || true
+  systemctl start nginx.service >/dev/null 2>&1 || true
   if [[ -n "${isolated_pid}" ]]; then
     kill "${isolated_pid}" >/dev/null 2>&1 || true
     wait "${isolated_pid}" >/dev/null 2>&1 || true
@@ -129,6 +131,13 @@ for service in redis-server postgresql minio robyn-anvil; do
     sleep 0.5
   done
   systemctl is-active --quiet "${service}"
+  if ! systemctl is-active --quiet pm2-hendo420.service; then
+    systemctl start pm2-hendo420.service
+  fi
+  if ! systemctl is-active --quiet nginx.service; then
+    systemctl start nginx.service
+  fi
+  systemctl is-active --quiet pm2-hendo420.service nginx.service
   reconcile "${scenario}"
 done
 

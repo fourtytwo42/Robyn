@@ -26,6 +26,10 @@ Durable project context lives here. Update this file whenever information should
   faults are limited to recoverable one-at-a-time PM2/native-service
   interruptions; reorg and corrupt-input cases use isolated ports/paths.
   Evidence is checksummed under `/var/backups/robyn/chaos/`.
+- First chaos attempt failed closed after Redis interruption: systemd correctly
+  stopped dependent PM2 through `Requires=`, but dependency recovery did not
+  automatically restart PM2/Nginx. The runner now explicitly restores and
+  proves both dependents before reconciliation.
 
 - Completed goal: schema-v4 contracts and every mapped product action on the
   controlled local network are validated; deterministic hundreds-user
