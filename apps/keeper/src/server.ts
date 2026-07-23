@@ -15,6 +15,7 @@ import { createDatabase } from "@robyn/db";
 import {
   boundedProtocolInput,
   conversionJobId,
+  failureAuditState,
   isLegExecutable,
   shouldSupersedeProtocolFailure,
 } from "./eligibility.js";
@@ -919,7 +920,7 @@ worker.on("failed", (job, error) => {
   const terminal = job.attemptsMade >= attempts;
   void audit(
     job.data.idempotencyKey,
-    terminal ? "dead_letter" : "retrying",
+    failureAuditState(job.data.kind, terminal),
     job.attemptsMade,
     job.data,
     error.message,

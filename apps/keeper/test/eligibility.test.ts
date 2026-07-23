@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   boundedProtocolInput,
   conversionJobId,
+  failureAuditState,
   isLegExecutable,
   protocolObservationChanged,
   shouldSupersedeProtocolFailure,
@@ -27,6 +28,17 @@ describe("keeper eligibility", () => {
   it("does not execute an empty or immature leg", () => {
     expect(isLegExecutable(base)).toBe(false);
     expect(isLegExecutable({ ...base, pendingBase: 0n })).toBe(false);
+  });
+
+  it("keeps auto-retried protocol failures in retrying state", () => {
+    expect(failureAuditState("protocol-native", true)).toBe("retrying");
+    expect(failureAuditState("protocol-launch", true)).toBe("retrying");
+  });
+
+  it("dead-letters terminal jobs without an automatic retry path", () => {
+    expect(failureAuditState("convert", true)).toBe("dead_letter");
+    expect(failureAuditState("harvest", true)).toBe("dead_letter");
+    expect(failureAuditState("convert", false)).toBe("retrying");
   });
 
   it("builds a stable BullMQ-safe idempotency key", () => {

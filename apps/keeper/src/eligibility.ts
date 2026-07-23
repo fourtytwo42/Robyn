@@ -52,3 +52,17 @@ export function shouldSupersedeProtocolFailure(
     protocolObservationChanged(observedAmount, authoritativeAmount)
   );
 }
+
+export function failureAuditState(
+  kind: string | undefined,
+  terminalAttempt: boolean,
+): "retrying" | "dead_letter" {
+  if (
+    kind === "protocol-native" ||
+    kind === "protocol-launch" ||
+    !terminalAttempt
+  ) {
+    return "retrying";
+  }
+  return "dead_letter";
+}

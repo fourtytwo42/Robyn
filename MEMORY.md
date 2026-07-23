@@ -18,10 +18,13 @@ Durable project context lives here. Update this file whenever information should
 - Monitoring checkpoint: native Alertmanager and the append-only local receiver
   are loopback-only. All 14 assurance alerts produced checksummed firing and
   resolved evidence. This proves local delivery only, not external paging.
-- Keeper correction: terminal protocol conversion jobs whose observed amount
-  no longer matches authoritative onchain pending work transition to
-  `superseded`; their original failure remains in append-only audit events.
-  Matching unresolved work remains a dead letter and continues alerting.
+- Keeper correction: protocol-native and protocol-launch jobs have an automatic
+  safe-retry path in the scanner, so exhausted BullMQ attempts remain
+  `retrying` instead of briefly becoming `dead_letter`; a stale-conversion alert
+  still catches work that cannot safely retry. Terminal convert-leg and harvest
+  jobs without that automatic path remain dead letters. Protocol jobs whose
+  observed amount no longer matches authoritative onchain pending work
+  transition to `superseded`; original failures remain in append-only events.
 - Chaos runner is fail-closed and requires a clean exact pushed commit. Live
   faults are limited to recoverable one-at-a-time PM2/native-service
   interruptions; reorg and corrupt-input cases use isolated ports/paths.
@@ -56,6 +59,14 @@ Durable project context lives here. Update this file whenever information should
   compares every process restart counter to its per-process baseline, marks
   the first sample assertion fatal, breaks immediately, and exits nonzero for
   all failed or interrupted runs.
+- Exact release `9f054c89bab7756b6e87f9047ea3f235f90c51e1`
+  proved the restart fix under a 25-cycle/100-transaction compressed workload:
+  the keeper remained below its new cap and all restart counters stayed zero.
+  That regression then failed closed on a real monitoring defect: an
+  automatically retried protocol conversion was labeled `dead_letter` for four
+  seconds before succeeding, which fired two critical alert series. The
+  failure-state policy and its tests were corrected before restarting the
+  release process; no eight-hour soak was started from that candidate.
 - Immutable candidate `b7127d09878c7a9d193fb9264e20882a010b6232` was built,
   promoted and served with six zero-restart PM2 processes. Root in-app-browser
   UAT created/funded wallet `0xD673...46E8`, traded graduated ROBYN, atomically
