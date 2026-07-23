@@ -35,8 +35,11 @@ forge build --root packages/contracts >/dev/null
 deploy_contract() {
   local contract="$1"
   shift
-  forge create "$contract" --root packages/contracts --rpc-url "$rpc_url" --from "$deployer" --unlocked --broadcast --json --constructor-args "$@" |
-    jq -er '.deployedTo'
+  local command=(forge create "$contract" --root packages/contracts --rpc-url "$rpc_url" --from "$deployer" --unlocked --broadcast --json)
+  if [[ "$#" -gt 0 ]]; then
+    command+=(--constructor-args "$@")
+  fi
+  "${command[@]}" | jq -er '.deployedTo'
 }
 
 send_transaction() {
@@ -50,12 +53,32 @@ spy="$(deploy_contract src/devnet/DevnetMockERC20.sol:DevnetMockERC20 "Mock S&P 
 eth_reward="$(deploy_contract src/devnet/DevnetMockERC20.sol:DevnetMockERC20 "Mock Ether" "mETH" "$deployer" "0")"
 router="$(deploy_contract src/devnet/DevnetConversionRouter.sol:DevnetConversionRouter "$deployer")"
 factory="$(deploy_contract src/RobynLaunchFactory.sol:RobynLaunchFactory "$base" "$router" "1000000000000000000" "86400")"
+uniswap_json="$(ROBYN_OPERATOR_RPC_URL="$rpc_url" "$repo_root/scripts/deploy-local-uniswap-v3.sh" "$base")"
+uniswap_factory="$(jq -er '.factory' <<<"$uniswap_json")"
+position_manager="$(jq -er '.positionManager' <<<"$uniswap_json")"
+quoter="$(jq -er '.quoter' <<<"$uniswap_json")"
+swap_router="$(jq -er '.swapRouter' <<<"$uniswap_json")"
 curve_token_allocation="800000000000000000000000000"
 graduation_token_allocation="200000000000000000000000000"
 initial_virtual_token_reserve="1066666666666666666666666666"
 initial_virtual_base_reserve="2166666666666666666667"
 graduation_threshold_base="6500000000000000000000"
-market_factory="$(deploy_contract src/devnet/DevnetMarketFactory.sol:DevnetMarketFactory "$base" "$factory" "$curve_token_allocation" "$graduation_token_allocation" "$initial_virtual_token_reserve" "$initial_virtual_base_reserve" "$graduation_threshold_base" "100")"
+initial_base_per_token_x18="32500000000000"
+pool_fee_pips="10000"
+tick_lower="-887200"
+tick_upper="887200"
+minimum_use_bps="9900"
+maximum_price_deviation_bps="100"
+adapter_deployer="$(deploy_contract src/uniswap/UniswapV3AdapterDeployer.sol:UniswapV3AdapterDeployer)"
+market_deployer="$(deploy_contract src/uniswap/UniswapV3MarketDeployer.sol:UniswapV3MarketDeployer)"
+market_factory="$({
+  deploy_contract src/uniswap/UniswapV3MarketFactory.sol:UniswapV3MarketFactory \
+    "$base" "$factory" "$adapter_deployer" "$market_deployer" \
+    "($curve_token_allocation,$graduation_token_allocation,$initial_virtual_token_reserve,$initial_virtual_base_reserve,$graduation_threshold_base,100)" \
+    "($uniswap_factory,$position_manager,$swap_router,$quoter,$pool_fee_pips,$tick_lower,$tick_upper,$initial_base_per_token_x18,$minimum_use_bps,$maximum_price_deviation_bps)"
+})"
+send_transaction "$adapter_deployer" "bindController(address)" "$market_factory"
+send_transaction "$market_deployer" "bindController(address)" "$market_factory"
 
 reward_liquidity="10000000000000000000000000"
 base_liquidity="10000000000000000000000000"
@@ -78,17 +101,19 @@ token="$(cast call "$factory" "launchTokenById(uint256)(address)" "$launch_id" -
 vault="$(cast call "$factory" "vaultByToken(address)(address)" "$token" --rpc-url "$rpc_url")"
 send_transaction "$market_factory" "createMarket(address)" "$token"
 market="$(cast call "$market_factory" "marketByToken(address)(address)" "$token" --rpc-url "$rpc_url")"
+adapter="$(cast call "$market_factory" "adapterByToken(address)(address)" "$token" --rpc-url "$rpc_url")"
 
 send_transaction "$token" "approve(address,uint256)" "$market" "$market_token_seed"
 send_transaction "$market" "seed(uint256,uint256)" "$market_token_seed" "0"
 pool="$(cast call "$market" "graduatedPool()(address)" --rpc-url "$rpc_url")"
-send_transaction "$factory" "sealLaunchExclusions(address,address[])" "$token" "[$market,$pool]"
+locker="$(cast call "$market" "positionLocker()(address)" --rpc-url "$rpc_url")"
+send_transaction "$factory" "sealLaunchExclusions(address,address[])" "$token" "[$market,$adapter,$locker,$pool]"
 
 block_number="$(cast block-number --rpc-url "$rpc_url")"
 git_commit="$(git rev-parse HEAD)"
 mkdir -p "$(dirname "$manifest")"
 temporary_manifest="$(mktemp "$(dirname "$manifest")/.31337.XXXXXX")"
-jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson blockNumber "$block_number" --arg gitCommit "$git_commit" --arg deployer "$deployer" --arg base "$base" --arg nvda "$nvda" --arg spy "$spy" --arg ethReward "$eth_reward" --arg router "$router" --arg factory "$factory" --arg marketFactory "$market_factory" --arg token "$token" --arg vault "$vault" --arg market "$market" --arg pool "$pool" --arg curveTokens "$curve_token_allocation" --arg graduationTokens "$graduation_token_allocation" --arg virtualTokens "$initial_virtual_token_reserve" --arg virtualBase "$initial_virtual_base_reserve" --arg threshold "$graduation_threshold_base" '{
+jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson blockNumber "$block_number" --arg gitCommit "$git_commit" --arg deployer "$deployer" --arg base "$base" --arg nvda "$nvda" --arg spy "$spy" --arg ethReward "$eth_reward" --arg router "$router" --arg factory "$factory" --arg marketFactory "$market_factory" --arg adapterDeployer "$adapter_deployer" --arg marketDeployer "$market_deployer" --arg token "$token" --arg vault "$vault" --arg market "$market" --arg adapter "$adapter" --arg locker "$locker" --arg pool "$pool" --argjson localUniswapV3 "$uniswap_json" --arg curveTokens "$curve_token_allocation" --arg graduationTokens "$graduation_token_allocation" --arg virtualTokens "$initial_virtual_token_reserve" --arg virtualBase "$initial_virtual_base_reserve" --arg threshold "$graduation_threshold_base" --arg initialPrice "$initial_base_per_token_x18" --argjson poolFee "$pool_fee_pips" --arg tickLower "$tick_lower" --arg tickUpper "$tick_upper" --arg minimumUse "$minimum_use_bps" --arg maximumDeviation "$maximum_price_deviation_bps" '{
     environment: $environment,
     chainId: $chainId,
     deploymentBlock: $blockNumber,
@@ -100,19 +125,31 @@ jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson b
       conversionRouter: $router,
       factory: $factory,
       marketFactory: $marketFactory,
+      adapterDeployer: $adapterDeployer,
+      marketDeployer: $marketDeployer,
       genesisToken: $token,
       genesisVault: $vault,
       genesisMarket: $market,
+      genesisGraduationAdapter: $adapter,
+      genesisPositionLocker: $locker,
       genesisGraduatedPool: $pool
     },
+    localUniswapV3: $localUniswapV3,
     genesisBasket: [
       {symbol: "mNVDA", weightBps: 4000},
       {symbol: "mSPY", weightBps: 4000},
       {symbol: "mETH", weightBps: 2000}
     ],
     market: {
-      type: "bonding-curve-v1",
+      type: "uniswap-v3-bonding-curve-v1",
+      liquidityVenue: "local-canonical-uniswap-v3",
       feeBps: 100,
+      poolFeePips: $poolFee,
+      tickLower: ($tickLower | tonumber),
+      tickUpper: ($tickUpper | tonumber),
+      initialBasePerTokenX18: $initialPrice,
+      minimumUseBps: ($minimumUse | tonumber),
+      maximumPriceDeviationBps: ($maximumDeviation | tonumber),
       curveTokenAllocation: $curveTokens,
       graduationTokenAllocation: $graduationTokens,
       initialVirtualTokenReserve: $virtualTokens,

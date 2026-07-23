@@ -46,6 +46,10 @@ export type LaunchRecord = {
     baseRaised: string;
     remainingCurveTokens: string;
     graduatedPool: string | null;
+    liquidityVenue: "uniswap-v3" | "devnet-locked-pool" | null;
+    positionLocker: string | null;
+    positionTokenId: string | null;
+    poolFeePips: number | null;
   } | null;
 };
 
@@ -88,6 +92,10 @@ export type LaunchAnalytics = {
     baseRaised: string;
     remainingCurveTokens: string;
     graduatedPool: string | null;
+    liquidityVenue: "uniswap-v3" | "devnet-locked-pool" | null;
+    positionLocker: string | null;
+    positionTokenId: string | null;
+    poolFeePips: number | null;
     baseSymbol: string;
     feeBps: number;
     priceBasePerToken: string;

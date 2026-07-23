@@ -124,6 +124,20 @@ const marketViewAbi = [
   },
   {
     type: "function",
+    name: "positionLocker",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "graduationAdapter",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
     name: "graduationProgressBps",
     stateMutability: "view",
     inputs: [],
@@ -149,6 +163,22 @@ const marketViewAbi = [
     stateMutability: "view",
     inputs: [],
     outputs: [{ type: "uint256" }],
+  },
+] as const;
+const graduationAdapterViewAbi = [
+  {
+    type: "function",
+    name: "positionTokenId",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "poolFee",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint24" }],
   },
 ] as const;
 const marketFactoryViewAbi = [
@@ -237,6 +267,10 @@ type MarketConfiguration = {
   baseRaised: bigint;
   remainingCurveTokens: bigint;
   graduatedPool: Address | null;
+  liquidityVenue: "uniswap-v3" | "devnet-locked-pool" | null;
+  positionLocker: Address | null;
+  positionTokenId: bigint | null;
+  poolFeePips: number | null;
 };
 const tokenSupply = new Map<string, Promise<bigint>>();
 
@@ -289,6 +323,43 @@ async function getMarketConfiguration(
           functionName: "realCurveTokenReserve",
         }),
       ]);
+    let liquidityVenue: MarketConfiguration["liquidityVenue"] =
+      "devnet-locked-pool";
+    let positionLocker: Address | null = null;
+    let positionTokenId: bigint | null = null;
+    let poolFeePips: number | null = null;
+    try {
+      const [locker, adapter] = await Promise.all([
+        rpcClient.readContract({
+          address: market,
+          abi: marketViewAbi,
+          functionName: "positionLocker",
+        }),
+        rpcClient.readContract({
+          address: market,
+          abi: marketViewAbi,
+          functionName: "graduationAdapter",
+        }),
+      ]);
+      const [tokenId, fee] = await Promise.all([
+        rpcClient.readContract({
+          address: adapter,
+          abi: graduationAdapterViewAbi,
+          functionName: "positionTokenId",
+        }),
+        rpcClient.readContract({
+          address: adapter,
+          abi: graduationAdapterViewAbi,
+          functionName: "poolFee",
+        }),
+      ]);
+      liquidityVenue = "uniswap-v3";
+      positionLocker = locker;
+      positionTokenId = tokenId === 0n ? null : tokenId;
+      poolFeePips = Number(fee);
+    } catch {
+      // Older controlled-devnet markets intentionally expose only their local pool.
+    }
     return {
       basePerToken,
       feeBps: Number(feeBps),
@@ -298,6 +369,10 @@ async function getMarketConfiguration(
       baseRaised: raised,
       remainingCurveTokens: remaining,
       graduatedPool,
+      liquidityVenue,
+      positionLocker,
+      positionTokenId,
+      poolFeePips,
     };
   } catch {
     return {
@@ -309,6 +384,10 @@ async function getMarketConfiguration(
       baseRaised: 0n,
       remainingCurveTokens: 0n,
       graduatedPool: null,
+      liquidityVenue: null,
+      positionLocker: null,
+      positionTokenId: null,
+      poolFeePips: null,
     };
   }
 }
@@ -330,12 +409,29 @@ function getTokenSupply(token: Address) {
 async function discoveryMetrics(rows: LaunchRow[]) {
   const metrics = new Map<string, ReturnType<typeof deriveLaunchAnalytics>>();
   if (rows.length === 0) return metrics;
+  const configurations = new Map(
+    await Promise.all(
+      rows.map(
+        async (row) =>
+          [
+            row.token.toLowerCase(),
+            await getMarketConfiguration(row.market as Address),
+          ] as const,
+      ),
+    ),
+  );
   const logs = await sql.unsafe<DiscoveryMetricLog[]>(
-    "WITH targets(launch_token,market) AS (SELECT * FROM unnest($2::text[],$3::text[])), ranked AS (SELECT t.launch_token,l.block_number::text,l.transaction_hash,l.log_index,l.address,l.topics,l.data,b.timestamp::text,row_number() OVER (PARTITION BY t.launch_token ORDER BY l.block_number,l.transaction_index,l.log_index) AS event_number FROM targets t JOIN raw_logs l ON l.chain_id=$1 AND (l.address=t.launch_token OR l.address=t.market) LEFT JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number) SELECT launch_token,block_number,transaction_hash,log_index,address,topics,data,timestamp FROM ranked WHERE event_number<=10001 ORDER BY launch_token,block_number::bigint,log_index",
+    "WITH targets(launch_token,market,pool) AS (SELECT * FROM unnest($2::text[],$3::text[],$4::text[])), ranked AS (SELECT t.launch_token,l.block_number::text,l.transaction_hash,l.log_index,l.address,l.topics,l.data,b.timestamp::text,row_number() OVER (PARTITION BY t.launch_token ORDER BY l.block_number,l.transaction_index,l.log_index) AS event_number FROM targets t JOIN raw_logs l ON l.chain_id=$1 AND (l.address=t.launch_token OR l.address=t.market OR l.address=t.pool) LEFT JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number) SELECT launch_token,block_number,transaction_hash,log_index,address,topics,data,timestamp FROM ranked WHERE event_number<=10001 ORDER BY launch_token,block_number::bigint,log_index",
     [
       chainId,
       rows.map((row) => row.token.toLowerCase()),
       rows.map((row) => row.market.toLowerCase()),
+      rows.map(
+        (row) =>
+          configurations
+            .get(row.token.toLowerCase())
+            ?.graduatedPool?.toLowerCase() ?? zeroAddress,
+      ),
     ],
   );
   const byToken = new Map<string, AnalyticsLog[]>();
@@ -350,7 +446,8 @@ async function discoveryMetrics(rows: LaunchRow[]) {
       const key = row.token.toLowerCase();
       const tokenLogs = byToken.get(key) ?? [];
       if (tokenLogs.length > 10_000) return;
-      const config = await getMarketConfiguration(row.market as Address);
+      const config = configurations.get(key);
+      if (!config) return;
       const activeLiquidityAddress =
         config.marketPhase === "graduated" && config.graduatedPool
           ? config.graduatedPool
@@ -379,6 +476,10 @@ async function discoveryMetrics(rows: LaunchRow[]) {
           token: row.token as Address,
           market: row.market as Address,
           creator: row.creator as Address,
+          baseAsset: baseAssetAddress,
+          ...(config.graduatedPool
+            ? { liquidityPool: config.graduatedPool }
+            : {}),
         },
         logs: tokenLogs,
         createdTimestamp: null,
@@ -607,6 +708,10 @@ app.get<{
             baseRaised: metric.baseRaised,
             remainingCurveTokens: metric.remainingCurveTokens,
             graduatedPool: metric.graduatedPool,
+            liquidityVenue: metric.liquidityVenue,
+            positionLocker: metric.positionLocker,
+            positionTokenId: metric.positionTokenId,
+            poolFeePips: metric.poolFeePips,
           }
         : null,
     };
@@ -731,13 +836,24 @@ app.get<{ Params: { token: string }; Querystring: { limit?: string } }>(
     );
     const launch = await hydrateMarkets(storedLaunch);
     if (!launch[0]) return reply.code(404).send({ error: "launch_not_found" });
+    const config = await getMarketConfiguration(launch[0].market as Address);
     const limit = Math.min(
       Math.max(Number(request.query.limit ?? "50"), 1),
       200,
     );
     const rows = await sql.unsafe(
       "SELECT block_number::text,block_hash,transaction_hash,transaction_index,log_index,address,topics,data FROM raw_logs WHERE chain_id=$1 AND address=ANY($2::text[]) ORDER BY block_number DESC,transaction_index DESC,log_index DESC LIMIT $3",
-      [chainId, [launch[0].token, launch[0].vault, launch[0].market], limit],
+      [
+        chainId,
+        [
+          launch[0].token,
+          launch[0].vault,
+          launch[0].market,
+          ...(config.graduatedPool ? [config.graduatedPool] : []),
+          ...(config.positionLocker ? [config.positionLocker] : []),
+        ],
+        limit,
+      ],
     );
     return { data: rows, ...(await freshness()) };
   },
@@ -762,17 +878,6 @@ app.get<{ Params: { token: string } }>(
     const launches = await hydrateMarkets(storedLaunches);
     const launch = launches[0];
     if (!launch) return reply.code(404).send({ error: "launch_not_found" });
-    const logs = await sql.unsafe<AnalyticsLog[]>(
-      "SELECT l.block_number::text,l.transaction_hash,l.log_index,l.address,l.topics,l.data,b.timestamp::text FROM raw_logs l LEFT JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number WHERE l.chain_id=$1 AND l.address=ANY($2::text[]) ORDER BY l.block_number,l.transaction_index,l.log_index LIMIT 10001",
-      [chainId, [launch.token, launch.market]],
-    );
-    if (logs.length > 10_000) {
-      return reply.code(503).send({ error: "analytics_projection_required" });
-    }
-    const created = await sql.unsafe<{ timestamp: string }[]>(
-      "SELECT timestamp::text FROM chain_blocks WHERE chain_id=$1 AND number=$2",
-      [chainId, launch.created_block],
-    );
     const tokenAddress = launch.token as Address;
     const marketAddress = launch.market as Address;
     const [baseAsset, config, totalSupply] = await Promise.all([
@@ -788,10 +893,30 @@ app.get<{ Params: { token: string } }>(
         functionName: "totalSupply",
       }),
     ]);
+    const logs = await sql.unsafe<AnalyticsLog[]>(
+      "SELECT l.block_number::text,l.transaction_hash,l.log_index,l.address,l.topics,l.data,b.timestamp::text FROM raw_logs l LEFT JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number WHERE l.chain_id=$1 AND l.address=ANY($2::text[]) ORDER BY l.block_number,l.transaction_index,l.log_index LIMIT 10001",
+      [
+        chainId,
+        [
+          launch.token,
+          launch.market,
+          ...(config.graduatedPool ? [config.graduatedPool] : []),
+        ],
+      ],
+    );
+    if (logs.length > 10_000) {
+      return reply.code(503).send({ error: "analytics_projection_required" });
+    }
+    const created = await sql.unsafe<{ timestamp: string }[]>(
+      "SELECT timestamp::text FROM chain_blocks WHERE chain_id=$1 AND number=$2",
+      [chainId, launch.created_block],
+    );
     const accounts = collectTokenAccounts(logs, tokenAddress);
     accounts.add(launch.creator.toLowerCase());
     accounts.add(launch.market.toLowerCase());
     if (config.graduatedPool) accounts.add(config.graduatedPool.toLowerCase());
+    if (config.positionLocker)
+      accounts.add(config.positionLocker.toLowerCase());
     const accountList = [...accounts] as Address[];
     const activeLiquidityAddress =
       config.marketPhase === "graduated" && config.graduatedPool
@@ -826,6 +951,7 @@ app.get<{ Params: { token: string } }>(
         token: launch.token as Address,
         market: launch.market as Address,
         creator: launch.creator as Address,
+        baseAsset,
         ...(config.graduatedPool
           ? { liquidityPool: config.graduatedPool }
           : {}),

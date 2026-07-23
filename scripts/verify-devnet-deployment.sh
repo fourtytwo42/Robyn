@@ -18,12 +18,22 @@ readarray -t addresses < <(
     .contracts.conversionRouter,
     .contracts.factory,
     .contracts.marketFactory,
+    (.contracts.adapterDeployer // empty),
+    (.contracts.marketDeployer // empty),
     .contracts.genesisToken,
     .contracts.genesisVault,
     .contracts.genesisMarket,
+    (.contracts.genesisGraduationAdapter // empty),
+    (.contracts.genesisPositionLocker // empty),
     (.contracts.genesisGraduatedPool // empty),
+    (.localUniswapV3.factory // empty),
+    (.localUniswapV3.positionManager // empty),
+    (.localUniswapV3.quoter // empty),
+    (.localUniswapV3.swapRouter // empty),
     (.contracts.bondingMarketFactory // empty),
     ((.bondingDemos // .demoLaunches // [])[] | .market),
+    ((.bondingDemos // .demoLaunches // [])[] | .graduationAdapter // empty),
+    ((.bondingDemos // .demoLaunches // [])[] | .positionLocker // empty),
     ((.bondingDemos // .demoLaunches // [])[] | .graduatedPool)
   ' "$manifest"
 )
@@ -73,7 +83,8 @@ done
 
 test "$(cast call "$market" "feeBps()(uint16)" --rpc-url "$rpc_url" | awk '{print $1}')" = "100"
 
-if [[ "$(jq -r '.market.type // "legacy-fixed"' "$manifest")" == "bonding-curve-v1" ]]; then
+market_type="$(jq -r '.market.type // "legacy-fixed"' "$manifest")"
+if [[ "$market_type" == "bonding-curve-v1" || "$market_type" == "uniswap-v3-bonding-curve-v1" ]]; then
   bonding_factory="$(jq -r '.contracts.bondingMarketFactory // .contracts.marketFactory' "$manifest")"
   test "$(cast call "$bonding_factory" "curveTokenAllocation()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "$(jq -r '.market.curveTokenAllocation' "$manifest")"
   test "$(cast call "$bonding_factory" "graduationThresholdBase()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "$(jq -r '.market.graduationThresholdBase' "$manifest")"
@@ -82,8 +93,13 @@ if [[ "$(jq -r '.market.type // "legacy-fixed"' "$manifest")" == "bonding-curve-
     test "$(cast call "$demo_market" "graduatedPool()(address)" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$demo_pool" | tr '[:upper:]' '[:lower:]')"
     if [[ "$expected_phase" == "graduated" ]]; then
       test "$(cast call "$demo_market" "graduated()(bool)" --rpc-url "$rpc_url")" = "true"
-      test "$(cast call "$demo_pool" "initialized()(bool)" --rpc-url "$rpc_url")" = "true"
       test "$(cast call "$demo_market" "graduationProgressBps()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "10000"
+      if [[ "$market_type" == "uniswap-v3-bonding-curve-v1" ]]; then
+        liquidity="$(cast call "$demo_pool" "liquidity()(uint128)" --rpc-url "$rpc_url" | awk '{print $1}')"
+        test "$(python3 -c 'import sys; print(int(sys.argv[1]) > 0)' "$liquidity")" = "True"
+      else
+        test "$(cast call "$demo_pool" "initialized()(bool)" --rpc-url "$rpc_url")" = "true"
+      fi
     else
       test "$(cast call "$demo_market" "graduated()(bool)" --rpc-url "$rpc_url")" = "false"
       progress="$(cast call "$demo_market" "graduationProgressBps()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')"
@@ -91,6 +107,31 @@ if [[ "$(jq -r '.market.type // "legacy-fixed"' "$manifest")" == "bonding-curve-
       test "$progress" -lt 10000
     fi
   done < <(jq -r '(.bondingDemos // .demoLaunches // [])[] | [.market,.graduatedPool,.phase] | @tsv' "$manifest")
+
+  if [[ "$market_type" == "uniswap-v3-bonding-curve-v1" ]]; then
+    adapter="$(jq -r '.contracts.genesisGraduationAdapter' "$manifest")"
+    locker="$(jq -r '.contracts.genesisPositionLocker' "$manifest")"
+    pool="$(jq -r '.contracts.genesisGraduatedPool' "$manifest")"
+    adapter_deployer="$(jq -r '.contracts.adapterDeployer' "$manifest")"
+    market_deployer="$(jq -r '.contracts.marketDeployer' "$manifest")"
+    position_manager="$(jq -r '.localUniswapV3.positionManager' "$manifest")"
+    test "$(cast call "$market" 'graduationAdapter()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$adapter" | tr '[:upper:]' '[:lower:]')"
+    test "$(cast call "$market" 'positionLocker()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$locker" | tr '[:upper:]' '[:lower:]')"
+    test "$(cast call "$adapter" 'pool()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$pool" | tr '[:upper:]' '[:lower:]')"
+    test "$(cast call "$adapter_deployer" 'controller()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$market_factory" | tr '[:upper:]' '[:lower:]')"
+    test "$(cast call "$market_deployer" 'controller()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$market_factory" | tr '[:upper:]' '[:lower:]')"
+    test "$(cast call "$market_factory" 'uniswapFactory()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(jq -r '.localUniswapV3.factory' "$manifest" | tr '[:upper:]' '[:lower:]')"
+    test "$(cast call "$market_factory" 'positionManager()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$position_manager" | tr '[:upper:]' '[:lower:]')"
+    test "$(cast call "$market_factory" 'poolFee()(uint24)' --rpc-url "$rpc_url" | awk '{print $1}')" = "$(jq -r '.market.poolFeePips' "$manifest")"
+    test "$(cast call "$market_factory" 'initialBasePerTokenX18()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')" = "$(jq -r '.market.initialBasePerTokenX18' "$manifest")"
+    test "$(cast call "$token" 'isExcluded(address)(bool)' "$adapter" --rpc-url "$rpc_url")" = "true"
+    test "$(cast call "$token" 'isExcluded(address)(bool)' "$locker" --rpc-url "$rpc_url")" = "true"
+    test "$(cast call "$token" 'isExcluded(address)(bool)' "$pool" --rpc-url "$rpc_url")" = "true"
+    while read -r component expected_hash; do
+      address="$(jq -r --arg component "$component" '.localUniswapV3[$component]' "$manifest")"
+      test "$(cast codehash "$address" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$expected_hash" | tr '[:upper:]' '[:lower:]')"
+    done < <(jq -r '.localUniswapV3.runtimeCodeHashes | to_entries[] | [.key,.value] | @tsv' "$manifest")
+  fi
 else
   test "$(cast call "$market" "basePerToken()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "1000000000000000"
 fi

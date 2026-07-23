@@ -88,8 +88,12 @@ contract RobinhoodUniswapGraduationForkTest {
                 minimumUseBps: 9_900,
                 maximumPriceDeviationBps: 100
             });
-        UniswapV3BondingCurveMarket market =
-            new UniswapV3BondingCurveMarket(base, token, vault, address(this), curve, dex);
+        UniswapV3GraduationAdapter marketAdapter =
+            new UniswapV3GraduationAdapter(base, token, vault, address(this), dex);
+        UniswapV3BondingCurveMarket market = new UniswapV3BondingCurveMarket(
+            base, token, vault, address(this), curve, marketAdapter
+        );
+        marketAdapter.bindMarket(address(market));
 
         address[] memory exclusions = new address[](4);
         exclusions[0] = address(market);

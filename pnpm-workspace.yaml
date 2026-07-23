@@ -7,6 +7,7 @@ overrides:
   sharp: 0.35.0
 allowBuilds:
   esbuild: true
+  keccak: false
   msgpackr-extract: false
   sharp: true
   unrs-resolver: true

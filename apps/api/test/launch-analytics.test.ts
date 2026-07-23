@@ -17,6 +17,9 @@ const token = "0x1000000000000000000000000000000000000001" as Address;
 const market = "0x2000000000000000000000000000000000000002" as Address;
 const creator = "0x3000000000000000000000000000000000000003" as Address;
 const trader = "0x4000000000000000000000000000000000000004" as Address;
+const base = "0x0500000000000000000000000000000000000005" as Address;
+const pool = "0x5000000000000000000000000000000000000005" as Address;
+const locker = "0x6000000000000000000000000000000000000006" as Address;
 const transferAbi = parseAbi([
   "event Transfer(address indexed from,address indexed to,uint256 value)",
 ]);
@@ -24,6 +27,12 @@ const marketAbi = parseAbi([
   "event Bought(address indexed buyer,uint256 baseInput,uint256 feeAmount,uint256 tokenOutput)",
   "event Sold(address indexed seller,uint256 tokenInput,uint256 feeAmount,uint256 baseOutput)",
   "event Graduated(address indexed pool,uint256 tokenLiquidity,uint256 baseLiquidity,uint256 finalCurvePrice)",
+]);
+const productionMarketAbi = parseAbi([
+  "event Graduated(address indexed pool,address indexed locker,uint256 indexed positionTokenId,uint256 tokenLiquidity,uint256 baseLiquidity,uint256 finalCurvePrice)",
+]);
+const poolAbi = parseAbi([
+  "event Swap(address indexed sender,address indexed recipient,int256 amount0,int256 amount1,uint160 sqrtPriceX96,uint128 liquidity,int24 tick)",
 ]);
 
 function row(
@@ -285,7 +294,6 @@ describe("launch analytics", () => {
   });
 
   it("marks canonical graduation events in the chart", () => {
-    const pool = "0x5000000000000000000000000000000000000005" as Address;
     const graduated = row(
       market,
       encodeEventTopics({
@@ -313,5 +321,97 @@ describe("launch analytics", () => {
       eventType: "graduation",
       transactionHash: graduated.transaction_hash,
     });
+  });
+
+  it("indexes direct Uniswap pool swaps without double-counting routed market trades", () => {
+    const directSwap = row(
+      pool,
+      encodeEventTopics({
+        abi: poolAbi,
+        eventName: "Swap",
+        args: { sender: market, recipient: trader },
+      }),
+      encodeAbiParameters(
+        [
+          { type: "int256" },
+          { type: "int256" },
+          { type: "uint160" },
+          { type: "uint128" },
+          { type: "int24" },
+        ],
+        [parseEther("100"), -parseEther("99"), 1n, 1n, 0],
+      ),
+      40,
+    );
+    const routedSwap = {
+      ...directSwap,
+      transaction_hash: row(pool, [], "0x", 41).transaction_hash,
+    };
+    const routedMarketEvent = row(
+      market,
+      encodeEventTopics({
+        abi: marketAbi,
+        eventName: "Bought",
+        args: { buyer: trader },
+      }),
+      encodeAbiParameters(
+        [{ type: "uint256" }, { type: "uint256" }, { type: "uint256" }],
+        [parseEther("50"), parseEther("0.5"), parseEther("49")],
+      ),
+      41,
+    );
+    const result = deriveLaunchAnalytics({
+      launch: { token, market, creator, baseAsset: base, liquidityPool: pool },
+      logs: [directSwap, routedSwap, routedMarketEvent],
+      createdTimestamp: null,
+      basePerToken: parseEther("1"),
+      feeBps: 100,
+      initialSupply: parseEther("1000"),
+      lifecycle: {
+        marketPhase: "graduated",
+        graduationProgressBps: 10_000,
+        graduationThresholdBase: parseEther("666"),
+        baseRaised: parseEther("666"),
+        remainingCurveTokens: 0n,
+        graduatedPool: pool,
+        liquidityVenue: "uniswap-v3",
+        positionLocker: locker,
+        positionTokenId: 42n,
+        poolFeePips: 10_000,
+      },
+    });
+
+    expect(result.tradeCount).toBe(2);
+    expect(result.totalVolumeBase).toBe(parseEther("150").toString());
+    expect(result.totalFeesBase).toBe(parseEther("1.5").toString());
+    expect(result.marketType).toBe("locked-uniswap-v3-position");
+    expect(result.positionLocker).toBe(locker);
+    expect(result.positionTokenId).toBe("42");
+    expect(result.poolFeePips).toBe(10_000);
+  });
+
+  it("decodes the production graduation event with locker and position id", () => {
+    const graduated = row(
+      market,
+      encodeEventTopics({
+        abi: productionMarketAbi,
+        eventName: "Graduated",
+        args: { pool, locker, positionTokenId: 42n },
+      }),
+      encodeAbiParameters(
+        [{ type: "uint256" }, { type: "uint256" }, { type: "uint256" }],
+        [parseEther("666"), parseEther("666"), parseEther("0.999")],
+      ),
+      42,
+    );
+    const result = deriveLaunchAnalytics({
+      launch: { token, market, creator },
+      logs: [graduated],
+      createdTimestamp: null,
+      basePerToken: parseEther("1"),
+      feeBps: 100,
+      initialSupply: parseEther("1000"),
+    });
+    expect(result.graduationBlock).toBe("42");
   });
 });

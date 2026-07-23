@@ -81,7 +81,7 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
         FeeBasketVault feeVault_,
         address marketOwner_,
         CurveConfig memory curve_,
-        UniswapV3GraduationAdapter.AdapterConfig memory dex_
+        UniswapV3GraduationAdapter graduationAdapter_
     ) {
         if (
             address(baseAsset_) == address(0) || address(launchToken_) == address(0)
@@ -92,6 +92,11 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
                 || curve_.curveFeeBps == 0 || curve_.curveFeeBps > 1_000
                 || address(feeVault_.baseAsset()) != address(baseAsset_)
                 || address(feeVault_.launchToken()) != address(launchToken_)
+                || address(graduationAdapter_) == address(0)
+                || address(graduationAdapter_).code.length == 0
+                || address(graduationAdapter_.baseAsset()) != address(baseAsset_)
+                || address(graduationAdapter_.launchToken()) != address(launchToken_)
+                || address(graduationAdapter_.feeVault()) != address(feeVault_)
         ) revert InvalidConfiguration();
         baseAsset = baseAsset_;
         launchToken = launchToken_;
@@ -103,9 +108,7 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
         initialVirtualBaseReserve = curve_.initialVirtualBaseReserve;
         graduationThresholdBase = curve_.graduationThresholdBase;
         feeBps = curve_.curveFeeBps;
-        graduationAdapter = new UniswapV3GraduationAdapter(
-            baseAsset_, IERC20(address(launchToken_)), feeVault_, address(this), dex_
-        );
+        graduationAdapter = graduationAdapter_;
     }
 
     function seed(uint256 tokenAmount, uint256 baseAmount) external nonReentrant {

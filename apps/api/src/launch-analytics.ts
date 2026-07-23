@@ -14,6 +14,10 @@ const marketEvents = parseAbi([
   "event Bought(address indexed buyer,uint256 baseInput,uint256 feeAmount,uint256 tokenOutput)",
   "event Sold(address indexed seller,uint256 tokenInput,uint256 feeAmount,uint256 baseOutput)",
   "event Graduated(address indexed pool,uint256 tokenLiquidity,uint256 baseLiquidity,uint256 finalCurvePrice)",
+  "event Graduated(address indexed pool,address indexed locker,uint256 indexed positionTokenId,uint256 tokenLiquidity,uint256 baseLiquidity,uint256 finalCurvePrice)",
+]);
+const poolEvents = parseAbi([
+  "event Swap(address indexed sender,address indexed recipient,int256 amount0,int256 amount1,uint160 sqrtPriceX96,uint128 liquidity,int24 tick)",
 ]);
 
 export type AnalyticsLog = {
@@ -30,6 +34,7 @@ type LaunchIdentity = {
   token: Address;
   market: Address;
   creator: Address;
+  baseAsset?: Address;
   liquidityPool?: Address;
 };
 
@@ -102,6 +107,10 @@ export function deriveLaunchAnalytics({
     baseRaised: bigint;
     remainingCurveTokens: bigint;
     graduatedPool: Address | null;
+    liquidityVenue?: "uniswap-v3" | "devnet-locked-pool" | null;
+    positionLocker?: Address | null;
+    positionTokenId?: bigint | null;
+    poolFeePips?: number | null;
   };
   snapshot?: {
     totalSupply: bigint;
@@ -115,6 +124,9 @@ export function deriveLaunchAnalytics({
   const market = launch.market.toLowerCase();
   const creator = launch.creator.toLowerCase();
   const liquidityPool = launch.liquidityPool?.toLowerCase();
+  const baseAsset = launch.baseAsset?.toLowerCase();
+  const positionLocker = lifecycle?.positionLocker?.toLowerCase();
+  const poolFeePips = lifecycle?.poolFeePips ?? feeBps * 100;
   const balances = new Map<string, bigint>();
   const traders = new Set<string>();
   const trades: Array<{
@@ -161,6 +173,23 @@ export function deriveLaunchAnalytics({
   ];
   let graduationBlock: string | null = null;
   let graduationTimestamp: string | null = null;
+  const marketTradeTransactions = new Set<string>();
+
+  for (const log of logs) {
+    if (log.address.toLowerCase() !== market) continue;
+    try {
+      const decoded = decodeEventLog({
+        abi: marketEvents,
+        data: log.data,
+        topics: log.topics as [Hex, ...Hex[]],
+      });
+      if (decoded.eventName === "Bought" || decoded.eventName === "Sold") {
+        marketTradeTransactions.add(log.transaction_hash.toLowerCase());
+      }
+    } catch {
+      continue;
+    }
+  }
 
   if (initialSupply) addBalance(balances, launch.creator, initialSupply);
 
@@ -178,6 +207,81 @@ export function deriveLaunchAnalytics({
         else addBalance(balances, from, -value);
         if (to.toLowerCase() === zeroAddress) totalSupply -= value;
         else addBalance(balances, to, value);
+      } catch {
+        continue;
+      }
+      continue;
+    }
+    if (
+      liquidityPool &&
+      baseAsset &&
+      log.address.toLowerCase() === liquidityPool &&
+      !marketTradeTransactions.has(log.transaction_hash.toLowerCase())
+    ) {
+      try {
+        const decoded = decodeEventLog({
+          abi: poolEvents,
+          data: log.data,
+          topics: log.topics as [Hex, ...Hex[]],
+        });
+        if (decoded.eventName !== "Swap") continue;
+        const baseIsToken0 = baseAsset < token;
+        const baseDelta = baseIsToken0
+          ? decoded.args.amount0
+          : decoded.args.amount1;
+        const tokenDelta = baseIsToken0
+          ? decoded.args.amount1
+          : decoded.args.amount0;
+        const isBuy = baseDelta > 0n && tokenDelta < 0n;
+        const isSell = tokenDelta > 0n && baseDelta < 0n;
+        if (!isBuy && !isSell) continue;
+        const baseOutputOrInput = baseDelta > 0n ? baseDelta : -baseDelta;
+        const tokenOutputOrInput = tokenDelta > 0n ? tokenDelta : -tokenDelta;
+        const feeAmount = isBuy
+          ? (baseOutputOrInput * BigInt(poolFeePips)) / 1_000_000n
+          : (baseOutputOrInput * BigInt(poolFeePips)) /
+            BigInt(1_000_000 - poolFeePips);
+        const baseVolume = isBuy
+          ? baseOutputOrInput
+          : baseOutputOrInput + feeAmount;
+        const executionPrice = isBuy
+          ? ((baseOutputOrInput - feeAmount) * 10n ** 18n) / tokenOutputOrInput
+          : (baseOutputOrInput * 10n ** 18n) / tokenOutputOrInput;
+        if (isBuy) {
+          tokenReserve -= tokenOutputOrInput;
+          baseReserve += baseOutputOrInput - feeAmount;
+          buyVolume += baseVolume;
+        } else {
+          tokenReserve += tokenOutputOrInput;
+          baseReserve -= baseOutputOrInput;
+          sellVolume += baseVolume;
+        }
+        totalVolume += baseVolume;
+        totalFees += feeAmount;
+        cumulativeVolume += baseVolume;
+        traders.add(decoded.args.recipient.toLowerCase());
+        trades.push({
+          side: isBuy ? "buy" : "sell",
+          trader: decoded.args.recipient,
+          baseAmount: baseVolume.toString(),
+          tokenAmount: tokenOutputOrInput.toString(),
+          feeAmount: feeAmount.toString(),
+          blockNumber: log.block_number,
+          timestamp: isoTime(log.timestamp),
+          transactionHash: log.transaction_hash,
+          price: executionPrice.toString(),
+        });
+        chart.push({
+          blockNumber: log.block_number,
+          timestamp: isoTime(log.timestamp),
+          price: executionPrice.toString(),
+          cumulativeVolume: cumulativeVolume.toString(),
+          eventType: "trade",
+          side: isBuy ? "buy" : "sell",
+          baseAmount: baseVolume.toString(),
+          transactionHash: log.transaction_hash,
+          logIndex: log.log_index,
+        });
       } catch {
         continue;
       }
@@ -293,12 +397,16 @@ export function deriveLaunchAnalytics({
     .filter(([, balance]) => balance > 0n)
     .sort((a, b) => (a[1] === b[1] ? 0 : a[1] > b[1] ? -1 : 1));
   const holders = positiveBalances.filter(
-    ([address]) => address !== market && address !== liquidityPool,
+    ([address]) =>
+      address !== market &&
+      address !== liquidityPool &&
+      address !== positionLocker,
   );
   const circulatingSupply =
     totalSupply -
     (balances.get(market) ?? 0n) -
-    (liquidityPool ? (balances.get(liquidityPool) ?? 0n) : 0n);
+    (liquidityPool ? (balances.get(liquidityPool) ?? 0n) : 0n) -
+    (positionLocker ? (balances.get(positionLocker) ?? 0n) : 0n);
   const marketCapBase = (totalSupply * basePerToken) / 10n ** 18n;
   const liquidityBase =
     baseReserve + (tokenReserve * basePerToken) / 10n ** 18n;
@@ -349,11 +457,14 @@ export function deriveLaunchAnalytics({
   return {
     formula: "canonical-events-plus-onchain-state-v1",
     marketType:
-      lifecycle?.marketPhase === "bonding"
-        ? "constant-product-bonding-curve"
-        : lifecycle?.marketPhase === "graduated"
-          ? "locked-constant-product-pool"
-          : "fixed-price-development-market",
+      lifecycle?.marketPhase === "graduated" &&
+      lifecycle.liquidityVenue === "uniswap-v3"
+        ? "locked-uniswap-v3-position"
+        : lifecycle?.marketPhase === "bonding"
+          ? "constant-product-bonding-curve"
+          : lifecycle?.marketPhase === "graduated"
+            ? "locked-constant-product-pool"
+            : "fixed-price-development-market",
     marketPhase: lifecycle?.marketPhase ?? "legacy_fixed",
     graduationProgressBps: lifecycle?.graduationProgressBps ?? 10_000,
     graduationThresholdBase: (
@@ -362,6 +473,10 @@ export function deriveLaunchAnalytics({
     baseRaised: (lifecycle?.baseRaised ?? 0n).toString(),
     remainingCurveTokens: (lifecycle?.remainingCurveTokens ?? 0n).toString(),
     graduatedPool: lifecycle?.graduatedPool ?? null,
+    liquidityVenue: lifecycle?.liquidityVenue ?? null,
+    positionLocker: lifecycle?.positionLocker ?? null,
+    positionTokenId: lifecycle?.positionTokenId?.toString() ?? null,
+    poolFeePips: lifecycle?.poolFeePips ?? null,
     baseSymbol: "mUSD",
     feeBps,
     priceBasePerToken: basePerToken.toString(),
@@ -399,11 +514,13 @@ export function deriveLaunchAnalytics({
       label:
         address === liquidityPool
           ? "Locked liquidity"
-          : address === market
-            ? "Liquidity pool"
-            : address === creator
-              ? "Creator"
-              : "Holder",
+          : address === positionLocker
+            ? "Locked fee inventory"
+            : address === market
+              ? "Liquidity pool"
+              : address === creator
+                ? "Creator"
+                : "Holder",
     })),
     recentTrades: trades.slice(-50).reverse(),
     chart: chart.length > 120 ? [chart[0], ...chart.slice(-119)] : chart,

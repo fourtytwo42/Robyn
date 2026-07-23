@@ -30,6 +30,7 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
     error BalanceDeltaMismatch();
     error PoolMismatch();
     error PoolAlreadyExists(address pool);
+    error MarketAlreadyBound();
     error InsufficientLiquidityUse(uint256 minimum, uint256 actual);
     error GraduationPriceMismatch(uint256 curvePrice, uint256 configuredPoolPrice);
 
@@ -57,7 +58,8 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
     IERC20 public immutable baseAsset;
     IERC20 public immutable launchToken;
     FeeBasketVault public immutable feeVault;
-    address public immutable bondingMarket;
+    address public immutable marketBindingAuthority;
+    address public bondingMarket;
     IUniswapV3Factory public immutable factory;
     INonfungiblePositionManager public immutable positionManager;
     ISwapRouter public immutable swapRouter;
@@ -98,13 +100,13 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
         IERC20 baseAsset_,
         IERC20 launchToken_,
         FeeBasketVault feeVault_,
-        address bondingMarket_,
+        address marketBindingAuthority_,
         AdapterConfig memory config_
     ) {
         int24 tickSpacing = config_.factory.feeAmountTickSpacing(config_.poolFee);
         if (
             address(baseAsset_) == address(0) || address(launchToken_) == address(0)
-                || address(feeVault_) == address(0) || bondingMarket_ == address(0)
+                || address(feeVault_) == address(0) || marketBindingAuthority_ == address(0)
                 || address(config_.factory) == address(0)
                 || address(config_.positionManager) == address(0)
                 || address(config_.swapRouter) == address(0)
@@ -123,7 +125,7 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
         baseAsset = baseAsset_;
         launchToken = launchToken_;
         feeVault = feeVault_;
-        bondingMarket = bondingMarket_;
+        marketBindingAuthority = marketBindingAuthority_;
         factory = config_.factory;
         positionManager = config_.positionManager;
         swapRouter = config_.swapRouter;
@@ -148,6 +150,15 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
         pool =
             config_.factory.createPool(address(baseAsset_), address(launchToken_), config_.poolFee);
         if (pool == address(0)) revert PoolMismatch();
+    }
+
+    function bindMarket(address bondingMarket_) external {
+        if (msg.sender != marketBindingAuthority) revert Unauthorized();
+        if (bondingMarket != address(0)) revert MarketAlreadyBound();
+        if (bondingMarket_ == address(0) || bondingMarket_.code.length == 0) {
+            revert InvalidConfiguration();
+        }
+        bondingMarket = bondingMarket_;
     }
 
     function initialize(uint256 tokenAmount, uint256 baseAmount, uint256 finalCurvePriceX18)
@@ -263,7 +274,8 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
                 sqrtPriceLimitX96: 0
             })
         );
-        nominalFeeAmount = Math.mulDiv(tokenInput, poolFee, 1_000_000);
+        uint256 nominalTokenFee = Math.mulDiv(tokenInput, poolFee, 1_000_000);
+        nominalFeeAmount = Math.mulDiv(nominalTokenFee, _spotBasePerTokenX18(), 1e18);
     }
 
     function sellFor(address recipient, uint256 tokenInput, uint256 minimumBaseOutput)
@@ -295,6 +307,10 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
 
     function spotBasePerTokenX18() external view returns (uint256) {
         if (!initialized) revert NotInitialized();
+        return _spotBasePerTokenX18();
+    }
+
+    function _spotBasePerTokenX18() private view returns (uint256) {
         (uint160 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
         return _basePerTokenX18(sqrtPriceX96);
     }

@@ -15,8 +15,11 @@ import {
     IUniswapV3Factory
 } from "../src/uniswap/UniswapV3Interfaces.sol";
 import { RewardFeePositionLocker } from "../src/uniswap/RewardFeePositionLocker.sol";
+import { UniswapV3AdapterDeployer } from "../src/uniswap/UniswapV3AdapterDeployer.sol";
 import { UniswapV3BondingCurveMarket } from "../src/uniswap/UniswapV3BondingCurveMarket.sol";
 import { UniswapV3GraduationAdapter } from "../src/uniswap/UniswapV3GraduationAdapter.sol";
+import { UniswapV3MarketDeployer } from "../src/uniswap/UniswapV3MarketDeployer.sol";
+import { UniswapV3MarketFactory } from "../src/uniswap/UniswapV3MarketFactory.sol";
 
 contract GraduationMockERC20 is ERC20 {
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) { }
@@ -323,6 +326,7 @@ contract GraduationMockFactory is IUniswapV3Factory {
                     maximumPriceDeviationBps: 100
                 });
             adapter = _deployAdapter(adapterConfig);
+            adapter.bindMarket(address(this));
             locker = adapter.locker();
             address[] memory exclusions = new address[](2);
             exclusions[0] = address(adapter);
@@ -511,7 +515,12 @@ contract GraduationMockFactory is IUniswapV3Factory {
                     minimumUseBps: 9_900,
                     maximumPriceDeviationBps: 100
                 });
-            market = new UniswapV3BondingCurveMarket(base, token, vault, address(this), curve, dex);
+            UniswapV3GraduationAdapter marketAdapter =
+                new UniswapV3GraduationAdapter(base, token, vault, address(this), dex);
+            market = new UniswapV3BondingCurveMarket(
+                base, token, vault, address(this), curve, marketAdapter
+            );
+            marketAdapter.bindMarket(address(market));
 
             address[] memory exclusions = new address[](4);
             exclusions[0] = address(market);
@@ -527,6 +536,14 @@ contract GraduationMockFactory is IUniswapV3Factory {
             token.transfer(address(swapRouter), 10_000 ether);
             reward.mint(address(conversionRouter), 10_000 ether);
         }
+
+
+
+
+
+
+
+
 
         function testTerminalBuyAtomicallyGraduatesAndSameMarketKeepsTrading() public {
             uint256 baseBefore = base.balanceOf(address(this));

@@ -224,12 +224,16 @@ export default async function LaunchDetail({
               <p className="card-label">Launch lifecycle</p>
               <h2 id="graduation-heading">
                 {market.marketPhase === "graduated"
-                  ? "Graduated to locked liquidity"
+                  ? market.liquidityVenue === "uniswap-v3"
+                    ? "Graduated to locked Uniswap v3 liquidity"
+                    : "Graduated to locked liquidity"
                   : "Climbing the bonding curve"}
               </h2>
               <p>
                 {market.marketPhase === "graduated"
-                  ? "The curve sold out atomically. Its remaining token allocation and raised mUSD now trade in a permanently locked local pool."
+                  ? market.liquidityVenue === "uniswap-v3"
+                    ? "The curve sold out atomically. Its reserved tokens and quote liquidity now trade in a canonical Uniswap v3 position whose NFT cannot be withdrawn. Quote-side fees continue funding this token's reward basket."
+                    : "The curve sold out atomically. Its remaining token allocation and raised mUSD now trade in a permanently locked local pool."
                   : "Every buy moves the price along the curve. When the curve allocation sells out, the market automatically moves its reserved tokens and raised mUSD into locked liquidity."}
               </p>
             </div>
@@ -457,8 +461,30 @@ export default async function LaunchDetail({
               <AddressRow label="Market" value={launch.market} />
               {market.graduatedPool ? (
                 <AddressRow
-                  label="Graduated liquidity pool"
+                  label={
+                    market.liquidityVenue === "uniswap-v3"
+                      ? "Uniswap v3 liquidity pool"
+                      : "Graduated liquidity pool"
+                  }
                   value={market.graduatedPool}
+                />
+              ) : null}
+              {market.positionLocker ? (
+                <AddressRow
+                  label="Immutable position locker"
+                  value={market.positionLocker}
+                />
+              ) : null}
+              {market.positionTokenId ? (
+                <AddressRow
+                  label="Uniswap position NFT"
+                  value={`#${market.positionTokenId}`}
+                />
+              ) : null}
+              {market.poolFeePips !== null ? (
+                <AddressRow
+                  label="Uniswap pool fee"
+                  value={`${(market.poolFeePips / 10_000).toFixed(2)}%`}
                 />
               ) : null}
               <AddressRow label="Creator wallet" value={launch.creator} />

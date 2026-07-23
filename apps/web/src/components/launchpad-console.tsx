@@ -139,6 +139,20 @@ const baseFaucetAbi = [
 const marketAbi = [
   {
     type: "function",
+    name: "graduationAdapter",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "positionLocker",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
     name: "graduatedPool",
     stateMutability: "view",
     inputs: [],
@@ -504,7 +518,9 @@ export function LaunchpadConsole({
         functionName: "launchTokenById",
         args: [id],
       });
-      setStatus("2/5 Deploying its bonding curve and locked pool...");
+      setStatus(
+        "2/5 Deploying its bonding curve and canonical Uniswap pool...",
+      );
       await submit({
         address: deployment.contracts.marketFactory,
         abi: marketFactoryAbi,
@@ -539,18 +555,33 @@ export function LaunchpadConsole({
         abi: marketAbi,
         functionName: "graduatedPool",
       });
-      setStatus("5/5 Sealing curve and locked-pool reward exclusions...");
+      const graduationAdapter = await publicClient.readContract({
+        address: market,
+        abi: marketAbi,
+        functionName: "graduationAdapter",
+      });
+      const positionLocker = await publicClient.readContract({
+        address: market,
+        abi: marketAbi,
+        functionName: "positionLocker",
+      });
+      setStatus(
+        "5/5 Sealing market, adapter, locker, and pool reward exclusions...",
+      );
       await submit({
         address: deployment.contracts.factory,
         abi: factoryAbi,
         functionName: "sealLaunchExclusions",
-        args: [token, [market, graduatedPool]],
+        args: [
+          token,
+          [market, graduationAdapter, positionLocker, graduatedPool],
+        ],
         account,
       });
       await refresh();
       await bindArtwork(token, artworkMediaId);
       setStatus(
-        "Launch complete. Its bonding curve is live, graduation is automatic, and basket rules are immutable.",
+        "Launch complete. Its bonding curve is live, graduation into locked Uniswap liquidity is automatic, and basket rules are immutable.",
       );
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Launch failed.");

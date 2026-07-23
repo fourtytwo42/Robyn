@@ -6,13 +6,23 @@ Durable project context lives here. Update this file whenever information should
 
 - Active Codex goal: completed 2026-07-22 — securely persist and fund a dedicated Robinhood Chain Testnet deployer wallet and prove no-broadcast deployment readiness without exposing secrets.
 - Goal completion standard: the encrypted operational wallet and recovery bundle survive isolated restore, owner-only permissions pass, the official chain-46630 balance is sufficient for deployment plus testing, and the workflow is documented and pushed without committing key material.
-- Current task: wire the implemented canonical Uniswap v3 graduation contracts into deployment, indexing, API, and the same token-page trade controls on feature branch `codex/uniswap-auto-graduation`; no public-testnet broadcast is authorized.
-- Last meaningful change: implemented `UniswapV3BondingCurveMarket`, `UniswapV3GraduationAdapter`, and `RewardFeePositionLocker`, including direct immutable NFT custody, price-continuity checks, same-market post-graduation swaps, permissionless fee harvest, and pool/locker reward exclusions.
-- Last verification: 2026-07-22 all 38 Foundry tests and size checks pass. An explicit no-broadcast fork test against Robinhood mainnet chain 4663 created a real pool through the official factory, minted a real position through the official position manager, traded both directions through official SwapRouter02, harvested both fee sides, routed WETH fees to the basket vault, and kept launch-token fees sequestered.
-- Next step: add a versioned native-market factory/deployment manifest, teach the indexer/API/web to bind the canonical pool and locker, rebuild the VM release, and run full in-app-browser regression on chain 31337 before considering chain 46630.
+- Current task: promote the validated chain-31337 Uniswap v3 graduation deployment and data-plane integration on feature branch `codex/uniswap-auto-graduation`, rebuild the VM release, and run complete in-app-browser regression; no public-testnet broadcast is authorized.
+- Last meaningful change: added the size-bounded `UniswapV3MarketFactory` deployment architecture, pinned official local Uniswap artifacts, four-address reward exclusions, canonical pool/locker API and UI data, direct pool-swap indexing, and automatic audited keeper fee harvests.
+- Last verification: 2026-07-22 all formatting, lint, typecheck, service tests, Anvil smoke, and 40 Foundry tests pass. An isolated official-artifact chain-31337 deployment seeded five demos, graduated EVID, traded both ways through the same market, locked NFT `1`, harvested both fee sides, and completed a keeper harvest job through a disposable PostgreSQL schema and Redis database.
+- Next step: run the explicit chain-4663 fork and optimized build/size gates, commit and push this checkpoint, reset and seed the persistent chain-31337 deployment, rebuild/promote the VM services, and complete browser regression before merging.
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-22 - Local canonical Uniswap deployment and automatic fee harvest
+
+- Deployment: `scripts/deploy-local-uniswap-v3.sh` deploys pinned official v3-core 1.0.0, v3-periphery 1.4.4, and SwapRouter contracts 1.1.0 artifacts on chain 31337 only. The deployment manifest binds package versions and runtime code hashes.
+- Factory: `UniswapV3MarketFactory` uses separately bound adapter/market deployers to remain under EIP-170, computes the initial sqrt price from base-per-token for either token ordering, creates the pool before exclusions seal, and preserves `createMarket`/`marketByToken` compatibility.
+- Exclusions: every native launch now seals market, graduation adapter, immutable position locker, and canonical pool. API holder accounting also excludes and labels the locker.
+- Data plane: the API accepts both legacy and canonical graduation events, exposes venue/locker/NFT/fee-tier metadata, ingests direct canonical pool swaps without double-counting Robyn-routed transactions, and shows the canonical venue on token pages.
+- Automation: the existing keeper simulates and queues permissionless locker harvests for graduated Uniswap markets; quote fees enter `FeeBasketVault`, then the existing conversion jobs buy basket assets. Launch-token fees remain sequestered in the excluded locker.
+- Verification: isolated deployment and five-demo seeding passed. EVID graduated and completed post-graduation buy/sell. Manual harvest moved mUSD fees from the NFT into the vault and left launch-token fees locked. A later trade was harvested automatically by one completed BullMQ audit job, increasing vault fees from 76.852318362795422879 to 79.852318362795422878 mUSD.
+- Remaining limitation: `createLaunch` and `createMarket` are two wallet transactions. The market factory is atomic once called, but a public launch coordinator is still required to remove the intervening pool-precreation denial-of-service opportunity.
 
 ### 2026-07-22 - Canonical Uniswap graduation contract checkpoint
 

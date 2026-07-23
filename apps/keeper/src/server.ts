@@ -17,8 +17,10 @@ import { conversionJobId, isLegExecutable } from "./eligibility.js";
 type Manifest = {
   chainId: number;
   contracts: { factory: Address };
+  market?: { type?: string };
 };
 type ConvertJob = {
+  kind?: "convert";
   idempotencyKey: string;
   token: Address;
   vault: Address;
@@ -26,7 +28,22 @@ type ConvertJob = {
   observedPending: string;
   observedPendingSince: string;
 };
-type ConvertResult = { transactionHash: Hash; inputAmount: string };
+type HarvestJob = {
+  kind: "harvest";
+  idempotencyKey: string;
+  token: Address;
+  vault: Address;
+  market: Address;
+  locker: Address;
+  observedBlock: string;
+};
+type KeeperJob = ConvertJob | HarvestJob;
+type KeeperResult = {
+  operation: "convert" | "harvest";
+  transactionHash: Hash;
+  inputAmount: string;
+  launchTokenFees?: string;
+};
 
 const environment = process.env.ROBYN_ENV ?? "";
 if (environment !== "robyn-devnet" && environment !== "robinhood-testnet") {
@@ -108,7 +125,7 @@ const auditRedis = new Redis(redisUrl.toString(), {
 });
 await auditRedis.ping();
 const queueName = process.env.ROBYN_QUEUE_NAME ?? "robyn-conversions";
-const queue = new Queue<ConvertJob, ConvertResult>(queueName, {
+const queue = new Queue<KeeperJob, KeeperResult>(queueName, {
   connection,
   defaultJobOptions: {
     attempts: 3,
@@ -198,6 +215,43 @@ const routerAbi = [
     outputs: [{ type: "uint256" }],
   },
 ] as const;
+const uniswapMarketAbi = [
+  {
+    type: "function",
+    name: "graduated",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "positionLocker",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+] as const;
+const positionLockerAbi = [
+  { type: "error", name: "EmptyHarvest", inputs: [] },
+  {
+    type: "function",
+    name: "positionBound",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "harvest",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [{ type: "uint256" }, { type: "uint256" }],
+  },
+] as const;
+
+function isEmptyHarvest(error: unknown) {
+  return error instanceof Error && error.message.includes("EmptyHarvest");
+}
 
 async function audit(
   key: string,
@@ -260,11 +314,16 @@ async function readLeg(vault: Address, legIndex: bigint) {
 
 async function scan() {
   await auditRedis.ping();
-  const launches = await sql.unsafe<{ token: Address; vault: Address }[]>(
-    "SELECT token,vault FROM launches WHERE chain_id=$1 ORDER BY launch_id",
+  const launches = await sql.unsafe<
+    { token: Address; vault: Address; market: Address }[]
+  >(
+    "SELECT token,vault,market FROM launches WHERE chain_id=$1 ORDER BY launch_id",
     [manifest.chainId],
   );
   for (const launch of launches) {
+    if (manifest.market?.type === "uniswap-v3-bonding-curve-v1") {
+      await enqueueHarvest(launch);
+    }
     const count = await publicClient.readContract({
       address: launch.vault,
       abi: vaultAbi,
@@ -289,6 +348,7 @@ async function scan() {
         current.leg.pendingBase,
       );
       const payload: ConvertJob = {
+        kind: "convert",
         idempotencyKey: key,
         token: launch.token,
         vault: launch.vault,
@@ -306,9 +366,61 @@ async function scan() {
   await heartbeat();
 }
 
+async function enqueueHarvest(launch: {
+  token: Address;
+  vault: Address;
+  market: Address;
+}) {
+  const graduated = await publicClient.readContract({
+    address: launch.market,
+    abi: uniswapMarketAbi,
+    functionName: "graduated",
+  });
+  if (!graduated) return;
+  const locker = await publicClient.readContract({
+    address: launch.market,
+    abi: uniswapMarketAbi,
+    functionName: "positionLocker",
+  });
+  const positionBound = await publicClient.readContract({
+    address: locker,
+    abi: positionLockerAbi,
+    functionName: "positionBound",
+  });
+  if (!positionBound) return;
+  try {
+    const simulation = await publicClient.simulateContract({
+      address: locker,
+      abi: positionLockerAbi,
+      functionName: "harvest",
+      account: operator,
+    });
+    if (simulation.result[0] === 0n && simulation.result[1] === 0n) return;
+  } catch (error) {
+    if (isEmptyHarvest(error)) return;
+    throw error;
+  }
+  const observedBlock = await publicClient.getBlockNumber();
+  const key = `harvest-${locker.toLowerCase()}-${observedBlock}`;
+  const payload: HarvestJob = {
+    kind: "harvest",
+    idempotencyKey: key,
+    token: launch.token,
+    vault: launch.vault,
+    market: launch.market,
+    locker,
+    observedBlock: observedBlock.toString(),
+  };
+  const existing = await queue.getJob(key);
+  if (!existing) {
+    await audit(key, "queued", 0, payload);
+    await queue.add("harvest-uniswap-fees", payload, { jobId: key });
+  }
+}
+
 async function processConversion(
-  job: Job<ConvertJob, ConvertResult>,
-): Promise<ConvertResult> {
+  job: Job<ConvertJob, KeeperResult>,
+): Promise<KeeperResult> {
   await audit(
     job.data.idempotencyKey,
     "active",
@@ -327,6 +439,7 @@ async function processConversion(
     })
   ) {
     return {
+      operation: "convert",
       transactionHash: ("0x" + "0".repeat(64)) as Hash,
       inputAmount: "0",
     };
@@ -371,14 +484,66 @@ async function processConversion(
     throw new Error("Conversion transaction reverted");
   }
   return {
+    operation: "convert",
     transactionHash,
     inputAmount: current.leg.pendingBase.toString(),
   };
 }
 
-const worker = new Worker<ConvertJob, ConvertResult>(
+async function processHarvest(
+  job: Job<HarvestJob, KeeperResult>,
+): Promise<KeeperResult> {
+  await audit(
+    job.data.idempotencyKey,
+    "active",
+    job.attemptsMade + 1,
+    job.data,
+  );
+  let simulation;
+  try {
+    simulation = await publicClient.simulateContract({
+      address: job.data.locker,
+      abi: positionLockerAbi,
+      functionName: "harvest",
+      account: operator,
+    });
+  } catch (error) {
+    if (!isEmptyHarvest(error)) throw error;
+    return {
+      operation: "harvest",
+      transactionHash: ("0x" + "0".repeat(64)) as Hash,
+      inputAmount: "0",
+      launchTokenFees: "0",
+    };
+  }
+  const transactionHash = await walletClient.writeContract(simulation.request);
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash: transactionHash,
+    timeout: 30_000,
+  });
+  if (receipt.status !== "success") {
+    throw new Error("Uniswap fee harvest transaction reverted");
+  }
+  return {
+    operation: "harvest",
+    transactionHash,
+    inputAmount: simulation.result[0].toString(),
+    launchTokenFees: simulation.result[1].toString(),
+  };
+}
+
+async function processKeeperJob(
+  job: Job<KeeperJob, KeeperResult>,
+): Promise<KeeperResult> {
+  if (job.data.kind === "harvest") {
+    return processHarvest(job as Job<HarvestJob, KeeperResult>);
+  }
+  return processConversion(job as Job<ConvertJob, KeeperResult>);
+}
+
+const worker = new Worker<KeeperJob, KeeperResult>(
   queueName,
-  processConversion,
+  processKeeperJob,
   { connection, concurrency: 1 },
 );
 worker.on("completed", (job, result) => {

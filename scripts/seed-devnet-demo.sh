@@ -55,7 +55,7 @@ cleanup() {
 trap cleanup EXIT
 
 record_launch() {
-  local name="$1" symbol="$2" token="$3" vault="$4" market="$5" pool="$6" trades="$7"
+  local name="$1" symbol="$2" token="$3" vault="$4" market="$5" adapter="$6" locker="$7" pool="$8" trades="$9"
   local graduated progress phase
   graduated="$(cast call "$market" 'graduated()(bool)' --rpc-url "$rpc_url")"
   progress="$(cast call "$market" 'graduationProgressBps()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')"
@@ -70,27 +70,31 @@ record_launch() {
     --arg token "$token" \
     --arg vault "$vault" \
     --arg market "$market" \
+    --arg adapter "$adapter" \
+    --arg locker "$locker" \
     --arg pool "$pool" \
     --arg phase "$phase" \
     --argjson progressBps "$progress" \
     --argjson seededTrades "$trades" \
-    '{name:$name,symbol:$symbol,token:$token,vault:$vault,market:$market,graduatedPool:$pool,phase:$phase,progressBps:$progressBps,seededTrades:$seededTrades}' >>"$demo_log"
+    '{name:$name,symbol:$symbol,token:$token,vault:$vault,market:$market,graduationAdapter:$adapter,positionLocker:$locker,graduatedPool:$pool,phase:$phase,progressBps:$progressBps,seededTrades:$seededTrades}' >>"$demo_log"
 }
 
 create_launch() {
   local name="$1" symbol="$2" assets="$3" weights="$4"
-  local id token vault market pool
+  local id token vault market adapter locker pool
   send_as "$deployer" "$factory" 'createLaunch(string,string,uint256,address[],uint16[])' "$name" "$symbol" "$initial_supply" "$assets" "$weights"
   id="$(cast call "$factory" 'launchCount()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')"
   token="$(cast call "$factory" 'launchTokenById(uint256)(address)' "$id" --rpc-url "$rpc_url")"
   vault="$(cast call "$factory" 'vaultByToken(address)(address)' "$token" --rpc-url "$rpc_url")"
   send_as "$deployer" "$market_factory" 'createMarket(address)' "$token"
   market="$(cast call "$market_factory" 'marketByToken(address)(address)' "$token" --rpc-url "$rpc_url")"
+  adapter="$(cast call "$market_factory" 'adapterByToken(address)(address)' "$token" --rpc-url "$rpc_url")"
   pool="$(cast call "$market" 'graduatedPool()(address)' --rpc-url "$rpc_url")"
+  locker="$(cast call "$market" 'positionLocker()(address)' --rpc-url "$rpc_url")"
   send_as "$deployer" "$token" 'approve(address,uint256)' "$market" "$initial_supply"
   send_as "$deployer" "$market" 'seed(uint256,uint256)' "$initial_supply" 0
-  send_as "$deployer" "$factory" 'sealLaunchExclusions(address,address[])' "$token" "[$market,$pool]"
-  printf '%s\t%s\t%s\t%s\n' "$token" "$vault" "$market" "$pool"
+  send_as "$deployer" "$factory" 'sealLaunchExclusions(address,address[])' "$token" "[$market,$adapter,$locker,$pool]"
+  printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$token" "$vault" "$market" "$adapter" "$locker" "$pool"
 }
 
 buy() {
@@ -108,6 +112,8 @@ sell() {
 genesis_token="$(jq -r '.contracts.genesisToken' "$manifest")"
 genesis_vault="$(jq -r '.contracts.genesisVault' "$manifest")"
 genesis_market="$(jq -r '.contracts.genesisMarket' "$manifest")"
+genesis_adapter="$(jq -r '.contracts.genesisGraduationAdapter' "$manifest")"
+genesis_locker="$(jq -r '.contracts.genesisPositionLocker' "$manifest")"
 genesis_pool="$(jq -r '.contracts.genesisGraduatedPool' "$manifest")"
 buy "$genesis_market" "${traders[0]}" 900
 buy "$genesis_market" "${traders[1]}" 700
@@ -116,24 +122,24 @@ buy "$genesis_market" "${traders[2]}" 1200
 buy "$genesis_market" "${traders[3]}" 650
 sell "$genesis_token" "$genesis_market" "${traders[1]}" 8000000
 buy "$genesis_market" "${traders[4]}" 900
-record_launch "Robyn Genesis" "ROBYN" "$genesis_token" "$genesis_vault" "$genesis_market" "$genesis_pool" 7
+record_launch "Robyn Genesis" "ROBYN" "$genesis_token" "$genesis_vault" "$genesis_market" "$genesis_adapter" "$genesis_locker" "$genesis_pool" 7
 
-IFS=$'\t' read -r soak_token soak_vault soak_market soak_pool < <(create_launch "Soak Society" "SOAK" "[$nvda,$spy,$eth_reward]" '[2500,5000,2500]')
+IFS=$'\t' read -r soak_token soak_vault soak_market soak_adapter soak_locker soak_pool < <(create_launch "Soak Society" "SOAK" "[$nvda,$spy,$eth_reward]" '[2500,5000,2500]')
 buy "$soak_market" "${traders[1]}" 400
 buy "$soak_market" "${traders[2]}" 650
 sell "$soak_token" "$soak_market" "${traders[1]}" 9000000
 buy "$soak_market" "${traders[3]}" 800
 buy "$soak_market" "${traders[5]}" 450
-record_launch "Soak Society" "SOAK" "$soak_token" "$soak_vault" "$soak_market" "$soak_pool" 5
+record_launch "Soak Society" "SOAK" "$soak_token" "$soak_vault" "$soak_market" "$soak_adapter" "$soak_locker" "$soak_pool" 5
 
-IFS=$'\t' read -r one_token one_vault one_market one_pool < <(create_launch "NVIDIA Orbit" "ONE" "[$nvda]" '[10000]')
+IFS=$'\t' read -r one_token one_vault one_market one_adapter one_locker one_pool < <(create_launch "NVIDIA Orbit" "ONE" "[$nvda]" '[10000]')
 buy "$one_market" "${traders[0]}" 250
 buy "$one_market" "${traders[4]}" 325
 sell "$one_token" "$one_market" "${traders[0]}" 5000000
 buy "$one_market" "${traders[5]}" 475
-record_launch "NVIDIA Orbit" "ONE" "$one_token" "$one_vault" "$one_market" "$one_pool" 4
+record_launch "NVIDIA Orbit" "ONE" "$one_token" "$one_vault" "$one_market" "$one_adapter" "$one_locker" "$one_pool" 4
 
-IFS=$'\t' read -r evid_token evid_vault evid_market evid_pool < <(create_launch "Evidence Engine" "EVID" "[$nvda,$spy,$eth_reward]" '[2000,3000,5000]')
+IFS=$'\t' read -r evid_token evid_vault evid_market evid_adapter evid_locker evid_pool < <(create_launch "Evidence Engine" "EVID" "[$nvda,$spy,$eth_reward]" '[2000,3000,5000]')
 buy "$evid_market" "${traders[0]}" 1000
 buy "$evid_market" "${traders[1]}" 1500
 sell "$evid_token" "$evid_market" "${traders[0]}" 12000000
@@ -141,15 +147,15 @@ buy "$evid_market" "${traders[2]}" 2300
 buy "$evid_market" "${traders[3]}" 5000
 buy "$evid_market" "${traders[4]}" 600
 sell "$evid_token" "$evid_market" "${traders[1]}" 7000000
-record_launch "Evidence Engine" "EVID" "$evid_token" "$evid_vault" "$evid_market" "$evid_pool" 7
+record_launch "Evidence Engine" "EVID" "$evid_token" "$evid_vault" "$evid_market" "$evid_adapter" "$evid_locker" "$evid_pool" 7
 
-IFS=$'\t' read -r myco_token myco_vault myco_market myco_pool < <(create_launch "My Community" "MYCO" "[$nvda,$spy,$eth_reward]" '[6000,2000,2000]')
+IFS=$'\t' read -r myco_token myco_vault myco_market myco_adapter myco_locker myco_pool < <(create_launch "My Community" "MYCO" "[$nvda,$spy,$eth_reward]" '[6000,2000,2000]')
 buy "$myco_market" "${traders[5]}" 800
 buy "$myco_market" "${traders[2]}" 1200
 buy "$myco_market" "${traders[4]}" 1500
 sell "$myco_token" "$myco_market" "${traders[5]}" 10000000
 buy "$myco_market" "${traders[0]}" 1100
-record_launch "My Community" "MYCO" "$myco_token" "$myco_vault" "$myco_market" "$myco_pool" 5
+record_launch "My Community" "MYCO" "$myco_token" "$myco_vault" "$myco_market" "$myco_adapter" "$myco_locker" "$myco_pool" 5
 
 demo_array="$(mktemp)"
 jq -s '.' "$demo_log" >"$demo_array"
