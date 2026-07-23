@@ -10,8 +10,14 @@
 
 ## Creator rewards
 
-- As a creator, I can see and pull my native fee balance without any fee payment occurring during a trade.
-- As a creator, I can claim to another recipient so a reverting or specialized wallet does not strand the entitlement.
+- As a creator, I see each token's pending conversion, claimable native ETH, lifetime earned, and lifetime claimed independently.
+- As a creator, I can claim a launch's native fees from that token page only when the connected wallet is its immutable canonical creator.
+- As a creator with multiple launches, I can claim one token without changing any other token's balance.
+- As a creator, I can use Portfolio to see every token I created, claim individually, or Claim All in one transaction.
+- As a creator, I can reveal an advanced Portfolio control to send an atomic batch claim to another valid recipient.
+- As a noncreator or disconnected visitor, I do not see personal claim controls on a token page.
+- As a protocol observer, I understand that wallet-gated controls do not make public onchain balances or events private.
+- As a DAO member, I no longer see creator-claim controls in DAO Rewards; Treasury retains aggregate creator-liability monitoring.
 - As a token holder, I can verify the creator share cannot reduce the immutable 50% basket share.
 
 ## Delegation and voting

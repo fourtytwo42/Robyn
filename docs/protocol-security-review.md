@@ -111,3 +111,14 @@ Chain-46630 uses a project-controlled test-only Uniswap v3 fallback only when th
 # DAO release security addendum
 
 The DAO release adds transfer-corrected native rewards, timestamp vote checkpoints, Timelock/Governor roles, bounded partial conversions, current/TWAP tick agreement, post-fee spot price-impact enforcement, permissionless keeper execution, and a pause-only guardian. The detailed threat model and response process are in [DAO Governance and Fee Operations](dao-governance-operations.md). Public or mainnet distribution remains blocked on independent contract, legal, and tax review.
+# Token-specific creator reward threat update
+
+Schema v4 removes the wallet-aggregated creator claim mapping and makes the launch token the accounting key. The security properties are:
+
+- Creator identity comes only from coordinator/factory launch registration and is immutable.
+- Every claim validates the caller against the selected token's creator. Batch input containing one unknown or foreign token reverts the entire transaction.
+- Liabilities clear before the native call and the router remains non-reentrant. A failed recipient restores all balances and emitted events.
+- Duplicate tokens in a batch cannot double-pay because the first debit clears the token balance and later duplicates contribute zero.
+- Claiming one token cannot mutate another token's fee account. The global liability decreases only by the exact aggregate amount paid.
+- Wallet-gated UI visibility does not provide confidentiality and must never be described as private accounting.
+- Remaining public-network gate: independent review of the expanded router, coordinator bindings, conversion path, and deployment manifest before real-value operation.

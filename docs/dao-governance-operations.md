@@ -47,7 +47,15 @@ For unsafe conversion behavior, guardian pauses immediately, operators preserve 
 
 ## Deployment gates
 
-Schema-v3 manifests bind RDAO, Governor, Timelock, guardian, fee router, native converter, native pool, fee policy, allocation, DEX provenance hash, and exact Git commit. Verification proves code presence, bindings, role renunciation, supply, exclusions, governance settings, launch fee registration, and chain ID. The isolated chain-46630 rehearsal must prove bonding, graduation, basket rewards, bounded native conversion, creator claim, and RDAO claim. Public testnet remains no-broadcast until separately authorized.
+Schema-v4 manifests bind RDAO, Governor, Timelock, guardian, `RobynProtocolFeeRouterV2`, native converter, native pool, fee policy, `per-token-v2` creator accounting, allocation, DEX provenance hash, and exact Git commit. Verification proves code presence, bindings, role renunciation, supply, exclusions, governance settings, expanded launch fee registration, and chain ID. The isolated chain-46630 rehearsal must prove bonding, graduation, basket rewards, bounded native conversion, token-attributed creator claim, and RDAO claim. Public testnet remains no-broadcast until separately authorized.
+
+## Creator reward operations
+
+- Keeper conversion remains permissionless and bounded. Pending creator base is not claimable or presented as ETH until native conversion succeeds.
+- Creator claims are launch-token scoped. Operators diagnose claims with `launchAccount(token)` and reconcile `claimableCreatorNative + claimedCreatorNative == cumulativeCreatorNative` for completed conversion credit.
+- Batch claim failures are fail-closed: an unknown token, foreign creator, invalid recipient, reentrancy, or failed native receiver reverts every debit and event.
+- The public DAO surface shows aggregate creator liability for solvency only. Personal creator claim controls live on the canonical token page and `/portfolio`.
+- Incident response must compare the sum of all launch `claimableCreatorNative` values with `totalCreatorNativeLiability` before and after any recovery, index rebuild, or release promotion.
 
 ### Initial RDAO allocation
 

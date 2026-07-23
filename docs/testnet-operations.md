@@ -166,6 +166,8 @@ scripts/verify-testnet-deployment.sh deployments/46630.json
 ```
 
 The protocol manifest is schema version 2 and records the coordinator, helper deployers, pool, adapter, locker, exact release commit, and SHA-256 of the DEX provenance manifest. `scripts/rehearse-testnet.sh` executes both phases on an isolated chain-46630 Anvil instance and proves atomic launch, bonding buy, automatic graduation, nonzero locked liquidity, post-graduation sell, reward conversion, and claims.
-# Schema-v3 DAO testnet candidate
+# Schema-v4 DAO and creator-reward testnet candidate
 
-`scripts/deploy-testnet.sh` now deploys the RDAO, Governor, Timelock, guardian, protocol fee router, bounded native converter, v3 factory, and DAO coordinator after the separately verified Robyn-controlled Uniswap suite. `scripts/verify-testnet-deployment.sh` requires schema version 3 and verifies DAO roles and launch fee registration. `scripts/rehearse-testnet.sh` proves a bounded native conversion plus creator and RDAO claims on isolated chain 46630. These commands do not authorize a public broadcast.
+`scripts/deploy-testnet.sh` deploys the RDAO, Governor, Timelock, guardian, `RobynProtocolFeeRouterV2`, bounded native converter, fresh factory, and DAO coordinator after the separately verified Robyn-controlled Uniswap suite. `scripts/verify-testnet-deployment.sh` requires schema version 4, `per-token-v2` provenance, and the expanded launch fee-account layout. `scripts/rehearse-testnet.sh` proves a bounded native conversion plus token-attributed creator and RDAO claims on isolated chain 46630. These commands do not authorize a public broadcast.
+
+Before any later authorized public transaction, verify the creator-reward endpoint against the frozen manifest, simulate `claimCreatorFees(genesisToken)`, confirm the caller equals the canonical launch creator, and prove the sum of per-token claimable creator balances equals `totalCreatorNativeLiability`.

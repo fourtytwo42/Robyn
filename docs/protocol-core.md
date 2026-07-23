@@ -128,4 +128,6 @@ All new native launches enter through immutable `RobynAtomicLaunchCoordinator`. 
 The canonical identity is `AtomicLaunchCreated` from the creator transaction receipt. Clients must not use the current `launchCount` to identify their result. The indexer exposes v2 launches only when the event agrees with both factory mappings and onchain seeded/sealed state.
 # DAO and protocol fee extension
 
-The schema-v3 protocol adds fixed-supply RDAO governance and the immutable 50/25/20/5 fee router. Architecture, accounting, keeper controls, and invariants are specified in [DAO Governance and Fee Operations](dao-governance-operations.md) and PRD 11.
+The schema-v4 protocol adds fixed-supply RDAO governance and the immutable 50/25/20/5 fee router with per-token creator-native accounting. Architecture, accounting, keeper controls, and invariants are specified in [DAO Governance and Fee Operations](dao-governance-operations.md) and PRD 11.
+
+`RobynProtocolFeeRouterV2` keeps launch identity as the accounting key. Native conversion credits `claimableCreatorNative` on that launch's account, while `cumulativeCreatorNative` and `claimedCreatorNative` preserve lifetime reconciliation. The router retains `totalCreatorNativeLiability` as a global conservation check but exposes no wallet-aggregated creator balance. Single and batch claims validate the immutable creator recorded when the coordinator registered the launch.

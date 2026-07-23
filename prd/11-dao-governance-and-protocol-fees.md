@@ -66,10 +66,20 @@ Basket rounding dust remains in the basket half. Native conversion rounding dust
 
 - Conservation and partial-batch invariants hold before and after graduation.
 - Fixed supply, exclusions, transfer corrections, delegation snapshots, quorum, timelock, double-vote rejection, guardian limits, and failed receiver behavior are tested.
-- Schema-v3 local and isolated chain-46630 deployments verify all bindings, roles, fee constants, exact supply, DEX provenance, and launch registration.
+- Schema-v4 local and isolated chain-46630 deployments verify all bindings, roles, fee constants, exact supply, DEX provenance, launch registration, and per-token creator reward accounting.
 - Protected testnet build contains injected-wallet controls and no devnet session key/faucet/private-key code.
 - Desktop, tablet, and 390x844 browser acceptance covers every DAO view and transaction path.
 - Public chain-46630 broadcast remains a separate explicit authorization gate.
+
+## Token-specific creator rewards
+
+- Every launch fee account stores pending creator base, claimable creator native ETH, lifetime creator ETH accrued, and lifetime creator ETH claimed.
+- Conversion credits creator ETH to the originating launch token. A claim against one token cannot reduce another token's entitlement, including when both tokens have the same creator.
+- Creator claims accept a token address. Batch claims validate immutable creator ownership for every token, skip owned zero balances, revert atomically on unknown or foreign tokens, clear liabilities before interaction, send one aggregate payment, and emit one token-attributed event per paid launch.
+- The global creator liability is retained only as a solvency invariant. Wallet-aggregated personal claims are removed.
+- The token earnings panel renders only when the connected wallet equals the factory-recorded creator. `/portfolio` is the unified wallet profile and includes created launches, aggregate totals, per-token claims, Claim All, and advanced claim-to controls.
+- DAO Rewards contains only RDAO member rewards. DAO Treasury may display aggregate creator liabilities and public token-level accounting for monitoring, but it does not expose personal creator claim controls.
+- UI gating is convenience and information hierarchy, not privacy. Contract storage and events remain public.
 
 ## Legal disclosure
 
