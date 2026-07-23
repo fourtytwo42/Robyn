@@ -32,6 +32,7 @@ The documents distinguish the first shippable product from the eventual native l
 | [10 - Technology stack and repository architecture](10-technology-stack-and-repository-architecture.md) | Monorepo, frontend, backend, contracts, data, testing, observability and deployment baseline |
 | [11 - DAO, governance and protocol fees](11-dao-governance-and-protocol-fees.md) | Governance token, fee policy, rewards and treasury |
 | [12 - Multi-wallet connection](12-multi-wallet-connection.md) | Shared testnet connectors, wallet UX, SIWE invalidation and release configuration |
+| [13 - Immutable IPFS token metadata](13-immutable-ipfs-token-metadata.md) | ERC-1046 token URIs, deterministic media, Kubo, redundant pinning, moderation and recovery |
 
 ## Requirement namespace
 
@@ -55,6 +56,7 @@ The implementation sequence and evidence gates are defined in [Devnet-to-testnet
 | `DESIGN-` | Visual system, interaction patterns and design QA |
 | `STACK-` | Application technologies, repository boundaries and toolchain |
 | `WALLET-` | External wallet connection, chain state and identity-session boundaries |
+| `IPFS-` | Immutable token metadata, content addressing, pinning and recovery |
 
 `MUST`, `SHOULD`, and `MAY` have their usual product-requirement meaning. Any change to a `MUST` requirement requires an entry in the decision register.
 

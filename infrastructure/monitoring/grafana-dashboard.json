@@ -118,6 +118,19 @@
       "targets": [{"expr": "robyn_pm2_process_restarts", "legendFormat": "{{component}}", "refId": "A"}, {"expr": "time() - robyn_keeper_last_success_timestamp_seconds", "legendFormat": "keeper heartbeat age", "refId": "B"}],
       "title": "Restart and keeper progress",
       "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "robyn-prometheus"},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 38},
+      "id": 13,
+      "options": {"legend": {"displayMode": "table", "placement": "bottom"}},
+      "targets": [
+        {"expr": "robyn_ipfs_pins", "legendFormat": "{{scope}} {{state}}", "refId": "A"},
+        {"expr": "robyn_ipfs_stale_objects", "legendFormat": "stale pin jobs", "refId": "B"},
+        {"expr": "robyn_ipfs_stale_preparations", "legendFormat": "stale preparations", "refId": "C"}
+      ],
+      "title": "Immutable metadata durability",
+      "type": "timeseries"
     }
   ],
   "refresh": "15s",

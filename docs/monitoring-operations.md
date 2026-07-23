@@ -48,3 +48,10 @@ Last verified 2026-07-21: after installing explicit PM2 ordering on PostgreSQL, 
 ## Remaining gate
 
 Configure an external human notification receiver before real-value testnet operation; the current local evaluator, dashboard and runbooks do not deliver to a person.
+# IPFS signals
+
+Operations monitor Kubo service availability, CID-gateway latency, local and
+remote pin failures, stale pin jobs, CID mismatches, and prepared metadata that
+remains unbound past its allowed window. Alerts must identify the chain, CID or
+preparation where applicable, include the runbook link, and emit both firing
+and resolved notifications through the loopback-only Alertmanager receiver.

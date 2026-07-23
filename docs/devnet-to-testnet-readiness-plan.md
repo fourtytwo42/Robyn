@@ -439,3 +439,12 @@ Do not start the full launchpad, install all infrastructure at once or expose a 
 - Isolated chain-46630 rehearsal proves partial base-to-native conversion, creator pull claim, RDAO transfer-aware claim, and treasury receipt.
 - Protected testnet web build proves no devnet session/private-key/faucet markers enter the bundle.
 - Public broadcast still requires separate explicit authorization, current funded-wallet verification, clean exact `origin/main`, live estimation, and post-deployment Blockscout/RPC verification.
+# Immutable metadata gate
+
+Robinhood Testnet deployment is blocked until the schema-v5 ERC-1046 contracts
+and exact release pass deterministic media, CID gateway, empty-Kubo restore,
+and onchain URI reconciliation. Unlike controlled devnet, testnet also requires
+configured vendor-neutral Pinning Service credentials and independently
+verified `pinned` status for the PNG, WebP, metadata JSON, fallback objects, and
+published token list. No testnet transaction is authorized by satisfying this
+gate alone.

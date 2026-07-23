@@ -55,8 +55,7 @@ if (allowedOrigins.size === 0)
   throw new Error("ROBYN_AUTH_ORIGINS is required");
 const artifactServiceUrl =
   process.env.ROBYN_ARTIFACT_SERVICE_URL ?? "http://127.0.0.1:3200";
-const ipfsApiUrl =
-  process.env.ROBYN_IPFS_API_URL ?? "http://127.0.0.1:5001";
+const ipfsApiUrl = process.env.ROBYN_IPFS_API_URL ?? "http://127.0.0.1:5001";
 const rpcClient = createPublicClient({
   transport: http(
     process.env.ROBYN_OPERATOR_RPC_URL ?? "http://127.0.0.1:8545",

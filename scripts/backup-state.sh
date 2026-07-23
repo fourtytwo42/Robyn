@@ -41,6 +41,8 @@ if [[ -n "${git_status}" ]]; then
   exit 1
 fi
 
+"${repo}/scripts/reconcile-ipfs-pins.sh" >/dev/null
+
 pg_dump --format=custom --no-owner --no-acl robyn >"${work}/database/robyn.dump"
 while IFS= read -r table; do
   count="$(psql -d robyn -Atqc "SELECT count(*) FROM \"public\".\"${table}\"")"
@@ -56,6 +58,10 @@ curl -fsS -X POST \
   sort >"${work}/ipfs/pins.txt"
 /usr/local/bin/ipfs version --number >"${work}/ipfs/kubo-version.txt"
 pin_count="$(wc -l <"${work}/ipfs/pins.txt")"
+psql -d robyn -Atqc \
+  "SELECT cid||E'\t'||artifact_sha256 FROM ipfs_pins WHERE local_status='pinned' ORDER BY cid" \
+  >"${work}/ipfs/pin-artifacts.tsv"
+test "$(wc -l <"${work}/ipfs/pin-artifacts.tsv")" = "${pin_count}"
 
 # shellcheck disable=SC1090
 source "${backup_env}"

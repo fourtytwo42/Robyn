@@ -81,3 +81,16 @@ Last verified 2026-07-21: the clean-target rehearsal completed in 830 ms, restor
 7. Apply committed migrations, start services, force an index reconciliation and run the full release gate plus browser UAT.
 
 The controlled milestone recovery target is under four hours. The measured clean-target rehearsal duration must be recorded in `MEMORY.md` and the release evidence before this gate is complete.
+# IPFS recovery policy
+
+Kubo's blockstore is intentionally excluded from encrypted backups. Before
+backup, `scripts/reconcile-ipfs-pins.sh` proves that every recursive local pin
+maps to exact content-addressed bytes in MinIO and an `ipfs_pins` database row.
+The backup contains `ipfs/pins.txt` plus `ipfs/pin-artifacts.tsv`.
+
+The isolated restore starts an empty offline Kubo repository on alternate
+loopback ports, re-adds every restored MinIO object with the production CIDv1
+settings, compares each reproduced CID, and compares the complete pin set.
+The restored application and CID-only gateway are then smoke-tested against
+that empty-node reconstruction. This avoids treating a mutable blockstore as
+the recovery source of truth.

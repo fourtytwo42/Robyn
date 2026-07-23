@@ -24,6 +24,7 @@ This backlog translates the [PRD set](../prd/README.md) into independently testa
 | [10 - Technology stack and developer platform](10-technology-stack-and-developer-platform.md) | Monorepo, frontend, API, persistence, jobs, contracts, tests, observability and releases |
 | [11 - DAO, governance and protocol fees](11-dao-governance-and-protocol-fees.md) | RDAO rewards, voting, treasury and immutable fee routing |
 | [12 - Multi-wallet connection](12-multi-wallet-connection.md) | EIP-6963, WalletConnect, chain switching, SIWE invalidation and protected builds |
+| [13 - Immutable IPFS token metadata](13-immutable-ipfs-token-metadata.md) | ERC-1046 identity, deterministic artwork, verified provenance, pinning and recovery |
 | [Traceability matrix](TRACEABILITY.md) | Generated mapping from every PRD requirement to covering stories |
 
 ## Personas

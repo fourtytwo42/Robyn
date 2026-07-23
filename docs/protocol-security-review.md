@@ -122,3 +122,18 @@ Schema v4 removes the wallet-aggregated creator claim mapping and makes the laun
 - Claiming one token cannot mutate another token's fee account. The global liability decreases only by the exact aggregate amount paid.
 - Wallet-gated UI visibility does not provide confidentiality and must never be described as private accounting.
 - Remaining public-network gate: independent review of the expanded router, coordinator bindings, conversion path, and deployment manifest before real-value operation.
+# Immutable metadata threat controls
+
+- The token URI is constructor-set and has no update authority.
+- CIDv1 syntax is validated onchain, while content trust is explicitly a
+  separate Robyn-sanitized status.
+- Metadata participates in the launch configuration hash and CREATE2 address,
+  preventing a preparation from being silently substituted at submission.
+- The Kubo RPC and gateway bind to loopback. Nginx permits only exact CID-shaped
+  GET paths and Kubo `NoFetch` prevents recursive gateway abuse.
+- Original uploads, SVG, animation, polyglots, decompression bombs, mutable
+  profiles, and credentials are excluded from public metadata.
+- Quarantine changes application rendering but cannot erase immutable public
+  content; interfaces must never promise deletion from IPFS.
+- External pin credentials stay in `/etc/robyn/ipfs.env` and are excluded from
+  bundles, logs, source, and backups.

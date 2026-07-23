@@ -21,6 +21,7 @@ database="robyn_restore_$(date -u +%Y%m%d%H%M%S)_${RANDOM}"
 anvil_pid=""
 redis_pid=""
 minio_pid=""
+ipfs_pid=""
 edge_pid=""
 app_pids=()
 live_current="$(readlink -f /opt/robyn/current)"
@@ -82,6 +83,10 @@ cleanup() {
     kill "${minio_pid}" 2>/dev/null || true
     wait "${minio_pid}" 2>/dev/null || true
   fi
+  if [[ -n "${ipfs_pid}" ]]; then
+    kill "${ipfs_pid}" 2>/dev/null || true
+    wait "${ipfs_pid}" 2>/dev/null || true
+  fi
   if [[ -n "${redis_pid}" ]]; then
     kill "${redis_pid}" 2>/dev/null || true
     wait "${redis_pid}" 2>/dev/null || true
@@ -98,7 +103,7 @@ trap cleanup EXIT
 test -r "${encrypted}"
 test -r "${checksum}"
 test -r "${identity}"
-for tool in age anvil curl file git jq minio mcli nginx node pg_dump pg_restore pnpm psql redis-server runuser sha256sum tar zstd; do
+for tool in age anvil curl file git ipfs jq minio mcli nginx node pg_dump pg_restore pnpm psql redis-server runuser sha256sum tar zstd; do
   command -v "${tool}" >/dev/null
 done
 
@@ -206,6 +211,7 @@ if ! runuser -u hendo420 -- env \
 fi
 
 install -d -o hendo420 -g hendo420 -m 0700 "${work}/redis" "${work}/minio"
+install -d -o hendo420 -g hendo420 -m 0700 "${work}/ipfs-repo"
 runuser -u hendo420 -- redis-server \
   --bind 127.0.0.1 --port 16379 --dir "${work}/redis" \
   --save '' --appendonly no >"${work}/redis.log" 2>&1 &
@@ -232,6 +238,52 @@ mcli mb --ignore-existing robyn-restore/robyn-artifacts >/dev/null
 mcli mirror --overwrite "${restore}/artifacts" \
   robyn-restore/robyn-artifacts >/dev/null
 
+runuser -u hendo420 -- env IPFS_PATH="${work}/ipfs-repo" \
+  ipfs init --profile=server >/dev/null
+runuser -u hendo420 -- env IPFS_PATH="${work}/ipfs-repo" \
+  ipfs config Addresses.API /ip4/127.0.0.1/tcp/15001
+runuser -u hendo420 -- env IPFS_PATH="${work}/ipfs-repo" \
+  ipfs config Addresses.Gateway /ip4/127.0.0.1/tcp/18080
+runuser -u hendo420 -- env IPFS_PATH="${work}/ipfs-repo" \
+  ipfs config --json Addresses.Swarm \
+  '["/ip4/127.0.0.1/tcp/14001","/ip6/::1/tcp/14001"]'
+runuser -u hendo420 -- env IPFS_PATH="${work}/ipfs-repo" \
+  ipfs config --json Gateway.NoFetch true
+runuser -u hendo420 -- env IPFS_PATH="${work}/ipfs-repo" \
+  ipfs daemon --offline >"${work}/ipfs.log" 2>&1 &
+ipfs_pid=$!
+for _ in {1..60}; do
+  if curl -fsS -X POST http://127.0.0.1:15001/api/v0/version \
+    >/dev/null 2>&1; then
+    break
+  fi
+  sleep 0.25
+done
+kill -0 "${ipfs_pid}"
+
+while IFS=$'\t' read -r expected_cid artifact_sha; do
+  object="$(
+    find "${restore}/artifacts" -type f -name "${artifact_sha}" -print -quit
+  )"
+  test -n "${object}"
+  restored_cid="$(
+    curl -fsS -X POST \
+      -F "file=@${object};filename=${artifact_sha};type=application/octet-stream" \
+      "http://127.0.0.1:15001/api/v0/add?cid-version=1&hash=sha2-256&pin=true&raw-leaves=true&wrap-with-directory=false" |
+      tail -n 1 |
+      jq -er '.Hash'
+  )"
+  if [[ "${restored_cid}" != "${expected_cid}" ]]; then
+    echo "Restored IPFS CID mismatch: ${restored_cid} != ${expected_cid}" >&2
+    exit 1
+  fi
+done <"${restore}/ipfs/pin-artifacts.tsv"
+curl -fsS -X POST \
+  http://127.0.0.1:15001/api/v0/pin/ls?type=recursive |
+  jq -r '.Keys | keys[]' |
+  sort >"${work}/restored-pins.txt"
+cmp -s "${restore}/ipfs/pins.txt" "${work}/restored-pins.txt"
+
 common_env=(
   HOME=/home/hendo420
   NODE_ENV=production
@@ -255,6 +307,7 @@ runuser -u hendo420 -- env "${common_env[@]}" \
   ROBYN_QUEUE_NAME=robyn-restore-conversions \
   ROBYN_AUTH_ORIGINS=http://127.0.0.1:13000 \
   ROBYN_ARTIFACT_SERVICE_URL=http://127.0.0.1:13200 \
+  ROBYN_IPFS_API_URL=http://127.0.0.1:15001 \
   node "${source_dir}/apps/api/dist/server.js" \
   >"${work}/api.log" 2>&1 &
 app_pids+=("$!")
@@ -298,6 +351,9 @@ http {
       proxy_set_header Host \$host:\$server_port;
       proxy_set_header X-Forwarded-Proto \$scheme;
     }
+    location ~ "^/ipfs/(b[a-z2-7]{20,120})\$" {
+      proxy_pass http://127.0.0.1:18080/ipfs/\$1;
+    }
     location / {
       proxy_pass http://127.0.0.1:13002;
       proxy_set_header Host \$host:\$server_port;
@@ -335,6 +391,13 @@ test -n "${media_id}"
 curl -fsS "http://127.0.0.1:13000/api/media/${media_id}" \
   >"${work}/restored-media.webp"
 file "${work}/restored-media.webp" | grep -q 'Web/P image'
+metadata_cid="$(
+  runuser -u postgres -- psql -d "${database}" -Atqc \
+    "SELECT metadata_cid FROM launch_metadata_bindings WHERE verification_status='robyn-sanitized' ORDER BY token LIMIT 1"
+)"
+test -n "${metadata_cid}"
+curl -fsS "http://127.0.0.1:13000/ipfs/${metadata_cid}" |
+  jq -e '.interop.erc1046 == true' >/dev/null
 HOME=/home/hendo420 ROBYN_OPERATOR_RPC_URL=http://127.0.0.1:18545 \
   ROBYN_DEVNET_MANIFEST="${source_dir}/deployments/31337.json" \
   "${source_dir}/scripts/verify-devnet-deployment.sh" \
@@ -377,4 +440,4 @@ if [[ "${post_live_current}" != "${live_current}" ||
 fi
 
 table_count="$(wc -l <"${restore}/database/table-counts.tsv" | tr -d ' ')"
-printf 'restore=passed\ndatabaseTables=%s\nartifacts=%s\nchainId=%s\nfactory=%s\ngitSha=%s\napiSmoke=passed\nkeeperSmoke=passed\nbrowserHttpSmoke=passed\nliveStateTouched=false\n' "${table_count}" "${artifact_count}" "${chain_id}" "${factory}" "${git_sha}"
+printf 'restore=passed\ndatabaseTables=%s\nartifacts=%s\nipfsPins=%s\nchainId=%s\nfactory=%s\ngitSha=%s\napiSmoke=passed\nkeeperSmoke=passed\nbrowserHttpSmoke=passed\nliveStateTouched=false\n' "${table_count}" "${artifact_count}" "$(wc -l <"${work}/restored-pins.txt" | tr -d ' ')" "${chain_id}" "${factory}" "${git_sha}"
