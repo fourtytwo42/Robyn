@@ -63,6 +63,13 @@ for (const app of apps) {
   ) {
     throw new Error(`${app.name} must use the reviewed V8 heap limit`);
   }
+  if (
+    (app.name === "robyn-api" || app.name === "robyn-api-testnet") &&
+    (app.env?.MALLOC_ARENA_MAX !== "2" ||
+      app.env?.MALLOC_TRIM_THRESHOLD_ !== "65536")
+  ) {
+    throw new Error(`${app.name} must use the reviewed native allocator bounds`);
+  }
 }
 
 for (const name of minimums.keys()) {

@@ -32,6 +32,18 @@ declare module "sharp" {
     sequentialRead: boolean;
   };
 
-  const sharp: (input: Buffer, options: SharpOptions) => Sharp;
+  type CacheResult = {
+    memory: { current: number; high: number; max: number };
+    files: { current: number; max: number };
+    items: { current: number; max: number };
+  };
+
+  type SharpConstructor = {
+    (input: Buffer, options: SharpOptions): Sharp;
+    cache(enable?: boolean): CacheResult;
+    concurrency(threads?: number): number;
+  };
+
+  const sharp: SharpConstructor;
   export default sharp;
 }

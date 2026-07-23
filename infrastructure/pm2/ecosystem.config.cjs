@@ -51,6 +51,8 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         NODE_OPTIONS: "--max-old-space-size=256",
+        MALLOC_ARENA_MAX: "2",
+        MALLOC_TRIM_THRESHOLD_: "65536",
         HOST: "127.0.0.1",
         PORT: "3101",
         CHAIN_ID: "31337",

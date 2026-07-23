@@ -1,11 +1,19 @@
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 import {
+  creatorImageRuntimePolicy,
   sanitizeCreatorImage,
   validateImageContainer,
 } from "../src/creator-media.js";
 
 describe("creator media sanitization", () => {
+  it("disables the no-hit native cache and bounds image worker concurrency", () => {
+    expect(creatorImageRuntimePolicy.concurrency).toBe(1);
+    expect(creatorImageRuntimePolicy.cache.memory.max).toBe(0);
+    expect(creatorImageRuntimePolicy.cache.files.max).toBe(0);
+    expect(creatorImageRuntimePolicy.cache.items.max).toBe(0);
+  });
+
   it("decodes, strips and re-encodes an accepted image to square WebP", async () => {
     const source = await sharp({
       create: { width: 640, height: 480, channels: 3, background: "#35d0ba" },

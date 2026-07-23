@@ -1,5 +1,16 @@
 import sharp from "sharp";
 
+// Creator uploads are unique content, so libvips' process-wide operation cache
+// cannot produce useful hits. Keeping it enabled retains native pixel buffers
+// across launches and can cross the API watchdog even when the JS heap is small.
+sharp.cache(false);
+sharp.concurrency(1);
+
+export const creatorImageRuntimePolicy = {
+  cache: sharp.cache(),
+  concurrency: sharp.concurrency(),
+};
+
 export const maxUploadBytes = 2 * 1024 * 1024;
 export const maxInputPixels = 4096 * 4096;
 
