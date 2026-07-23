@@ -63,6 +63,12 @@ Durable project context lives here. Update this file whenever information should
   file before checksum generation. Actor API reads now use port 3101 and both
   JSONL evidence files are created before validation. A two-second regression
   passed with 100 actors, zero alerts/errors/restarts and checksums.
+- The first transaction-bearing soak cycle then failed closed because the
+  graduated adapter rejects a zero minimum output. The workload now obtains
+  canonical buy/sell quotes and submits 99% bounded minimums. A configurable
+  write cadence supports fast regression only; the eight-hour default remains
+  one cycle per ten 30-second samples. A 10-second regression completed three
+  cycles and 14 real transactions with zero errors, alerts or restarts.
 - Isolated recovery now builds the backup-recorded commit and restores native
   PostgreSQL, Redis, MinIO and Anvil on alternate paths/ports, then starts web,
   API, indexer, keeper and artifacts for smoke checks. It fingerprints the live

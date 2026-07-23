@@ -21,14 +21,21 @@ const maximumRssGrowthBytes = Number(
 const maximumEndpointP95Ms = Number(
   process.env.SOAK_MAXIMUM_ENDPOINT_P95_MS ?? "500",
 );
+const writeEverySamples = Number(
+  process.env.SOAK_WRITE_EVERY_SAMPLES ?? "10",
+);
 
 if (
   !Number.isFinite(durationSeconds) ||
   durationSeconds <= 0 ||
   !Number.isFinite(intervalSeconds) ||
-  intervalSeconds <= 0
+  intervalSeconds <= 0 ||
+  !Number.isInteger(writeEverySamples) ||
+  writeEverySamples <= 0
 ) {
-  throw new Error("soak duration and interval must be positive numbers");
+  throw new Error(
+    "soak duration, interval and write cadence must be positive numbers",
+  );
 }
 
 const currentLink = "/opt/robyn/current";
@@ -179,6 +186,19 @@ function firstInteger(output) {
   return BigInt(value);
 }
 
+function integerAt(output, index) {
+  const values = output
+    .trim()
+    .split(/\r?\n/)
+    .map((line) => line.trim().split(/\s+/)[0])
+    .filter(Boolean);
+  const value = values[index];
+  if (!value || !/^\d+$/.test(value)) {
+    throw new Error(`invalid cast integer at ${index}: ${output}`);
+  }
+  return BigInt(value);
+}
+
 function unlockedAccounts() {
   return JSON.parse(
     execFileSync(
@@ -217,8 +237,25 @@ function runWriteWorkload() {
       castSend(trader, baseAsset, "approve(address,uint256)", launch.market, maximumUint256),
     );
   }
+  const buyAmount = 10n ** 18n;
+  const buyQuote = castCall(
+    launch.market,
+    "quoteBuy(uint256)(uint256,uint256)",
+    String(buyAmount),
+  );
+  const quotedTokenOutput = integerAt(buyQuote, 1);
+  const minimumTokenOutput = (quotedTokenOutput * 99n) / 100n;
+  if (minimumTokenOutput === 0n) {
+    throw new Error(`buy quote is too small for ${launch.token}`);
+  }
   transactions.push(
-    castSend(trader, launch.market, "buy(uint256,uint256)", String(10n ** 18n), "0"),
+    castSend(
+      trader,
+      launch.market,
+      "buy(uint256,uint256)",
+      String(buyAmount),
+      String(minimumTokenOutput),
+    ),
   );
   const tokenBalance = firstInteger(
     castCall(launch.token, "balanceOf(address)(uint256)", trader),
@@ -244,8 +281,24 @@ function runWriteWorkload() {
         ),
       );
     }
+    const sellQuote = castCall(
+      launch.market,
+      "quoteSell(uint256)(uint256,uint256)",
+      String(sellAmount),
+    );
+    const quotedBaseOutput = integerAt(sellQuote, 1);
+    const minimumBaseOutput = (quotedBaseOutput * 99n) / 100n;
+    if (minimumBaseOutput === 0n) {
+      throw new Error(`sell quote is too small for ${launch.token}`);
+    }
     transactions.push(
-      castSend(trader, launch.market, "sell(uint256,uint256)", String(sellAmount), "0"),
+      castSend(
+        trader,
+        launch.market,
+        "sell(uint256,uint256)",
+        String(sellAmount),
+        String(minimumBaseOutput),
+      ),
     );
   }
 
@@ -533,7 +586,9 @@ try {
     }
     if (aborted) break;
     try {
-      if (sampleCount > 0 && sampleCount % 10 === 0) runWriteWorkload();
+      if (sampleCount > 0 && sampleCount % writeEverySamples === 0) {
+        runWriteWorkload();
+      }
       finalSample = await collectSample();
       fs.appendFileSync(samplesPath, `${JSON.stringify(finalSample)}\n`);
       sampleCount += 1;
@@ -603,6 +658,7 @@ try {
     requestedDurationSeconds: durationSeconds,
     elapsedSeconds,
     intervalSeconds,
+    writeEverySamples,
     sampleCount,
     actorCount,
     actorRequestCount,
