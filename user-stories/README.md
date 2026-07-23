@@ -83,3 +83,6 @@ A story is ready when its release, priority, PRD mapping, dependencies, UX/contr
 ## Definition of done
 
 A story is done when all acceptance criteria pass in the intended environment, relevant telemetry and runbooks exist, security/privacy/accessibility checks are complete, deployment/configuration evidence is recorded and the mapped PRD requirements remain satisfied.
+# DAO stories
+
+- [11 - DAO, governance, and protocol fees](11-dao-governance-and-protocol-fees.md)

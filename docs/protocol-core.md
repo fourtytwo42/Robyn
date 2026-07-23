@@ -126,3 +126,6 @@ All new native launches enter through immutable `RobynAtomicLaunchCoordinator`. 
 `RobynLaunchFactoryV2` and `UniswapV3MarketFactoryV2` start inactive. Their initializer can bind a coordinator exactly once, after which creator-facing factory methods remain unavailable and only coordinator calls are accepted. The market's canonical creator is the wallet while its one-use seed authority is the coordinator.
 
 The canonical identity is `AtomicLaunchCreated` from the creator transaction receipt. Clients must not use the current `launchCount` to identify their result. The indexer exposes v2 launches only when the event agrees with both factory mappings and onchain seeded/sealed state.
+# DAO and protocol fee extension
+
+The schema-v3 protocol adds fixed-supply RDAO governance and the immutable 50/25/20/5 fee router. Architecture, accounting, keeper controls, and invariants are specified in [DAO Governance and Fee Operations](dao-governance-operations.md) and PRD 11.

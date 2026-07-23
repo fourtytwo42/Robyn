@@ -172,7 +172,7 @@ contract RobynProtocolFeeRouter is ReentrancyGuard {
         _allocateBase(address(token), account, msg.sender, baseOut);
     }
 
-    function convertPendingToNative(IERC20 token, uint256 minimumNativeOut, uint256 deadline)
+    function convertPendingToNative(IERC20 token, uint256 maximumBaseInput, uint256 minimumNativeOut, uint256 deadline)
         external
         nonReentrant
         returns (uint256 nativeOut)
@@ -180,15 +180,18 @@ contract RobynProtocolFeeRouter is ReentrancyGuard {
         LaunchFeeAccount storage account = _launchAccounts[address(token)];
         if (!account.registered) revert UnknownLaunch();
         if (paused) revert ConversionPaused();
-        if (address(converter) == address(0) || minimumNativeOut == 0) revert InvalidConfiguration();
-        uint256 creatorBase = account.pendingCreatorBase;
-        uint256 daoBase = account.pendingDaoRewardBase;
-        uint256 treasuryBase = account.pendingTreasuryBase;
-        uint256 totalBase = creatorBase + daoBase + treasuryBase;
-        if (totalBase == 0) revert NothingPending();
-        account.pendingCreatorBase = 0;
-        account.pendingDaoRewardBase = 0;
-        account.pendingTreasuryBase = 0;
+        if (address(converter) == address(0) || maximumBaseInput == 0 || minimumNativeOut == 0) {
+            revert InvalidConfiguration();
+        }
+        uint256 totalPending = account.pendingCreatorBase + account.pendingDaoRewardBase + account.pendingTreasuryBase;
+        if (totalPending == 0) revert NothingPending();
+        uint256 totalBase = maximumBaseInput < totalPending ? maximumBaseInput : totalPending;
+        uint256 creatorBase = (totalBase * account.pendingCreatorBase) / totalPending;
+        uint256 daoBase = (totalBase * account.pendingDaoRewardBase) / totalPending;
+        uint256 treasuryBase = totalBase - creatorBase - daoBase;
+        account.pendingCreatorBase -= creatorBase;
+        account.pendingDaoRewardBase -= daoBase;
+        account.pendingTreasuryBase -= treasuryBase;
         baseAsset.forceApprove(address(converter), totalBase);
         uint256 nativeBefore = address(this).balance;
         nativeOut =
@@ -196,6 +199,17 @@ contract RobynProtocolFeeRouter is ReentrancyGuard {
         baseAsset.forceApprove(address(converter), 0);
         uint256 delta = address(this).balance - nativeBefore;
         if (nativeOut != delta || nativeOut < minimumNativeOut) revert InvalidConfiguration();
+        _creditNative(account, address(token), totalBase, creatorBase, daoBase, nativeOut);
+    }
+
+    function _creditNative(
+        LaunchFeeAccount storage account,
+        address token,
+        uint256 totalBase,
+        uint256 creatorBase,
+        uint256 daoBase,
+        uint256 nativeOut
+    ) private {
         uint256 creatorOut = (nativeOut * creatorBase) / totalBase;
         uint256 daoOut = (nativeOut * daoBase) / totalBase;
         uint256 treasuryOut = nativeOut - creatorOut - daoOut;
@@ -207,7 +221,7 @@ contract RobynProtocolFeeRouter is ReentrancyGuard {
         daoToken.depositRewards{value: daoOut}();
         (bool sent,) = treasury.call{value: treasuryOut}("");
         if (!sent) revert NativeTransferFailed();
-        emit NativeFeesConverted(address(token), totalBase, nativeOut, creatorOut, daoOut, treasuryOut);
+        emit NativeFeesConverted(token, totalBase, nativeOut, creatorOut, daoOut, treasuryOut);
     }
 
     function claimCreatorFees() external returns (uint256 amount) {

@@ -165,7 +165,7 @@ contract DaoFeesTest {
         require(account.pendingTreasuryBase == 50 ether, "treasury 5");
 
         uint256 treasuryBefore = address(treasury).balance;
-        router.convertPendingToNative(launchToken, 500 ether, block.timestamp + 1);
+        router.convertPendingToNative(launchToken, 500 ether, 500 ether, block.timestamp + 1);
         require(router.creatorNativeClaims(address(creator)) == 250 ether, "creator native");
         uint256 memberClaimable = daoToken.claimableRewardOf(address(member));
         require(memberClaimable >= 200 ether - 1 && memberClaimable <= 200 ether, "member native");
@@ -193,5 +193,30 @@ contract DaoFeesTest {
             account.pendingCreatorBase + account.pendingDaoRewardBase + account.pendingTreasuryBase == 50 ether,
             "native queue"
         );
+    }
+
+    function testNativeConversionUsesBoundedProportionalBatches() external {
+        base.mint(address(market), 1_000 ether);
+        market.approve(base, address(router), 1_000 ether);
+        market.route(router, launchToken, 1_000 ether);
+
+        router.convertPendingToNative(launchToken, 100 ether, 100 ether, block.timestamp + 1);
+        RobynProtocolFeeRouter.LaunchFeeAccount memory afterFirst = router.launchAccount(address(launchToken));
+        require(afterFirst.pendingCreatorBase == 200 ether, "creator remainder");
+        require(afterFirst.pendingDaoRewardBase == 160 ether, "dao remainder");
+        require(afterFirst.pendingTreasuryBase == 40 ether, "treasury remainder");
+        require(router.creatorNativeClaims(address(creator)) == 50 ether, "creator first batch");
+        require(router.totalDaoNativeRewards() == 40 ether, "dao first batch");
+        require(router.totalTreasuryNative() == 10 ether, "treasury first batch");
+
+        router.convertPendingToNative(launchToken, type(uint256).max, 400 ether, block.timestamp + 1);
+        RobynProtocolFeeRouter.LaunchFeeAccount memory afterSecond = router.launchAccount(address(launchToken));
+        require(
+            afterSecond.pendingCreatorBase + afterSecond.pendingDaoRewardBase + afterSecond.pendingTreasuryBase == 0,
+            "queue drained"
+        );
+        require(router.creatorNativeClaims(address(creator)) == 250 ether, "creator total");
+        require(router.totalDaoNativeRewards() == 200 ether, "dao total");
+        require(router.totalTreasuryNative() == 50 ether, "treasury total");
     }
 }

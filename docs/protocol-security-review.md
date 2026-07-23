@@ -108,3 +108,6 @@ Before any real-value asset deployment, obtain an independent contract audit/rev
 - Metadata and artwork remain offchain after confirmation. Their failure cannot change or obscure the onchain transaction result.
 
 Chain-46630 uses a project-controlled test-only Uniswap v3 fallback only when the official registry still lacks that chain. Its manifest binds every address, deployment transaction, constructor encoding, creation-input hash, runtime hash, package artifact hash, wiring, owner, and enabled fee tier. The configuration is explicitly rejected outside chain 46630 and must never be accepted as mainnet infrastructure.
+# DAO release security addendum
+
+The DAO release adds transfer-corrected native rewards, timestamp vote checkpoints, Timelock/Governor roles, bounded partial conversions, current/TWAP tick agreement, post-fee spot price-impact enforcement, permissionless keeper execution, and a pause-only guardian. The detailed threat model and response process are in [DAO Governance and Fee Operations](dao-governance-operations.md). Public or mainnet distribution remains blocked on independent contract, legal, and tax review.

@@ -41,14 +41,23 @@ ROBYN_TESTNET_BROADCAST=true \
 
 accounts="$(cast rpc eth_accounts --rpc-url "$rpc_url")"
 user="$(jq -er '.[1]' <<<"$accounts")"
+deployer="$(jq -er '.[0]' <<<"$accounts")"
 base="$(jq -er '.contracts.baseAsset' "$manifest")"
+wrapped_native="$(jq -er '.contracts.wrappedNative' "$manifest")"
 token="$(jq -er '.contracts.genesisToken' "$manifest")"
 vault="$(jq -er '.contracts.genesisVault' "$manifest")"
 market="$(jq -er '.contracts.genesisMarket' "$manifest")"
+fee_router="$(jq -er '.contracts.protocolFeeRouter' "$manifest")"
+native_converter="$(jq -er '.contracts.nativeFeeConverter' "$manifest")"
+dao_token="$(jq -er '.contracts.daoToken' "$manifest")"
 mapfile -t rewards < <(jq -er '.contracts.rewardAssets[]' "$manifest")
 
 send_as_user() {
   cast send --rpc-url "$rpc_url" --from "$user" --unlocked --json "$@" |
+    jq -e '.status == "0x1" or .status == 1' >/dev/null
+}
+send_as_deployer() {
+  cast send --rpc-url "$rpc_url" --from "$deployer" --unlocked --json "$@" |
     jq -e '.status == "0x1" or .status == 1' >/dev/null
 }
 call_uint() {
@@ -75,6 +84,21 @@ send_as_user "$token" 'claimAll()'
 
 send_as_user "$token" 'approve(address,uint256)' "$market" "100000000000000000000000"
 send_as_user "$market" 'sell(uint256,uint256)' "100000000000000000000000" "1"
+
+# Prove a bounded base-to-native batch while leaving excess fees queued for later safe retries.
+cast rpc evm_increaseTime 61 --rpc-url "$rpc_url" >/dev/null
+cast rpc evm_mine --rpc-url "$rpc_url" >/dev/null
+maximum_native_batch="100000000000000000"
+minimum_native="$(cast call "$native_converter" 'minimumSafeOutput(address,address,uint24,uint256)(uint256)' "$base" "$wrapped_native" "10000" "$maximum_native_batch" --from "$user" --rpc-url "$rpc_url" | awk '{print $1}')"
+deadline=$(( $(date +%s) + 600 ))
+send_as_user "$fee_router" 'convertPendingToNative(address,uint256,uint256,uint256)' "$token" "$maximum_native_batch" "$minimum_native" "$deadline"
+dao_native_rewards="$(call_uint "$fee_router" 'totalDaoNativeRewards()(uint256)')"
+treasury_native_rewards="$(call_uint "$fee_router" 'totalTreasuryNative()(uint256)')"
+creator_claimable="$(call_uint "$fee_router" 'creatorNativeClaims(address)(uint256)' "$deployer")"
+member_claimable="$(call_uint "$dao_token" 'claimableRewardOf(address)(uint256)' "$deployer")"
+[[ "$dao_native_rewards" != "0" && "$treasury_native_rewards" != "0" && "$creator_claimable" != "0" && "$member_claimable" != "0" ]]
+send_as_deployer "$fee_router" 'claimCreatorFees()'
+send_as_deployer "$dao_token" 'claimRewards()'
 
 base_balance="$(call_uint "$base" 'balanceOf(address)(uint256)' "$user")"
 token_balance="$(call_uint "$token" 'balanceOf(address)(uint256)' "$user")"
@@ -105,7 +129,11 @@ summary="$(jq -n \
   --argjson reward0 "${reward_balances[0]}" \
   --argjson reward1 "${reward_balances[1]}" \
   --argjson reward2 "${reward_balances[2]}" \
-  '{schemaVersion: 2, testedAt: $testedAt, gitSha: $gitSha, chainId: $chainId, passed: true, dexProvenance:"robyn-controlled-uniswap-v3-testnet", user: $user, journey: {faucet: true, atomicLaunch: true, bondingBuy: true, automaticGraduation: true, postGraduationSell: true, convertAllLegs: true, claimAll: true}, balances: {base: $baseBalance, token: $tokenBalance, rewards: [$reward0,$reward1,$reward2]}, accounting: {feesReceived: $feesReceived, baseConsumed: $baseConsumed, convertedPending: [$pending0,$pending1,$pending2]}}')"
+  --argjson daoNativeRewards "$dao_native_rewards" \
+  --argjson treasuryNativeRewards "$treasury_native_rewards" \
+  --argjson creatorNativeClaim "$creator_claimable" \
+  --argjson memberNativeClaim "$member_claimable" \
+  '{schemaVersion: 3, testedAt: $testedAt, gitSha: $gitSha, chainId: $chainId, passed: true, dexProvenance:"robyn-controlled-uniswap-v3-testnet", user: $user, journey: {faucet: true, atomicLaunch: true, bondingBuy: true, automaticGraduation: true, postGraduationSell: true, convertAllLegs: true, claimAll: true, boundedNativeConversion: true, creatorNativeClaim: true, rdaoNativeClaim: true}, balances: {base: $baseBalance, token: $tokenBalance, rewards: [$reward0,$reward1,$reward2]}, accounting: {feesReceived: $feesReceived, baseConsumed: $baseConsumed, convertedPending: [$pending0,$pending1,$pending2], daoNativeRewards:$daoNativeRewards, treasuryNativeRewards:$treasuryNativeRewards, creatorNativeClaim:$creatorNativeClaim, memberNativeClaim:$memberNativeClaim}}')"
 if [[ -n "$evidence_path" ]]; then
   mkdir -p "$(dirname "$evidence_path")"
   printf '%s\n' "$summary" > "$evidence_path"

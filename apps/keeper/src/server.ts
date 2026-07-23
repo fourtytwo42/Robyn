@@ -152,6 +152,9 @@ const scanMs = Number(process.env.KEEPER_SCAN_MS ?? "5000");
 const minimumProtocolBase = BigInt(
   process.env.KEEPER_MINIMUM_PROTOCOL_BASE ?? "10000000000000000",
 );
+const maximumProtocolBase = BigInt(
+  process.env.KEEPER_MAXIMUM_PROTOCOL_BASE ?? "100000000000000000",
+);
 const minimumLaunchFees = BigInt(
   process.env.KEEPER_MINIMUM_LAUNCH_FEES ?? "1000000000000",
 );
@@ -310,7 +313,12 @@ const protocolFeeRouterAbi = [
     type: "function",
     name: "convertPendingToNative",
     stateMutability: "nonpayable",
-    inputs: [{ type: "address" }, { type: "uint256" }, { type: "uint256" }],
+    inputs: [
+      { type: "address" },
+      { type: "uint256" },
+      { type: "uint256" },
+      { type: "uint256" },
+    ],
     outputs: [{ type: "uint256" }],
   },
 ] as const;
@@ -769,12 +777,13 @@ async function processProtocolConversion(
       transactionHash: ("0x" + "0".repeat(64)) as Hash,
       inputAmount: "0",
     };
-  const minimum = await safeMinimum(base, wrappedNative, pending);
+  const input = pending < maximumProtocolBase ? pending : maximumProtocolBase;
+  const minimum = await safeMinimum(base, wrappedNative, input);
   const simulation = await publicClient.simulateContract({
     address: router,
     abi: protocolFeeRouterAbi,
     functionName: "convertPendingToNative",
-    args: [job.data.token, minimum, deadline],
+    args: [job.data.token, input, minimum, deadline],
     account: operator,
   });
   const transactionHash = await walletClient.writeContract(simulation.request);
@@ -787,7 +796,7 @@ async function processProtocolConversion(
   return {
     operation: "protocol-native",
     transactionHash,
-    inputAmount: pending.toString(),
+    inputAmount: input.toString(),
   };
 }
 

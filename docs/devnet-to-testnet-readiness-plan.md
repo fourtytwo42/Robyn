@@ -433,3 +433,9 @@ Do not start the full launchpad, install all infrastructure at once or expose a 
 - Schema-v2 indexing requires a matching coordinator event, factory mappings, seeded market, and sealed exclusions.
 - Chain-46630 deployment is two explicitly authorized phases: verified test-only Uniswap venue, then Robyn protocol.
 - The isolated chain-46630 rehearsal must pass before any estimate or broadcast. Mainnet remains excluded.
+# DAO release gates
+
+- Schema-v3 manifest verified with exact RDAO supply/allocation, fee-policy hash inputs, governance timing, role renunciation, guardian, converter, and DEX provenance.
+- Isolated chain-46630 rehearsal proves partial base-to-native conversion, creator pull claim, RDAO transfer-aware claim, and treasury receipt.
+- Protected testnet web build proves no devnet session/private-key/faucet markers enter the bundle.
+- Public broadcast still requires separate explicit authorization, current funded-wallet verification, clean exact `origin/main`, live estimation, and post-deployment Blockscout/RPC verification.

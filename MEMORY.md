@@ -37,6 +37,14 @@ Durable project context lives here. Update this file whenever information should
 - Web: `/dao` provides Overview, Rewards, Governance, Treasury, Members, and Activity views; `/dao/proposals/[id]` selects an onchain proposal. Controls simulate then claim, claim-to, delegate, propose, vote, queue, and execute. Devnet and protected-testnet wallet adapters remain separate so the session private-key path cannot enter testnet bundles.
 - Verification: API tests (28), keeper tests (4), API/indexer/keeper/web strict typechecks, keeper/web lint, and optimized devnet web build pass. Persistent services still point to schema-v2 until the intentional reset/reseed checkpoint.
 
+### 2026-07-22 - DAO conversion and testnet hardening
+
+- Corrected a safety gap: the native converter now compares the Uniswap quote with post-fee current spot output and rejects excessive price impact, in addition to its TWAP deviation and caller-minimum checks.
+- Base-to-native routing now accepts a maximum base input and proportionally consumes creator/DAO/treasury queues, so large liabilities drain through bounded retryable batches instead of requiring one unsafe swap. A new Foundry test proves conservation across partial and final batches.
+- Keeper default maximum native-conversion batch is `100000000000000000` base units and remains configurable with `KEEPER_MAXIMUM_PROTOCOL_BASE`.
+- Chain-46630 deployment and verification scripts now produce schema-v3 DAO manifests. The isolated rehearsal passed DEX verification, atomic launch, bonding/graduation, basket claims, bounded native conversion, creator native claim, RDAO native claim, and treasury receipt. The protected testnet web candidate built without forbidden devnet markers. No public testnet broadcast occurred.
+- Added PRD 11, DAO user stories, and the DAO architecture/economics/threat/operations runbook. Persistent devnet reset/reseed and browser acceptance remain.
+
 ### 2026-07-22 - Atomic app, indexer, and chain-46630 rehearsal
 
 - Web: local and protected-testnet creation now use one `RobynAtomicLaunchCoordinator.createLaunch` transaction. Both simulate first, generate a nonzero random browser salt, decode `AtomicLaunchCreated` from their own receipt, and distinguish indexing/artwork failures from onchain failure.

@@ -81,3 +81,6 @@ All implementation and operations use the authoritative VM-only, no-container mo
 ## Delivery backlog
 
 Implementation and validation stories derived from this PRD set are indexed in [user-stories/README.md](../user-stories/README.md). The generated [traceability matrix](../user-stories/TRACEABILITY.md) must continue to show complete PRD coverage as stories or requirements change.
+# DAO release
+
+- [11 - DAO, governance, and protocol fees](11-dao-governance-and-protocol-fees.md)

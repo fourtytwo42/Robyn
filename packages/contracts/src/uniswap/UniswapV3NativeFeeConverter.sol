@@ -3,6 +3,7 @@ pragma solidity 0.8.30;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {INativeFeeConverter} from "../dao/INativeFeeConverter.sol";
 import {IQuoterV2, ISwapRouter, IUniswapV3Factory, IUniswapV3Pool} from "./UniswapV3Interfaces.sol";
 
@@ -21,6 +22,7 @@ contract UniswapV3NativeFeeConverter is INativeFeeConverter {
     error MissingPool();
     error UnsafeMinimum(uint256 required, uint256 supplied);
     error TwapDeviation(int24 currentTick, int24 meanTick);
+    error ExcessivePriceImpact(uint256 minimumQuotedOutput, uint256 quotedOutput);
     error BalanceDeltaMismatch();
 
     IUniswapV3Factory public immutable factory;
@@ -131,7 +133,23 @@ contract UniswapV3NativeFeeConverter is INativeFeeConverter {
                 tokenIn: address(tokenIn), tokenOut: address(tokenOut), amountIn: amount, fee: fee, sqrtPriceLimitX96: 0
             })
         );
+        uint256 idealAfterFee = (_spotOutput(IUniswapV3Pool(pool), tokenIn, amount) * (1_000_000 - fee)) / 1_000_000;
+        uint256 minimumQuote = (idealAfterFee * (10_000 - maximumPriceImpactBps)) / 10_000;
+        if (quote < minimumQuote) revert ExcessivePriceImpact(minimumQuote, quote);
         return (quote * (10_000 - maximumPriceImpactBps)) / 10_000;
+    }
+
+    function _spotOutput(IUniswapV3Pool pool, IERC20 tokenIn, uint256 amount) private view returns (uint256 output) {
+        (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
+        bool zeroForOne = address(tokenIn) == pool.token0();
+        if (sqrtPriceX96 <= type(uint128).max) {
+            uint256 ratioX192 = uint256(sqrtPriceX96) * sqrtPriceX96;
+            output = zeroForOne ? Math.mulDiv(amount, ratioX192, 1 << 192) : Math.mulDiv(amount, 1 << 192, ratioX192);
+        } else {
+            uint256 ratioX128 = Math.mulDiv(sqrtPriceX96, sqrtPriceX96, 1 << 64);
+            output = zeroForOne ? Math.mulDiv(amount, ratioX128, 1 << 128) : Math.mulDiv(amount, 1 << 128, ratioX128);
+        }
+        if (output == 0) revert InvalidConfiguration();
     }
 
     function _assertTwap(address pool) private view {
