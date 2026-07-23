@@ -65,16 +65,49 @@ The schema-v4 contract suite currently contains 70 passing tests, including four
 - native conversion authorization, deadline, pool availability, TWAP
   deviation, price impact, caller minimum, recipient/asset validation, measured
   balance deltas, and allowance cleanup;
-- all 54 public API read/write/validation/anonymous-auth route cases.
+- all 64 public API read/write/validation cases, including a real ephemeral
+  SIWE signature, authenticated profile update, sanitized media upload/read/
+  report, logout, and session invalidation.
 
-`scripts/test-api-surface.mjs` must run through the same-origin Nginx API route
-when testing SIWE endpoints so the request Host and Origin match exactly:
+`scripts/test-api-surface.mjs` defaults to the same-origin LAN Nginx API route
+so SIWE request Host and Origin match exactly. Override both values together
+when testing another trusted origin:
 
 ```bash
 ROBYN_API_TEST_URL=http://192.168.50.250:3000/api \
 ROBYN_API_TEST_AUTH_ORIGIN=http://192.168.50.250:3000 \
 node scripts/test-api-surface.mjs
 ```
+
+## Built-browser acceptance checkpoint
+
+The Codex in-app browser completed the production-build journeys against
+`http://192.168.50.250:3000` on 2026-07-23:
+
+- created, funded, traded, converted, and claimed with a fresh session wallet;
+- searched and filtered Markets, watched a token, and exercised Price/Volume
+  and time-range chart controls;
+- bought through the bonding threshold, verified automatic locked-liquidity
+  graduation, then bought and sold through the graduated pool;
+- launched two new tokens atomically, proved SIWE wallet ownership, edited the
+  creator profile, rejected an invalid 99 percent basket, and verified launch
+  completion cannot accidentally submit a duplicate;
+- accrued and claimed token-specific creator rewards, then claimed two tokens
+  in one Portfolio batch transaction;
+- claimed RDAO rewards, delegated 120 million votes, proposed, voted, proved
+  early execution fails, queued after three days, and executed after the
+  two-day timelock;
+- verified Treasury, Members, Activity, and proposal detail views;
+- verified the token mobile trade sheet, discard confirmation, backward focus
+  wrapping and opener focus restoration, plus keyboard chart-point movement;
+- verified no horizontal overflow and nonzero headings at 390 by 844 and 768
+  by 1024 on Home, Markets, Portfolio, DAO, Create, and token detail;
+- cleared the wallet and proved token creator controls and Portfolio financial
+  state disappear while public market data remains accessible.
+
+The browser console remained empty after the tested journeys. Seed transfers
+and EVM time advancement were controlled local-test preparation only; all
+product actions were submitted through the served UI.
 
 The standard Foundry coverage reporter is not a release gate in this repository:
 the non-IR mode cannot compile the production-shaped coordinator because of

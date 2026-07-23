@@ -397,6 +397,12 @@ export function DevnetConsole({ deployment }: { deployment: Deployment }) {
     if (!account || !walletClient) return;
     const input = parseEther("1000");
     await execute("Buying ROBYN and generating basket fees&", async () => {
+      const tokenBefore = await publicClient.readContract({
+        address: deployment.contracts.genesisToken,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [account.address],
+      });
       const allowance = await publicClient.readContract({
         address: deployment.contracts.baseAsset,
         abi: erc20Abi,
@@ -421,8 +427,14 @@ export function DevnetConsole({ deployment }: { deployment: Deployment }) {
           args: [input, parseEther("990000")],
         }),
       );
+      const tokenAfter = await publicClient.readContract({
+        address: deployment.contracts.genesisToken,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [account.address],
+      });
       setStatus(
-        "Bought 990,000 ROBYN. The 10 mUSD fee is pending by basket weight.",
+        `Bought ${compact(tokenAfter - tokenBefore, 0)} ROBYN. Trading fees were routed across the holder basket, creator, RDAO, and treasury.`,
       );
     });
   }

@@ -329,6 +329,7 @@ export function LaunchpadConsole({
     "Create or fund a session wallet, then launch.",
   );
   const [busy, setBusy] = useState(false);
+  const [launchedToken, setLaunchedToken] = useState<Address>();
   const rpcUrl = "/rpc";
   const chain = useMemo(
     () =>
@@ -588,6 +589,7 @@ export function LaunchpadConsole({
         topics: launchLog.topics,
       });
       const token = decoded.args.token;
+      setLaunchedToken(token);
       setStatus("Waiting for the canonical launch to be indexed...");
       await refresh();
       try {
@@ -748,6 +750,14 @@ export function LaunchpadConsole({
             return account.signMessage({ message });
           }}
           onLaunch={createLaunch}
+          launchedToken={launchedToken}
+          onStartAnother={() => {
+            setLaunchedToken(undefined);
+            setName("My Community");
+            setSymbol("MYCO");
+            setWeights([40, 40, 20]);
+            setStatus("Configure the next token and its immutable basket.");
+          }}
           openByDefault={openByDefault}
         />
         {showRegistry ? (

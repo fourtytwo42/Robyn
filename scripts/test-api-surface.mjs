@@ -1,12 +1,20 @@
 #!/usr/bin/env node
+import { randomBytes } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 
-const baseUrl = process.env.ROBYN_API_TEST_URL ?? "http://127.0.0.1:3101";
+const apiRequire = createRequire(
+  new URL("../apps/api/package.json", import.meta.url),
+);
+const { privateKeyToAccount } = await import(apiRequire.resolve("viem/accounts"));
+
+const authOrigin =
+  process.env.ROBYN_API_TEST_AUTH_ORIGIN ?? "http://192.168.50.250:3000";
+const baseUrl =
+  process.env.ROBYN_API_TEST_URL ?? `${authOrigin.replace(/\/$/, "")}/api`;
 const manifestPath =
   process.env.ROBYN_API_TEST_MANIFEST ?? "deployments/31337.json";
 const outputPath = process.env.ROBYN_API_TEST_OUTPUT;
-const authOrigin =
-  process.env.ROBYN_API_TEST_AUTH_ORIGIN ?? "http://192.168.50.250:3000";
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const launch = manifest.demoLaunches?.[0];
 if (!launch?.token) throw new Error("manifest requires a demo launch");
@@ -15,6 +23,9 @@ const creator =
   manifest.deployer ?? "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
 const unknownAddress = "0x0000000000000000000000000000000000000001";
 const unknownSha = "0".repeat(64);
+const testAccount = privateKeyToAccount(
+  `0x${randomBytes(32).toString("hex")}`,
+);
 const authHeaders = {
   origin: authOrigin,
   "content-type": "application/json",
@@ -38,10 +49,10 @@ async function check({
     const response = await fetch(
       new URL(`${baseUrl.replace(/\/$/, "")}${path}`),
       {
-      method,
-      headers,
-      body,
-      signal: AbortSignal.timeout(10_000),
+        method,
+        headers,
+        body,
+        signal: AbortSignal.timeout(10_000),
       },
     );
     status = response.status;
@@ -261,6 +272,118 @@ await check({
   body: JSON.stringify({ message: challenge, signature: invalidSignature }),
   expected: [401],
 });
+let testChallenge;
+await check({
+  name: "auth-nonce-success-session",
+  path: "/auth/nonce",
+  method: "POST",
+  headers: authHeaders,
+  body: JSON.stringify({ address: testAccount.address }),
+  validate: (body) => {
+    testChallenge = body?.data?.message;
+    return typeof testChallenge === "string";
+  },
+});
+const testSignature = await testAccount.signMessage({ message: testChallenge });
+let authenticatedCookie;
+await check({
+  name: "auth-verify-success-session",
+  path: "/auth/verify",
+  method: "POST",
+  headers: authHeaders,
+  body: JSON.stringify({ message: testChallenge, signature: testSignature }),
+  validate: (body, response) => {
+    authenticatedCookie = response.headers.get("set-cookie")?.split(";", 1)[0];
+    return (
+      body?.data?.address?.toLowerCase() === testAccount.address.toLowerCase() &&
+      typeof authenticatedCookie === "string"
+    );
+  },
+});
+const authenticatedHeaders = {
+  ...authHeaders,
+  cookie: authenticatedCookie,
+};
+await check({
+  name: "auth-session-authenticated",
+  path: "/auth/session",
+  headers: { origin: authOrigin, cookie: authenticatedCookie },
+  validate: (body) =>
+    body?.data?.address?.toLowerCase() === testAccount.address.toLowerCase(),
+});
+await check({
+  name: "profile-update-authenticated",
+  path: "/profile",
+  method: "PUT",
+  headers: authenticatedHeaders,
+  body: JSON.stringify({
+    displayName: "Robyn system test",
+    bio: "Ephemeral authenticated integration-test profile.",
+    website: "https://example.com/robyn-system-test",
+  }),
+  validate: (body) =>
+    body?.data?.address?.toLowerCase() === testAccount.address.toLowerCase(),
+});
+await check({
+  name: "profile-read-authenticated",
+  path: `/profiles/${testAccount.address}`,
+  validate: (body) => body?.data?.display_name === "Robyn system test",
+});
+const validImage = await readFile(
+  "apps/web/public/assets/brand/robyn-logo.webp",
+);
+let uploadedMediaId;
+await check({
+  name: "media-upload-authenticated",
+  path: "/media?purpose=avatar",
+  method: "POST",
+  headers: {
+    origin: authOrigin,
+    cookie: authenticatedCookie,
+    "content-type": "image/webp",
+  },
+  body: validImage,
+  expected: [201],
+  validate: (body) => {
+    uploadedMediaId = body?.data?.media_id;
+    return (
+      typeof uploadedMediaId === "string" &&
+      body?.data?.status === "active" &&
+      body?.data?.width === 1024 &&
+      body?.data?.height === 1024
+    );
+  },
+});
+await check({
+  name: "media-read-authenticated-upload",
+  path: `/media/${uploadedMediaId}`,
+  validate: (_body, response) =>
+    response.headers.get("content-type")?.startsWith("image/webp"),
+});
+await check({
+  name: "media-report-authenticated-upload",
+  path: `/media/${uploadedMediaId}/reports`,
+  method: "POST",
+  headers: authenticatedHeaders,
+  body: JSON.stringify({
+    reason: "Automated integration-test report; no moderation action required.",
+  }),
+  expected: [201],
+  validate: (body) => body?.status === "recorded_not_hidden",
+});
+await check({
+  name: "auth-logout-authenticated",
+  path: "/auth/logout",
+  method: "POST",
+  headers: authenticatedHeaders,
+  body: "{}",
+});
+await check({
+  name: "auth-session-after-logout",
+  path: "/auth/session",
+  headers: { origin: authOrigin, cookie: authenticatedCookie },
+  validate: (body) => body?.data === null,
+});
 await check({
   name: "auth-logout-anonymous",
   path: "/auth/logout",
@@ -349,6 +472,10 @@ const summary = {
   passedCount: results.length - failed.length,
   failedCount: failed.length,
   passed: failed.length === 0,
+  resources: {
+    authenticatedTestAddress: testAccount.address,
+    uploadedMediaId,
+  },
   results,
 };
 const encoded = `${JSON.stringify(summary, null, 2)}\n`;

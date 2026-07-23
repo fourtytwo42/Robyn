@@ -35,6 +35,30 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-23 - Built-browser lifecycle and defect checkpoint
+
+- Codex in-app-browser acceptance against the optimized LAN build completed
+  atomic creation, bonding and post-graduation trading, holder/creator/RDAO
+  claims, creator batch claims, SIWE profile editing, Markets filtering,
+  watchlist persistence, interactive chart keyboard use, DAO proposal voting,
+  queueing and timelock execution, and disconnected-wallet gating.
+- Browser acceptance found and fixed three product defects: homepage buy
+  confirmation now reports the measured token delta and truthful four-way fee
+  routing; successful launches disable resubmission and expose explicit view or
+  start-another actions; zero-value RDAO claims and claim-to actions are
+  disabled.
+- Mobile and tablet checks passed without horizontal overflow across Home,
+  Markets, token detail, Portfolio, DAO and Create. The token mobile trade
+  sheet passed discard confirmation, backward focus wrapping and opener-focus
+  restoration. Browser diagnostics were empty.
+- `scripts/test-api-surface.mjs` now exercises a real ephemeral SIWE signature,
+  authenticated profile update, sanitized media upload/read/report, logout and
+  session invalidation. The same-origin surface passes 64 of 64 cases and is
+  now the default test URL.
+- Follow-up: complete final operational restart/rebuild, backup/isolated
+  restore, protected testnet build/rehearsal, final exact-commit simulation and
+  fail-closed action manifest before closing the active goal.
+
 ### 2026-07-23 - Exhaustive system test and 256-user simulation checkpoint
 
 - Added `SchemaV4HundredsUsersSimulationTest`: 256 deterministic EOA actors, eight atomic launches by four creators, bonding buys/sells, two automatic graduations, post-graduation trades, basket conversion and holder claims, native conversion, RDAO transfer-aware rewards, per-token creator batch claims, 100 delegated voters, proposal voting, queue and timelock execution.

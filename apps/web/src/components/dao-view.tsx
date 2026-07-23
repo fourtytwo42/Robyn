@@ -279,6 +279,8 @@ export function DaoView({
         <p>{status}</p>
       </section>
     );
+  const hasClaimableRewards =
+    BigInt(overview.account?.claimableRewards ?? "0") > 0n;
   const tabs: Array<{ id: Tab; label: string }> = [
     { id: "overview", label: "Overview" },
     { id: "rewards", label: "Rewards" },
@@ -434,6 +436,7 @@ export function DaoView({
             <div className="action-row">
               <button
                 className="button primary"
+                disabled={!hasClaimableRewards}
                 onClick={() =>
                   void transact(
                     overview.contracts.daoToken,
@@ -458,7 +461,7 @@ export function DaoView({
             <div className="action-row">
               <button
                 className="button"
-                disabled={!isAddress(recipient)}
+                disabled={!hasClaimableRewards || !isAddress(recipient)}
                 onClick={() =>
                   void transact(
                     overview.contracts.daoToken,

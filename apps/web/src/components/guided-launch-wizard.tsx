@@ -22,6 +22,8 @@ type WizardProps = {
   marketSummary?: string;
   signMessage: (message: string) => Promise<Hex>;
   onLaunch: (artworkMediaId?: string) => Promise<void>;
+  launchedToken?: Address;
+  onStartAnother?: () => void;
   openByDefault?: boolean;
 };
 
@@ -516,6 +518,8 @@ export function GuidedLaunchWizard(props: WizardProps) {
     onWalletAction,
     signMessage,
     onLaunch,
+    launchedToken,
+    onStartAnother,
     openByDefault = false,
     assetSymbols = ["mNVDA", "mSPY", "mETH"],
     marketSummary = "Bonding curve → locked liquidity",
@@ -790,11 +794,37 @@ export function GuidedLaunchWizard(props: WizardProps) {
                   <button
                     className="button primary launch-submit"
                     type="button"
-                    disabled={busy || !account || !validToken || !validBasket}
+                    disabled={
+                      busy ||
+                      Boolean(launchedToken) ||
+                      !account ||
+                      !validToken ||
+                      !validBasket
+                    }
                     onClick={() => void onLaunch(artworkMediaId)}
                   >
-                    {busy ? "Launching…" : "Launch token and market"}
+                    {launchedToken
+                      ? "Launch complete"
+                      : busy
+                        ? "Launching…"
+                        : "Launch token and market"}
                   </button>
+                  {launchedToken ? (
+                    <div className="wizard-wallet-required">
+                      <a className="button" href={`/launches/${launchedToken}`}>
+                        View launched market
+                      </a>
+                      {onStartAnother ? (
+                        <button
+                          className="button ghost"
+                          type="button"
+                          onClick={onStartAnother}
+                        >
+                          Start another launch
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
                   {!account ? (
                     <div className="wizard-wallet-required">
                       <p className="form-hint">{walletHint}</p>

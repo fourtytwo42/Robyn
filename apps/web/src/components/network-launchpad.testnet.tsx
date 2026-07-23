@@ -285,6 +285,7 @@ export function NetworkLaunchpadConsole({
     "Connect and fund a testnet wallet, then launch.",
   );
   const [busy, setBusy] = useState(false);
+  const [launchedToken, setLaunchedToken] = useState<Address>();
   const refresh = useCallback(async () => {
     if (!publicClient) return;
     const count = await publicClient.readContract({
@@ -456,6 +457,7 @@ export function NetworkLaunchpadConsole({
         topics: launchLog.topics,
       });
       const token = decoded.args.token;
+      setLaunchedToken(token);
       setStatus("Waiting for the canonical launch to be indexed...");
       await refresh();
       try {
@@ -637,6 +639,14 @@ export function NetworkLaunchpadConsole({
             });
           }}
           onLaunch={createLaunch}
+          launchedToken={launchedToken}
+          onStartAnother={() => {
+            setLaunchedToken(undefined);
+            setName("My Community");
+            setSymbol("MYCO");
+            setWeights([40, 40, 20]);
+            setStatus("Configure the next token and its immutable basket.");
+          }}
           openByDefault={openByDefault}
         />
         {showRegistry ? (
