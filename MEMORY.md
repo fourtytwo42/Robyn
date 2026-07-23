@@ -4,8 +4,8 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
-- Current task: implementing the approved RDAO governance and immutable 50/25/20/5 protocol-fee release on branch `codex/dao-governance-fees`; public testnet broadcasting remains unauthorized.
-- Current checkpoint: the fixed-supply RDAO/governance/fee stack, schema-v3 deployment/verifier, DAO-aware indexer/API, permissionless conversion keeper jobs, responsive `/dao` plus proposal interfaces, controlled reset/reseed, and browser acceptance are complete. The final checkpoint is to commit the wallet-signing/allocation-manifest fixes, reset/rebuild from that exact clean commit, and perform the final served-build smoke.
+- Current task: the approved RDAO governance and immutable 50/25/20/5 protocol-fee release is complete on branch `codex/dao-governance-fees`; public testnet broadcasting remains unauthorized.
+- Current checkpoint: fixed-supply RDAO/governance/fee contracts, schema-v3 deployment/verifier, indexer/API/keeper, responsive DAO/proposal UI, controlled reset/reseed, protected testnet rehearsal, LAN/browser acceptance, and public HTTPS acceptance are complete. The persistent VM serves the optimized build with all eight PM2 processes online and saved.
 - Deployment checkpoint: schema-v3 local deployment now creates and seeds WETH/base conversion liquidity, deploys RDAO/Governor/Timelock/router/converter, binds v3 launch contracts, seals reward exclusions, assigns/renounces timelock roles, creates genesis atomically, and passes the expanded verifier on an isolated chain-31337 rehearsal.
 - Economic invariant: every collectible fee allocates 50% to the launch basket, 25% to creator native claims, 20% to RDAO-holder native claims, and 5% to the timelock treasury. Existing launch splits and baskets are immutable.
 - DAO decisions: RDAO is fully transferable and fixed at 1B; token balance controls instant native rewards, delegated checkpoints control votes; 1-day delay, 3-day vote, 2-day timelock, 10% quorum, 1% proposal threshold; guardian may pause conversion and cancel queued operations only.
@@ -27,6 +27,8 @@ Durable project context lives here. Update this file whenever information should
 - `scripts/deploy-testnet.sh` now refuses a real chain-46630 broadcast without `ROBYN_RDAO_ALLOCATION_MANIFEST`. The schema requires unique recipients, exactly 10,000 bps, non-empty purposes, and a `timelock` treasury reserve. The resolved allocation and source SHA-256 are frozen in schema-v3; `verify-testnet-deployment.sh` checks every onchain recipient balance.
 - `config/rdao-allocation.example.json` is documentation only. Real member addresses and allocations remain an explicit human input and must not be invented or broadcast without participant approval.
 - The isolated chain-46630 rehearsal passed again after this gate, including DEX verification, atomic launch, bonding, graduation, basket claims, bounded native conversion, creator claim, RDAO claim, and treasury receipt. No public testnet broadcast occurred.
+- Final controlled reset created encrypted backup `/var/backups/robyn/robyn-state-20260723T033508Z.tar.zst.age`, redeployed schema-v3 from `179113a0973973fc91f34558933e6f272598ff05`, reseeded five launches with 28 trades, rebuilt, restarted, and saved all eight PM2 processes. Deployment manifest freeze is `9c536ac5662cfa60deec96e772f5ae26a26df272`.
+- Public HTTPS acceptance caught hardcoded client port `:3100` in the DAO and Portfolio devnet clients. Commit `8e9eb43` uses the same-origin `/api` reverse proxy. LAN and `https://called-junior-documents-winston.trycloudflare.com/dao` now load authoritative DAO data with zero browser warnings/errors; the public Portfolio fetch also passes. Quick Tunnel hostnames remain ephemeral.
 
 ### 2026-07-22 - DAO and fee-routing contract checkpoint
 
