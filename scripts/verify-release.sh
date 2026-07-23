@@ -28,11 +28,12 @@ pm2_bin="${release_real}/node_modules/.bin/pm2"
 pm2_json="$(PM2_HOME=/home/hendo420/.pm2 "${pm2_bin}" jlist)"
 app_count="$(jq 'length' <<<"${pm2_json}")"
 online_count="$(jq '[.[] | select(.pm2_env.status == "online")]|length' <<<"${pm2_json}")"
+restart_count="$(jq '[.[].pm2_env.restart_time] | add // 0' <<<"${pm2_json}")"
 wrong_cwd="$(jq --arg cwd "${release_real}" --arg web_cwd "${release_real}/apps/web" '[.[] | select((.name == "robyn-web" and .pm2_env.pm_cwd != $web_cwd) or (.name != "robyn-web" and .pm2_env.pm_cwd != $cwd))]|length' <<<"${pm2_json}")"
 
-[[ "${app_count}" -eq 6 && "${online_count}" -eq 6 && "${wrong_cwd}" -eq 0 ]] || {
+[[ "${app_count}" -eq 6 && "${online_count}" -eq 6 && "${restart_count}" -eq 0 && "${wrong_cwd}" -eq 0 ]] || {
   echo "PM2 release binding mismatch" >&2
-  jq -r '.[] | [.name,.pm2_env.status,.pm2_env.pm_cwd] | @tsv' <<<"${pm2_json}" >&2
+  jq -r '.[] | [.name,.pm2_env.status,.pm2_env.restart_time,.pm2_env.pm_cwd] | @tsv' <<<"${pm2_json}" >&2
   exit 1
 }
 
@@ -53,6 +54,7 @@ jq -n \
   --arg chainBlock "${chain_block}" \
   --argjson status "${status_json}" \
   --argjson appCount "${app_count}" \
+  --argjson pm2Restarts "${restart_count}" \
   --argjson immutability "${immutability_json}" \
   --argjson creatorDataPlane "${creator_data_plane}" \
   '{
@@ -60,6 +62,7 @@ jq -n \
     releasePath: $releasePath,
     gitSha: $gitSha,
     appCount: $appCount,
+    pm2Restarts: $pm2Restarts,
     chainBlock: $chainBlock,
     status: $status,
     immutability: $immutability,

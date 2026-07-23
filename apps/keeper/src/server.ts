@@ -448,8 +448,12 @@ async function reconcileLegacyStreamJobs() {
     isLegacyStreamJobId(job.data.kind, job.id ?? ""),
   );
   if (activeLegacy.length > 0) {
-    throw new Error(
-      `Cannot reconcile ${activeLegacy.length} active legacy keeper jobs`,
+    process.stdout.write(
+      JSON.stringify({
+        level: "info",
+        event: "active_legacy_stream_jobs_deferred",
+        count: activeLegacy.length,
+      }) + "\n",
     );
   }
   const legacyJobs = (

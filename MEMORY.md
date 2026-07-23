@@ -34,6 +34,15 @@ Durable project context lives here. Update this file whenever information should
   The workspace now overrides the router to patched `9.7.0`. The dependency
   audit reports zero high or critical advisories and the complete regression
   plus static-security gate passes. Last verified 2026-07-23.
+- Candidate `95806afd8f3385080969934064c6a4afb3295af3` is invalid. Promotion
+  exposed ten BullMQ legacy jobs whose active locks survived PM2's hard process
+  replacement. Startup correctly avoided removing active financial work but
+  restart-looped before a worker could reclaim the stalled locks; rollback to
+  `4e2e740a2076b577fe4758b343a7c43cf5068d51` succeeded. The replacement
+  defers active legacy jobs to BullMQ recovery while superseding only inactive
+  legacy jobs. Release verification now requires zero PM2 restart counters and
+  promotion/rollback repeat verification after a five-second stability window.
+  Build and live migration validation remain in progress.
 - Baseline checkpoint: exact release `691e8cf` was clean and healthy; encrypted
   backup `robyn-state-20260723T070046Z` restored 14 tables, eight artifacts and
   chain state in isolation with `liveStateTouched=false`.

@@ -78,6 +78,11 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 
+if [[ "${healthy}" == true ]]; then
+  sleep 5
+  runuser -u "${operator_user}" -- "${target}/scripts/verify-release.sh" "${current}" >/tmp/robyn-release-verify.json 2>/dev/null || healthy=false
+fi
+
 if [[ "${healthy}" != true ]]; then
   echo "release health verification failed; restoring prior release" >&2
   rollback_failed_promotion
