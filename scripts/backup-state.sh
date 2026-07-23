@@ -20,6 +20,10 @@ encrypted="${bundle}.age"
 checksum="${encrypted}.sha256"
 
 cleanup() {
+  if [[ -n "${snapshot_pid:-}" ]]; then
+    kill "${snapshot_pid}" >/dev/null 2>&1 || true
+    wait "${snapshot_pid}" >/dev/null 2>&1 || true
+  fi
   rm -rf -- "${work}"
   rm -rf -- "${mc_config}"
   rm -f -- "${bundle}"
@@ -40,14 +44,51 @@ if [[ -n "${git_status}" ]]; then
   echo "Refusing to back up a dirty release checkout." >&2
   exit 1
 fi
+served_sha="$(jq -er .gitSha /opt/robyn/current/release-manifest.json)"
+if [[ "${served_sha}" != "${git_sha}" ]]; then
+  echo "Refusing to back up a release that is not currently served." >&2
+  exit 1
+fi
 
 "${repo}/scripts/reconcile-ipfs-pins.sh" >/dev/null
 
-pg_dump --format=custom --no-owner --no-acl robyn >"${work}/database/robyn.dump"
-while IFS= read -r table; do
-  count="$(psql -d robyn -Atqc "SELECT count(*) FROM \"public\".\"${table}\"")"
-  printf '%s\t%s\n' "${table}" "${count}"
-done < <(psql -d robyn -Atqc "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename") >"${work}/database/table-counts.tsv"
+coproc DB_SNAPSHOT { stdbuf -oL psql -X -qAt -d robyn; }
+snapshot_pid="${DB_SNAPSHOT_PID}"
+printf '%s\n' \
+  'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;' \
+  'SELECT pg_export_snapshot();' \
+  >&"${DB_SNAPSHOT[1]}"
+IFS= read -r snapshot_id <&"${DB_SNAPSHOT[0]}"
+[[ "${snapshot_id}" =~ ^[0-9A-Fa-f]+-[0-9A-Fa-f]+-[0-9]+$ ]] || {
+  echo "Failed to export a PostgreSQL backup snapshot." >&2
+  exit 1
+}
+
+pg_dump \
+  --format=custom \
+  --no-owner \
+  --no-acl \
+  --snapshot="${snapshot_id}" \
+  robyn >"${work}/database/robyn.dump"
+psql -X -qAt -F $'\t' -v snapshot_id="${snapshot_id}" -d robyn \
+  >"${work}/database/table-counts.tsv" <<'SQL'
+BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
+SET TRANSACTION SNAPSHOT :'snapshot_id';
+SELECT format(
+  'SELECT %L, count(*)::text FROM %I.%I;',
+  tablename,
+  schemaname,
+  tablename
+)
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY tablename
+\gexec
+COMMIT;
+SQL
+printf '%s\n' 'COMMIT;' '\q' >&"${DB_SNAPSHOT[1]}"
+wait "${snapshot_pid}"
+snapshot_pid=""
 
 curl -fsS -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"anvil_dumpState","params":[]}' http://127.0.0.1:8545 |
   jq -er '.result' >"${work}/anvil/state.json"
