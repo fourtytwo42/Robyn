@@ -6,7 +6,7 @@ Last verified: 2026-07-22
 
 Robyn's production market implementation can atomically graduate a sold-out bonding curve into a canonical Uniswap v3 pool while preserving the same market contract as the user's Buy/Sell entrypoint. The liquidity-position NFT is permanently held by an immutable locker. Quote-asset trading fees fund the launch's existing reward basket; launch-token fees stay sequestered in the excluded locker.
 
-The feature-branch deployment path now uses pinned official Uniswap v3 artifacts on chain 31337 and has passed an isolated full deployment, seeded-demo, graduation, post-graduation trading, and keeper-harvest rehearsal. The persistent served chain is not changed until the validated release is promoted.
+The persistent served chain 31337 now uses pinned official Uniswap v3 artifacts. Its seeded EVID market is graduated into locked canonical liquidity and remains tradable through Robyn's existing Buy/Sell interface. Isolated deployment, graduation, two-way trading, fee harvesting, persistent verification, and in-app-browser acceptance have passed.
 
 ## Contracts
 
@@ -82,6 +82,8 @@ ROBINHOOD_MAINNET_RPC_URL=https://rpc.mainnet.chain.robinhood.com \
 Without `ROBINHOOD_MAINNET_RPC_URL`, the fork test returns without accessing a network so the ordinary deterministic suite remains offline-compatible.
 
 The isolated chain-31337 rehearsal additionally proved that the seeded EVID demo graduated, remained buyable and sellable through the same market address, minted position NFT `1` directly to its locker, routed collected mUSD fees into its basket vault, permanently retained the collected launch-token side, and completed an automatic keeper harvest job. The rehearsal used a disposable Anvil process, disposable PostgreSQL schema, and previously empty Redis logical database; all were cleaned after verification.
+
+Persistent browser acceptance at 390x844 and desktop widths verified a non-overflowing graduated EVID page, locked-liquidity disclosure, canonical pool/locker/NFT/fee-tier metadata, chart graduation and post-graduation markers, guided creation dialog, and a confirmed 100 mUSD post-graduation buy from a freshly created and funded session wallet. Browser warning/error logs were empty.
 
 ## Fail-closed deployment gates
 
