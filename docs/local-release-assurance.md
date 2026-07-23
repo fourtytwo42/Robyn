@@ -58,6 +58,12 @@ It temporarily serves the second clean build on loopback port 3300 and verifies
 the development-network disclosure. Every normalization is recorded in the
 checksummed summary.
 
+Next preview-mode and Server Actions cryptographic values are a protected,
+VM-local build input. Both builds consume the same input; evidence records only
+its SHA-256 fingerprint. Generate it once with
+`scripts/ensure-next-build-secrets.mjs`. Never commit or copy the secret JSON
+into release evidence.
+
 ## Alert evidence
 
 `scripts/verify-alert-delivery.sh` injects reversible synthetic alerts into

@@ -12,6 +12,7 @@ run_id="${REPRO_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
 output="${evidence_root}/${run_id}"
 fixed_root="/var/tmp/robyn-reproducible-build"
 work="${fixed_root}/source"
+next_secrets="${ROBYN_NEXT_BUILD_SECRETS_FILE:-/home/hendo420/.config/robyn/next-build-secrets.json}"
 git_sha="$(git -C "${repo}" rev-parse HEAD)"
 epoch="$(git -C "${repo}" show -s --format=%ct "${git_sha}")"
 mkdir -p "${output}"
@@ -27,6 +28,11 @@ if [[ "$(git -C "${repo}" rev-parse '@{u}')" != "${git_sha}" ]]; then
 fi
 rm -rf -- "${fixed_root}"
 mkdir -p "${fixed_root}/store-a" "${fixed_root}/store-b"
+[[ -r "${next_secrets}" ]] || {
+  echo "Missing protected Next build secrets: ${next_secrets}" >&2
+  exit 1
+}
+next_secrets_sha="$(sha256sum "${next_secrets}" | cut -d' ' -f1)"
 
 archive="${output}/source.tar"
 git -C "${repo}" archive --format=tar "${git_sha}" -o "${archive}"
@@ -42,6 +48,10 @@ build_one() {
   export LC_ALL=C
   export SOURCE_DATE_EPOCH="${epoch}"
   export ROBYN_BUILD_ID="${git_sha}"
+  export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+  NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(
+    node scripts/prepare-next-build-inputs.mjs "${work}" "${next_secrets}"
+  )"
   pnpm install --frozen-lockfile --package-import-method=copy \
     --store-dir "${store}" >"${output}/${side}-install.log"
   pnpm build >"${output}/${side}-build.log"
@@ -155,14 +165,17 @@ jq -n \
   --arg nodeVersion "$(node --version)" \
   --arg pnpmVersion "$(pnpm --version)" \
   --arg forgeVersion "$(PATH=/home/hendo420/.foundry/bin:${PATH} forge --version | head -1)" \
+  --arg nextBuildSecretsSha256 "${next_secrets_sha}" \
   '{
     schemaVersion:1,generatedAt:$generatedAt,gitSha:$gitSha,
     sourceArchiveSha256:$sourceArchiveSha256,
+    nextBuildSecretsSha256:$nextBuildSecretsSha256,
     toolchain:{node:$nodeVersion,pnpm:$pnpmVersion,foundry:$forgeVersion},
     cleanArchives:2,freshPnpmStores:2,
     normalizationRules:[
       "both independent archives build sequentially at /var/tmp/robyn-reproducible-build/source because Next and Solidity JSON containers embed absolute source roots",
       "Next BUILD_ID is the exact Git SHA",
+      "Next preview and Server Actions cryptographic values come from one protected VM build input; evidence records only its SHA-256",
       "TZ=UTC, LC_ALL=C and SOURCE_DATE_EPOCH=commit timestamp",
       "Next cache and trace telemetry are excluded",
       "JSON and Next client-reference manifests are canonicalized by recursively sorting object keys while preserving array order",

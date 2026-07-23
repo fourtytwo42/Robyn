@@ -36,7 +36,9 @@ Durable project context lives here. Update this file whenever information should
   trace telemetry and absolute-path-only Solidity JSON metadata are excluded.
   JSON object keys and Next client-reference objects are canonicalized while
   arrays preserve order. The gate emits and compares a deterministic CycloneDX
-  1.5 SBOM; all normalization rules are recorded in evidence.
+  1.5 SBOM. Next preview/Server Actions cryptographic values come from a
+  protected VM-only input whose SHA-256, but never contents, is recorded in
+  evidence. All normalization rules are recorded.
 
 - Completed goal: schema-v4 contracts and every mapped product action on the
   controlled local network are validated; deterministic hundreds-user
