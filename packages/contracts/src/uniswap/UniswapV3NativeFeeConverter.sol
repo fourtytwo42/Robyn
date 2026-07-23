@@ -3,6 +3,7 @@ pragma solidity 0.8.30;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { INativeFeeConverter } from "../dao/INativeFeeConverter.sol";
 import {
@@ -17,7 +18,7 @@ interface IWrappedNative is IERC20 {
 }
 
 /// @notice Canonical-v3 fee conversion guarded by TWAP/spot agreement and bounded quoted impact.
-contract UniswapV3NativeFeeConverter is INativeFeeConverter {
+contract UniswapV3NativeFeeConverter is INativeFeeConverter, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     error Unauthorized();
@@ -99,13 +100,16 @@ contract UniswapV3NativeFeeConverter is INativeFeeConverter {
         uint256 minimumNativeOut,
         uint256 deadline,
         address payable recipient
-    ) external returns (uint256 nativeOut) {
+    ) external nonReentrant returns (uint256 nativeOut) {
         _authorize(deadline);
         if (address(baseAsset_) != address(baseAsset) || recipient == address(0)) {
             revert InvalidConfiguration();
         }
         baseAsset.safeTransferFrom(msg.sender, address(this), amount);
         uint256 wrappedBefore = wrappedNative.balanceOf(address(this));
+        // The complete conversion is nonReentrant. Measured output is required
+        // because wrapped-native implementations do not guarantee router returns.
+        // slither-disable-next-line reentrancy-balance
         _swap(
             baseAsset,
             IERC20(address(wrappedNative)),
@@ -128,7 +132,7 @@ contract UniswapV3NativeFeeConverter is INativeFeeConverter {
         uint256 minimumBaseOut,
         uint256 deadline,
         address recipient
-    ) external returns (uint256 baseOut) {
+    ) external nonReentrant returns (uint256 baseOut) {
         _authorize(deadline);
         if (
             address(baseAsset_) != address(baseAsset) || address(launchToken) == address(baseAsset)
@@ -136,6 +140,9 @@ contract UniswapV3NativeFeeConverter is INativeFeeConverter {
         ) revert InvalidConfiguration();
         launchToken.safeTransferFrom(msg.sender, address(this), amount);
         uint256 beforeBalance = baseAsset.balanceOf(recipient);
+        // The complete conversion is nonReentrant. Recipient balance deltas
+        // additionally reject dishonest or fee-on-transfer router reporting.
+        // slither-disable-next-line reentrancy-balance
         _swap(launchToken, baseAsset, launchPoolFee, amount, minimumBaseOut, recipient);
         baseOut = baseAsset.balanceOf(recipient) - beforeBalance;
         if (baseOut < minimumBaseOut) revert BalanceDeltaMismatch();

@@ -52,7 +52,7 @@ forge build --root packages/contracts >/dev/null
 core_artifact="node_modules/@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json"
 position_artifact="node_modules/@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json"
 quoter_artifact="node_modules/@uniswap/v3-periphery/artifacts/contracts/lens/QuoterV2.sol/QuoterV2.json"
-router_artifact="node_modules/@uniswap/swap-router-contracts/artifacts/contracts/SwapRouter02.sol/SwapRouter02.json"
+router_artifact="packages/contracts/vendor/uniswap/swap-router-contracts-1.1.0/SwapRouter02.json"
 for artifact in "$core_artifact" "$position_artifact" "$quoter_artifact" "$router_artifact"; do
   [[ -f "$artifact" ]] || { echo "Missing pinned artifact: $artifact" >&2; exit 1; }
 done

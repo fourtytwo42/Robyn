@@ -11,6 +11,7 @@ bytecode_hash = "none"
 cbor_metadata = false
 remappings = ["@openzeppelin/contracts/=../../node_modules/@openzeppelin/contracts/"]
 allow_paths = ["../../node_modules"]
+gas_limit = 30_000_000_000
 
 [fmt]
 line_length = 100
@@ -20,4 +21,9 @@ bracket_spacing = true
 [invariant]
 runs = 128
 depth = 64
+fail_on_revert = true
+
+[profile.assurance.invariant]
+runs = 256
+depth = 128
 fail_on_revert = true

@@ -4,6 +4,18 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Current task: execute the approved local release-assurance program on branch
+  `codex/local-release-assurance`: internal schema-v4 audit, adversarial
+  economics, chaos/alert/recovery drills, subagent UAT, reproducible builds and
+  a final one-shot eight-hour soak. No public testnet broadcast is authorized.
+- Baseline checkpoint: exact release `691e8cf` was clean and healthy; encrypted
+  backup `robyn-state-20260723T070046Z` restored 14 tables, eight artifacts and
+  chain state in isolation with `liveStateTouched=false`.
+- Current result: deprecated vulnerable Uniswap Hardhat tooling was removed,
+  the pinned router artifact was vendored, converter reentrancy was hardened,
+  static security has zero unresolved high findings, and the 512-wallet,
+  32-launch, 25,000-action economic campaign passes.
+
 - Completed goal: schema-v4 contracts and every mapped product action on the
   controlled local network are validated; deterministic hundreds-user
   simulation, built-browser acceptance, defect remediation, operational
@@ -58,6 +70,27 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-23 - Assurance audit and economic checkpoint
+
+- The first fresh security run failed closed on six new high dependency
+  advisories inherited only through deprecated
+  `@uniswap/swap-router-contracts` Hardhat tooling.
+- The executable package was removed. Its exact official `SwapRouter02` JSON
+  artifact was copied to controlled vendor storage with SHA-256
+  `210a7bf29f26de9f45d35dac1214943eca41c3a002007dd6a0e1aa870bf2d2d1`;
+  deployment and verification scripts use that path.
+- `UniswapV3NativeFeeConverter` now has function-wide reentrancy guards.
+  Narrow Slither annotations document existing guarded balance-delta and
+  canonical creator claim-to paths. Security audit now reports zero high or
+  critical dependencies and zero unresolved high contract findings.
+- The schema-v4 simulation now models 512 wallets, 32 launches, 25,000
+  deterministic economic actions across 20 seeds and 100 voters. The
+  assurance profile runs invariants at 256 runs/depth 128.
+- Full format, lint, typecheck, 70 Foundry tests, service tests, Anvil smoke,
+  optimized build, deployment verification and zero-pending action coverage
+  pass. Raw economic evidence is under
+  `/var/backups/robyn/economic-simulation/20260723T071107Z/`.
 
 ### 2026-07-23 - Protected testnet stack rehearsal repair
 

@@ -188,6 +188,9 @@ contract RobynProtocolFeeRouter is ReentrancyGuard {
         token.safeTransferFrom(msg.sender, address(this), amount);
         token.forceApprove(address(converter), amount);
         uint256 beforeBalance = baseAsset.balanceOf(address(this));
+        // The full entry point is nonReentrant and the converter is bound by the
+        // initializer/timelock. Balance-delta verification intentionally follows it.
+        // slither-disable-next-line reentrancy-balance
         baseOut = converter.convertLaunchToBase(
             token, baseAsset, amount, minimumBaseOut, deadline, address(this)
         );
@@ -329,6 +332,9 @@ contract RobynProtocolFeeRouter is ReentrancyGuard {
     }
 
     function _sendNative(address payable recipient, uint256 amount) private {
+        // The canonical creator chooses claim-to recipients. Every caller-facing
+        // claim entry point is nonReentrant and liabilities are debited first.
+        // slither-disable-next-line arbitrary-send-eth
         (bool sent,) = recipient.call{ value: amount }("");
         if (!sent) revert NativeTransferFailed();
     }

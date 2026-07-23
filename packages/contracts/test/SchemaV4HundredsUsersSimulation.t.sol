@@ -41,8 +41,10 @@ contract SchemaV4HundredsUsersSimulationTest {
     SystemSimulationVm private constant vm =
         SystemSimulationVm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
-    uint256 private constant USER_COUNT = 256;
-    uint256 private constant LAUNCH_COUNT = 8;
+    uint256 private constant USER_COUNT = 512;
+    uint256 private constant LAUNCH_COUNT = 32;
+    uint256 private constant ECONOMIC_ACTION_COUNT = 25_000;
+    uint256 private constant ECONOMIC_SEED_COUNT = 20;
     uint256 private constant SUPPLY = 2_666 ether;
     uint24 private constant POOL_FEE = 10_000;
 
@@ -141,7 +143,7 @@ contract SchemaV4HundredsUsersSimulationTest {
         }
     }
 
-    function testSimulation256UsersAcrossLaunchTradeRewardAndClaimLifecycles() external {
+    function testSimulation512UsersAcrossLaunchTradeRewardAndClaimLifecycles() external {
         _distributeDaoAndDelegate();
         _simulateBondingTrades();
         _graduateAndTradeOnDex();
@@ -173,8 +175,8 @@ contract SchemaV4HundredsUsersSimulationTest {
         targets[0] = address(target);
         uint256[] memory values = new uint256[](1);
         bytes[] memory calldatas = new bytes[](1);
-        calldatas[0] = abi.encodeCall(DaoGovernedValue.setValue, (256));
-        string memory description = "256-user deterministic simulation";
+        calldatas[0] = abi.encodeCall(DaoGovernedValue.setValue, (512));
+        string memory description = "512-user deterministic simulation";
         uint256 proposalId = governor.propose(targets, values, calldatas, description);
 
         vm.warp(block.timestamp + 1 days + 1);
@@ -188,7 +190,7 @@ contract SchemaV4HundredsUsersSimulationTest {
         governor.queue(targets, values, calldatas, descriptionHash);
         vm.warp(block.timestamp + 2 days + 1);
         governor.execute(targets, values, calldatas, descriptionHash);
-        require(target.value() == 256, "governance execution");
+        require(target.value() == 512, "governance execution");
     }
 
     function testSchemaV4AtomicRollbackAuthorizationAndPauseMatrix() external {
@@ -322,6 +324,30 @@ contract SchemaV4HundredsUsersSimulationTest {
             }
             vm.stopPrank();
         }
+
+        for (uint256 actionIndex; actionIndex < ECONOMIC_ACTION_COUNT; ++actionIndex) {
+            uint256 seed = actionIndex % ECONOMIC_SEED_COUNT;
+            uint256 entropy =
+                uint256(keccak256(abi.encode(seed, actionIndex / ECONOMIC_SEED_COUNT)));
+            address user = _user(entropy % USER_COUNT);
+            uint256 marketIndex = (entropy >> 32) % LAUNCH_COUNT;
+            base.mint(user, 0.02 ether);
+            vm.startPrank(user);
+            base.approve(address(markets[marketIndex]), type(uint256).max);
+            if (entropy % 5 != 0) {
+                markets[marketIndex].buy(0.01 ether, 1);
+            } else {
+                uint256 balance = tokens[marketIndex].balanceOf(user);
+                if (balance > 20) {
+                    uint256 sellAmount = balance / 20;
+                    tokens[marketIndex].approve(address(markets[marketIndex]), sellAmount);
+                    markets[marketIndex].sell(sellAmount, 1);
+                } else {
+                    markets[marketIndex].buy(0.01 ether, 1);
+                }
+            }
+            vm.stopPrank();
+        }
     }
 
     function _graduateAndTradeOnDex() private {
@@ -391,10 +417,12 @@ contract SchemaV4HundredsUsersSimulationTest {
             }
         }
 
+        uint256 tokensPerCreator = LAUNCH_COUNT / 4;
         for (uint256 creatorIndex; creatorIndex < 4; ++creatorIndex) {
-            address[] memory creatorTokens = new address[](2);
-            creatorTokens[0] = address(tokens[creatorIndex]);
-            creatorTokens[1] = address(tokens[creatorIndex + 4]);
+            address[] memory creatorTokens = new address[](tokensPerCreator);
+            for (uint256 offset; offset < tokensPerCreator; ++offset) {
+                creatorTokens[offset] = address(tokens[creatorIndex + (offset * 4)]);
+            }
             vm.prank(_user(creatorIndex));
             feeRouter.claimCreatorFeesBatch(creatorTokens);
         }

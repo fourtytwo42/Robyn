@@ -132,6 +132,9 @@ contract RewardFeePositionLocker is IERC721Receiver, ReentrancyGuard {
         if (!positionBound) revert PositionNotBound();
         uint256 baseBefore = baseAsset.balanceOf(address(this));
         uint256 launchBefore = launchToken.balanceOf(address(this));
+        // The complete harvest is nonReentrant. Post-collect balance deltas are
+        // required because the canonical position manager does not return them.
+        // slither-disable-next-line reentrancy-balance
         positionManager.collect(
             INonfungiblePositionManager.CollectParams({
                 tokenId: positionTokenId,

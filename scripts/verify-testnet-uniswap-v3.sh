@@ -15,7 +15,7 @@ declare -A artifacts=(
   [factory]="node_modules/@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json"
   [positionManager]="node_modules/@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json"
   [quoterV2]="node_modules/@uniswap/v3-periphery/artifacts/contracts/lens/QuoterV2.sol/QuoterV2.json"
-  [swapRouter02]="node_modules/@uniswap/swap-router-contracts/artifacts/contracts/SwapRouter02.sol/SwapRouter02.json"
+  [swapRouter02]="packages/contracts/vendor/uniswap/swap-router-contracts-1.1.0/SwapRouter02.json"
 )
 
 for key in weth9 factory positionManager quoterV2 swapRouter02; do
