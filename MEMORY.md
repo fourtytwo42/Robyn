@@ -16,13 +16,14 @@ Durable project context lives here. Update this file whenever information should
   preparation, atomic creation, indexing, immutable binding, bonding,
   graduation, post-graduation trading and eligible claims. Freeze and promote
   this changed harness, then start the fresh one-shot eight-hour soak.
-- Latest soak result: exact release `5844cf333757e6313e7db0a8cd615fd9f5f94389`
-  failed closed after 1h01m when `robyn-api` crossed its 384 MiB PM2 ceiling
-  and restarted. Before failure it completed 1,220 actor requests, 73
-  transactions, three new immutable-IPFS launches and one graduation with zero
-  alerts, accounting failures or endpoint-SLO failures. The replacement must
-  prove the cache-retention fix under a dense multi-launch workload before the
-  eight-hour clock restarts.
+- Latest soak result: the original exact release `5844cf3` failed closed afte
+  1h01m on an API memory restart. Replacement `b02eae2` completed a compressed
+  240-second regression on an already exercised 31-launch chain with eight new
+  immutable-IPFS launches, four graduations, 173 workload transactions and zero
+  process restarts. API RSS ended at 328,855,552 bytes under the unchanged
+  402,653,184-byte watchdog. The deliberately compressed three-second cadence
+  exceeded the endpoint p95 gate; validate normal 30-second cadence, freeze one
+  final exact release, then restart the eight-hour clock.
 - Baseline checkpoint: exact release `691e8cf` was clean and healthy; encrypted
   backup `robyn-state-20260723T070046Z` restored 14 tables, eight artifacts and
   chain state in isolation with `liveStateTouched=false`.
@@ -218,6 +219,32 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-23 - Creator-image native memory correction
+
+- Context: Cache expiry correction alone did not prevent an API restart in the
+  compressed multi-launch regression. Node diagnostic reports at 418 MiB RSS
+  showed only 42 MiB live JavaScript, 5 MiB external memory and no detached
+  contexts. RSS increased with each sanitized creator upload.
+- Cause: Sharp/libvips retained native cache and allocator high-water memory for
+  unique image inputs. The default cache cannot produce useful hits in this
+  content-addressed upload pipeline.
+- Decision: Disable Sharp's process-wide operation cache, bound Sharp worker
+  concurrency to one, and run both devnet and testnet APIs with
+  `MALLOC_ARENA_MAX=2` and `MALLOC_TRIM_THRESHOLD_=65536`. Keep the existing
+  384 MiB PM2 watchdog and 256 MiB old-space limit. Analytics queries now also
+  select only the seven event topics used by the canonical projection.
+- Files: `apps/api/src/creator-media.ts`, `apps/api/src/sharp.d.ts`,
+  `apps/api/test/creator-media.test.ts`, `apps/api/src/server.ts`,
+  `infrastructure/pm2/ecosystem.config.cjs`,
+  `infrastructure/pm2/ecosystem.testnet.config.cjs`,
+  `scripts/validate-pm2-config.mjs`.
+- Verification: 38 API tests, strict typecheck and PM2 validation pass. Exact
+  release `b02eae201aa224636a6019713740b28a8cbc12c2` completed eight launches,
+  four graduations and 173 workload transactions with zero restarts; API RSS
+  ended at 328,855,552 bytes.
+- Follow-up: Prove endpoint p95 at the normal soak cadence, then start a fresh
+  uninterrupted eight-hour soak from the final exact release.
 
 ### 2026-07-23 - Realistic-soak API memory correction
 
