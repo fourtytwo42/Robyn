@@ -58,6 +58,13 @@ web restarts at the previous 512 MiB PM2 ceiling. The production and preview
 web budgets are now 1 GiB on the 8 GiB VM; all backend budgets remain bounded
 at 256 or 384 MiB.
 
+The corrected run at commit `af0c27a5168028b42d69c4c8e203608a77bcaf9b`
+passed 18,000 of 18,000 requests with zero monitored-process restarts. P95
+latency was 17.45 ms for server-rendered Markets, 5.01 ms for API status,
+4.07 ms for API launches, 6.98 ms for RPC chain ID, and 7.23 ms for RPC head.
+Raw checksummed evidence is retained at
+`/var/backups/robyn/system-simulation/final-af0c27a/`.
+
 ## Current automated matrix
 
 The schema-v4 contract suite currently contains 70 passing tests, including four

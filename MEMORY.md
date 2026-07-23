@@ -4,12 +4,31 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
-- Current goal: exhaustively validate schema-v4 contracts and every product action on the controlled local network, add a deterministic hundreds-user simulation, fix every in-scope defect, complete built-browser acceptance, and push verified checkpoints. Work is on `codex/system-exhaustive-testing`; the goal remains active.
-- Current checkpoint: the first schema-v4 production-shape simulation models 256 users, eight atomic launches, bonding and graduated trades, basket/native conversions, holder/RDAO/creator claims, 100 voters, and timelock execution. A 60-second 100 rps/200-concurrency/256-client live load produced 6,000/6,000 valid responses after fixes.
-- Defects fixed: devnet Next SSR now calls the internal API backend instead of the public per-IP rate-limited Nginx port; discovery analytics use a bounded 3-second single-flight cache to prevent identical concurrent queries/RPC fanout from exhausting the API's 384 MiB PM2 limit.
-- Evidence: `evidence/system-simulation/20260723T051734Z/` contains raw contract/load logs, JSON summary, and checksums. Contract mutations occur only in Foundry's isolated EVM; the live HTTP phase is read-only.
-- Next step: finish the machine-audited function/action/state matrix, expand adversarial and lifecycle tests for uncovered schema-v4/API/indexer/keeper/media/wallet paths, run complete in-app-browser journeys, then rebuild/restart/reconcile and push the next checkpoints. Public testnet broadcast remains unauthorized.
-- Current test expansion: 70 Foundry tests now pass, including new atomic rollback/pause, governance lifecycle, RDAO signature/reward, native-converter safety, and 256-user/100-voter matrices. The public API surface harness passes all 54 cases through the same-origin Nginx route.
+- Current goal: exhaustively validate schema-v4 contracts and every product
+  action on the controlled local network, add a deterministic hundreds-user
+  simulation, fix every in-scope defect, complete built-browser acceptance,
+  and push verified checkpoints. Work is on
+  `codex/system-exhaustive-testing`; final closure is in progress.
+- Current checkpoint: 70 Foundry tests, four stateful invariants, 64 authenticated
+  and anonymous API cases, 108 ABI functions, 25 API endpoints and all 12
+  required browser/operational journeys pass. Built-browser acceptance covered
+  launch, bonding, graduation, post-graduation trading, claims, identity,
+  responsive layouts and the full DAO lifecycle.
+- High-scale result: the corrected 120-second profile passed 18,000 of 18,000
+  requests across 512 virtual clients at 150 rps and 256 concurrency with zero
+  monitored PM2 restarts. Contract simulation models 256 users, eight launches
+  and 100 voters.
+- Defects fixed during the goal include internal SSR routing and discovery
+  single-flight caching, truthful measured buy copy, duplicate-launch
+  prevention, zero-value DAO claim gating, DEX-first testnet-stack rehearsal,
+  live-lifecycle verification, large-state restore request sizing, and the
+  high-load web memory/process-stability gate.
+- Evidence: committed checkpoint
+  `evidence/system-simulation/20260723T051734Z/` plus checksummed final evidence
+  under `/var/backups/robyn/system-simulation/final-af0c27a/`.
+- Next step: freeze the final documented commit, repeat the exact-candidate
+  simulation and backup/restore, perform final built-browser smoke, then close
+  the active goal. Public testnet broadcast remains unauthorized.
 
 - Current task: the approved multi-wallet connection release is implemented on branch `codex/multi-wallet`; no Robinhood Testnet transaction was broadcast.
 - Current checkpoint: protected testnet components use one RainbowKit/wagmi connection layer for Create, trading, Portfolio, creator rewards, DAO and governance. Devnet retains the generated/restored session wallet through compile-time aliases.
@@ -89,7 +108,11 @@ Durable project context lives here. Update this file whenever information should
   non-online service fails the simulation even if all HTTP responses happen to
   succeed.
 - A 100-request validation run passed with all five monitored services stable.
-  Follow-up: rerun the complete higher-scale profile before goal closure.
+  The complete corrected rerun at `af0c27a` then passed 18,000 of 18,000
+  requests with zero restarts. P95 latency was 17.45 ms web, 5.01 ms API
+  status, 4.07 ms API launches, 6.98 ms RPC chain ID and 7.23 ms RPC head.
+  Checksummed raw evidence is under
+  `/var/backups/robyn/system-simulation/final-af0c27a/`.
 
 ### 2026-07-23 - Built-browser lifecycle and defect checkpoint
 
