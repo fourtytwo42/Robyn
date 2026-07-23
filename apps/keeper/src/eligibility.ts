@@ -41,3 +41,14 @@ export function protocolObservationChanged(
   if (!/^[0-9]+$/.test(observedAmount)) return true;
   return BigInt(observedAmount) !== authoritativeAmount;
 }
+
+export function shouldSupersedeProtocolFailure(
+  state: string,
+  observedAmount: string,
+  authoritativeAmount: bigint,
+): boolean {
+  return (
+    state === "dead_letter" &&
+    protocolObservationChanged(observedAmount, authoritativeAmount)
+  );
+}

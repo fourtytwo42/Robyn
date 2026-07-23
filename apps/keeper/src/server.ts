@@ -16,7 +16,7 @@ import {
   boundedProtocolInput,
   conversionJobId,
   isLegExecutable,
-  protocolObservationChanged,
+  shouldSupersedeProtocolFailure,
 } from "./eligibility.js";
 
 type Manifest = {
@@ -395,14 +395,16 @@ async function supersedeStaleProtocolDeadLetters(
       idempotency_key: string;
       attempts: number;
       payload: ProtocolConversionJob;
+      state: string;
     }[]
   >(
-    "SELECT idempotency_key,attempts,payload FROM job_audit WHERE queue=$1 AND state IN ('dead_letter','superseded') AND payload->>'kind'=$2 AND lower(payload->>'token')=$3",
+    "SELECT idempotency_key,attempts,payload,state FROM job_audit WHERE queue=$1 AND state='dead_letter' AND payload->>'kind'=$2 AND lower(payload->>'token')=$3",
     [queueName, kind, token.toLowerCase()],
   );
   for (const row of rows) {
     if (
-      !protocolObservationChanged(
+      !shouldSupersedeProtocolFailure(
+        row.state,
         row.payload.observedAmount,
         authoritativeAmount,
       )

@@ -4,6 +4,7 @@ import {
   conversionJobId,
   isLegExecutable,
   protocolObservationChanged,
+  shouldSupersedeProtocolFailure,
 } from "../src/eligibility.js";
 
 describe("keeper eligibility", () => {
@@ -46,5 +47,17 @@ describe("keeper eligibility", () => {
     expect(protocolObservationChanged("100", 100n)).toBe(false);
     expect(protocolObservationChanged("100", 75n)).toBe(true);
     expect(protocolObservationChanged("not-an-amount", 100n)).toBe(true);
+  });
+
+  it("processes a changed failed observation exactly once", () => {
+    expect(shouldSupersedeProtocolFailure("dead_letter", "100", 75n)).toBe(
+      true,
+    );
+    expect(shouldSupersedeProtocolFailure("superseded", "100", 75n)).toBe(
+      false,
+    );
+    expect(shouldSupersedeProtocolFailure("dead_letter", "100", 100n)).toBe(
+      false,
+    );
   });
 });

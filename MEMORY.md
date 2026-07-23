@@ -72,9 +72,15 @@ Durable project context lives here. Update this file whenever information should
 - Isolated recovery now builds the backup-recorded commit and restores native
   PostgreSQL, Redis, MinIO and Anvil on alternate paths/ports, then starts web,
   API, indexer, keeper and artifacts for smoke checks. It fingerprints the live
-  release link, deployment, chain state and non-heartbeat database data before
-  and after and fails on drift. Same-VM isolation still does not prove total
-  host-loss recovery.
+  release link, deployment, chain state and durable database contents before
+  and after and fails on drift. Database comparison canonicalizes row and table
+  ordering while excluding only heartbeat and indexer poll timestamps. Same-VM
+  isolation still does not prove total host-loss recovery.
+- Recovery fingerprinting exposed a keeper defect: a terminal `superseded`
+  conversion job was reconsidered every scan, rewriting its row and appending
+  duplicate audit events. The keeper now selects only `dead_letter` jobs for
+  this one-time transition, with a regression test proving an already
+  superseded observation cannot be processed again.
 - The immutable release gate exposed creator-metadata drift after the last
   controlled chain reset: PostgreSQL still held bindings for retired token
   addresses. `scripts/seed-devnet-creator-metadata.sh` authenticated as the
@@ -136,6 +142,25 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-23 - Isolated recovery fingerprint and keeper terminal-state fix
+
+- Context: The isolated native restore reached complete service, API, contract,
+  keeper and browser-HTTP smoke, then correctly failed its live-state guard
+  because the keeper was rewriting a terminal job every five seconds.
+- Decision: Treat `superseded` as terminal. Only `dead_letter` jobs may enter
+  stale-observation reconciliation. Compare live PostgreSQL state with
+  order-independent per-table JSON row digests instead of nondeterministic
+  `pg_dump` output.
+- Files: `apps/keeper/src/eligibility.ts`,
+  `apps/keeper/src/server.ts`, `apps/keeper/test/eligibility.test.ts`,
+  `scripts/rehearse-restore.sh`.
+- Commands/tests: Keeper Vitest 7/7, keeper strict typecheck, Prettier check.
+- Result: The repeated-audit root cause is fixed and volatile database
+  normalization is limited to `service_heartbeats` and
+  `indexer_checkpoints`. Full isolated restore rerun remains pending.
+- Follow-up: Rebuild/promote the exact pushed checkpoint, create a new
+  encrypted off-VM backup, and rerun isolated CLI plus in-app-browser recovery.
 
 ### 2026-07-23 - Local alert delivery and stale-job reconciliation
 

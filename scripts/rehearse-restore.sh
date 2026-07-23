@@ -14,6 +14,7 @@ encrypted="$(readlink -f "${1}")"
 checksum="${encrypted}.sha256"
 identity="/etc/robyn/backup-age-identity.txt"
 work="$(mktemp -d /var/tmp/robyn-restore.XXXXXX)"
+chmod 0711 "${work}"
 bundle="${work}/state.tar.zst"
 restore="${work}/restore"
 database="robyn_restore_$(date -u +%Y%m%d%H%M%S)_${RANDOM}"
@@ -28,11 +29,42 @@ live_chain_state_sha="$(
     --data '{"jsonrpc":"2.0","id":1,"method":"anvil_dumpState","params":[]}' \
     http://127.0.0.1:8545 | jq -er '.result' | sha256sum | cut -d' ' -f1
 )"
-live_database_sha="$(
-  runuser -u hendo420 -- pg_dump \
-    --data-only --no-owner --no-acl --exclude-table=service_heartbeats robyn |
-    sha256sum | cut -d' ' -f1
-)"
+
+database_fingerprint() {
+  local database_name="$1"
+  local table_name
+  local table_digest
+  while IFS= read -r table_name; do
+    table_digest="$(
+      runuser -u hendo420 -- psql -X -v ON_ERROR_STOP=1 \
+        -d "${database_name}" -Atqc "
+          SELECT coalesce(
+            md5(string_agg(row_json, '' ORDER BY row_json)),
+            md5('')
+          )
+          FROM (
+            SELECT to_jsonb(source_row)::text AS row_json
+            FROM public.\"${table_name}\" AS source_row
+          ) AS canonical_rows
+        "
+    )"
+    printf '%s\t%s\n' "${table_name}" "${table_digest}"
+  done < <(
+    runuser -u hendo420 -- psql -X -v ON_ERROR_STOP=1 \
+      -d "${database_name}" -Atqc "
+        SELECT tablename
+        FROM pg_catalog.pg_tables
+        WHERE schemaname = 'public'
+          AND tablename NOT IN ('service_heartbeats', 'indexer_checkpoints')
+        ORDER BY tablename
+      "
+  ) | sha256sum | cut -d' ' -f1
+}
+
+# Heartbeats and the indexer's last-poll timestamp are intentionally volatile.
+# Every durable financial, audit, queue, profile, media, and chain projection row
+# remains inside this order-independent semantic fingerprint.
+live_database_sha="$(database_fingerprint robyn)"
 
 cleanup() {
   for app_pid in "${app_pids[@]}"; do
@@ -146,18 +178,21 @@ if [[ -n "$(git -C "${source_dir}" status --porcelain)" ]]; then
   exit 1
 fi
 chown -R hendo420:hendo420 "${source_dir}"
-runuser -u hendo420 -- env \
+if ! runuser -u hendo420 -- env \
   HOME=/home/hendo420 \
   TZ=UTC \
   LC_ALL=C \
   SOURCE_DATE_EPOCH="$(git -C "${source_dir}" show -s --format=%ct "${git_sha}")" \
   ROBYN_BUILD_ID="${git_sha}" \
   bash -lc "
-    cd '${source_dir}'
-    export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=\"\$(node scripts/prepare-next-build-inputs.mjs '${source_dir}' /home/hendo420/.config/robyn/next-build-secrets.json)\"
-    pnpm install --frozen-lockfile --package-import-method=copy
-    pnpm build
-  " >"${work}/recovery-build.log" 2>&1
+      cd '${source_dir}'
+      export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=\"\$(node scripts/prepare-next-build-inputs.mjs '${source_dir}' /home/hendo420/.config/robyn/next-build-secrets.json)\"
+      pnpm install --frozen-lockfile --package-import-method=copy
+      pnpm build
+    " >"${work}/recovery-build.log" 2>&1; then
+  cat "${work}/recovery-build.log" >&2
+  exit 1
+fi
 
 install -d -o hendo420 -g hendo420 -m 0700 "${work}/redis" "${work}/minio"
 runuser -u hendo420 -- redis-server \
@@ -256,7 +291,12 @@ HOME=/home/hendo420 ROBYN_OPERATOR_RPC_URL=http://127.0.0.1:18545 \
   "${source_dir}/deployments/31337.json" \
   >"${work}/contract-smoke.log"
 sleep 6
-grep -q '"status":"ok"' "${work}/api-status.json"
+jq -e '
+  .service == "robyn-api" and
+  .chainId == 31337 and
+  .keeperStatus == "ok" and
+  .artifactStatus == "ok"
+' "${work}/api-status.json" >/dev/null
 for app_pid in "${app_pids[@]}"; do
   kill -0 "${app_pid}"
 done
@@ -276,11 +316,7 @@ post_live_chain_state_sha="$(
     --data '{"jsonrpc":"2.0","id":1,"method":"anvil_dumpState","params":[]}' \
     http://127.0.0.1:8545 | jq -er '.result' | sha256sum | cut -d' ' -f1
 )"
-post_live_database_sha="$(
-  runuser -u hendo420 -- pg_dump \
-    --data-only --no-owner --no-acl --exclude-table=service_heartbeats robyn |
-    sha256sum | cut -d' ' -f1
-)"
+post_live_database_sha="$(database_fingerprint robyn)"
 if [[ "${post_live_current}" != "${live_current}" ||
   "${post_live_deployment_sha}" != "${live_deployment_sha}" ||
   "${post_live_chain_state_sha}" != "${live_chain_state_sha}" ||
