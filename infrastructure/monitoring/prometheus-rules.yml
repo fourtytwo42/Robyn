@@ -3,7 +3,7 @@ groups:
     interval: 15s
     rules:
       - alert: RobynComponentDown
-        expr: robyn_component_up == 0 or robyn_pm2_process_up == 0 or robyn_systemd_unit_up == 0
+        expr: robyn_component_up == 0 or robyn_pm2_process_up == 0 or robyn_systemd_unit_up == 0 or robyn_assurance_drill{alert="RobynComponentDown"} == 1
         for: 1m
         labels:
           {
@@ -18,7 +18,7 @@ groups:
           description: 'Chain 31337 component {{ $labels.component }} is unavailable. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#component-down"
       - alert: RobynIndexerLag
-        expr: robyn_indexer_lag_blocks > 5
+        expr: robyn_indexer_lag_blocks > 5 or robyn_assurance_drill{alert="RobynIndexerLag"} == 1
         for: 2m
         labels:
           {
@@ -34,7 +34,7 @@ groups:
           description: 'Lag is {{ $value }} blocks. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
       - alert: RobynRpcDivergence
-        expr: robyn_rpc_divergence_blocks > 2
+        expr: robyn_rpc_divergence_blocks > 2 or robyn_assurance_drill{alert="RobynRpcDivergence"} == 1
         for: 1m
         labels:
           {
@@ -50,7 +50,7 @@ groups:
           description: 'Divergence is {{ $value }} blocks. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#rpc-divergence"
       - alert: RobynDeadLetterOrFailedJob
-        expr: robyn_job_audit_entries{state="dead_letter"} > 0 or robyn_queue_jobs{state="failed"} > 0
+        expr: robyn_job_audit_entries{state="dead_letter"} > 0 or robyn_queue_jobs{state="failed"} > 0 or robyn_assurance_drill{alert="RobynDeadLetterOrFailedJob"} == 1
         for: 0m
         labels:
           {
@@ -66,7 +66,7 @@ groups:
           description: 'A failed/dead-letter job exists. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#conversion-failure"
       - alert: RobynBackupStale
-        expr: time() - robyn_backup_last_success_timestamp_seconds > 108000
+        expr: time() - robyn_backup_last_success_timestamp_seconds > 108000 or robyn_assurance_drill{alert="RobynBackupStale"} == 1
         for: 5m
         labels:
           {
@@ -82,7 +82,7 @@ groups:
           description: 'No current backup is visible. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#backup-stale"
       - alert: RobynMetricsCollectorStale
-        expr: time() - robyn_monitoring_collected_timestamp_seconds > 120
+        expr: time() - robyn_monitoring_collected_timestamp_seconds > 120 or robyn_assurance_drill{alert="RobynMetricsCollectorStale"} == 1
         for: 2m
         labels:
           {
@@ -98,7 +98,7 @@ groups:
           description: 'Collector is stale. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#monitoring-stale"
       - alert: RobynDiskHeadroomLow
-        expr: node_filesystem_avail_bytes{mountpoint="/",fstype!=""} / node_filesystem_size_bytes{mountpoint="/",fstype!=""} < 0.15
+        expr: node_filesystem_avail_bytes{mountpoint="/",fstype!=""} / node_filesystem_size_bytes{mountpoint="/",fstype!=""} < 0.15 or robyn_assurance_drill{alert="RobynDiskHeadroomLow"} == 1
         for: 5m
         labels:
           {
@@ -114,7 +114,7 @@ groups:
           description: 'Free ratio is {{ $value }}. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#capacity"
       - alert: RobynMemoryHeadroomLow
-        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10 or robyn_assurance_drill{alert="RobynMemoryHeadroomLow"} == 1
         for: 5m
         labels:
           {
@@ -145,3 +145,99 @@ groups:
           summary: Robyn reversible monitoring drill is active
           description: 'This is an operator-initiated alert drill. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
           runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#monitoring-stale
+      - alert: RobynKeeperStalled
+        expr: time() - robyn_keeper_last_success_timestamp_seconds > 120 or robyn_assurance_drill{alert="RobynKeeperStalled"} == 1
+        for: 2m
+        labels:
+          {
+            severity: critical,
+            chain_id: "31337",
+            component: keeper,
+            launch: all,
+            asset: all,
+            runbook: conversion-failure,
+          }
+        annotations:
+          summary: Robyn keeper progress is stale
+          description: Keeper heartbeat has not advanced within the bounded interval.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#conversion-failure
+      - alert: RobynConversionStale
+        expr: robyn_oldest_pending_conversion_age_seconds > 300 or robyn_assurance_drill{alert="RobynConversionStale"} == 1
+        for: 1m
+        labels:
+          {
+            severity: critical,
+            chain_id: "31337",
+            component: keeper,
+            launch: all,
+            asset: all,
+            runbook: conversion-failure,
+          }
+        annotations:
+          summary: A Robyn conversion has remained pending too long
+          description: Oldest pending conversion age is {{ $value }} seconds.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#conversion-failure
+      - alert: RobynAccountingDrift
+        expr: robyn_accounting_drift > 0 or robyn_assurance_drill{alert="RobynAccountingDrift"} == 1
+        for: 0m
+        labels:
+          {
+            severity: critical,
+            chain_id: "31337",
+            component: protocol,
+            launch: all,
+            asset: all,
+            runbook: accounting-drift,
+          }
+        annotations:
+          summary: Robyn accounting reconciliation failed
+          description: The latest fail-closed protocol reconciliation reported drift.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#accounting-drift
+      - alert: RobynServiceRestart
+        expr: increase(robyn_pm2_process_restarts[5m]) > 0 or robyn_assurance_drill{alert="RobynServiceRestart"} == 1
+        for: 0m
+        labels:
+          {
+            severity: warning,
+            chain_id: "31337",
+            component: runtime,
+            launch: all,
+            asset: all,
+            runbook: component-down,
+          }
+        annotations:
+          summary: A Robyn PM2 process restarted
+          description: Restart counters changed during the last five minutes.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#component-down
+      - alert: RobynRestoreFailure
+        expr: robyn_restore_last_result == 0 or robyn_assurance_drill{alert="RobynRestoreFailure"} == 1
+        for: 0m
+        labels:
+          {
+            severity: critical,
+            chain_id: "31337",
+            component: backup,
+            launch: all,
+            asset: all,
+            runbook: backup-stale,
+          }
+        annotations:
+          summary: Robyn isolated restore rehearsal failed
+          description: The most recent recorded restore result is unsuccessful.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#backup-stale
+      - alert: RobynSoakFailure
+        expr: robyn_soak_last_result == 0 or robyn_assurance_drill{alert="RobynSoakFailure"} == 1
+        for: 0m
+        labels:
+          {
+            severity: critical,
+            chain_id: "31337",
+            component: release,
+            launch: all,
+            asset: all,
+            runbook: release-soak,
+          }
+        annotations:
+          summary: Robyn release soak failed
+          description: The latest recorded one-shot soak result is unsuccessful.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/release-operations.md#run-the-exact-release-soak

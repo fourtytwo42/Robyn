@@ -15,6 +15,13 @@ Durable project context lives here. Update this file whenever information should
   the pinned router artifact was vendored, converter reentrancy was hardened,
   static security has zero unresolved high findings, and the 512-wallet,
   32-launch, 25,000-action economic campaign passes.
+- Monitoring checkpoint: native Alertmanager and the append-only local receiver
+  are loopback-only. All 14 assurance alerts produced checksummed firing and
+  resolved evidence. This proves local delivery only, not external paging.
+- Keeper correction: terminal protocol conversion jobs whose observed amount
+  no longer matches authoritative onchain pending work transition to
+  `superseded`; their original failure remains in append-only audit events.
+  Matching unresolved work remains a dead letter and continues alerting.
 
 - Completed goal: schema-v4 contracts and every mapped product action on the
   controlled local network are validated; deterministic hundreds-user
@@ -70,6 +77,23 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-23 - Local alert delivery and stale-job reconciliation
+
+- Native Alertmanager listens on `127.0.0.1:9093` with clustering disabled;
+  `robyn-alert-receiver.service` listens on `127.0.0.1:9094` under systemd
+  hardening and appends JSONL evidence.
+- `scripts/verify-alert-delivery.sh` proved firing and resolved delivery for
+  all 14 component, lag, divergence, keeper, conversion, accounting, restore,
+  capacity and soak alerts. Evidence:
+  `/var/backups/robyn/alert-validation/20260723T072319Z/`.
+- A real dead-letter alert identified a stale historical bounded-conversion
+  job. The keeper now marks it `superseded` only after its observed amount
+  differs from authoritative onchain pending state, while retaining the
+  failure in `job_audit_events`.
+- Grafana now includes creator/RDAO native liabilities, treasury balance,
+  pending protocol base, conversion age, restart counts, keeper progress,
+  accounting status, restore status and soak status.
 
 ### 2026-07-23 - Assurance audit and economic checkpoint
 

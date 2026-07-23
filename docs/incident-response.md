@@ -35,7 +35,20 @@ Every alert is scoped to chain, component, launch and asset labels and links to 
 ## Monitoring stale
 1. Check `robyn-metrics-collector.timer` and its journal.
 2. Validate the textfile with `promtool check metrics`.
-3. Confirm node-exporter and Prometheus targets before restarting the collector.
+3. Confirm node-exporter, Prometheus, Alertmanager and
+   `robyn-alert-receiver.service` before restarting the collector.
+4. Alertmanager and its append-only receiver must remain bound to loopback.
+   Inspect `/var/lib/robyn/alerts/deliveries.jsonl` for both firing and resolved
+   records; this is local evidence, not external human notification.
+
+## Accounting drift
+1. Stop keeper conversions and release promotion without deleting pending work.
+2. Record the exact block, deployment manifest and affected launch/asset.
+3. Reconcile basket, creator, RDAO and treasury liabilities against contract
+   balances and cumulative events.
+4. Restore the last proved baseline in isolation if the drift is unexplained.
+5. Resume only after the defect has a regression test and reconciliation is
+   exact.
 
 ## Capacity
 1. Capture disk, inode, memory, load and per-process use.
@@ -60,3 +73,12 @@ Every alert is scoped to chain, component, launch and asset labels and links to 
 2. Pause conversion/claim publication for that scope.
 3. Compare vault input, router output, deposit and cumulative accounting.
 4. Preserve principal; never redistribute a failed basket weight.
+
+## Release soak
+1. Treat any assertion, alert, restart, release change or interruption as a
+   failed candidate; preserve the raw sample and checksum evidence.
+2. Do not restart the soak against a dirty tree or changed artifact.
+3. Diagnose and fix the defect, rebuild one immutable candidate, and rerun all
+   affected gates before explicitly starting a new eight-hour clock.
+4. Remove the one-shot soak unit after completion; do not leave a recurring
+   scheduler or automation behind.

@@ -1,0 +1,30 @@
+[Unit]
+Description=Robyn local alert evidence receiver
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hendo420
+Group=hendo420
+Environment=NODE_ENV=production
+Environment=ROBYN_ALERT_RECEIVER_HOST=127.0.0.1
+Environment=ROBYN_ALERT_RECEIVER_PORT=9094
+Environment=ROBYN_ALERT_LOG=/var/lib/robyn/alerts/deliveries.jsonl
+ExecStart=/usr/local/bin/node --jitless /home/hendo420/Robyn/scripts/alert-webhook-receiver.mjs
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/robyn/alerts
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+
+[Install]
+WantedBy=multi-user.target

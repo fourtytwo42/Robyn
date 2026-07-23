@@ -2,6 +2,10 @@
 set -euo pipefail
 
 output="${ROBYN_METRICS_FILE:-/var/lib/prometheus/node-exporter/robyn.prom}"
+drill_file="/etc/robyn/monitoring-drill.env"
+if [[ -r "${drill_file}" ]]; then
+  source "${drill_file}"
+fi
 repo="/home/hendo420/Robyn"
 tmp="$(mktemp "${output}.XXXXXX")"
 trap 'rm -f -- "${tmp}"' EXIT
@@ -25,7 +29,7 @@ redis_count() {
 printf '# HELP robyn_monitoring_collected_timestamp_seconds Unix timestamp of the last successful collector run.\n# TYPE robyn_monitoring_collected_timestamp_seconds gauge\n' >"${tmp}"
 metric "robyn_monitoring_collected_timestamp_seconds" "$(date +%s)"
 printf '# HELP robyn_systemd_unit_up Whether a required native systemd unit is active.\n# TYPE robyn_systemd_unit_up gauge\n' >>"${tmp}"
-for unit in postgresql redis-server minio robyn-anvil pm2-hendo420 robyn-backup.timer prometheus prometheus-node-exporter grafana-server; do
+for unit in postgresql redis-server minio robyn-anvil pm2-hendo420 robyn-backup.timer prometheus prometheus-alertmanager prometheus-node-exporter grafana-server robyn-alert-receiver; do
   value=0
   systemctl is-active --quiet "${unit}" && value=1
   metric "robyn_systemd_unit_up{chain_id=\"31337\",component=\"${unit}\",launch=\"all\",asset=\"all\"}" "${value}"
@@ -47,6 +51,7 @@ gateway_json="$(curl -fsS --max-time 3 http://127.0.0.1:8546/health 2>/dev/null 
 api_json="$(curl -fsS --max-time 3 http://127.0.0.1:3100/health 2>/dev/null || printf '{}')"
 status_json="$(curl -fsS --max-time 3 http://127.0.0.1:3100/status 2>/dev/null || printf '{}')"
 operations_json="$(curl -fsS --max-time 3 http://127.0.0.1:3100/operations 2>/dev/null || printf '{}')"
+dao_json="$(curl -fsS --max-time 3 http://127.0.0.1:3100/dao 2>/dev/null || printf '{}')"
 printf '# HELP robyn_component_up Whether a Robyn application component reports healthy.\n# TYPE robyn_component_up gauge\n' >>"${tmp}"
 for pair in "web:${web_json}" "rpc-gateway:${gateway_json}" "api:${api_json}"; do
   component="${pair%%:*}"; body="${pair#*:}"
@@ -79,7 +84,7 @@ for state in wait active delayed failed completed; do
   metric "robyn_queue_jobs{chain_id=\"31337\",component=\"keeper\",queue=\"robyn-conversions\",state=\"${state}\",launch=\"all\",asset=\"all\"}" "${count}"
 done
 printf '# HELP robyn_job_audit_entries Durable conversion job counts by state.\n# TYPE robyn_job_audit_entries gauge\n' >>"${tmp}"
-for state in queued active retrying dead_letter completed; do
+for state in queued active retrying dead_letter superseded completed; do
   count="$(json_get "${operations_json}" ".counts.${state}")"; [[ "${count}" =~ ^[0-9]+$ ]] || count=0
   metric "robyn_job_audit_entries{chain_id=\"31337\",component=\"keeper\",state=\"${state}\",launch=\"all\",asset=\"all\"}" "${count}"
 done
@@ -90,6 +95,59 @@ printf '# HELP robyn_backup_last_success_timestamp_seconds Modification time of 
 metric "robyn_backup_last_success_timestamp_seconds{chain_id=\"31337\",component=\"backup\"}" "${latest_backup}"
 printf '# HELP robyn_alert_drill Whether the reversible monitoring alert drill is active.\n# TYPE robyn_alert_drill gauge\n' >>"${tmp}"
 metric "robyn_alert_drill{chain_id=\"31337\",component=\"monitoring\",launch=\"all\",asset=\"all\"}" "${ROBYN_ALERT_DRILL:-0}"
+keeper_updated="$(json_get "${api_json}" '.keeperUpdatedAt')"
+keeper_epoch="$(date -d "${keeper_updated}" +%s 2>/dev/null || printf '0')"
+pending_created="$(jq -r '[.recent[]? | select(.state=="queued" or .state=="active" or .state=="retrying") | .created_at][0] // empty' <<<"${operations_json}" 2>/dev/null || true)"
+if [[ -n "${pending_created}" ]]; then
+  pending_epoch="$(date -d "${pending_created}" +%s 2>/dev/null || printf '0')"
+  pending_age=$(( $(date +%s) - pending_epoch ))
+  ((pending_age < 0)) && pending_age=0
+else
+  pending_age=0
+fi
+accounting_drift="$(cat /var/lib/robyn/monitoring/accounting-drift 2>/dev/null || printf '0')"
+restore_result="$(cat /var/lib/robyn/monitoring/restore-result 2>/dev/null || printf '1')"
+soak_result="$(cat /var/lib/robyn/monitoring/soak-result 2>/dev/null || printf '1')"
+for value_name in accounting_drift restore_result soak_result; do
+  value="${!value_name}"
+  [[ "${value}" =~ ^[0-9]+$ ]] || printf -v "${value_name}" '0'
+done
+printf '# HELP robyn_keeper_last_success_timestamp_seconds Keeper heartbeat timestamp.\n# TYPE robyn_keeper_last_success_timestamp_seconds gauge\n' >>"${tmp}"
+metric "robyn_keeper_last_success_timestamp_seconds{chain_id=\"31337\",component=\"keeper\",launch=\"all\",asset=\"all\"}" "${keeper_epoch}"
+printf '# HELP robyn_oldest_pending_conversion_age_seconds Age of the oldest visible current pending conversion.\n# TYPE robyn_oldest_pending_conversion_age_seconds gauge\n' >>"${tmp}"
+metric "robyn_oldest_pending_conversion_age_seconds{chain_id=\"31337\",component=\"keeper\",launch=\"all\",asset=\"all\"}" "${pending_age}"
+printf '# HELP robyn_accounting_drift Whether the latest reconciliation found accounting drift.\n# TYPE robyn_accounting_drift gauge\n' >>"${tmp}"
+metric "robyn_accounting_drift{chain_id=\"31337\",component=\"protocol\",launch=\"all\",asset=\"all\"}" "${accounting_drift}"
+printf '# HELP robyn_restore_last_result Whether the latest restore rehearsal passed.\n# TYPE robyn_restore_last_result gauge\n' >>"${tmp}"
+metric "robyn_restore_last_result{chain_id=\"31337\",component=\"backup\",launch=\"all\",asset=\"all\"}" "${restore_result}"
+printf '# HELP robyn_soak_last_result Whether the latest one-shot soak passed.\n# TYPE robyn_soak_last_result gauge\n' >>"${tmp}"
+metric "robyn_soak_last_result{chain_id=\"31337\",component=\"release\",launch=\"all\",asset=\"all\"}" "${soak_result}"
+creator_liability="$(json_get "${dao_json}" '.data.pendingCreatorLiability')"; [[ "${creator_liability}" =~ ^[0-9]+$ ]] || creator_liability=0
+rewards_deposited="$(json_get "${dao_json}" '.data.totalRewardsDeposited')"; [[ "${rewards_deposited}" =~ ^[0-9]+$ ]] || rewards_deposited=0
+rewards_claimed="$(json_get "${dao_json}" '.data.totalRewardsClaimed')"; [[ "${rewards_claimed}" =~ ^[0-9]+$ ]] || rewards_claimed=0
+rdao_liability="$(awk -v deposited="${rewards_deposited}" -v claimed="${rewards_claimed}" 'BEGIN { value=deposited-claimed; if (value<0) value=0; printf "%.0f", value }')"
+treasury_balance="$(json_get "${dao_json}" '.data.treasuryBalance')"; [[ "${treasury_balance}" =~ ^[0-9]+$ ]] || treasury_balance=0
+pending_protocol_base="$(jq -r '[.data.launchFees[]? | ((.pendingCreatorBase|tonumber) + (.pendingDaoRewardBase|tonumber) + (.pendingTreasuryBase|tonumber))] | add // 0' <<<"${dao_json}" 2>/dev/null || printf '0')"
+[[ "${pending_protocol_base}" =~ ^[0-9]+$ ]] || pending_protocol_base=0
+printf '# HELP robyn_creator_native_liability_wei Claimable creator native liability in wei.\n# TYPE robyn_creator_native_liability_wei gauge\n' >>"${tmp}"
+metric "robyn_creator_native_liability_wei{chain_id=\"31337\",component=\"protocol\",launch=\"all\",asset=\"native\"}" "${creator_liability}"
+printf '# HELP robyn_rdao_native_liability_wei Deposited less claimed RDAO native reward liability in wei.\n# TYPE robyn_rdao_native_liability_wei gauge\n' >>"${tmp}"
+metric "robyn_rdao_native_liability_wei{chain_id=\"31337\",component=\"protocol\",launch=\"all\",asset=\"native\"}" "${rdao_liability}"
+printf '# HELP robyn_treasury_native_balance_wei DAO timelock native balance in wei.\n# TYPE robyn_treasury_native_balance_wei gauge\n' >>"${tmp}"
+metric "robyn_treasury_native_balance_wei{chain_id=\"31337\",component=\"protocol\",launch=\"all\",asset=\"native\"}" "${treasury_balance}"
+printf '# HELP robyn_pending_protocol_base_wei Protocol base assets pending native conversion in wei units.\n# TYPE robyn_pending_protocol_base_wei gauge\n' >>"${tmp}"
+metric "robyn_pending_protocol_base_wei{chain_id=\"31337\",component=\"protocol\",launch=\"all\",asset=\"base\"}" "${pending_protocol_base}"
+printf '# HELP robyn_assurance_drill Reversible alert-delivery fixture selected by exact alert name.\n# TYPE robyn_assurance_drill gauge\n' >>"${tmp}"
+for alert in \
+  RobynComponentDown RobynIndexerLag RobynRpcDivergence \
+  RobynDeadLetterOrFailedJob RobynBackupStale RobynMetricsCollectorStale \
+  RobynDiskHeadroomLow RobynMemoryHeadroomLow RobynKeeperStalled \
+  RobynConversionStale RobynAccountingDrift RobynServiceRestart \
+  RobynRestoreFailure RobynSoakFailure; do
+  value=0
+  [[ "${ROBYN_ALERT_DRILL_NAME:-}" == "${alert}" ]] && value=1
+  metric "robyn_assurance_drill{alert=\"${alert}\",chain_id=\"31337\",component=\"monitoring-drill\",launch=\"all\",asset=\"all\"}" "${value}"
+done
 chmod 0640 "${tmp}"
 mv -f "${tmp}" "${output}"
 trap - EXIT

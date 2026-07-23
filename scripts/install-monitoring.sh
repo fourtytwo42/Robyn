@@ -11,8 +11,14 @@ wait_for_url() {
   echo "Timed out waiting for ${url}" >&2
   return 1
 }
-for tool in curl grafana jq openssl prometheus prometheus-node-exporter promtool runuser; do command -v "${tool}" >/dev/null; done
+if ! command -v prometheus-alertmanager >/dev/null; then
+  apt-get update
+  apt-get install -y prometheus-alertmanager
+fi
+for tool in amtool curl grafana jq node openssl prometheus prometheus-alertmanager prometheus-node-exporter promtool runuser; do command -v "${tool}" >/dev/null; done
 install -d -m 0750 -o root -g hendo420 /etc/robyn
+install -d -m 0750 -o hendo420 -g hendo420 /var/lib/robyn/alerts
+install -d -m 0750 -o hendo420 -g hendo420 /var/lib/robyn/monitoring
 install -d -m 0750 -o hendo420 -g prometheus /var/lib/prometheus/node-exporter
 install -d -m 0750 -o root -g grafana /var/lib/grafana/dashboards
 install -d -m 0750 -o root -g grafana /etc/grafana/provisioning/datasources /etc/grafana/provisioning/dashboards
@@ -21,6 +27,8 @@ install -d -m 0755 /etc/systemd/system/grafana-server.service.d
 install -m 0755 "${repo}/scripts/collect-monitoring-metrics.sh" /usr/local/sbin/robyn-collect-metrics
 install -m 0644 "${repo}/infrastructure/monitoring/prometheus.yml" /etc/prometheus/prometheus.yml
 install -m 0644 "${repo}/infrastructure/monitoring/prometheus-rules.yml" /etc/prometheus/robyn-rules.yml
+install -m 0644 "${repo}/infrastructure/monitoring/alertmanager.yml" /etc/prometheus/alertmanager.yml
+install -m 0644 "${repo}/infrastructure/monitoring/alertmanager.default" /etc/default/prometheus-alertmanager
 install -m 0644 "${repo}/infrastructure/monitoring/prometheus.default" /etc/default/prometheus
 install -m 0644 "${repo}/infrastructure/monitoring/node-exporter.default" /etc/default/prometheus-node-exporter
 install -m 0640 -o root -g grafana "${repo}/infrastructure/monitoring/grafana-datasource.yml" /etc/grafana/provisioning/datasources/robyn.yml
@@ -28,6 +36,7 @@ install -m 0640 -o root -g grafana "${repo}/infrastructure/monitoring/grafana-da
 install -m 0640 -o root -g grafana "${repo}/infrastructure/monitoring/grafana-dashboard.json" /var/lib/grafana/dashboards/robyn-release-readiness.json
 install -m 0644 "${repo}/infrastructure/systemd/robyn-metrics-collector.service" /etc/systemd/system/robyn-metrics-collector.service
 install -m 0644 "${repo}/infrastructure/systemd/robyn-metrics-collector.timer" /etc/systemd/system/robyn-metrics-collector.timer
+install -m 0644 "${repo}/infrastructure/systemd/robyn-alert-receiver.service" /etc/systemd/system/robyn-alert-receiver.service
 install -m 0644 "${repo}/infrastructure/systemd/prometheus-node-exporter-robyn.conf" /etc/systemd/system/prometheus-node-exporter.service.d/robyn.conf
 install -m 0644 "${repo}/infrastructure/systemd/grafana-robyn.conf" /etc/systemd/system/grafana-server.service.d/robyn.conf
 if ! runuser -u postgres -- psql -Atqc "SELECT 1 FROM pg_roles WHERE rolname='grafana'" postgres | grep -qx 1; then runuser -u postgres -- createuser --no-createdb --no-createrole --no-superuser grafana; fi
@@ -56,6 +65,7 @@ if [[ ! -f /etc/robyn/grafana.env ]]; then
 fi
 chown root:grafana /etc/robyn/grafana.env
 chmod 0640 /etc/robyn/grafana.env
+amtool check-config /etc/prometheus/alertmanager.yml
 promtool check config /etc/prometheus/prometheus.yml
 promtool check rules /etc/prometheus/robyn-rules.yml
 jq -e '.uid=="robyn-release-readiness"' /var/lib/grafana/dashboards/robyn-release-readiness.json >/dev/null
@@ -64,10 +74,12 @@ systemctl disable --now prometheus-node-exporter-apt.timer prometheus-node-expor
 systemctl disable --now openipmi.service >/dev/null 2>&1 || true
 systemctl reset-failed openipmi.service >/dev/null 2>&1 || true
 systemctl daemon-reload
-systemctl enable --now prometheus-node-exporter.service prometheus.service grafana-server.service robyn-metrics-collector.timer
+systemctl enable --now prometheus-node-exporter.service prometheus-alertmanager.service prometheus.service grafana-server.service robyn-alert-receiver.service robyn-metrics-collector.timer
 systemctl start robyn-metrics-collector.service
-systemctl restart prometheus-node-exporter.service prometheus.service grafana-server.service
+systemctl restart prometheus-node-exporter.service prometheus-alertmanager.service prometheus.service grafana-server.service robyn-alert-receiver.service
 wait_for_url http://127.0.0.1:9090/-/ready
+wait_for_url http://127.0.0.1:9093/-/ready
+wait_for_url http://127.0.0.1:9094/health
 wait_for_url http://127.0.0.1:9100/metrics
 wait_for_url http://127.0.0.1:3001/api/health
 echo "Native Robyn monitoring verified"

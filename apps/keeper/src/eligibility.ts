@@ -33,3 +33,11 @@ export function boundedProtocolInput(pending: bigint, maximum: bigint): bigint {
   if (maximum <= 0n) throw new Error("Maximum protocol batch must be positive");
   return pending < maximum ? pending : maximum;
 }
+
+export function protocolObservationChanged(
+  observedAmount: string,
+  authoritativeAmount: bigint,
+): boolean {
+  if (!/^[0-9]+$/.test(observedAmount)) return true;
+  return BigInt(observedAmount) !== authoritativeAmount;
+}

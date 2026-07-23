@@ -80,6 +80,44 @@
       "targets": [{"expr": "node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}", "legendFormat": "disk free", "refId": "A"}, {"expr": "node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes", "legendFormat": "memory available", "refId": "B"}],
       "title": "Capacity headroom",
       "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "robyn-prometheus"},
+      "fieldConfig": {"defaults": {"unit": "decbytes"}},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 22},
+      "id": 9,
+      "options": {"legend": {"displayMode": "table", "placement": "bottom"}},
+      "targets": [{"expr": "robyn_creator_native_liability_wei", "legendFormat": "creator claimable", "refId": "A"}, {"expr": "robyn_rdao_native_liability_wei", "legendFormat": "RDAO claimable", "refId": "B"}, {"expr": "robyn_treasury_native_balance_wei", "legendFormat": "timelock treasury", "refId": "C"}],
+      "title": "Native liabilities and treasury (wei)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "robyn-prometheus"},
+      "fieldConfig": {"defaults": {"unit": "decbytes"}},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 22},
+      "id": 10,
+      "options": {"legend": {"displayMode": "table", "placement": "bottom"}},
+      "targets": [{"expr": "robyn_pending_protocol_base_wei", "legendFormat": "pending base", "refId": "A"}, {"expr": "robyn_oldest_pending_conversion_age_seconds", "legendFormat": "oldest age seconds", "refId": "B"}],
+      "title": "Conversion backlog",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "robyn-prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 30},
+      "id": 11,
+      "options": {"legend": {"displayMode": "table", "placement": "bottom"}},
+      "targets": [{"expr": "robyn_accounting_drift", "legendFormat": "accounting drift", "refId": "A"}, {"expr": "robyn_restore_last_result", "legendFormat": "restore pass", "refId": "B"}, {"expr": "robyn_soak_last_result", "legendFormat": "soak pass", "refId": "C"}],
+      "title": "Release assurance state",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "robyn-prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 30},
+      "id": 12,
+      "options": {"legend": {"displayMode": "table", "placement": "bottom"}},
+      "targets": [{"expr": "robyn_pm2_process_restarts", "legendFormat": "{{component}}", "refId": "A"}, {"expr": "time() - robyn_keeper_last_success_timestamp_seconds", "legendFormat": "keeper heartbeat age", "refId": "B"}],
+      "title": "Restart and keeper progress",
+      "type": "timeseries"
     }
   ],
   "refresh": "15s",

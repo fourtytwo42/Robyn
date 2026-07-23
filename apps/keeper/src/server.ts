@@ -16,6 +16,7 @@ import {
   boundedProtocolInput,
   conversionJobId,
   isLegExecutable,
+  protocolObservationChanged,
 } from "./eligibility.js";
 
 type Manifest = {
@@ -384,6 +385,55 @@ async function heartbeat() {
   );
 }
 
+async function supersedeStaleProtocolDeadLetters(
+  token: Address,
+  kind: ProtocolConversionJob["kind"],
+  authoritativeAmount: bigint,
+) {
+  const rows = await sql.unsafe<
+    {
+      idempotency_key: string;
+      attempts: number;
+      payload: ProtocolConversionJob;
+    }[]
+  >(
+    "SELECT idempotency_key,attempts,payload FROM job_audit WHERE queue=$1 AND state IN ('dead_letter','superseded') AND payload->>'kind'=$2 AND lower(payload->>'token')=$3",
+    [queueName, kind, token.toLowerCase()],
+  );
+  for (const row of rows) {
+    if (
+      !protocolObservationChanged(
+        row.payload.observedAmount,
+        authoritativeAmount,
+      )
+    ) {
+      continue;
+    }
+    await audit(
+      row.idempotency_key,
+      "superseded",
+      row.attempts,
+      row.payload,
+      "Authoritative onchain pending amount changed; failure retained in job_audit_events",
+      {
+        authoritativeAmount: authoritativeAmount.toString(),
+        observedAmount: row.payload.observedAmount,
+      },
+    );
+    const staleQueueJob = await queue.getJob(row.idempotency_key);
+    if (staleQueueJob && (await staleQueueJob.isFailed())) {
+      await staleQueueJob.remove();
+      await audit(
+        row.idempotency_key,
+        "superseded",
+        row.attempts,
+        row.payload,
+        "Stale failed queue entry removed after authoritative onchain reconciliation",
+      );
+    }
+  }
+}
+
 async function readLeg(vault: Address, legIndex: bigint) {
   const [minimum, delay, leg, block] = await Promise.all([
     publicClient.readContract({
@@ -506,6 +556,11 @@ async function enqueueProtocolConversions(launch: {
     account.pendingCreatorBase +
     account.pendingDaoRewardBase +
     account.pendingTreasuryBase;
+  await supersedeStaleProtocolDeadLetters(
+    launch.token,
+    "protocol-native",
+    nativePending,
+  );
   if (nativePending >= minimumProtocolBase) {
     try {
       await safeMinimum(
@@ -538,6 +593,11 @@ async function enqueueProtocolConversions(launch: {
     abi: positionLockerAbi,
     functionName: "pendingLaunchTokenFees",
   });
+  await supersedeStaleProtocolDeadLetters(
+    launch.token,
+    "protocol-launch",
+    pendingLaunch,
+  );
   if (pendingLaunch >= minimumLaunchFees) {
     try {
       await safeMinimum(launch.token, base, pendingLaunch);

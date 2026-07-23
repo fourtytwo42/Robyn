@@ -3,6 +3,7 @@ import {
   boundedProtocolInput,
   conversionJobId,
   isLegExecutable,
+  protocolObservationChanged,
 } from "../src/eligibility.js";
 
 describe("keeper eligibility", () => {
@@ -39,5 +40,11 @@ describe("keeper eligibility", () => {
     expect(() => boundedProtocolInput(1n, 0n)).toThrow(
       "Maximum protocol batch must be positive",
     );
+  });
+
+  it("supersedes only observations that no longer match onchain work", () => {
+    expect(protocolObservationChanged("100", 100n)).toBe(false);
+    expect(protocolObservationChanged("100", 75n)).toBe(true);
+    expect(protocolObservationChanged("not-an-amount", 100n)).toBe(true);
   });
 });
