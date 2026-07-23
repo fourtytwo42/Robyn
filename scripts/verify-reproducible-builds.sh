@@ -60,6 +60,8 @@ build_one() {
     >"${output}/${side}-contracts.log"
   pnpm list --depth Infinity --json >"${output}/${side}-dependencies.json"
   pnpm licenses list --json >"${output}/${side}-licenses.json"
+  node scripts/generate-license-inventory.mjs \
+    "${work}" "${output}/${side}-licenses.canonical.json"
   node scripts/generate-cyclonedx-sbom.mjs \
     "${output}/${side}-dependencies.json" \
     "${output}/${side}-cyclonedx-sbom.json" \
@@ -102,9 +104,6 @@ build_one() {
   } | sort -z | xargs -0 sha256sum >"${output}/${side}-operations.sha256"
   jq -cS . "${output}/${side}-dependencies.json" \
     >"${output}/${side}-dependencies.canonical.json"
-  jq -cS 'walk(if type == "array" then sort_by(tostring) else . end)' \
-    "${output}/${side}-licenses.json" \
-    >"${output}/${side}-licenses.canonical.json"
   jq -cS . "${output}/${side}-cyclonedx-sbom.json" \
     >"${output}/${side}-cyclonedx-sbom.canonical.json"
 }
@@ -180,7 +179,7 @@ jq -n \
       "TZ=UTC, LC_ALL=C and SOURCE_DATE_EPOCH=commit timestamp",
       "Next cache and trace telemetry are excluded",
       "JSON and Next client-reference manifests are canonicalized by recursively sorting object keys while preserving array order",
-      "license inventory arrays are sorted because pnpm license traversal order is not semantically meaningful",
+      "raw pnpm license output is retained, while the compared license inventory is deterministically derived from installed package manifests and sorted by name, version and license",
       "CycloneDX 1.5 SBOM content is derived from the exact pnpm dependency graph and release commit",
       "contract comparison selects ABI, creation bytecode, runtime bytecode and storage layout and excludes absolute-path metadata"
     ],
