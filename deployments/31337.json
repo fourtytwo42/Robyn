@@ -1,8 +1,9 @@
 {
+  "schemaVersion": 2,
   "environment": "robyn-devnet",
   "chainId": 31337,
-  "deploymentBlock": 27,
-  "gitCommit": "009196f4379114d2294c8ef17c4cc105a1afaff2",
+  "deploymentBlock": 28,
+  "gitCommit": "bc78bb634024dd34123a955d125a3720765167a6",
   "deployer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
   "contracts": {
     "baseAsset": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
@@ -12,23 +13,25 @@
       "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
     ],
     "conversionRouter": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-    "factory": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
-    "marketFactory": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
-    "adapterDeployer": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
-    "marketDeployer": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
-    "genesisToken": "0x23dB4a08f2272df049a4932a4Cc3A6Dc1002B33E",
-    "genesisVault": "0x61c36a8d610163660E21a8b7359e1Cac0C9133e1",
-    "genesisMarket": "0x8dAF17A20c9DBA35f005b6324F493785D239719d",
-    "genesisGraduationAdapter": "0x6F1216D1BFe15c98520CA1434FC1d9D57AC95321",
-    "genesisPositionLocker": "0x025396601bc7D28fCEf329c9b2a8E1110F6BBf40",
-    "genesisGraduatedPool": "0x91df4Da073B8b3Ee9fAF5429F9F985A7a1F26d6D"
+    "factory": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+    "launchDeployer": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+    "marketFactory": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+    "atomicLaunchCoordinator": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+    "adapterDeployer": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+    "marketDeployer": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+    "genesisToken": "0x448ee2caC8909e48E7eA3167D26BB91cAD5Ecee9",
+    "genesisVault": "0xb800241c08C5eF812DbB009Bc4bBA23A7877DF3a",
+    "genesisMarket": "0x1F708C24a0D3A740cD47cC0444E9480899f3dA7D",
+    "genesisGraduationAdapter": "0x8dAF17A20c9DBA35f005b6324F493785D239719d",
+    "genesisPositionLocker": "0x6F00454894e0790AaE84E7A6406E85075a321469",
+    "genesisGraduatedPool": "0x615934e2288d48b0274F43A6b13576c3FB6Fa863"
   },
   "localUniswapV3": {
     "environment": "local-canonical-uniswap-v3",
-    "factory": "0x0165878a594ca255338adfa4d48449f69242eb8f",
-    "positionManager": "0xa513e6e4b8f2a923d98304ec87f64353c4d5c853",
-    "quoter": "0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6",
-    "swapRouter": "0x8a791620dd6260079bf849dc5567adc3f2fdc318",
+    "factory": "0xa513e6e4b8f2a923d98304ec87f64353c4d5c853",
+    "positionManager": "0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6",
+    "quoter": "0x8a791620dd6260079bf849dc5567adc3f2fdc318",
+    "swapRouter": "0x610178da211fef7d417bc0e6fed39f05609ad788",
     "wrappedQuoteAsset": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "packageVersions": {
       "core": "1.0.0",
@@ -36,10 +39,10 @@
       "swapRouterContracts": "1.1.0"
     },
     "runtimeCodeHashes": {
-      "factory": "0x6efddef5c58ec64cec1b3f7893948145103c0d25ca1114307428549a4f311bd1",
-      "positionManager": "0xb8b10917f36ceeba7681c60b96cb72c7217d4566fe5c20c49e33c6268eb7b88c",
-      "quoter": "0x636110cb07f87aff6c001a4493fe385c9963ddbd4c186180bda0c9a71c385221",
-      "swapRouter": "0x8ed20609199f06564d4386d64cbde418d49467dfc625a55aa8ea8f781130eabc"
+      "factory": "0x8eff07085868d30fdc05f139b533e9e543d081e033327dbf4124a8bba0e51730",
+      "positionManager": "0xf2f27a1139d20cf889425c5e482db95e1166e2f6301d3045a1e5b3451234ebe5",
+      "quoter": "0x0da057889ac37c60037a18b3285d5ada2e33c1a6bebd3bced9d01e4e1d75f3d1",
+      "swapRouter": "0xd0974135ab36e1a4767170ef3ee7f179ff5b4b524ea7143bf7d615f5e88cff6b"
     }
   },
   "genesisBasket": [
@@ -76,12 +79,12 @@
     {
       "name": "Robyn Genesis",
       "symbol": "ROBYN",
-      "token": "0x23dB4a08f2272df049a4932a4Cc3A6Dc1002B33E",
-      "vault": "0x61c36a8d610163660E21a8b7359e1Cac0C9133e1",
-      "market": "0x8dAF17A20c9DBA35f005b6324F493785D239719d",
-      "graduationAdapter": "0x6F1216D1BFe15c98520CA1434FC1d9D57AC95321",
-      "positionLocker": "0x025396601bc7D28fCEf329c9b2a8E1110F6BBf40",
-      "graduatedPool": "0x91df4Da073B8b3Ee9fAF5429F9F985A7a1F26d6D",
+      "token": "0x448ee2caC8909e48E7eA3167D26BB91cAD5Ecee9",
+      "vault": "0xb800241c08C5eF812DbB009Bc4bBA23A7877DF3a",
+      "market": "0x1F708C24a0D3A740cD47cC0444E9480899f3dA7D",
+      "graduationAdapter": "0x8dAF17A20c9DBA35f005b6324F493785D239719d",
+      "positionLocker": "0x6F00454894e0790AaE84E7A6406E85075a321469",
+      "graduatedPool": "0x615934e2288d48b0274F43A6b13576c3FB6Fa863",
       "phase": "bonding",
       "progressBps": 6330,
       "seededTrades": 7
@@ -89,12 +92,12 @@
     {
       "name": "Soak Society",
       "symbol": "SOAK",
-      "token": "0x6743E5c6E1B453372507E8dfD6CA53508721425B",
-      "vault": "0x8EFa1819Ff5B279077368d44B593a4543280e402",
-      "market": "0x3Ca8f9C04c7e3E1624Ac2008F92f6F366A869444",
-      "graduationAdapter": "0xdAD42D43ecE0f6e8da8c2BCbC6A25FF6b3922C58",
-      "positionLocker": "0x2dD1e6cACEDEE49598C19b952B663AE233EC0ffb",
-      "graduatedPool": "0x3B666d89228b315b91007672366357A7b57F8f48",
+      "token": "0x2296918352D212e389244766dE8FdD8161AEe0Ad",
+      "vault": "0x9BB34117f6FBb508DFD13D5957AF515F15D95A13",
+      "market": "0xf41B47c54dEFF12f8fE830A411a09D865eBb120E",
+      "graduationAdapter": "0x3Ca8f9C04c7e3E1624Ac2008F92f6F366A869444",
+      "positionLocker": "0x2aB6c5c9bc3121b8A9A796B9000891659c3161b9",
+      "graduatedPool": "0xfa3Ade4847D16f875D5D5F50ba8146962cfB6cB7",
       "phase": "bonding",
       "progressBps": 3442,
       "seededTrades": 5
@@ -102,12 +105,12 @@
     {
       "name": "NVIDIA Orbit",
       "symbol": "ONE",
-      "token": "0x1c8d7d133c0c4AC780Fc1a4f71913FB6625F7De5",
-      "vault": "0xA14d9C7a916Db01cCA55ec21Be1F7665C326928F",
-      "market": "0x7e2d5FCC5E02cBF2b9f860052C0226104E23F9c7",
-      "graduationAdapter": "0xCBd5431cC04031d089c90E7c83288183A6Fe545d",
-      "positionLocker": "0x81D1bcD9E6ee66D92d0b5C87C0bffBAe617f9C9b",
-      "graduatedPool": "0x07715650704A70B2e1c461cB32c06aB69DFd669E",
+      "token": "0x67a74e35ABEe90f00D07FEE7f29952d873B095e3",
+      "vault": "0x5D1bb5C38917e384111bF0c99eDd20Abd5462294",
+      "market": "0x05242D4AC717Cdf38C36AF290F2b0DA99AA82c67",
+      "graduationAdapter": "0x7e2d5FCC5E02cBF2b9f860052C0226104E23F9c7",
+      "positionLocker": "0xEBd654d18a2387c6aae129005b31aC415F1204aa",
+      "graduatedPool": "0xa509B6Eea3037E7C45AA1D065EDFBa5eaB175f28",
       "phase": "bonding",
       "progressBps": 1574,
       "seededTrades": 4
@@ -115,12 +118,12 @@
     {
       "name": "Evidence Engine",
       "symbol": "EVID",
-      "token": "0xEd46dE7A5F16D09b02fF3890DB11C91316196182",
-      "vault": "0x7fc1375aA5d360Ca90cc443B5c3d3919aA8B9208",
-      "market": "0x35dd738E306d32f2709824B6f744f188DA01D3C5",
-      "graduationAdapter": "0x40a87c555319e8bD334b209CA3fA22615b9c619e",
-      "positionLocker": "0xe73414042Df1d368f0A06fEbf596Db6A75fD09FE",
-      "graduatedPool": "0x7AAB45AA7900c6d2Ca94572d5E6EfEC5A887E10D",
+      "token": "0x9bC77f36DbdC168dFF6704E3B23BE8Fa0040D28c",
+      "vault": "0xfe92077871d962a40DA025614C9be641AaA21486",
+      "market": "0x1655f30B495586cDC5E1E332844FabF7363b3667",
+      "graduationAdapter": "0x35dd738E306d32f2709824B6f744f188DA01D3C5",
+      "positionLocker": "0x14Bc797619632f865c5ec26D00Ba7aD753B80DdD",
+      "graduatedPool": "0x49B58e681A237dbe4918C963748eFac1D25AAaD0",
       "phase": "graduated",
       "progressBps": 10000,
       "seededTrades": 7
@@ -128,16 +131,16 @@
     {
       "name": "My Community",
       "symbol": "MYCO",
-      "token": "0x7fFAcD7f90cc330FfD99dbF6c88673F0727ec79b",
-      "vault": "0xD7D8EA09CA464fbcC358CE39117dbFd05753dCA1",
-      "market": "0xD316991A0B2014DCf954bB02150Df6261661be2E",
-      "graduationAdapter": "0x193198556d1DbF455Aa063050eC1Cb039E8acECf",
-      "positionLocker": "0x38d08c4394c0FC3B0f8fd200893a9fFE96978e77",
-      "graduatedPool": "0x448b30030D5acC891C1526528B4405253e1b21c9",
+      "token": "0xA0710cE20a2Ca14DDE1e6cd421484331E9705Ae1",
+      "vault": "0x402d281fCE6F573CC969D952f68D9dF53169D4b9",
+      "market": "0x1E01182454073691d6190FC0F977cB7D646981E1",
+      "graduationAdapter": "0xD316991A0B2014DCf954bB02150Df6261661be2E",
+      "positionLocker": "0xEa2eccF258607D0E5882b6a78Fb242F2543ddf57",
+      "graduatedPool": "0xba1f8B4BF0D26Fa26455Ac9675f2EE2F5f70AC50",
       "phase": "bonding",
       "progressBps": 6800,
       "seededTrades": 5
     }
   ],
-  "demoSeedBlock": 109
+  "demoSeedBlock": 94
 }
