@@ -34,6 +34,7 @@ if [[ "$rehearsal" == "true" ]]; then
   deployer="$(cast rpc eth_accounts --rpc-url "$rpc_url" | jq -er '.[0]')"
   wallet_args=(--from "$deployer" --unlocked)
 else
+  scripts/check-testnet-external-inputs.sh >/dev/null
   keystore="${ROBYN_TESTNET_KEYSTORE:-}"
   password_file="${ROBYN_TESTNET_PASSWORD_FILE:-}"
   [[ -f "$keystore" && -f "$password_file" ]] || {

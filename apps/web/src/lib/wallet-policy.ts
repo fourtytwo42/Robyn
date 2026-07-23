@@ -26,6 +26,19 @@ export function shouldInvalidateWalletSession(
   if (!previousAddress) return false;
   return previousAddress.toLowerCase() !== nextAddress?.toLowerCase();
 }
+export function walletErrorCode(error: unknown, depth = 0): number | undefined {
+  if (depth > 4 || typeof error !== "object" || error === null)
+    return undefined;
+  const value = error as { code?: unknown; cause?: unknown; details?: unknown };
+  if (typeof value.code === "number") return value.code;
+  if (typeof value.code === "string" && /^-?\d+$/.test(value.code)) {
+    return Number(value.code);
+  }
+  return (
+    walletErrorCode(value.cause, depth + 1) ??
+    walletErrorCode(value.details, depth + 1)
+  );
+}
 
 export function normalizeWalletError(error: unknown): string {
   const value = error as {
@@ -35,7 +48,8 @@ export function normalizeWalletError(error: unknown): string {
     shortMessage?: string;
   };
   const message = value?.shortMessage ?? value?.message ?? "";
-  if (value?.code === 4001 || /user rejected|user denied/i.test(message)) {
+  const code = walletErrorCode(error);
+  if (code === 4001 || /user rejected|user denied/i.test(message)) {
     return "The wallet request was rejected.";
   }
   if (

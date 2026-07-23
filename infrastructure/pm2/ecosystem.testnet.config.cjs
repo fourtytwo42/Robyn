@@ -42,8 +42,8 @@ module.exports = {
     {
       name: "robyn-api-testnet",
       cwd: releaseRoot,
-      script: nodeBinary,
-      args: path.join(releaseRoot, "apps/api/dist/server.js"),
+      script: "/bin/bash",
+      args: path.join(releaseRoot, "scripts/start-testnet-api.sh"),
       env: {
         NODE_ENV: "production",
         NODE_OPTIONS: "--max-old-space-size=256",
@@ -57,6 +57,12 @@ module.exports = {
         ROBYN_ARTIFACT_SERVICE_URL: "http://127.0.0.1:3210",
         ROBYN_OPERATOR_RPC_URL: rpcUrl,
         ROBYN_MANIFEST: manifest,
+        ROBYN_TESTNET_RELEASE_ROOT: releaseRoot,
+        ROBYN_TESTNET_API_ENV_FILE:
+          process.env.ROBYN_TESTNET_API_ENV_FILE ||
+          "/etc/robyn/testnet-api.env",
+        ROBYN_TESTNET_REQUIRE_REMOTE_PIN:
+          process.env.ROBYN_TESTNET_REQUIRE_REMOTE_PIN || "true",
         REDIS_URL: "redis://127.0.0.1:6379/1",
         PGHOST: "/var/run/postgresql",
         PGDATABASE: database,

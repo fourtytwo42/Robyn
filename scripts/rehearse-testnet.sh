@@ -50,7 +50,15 @@ market="$(jq -er '.contracts.genesisMarket' "$manifest")"
 fee_router="$(jq -er '.contracts.protocolFeeRouter' "$manifest")"
 native_converter="$(jq -er '.contracts.nativeFeeConverter' "$manifest")"
 dao_token="$(jq -er '.contracts.daoToken' "$manifest")"
-mapfile -t rewards < <(jq -er '.contracts.rewardAssets[]' "$manifest")
+mapfile -t rewards < <(jq -er '
+  . as $manifest
+  | .genesisBasket[]
+  | .symbol as $symbol
+  | $manifest.assetCatalog.assets[]
+  | select(.mockSymbol == $symbol)
+  | .address
+' "$manifest")
+router="$(jq -er '.contracts.routeRegistry' "$manifest")"
 
 send_as_user() {
   cast send --rpc-url "$rpc_url" --from "$user" --unlocked --json "$@" |
@@ -75,8 +83,8 @@ pending_before=()
 for i in 0 1 2; do
   pending="$(cast call "$vault" 'leg(uint256)((address,uint16,uint256,uint256,uint256,uint256))' "$i" --rpc-url "$rpc_url" --json | jq -er '.[0][2]')"
   pending_before+=("$pending")
-  rate=$((i + 1))
-  minimum_output="$(python3 -c "print(int('$pending') * $rate)")"
+  quoted_output="$(cast call "$router" 'quoteExactInput(address,address,uint256)(uint256)' "$base" "${rewards[$i]}" "$pending" --from "$user" --rpc-url "$rpc_url" | awk '{print $1}')"
+  minimum_output="$(python3 -c "print(int('$quoted_output') * 99 // 100)")"
   deadline=$(( $(date +%s) + 600 ))
   send_as_user "$vault" 'convertLeg(uint256,uint256,uint256,uint256)' "$i" "$pending" "$minimum_output" "$deadline"
 done
@@ -134,7 +142,7 @@ summary="$(jq -n \
   --argjson treasuryNativeRewards "$treasury_native_rewards" \
   --argjson creatorNativeClaim "$creator_claimable" \
   --argjson memberNativeClaim "$member_claimable" \
-  '{schemaVersion: 4, testedAt: $testedAt, gitSha: $gitSha, chainId: $chainId, passed: true, dexProvenance:"robyn-controlled-uniswap-v3-testnet", user: $user, journey: {faucet: true, atomicLaunch: true, bondingBuy: true, automaticGraduation: true, postGraduationSell: true, convertAllLegs: true, claimAll: true, boundedNativeConversion: true, creatorNativeClaim: true, rdaoNativeClaim: true}, balances: {base: $baseBalance, token: $tokenBalance, rewards: [$reward0,$reward1,$reward2]}, accounting: {feesReceived: $feesReceived, baseConsumed: $baseConsumed, convertedPending: [$pending0,$pending1,$pending2], daoNativeRewards:$daoNativeRewards, treasuryNativeRewards:$treasuryNativeRewards, creatorNativeClaim:$creatorNativeClaim, memberNativeClaim:$memberNativeClaim}}')"
+  '{schemaVersion: 6, testedAt: $testedAt, gitSha: $gitSha, chainId: $chainId, passed: true, dexProvenance:"robyn-controlled-uniswap-v3-testnet", assetCatalogSize:24, user: $user, journey: {faucet: true, atomicLaunch: true, bondingBuy: true, automaticGraduation: true, postGraduationSell: true, convertAllLegs: true, claimAll: true, boundedNativeConversion: true, creatorNativeClaim: true, rdaoNativeClaim: true}, balances: {base: $baseBalance, token: $tokenBalance, rewards: [$reward0,$reward1,$reward2]}, accounting: {feesReceived: $feesReceived, baseConsumed: $baseConsumed, convertedPending: [$pending0,$pending1,$pending2], daoNativeRewards:$daoNativeRewards, treasuryNativeRewards:$treasuryNativeRewards, creatorNativeClaim:$creatorNativeClaim, memberNativeClaim:$memberNativeClaim}}')"
 if [[ -n "$evidence_path" ]]; then
   mkdir -p "$(dirname "$evidence_path")"
   printf '%s\n' "$summary" > "$evidence_path"

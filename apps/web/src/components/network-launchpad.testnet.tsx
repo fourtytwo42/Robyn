@@ -11,8 +11,12 @@ import { useCallback, useEffect, useState } from "react";
 import type { Deployment } from "@/lib/deployment";
 import { TokenCardArt } from "@/components/launchpad-visuals";
 import { GuidedLaunchWizard } from "@/components/guided-launch-wizard";
-import { useRobynTestnetWallet } from "./robyn-testnet-wallet";
+import {
+  ROBINHOOD_TESTNET_FAUCET_URL,
+  useRobynTestnetWallet,
+} from "./robyn-testnet-wallet";
 import { normalizeWalletError } from "@/lib/wallet-policy";
+import type { BasketAsset } from "@/components/basket-asset-picker";
 
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
 const atomicLaunchCoordinatorAbi = [
@@ -76,6 +80,8 @@ function launchErrorMessage(error: unknown) {
     message.includes("InvalidBasket")
   )
     return "The token or reward basket configuration is invalid. No launch was created.";
+  if (message.includes("AssetRouteUnavailable"))
+    return "One of the selected reward assets no longer has a safe conversion route. No launch was created; refresh the basket and try again.";
   return message;
 }
 const factoryAbi = [
@@ -283,6 +289,7 @@ export function NetworkLaunchpadConsole({
   const [name, setName] = useState("My Community");
   const [symbol, setSymbol] = useState("MYCO");
   const [weights, setWeights] = useState([40, 40, 20]);
+  const [basketAssets, setBasketAssets] = useState<BasketAsset[]>([]);
   const [status, setStatus] = useState(
     "Connect and fund a testnet wallet, then launch.",
   );
@@ -366,6 +373,30 @@ export function NetworkLaunchpadConsole({
     void refresh().catch(() => setStatus("Unable to load launch registry."));
   }, [refresh]);
 
+  useEffect(() => {
+    void fetch("/api/assets")
+      .then(async (response) => {
+        if (!response.ok)
+          throw new Error("The testnet asset catalog is unavailable.");
+        return (await response.json()) as { data: BasketAsset[] };
+      })
+      .then((body) => {
+        const defaults = ["tmNVDA", "tmSPY", "tmAAPL"]
+          .map((symbol) => body.data.find((asset) => asset.symbol === symbol))
+          .filter((asset): asset is BasketAsset => Boolean(asset));
+        if (defaults.length !== 3)
+          throw new Error("The default reward routes are not ready.");
+        setBasketAssets(defaults);
+      })
+      .catch((error) =>
+        setStatus(
+          error instanceof Error
+            ? error.message
+            : "The testnet asset catalog is unavailable.",
+        ),
+      );
+  }, []);
+
   const submit = useCallback(
     async (
       request: Parameters<NonNullable<typeof walletClient>["writeContract"]>[0],
@@ -420,15 +451,14 @@ export function NetworkLaunchpadConsole({
       return setStatus(
         "Basket weights must be whole percentages totaling 100.",
       );
-    const basket = weights
-      .map((weight, index) => ({
-        asset: deployment.contracts.rewardAssets[index],
-        weight,
+    const basket = basketAssets
+      .map((asset, index) => ({
+        asset: asset.address,
+        weight: weights[index] ?? 0,
       }))
-      .filter(
-        (item): item is { asset: Address; weight: number } =>
-          item.weight > 0 && item.asset !== undefined,
-      );
+      .filter((item) => item.weight > 0);
+    if (basket.length === 0 || basket.some((item) => !item.asset))
+      return setStatus("Choose at least one reward asset with a funded route.");
     setBusy(true);
     try {
       const coordinator = deployment.contracts.atomicLaunchCoordinator;
@@ -669,7 +699,12 @@ export function NetworkLaunchpadConsole({
               setStatus(normalizeWalletError(error));
             }
           }}
-          assetSymbols={["tmNVDA", "tmSPY", "tmETH"]}
+          faucetUrl={ROBINHOOD_TESTNET_FAUCET_URL}
+          basketAssets={basketAssets}
+          setBasketAssets={(assets, nextWeights) => {
+            setBasketAssets(assets);
+            setWeights(nextWeights);
+          }}
           marketSummary="Seeded testnet mock market"
           signMessage={async (message) => {
             if (!walletClient || !account || isWrongChain)
@@ -686,6 +721,7 @@ export function NetworkLaunchpadConsole({
             setName("My Community");
             setSymbol("MYCO");
             setWeights([40, 40, 20]);
+            setBasketAssets((assets) => assets.slice(0, 3));
             setStatus("Configure the next token and its immutable basket.");
           }}
           openByDefault={openByDefault}

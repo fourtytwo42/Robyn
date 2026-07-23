@@ -13,7 +13,21 @@ export function rewardAssetMetadata(
   address: string,
   canonicalAddresses: readonly string[],
   isTestnet: boolean,
+  catalog?: readonly {
+    address: string;
+    symbol: string;
+    mockSymbol?: string;
+    name: string;
+  }[],
 ): RewardAssetMetadata {
+  const catalogAsset = catalog?.find(
+    (candidate) => candidate.address.toLowerCase() === address.toLowerCase(),
+  );
+  if (catalogAsset)
+    return {
+      symbol: catalogAsset.mockSymbol ?? catalogAsset.symbol,
+      name: catalogAsset.name,
+    };
   const index = canonicalAddresses.findIndex(
     (candidate) => candidate.toLowerCase() === address.toLowerCase(),
   );

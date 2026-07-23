@@ -84,7 +84,12 @@ export default async function LaunchDetail({
   const launch = detail.data;
   const market = analytics.data;
   const basket = launch.assets.map((asset, index) => ({
-    ...rewardAssetMetadata(asset, deployment.contracts.rewardAssets, isTestnet),
+    ...rewardAssetMetadata(
+      asset,
+      deployment.contracts.rewardAssets,
+      isTestnet,
+      deployment.assetCatalog?.assets,
+    ),
     address: asset,
     weight: launch.weights_bps[index] ?? 0,
   }));

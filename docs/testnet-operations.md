@@ -1,8 +1,13 @@
 # Robinhood Chain Testnet operations
 
-Status: funded persistent deployer and no-broadcast readiness verification passed; public-testnet deployment still requires explicit authorization
+Status: schema-v6 candidate implemented and rehearsed; public broadcast blocked on required external inputs
 
-Last verified: 2026-07-22
+Last verified: 2026-07-23
+
+> Current schema-v6 asset, route, wallet, gas, and named-tunnel operations are
+> documented in [Robinhood Testnet asset and deployment operations](robinhood-testnet-assets.md).
+> Earlier measurements and fixed-price references below are retained as history
+> and are superseded where they conflict with that document or the current code.
 
 ## Boundary
 

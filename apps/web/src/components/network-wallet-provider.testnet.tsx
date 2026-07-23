@@ -9,6 +9,7 @@ import {
 } from "@rainbow-me/rainbowkit";
 import {
   coinbaseWallet,
+  injectedWallet,
   ledgerWallet,
   metaMaskWallet,
   rabbyWallet,
@@ -61,6 +62,10 @@ const config = getDefaultConfig({
     {
       groupName: "Hardware and multisig",
       wallets: [safeWallet, ledgerWallet],
+    },
+    {
+      groupName: "Other EVM wallets",
+      wallets: [injectedWallet],
     },
   ],
 });

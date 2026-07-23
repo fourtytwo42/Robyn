@@ -43,7 +43,7 @@ NEXT_PUBLIC_APP_URL="$app_url" \
   pnpm --filter @robyn/web build
 rm -rf apps/web/.next/cache
 
-for marker in DEVNET_ONLY robyn-devnet robyn-devnet-session-key generatePrivateKey '"/faucet"'; do
+for marker in DEVNET_ONLY robyn-devnet robyn-devnet-session-key generatePrivateKey robyn-devnet-faucet '"/api/faucet"'; do
   if grep -RasF -- "$marker" apps/web/.next/static apps/web/.next/server >/dev/null; then
     echo "Forbidden testnet-bundle marker found: $marker" >&2
     exit 1

@@ -31,6 +31,16 @@ export function SiteHeader() {
             <span className="status-dot" aria-hidden="true" />
             {isTestnet ? "Robinhood Testnet" : "Local devnet"}
           </span>
+          {isTestnet ? (
+            <a
+              className="header-faucet-link"
+              href="https://faucet.testnet.chain.robinhood.com"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Get test ETH
+            </a>
+          ) : null}
           <NetworkWalletControl />
           <Link className="button primary header-launch-button" href="/create">
             Launch a token

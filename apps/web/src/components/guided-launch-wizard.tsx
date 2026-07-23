@@ -4,6 +4,10 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
 import type { Address, Hex } from "viem";
 import { TokenArt } from "@/components/launchpad-visuals";
+import {
+  BasketAssetPicker,
+  type BasketAsset,
+} from "@/components/basket-asset-picker";
 
 type WizardProps = {
   account?: Address;
@@ -19,6 +23,9 @@ type WizardProps = {
   walletActionLabel: string;
   onWalletAction: () => void | Promise<void>;
   assetSymbols?: [string, string, string];
+  basketAssets?: BasketAsset[];
+  setBasketAssets?: (assets: BasketAsset[], weights: number[]) => void;
+  faucetUrl?: string;
   marketSummary?: string;
   signMessage: (message: string) => Promise<Hex>;
   onLaunch: (artworkMediaId?: string, description?: string) => Promise<void>;
@@ -531,6 +538,9 @@ export function GuidedLaunchWizard(props: WizardProps) {
     onStartAnother,
     openByDefault = false,
     assetSymbols = ["mNVDA", "mSPY", "mETH"],
+    basketAssets,
+    setBasketAssets,
+    faucetUrl,
     marketSummary = "Bonding curve → locked liquidity",
   } = props;
   const [open, setOpen] = useState(openByDefault);
@@ -544,15 +554,24 @@ export function GuidedLaunchWizard(props: WizardProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const total = weights.reduce((sum, value) => sum + value, 0);
+  const displayAssetSymbols = basketAssets
+    ? basketAssets.map((asset) => asset.symbol)
+    : assetSymbols;
   const validToken =
     Boolean(name.trim()) && /^[A-Z0-9]{2,8}$/.test(symbol.trim());
   const validBasket =
     total === 100 &&
+    (!basketAssets ||
+      (basketAssets.length >= 1 &&
+        basketAssets.length <= 3 &&
+        basketAssets.length === weights.length &&
+        basketAssets.every((asset) => asset.route.ready))) &&
     weights.every((value) => Number.isInteger(value) && value >= 0);
   const dirty =
     name !== "My Community" ||
     symbol !== "MYCO" ||
     weights.join(",") !== "40,40,20" ||
+    Boolean(basketAssets && basketAssets.length !== 3) ||
     Boolean(description) ||
     Boolean(artworkMediaId) ||
     Boolean(artworkPreview);
@@ -694,6 +713,16 @@ export function GuidedLaunchWizard(props: WizardProps) {
                     >
                       {walletActionLabel}
                     </button>
+                    {faucetUrl ? (
+                      <a
+                        className="button ghost compact"
+                        href={faucetUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Get test ETH
+                      </a>
+                    ) : null}
                   </div>
                   <label>
                     Token name
@@ -744,30 +773,41 @@ export function GuidedLaunchWizard(props: WizardProps) {
                     Choose whole percentages. The basket becomes immutable at
                     launch.
                   </p>
-                  <fieldset className="basket-builder">
-                    <legend>Reward basket weights</legend>
-                    {assetSymbols.map((asset, index) => (
-                      <label key={asset}>
-                        <span>{asset}</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={weights[index]}
-                          onChange={(event) =>
-                            setWeights(
-                              weights.map((value, offset) =>
-                                offset === index
-                                  ? Number(event.target.value)
-                                  : value,
-                              ),
-                            )
-                          }
-                        />
-                        <b>{weights[index]}%</b>
-                      </label>
-                    ))}
-                  </fieldset>
+                  {basketAssets && setBasketAssets ? (
+                    <BasketAssetPicker
+                      selected={basketAssets}
+                      weights={weights}
+                      onChange={(assets, nextWeights) => {
+                        setBasketAssets(assets, nextWeights);
+                        setWeights(nextWeights);
+                      }}
+                    />
+                  ) : (
+                    <fieldset className="basket-builder">
+                      <legend>Reward basket weights</legend>
+                      {assetSymbols.map((asset, index) => (
+                        <label key={asset}>
+                          <span>{asset}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={weights[index]}
+                            onChange={(event) =>
+                              setWeights(
+                                weights.map((value, offset) =>
+                                  offset === index
+                                    ? Number(event.target.value)
+                                    : value,
+                                ),
+                              )
+                            }
+                          />
+                          <b>{weights[index]}%</b>
+                        </label>
+                      ))}
+                    </fieldset>
+                  )}
                   <p
                     className={
                       validBasket ? "weight-total valid" : "weight-total"
@@ -794,7 +834,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
                   <div>
                     <span>Reward basket</span>
                     <strong>
-                      {assetSymbols
+                      {displayAssetSymbols
                         .map((asset, index) => `${asset} ${weights[index]}%`)
                         .filter((_, index) => weights[index] > 0)
                         .join(" · ")}
@@ -898,7 +938,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
                   ))}
                 </div>
                 <div className="preview-basket-labels">
-                  {assetSymbols.map((asset, index) =>
+                  {displayAssetSymbols.map((asset, index) =>
                     weights[index] > 0 ? (
                       <span key={asset}>
                         {asset} {weights[index]}%

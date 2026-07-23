@@ -6,7 +6,27 @@ manifest="${1:-$repo_root/deployments/46630.json}"
 rpc_url="${ROBYN_TESTNET_RPC_URL:-https://rpc.testnet.chain.robinhood.com}"
 export PATH="$HOME/.foundry/bin:$PATH"
 
-jq -e '.schemaVersion == 5 and .environment == "robinhood-testnet" and .chainId == 46630 and .mockOnly == true and .assetStrategy == "project-owned-testnet-mocks" and .market.liquidityVenue == "robyn-controlled-uniswap-v3-testnet" and .dao.creatorRewardsAccounting == "per-token-v2" and .ipfsMetadata.standard == "ERC-1046" and .ipfsMetadata.remotePinRequired == true' "$manifest" >/dev/null
+jq -e '
+  .schemaVersion == 6 and
+  .environment == "robinhood-testnet" and
+  .chainId == 46630 and
+  .mockOnly == true and
+  .assetStrategy == "project-owned-testnet-mocks" and
+  .market.liquidityVenue == "robyn-controlled-uniswap-v3-testnet" and
+  .dao.creatorRewardsAccounting == "per-token-v2" and
+  .ipfsMetadata.standard == "ERC-1046" and
+  .ipfsMetadata.remotePinRequired == true and
+  .assetCatalog.schemaVersion == 1 and
+  (.assetCatalog.assets | length == 24) and
+  (.contracts.rewardAssets | length == 24) and
+  (([.assetCatalog.assets[].address | ascii_downcase] | unique | length) == 24) and
+  (all(.assetCatalog.assets[];
+    .chainId == 46630 and
+    (.address | test("^0x[0-9a-fA-F]{40}$")) and
+    (.decimals | type == "number" and . >= 0 and . <= 36) and
+    (.mockOnly == true)
+  ))
+' "$manifest" >/dev/null
 jq -e '. as $manifest |
   (.dao.initialAllocationManifestSha256 | test("^[0-9a-f]{64}$")) and
   (.dao.allocation | type == "array" and length > 1) and
@@ -16,11 +36,11 @@ jq -e '. as $manifest |
   (any(.dao.allocation[]; (.account | ascii_downcase) == ($manifest.contracts.timelock | ascii_downcase) and .purpose == "dao-treasury-reserve"))
 ' "$manifest" >/dev/null
 grep -Eqs 'DEVNET_ONLY|robyn-devnet|31337' "$manifest" && { echo "Devnet content found in testnet manifest" >&2; exit 1; }
-jq -e '.chainId == 46630 and .deployment.allowsUnlockedAccount == false' "$repo_root/config/networks/robinhood-testnet.json" >/dev/null
+jq -e '.schemaVersion == 2 and .chainId == 46630 and .faucetUrl == "https://faucet.testnet.chain.robinhood.com" and .deployment.allowsUnlockedAccount == false' "$repo_root/config/networks/robinhood-testnet.json" >/dev/null
 [[ "$(cast chain-id --rpc-url "$rpc_url")" == "46630" ]]
 
 contract() { jq -er ".contracts.$1" "$manifest"; }
-base="$(contract baseAsset)"; router="$(contract conversionRouter)"; factory="$(contract factory)"
+base="$(contract baseAsset)"; router="$(contract conversionRouter)"; route_registry="$(contract routeRegistry)"; factory="$(contract factory)"
 launch_deployer="$(contract launchDeployer)"; market_factory="$(contract marketFactory)"; coordinator="$(contract atomicLaunchCoordinator)"
 adapter_deployer="$(contract adapterDeployer)"; market_deployer="$(contract marketDeployer)"
 dao_token="$(contract daoToken)"; governor="$(contract governor)"; timelock="$(contract timelock)"
@@ -36,6 +56,8 @@ eq_address() { [[ "$(lower "$(cast call "$1" "$2" ${3:-} --rpc-url "$rpc_url")")
 [[ "$(cast call "$factory" 'chainId()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')" == "46630" ]]
 eq_address "$factory" 'baseAsset()(address)' "" "$base"
 eq_address "$factory" 'conversionRouter()(address)' "" "$router"
+[[ "$(lower "$route_registry")" == "$(lower "$router")" ]]
+eq_address "$factory" 'routeRegistry()(address)' "" "$route_registry"
 eq_address "$factory" 'coordinator()(address)' "" "$coordinator"
 eq_address "$market_factory" 'launchFactory()(address)' "" "$factory"
 eq_address "$market_factory" 'coordinator()(address)' "" "$coordinator"
@@ -70,7 +92,7 @@ for excluded in "$market" "$adapter" "$locker" "$pool" "$coordinator" "$fee_rout
 [[ "$(cast call "$token" 'balanceOf(address)(uint256)' "$coordinator" --rpc-url "$rpc_url" | awk '{print $1}')" == "0" ]]
 [[ "$(cast call "$token" 'allowance(address,address)(uint256)' "$coordinator" "$market" --rpc-url "$rpc_url" | awk '{print $1}')" == "0" ]]
 [[ "$(cast call "$base" 'TESTNET_MOCK_ONLY()(string)' --rpc-url "$rpc_url" --json | jq -r '.[0]')" == "robinhood-testnet-mock" ]]
-[[ "$(cast call "$router" 'TESTNET_MOCK_ONLY()(string)' --rpc-url "$rpc_url" --json | jq -r '.[0]')" == "robinhood-testnet-mock" ]]
+[[ "$(cast call "$router" 'TESTNET_MOCK_ONLY()(string)' --rpc-url "$rpc_url" --json | jq -r '.[0]')" == "robyn-controlled-testnet-assets" ]]
 [[ "$(cast call "$(jq -er '.localUniswapV3.wrappedQuoteAsset' "$manifest")" 'TESTNET_PROVENANCE()(string)' --rpc-url "$rpc_url" --json | jq -r '.[0]')" == "robyn-controlled-uniswap-v3-testnet" ]]
 [[ "$(cast call "$dao_token" 'totalSupply()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')" == "1000000000000000000000000000" ]]
 while IFS=$'\t' read -r allocation_account share_bps; do
@@ -100,10 +122,30 @@ fee_account="$(cast call "$fee_router" 'launchAccount(address)((address,address,
 [[ "$(lower "$(jq -r '.[0][3]' <<<"$fee_account")")" == "$(lower "$locker")" ]]
 
 expected_weights=(4000 4000 2000)
+mapfile -t genesis_rewards < <(jq -er '
+  . as $manifest
+  | .genesisBasket[]
+  | .symbol as $symbol
+  | $manifest.assetCatalog.assets[]
+  | select(.mockSymbol == $symbol)
+  | .address
+' "$manifest")
+[[ "${#genesis_rewards[@]}" == "3" ]]
 for i in 0 1 2; do
-  eq_address "$token" 'rewardAsset(uint256)(address)' "$i" "${rewards[$i]}"
+  eq_address "$token" 'rewardAsset(uint256)(address)' "$i" "${genesis_rewards[$i]}"
   [[ "$(cast call "$vault" 'leg(uint256)((address,uint16,uint256,uint256,uint256,uint256))' "$i" --rpc-url "$rpc_url" --json | jq -r '.[0][1]')" == "${expected_weights[$i]}" ]]
 done
+while IFS= read -r asset; do
+  address="$(jq -r '.address' <<<"$asset")"
+  verification="$(jq -r '.verification' <<<"$asset")"
+  [[ "$(cast call "$route_registry" 'isRouteReady(address,address)(bool)' "$base" "$address" --rpc-url "$rpc_url")" == "true" ]] || {
+    echo "Catalog route is not ready for $address" >&2
+    exit 1
+  }
+  if [[ "$verification" == "robyn-testnet-mock" ]]; then
+    [[ "$(cast call "$address" 'TESTNET_MOCK_ONLY()(string)' --rpc-url "$rpc_url" --json | jq -r '.[0]')" == "robinhood-testnet-mock" ]]
+  fi
+done < <(jq -c '.assetCatalog.assets[]' "$manifest")
 [[ "$(cast call "$market_factory" 'poolFee()(uint24)' --rpc-url "$rpc_url" | awk '{print $1}')" == "$(jq -r '.market.poolFeePips' "$manifest")" ]]
 [[ "$(cast call "$market_factory" 'curveTokenAllocation()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')" == "$(jq -r '.market.curveTokenAllocation' "$manifest")" ]]
 [[ "$(cast call "$market_factory" 'graduationThresholdBase()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')" == "$(jq -r '.market.graduationThresholdBase' "$manifest")" ]]

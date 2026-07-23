@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "name": "Robinhood Chain Testnet",
   "environment": "robinhood-testnet",
   "chainId": 46630,
@@ -10,6 +10,7 @@
   },
   "publicRpcUrl": "https://rpc.testnet.chain.robinhood.com",
   "explorerUrl": "https://explorer.testnet.chain.robinhood.com",
+  "faucetUrl": "https://faucet.testnet.chain.robinhood.com",
   "feedUrl": "wss://feed.testnet.chain.robinhood.com",
   "confirmations": 3,
   "deployment": {
@@ -22,7 +23,8 @@
       "robyn-devnet",
       "robyn-devnet-session-key",
       "generatePrivateKey",
-      "/faucet"
+      "robyn-devnet-faucet",
+      "/api/faucet"
     ]
   },
   "canonicalContracts": {

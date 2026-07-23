@@ -33,6 +33,7 @@ The documents distinguish the first shippable product from the eventual native l
 | [11 - DAO, governance and protocol fees](11-dao-governance-and-protocol-fees.md) | Governance token, fee policy, rewards and treasury |
 | [12 - Multi-wallet connection](12-multi-wallet-connection.md) | Shared testnet connectors, wallet UX, SIWE invalidation and release configuration |
 | [13 - Immutable IPFS token metadata](13-immutable-ipfs-token-metadata.md) | ERC-1046 token URIs, deterministic media, Kubo, redundant pinning, moderation and recovery |
+| [14 - Robinhood Testnet and basket assets](14-robinhood-testnet-and-basket-assets.md) | Chain-46630 deployment, wallet switching, faucet, curated/manual assets, conversion readiness and stable HTTPS |
 
 ## Requirement namespace
 
@@ -57,6 +58,8 @@ The implementation sequence and evidence gates are defined in [Devnet-to-testnet
 | `STACK-` | Application technologies, repository boundaries and toolchain |
 | `WALLET-` | External wallet connection, chain state and identity-session boundaries |
 | `IPFS-` | Immutable token metadata, content addressing, pinning and recovery |
+| `TESTNET-` | Robinhood Testnet environment, deployment gates, wallet network and public hosting |
+| `ASSET-` | Basket catalog, provenance, address resolution, route readiness and decimal correctness |
 
 `MUST`, `SHOULD`, and `MAY` have their usual product-requirement meaning. Any change to a `MUST` requirement requires an entry in the decision register.
 
@@ -77,11 +80,9 @@ All implementation and operations use the authoritative VM-only, no-container mo
 
 ## Current blockers
 
-- Bags and pons contract-recipient behavior has not been proven with funded transactions.
-- Authenticated 0x and 1inch firm Stock Token quotes have not been sampled.
-- No canonical Robinhood testnet Stock Token registry or public faucet was located.
-- Legal treatment of permissionless fee-funded Stock Token distribution requires counsel and written upstream clarification.
-- The Git repository and VM environment exist, but no application contracts, native data services or persistent PM2 application processes have been implemented yet.
+- Public testnet broadcast requires a real WalletConnect project ID, stable registered HTTPS hostname/named Cloudflare Tunnel, remote pinning credentials, and reviewed RDAO member allocation.
+- Robinhood currently reports no official Stock Token deployments on chain `46630`; the candidate therefore uses clearly disclosed testnet mocks.
+- Legal treatment of permissionless fee-funded Stock Token distribution requires counsel before real-value or mainnet operation.
 
 ## Delivery backlog
 

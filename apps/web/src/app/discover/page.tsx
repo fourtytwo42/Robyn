@@ -50,7 +50,12 @@ export default async function Discover({
   const assetMetadata = new Map(
     assets.map((asset) => [
       asset.toLowerCase(),
-      rewardAssetMetadata(asset, deployment.contracts.rewardAssets, isTestnet),
+      rewardAssetMetadata(
+        asset,
+        deployment.contracts.rewardAssets,
+        isTestnet,
+        deployment.assetCatalog?.assets,
+      ),
     ]),
   );
   const assetOptions = assets.map((asset) => ({

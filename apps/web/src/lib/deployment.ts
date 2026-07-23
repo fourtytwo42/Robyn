@@ -36,6 +36,23 @@ export type Deployment = {
     swapRouter: Address;
     wrappedQuoteAsset: Address;
   };
+  assetCatalog?: {
+    schemaVersion: number;
+    snapshotAt: string;
+    disclosure: string;
+    assets: Array<{
+      address: Address;
+      symbol: string;
+      mockSymbol?: string;
+      name: string;
+      category: string;
+      logoUrl?: string | null;
+      verification: string;
+      mockOnly: boolean;
+      decimals: number;
+      referencePriceUsd?: string | null;
+    }>;
+  };
   dao?: {
     token: { name: string; symbol: string; fixedSupply: string };
     feePolicy: {

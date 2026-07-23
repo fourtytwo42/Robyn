@@ -2,6 +2,12 @@
 
 ## Runtime boundary
 
+Last verified: 2026-07-23. The shared wallet requests an immediate switch to
+chain `46630`; provider error `4902` triggers official chain addition and a
+second switch request. Every write remains gated on provider-confirmed chain
+state. The wallet menu and Create funding state link to the official testnet
+faucet.
+
 `apps/web/next.config.ts` resolves wallet provider and header-control aliases to devnet or testnet modules. Devnet imports no RainbowKit/wagmi provider and keeps the existing session wallet. Testnet wraps the application once with Wagmi, TanStack Query and RainbowKit.
 
 `useRobynTestnetWallet` is the only testnet component interface. It exposes the active account/connector, required-chain state, public client, wallet client, connect, chain switch and disconnect. Transaction components retain their existing simulation, receipt and error paths.
@@ -43,3 +49,7 @@ The testnet response CSP permits the configured RPC plus WalletConnect/Reown rel
 
 No seed phrase, private key or recovery material is accepted during this procedure.
 
+Real broadcast additionally requires
+`scripts/check-testnet-external-inputs.sh`, which rejects the rehearsal project
+ID, reserved invalid origins, Quick Tunnels, missing named-tunnel routing,
+missing remote IPFS credentials, and missing RDAO allocation.

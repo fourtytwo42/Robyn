@@ -24,10 +24,14 @@ if grep -RqsE 'DEVNET_ONLY|robyn-devnet' packages/contracts/src/testnet; then
 fi
 
 measurement="$("$repo_root/scripts/measure-robinhood-testnet-deployment-gas.sh")"
-execution_cost_wei="$(jq -r .executionCostWei <<<"$measurement")"
-[[ "$execution_cost_wei" -gt 0 ]] || { echo "Measured execution cost must be positive" >&2; exit 1; }
-headroom_multiple=$((balance_wei / execution_cost_wei))
-[[ "$headroom_multiple" -ge 20 ]] || { echo "Deployer has less than 20x measured execution-cost headroom" >&2; exit 1; }
+estimated_total_cost_wei="$(jq -r .estimatedTotalCostWei <<<"$measurement")"
+[[ "$estimated_total_cost_wei" -gt 0 ]] || { echo "Measured execution plus L1 data cost must be positive" >&2; exit 1; }
+[[ "$(jq -r .includesArbitrumL1DataFeeEstimate <<<"$measurement")" == "true" ]] || { echo "L1 data-fee estimate is required" >&2; exit 1; }
+required_with_headroom=$((estimated_total_cost_wei + (estimated_total_cost_wei + 3) / 4))
+[[ "$balance_wei" -ge "$required_with_headroom" ]] || {
+  echo "Deployer balance does not cover the full measured bundle plus 25% headroom" >&2
+  exit 1
+}
 
 jq -n \
   --arg checkedAt "$(date -u +%FT%TZ)" \
@@ -35,5 +39,5 @@ jq -n \
   --argjson wallet "$wallet" \
   --argjson gasMeasurement "$measurement" \
   --arg minimumBalanceWei "$minimum_balance_wei" \
-  --argjson executionHeadroomMultiple "$headroom_multiple" \
-  '{schemaVersion: 1, checkedAt: $checkedAt, passed: true, gitSha: $gitSha, wallet: $wallet, minimumBalanceWei: $minimumBalanceWei, gasMeasurement: $gasMeasurement, executionHeadroomMultiple: $executionHeadroomMultiple, broadcastPerformed: false}'
+  --arg requiredWithHeadroomWei "$required_with_headroom" \
+  '{schemaVersion: 2, checkedAt: $checkedAt, passed: true, gitSha: $gitSha, wallet: $wallet, minimumBalanceWei: $minimumBalanceWei, gasMeasurement: $gasMeasurement, requiredWith25PercentHeadroomWei: $requiredWithHeadroomWei, broadcastPerformed: false}'

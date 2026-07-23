@@ -4,6 +4,28 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Current task (2026-07-23): finish and push the Robinhood Testnet, multi-wallet,
+  and basket-asset release on branch `codex/robinhood-testnet-assets`. The
+  controlled Anvil devnet remains the internal regression environment.
+- Current checkpoint: fresh V3/V5 factories and coordinator, the hybrid
+  testnet conversion route registry, the exact 24-asset catalog, defensive
+  manual ERC-20 introspection, RainbowKit/wagmi add-then-switch handling,
+  faucet UX, responsive basket picker, isolated testnet PM2/Nginx/tunnel
+  topology and schema-v6 deployment tooling are implemented. Repository lint,
+  strict types, 75 Foundry tests, application tests, Anvil smoke, official
+  asset-provenance verification, deployment gas estimation and the isolated
+  five-service chain-46630 rehearsal pass.
+- Browser checkpoint: protected create/catalog/manual-address flows passed on
+  desktop and 390x844 through the loopback testnet Nginx edge. A nested-dialog
+  Escape defect was found and fixed; one Escape now closes only the asset
+  picker and the mobile document remains 390 pixels wide with no overflow.
+  Placeholder WalletConnect acceptance intentionally remains blocked.
+- Broadcast is fail-closed until four external inputs exist: a real 32-character
+  WalletConnect/Reown project ID, a stable registered HTTPS hostname with named
+  Cloudflare Tunnel, remote IPFS pinning credentials in the protected testnet
+  API environment, and a reviewed RDAO member allocation manifest totaling
+  100%. The encrypted deployer is funded, but no Robinhood Testnet transaction
+  has been broadcast.
 - Current task: finish the immutable ERC-1046/IPFS token-metadata release on
   branch `codex/ipfs-token-metadata`, promote one exact release, prove backup,
   isolated restore and reboot recovery, then start a fresh one-shot eight-hour
@@ -264,6 +286,40 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-23 - Robinhood Testnet asset release candidate
+
+- Context: The user authorized Robinhood Testnet deployment after every
+  specified gate and required external input passes.
+- Decision: Keep devnet isolated on chain 31337 and deploy a separate
+  chain-46630 stack. Use 23 clearly labeled 18-decimal Robyn stock/ETF mock
+  assets plus the test DEX WETH, with chain plus address as canonical identity.
+  Manual assets remain inspectable but selectable only when the route registry
+  reports a funded and safe conversion route.
+- Files: `config/assets/robinhood-testnet-curated.json`,
+  `packages/contracts/src/testnet/TestnetAssetConversionRouter.sol`,
+  `packages/contracts/src/RobynDaoLaunchCoordinatorV5.sol`,
+  `apps/api/src/asset-catalog.ts`,
+  `apps/web/src/components/basket-asset-picker.tsx`,
+  `scripts/deploy-testnet.sh`,
+  `scripts/check-testnet-external-inputs.sh`,
+  `infrastructure/pm2/ecosystem.testnet.config.cjs`, and
+  `infrastructure/nginx/robyn-testnet.conf`.
+- Commands/tests: `pnpm run format`, `pnpm run lint`, `pnpm run typecheck`,
+  `pnpm run test`, `python3 scripts/validate-user-stories.py`,
+  `scripts/check-robinhood-testnet-asset-provenance.sh`,
+  `scripts/measure-robinhood-testnet-deployment-gas.sh`, and
+  `scripts/rehearse-testnet-stack.sh`.
+- Result: 175 stories cover 194/194 requirements; all application and 75
+  Foundry tests pass; the 112-transaction estimate is about
+  0.001182601277067904 ETH including the conservative L1-data upper bound;
+  the 0.01 ETH deployer balance exceeds 25% headroom; the isolated rehearsal
+  completed atomic launch, pre/post-graduation trading, three basket
+  conversions, holder/creator/RDAO claims and clean rollback. Last verified
+  2026-07-23.
+- Follow-up: provide the four external inputs, rerun the exact-commit protected
+  build and stable-origin wallet acceptance, then authorize the two-phase DEX
+  and protocol broadcast. Do not deploy mainnet.
 
 ### 2026-07-23 - Creator-image native memory correction
 
@@ -1344,6 +1400,14 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Supply a real 32-character WalletConnect/Reown project ID and register the
+  final stable HTTPS hostname in its allowlist.
+- Supply the stable hostname/domain and provision the named Cloudflare Tunnel
+  routing it to `http://127.0.0.1:3081`.
+- Configure a vendor-neutral IPFS Pinning Service endpoint/token in the
+  protected testnet API environment.
+- Supply and review the actual RDAO member wallet/percentage allocation
+  manifest totaling exactly 100%.
 - Before Robinhood Testnet, independently review the implemented production graduation adapter, immutable LP locker, atomic coordinator and fee router; recheck for an official chain-46630 Uniswap deployment. If none exists, deploy and freeze the separately verified Robyn-controlled test-only DEX manifest before protocol broadcast.
 - Complete independent browser-persona UAT when subagent runtimes expose the
   Codex in-app browser, or obtain an explicit product-owner waiver. Root-agent

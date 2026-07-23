@@ -51,19 +51,30 @@ ROBYN_TESTNET_BROADCAST=true \
 latest_block="$(cast block-number --rpc-url "$local_rpc")"
 total_gas=0
 transaction_count=0
+total_calldata_bytes=0
 for ((block = 1; block <= latest_block; block++)); do
   block_json="$(cast block "$block" --rpc-url "$local_rpc" --json)"
   while IFS= read -r transaction; do
     [[ -n "$transaction" ]] || continue
     receipt="$(cast receipt "$transaction" --rpc-url "$local_rpc" --json)"
     gas_used="$(jq -r .gasUsed <<<"$receipt")"
+    input="$(cast tx "$transaction" --rpc-url "$local_rpc" --json | jq -r .input)"
+    calldata_bytes=$(((${#input} - 2) / 2))
     total_gas=$((total_gas + gas_used))
+    total_calldata_bytes=$((total_calldata_bytes + calldata_bytes))
     transaction_count=$((transaction_count + 1))
   done < <(jq -r '.transactions[]?' <<<"$block_json")
 done
 
 gas_price_wei="$(cast gas-price --rpc-url "$public_rpc")"
 execution_cost_wei=$((total_gas * gas_price_wei))
+l1_base_fee_wei="$(cast call 0x000000000000000000000000000000000000006C 'getL1BaseFeeEstimate()(uint256)' --rpc-url "$public_rpc" | awk '{print $1}')"
+# Nitro compresses batch data, but the release gate deliberately uses the
+# more conservative uncompressed calldata upper bound plus 140 bytes of
+# transaction envelope overhead for each transaction.
+l1_data_gas_upper_bound=$(((total_calldata_bytes + transaction_count * 140) * 16))
+l1_data_cost_upper_bound_wei=$((l1_data_gas_upper_bound * l1_base_fee_wei))
+estimated_total_cost_wei=$((execution_cost_wei + l1_data_cost_upper_bound_wei))
 coordinator="$(jq -er '.contracts.atomicLaunchCoordinator' "$manifest")"
 launch_topic="$(cast keccak 'AtomicLaunchCreated(uint256,address,address,address,address,address,address,address,bytes32,bytes32,bytes32)')"
 launch_filter="$(jq -nc --arg address "$coordinator" --arg topic "$launch_topic" '{fromBlock:"0x0",toBlock:"latest",address:$address,topics:[$topic]}')"
@@ -74,8 +85,14 @@ jq -n \
   --argjson chainId 46630 \
   --argjson transactionCount "$transaction_count" \
   --argjson deploymentGasUsed "$total_gas" \
+  --argjson totalCalldataBytes "$total_calldata_bytes" \
   --arg gasPriceWei "$gas_price_wei" \
   --arg executionCostWei "$execution_cost_wei" \
   --arg executionCostEth "$(cast from-wei "$execution_cost_wei")" \
+  --arg l1BaseFeeEstimateWei "$l1_base_fee_wei" \
+  --argjson l1DataGasUpperBound "$l1_data_gas_upper_bound" \
+  --arg l1DataCostUpperBoundWei "$l1_data_cost_upper_bound_wei" \
+  --arg estimatedTotalCostWei "$estimated_total_cost_wei" \
+  --arg estimatedTotalCostEth "$(cast from-wei "$estimated_total_cost_wei")" \
   --argjson atomicLaunchGasUsed "$atomic_launch_gas" \
-  '{schemaVersion: 2, chainId: $chainId, transactionCount: $transactionCount, deploymentGasUsed: $deploymentGasUsed, atomicLaunchGasUsed: $atomicLaunchGasUsed, gasPriceWei: $gasPriceWei, executionCostWei: $executionCostWei, executionCostEth: $executionCostEth, includesArbitrumL1DataFee: false}'
+  '{schemaVersion: 3, chainId: $chainId, transactionCount: $transactionCount, deploymentGasUsed: $deploymentGasUsed, atomicLaunchGasUsed: $atomicLaunchGasUsed, totalCalldataBytes: $totalCalldataBytes, gasPriceWei: $gasPriceWei, executionCostWei: $executionCostWei, executionCostEth: $executionCostEth, l1BaseFeeEstimateWei: $l1BaseFeeEstimateWei, l1DataGasUpperBound: $l1DataGasUpperBound, l1DataCostUpperBoundWei: $l1DataCostUpperBoundWei, l1DataMethod:"uncompressed-nitro-upper-bound", estimatedTotalCostWei: $estimatedTotalCostWei, estimatedTotalCostEth: $estimatedTotalCostEth, includesArbitrumL1DataFeeEstimate: true}'

@@ -55,6 +55,7 @@ export function MarketCard({
               asset,
               deployment.contracts.rewardAssets,
               isTestnet,
+              deployment.assetCatalog?.assets,
             );
             const weight = (launch.weights_bps[index] ?? 0) / 100;
             return (

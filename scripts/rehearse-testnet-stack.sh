@@ -5,6 +5,11 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export PATH="$HOME/.foundry/bin:$PATH"
 cd "$repo_root"
 work="$(mktemp -d)"
+had_existing_next=false
+if [[ -d apps/web/.next ]]; then
+  mv apps/web/.next "$work/devnet-next"
+  had_existing_next=true
+fi
 database="robyn_testnet_rehearsal"
 rpc_url="http://127.0.0.1:18545"
 pm2="$repo_root/node_modules/.bin/pm2"
@@ -19,6 +24,10 @@ cleanup() {
   fi
   kill "$anvil_pid" 2>/dev/null || true
   wait "$anvil_pid" 2>/dev/null || true
+  rm -rf apps/web/.next
+  if [[ "$had_existing_next" == "true" && -d "$work/devnet-next" ]]; then
+    mv "$work/devnet-next" apps/web/.next
+  fi
   rm -rf "$work"
 }
 trap cleanup EXIT
@@ -67,6 +76,8 @@ ROBYN_TESTNET_MANIFEST="$manifest" \
 ROBYN_TESTNET_RPC_URL="$rpc_url" \
 ROBYN_OPERATOR_KEY_FILE="$work/operator.key" \
 ROBYN_TESTNET_DATABASE="$database" \
+ROBYN_TESTNET_API_ENV_FILE="/dev/null" \
+ROBYN_TESTNET_REQUIRE_REMOTE_PIN="false" \
   "$pm2" start infrastructure/pm2/ecosystem.testnet.config.cjs --only "$app_selector" --update-env >/dev/null
 
 healthy=false
@@ -108,6 +119,26 @@ for i in 0 1 2; do
   received="$(cast call "$token" 'totalRewardsReceived(uint256)(uint256)' "$i" --rpc-url "$rpc_url" --json | jq -er '.[0]')"
   [[ "$received" != "0" ]]
 done
+
+hold_seconds="${ROBYN_TESTNET_STACK_HOLD_SECONDS:-0}"
+[[ "$hold_seconds" =~ ^[0-9]+$ ]] || {
+  echo "ROBYN_TESTNET_STACK_HOLD_SECONDS must be a non-negative integer" >&2
+  exit 1
+}
+if (( hold_seconds > 0 )); then
+  ready_file="${ROBYN_TESTNET_STACK_READY_FILE:-$work/browser-ready.json}"
+  jq -n \
+    --arg readyAt "$(date -u +%FT%TZ)" \
+    --arg webUrl "http://127.0.0.1:3012" \
+    --arg apiUrl "http://127.0.0.1:3111" \
+    --arg manifest "$manifest" \
+    --arg token "$token" \
+    '{schemaVersion:1,readyAt:$readyAt,webUrl:$webUrl,apiUrl:$apiUrl,manifest:$manifest,genesisToken:$token}' \
+    > "$ready_file"
+  printf 'Testnet rehearsal held for browser acceptance at %s for %s seconds\n' \
+    "http://127.0.0.1:3012" "$hold_seconds"
+  sleep "$hold_seconds"
+fi
 
 processes="$(PM2_HOME=/home/hendo420/.pm2 "$pm2" jlist)"
 for name in "${app_names[@]}"; do

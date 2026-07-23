@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import {
   useAccount,
@@ -22,7 +22,11 @@ import {
   getWalletWriteState,
   normalizeWalletError,
   ROBINHOOD_TESTNET_CHAIN_ID,
+  walletErrorCode,
 } from "@/lib/wallet-policy";
+
+export const ROBINHOOD_TESTNET_FAUCET_URL =
+  "https://faucet.testnet.chain.robinhood.com";
 
 export const robinhoodTestnet = defineChain({
   id: ROBINHOOD_TESTNET_CHAIN_ID,
@@ -61,6 +65,7 @@ type RobynWalletClient = WalletClient<
 
 export function useRobynTestnetWallet() {
   const accountState = useAccount();
+  const automaticSwitchAttempt = useRef<string | undefined>(undefined);
   const { data: walletClient } = useWalletClient({
     chainId: ROBINHOOD_TESTNET_CHAIN_ID,
   });
@@ -84,9 +89,60 @@ export function useRobynTestnetWallet() {
     try {
       await switchChainAsync({ chainId: ROBINHOOD_TESTNET_CHAIN_ID });
     } catch (error) {
+      const provider = await accountState.connector?.getProvider();
+      const candidate = provider as
+        | {
+            request?: (request: {
+              method: string;
+              params?: unknown[];
+            }) => Promise<unknown>;
+          }
+        | undefined;
+      const code = walletErrorCode(error);
+      if (code === 4902 && candidate?.request) {
+        await candidate.request({
+          method: "wallet_addEthereumChain",
+          params: [
+            {
+              chainId: `0x${ROBINHOOD_TESTNET_CHAIN_ID.toString(16)}`,
+              chainName: robinhoodTestnet.name,
+              nativeCurrency: robinhoodTestnet.nativeCurrency,
+              rpcUrls: [...robinhoodTestnet.rpcUrls.default.http],
+              blockExplorerUrls: [robinhoodTestnet.blockExplorers.default.url],
+            },
+          ],
+        });
+        await switchChainAsync({ chainId: ROBINHOOD_TESTNET_CHAIN_ID });
+        return;
+      }
       throw new Error(normalizeWalletError(error), { cause: error });
     }
-  }, [switchChainAsync]);
+  }, [accountState.connector, switchChainAsync]);
+
+  useEffect(() => {
+    if (
+      !accountState.isConnected ||
+      !accountState.address ||
+      !accountState.chainId
+    ) {
+      automaticSwitchAttempt.current = undefined;
+      return;
+    }
+    if (accountState.chainId === ROBINHOOD_TESTNET_CHAIN_ID) {
+      automaticSwitchAttempt.current = undefined;
+      return;
+    }
+    const key = `${accountState.connector?.id ?? "wallet"}:${accountState.address}:${accountState.chainId}`;
+    if (automaticSwitchAttempt.current === key) return;
+    automaticSwitchAttempt.current = key;
+    void switchToRobinhoodTestnet().catch(() => undefined);
+  }, [
+    accountState.address,
+    accountState.chainId,
+    accountState.connector?.id,
+    accountState.isConnected,
+    switchToRobinhoodTestnet,
+  ]);
 
   const disconnect = useCallback(async () => {
     await disconnectAsync();

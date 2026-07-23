@@ -1,0 +1,345 @@
+import {
+  bytesToString,
+  getAddress,
+  hexToBytes,
+  isAddress,
+  type Address,
+  type PublicClient,
+} from "viem";
+import { SingleFlightTtlCache } from "./single-flight-cache.js";
+
+export type AssetCategory = "stock" | "etf-commodity" | "crypto" | "custom";
+export type AssetVerification =
+  | "official-robinhood-current-chain"
+  | "robyn-testnet-mock"
+  | "robyn-controlled-testnet-dex"
+  | "robyn-token-list"
+  | "unverified-erc20";
+
+export type AssetRoute = {
+  kind: "none" | "fixed-testnet" | "uniswap-v3";
+  ready: boolean;
+  venue: Address | null;
+  poolFee: number | null;
+  liquidity: string | null;
+  reason: string | null;
+};
+
+export type CatalogAsset = {
+  chainId: number;
+  address: Address;
+  symbol: string;
+  name: string;
+  decimals: number;
+  totalSupply: string;
+  category: AssetCategory;
+  logoUrl: string | null;
+  verification: AssetVerification;
+  mockOnly: boolean;
+  disclosure: string | null;
+  mainnetAddress: Address | null;
+  referencePriceUsd: string | null;
+  referencePriceAt: string | null;
+  route: AssetRoute;
+};
+
+type ManifestAsset = {
+  symbol: string;
+  mockSymbol?: string;
+  name: string;
+  category: AssetCategory;
+  logoUrl?: string | null;
+  mainnetAddress?: Address | null;
+  referencePriceUsd?: string | null;
+  address: Address;
+  chainId: number;
+  decimals: number;
+  verification: AssetVerification;
+  mockOnly: boolean;
+  route?: { kind?: AssetRoute["kind"]; ready?: boolean };
+};
+
+export type AssetCatalogManifest = {
+  schemaVersion: number;
+  snapshotAt: string;
+  disclosure: string;
+  assets: ManifestAsset[];
+};
+
+const stringMetadataAbi = [
+  {
+    type: "function",
+    name: "name",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "string" }],
+  },
+  {
+    type: "function",
+    name: "symbol",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "string" }],
+  },
+  {
+    type: "function",
+    name: "decimals",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint8" }],
+  },
+  {
+    type: "function",
+    name: "totalSupply",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+
+const bytes32MetadataAbi = [
+  {
+    type: "function",
+    name: "name",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "symbol",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+] as const;
+
+const routeRegistryAbi = [
+  {
+    type: "function",
+    name: "routeStatus",
+    stateMutability: "view",
+    inputs: [{ type: "address" }, { type: "address" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "kind", type: "uint8" },
+          { name: "ready", type: "bool" },
+          { name: "venue", type: "address" },
+          { name: "poolFee", type: "uint24" },
+          { name: "liquidity", type: "uint128" },
+          { name: "fixedRateX18", type: "uint256" },
+          { name: "reason", type: "bytes32" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "quoteExactInput",
+    stateMutability: "view",
+    inputs: [{ type: "address" }, { type: "address" }, { type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+
+const zeroAddress = "0x0000000000000000000000000000000000000000" as Address;
+
+function cleanText(value: string, fallback: string) {
+  const normalized = value.replace(/[\u0000-\u001f\u007f]/g, "").trim();
+  return normalized.length > 0 && normalized.length <= 96
+    ? normalized
+    : fallback;
+}
+
+function bytes32Text(value: `0x${string}`, fallback: string) {
+  try {
+    return cleanText(bytesToString(hexToBytes(value), { size: 32 }), fallback);
+  } catch {
+    return fallback;
+  }
+}
+
+function reasonText(value: `0x${string}`) {
+  if (/^0x0+$/.test(value)) return null;
+  return bytes32Text(value, "route-unavailable");
+}
+
+function routeKind(value: number): AssetRoute["kind"] {
+  return value === 1 ? "fixed-testnet" : value === 2 ? "uniswap-v3" : "none";
+}
+
+export class AssetCatalogService {
+  private readonly byAddress: Map<string, ManifestAsset>;
+  private readonly assetCache = new SingleFlightTtlCache<CatalogAsset | null>(
+    20_000,
+    256,
+  );
+
+  constructor(
+    private readonly rpcClient: PublicClient,
+    private readonly chainId: number,
+    private readonly baseAsset: Address,
+    private readonly routeRegistry: Address | undefined,
+    private readonly manifest: AssetCatalogManifest | undefined,
+  ) {
+    this.byAddress = new Map(
+      (manifest?.assets ?? []).map((asset) => [
+        asset.address.toLowerCase(),
+        asset,
+      ]),
+    );
+  }
+
+  async list(query = "", category?: string) {
+    const needle = query.trim().toLowerCase();
+    const assets = await Promise.all(
+      (this.manifest?.assets ?? []).map((asset) => this.resolve(asset.address)),
+    );
+    return assets.filter(
+      (asset): asset is CatalogAsset =>
+        asset !== null &&
+        (!category || category === "all" || asset.category === category) &&
+        (!needle ||
+          asset.symbol.toLowerCase().includes(needle) ||
+          asset.name.toLowerCase().includes(needle) ||
+          asset.address.toLowerCase().includes(needle)),
+    );
+  }
+
+  async resolve(value: string): Promise<CatalogAsset | null> {
+    if (!isAddress(value)) return null;
+    const address = getAddress(value);
+    return this.assetCache.get(address.toLowerCase(), () =>
+      this.resolveUncached(address),
+    );
+  }
+
+  private async resolveUncached(
+    address: Address,
+  ): Promise<CatalogAsset | null> {
+    const code = await this.rpcClient.getCode({ address });
+    if (!code || code === "0x") return null;
+    const known = this.byAddress.get(address.toLowerCase());
+    const [name, symbol, decimals, totalSupply] = await Promise.all([
+      this.readText(address, "name", known?.name ?? "Unnamed token"),
+      this.readText(
+        address,
+        "symbol",
+        known?.mockSymbol ?? known?.symbol ?? "TOKEN",
+      ),
+      this.rpcClient
+        .readContract({
+          address,
+          abi: stringMetadataAbi,
+          functionName: "decimals",
+        })
+        .then(Number)
+        .catch(() => 18),
+      this.rpcClient
+        .readContract({
+          address,
+          abi: stringMetadataAbi,
+          functionName: "totalSupply",
+        })
+        .catch(() => 0n),
+    ]);
+    if (!Number.isInteger(decimals) || decimals < 0 || decimals > 36)
+      return null;
+    const route = await this.readRoute(address);
+    return {
+      chainId: this.chainId,
+      address,
+      symbol: cleanText(symbol, "TOKEN"),
+      name: cleanText(name, "Unnamed token"),
+      decimals,
+      totalSupply: totalSupply.toString(),
+      category: known?.category ?? "custom",
+      logoUrl: known?.logoUrl ?? null,
+      verification: known?.verification ?? "unverified-erc20",
+      mockOnly: known?.mockOnly ?? false,
+      disclosure: known?.mockOnly ? (this.manifest?.disclosure ?? null) : null,
+      mainnetAddress: known?.mainnetAddress ?? null,
+      referencePriceUsd: known?.referencePriceUsd ?? null,
+      referencePriceAt: known ? (this.manifest?.snapshotAt ?? null) : null,
+      route,
+    };
+  }
+
+  async quote(address: Address, amount: bigint) {
+    if (!this.routeRegistry || amount <= 0n) return null;
+    return this.rpcClient.readContract({
+      address: this.routeRegistry,
+      abi: routeRegistryAbi,
+      functionName: "quoteExactInput",
+      args: [this.baseAsset, address, amount],
+    });
+  }
+
+  private async readText(
+    address: Address,
+    key: "name" | "symbol",
+    fallback: string,
+  ) {
+    try {
+      return cleanText(
+        await this.rpcClient.readContract({
+          address,
+          abi: stringMetadataAbi,
+          functionName: key,
+        }),
+        fallback,
+      );
+    } catch {
+      try {
+        const value = await this.rpcClient.readContract({
+          address,
+          abi: bytes32MetadataAbi,
+          functionName: key,
+        });
+        return bytes32Text(value, fallback);
+      } catch {
+        return fallback;
+      }
+    }
+  }
+
+  private async readRoute(outputToken: Address): Promise<AssetRoute> {
+    if (!this.routeRegistry) {
+      return {
+        kind: "none",
+        ready: false,
+        venue: null,
+        poolFee: null,
+        liquidity: null,
+        reason: "route-registry-unavailable",
+      };
+    }
+    try {
+      const status = await this.rpcClient.readContract({
+        address: this.routeRegistry,
+        abi: routeRegistryAbi,
+        functionName: "routeStatus",
+        args: [this.baseAsset, outputToken],
+      });
+      return {
+        kind: routeKind(status.kind),
+        ready: status.ready,
+        venue: status.venue === zeroAddress ? null : status.venue,
+        poolFee: status.poolFee === 0 ? null : status.poolFee,
+        liquidity: status.kind === 2 ? status.liquidity.toString() : null,
+        reason: status.ready ? null : reasonText(status.reason),
+      };
+    } catch {
+      return {
+        kind: "none",
+        ready: false,
+        venue: null,
+        poolFee: null,
+        liquidity: null,
+        reason: "route-read-failed",
+      };
+    }
+  }
+}

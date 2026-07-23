@@ -21,6 +21,10 @@ import {
 import { registerCreatorRoutes } from "./creator-routes.js";
 import { registerDaoRoutes } from "./dao-routes.js";
 import { SingleFlightTtlCache } from "./single-flight-cache.js";
+import {
+  AssetCatalogService,
+  type AssetCatalogManifest,
+} from "./asset-catalog.js";
 
 const app = Fastify({
   logger: { level: process.env.LOG_LEVEL ?? "info" },
@@ -69,6 +73,9 @@ const deployment = JSON.parse(
 ) as {
   deploymentBlock: number;
   contracts: {
+    baseAsset: Address;
+    conversionRouter?: Address;
+    routeRegistry?: Address;
     marketFactory: Address;
     legacyMarketFactories?: Address[];
     daoToken: Address;
@@ -83,7 +90,15 @@ const deployment = JSON.parse(
     tokenListUri?: string | null;
     tokenListStablePath?: string;
   };
+  assetCatalog?: AssetCatalogManifest;
 };
+const assetCatalog = new AssetCatalogService(
+  rpcClient,
+  chainId,
+  deployment.contracts.baseAsset,
+  deployment.contracts.routeRegistry ?? deployment.contracts.conversionRouter,
+  deployment.assetCatalog,
+);
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const erc20ViewAbi = [
   {
@@ -1036,20 +1051,131 @@ app.get<{ Params: { sha256: string } }>(
   },
 );
 
-app.get("/assets", async () => {
-  const rows = await sql.unsafe<{ address: string }[]>(
-    "SELECT DISTINCT jsonb_array_elements_text(assets) address FROM launches WHERE chain_id=$1 ORDER BY address",
-    [chainId],
+const assetCategories = new Set([
+  "all",
+  "stock",
+  "etf-commodity",
+  "crypto",
+  "custom",
+]);
+const assetPageSize = 24;
+
+function assetCursor(address: string) {
+  return Buffer.from(
+    JSON.stringify({ version: 1, address: address.toLowerCase() }),
+  ).toString("base64url");
+}
+
+function decodeAssetCursor(value: string | undefined) {
+  if (!value) return null;
+  if (!/^[A-Za-z0-9_-]{1,160}$/.test(value)) throw new Error("invalid_cursor");
+  try {
+    const decoded = JSON.parse(
+      Buffer.from(value, "base64url").toString("utf8"),
+    ) as { version?: unknown; address?: unknown };
+    if (
+      decoded.version !== 1 ||
+      typeof decoded.address !== "string" ||
+      !/^0x[0-9a-f]{40}$/.test(decoded.address)
+    ) {
+      throw new Error("invalid_cursor");
+    }
+    return decoded.address;
+  } catch {
+    throw new Error("invalid_cursor");
+  }
+}
+
+app.get<{
+  Querystring: { query?: string; category?: string; cursor?: string };
+}>("/assets", async (request, reply) => {
+  if (
+    (request.query.query?.length ?? 0) > 96 ||
+    (request.query.category && !assetCategories.has(request.query.category))
+  ) {
+    return reply.code(400).send({ error: "invalid_asset_query" });
+  }
+  let afterAddress: string | null;
+  try {
+    afterAddress = decodeAssetCursor(request.query.cursor);
+  } catch {
+    return reply.code(400).send({ error: "invalid_cursor" });
+  }
+  let data = await assetCatalog.list(
+    request.query.query,
+    request.query.category,
   );
+  if (!deployment.assetCatalog) {
+    const rows = await sql.unsafe<{ address: string }[]>(
+      "SELECT DISTINCT jsonb_array_elements_text(assets) address FROM launches WHERE chain_id=$1 ORDER BY address",
+      [chainId],
+    );
+    data = (
+      await Promise.all(rows.map((row) => assetCatalog.resolve(row.address)))
+    ).filter((asset): asset is NonNullable<typeof asset> => asset !== null);
+  }
+  const start = afterAddress
+    ? data.findIndex((asset) => asset.address.toLowerCase() === afterAddress) +
+      1
+    : 0;
+  if (afterAddress && start === 0) {
+    return reply.code(400).send({ error: "invalid_cursor" });
+  }
+  const page = data.slice(start, start + assetPageSize);
+  const nextCursor =
+    start + assetPageSize < data.length && page.length
+      ? assetCursor(page.at(-1)!.address)
+      : null;
   return {
-    data: rows.map((row) => ({
-      address: row.address,
-      environment: "robyn-devnet",
-      status: "mock-active",
-    })),
+    data: page,
+    catalog: {
+      schemaVersion: deployment.assetCatalog?.schemaVersion ?? null,
+      snapshotAt: deployment.assetCatalog?.snapshotAt ?? null,
+      disclosure: deployment.assetCatalog?.disclosure ?? null,
+    },
+    nextCursor,
     ...(await freshness()),
   };
 });
+
+app.get<{ Params: { address: string } }>(
+  "/assets/:address",
+  async (request, reply) => {
+    const asset = await assetCatalog.resolve(request.params.address);
+    if (!asset) return reply.code(404).send({ error: "asset_not_found" });
+    return { data: asset, ...(await freshness()) };
+  },
+);
+
+app.get<{
+  Params: { address: string };
+  Querystring: { amount?: string };
+}>("/assets/:address/quote", async (request, reply) => {
+  if (!/^[1-9][0-9]{0,77}$/.test(request.query.amount ?? "")) {
+    return reply.code(400).send({ error: "invalid_amount" });
+  }
+  const asset = await assetCatalog.resolve(request.params.address);
+  if (!asset) return reply.code(404).send({ error: "asset_not_found" });
+  if (!asset.route.ready) {
+    return reply.code(409).send({ error: "route_unavailable", data: asset });
+  }
+  const output = await assetCatalog.quote(
+    asset.address,
+    BigInt(request.query.amount!),
+  );
+  return {
+    data: {
+      inputAmount: request.query.amount,
+      outputAmount: output?.toString(),
+    },
+    ...(await freshness()),
+  };
+});
+
+app.get("/assets/catalog-manifest", async () => ({
+  data: deployment.assetCatalog ?? null,
+  ...(await freshness()),
+}));
 
 app.get("/token-list", async () => {
   const rows = await sql.unsafe<

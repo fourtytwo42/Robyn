@@ -15,6 +15,8 @@ interface IUniswapV3Factory {
 interface IUniswapV3Pool {
     function token0() external view returns (address);
 
+    function liquidity() external view returns (uint128);
+
     function observe(uint32[] calldata secondsAgos)
         external
         view

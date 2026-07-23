@@ -6,6 +6,7 @@ import {
   normalizeWalletError,
   shouldInvalidateWalletSession,
   validateWalletBuildConfig,
+  walletErrorCode,
 } from "./wallet-policy";
 
 describe("wallet policy", () => {
@@ -38,6 +39,13 @@ describe("wallet policy", () => {
     expect(normalizeWalletError({ message: "unsupported chain" })).toMatch(
       /does not currently support/i,
     );
+  });
+
+  it("finds provider error codes through connector wrappers", () => {
+    expect(walletErrorCode({ code: 4902 })).toBe(4902);
+    expect(walletErrorCode({ cause: { cause: { code: "4902" } } })).toBe(4902);
+    expect(walletErrorCode({ cause: { code: 4001 } })).toBe(4001);
+    expect(walletErrorCode(new Error("no code"))).toBeUndefined();
   });
 
   it("requires public testnet build metadata and rejects private RPCs", () => {

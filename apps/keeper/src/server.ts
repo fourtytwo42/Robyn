@@ -247,6 +247,13 @@ const routerAbi = [
     inputs: [{ type: "address" }, { type: "address" }],
     outputs: [{ type: "uint256" }],
   },
+  {
+    type: "function",
+    name: "quoteExactInput",
+    stateMutability: "view",
+    inputs: [{ type: "address" }, { type: "address" }, { type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
 ] as const;
 const uniswapMarketAbi = [
   {
@@ -794,15 +801,25 @@ async function processConversion(
       functionName: "conversionRouter",
     }),
   ]);
-  const rate = await publicClient.readContract({
-    address: router,
-    abi: routerAbi,
-    functionName: "rate",
-    args: [baseAsset, current.leg.asset],
-  });
-  const expected = (current.leg.pendingBase * rate) / 10n ** 18n;
+  let expected: bigint;
+  if (isTestnet) {
+    expected = await publicClient.readContract({
+      address: router,
+      abi: routerAbi,
+      functionName: "quoteExactInput",
+      args: [baseAsset, current.leg.asset, current.leg.pendingBase],
+    });
+  } else {
+    const rate = await publicClient.readContract({
+      address: router,
+      abi: routerAbi,
+      functionName: "rate",
+      args: [baseAsset, current.leg.asset],
+    });
+    expected = (current.leg.pendingBase * rate) / 10n ** 18n;
+  }
   const minimumOutput = (expected * 9_950n) / 10_000n;
-  if (rate === 0n || minimumOutput === 0n) {
+  if (expected === 0n || minimumOutput === 0n) {
     throw new Error("Conversion route is unavailable");
   }
   const deadline = current.timestamp + 300n;
