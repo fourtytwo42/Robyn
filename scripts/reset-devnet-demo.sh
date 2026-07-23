@@ -24,6 +24,13 @@ printf '%s\n' "$backup_result"
 
 node "$pm2_bin" stop all >/dev/null
 cast rpc anvil_reset --rpc-url "$rpc_url" >/dev/null
+operator="$(cast rpc eth_accounts --rpc-url "$rpc_url" | jq -er '.[0]')"
+# The production-shape local liquidity rehearsal intentionally seeds 10,000
+# native units. Refill only the controlled Anvil operator after reset so gas
+# cannot make that deterministic setup underfunded.
+cast rpc anvil_setBalance "$operator" \
+  "$(cast to-hex 1000000000000000000000000)" \
+  --rpc-url "$rpc_url" >/dev/null
 
 psql -d robyn -v ON_ERROR_STOP=1 <<'SQL'
 TRUNCATE TABLE
