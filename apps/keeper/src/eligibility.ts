@@ -28,3 +28,8 @@ export function conversionJobId(
     pendingBase.toString(),
   ].join("-");
 }
+
+export function boundedProtocolInput(pending: bigint, maximum: bigint): bigint {
+  if (maximum <= 0n) throw new Error("Maximum protocol batch must be positive");
+  return pending < maximum ? pending : maximum;
+}

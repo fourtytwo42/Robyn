@@ -86,6 +86,7 @@ fi
 send_transaction "$uniswap_factory" 'createPool(address,address,uint24)' "$base" "$wrapped_native" "$pool_fee"
 native_pool="$(cast call "$uniswap_factory" 'getPool(address,address,uint24)(address)' "$base" "$wrapped_native" "$pool_fee" --rpc-url "$rpc_url")"
 send_transaction "$native_pool" 'initialize(uint160)' "$native_sqrt_price"
+send_transaction "$native_pool" 'increaseObservationCardinalityNext(uint16)' '64'
 native_deadline="$(($(date +%s) + 3600))"
 send_transaction "$position_manager" 'mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))' "($native_token0,$native_token1,$pool_fee,$tick_lower,$tick_upper,$native_amount0,$native_amount1,$native_minimum0,$native_minimum1,$deployer,$native_deadline)"
 

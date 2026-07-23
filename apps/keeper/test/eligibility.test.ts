@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { conversionJobId, isLegExecutable } from "../src/eligibility.js";
+import {
+  boundedProtocolInput,
+  conversionJobId,
+  isLegExecutable,
+} from "../src/eligibility.js";
 
 describe("keeper eligibility", () => {
   const base = {
@@ -26,6 +30,14 @@ describe("keeper eligibility", () => {
   it("builds a stable BullMQ-safe idempotency key", () => {
     expect(conversionJobId("0xABCDEF", 2n, 100n, 500n)).toBe(
       "convert-abcdef-2-100-500",
+    );
+  });
+
+  it("quotes and executes the same bounded protocol batch", () => {
+    expect(boundedProtocolInput(25_500n, 100n)).toBe(100n);
+    expect(boundedProtocolInput(75n, 100n)).toBe(75n);
+    expect(() => boundedProtocolInput(1n, 0n)).toThrow(
+      "Maximum protocol batch must be positive",
     );
   });
 });

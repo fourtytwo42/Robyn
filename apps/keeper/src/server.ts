@@ -12,7 +12,11 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { createDatabase } from "@robyn/db";
-import { conversionJobId, isLegExecutable } from "./eligibility.js";
+import {
+  boundedProtocolInput,
+  conversionJobId,
+  isLegExecutable,
+} from "./eligibility.js";
 
 type Manifest = {
   chainId: number;
@@ -304,6 +308,9 @@ const protocolFeeRouterAbi = [
           { name: "cumulativeBaseFees", type: "uint256" },
           { name: "cumulativeLaunchFeesConverted", type: "uint256" },
           { name: "cumulativeNativeConverted", type: "uint256" },
+          { name: "claimableCreatorNative", type: "uint256" },
+          { name: "cumulativeCreatorNative", type: "uint256" },
+          { name: "claimedCreatorNative", type: "uint256" },
           { name: "registered", type: "bool" },
         ],
       },
@@ -501,7 +508,11 @@ async function enqueueProtocolConversions(launch: {
     account.pendingTreasuryBase;
   if (nativePending >= minimumProtocolBase) {
     try {
-      await safeMinimum(base, wrappedNative, nativePending);
+      await safeMinimum(
+        base,
+        wrappedNative,
+        boundedProtocolInput(nativePending, maximumProtocolBase),
+      );
       const key = `protocol-native-${launch.token.toLowerCase()}-${nativePending}`;
       const payload: ProtocolConversionJob = {
         kind: "protocol-native",
@@ -510,9 +521,13 @@ async function enqueueProtocolConversions(launch: {
         locker: account.locker,
         observedAmount: nativePending.toString(),
       };
-      if (!(await queue.getJob(key))) {
+      const existing = await queue.getJob(key);
+      if (!existing) {
         await audit(key, "queued", 0, payload);
         await queue.add("convert-protocol-native", payload, { jobId: key });
+      } else if (await existing.isFailed()) {
+        await audit(key, "queued", existing.attemptsMade, payload);
+        await existing.retry();
       }
     } catch {
       // A fresh or unsafe TWAP remains queued onchain for the next scan.
@@ -534,9 +549,13 @@ async function enqueueProtocolConversions(launch: {
         locker: account.locker,
         observedAmount: pendingLaunch.toString(),
       };
-      if (!(await queue.getJob(key))) {
+      const existing = await queue.getJob(key);
+      if (!existing) {
         await audit(key, "queued", 0, payload);
         await queue.add("convert-launch-fees", payload, { jobId: key });
+      } else if (await existing.isFailed()) {
+        await audit(key, "queued", existing.attemptsMade, payload);
+        await existing.retry();
       }
     } catch {
       // Unsafe liquidity or TWAP data deliberately leaves fees for retry.
@@ -777,7 +796,7 @@ async function processProtocolConversion(
       transactionHash: ("0x" + "0".repeat(64)) as Hash,
       inputAmount: "0",
     };
-  const input = pending < maximumProtocolBase ? pending : maximumProtocolBase;
+  const input = boundedProtocolInput(pending, maximumProtocolBase);
   const minimum = await safeMinimum(base, wrappedNative, input);
   const simulation = await publicClient.simulateContract({
     address: router,

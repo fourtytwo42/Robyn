@@ -81,7 +81,7 @@ maximum_conversion_price_impact_bps="100"
 maximum_conversion_tick_deviation="100"
 
 # Seed the controlled base/WETH conversion venue at a 1:1 test-only price.
-native_pool_liquidity="100000000000000000000"
+native_pool_liquidity="10000000000000000000000"
 send_transaction "$weth" --value "$native_pool_liquidity" "deposit()"
 send_transaction "$base" "mint(address,uint256)" "$deployer" "$native_pool_liquidity"
 send_transaction "$base" "approve(address,uint256)" "$position_manager" "$native_pool_liquidity"
@@ -101,6 +101,7 @@ send_transaction "$position_manager" \
   "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))" \
   "($native_token0,$native_token1,$pool_fee_pips,$tick_lower,$tick_upper,$native_pool_liquidity,$native_pool_liquidity,99000000000000000000,99000000000000000000,$deployer,$native_deadline)"
 native_pool="$(cast call "$uniswap_factory" "getPool(address,address,uint24)(address)" "$base" "$weth" "$pool_fee_pips" --rpc-url "$rpc_url")"
+send_transaction "$native_pool" "increaseObservationCardinalityNext(uint16)" "64"
 
 # DAO supply is fixed: 80% initial contributor allocation and 20% timelock treasury reserve on devnet.
 timelock="$(deploy_contract ../../node_modules/@openzeppelin/contracts/governance/TimelockController.sol:TimelockController "172800" "[]" "[]" "$deployer")"

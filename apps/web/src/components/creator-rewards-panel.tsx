@@ -78,6 +78,15 @@ export function CreatorRewardsPanel({
     void refresh().catch((error) =>
       setStatus(error instanceof Error ? error.message : "Refresh failed."),
     );
+    const interval = window.setInterval(() => {
+      void refresh().catch(() => undefined);
+    }, 5_000);
+    const onFocus = () => void refresh().catch(() => undefined);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
   }, [refresh]);
 
   if (!isCreator || !data) return null;
@@ -88,7 +97,7 @@ export function CreatorRewardsPanel({
     setStatus("Simulating token-specific creator claim…");
     try {
       const request = await publicClient.simulateContract({
-        account,
+        account: walletClient.account ?? account,
         address: router,
         abi: feeRouterAbi,
         functionName: "claimCreatorFees",

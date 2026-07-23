@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "environment": "robyn-devnet",
   "chainId": 31337,
   "deploymentBlock": 49,
-  "gitCommit": "179113a0973973fc91f34558933e6f272598ff05",
+  "gitCommit": "16231a2f2512e3b97f096a2133bfc614eb41b9bf",
   "deployer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
   "contracts": {
     "baseAsset": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
@@ -76,6 +76,7 @@
       "daoRewardsBps": 2000,
       "treasuryBps": 500
     },
+    "creatorRewardsAccounting": "per-token-v2",
     "governance": {
       "votingDelaySeconds": 86400,
       "votingPeriodSeconds": 259200,

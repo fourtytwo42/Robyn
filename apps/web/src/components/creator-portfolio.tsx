@@ -134,7 +134,7 @@ export function CreatorPortfolio({
     setStatus("Simulating creator claim…");
     try {
       const request = await publicClient.simulateContract({
-        account,
+        account: walletClient.account ?? account,
         address: router,
         abi: feeRouterAbi,
         functionName,

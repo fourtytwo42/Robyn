@@ -5,8 +5,8 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - Current task: implement token-specific creator-native rewards and the unified Portfolio creator dashboard on branch `codex/token-creator-rewards`; public Robinhood Testnet broadcasting remains unauthorized.
-- Current checkpoint: `RobynProtocolFeeRouterV2` credits and claims creator ETH per canonical launch token; schema-v4 deployment/API/indexer integration and creator-only token/Portfolio controls compile; all 54 Foundry tests, 29 API tests, 9 web tests, optimized devnet build, and isolated chain-46630 schema-v4 rehearsal pass.
-- Next step: commit/push this validated subsystem, update the full documentation set, run isolated schema-v4 deployment plus chain-46630 rehearsal/protected build, back up and reset/reseed the controlled devnet, then complete in-app-browser acceptance on LAN and public HTTPS.
+- Current checkpoint: token-specific creator rewards are complete on controlled schema-v4 devnet. Token-page claims, Portfolio individual/Claim All/advanced controls, wallet-gated visibility, LAN/public HTTPS routing, responsive acceptance, full validation and isolated chain-46630 rehearsal pass. No public testnet broadcast occurred.
+- Next step: commit and push the final browser/keeper/deployment hardening checkpoint, then review/merge the branch. Before any public testnet transaction, separately authorize broadcast and reverify funding, DEX manifest, exact commit and protected build.
 - Current task: the approved RDAO governance and immutable 50/25/20/5 protocol-fee release is complete on branch `codex/dao-governance-fees`; public testnet broadcasting remains unauthorized.
 - Current checkpoint: fixed-supply RDAO/governance/fee contracts, schema-v3 deployment/verifier, indexer/API/keeper, responsive DAO/proposal UI, controlled reset/reseed, protected testnet rehearsal, LAN/browser acceptance, and public HTTPS acceptance are complete. The persistent VM serves the optimized build with all eight PM2 processes online and saved.
 - Deployment checkpoint: schema-v3 local deployment now creates and seeds WETH/base conversion liquidity, deploys RDAO/Governor/Timelock/router/converter, binds v3 launch contracts, seals reward exclusions, assigns/renounces timelock roles, creates genesis atomically, and passes the expanded verifier on an isolated chain-31337 rehearsal.
@@ -22,6 +22,15 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-23 - Token-specific creator rewards final acceptance
+
+- The controlled devnet was backed up to `/var/backups/robyn/robyn-state-20260723T040455Z.tar.zst.age`, reset, redeployed with schema v4, reseeded, rebuilt and restarted under saved PM2 state. Browser acceptance then created launch #6, `Creator Proof (CRTR)`, from wallet `0x9363...FEeb1`; the private session key remains outside the repository and memory.
+- Creator fee accounting was accepted end to end. Browser trades accrued CRTR-only pending creator base, the keeper converted bounded batches, the token page claimed only CRTR ETH, and Portfolio `Claim all` cleared the subsequently accrued token balance in one transaction. Lifetime earned/claimed values remained attributed to CRTR; DAO Rewards exposed no creator claim controls.
+- Browser acceptance proved the creator panel absent while disconnected/noncreator, present for the immutable creator, public HTTPS anonymous routing at `https://called-junior-documents-winston.trycloudflare.com`, no horizontal overflow at 390x844 or 768x1024, and no browser warnings/errors.
+- Browser testing found and fixed local-account signing in both creator claim components: simulation now retains `walletClient.account`, allowing local devnet clients to sign raw transactions while injected testnet wallets continue using their provider.
+- Keeper testing found and fixed three retry/safety defects: decode the schema-v4 fee account tuple, preflight and execute only the bounded native batch, and retry a previously failed protocol job only after a fresh safe preflight succeeds. The native conversion pool now provisions 64 observations; devnet starts with 10,000 base/WETH liquidity so repeated demo conversions do not immediately trip TWAP deviation. Production safety thresholds were not weakened.
+- Final verification: Prettier, lint, monorepo strict typecheck, all application tests, Anvil smoke, 54 Foundry tests and four 128-run invariants, optimized devnet build, schema-v4 devnet verifier, and isolated chain-46630 rehearsal all pass. The rehearsal covered atomic launch, bonding, graduation, post-graduation trade, basket conversion/claim, bounded native conversion, token-attributed creator claim and RDAO claim without a public broadcast.
 
 ### 2026-07-22 - Token-specific creator rewards implementation checkpoint
 
@@ -748,9 +757,9 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Before Robinhood Testnet, independently review the implemented production graduation adapter and immutable LP locker, add a coordinator that makes launch creation and market creation atomic, and bind independently verified canonical chain-46630 DEX addresses and code hashes. The controlled chain-31337 deployment is canonical local Uniswap infrastructure, not evidence of a Robinhood Testnet venue.
+- Before Robinhood Testnet, independently review the implemented production graduation adapter, immutable LP locker, atomic coordinator and fee router; recheck for an official chain-46630 Uniswap deployment. If none exists, deploy and freeze the separately verified Robyn-controlled test-only DEX manifest before protocol broadcast.
 - Complete and independently verify the now-approved creator metadata subsystem: SIWE-style sessions, sanitized content-addressed images, immutable canonical creator binding, editable profiles, reporting, quarantine/restore and backup coverage. Until that checkpoint lands, the live release still uses curated demo mappings plus a generated fallback.
-- Run a real uninterrupted 24-hour soak against the final exact immutable release candidate; short harness tests and forced-build contention do not satisfy this gate.
+- The user explicitly waived the 24-hour soak for this release. Do not represent the shorter validation runs as a completed soak; require a new explicit decision before treating soak evidence as a future release gate.
 - Configure and test a human alert receiver before unattended public-testnet or real-value operation; local Prometheus/Grafana alert state alone is insufficient.
 - Obtain independent protocol/security review before real-value operation. Stateful invariants and malicious callbacks are now implemented, but the internal engineering review is not independent.
 - Ask Vladdy whether the team will provide a repository/license and whether a native multi-asset mode is planned; current deployed contracts do not expose a safe weighted-basket seam.
