@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-import { FeeBasketVault } from "../FeeBasketVault.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {FeeBasketVault} from "../FeeBasketVault.sol";
+import {RobynProtocolFeeRouter} from "../dao/RobynProtocolFeeRouter.sol";
 import {
     INonfungiblePositionManager,
     IQuoterV2,
@@ -13,7 +14,7 @@ import {
     IUniswapV3Factory,
     IUniswapV3Pool
 } from "./UniswapV3Interfaces.sol";
-import { RewardFeePositionLocker } from "./RewardFeePositionLocker.sol";
+import {RewardFeePositionLocker} from "./RewardFeePositionLocker.sol";
 
 /// @notice Market-bound Uniswap v3 graduation and post-graduation execution adapter.
 contract UniswapV3GraduationAdapter is ReentrancyGuard {
@@ -89,12 +90,7 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
         uint256 tokenResidualLocked,
         uint256 baseResidualLocked
     );
-    event PoolTrade(
-        address indexed recipient,
-        address indexed inputToken,
-        uint256 inputAmount,
-        uint256 outputAmount
-    );
+    event PoolTrade(address indexed recipient, address indexed inputToken, uint256 inputAmount, uint256 outputAmount);
 
     constructor(
         IERC20 baseAsset_,
@@ -105,20 +101,15 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
     ) {
         int24 tickSpacing = config_.factory.feeAmountTickSpacing(config_.poolFee);
         if (
-            address(baseAsset_) == address(0) || address(launchToken_) == address(0)
-                || address(feeVault_) == address(0) || marketBindingAuthority_ == address(0)
-                || address(config_.factory) == address(0)
-                || address(config_.positionManager) == address(0)
-                || address(config_.swapRouter) == address(0)
-                || address(config_.quoter) == address(0)
-                || address(config_.factory).code.length == 0
-                || address(config_.positionManager).code.length == 0
-                || address(config_.swapRouter).code.length == 0
-                || address(config_.quoter).code.length == 0 || config_.poolFee == 0
-                || tickSpacing == 0 || config_.tickLower >= config_.tickUpper
-                || config_.tickLower % tickSpacing != 0 || config_.tickUpper % tickSpacing != 0
-                || config_.initialSqrtPriceX96 == 0 || config_.minimumUseBps == 0
-                || config_.minimumUseBps > BPS || config_.maximumPriceDeviationBps > 1_000
+            address(baseAsset_) == address(0) || address(launchToken_) == address(0) || address(feeVault_) == address(0)
+                || marketBindingAuthority_ == address(0) || address(config_.factory) == address(0)
+                || address(config_.positionManager) == address(0) || address(config_.swapRouter) == address(0)
+                || address(config_.quoter) == address(0) || address(config_.factory).code.length == 0
+                || address(config_.positionManager).code.length == 0 || address(config_.swapRouter).code.length == 0
+                || address(config_.quoter).code.length == 0 || config_.poolFee == 0 || tickSpacing == 0
+                || config_.tickLower >= config_.tickUpper || config_.tickLower % tickSpacing != 0
+                || config_.tickUpper % tickSpacing != 0 || config_.initialSqrtPriceX96 == 0
+                || config_.minimumUseBps == 0 || config_.minimumUseBps > BPS || config_.maximumPriceDeviationBps > 1_000
                 || address(feeVault_.baseAsset()) != address(baseAsset_)
                 || address(feeVault_.launchToken()) != address(launchToken_)
         ) revert InvalidConfiguration();
@@ -137,18 +128,11 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
         minimumUseBps = config_.minimumUseBps;
         maximumPriceDeviationBps = config_.maximumPriceDeviationBps;
         locker = new RewardFeePositionLocker(
-            config_.positionManager,
-            baseAsset_,
-            launchToken_,
-            feeVault_,
-            address(this),
-            config_.poolFee
+            config_.positionManager, baseAsset_, launchToken_, feeVault_, address(this), config_.poolFee
         );
-        address existingPool =
-            config_.factory.getPool(address(baseAsset_), address(launchToken_), config_.poolFee);
+        address existingPool = config_.factory.getPool(address(baseAsset_), address(launchToken_), config_.poolFee);
         if (existingPool != address(0)) revert PoolAlreadyExists(existingPool);
-        pool =
-            config_.factory.createPool(address(baseAsset_), address(launchToken_), config_.poolFee);
+        pool = config_.factory.createPool(address(baseAsset_), address(launchToken_), config_.poolFee);
         if (pool == address(0)) revert PoolMismatch();
     }
 
@@ -159,6 +143,11 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
             revert InvalidConfiguration();
         }
         bondingMarket = bondingMarket_;
+    }
+
+    function bindFeeRouter(RobynProtocolFeeRouter feeRouter_) external {
+        if (msg.sender != marketBindingAuthority) revert Unauthorized();
+        locker.bindFeeRouter(feeRouter_);
     }
 
     function initialize(uint256 tokenAmount, uint256 baseAmount, uint256 finalCurvePriceX18)
@@ -241,10 +230,7 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
         emit PoolTrade(recipient, address(baseAsset), baseInput, tokenOutput);
     }
 
-    function quoteBuy(uint256 baseInput)
-        external
-        returns (uint256 nominalFeeAmount, uint256 tokenOutput)
-    {
+    function quoteBuy(uint256 baseInput) external returns (uint256 nominalFeeAmount, uint256 tokenOutput) {
         if (!initialized) revert NotInitialized();
         if (baseInput == 0) revert InvalidAmount();
         (tokenOutput,,,) = quoter.quoteExactInputSingle(
@@ -259,10 +245,7 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
         nominalFeeAmount = Math.mulDiv(baseInput, poolFee, 1_000_000);
     }
 
-    function quoteSell(uint256 tokenInput)
-        external
-        returns (uint256 nominalFeeAmount, uint256 baseOutput)
-    {
+    function quoteSell(uint256 tokenInput) external returns (uint256 nominalFeeAmount, uint256 baseOutput) {
         if (!initialized) revert NotInitialized();
         if (tokenInput == 0) revert InvalidAmount();
         (baseOutput,,,) = quoter.quoteExactInputSingle(
@@ -349,15 +332,10 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
         ) revert BalanceDeltaMismatch();
     }
 
-    function _mintLiquidity(uint256 tokenAmount, uint256 baseAmount)
-        private
-        returns (MintOutcome memory outcome)
-    {
-        (address token0, address token1, uint256 amount0, uint256 amount1) =
-            _ordered(tokenAmount, baseAmount);
-        outcome.graduatedPool = positionManager.createAndInitializePoolIfNecessary(
-            token0, token1, poolFee, initialSqrtPriceX96
-        );
+    function _mintLiquidity(uint256 tokenAmount, uint256 baseAmount) private returns (MintOutcome memory outcome) {
+        (address token0, address token1, uint256 amount0, uint256 amount1) = _ordered(tokenAmount, baseAmount);
+        outcome.graduatedPool =
+            positionManager.createAndInitializePoolIfNecessary(token0, token1, poolFee, initialSqrtPriceX96);
         if (
             outcome.graduatedPool == address(0) || outcome.graduatedPool != pool
                 || factory.getPool(token0, token1, poolFee) != outcome.graduatedPool
@@ -384,7 +362,6 @@ contract UniswapV3GraduationAdapter is ReentrancyGuard {
         locker.bindPosition(outcome.tokenId);
         launchToken.forceApprove(address(positionManager), 0);
         baseAsset.forceApprove(address(positionManager), 0);
-        (outcome.tokenUsed, outcome.baseUsed) =
-            token0 == address(launchToken) ? (used0, used1) : (used1, used0);
+        (outcome.tokenUsed, outcome.baseUsed) = token0 == address(launchToken) ? (used0, used1) : (used1, used0);
     }
 }

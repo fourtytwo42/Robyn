@@ -1,19 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-import { FeeBasketVault } from "../FeeBasketVault.sol";
-import { RobynLaunchToken } from "../RobynLaunchToken.sol";
-import {
-    INonfungiblePositionManager,
-    IQuoterV2,
-    ISwapRouter,
-    IUniswapV3Factory
-} from "./UniswapV3Interfaces.sol";
-import { UniswapV3GraduationAdapter } from "./UniswapV3GraduationAdapter.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {FeeBasketVault} from "../FeeBasketVault.sol";
+import {RobynLaunchToken} from "../RobynLaunchToken.sol";
+import {RobynProtocolFeeRouter} from "../dao/RobynProtocolFeeRouter.sol";
+import {INonfungiblePositionManager, IQuoterV2, ISwapRouter, IUniswapV3Factory} from "./UniswapV3Interfaces.sol";
+import {UniswapV3GraduationAdapter} from "./UniswapV3GraduationAdapter.sol";
 
 /// @notice Robyn launch curve that atomically graduates into locked canonical Uniswap v3 liquidity.
 contract UniswapV3BondingCurveMarket is ReentrancyGuard {
@@ -38,6 +34,7 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
     error NotSeeded();
     error Slippage(uint256 minimum, uint256 actual);
     error CurveInventoryExceeded();
+    error FeeRouterAlreadyBound();
 
     IERC20 public immutable baseAsset;
     RobynLaunchToken public immutable launchToken;
@@ -50,6 +47,7 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
     uint256 public immutable graduationThresholdBase;
     uint16 public immutable feeBps;
     UniswapV3GraduationAdapter public immutable graduationAdapter;
+    RobynProtocolFeeRouter public feeRouter;
 
     uint256 public virtualTokenReserve;
     uint256 public virtualBaseReserve;
@@ -61,10 +59,7 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
     event Bought(address indexed buyer, uint256 baseInput, uint256 feeAmount, uint256 tokenOutput);
     event Sold(address indexed seller, uint256 tokenInput, uint256 feeAmount, uint256 baseOutput);
     event CurveState(
-        uint256 virtualTokenReserve,
-        uint256 virtualBaseReserve,
-        uint256 realCurveTokenReserve,
-        uint256 progressBps
+        uint256 virtualTokenReserve, uint256 virtualBaseReserve, uint256 realCurveTokenReserve, uint256 progressBps
     );
     event Graduated(
         address indexed pool,
@@ -74,6 +69,7 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
         uint256 baseLiquidity,
         uint256 finalCurvePrice
     );
+    event FeeRouterBound(address indexed feeRouter);
 
     constructor(
         IERC20 baseAsset_,
@@ -84,16 +80,15 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
         UniswapV3GraduationAdapter graduationAdapter_
     ) {
         if (
-            address(baseAsset_) == address(0) || address(launchToken_) == address(0)
-                || address(feeVault_) == address(0) || marketOwner_ == address(0)
-                || curve_.curveTokenAllocation == 0 || curve_.graduationTokenAllocation == 0
+            address(baseAsset_) == address(0) || address(launchToken_) == address(0) || address(feeVault_) == address(0)
+                || marketOwner_ == address(0) || curve_.curveTokenAllocation == 0
+                || curve_.graduationTokenAllocation == 0
                 || curve_.initialVirtualTokenReserve <= curve_.curveTokenAllocation
                 || curve_.initialVirtualBaseReserve == 0 || curve_.graduationThresholdBase == 0
                 || curve_.curveFeeBps == 0 || curve_.curveFeeBps > 1_000
                 || address(feeVault_.baseAsset()) != address(baseAsset_)
                 || address(feeVault_.launchToken()) != address(launchToken_)
-                || address(graduationAdapter_) == address(0)
-                || address(graduationAdapter_).code.length == 0
+                || address(graduationAdapter_) == address(0) || address(graduationAdapter_).code.length == 0
                 || address(graduationAdapter_.baseAsset()) != address(baseAsset_)
                 || address(graduationAdapter_.launchToken()) != address(launchToken_)
                 || address(graduationAdapter_.feeVault()) != address(feeVault_)
@@ -109,6 +104,18 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
         graduationThresholdBase = curve_.graduationThresholdBase;
         feeBps = curve_.curveFeeBps;
         graduationAdapter = graduationAdapter_;
+    }
+
+    function bindFeeRouter(RobynProtocolFeeRouter feeRouter_) external {
+        if (msg.sender != marketOwner && msg.sender != graduationAdapter.marketBindingAuthority()) {
+            revert Unauthorized();
+        }
+        if (address(feeRouter) != address(0)) revert FeeRouterAlreadyBound();
+        if (seeded || address(feeRouter_) == address(0) || address(feeRouter_).code.length == 0) {
+            revert InvalidConfiguration();
+        }
+        feeRouter = feeRouter_;
+        emit FeeRouterBound(address(feeRouter_));
     }
 
     function seed(uint256 tokenAmount, uint256 baseAmount) external nonReentrant {
@@ -141,9 +148,7 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
 
     function baseRaised() public view returns (uint256) {
         if (graduated) return graduationThresholdBase;
-        return virtualBaseReserve > initialVirtualBaseReserve
-            ? virtualBaseReserve - initialVirtualBaseReserve
-            : 0;
+        return virtualBaseReserve > initialVirtualBaseReserve ? virtualBaseReserve - initialVirtualBaseReserve : 0;
     }
 
     function graduationProgressBps() public view returns (uint256) {
@@ -158,8 +163,7 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
         if (baseInput == 0) revert InvalidAmount();
         feeAmount = (baseInput * feeBps) / BPS;
         uint256 netInput = baseInput - feeAmount;
-        uint256 newTokenReserve =
-            Math.ceilDiv(virtualBaseReserve * virtualTokenReserve, virtualBaseReserve + netInput);
+        uint256 newTokenReserve = Math.ceilDiv(virtualBaseReserve * virtualTokenReserve, virtualBaseReserve + netInput);
         tokenOutput = virtualTokenReserve - newTokenReserve;
         if (tokenOutput > realCurveTokenReserve) tokenOutput = realCurveTokenReserve;
     }
@@ -170,19 +174,14 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
         if (tokenInput == 0 || realCurveTokenReserve + tokenInput > curveTokenAllocation) {
             revert CurveInventoryExceeded();
         }
-        uint256 newBaseReserve = Math.ceilDiv(
-            virtualBaseReserve * virtualTokenReserve, virtualTokenReserve + tokenInput
-        );
+        uint256 newBaseReserve =
+            Math.ceilDiv(virtualBaseReserve * virtualTokenReserve, virtualTokenReserve + tokenInput);
         uint256 grossOutput = virtualBaseReserve - newBaseReserve;
         feeAmount = (grossOutput * feeBps) / BPS;
         baseOutput = grossOutput - feeAmount;
     }
 
-    function buy(uint256 baseInput, uint256 minimumTokenOutput)
-        external
-        nonReentrant
-        returns (uint256 tokenOutput)
-    {
+    function buy(uint256 baseInput, uint256 minimumTokenOutput) external nonReentrant returns (uint256 tokenOutput) {
         if (!seeded) revert NotSeeded();
         if (graduated) return _buyGraduated(baseInput, minimumTokenOutput);
         if (baseInput == 0) revert InvalidAmount();
@@ -214,17 +213,11 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
         IERC20(address(launchToken)).safeTransfer(msg.sender, tokenOutput);
         if (usedInput < baseInput) baseAsset.safeTransfer(msg.sender, baseInput - usedInput);
         emit Bought(msg.sender, usedInput, feeAmount, tokenOutput);
-        emit CurveState(
-            virtualTokenReserve, virtualBaseReserve, realCurveTokenReserve, graduationProgressBps()
-        );
+        emit CurveState(virtualTokenReserve, virtualBaseReserve, realCurveTokenReserve, graduationProgressBps());
         if (realCurveTokenReserve == 0) _graduate();
     }
 
-    function sell(uint256 tokenInput, uint256 minimumBaseOutput)
-        external
-        nonReentrant
-        returns (uint256 baseOutput)
-    {
+    function sell(uint256 tokenInput, uint256 minimumBaseOutput) external nonReentrant returns (uint256 baseOutput) {
         if (!seeded) revert NotSeeded();
         if (graduated) return _sellGraduated(tokenInput, minimumBaseOutput);
         (uint256 feeAmount, uint256 quotedOutput) = quoteSell(tokenInput);
@@ -239,9 +232,7 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
         _recordFee(feeAmount);
         baseAsset.safeTransfer(msg.sender, baseOutput);
         emit Sold(msg.sender, tokenInput, feeAmount, baseOutput);
-        emit CurveState(
-            virtualTokenReserve, virtualBaseReserve, realCurveTokenReserve, graduationProgressBps()
-        );
+        emit CurveState(virtualTokenReserve, virtualBaseReserve, realCurveTokenReserve, graduationProgressBps());
     }
 
     function _graduate() private {
@@ -251,8 +242,7 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
         IERC20(address(launchToken)).forceApprove(address(graduationAdapter), tokenLiquidity);
         baseAsset.forceApprove(address(graduationAdapter), baseLiquidity);
         graduated = true;
-        (address pool, uint256 tokenId) =
-            graduationAdapter.initialize(tokenLiquidity, baseLiquidity, finalPrice);
+        (address pool, uint256 tokenId) = graduationAdapter.initialize(tokenLiquidity, baseLiquidity, finalPrice);
         IERC20(address(launchToken)).forceApprove(address(graduationAdapter), 0);
         baseAsset.forceApprove(address(graduationAdapter), 0);
         emit Graduated(
@@ -265,10 +255,7 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
         );
     }
 
-    function _buyGraduated(uint256 baseInput, uint256 minimumTokenOutput)
-        private
-        returns (uint256 tokenOutput)
-    {
+    function _buyGraduated(uint256 baseInput, uint256 minimumTokenOutput) private returns (uint256 tokenOutput) {
         baseAsset.safeTransferFrom(msg.sender, address(this), baseInput);
         baseAsset.forceApprove(address(graduationAdapter), baseInput);
         (uint256 nominalFee,) = graduationAdapter.quoteBuy(baseInput);
@@ -277,10 +264,7 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
         emit Bought(msg.sender, baseInput, nominalFee, tokenOutput);
     }
 
-    function _sellGraduated(uint256 tokenInput, uint256 minimumBaseOutput)
-        private
-        returns (uint256 baseOutput)
-    {
+    function _sellGraduated(uint256 tokenInput, uint256 minimumBaseOutput) private returns (uint256 baseOutput) {
         IERC20(address(launchToken)).safeTransferFrom(msg.sender, address(this), tokenInput);
         IERC20(address(launchToken)).forceApprove(address(graduationAdapter), tokenInput);
         (uint256 nominalFee,) = graduationAdapter.quoteSell(tokenInput);
@@ -291,6 +275,12 @@ contract UniswapV3BondingCurveMarket is ReentrancyGuard {
 
     function _recordFee(uint256 feeAmount) private {
         if (feeAmount == 0) revert InvalidAmount();
+        if (address(feeRouter) != address(0)) {
+            baseAsset.forceApprove(address(feeRouter), feeAmount);
+            feeRouter.routeBaseFees(IERC20(address(launchToken)), feeAmount);
+            baseAsset.forceApprove(address(feeRouter), 0);
+            return;
+        }
         baseAsset.forceApprove(address(feeVault), feeAmount);
         feeVault.recordFees(feeAmount);
         baseAsset.forceApprove(address(feeVault), 0);

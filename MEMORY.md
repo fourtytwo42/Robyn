@@ -4,6 +4,10 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Current task: implementing the approved RDAO governance and immutable 50/25/20/5 protocol-fee release on branch `codex/dao-governance-fees`; public testnet broadcasting remains unauthorized.
+- Current checkpoint: fixed-supply `RobynDaoToken`, timestamp-based `RobynGovernor`, immutable fee router, TWAP/price-impact guarded native converter, fee-aware market/locker bindings, and fresh v3 market factory/coordinator compile. New fee and governance lifecycle tests pass; deployment/app integration remains in progress.
+- Economic invariant: every collectible fee allocates 50% to the launch basket, 25% to creator native claims, 20% to RDAO-holder native claims, and 5% to the timelock treasury. Existing launch splits and baskets are immutable.
+- DAO decisions: RDAO is fully transferable and fixed at 1B; token balance controls instant native rewards, delegated checkpoints control votes; 1-day delay, 3-day vote, 2-day timelock, 10% quorum, 1% proposal threshold; guardian may pause conversion and cancel queued operations only.
 - Active Codex goal: completed 2026-07-22 — securely persist and fund a dedicated Robinhood Chain Testnet deployer wallet and prove no-broadcast deployment readiness without exposing secrets.
 - Goal completion standard: the encrypted operational wallet and recovery bundle survive isolated restore, owner-only permissions pass, the official chain-46630 balance is sufficient for deployment plus testing, and the workflow is documented and pushed without committing key material.
 - Current task: atomic-launch and Robinhood Testnet Uniswap implementation is complete on feature branch `codex/uniswap-auto-graduation`; no public-testnet broadcast is authorized.
@@ -14,6 +18,14 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-22 - DAO and fee-routing contract checkpoint
+
+- Added `RobynDaoToken`, `RobynGovernor`, `RobynProtocolFeeRouter`, `INativeFeeConverter`, and `UniswapV3NativeFeeConverter` plus fresh `UniswapV3MarketFactoryV3` and `RobynDaoLaunchCoordinator` integration surfaces.
+- Curve fees route the basket half immediately while native obligations queue asynchronously. The LP NFT and principal remain locked; harvested launch-token fees may be sold only through guarded conversion before using the same split.
+- Native conversion requires current-vs-TWAP tick agreement, a quoter-derived minimum with bounded price impact, a caller minimum, and a deadline. Guardian pause cannot unpause or withdraw assets.
+- Verification: the full pre-existing Foundry suite remains green. New tests prove 50/25/20/5 conservation, treasury reward exclusion, transfer-aware claims, creator claims, launch-token fee conversion, fixed supply, and the complete propose/vote/queue/timelock-execute lifecycle.
+- Follow-up: integrate deployment scripts/manifests, add v3 atomic fixture coverage, index DAO/fee events, build the DAO UI, reset/reseed local chain, and run browser acceptance.
 
 ### 2026-07-22 - Atomic app, indexer, and chain-46630 rehearsal
 

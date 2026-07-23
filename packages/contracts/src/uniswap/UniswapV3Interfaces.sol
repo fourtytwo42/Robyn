@@ -4,15 +4,17 @@ pragma solidity 0.8.30;
 interface IUniswapV3Factory {
     function createPool(address tokenA, address tokenB, uint24 fee) external returns (address pool);
 
-    function getPool(address tokenA, address tokenB, uint24 fee)
-        external
-        view
-        returns (address pool);
+    function getPool(address tokenA, address tokenB, uint24 fee) external view returns (address pool);
 
     function feeAmountTickSpacing(uint24 fee) external view returns (int24 tickSpacing);
 }
 
 interface IUniswapV3Pool {
+    function observe(uint32[] calldata secondsAgos)
+        external
+        view
+        returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s);
+
     function slot0()
         external
         view
@@ -49,22 +51,17 @@ interface INonfungiblePositionManager {
         uint128 amount1Max;
     }
 
-    function createAndInitializePoolIfNecessary(
-        address token0,
-        address token1,
-        uint24 fee,
-        uint160 sqrtPriceX96
-    ) external payable returns (address pool);
+    function createAndInitializePoolIfNecessary(address token0, address token1, uint24 fee, uint160 sqrtPriceX96)
+        external
+        payable
+        returns (address pool);
 
     function mint(MintParams calldata params)
         external
         payable
         returns (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
 
-    function collect(CollectParams calldata params)
-        external
-        payable
-        returns (uint256 amount0, uint256 amount1);
+    function collect(CollectParams calldata params) external payable returns (uint256 amount0, uint256 amount1);
 
     function ownerOf(uint256 tokenId) external view returns (address owner);
 
@@ -98,10 +95,7 @@ interface ISwapRouter {
         uint160 sqrtPriceLimitX96;
     }
 
-    function exactInputSingle(ExactInputSingleParams calldata params)
-        external
-        payable
-        returns (uint256 amountOut);
+    function exactInputSingle(ExactInputSingleParams calldata params) external payable returns (uint256 amountOut);
 }
 
 interface IQuoterV2 {
@@ -115,10 +109,5 @@ interface IQuoterV2 {
 
     function quoteExactInputSingle(QuoteExactInputSingleParams calldata params)
         external
-        returns (
-            uint256 amountOut,
-            uint160 sqrtPriceX96After,
-            uint32 initializedTicksCrossed,
-            uint256 gasEstimate
-        );
+        returns (uint256 amountOut, uint160 sqrtPriceX96After, uint32 initializedTicksCrossed, uint256 gasEstimate);
 }

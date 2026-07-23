@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import { FeeBasketVault } from "../FeeBasketVault.sol";
-import { INonfungiblePositionManager } from "./UniswapV3Interfaces.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {FeeBasketVault} from "../FeeBasketVault.sol";
+import {RobynProtocolFeeRouter} from "../dao/RobynProtocolFeeRouter.sol";
+import {INonfungiblePositionManager} from "./UniswapV3Interfaces.sol";
 
 /// @notice Permanently locks one Uniswap v3 position while permissionlessly harvesting fees.
 /// @dev This contract intentionally exposes no NFT approval/transfer or liquidity-decrease path.
@@ -21,6 +22,8 @@ contract RewardFeePositionLocker is IERC721Receiver, ReentrancyGuard {
     error PositionAlreadyBound();
     error PositionNotBound();
     error EmptyHarvest();
+    error FeeRouterAlreadyBound();
+    error InvalidAmount();
 
     INonfungiblePositionManager public immutable positionManager;
     IERC20 public immutable baseAsset;
@@ -32,7 +35,9 @@ contract RewardFeePositionLocker is IERC721Receiver, ReentrancyGuard {
     uint256 public positionTokenId;
     uint256 public cumulativeBaseFees;
     uint256 public cumulativeLaunchTokenFeesLocked;
+    uint256 public pendingLaunchTokenFees;
     bool public positionBound;
+    RobynProtocolFeeRouter public feeRouter;
 
     event PositionBound(
         uint256 indexed tokenId,
@@ -49,6 +54,8 @@ contract RewardFeePositionLocker is IERC721Receiver, ReentrancyGuard {
         uint256 cumulativeBaseFees,
         uint256 cumulativeLaunchTokenFeesLocked
     );
+    event FeeRouterBound(address indexed feeRouter);
+    event LaunchFeesConverted(address indexed caller, uint256 launchAmount, uint256 baseOutput);
 
     constructor(
         INonfungiblePositionManager positionManager_,
@@ -73,10 +80,17 @@ contract RewardFeePositionLocker is IERC721Receiver, ReentrancyGuard {
         poolFee = poolFee_;
     }
 
-    function onERC721Received(address operator, address, uint256 tokenId, bytes calldata)
-        external
-        returns (bytes4)
-    {
+    function bindFeeRouter(RobynProtocolFeeRouter feeRouter_) external {
+        if (msg.sender != graduationAdapter) revert Unauthorized();
+        if (address(feeRouter) != address(0)) revert FeeRouterAlreadyBound();
+        if (positionBound || address(feeRouter_) == address(0) || address(feeRouter_).code.length == 0) {
+            revert InvalidConfiguration();
+        }
+        feeRouter = feeRouter_;
+        emit FeeRouterBound(address(feeRouter_));
+    }
+
+    function onERC721Received(address operator, address, uint256 tokenId, bytes calldata) external returns (bytes4) {
         if (msg.sender != address(positionManager) || operator != graduationAdapter) {
             revert Unauthorized();
         }
@@ -126,13 +140,36 @@ contract RewardFeePositionLocker is IERC721Receiver, ReentrancyGuard {
 
         if (baseFees != 0) {
             cumulativeBaseFees += baseFees;
-            baseAsset.forceApprove(address(feeVault), baseFees);
-            feeVault.recordFees(baseFees);
-            baseAsset.forceApprove(address(feeVault), 0);
+            if (address(feeRouter) == address(0)) {
+                baseAsset.forceApprove(address(feeVault), baseFees);
+                feeVault.recordFees(baseFees);
+                baseAsset.forceApprove(address(feeVault), 0);
+            } else {
+                baseAsset.forceApprove(address(feeRouter), baseFees);
+                feeRouter.routeBaseFees(launchToken, baseFees);
+                baseAsset.forceApprove(address(feeRouter), 0);
+            }
         }
-        if (launchFees != 0) cumulativeLaunchTokenFeesLocked += launchFees;
-        emit FeesHarvested(
-            msg.sender, baseFees, launchFees, cumulativeBaseFees, cumulativeLaunchTokenFeesLocked
-        );
+        if (launchFees != 0) {
+            cumulativeLaunchTokenFeesLocked += launchFees;
+            pendingLaunchTokenFees += launchFees;
+        }
+        emit FeesHarvested(msg.sender, baseFees, launchFees, cumulativeBaseFees, cumulativeLaunchTokenFeesLocked);
+    }
+
+    function convertLaunchFees(uint256 amount, uint256 minimumBaseOut, uint256 deadline)
+        external
+        nonReentrant
+        returns (uint256 baseOut)
+    {
+        if (address(feeRouter) == address(0)) revert InvalidConfiguration();
+        if (amount == 0 || amount > pendingLaunchTokenFees || minimumBaseOut == 0) {
+            revert InvalidAmount();
+        }
+        pendingLaunchTokenFees -= amount;
+        launchToken.forceApprove(address(feeRouter), amount);
+        baseOut = feeRouter.convertAndRouteLaunchFees(launchToken, amount, minimumBaseOut, deadline);
+        launchToken.forceApprove(address(feeRouter), 0);
+        emit LaunchFeesConverted(msg.sender, amount, baseOut);
     }
 }
