@@ -223,6 +223,16 @@ type LaunchRow = {
 
 type DiscoveryMetricLog = AnalyticsLog & { launch_token: string };
 
+const analyticsEventTopics = [
+  "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+  "0xedba86fd2b22962d534e70ad9b0ff8730de46f636146f2bab6a72cbb1ebbcc53",
+  "0xe029f26dbcf8c42dd2f352c10214a7fc26773dc62482c6240334a0402ac09a80",
+  "0x8e35909329327a37503200dfcee9d7ab5d6bfa455eeda068210182468f9d4b59",
+  "0xcb64f2436060c9575db20c5dcf9cdc11657017ee5b0301949f531b3dd7da6b19",
+  "0x8d0453dc55ff49f0c8c7ca816943faff3ced84a6a1a9b3831f8bcf12b4d700c3",
+  "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67",
+] as const;
+
 async function resolveLaunchMarket(token: string, storedMarket: string) {
   if (storedMarket.toLowerCase() !== zeroAddress) return storedMarket;
   for (const factory of [
@@ -436,7 +446,7 @@ async function discoveryMetrics(rows: LaunchRow[]) {
     ),
   );
   const logs = await sql.unsafe<DiscoveryMetricLog[]>(
-    "WITH targets(launch_token,market,pool) AS (SELECT * FROM unnest($2::text[],$3::text[],$4::text[])), ranked AS (SELECT t.launch_token,l.block_number::text,l.transaction_hash,l.log_index,l.address,l.topics,l.data,b.timestamp::text,row_number() OVER (PARTITION BY t.launch_token ORDER BY l.block_number,l.transaction_index,l.log_index) AS event_number FROM targets t JOIN raw_logs l ON l.chain_id=$1 AND (l.address=t.launch_token OR l.address=t.market OR l.address=t.pool) LEFT JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number) SELECT launch_token,block_number,transaction_hash,log_index,address,topics,data,timestamp FROM ranked WHERE event_number<=10001 ORDER BY launch_token,block_number::bigint,log_index",
+    "WITH targets(launch_token,market,pool) AS (SELECT * FROM unnest($2::text[],$3::text[],$4::text[])), ranked AS (SELECT t.launch_token,l.block_number::text,l.transaction_hash,l.log_index,l.address,l.topics,l.data,b.timestamp::text,row_number() OVER (PARTITION BY t.launch_token ORDER BY l.block_number,l.transaction_index,l.log_index) AS event_number FROM targets t JOIN raw_logs l ON l.chain_id=$1 AND (l.address=t.launch_token OR l.address=t.market OR l.address=t.pool) AND l.topics->>0=ANY($5::text[]) LEFT JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number) SELECT launch_token,block_number,transaction_hash,log_index,address,topics,data,timestamp FROM ranked WHERE event_number<=10001 ORDER BY launch_token,block_number::bigint,log_index",
     [
       chainId,
       rows.map((row) => row.token.toLowerCase()),
@@ -447,6 +457,7 @@ async function discoveryMetrics(rows: LaunchRow[]) {
             .get(row.token.toLowerCase())
             ?.graduatedPool?.toLowerCase() ?? zeroAddress,
       ),
+      analyticsEventTopics,
     ],
   );
   const byToken = new Map<string, AnalyticsLog[]>();
@@ -926,7 +937,7 @@ app.get<{ Params: { token: string } }>(
       }),
     ]);
     const logs = await sql.unsafe<AnalyticsLog[]>(
-      "SELECT l.block_number::text,l.transaction_hash,l.log_index,l.address,l.topics,l.data,b.timestamp::text FROM raw_logs l LEFT JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number WHERE l.chain_id=$1 AND l.address=ANY($2::text[]) ORDER BY l.block_number,l.transaction_index,l.log_index LIMIT 10001",
+      "SELECT l.block_number::text,l.transaction_hash,l.log_index,l.address,l.topics,l.data,b.timestamp::text FROM raw_logs l LEFT JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number WHERE l.chain_id=$1 AND l.address=ANY($2::text[]) AND l.topics->>0=ANY($3::text[]) ORDER BY l.block_number,l.transaction_index,l.log_index LIMIT 10001",
       [
         chainId,
         [
@@ -934,6 +945,7 @@ app.get<{ Params: { token: string } }>(
           launch.market,
           ...(config.graduatedPool ? [config.graduatedPool] : []),
         ],
+        analyticsEventTopics,
       ],
     );
     if (logs.length > 10_000) {
