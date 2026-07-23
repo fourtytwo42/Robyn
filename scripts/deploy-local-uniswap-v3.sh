@@ -4,6 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 rpc_url="${ROBYN_OPERATOR_RPC_URL:-http://127.0.0.1:8545}"
 base_asset="${1:-}"
+wrapped_native="${2:-$base_asset}"
 
 export PATH="$HOME/.foundry/bin:$PATH"
 cd "$repo_root"
@@ -18,6 +19,10 @@ if [[ ! "$base_asset" =~ ^0x[0-9a-fA-F]{40}$ ]]; then
 fi
 if [[ "$(cast code "$base_asset" --rpc-url "$rpc_url")" == "0x" ]]; then
   echo "Base asset has no code: $base_asset" >&2
+  exit 1
+fi
+if [[ ! "$wrapped_native" =~ ^0x[0-9a-fA-F]{40}$ || "$(cast code "$wrapped_native" --rpc-url "$rpc_url")" == "0x" ]]; then
+  echo "Wrapped native asset is invalid or has no code: $wrapped_native" >&2
   exit 1
 fi
 
@@ -60,15 +65,15 @@ done
 factory="$(deploy_artifact "$core_artifact" "")"
 position_manager="$(
   deploy_artifact "$position_artifact" "constructor(address,address,address)" \
-    "$factory" "$base_asset" "$zero_address"
+    "$factory" "$wrapped_native" "$zero_address"
 )"
 quoter="$(
   deploy_artifact "$quoter_artifact" "constructor(address,address)" \
-    "$factory" "$base_asset"
+    "$factory" "$wrapped_native"
 )"
 swap_router="$(
   deploy_artifact "$router_artifact" "constructor(address,address,address,address)" \
-    "$zero_address" "$factory" "$position_manager" "$base_asset"
+    "$zero_address" "$factory" "$position_manager" "$wrapped_native"
 )"
 
 jq -n \
@@ -77,6 +82,7 @@ jq -n \
   --arg quoter "$quoter" \
   --arg swapRouter "$swap_router" \
   --arg wrappedQuoteAsset "$base_asset" \
+  --arg wrappedNative "$wrapped_native" \
   --arg coreVersion "1.0.0" \
   --arg peripheryVersion "1.4.4" \
   --arg routerVersion "1.1.0" \
@@ -91,6 +97,7 @@ jq -n \
     quoter: $quoter,
     swapRouter: $swapRouter,
     wrappedQuoteAsset: $wrappedQuoteAsset,
+    wrappedNative: $wrappedNative,
     packageVersions: {
       core: $coreVersion,
       periphery: $peripheryVersion,
