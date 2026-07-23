@@ -537,14 +537,6 @@ contract GraduationMockFactory is IUniswapV3Factory {
             reward.mint(address(conversionRouter), 10_000 ether);
         }
 
-
-
-
-
-
-
-
-
         function testTerminalBuyAtomicallyGraduatesAndSameMarketKeepsTrading() public {
             uint256 baseBefore = base.balanceOf(address(this));
             base.approve(address(market), 2_000 ether);

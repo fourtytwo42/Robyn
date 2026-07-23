@@ -5,6 +5,7 @@ export type DiscoveryQuery = {
   q?: string;
   asset?: string;
   basketSize?: string;
+  creator?: string;
   sort?: string;
   window?: string;
   phase?: string;
@@ -26,6 +27,8 @@ export type ParsedDiscoveryQuery = {
   query: string | null;
   asset: string | null;
   basketSize: number | null;
+  creator: string | null;
+  invalidCreator: boolean;
   invalidCursor: boolean;
   cursor: DiscoveryCursor | null;
   invalidCanonicalAddress: boolean;
@@ -105,6 +108,11 @@ export function parseDiscoveryQuery(
     : null;
   const requestedSize = Number(input.basketSize);
   const basketSize = [1, 2, 3].includes(requestedSize) ? requestedSize : null;
+  const creatorInput = input.creator?.trim() ?? "";
+  const invalidCreator =
+    creatorInput !== "" && !/^0x[0-9a-fA-F]{40}$/.test(creatorInput);
+  const creator =
+    invalidCreator || creatorInput === "" ? null : creatorInput.toLowerCase();
   const sortValues: DiscoverySort[] = [
     "new",
     "trending",
@@ -137,6 +145,8 @@ export function parseDiscoveryQuery(
     query,
     asset,
     basketSize,
+    creator,
+    invalidCreator,
     invalidCursor,
     cursor: invalidCursor ? null : opaqueCursor,
     invalidCanonicalAddress,

@@ -24,6 +24,18 @@ declare module "@robyn/network-portfolio" {
   export function NetworkPortfolioView(): JSX.Element;
 }
 
+declare module "@robyn/network-creator-portfolio" {
+  export function NetworkCreatorPortfolio(): JSX.Element | null;
+}
+
+declare module "@robyn/network-creator-rewards" {
+  import type { Address } from "viem";
+  export function NetworkCreatorRewardsPanel(props: {
+    token: Address;
+    creator: Address;
+  }): JSX.Element | null;
+}
+
 declare module "@robyn/network-dao" {
   import type { Deployment } from "@/lib/deployment";
   export function NetworkDaoView(props: {

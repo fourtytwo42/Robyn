@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
-import {ERC20Votes} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
-import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import { ERC20Votes } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+import { Nonces } from "@openzeppelin/contracts/utils/Nonces.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @notice Fixed-supply Robyn governance token with transfer-aware native rewards.
 contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
@@ -58,7 +58,9 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
     function bindRewardDepositor(address depositor) external {
         if (msg.sender != initializer) revert Unauthorized();
         if (rewardDepositor != address(0)) revert AlreadyBound();
-        if (depositor == address(0) || depositor.code.length == 0 || !exclusionsSealed) revert InvalidConfiguration();
+        if (depositor == address(0) || depositor.code.length == 0 || !exclusionsSealed) {
+            revert InvalidConfiguration();
+        }
         rewardDepositor = depositor;
         emit RewardDepositorBound(depositor);
     }
@@ -66,7 +68,9 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
     function sealRewardExclusions(address[] calldata accounts) external {
         if (msg.sender != initializer) revert Unauthorized();
         if (exclusionsSealed) revert ExclusionsAlreadySealed();
-        if (accounts.length == 0 || accounts.length > MAX_EXCLUSIONS) revert InvalidConfiguration();
+        if (accounts.length == 0 || accounts.length > MAX_EXCLUSIONS) {
+            revert InvalidConfiguration();
+        }
         for (uint256 i; i < accounts.length; ++i) {
             address account = accounts[i];
             if (account == address(0) || isRewardExcluded[account]) revert InvalidConfiguration();
@@ -100,7 +104,8 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
 
     function accumulativeRewardOf(address account) public view returns (uint256) {
         if (isRewardExcluded[account]) return 0;
-        int256 magnified = int256(magnifiedRewardPerShare * balanceOf(account)) + _magnifiedRewardCorrections[account];
+        int256 magnified = int256(magnifiedRewardPerShare * balanceOf(account))
+            + _magnifiedRewardCorrections[account];
         if (magnified <= 0) return 0;
         return uint256(magnified) / MAGNITUDE;
     }
@@ -120,13 +125,17 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
         return _claim(msg.sender, recipient);
     }
 
-    function _claim(address account, address payable recipient) private nonReentrant returns (uint256 amount) {
+    function _claim(address account, address payable recipient)
+        private
+        nonReentrant
+        returns (uint256 amount)
+    {
         if (isRewardExcluded[account]) revert RewardAccountExcluded();
         amount = claimableRewardOf(account);
         if (amount == 0) revert NothingToClaim();
         withdrawnRewards[account] += amount;
         totalRewardsClaimed += amount;
-        (bool sent,) = recipient.call{value: amount}("");
+        (bool sent,) = recipient.call{ value: amount }("");
         if (!sent) revert NativeTransferFailed();
         emit RewardsClaimed(account, recipient, amount);
     }

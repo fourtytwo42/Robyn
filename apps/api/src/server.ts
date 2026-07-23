@@ -635,6 +635,8 @@ app.get<{
     query,
     asset,
     basketSize,
+    creator,
+    invalidCreator,
     invalidCursor,
     invalidCanonicalAddress,
     sort,
@@ -644,13 +646,16 @@ app.get<{
   if (invalidCursor) {
     return reply.code(400).send({ error: "invalid_cursor" });
   }
+  if (invalidCreator) {
+    return reply.code(400).send({ error: "invalid_creator" });
+  }
   const state = await freshness();
   if (invalidCanonicalAddress) {
     return {
       data: [],
       nextCursor: null,
       queryStatus: "invalid_address",
-      filters: { q: query, asset, basketSize, sort, window, phase },
+      filters: { q: query, asset, basketSize, creator, sort, window, phase },
       ...state,
     };
   }
@@ -661,7 +666,7 @@ app.get<{
     request.query.phase !== undefined;
   const candidateLimit = rankedRequest ? 1001 : limit;
   const storedRows = await sql.unsafe<LaunchRow[]>(
-    "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version FROM launches WHERE chain_id=$1 AND ($2::bigint IS NULL OR launch_id::bigint<$2::bigint) AND ($4::text IS NULL OR token=$4 OR strpos(lower(name),$4)>0 OR strpos(lower(symbol),$4)>0) AND ($5::text IS NULL OR assets ? $5) AND ($6::integer IS NULL OR jsonb_array_length(assets)=$6) ORDER BY CASE WHEN token=$4 THEN 0 ELSE 1 END,launch_id::bigint DESC LIMIT $3",
+    "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version FROM launches WHERE chain_id=$1 AND ($2::bigint IS NULL OR launch_id::bigint<$2::bigint) AND ($4::text IS NULL OR token=$4 OR strpos(lower(name),$4)>0 OR strpos(lower(symbol),$4)>0) AND ($5::text IS NULL OR assets ? $5) AND ($6::integer IS NULL OR jsonb_array_length(assets)=$6) AND ($7::text IS NULL OR creator=$7) ORDER BY CASE WHEN token=$4 THEN 0 ELSE 1 END,launch_id::bigint DESC LIMIT $3",
     [
       chainId,
       rankedRequest ? null : before,
@@ -669,6 +674,7 @@ app.get<{
       query,
       asset,
       basketSize,
+      creator,
     ],
   );
   if (rankedRequest && storedRows.length === candidateLimit) {
@@ -804,7 +810,7 @@ app.get<{
           : lastRow.launch_id
         : null,
     queryStatus: "ok",
-    filters: { q: query, asset, basketSize, sort, window, phase },
+    filters: { q: query, asset, basketSize, creator, sort, window, phase },
     ...state,
   };
 });

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {FeeBasketVault, IRobynConversionRouter} from "./FeeBasketVault.sol";
-import {RobynLaunchToken} from "./RobynLaunchToken.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { FeeBasketVault, IRobynConversionRouter } from "./FeeBasketVault.sol";
+import { RobynLaunchToken } from "./RobynLaunchToken.sol";
 
 /// @notice Size-bounded CREATE2 helper controlled by one v2 launch factory.
 contract RobynLaunchDeployerV2 {
@@ -37,8 +37,14 @@ contract RobynLaunchDeployerV2 {
         uint256 maximumPendingDelay
     ) external returns (FeeBasketVault vault) {
         if (msg.sender != controller) revert Unauthorized();
-        vault = new FeeBasketVault{salt: salt}(
-            baseAsset, conversionRouter, controller, assets, weights, minimumConversionBase, maximumPendingDelay
+        vault = new FeeBasketVault{ salt: salt }(
+            baseAsset,
+            conversionRouter,
+            controller,
+            assets,
+            weights,
+            minimumConversionBase,
+            maximumPendingDelay
         );
     }
 
@@ -52,7 +58,9 @@ contract RobynLaunchDeployerV2 {
         address[] calldata assets
     ) external returns (RobynLaunchToken token) {
         if (msg.sender != controller) revert Unauthorized();
-        token = new RobynLaunchToken{salt: salt}(name, symbol, supplyRecipient, initialSupply, vault, assets);
+        token = new RobynLaunchToken{ salt: salt }(
+            name, symbol, supplyRecipient, initialSupply, vault, assets
+        );
     }
 
     function sealExclusions(RobynLaunchToken token, address[] calldata accounts) external {
@@ -73,7 +81,13 @@ contract RobynLaunchDeployerV2 {
             abi.encodePacked(
                 type(FeeBasketVault).creationCode,
                 abi.encode(
-                    baseAsset, conversionRouter, controller, assets, weights, minimumConversionBase, maximumPendingDelay
+                    baseAsset,
+                    conversionRouter,
+                    controller,
+                    assets,
+                    weights,
+                    minimumConversionBase,
+                    maximumPendingDelay
                 )
             )
         );
@@ -99,6 +113,12 @@ contract RobynLaunchDeployerV2 {
     }
 
     function _create2Address(bytes32 salt, bytes32 initCodeHash) private view returns (address) {
-        return address(uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), address(this), salt, initCodeHash)))));
+        return address(
+            uint160(
+                uint256(
+                    keccak256(abi.encodePacked(bytes1(0xff), address(this), salt, initCodeHash))
+                )
+            )
+        );
     }
 }

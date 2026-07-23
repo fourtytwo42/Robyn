@@ -24,6 +24,8 @@ describe("parseDiscoveryQuery", () => {
       query: "myco",
       asset: "0x70e0ba845a1a0f2da3359c97e0285013525ffc49",
       basketSize: 3,
+      creator: null,
+      invalidCreator: false,
       sort: "trending",
       window: "24h",
       phase: "bonding",
@@ -31,6 +33,16 @@ describe("parseDiscoveryQuery", () => {
       cursor: null,
       invalidCanonicalAddress: false,
     });
+  });
+
+  it("normalizes and validates canonical creator filters", () => {
+    const creator = "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49";
+    expect(parseDiscoveryQuery({ creator }).creator).toBe(
+      creator.toLowerCase(),
+    );
+    const invalid = parseDiscoveryQuery({ creator: "0x1234" });
+    expect(invalid.creator).toBeNull();
+    expect(invalid.invalidCreator).toBe(true);
   });
 
   it("fails unknown market views back to backward-compatible defaults", () => {

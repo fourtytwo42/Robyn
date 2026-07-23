@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {FeeBasketVault} from "../FeeBasketVault.sol";
-import {RobynProtocolFeeRouter} from "../dao/RobynProtocolFeeRouter.sol";
-import {INonfungiblePositionManager} from "./UniswapV3Interfaces.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { FeeBasketVault } from "../FeeBasketVault.sol";
+import { RobynProtocolFeeRouter } from "../dao/RobynProtocolFeeRouter.sol";
+import { INonfungiblePositionManager } from "./UniswapV3Interfaces.sol";
 
 /// @notice Permanently locks one Uniswap v3 position while permissionlessly harvesting fees.
 /// @dev This contract intentionally exposes no NFT approval/transfer or liquidity-decrease path.
@@ -83,14 +83,20 @@ contract RewardFeePositionLocker is IERC721Receiver, ReentrancyGuard {
     function bindFeeRouter(RobynProtocolFeeRouter feeRouter_) external {
         if (msg.sender != graduationAdapter) revert Unauthorized();
         if (address(feeRouter) != address(0)) revert FeeRouterAlreadyBound();
-        if (positionBound || address(feeRouter_) == address(0) || address(feeRouter_).code.length == 0) {
+        if (
+            positionBound || address(feeRouter_) == address(0)
+                || address(feeRouter_).code.length == 0
+        ) {
             revert InvalidConfiguration();
         }
         feeRouter = feeRouter_;
         emit FeeRouterBound(address(feeRouter_));
     }
 
-    function onERC721Received(address operator, address, uint256 tokenId, bytes calldata) external returns (bytes4) {
+    function onERC721Received(address operator, address, uint256 tokenId, bytes calldata)
+        external
+        returns (bytes4)
+    {
         if (msg.sender != address(positionManager) || operator != graduationAdapter) {
             revert Unauthorized();
         }
@@ -154,7 +160,9 @@ contract RewardFeePositionLocker is IERC721Receiver, ReentrancyGuard {
             cumulativeLaunchTokenFeesLocked += launchFees;
             pendingLaunchTokenFees += launchFees;
         }
-        emit FeesHarvested(msg.sender, baseFees, launchFees, cumulativeBaseFees, cumulativeLaunchTokenFeesLocked);
+        emit FeesHarvested(
+            msg.sender, baseFees, launchFees, cumulativeBaseFees, cumulativeLaunchTokenFeesLocked
+        );
     }
 
     function convertLaunchFees(uint256 amount, uint256 minimumBaseOut, uint256 deadline)

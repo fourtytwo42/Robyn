@@ -6,7 +6,7 @@ manifest="${1:-$repo_root/deployments/46630.json}"
 rpc_url="${ROBYN_TESTNET_RPC_URL:-https://rpc.testnet.chain.robinhood.com}"
 export PATH="$HOME/.foundry/bin:$PATH"
 
-jq -e '.schemaVersion == 3 and .environment == "robinhood-testnet" and .chainId == 46630 and .mockOnly == true and .assetStrategy == "project-owned-testnet-mocks" and .market.liquidityVenue == "robyn-controlled-uniswap-v3-testnet"' "$manifest" >/dev/null
+jq -e '.schemaVersion == 4 and .environment == "robinhood-testnet" and .chainId == 46630 and .mockOnly == true and .assetStrategy == "project-owned-testnet-mocks" and .market.liquidityVenue == "robyn-controlled-uniswap-v3-testnet" and .dao.creatorRewardsAccounting == "per-token-v2"' "$manifest" >/dev/null
 jq -e '. as $manifest |
   (.dao.initialAllocationManifestSha256 | test("^[0-9a-f]{64}$")) and
   (.dao.allocation | type == "array" and length > 1) and
@@ -92,8 +92,8 @@ proposer_role="$(cast call "$timelock" 'PROPOSER_ROLE()(bytes32)' --rpc-url "$rp
 admin_role="$(cast call "$timelock" 'DEFAULT_ADMIN_ROLE()(bytes32)' --rpc-url "$rpc_url")"
 [[ "$(cast call "$timelock" 'hasRole(bytes32,address)(bool)' "$proposer_role" "$governor" --rpc-url "$rpc_url")" == "true" ]]
 [[ "$(cast call "$timelock" 'hasRole(bytes32,address)(bool)' "$admin_role" "$(jq -er '.deployer' "$manifest")" --rpc-url "$rpc_url")" == "false" ]]
-fee_account="$(cast call "$fee_router" 'launchAccount(address)((address,address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,bool))' "$token" --rpc-url "$rpc_url" --json)"
-[[ "$(jq -r '.[0][10]' <<<"$fee_account")" == "true" ]]
+fee_account="$(cast call "$fee_router" 'launchAccount(address)((address,address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,bool))' "$token" --rpc-url "$rpc_url" --json)"
+[[ "$(jq -r '.[0][13]' <<<"$fee_account")" == "true" ]]
 [[ "$(lower "$(jq -r '.[0][0]' <<<"$fee_account")")" == "$(lower "$(jq -er '.deployer' "$manifest")")" ]]
 [[ "$(lower "$(jq -r '.[0][1]' <<<"$fee_account")")" == "$(lower "$vault")" ]]
 [[ "$(lower "$(jq -r '.[0][2]' <<<"$fee_account")")" == "$(lower "$market")" ]]

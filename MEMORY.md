@@ -4,6 +4,9 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Current task: implement token-specific creator-native rewards and the unified Portfolio creator dashboard on branch `codex/token-creator-rewards`; public Robinhood Testnet broadcasting remains unauthorized.
+- Current checkpoint: `RobynProtocolFeeRouterV2` credits and claims creator ETH per canonical launch token, schema-v4 deployment/API/indexer integration and creator-only token/Portfolio controls compile, all 54 Foundry tests pass, API tests pass 29/29, web tests pass 9/9, and the optimized devnet build succeeds.
+- Next step: commit/push this validated subsystem, update the full documentation set, run isolated schema-v4 deployment plus chain-46630 rehearsal/protected build, back up and reset/reseed the controlled devnet, then complete in-app-browser acceptance on LAN and public HTTPS.
 - Current task: the approved RDAO governance and immutable 50/25/20/5 protocol-fee release is complete on branch `codex/dao-governance-fees`; public testnet broadcasting remains unauthorized.
 - Current checkpoint: fixed-supply RDAO/governance/fee contracts, schema-v3 deployment/verifier, indexer/API/keeper, responsive DAO/proposal UI, controlled reset/reseed, protected testnet rehearsal, LAN/browser acceptance, and public HTTPS acceptance are complete. The persistent VM serves the optimized build with all eight PM2 processes online and saved.
 - Deployment checkpoint: schema-v3 local deployment now creates and seeds WETH/base conversion liquidity, deploys RDAO/Governor/Timelock/router/converter, binds v3 launch contracts, seals reward exclusions, assigns/renounces timelock roles, creates genesis atomically, and passes the expanded verifier on an isolated chain-31337 rehearsal.
@@ -19,6 +22,15 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-22 - Token-specific creator rewards implementation checkpoint
+
+- Creator native rewards are now accounted by launch token rather than aggregated by wallet. Each fee account records pending creator base, claimable creator native, cumulative creator native and claimed creator native while `totalCreatorNativeLiability` remains the solvency invariant.
+- Creator calls are `claimCreatorFees(token)`, `claimCreatorFeesTo(token,recipient)`, and atomic batch equivalents. Unknown or foreign tokens revert the whole batch, zero owned balances are skipped, state clears before the single aggregate transfer, and each paid token emits an attributed event.
+- API additions are `GET /launches?creator=<canonical-address>` and `GET /launches/:token/creator-rewards?account=<address>`. DAO account responses no longer expose creator claims; aggregate liability remains in Treasury monitoring.
+- Token pages render earnings only for the connected immutable creator. `/portfolio` adds wallet-owned profile context, created-token cards, per-token claims, aggregate totals, Claim All and an advanced claim-to address. DAO Rewards retains RDAO member claims only.
+- Deployment manifests move to schema 4 and explicitly identify `per-token-v2` creator accounting. Devnet/testnet scripts deploy `RobynProtocolFeeRouterV2`; verifiers and rehearsal calls use the expanded fee-account tuple.
+- Verification: Solidity format check; all 54 Foundry tests including four 128-run invariants; API typecheck and 29 tests; indexer typecheck; web typecheck, 9 tests and optimized build. Controlled reset and browser acceptance are still pending.
 
 ### 2026-07-22 - DAO browser acceptance and allocation manifest gate
 

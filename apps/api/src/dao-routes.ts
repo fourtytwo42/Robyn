@@ -36,7 +36,6 @@ const routerAbi = parseAbi([
   "function totalCreatorNativeLiability() view returns (uint256)",
   "function totalDaoNativeRewards() view returns (uint256)",
   "function totalTreasuryNative() view returns (uint256)",
-  "function creatorNativeClaims(address) view returns (uint256)",
 ]);
 const governorAbi = parseAbi([
   "function votingDelay() view returns (uint256)",
@@ -69,7 +68,7 @@ const launchRegisteredEvent = parseAbiItem(
   "event LaunchRegistered(address indexed token, address indexed creator, address indexed vault, address market, address locker)",
 );
 const launchAccountAbi = parseAbi([
-  "function launchAccount(address) view returns ((address creator,address vault,address market,address locker,uint256 pendingCreatorBase,uint256 pendingDaoRewardBase,uint256 pendingTreasuryBase,uint256 cumulativeBaseFees,uint256 cumulativeLaunchFeesConverted,uint256 cumulativeNativeConverted,bool registered))",
+  "function launchAccount(address) view returns ((address creator,address vault,address market,address locker,uint256 pendingCreatorBase,uint256 pendingDaoRewardBase,uint256 pendingTreasuryBase,uint256 cumulativeBaseFees,uint256 cumulativeLaunchFeesConverted,uint256 cumulativeNativeConverted,uint256 claimableCreatorNative,uint256 cumulativeCreatorNative,uint256 claimedCreatorNative,bool registered))",
 ]);
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const stateNames = [
@@ -255,14 +254,8 @@ export function registerDaoRoutes(
             functionName: "withdrawnRewards",
             args: [account],
           }),
-          rpcClient.readContract({
-            address: protocolFeeRouter,
-            abi: routerAbi,
-            functionName: "creatorNativeClaims",
-            args: [account],
-          }),
         ])
-      : Promise.resolve([0n, zeroAddress, 0n, 0n, 0n, 0n] as const);
+      : Promise.resolve([0n, zeroAddress, 0n, 0n, 0n] as const);
     const registeredLogsPromise = rpcClient.getLogs({
       address: protocolFeeRouter,
       event: launchRegisteredEvent,
@@ -373,6 +366,10 @@ export function registerDaoRoutes(
             feeAccount.cumulativeLaunchFeesConverted.toString(),
           cumulativeNativeConverted:
             feeAccount.cumulativeNativeConverted.toString(),
+          claimableCreatorNative: feeAccount.claimableCreatorNative.toString(),
+          cumulativeCreatorNative:
+            feeAccount.cumulativeCreatorNative.toString(),
+          claimedCreatorNative: feeAccount.claimedCreatorNative.toString(),
         };
       }),
     );
@@ -416,9 +413,45 @@ export function registerDaoRoutes(
               votingPower: accountValues[2].toString(),
               claimableRewards: accountValues[3].toString(),
               lifetimeRewards: accountValues[4].toString(),
-              claimableCreatorFees: accountValues[5].toString(),
             }
           : null,
+      },
+    };
+  });
+
+  app.get<{
+    Params: { token: string };
+    Querystring: { account?: string };
+  }>("/launches/:token/creator-rewards", async (request, reply) => {
+    if (!isAddress(request.params.token)) {
+      return reply.code(400).send({ error: "invalid_token" });
+    }
+    if (request.query.account && !isAddress(request.query.account)) {
+      return reply.code(400).send({ error: "invalid_account" });
+    }
+    const token = getAddress(request.params.token);
+    const viewer = request.query.account
+      ? getAddress(request.query.account)
+      : undefined;
+    const feeAccount = await rpcClient.readContract({
+      address: deployment.contracts.protocolFeeRouter,
+      abi: launchAccountAbi,
+      functionName: "launchAccount",
+      args: [token],
+    });
+    if (!feeAccount.registered) {
+      return reply.code(404).send({ error: "launch_not_found" });
+    }
+    return {
+      data: {
+        token,
+        creator: feeAccount.creator,
+        viewerIsCreator:
+          viewer?.toLowerCase() === feeAccount.creator.toLowerCase(),
+        pendingCreatorBase: feeAccount.pendingCreatorBase.toString(),
+        claimableNative: feeAccount.claimableCreatorNative.toString(),
+        lifetimeAccruedNative: feeAccount.cumulativeCreatorNative.toString(),
+        lifetimeClaimedNative: feeAccount.claimedCreatorNative.toString(),
       },
     };
   });

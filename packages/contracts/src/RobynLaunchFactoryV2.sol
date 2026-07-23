@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {RobynLaunchToken} from "./RobynLaunchToken.sol";
-import {FeeBasketVault, IRobynConversionRouter} from "./FeeBasketVault.sol";
-import {RobynLaunchDeployerV2} from "./RobynLaunchDeployerV2.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { RobynLaunchToken } from "./RobynLaunchToken.sol";
+import { FeeBasketVault, IRobynConversionRouter } from "./FeeBasketVault.sol";
+import { RobynLaunchDeployerV2 } from "./RobynLaunchDeployerV2.sol";
 
 /// @notice Coordinator-only factory for atomic fixed-supply Robyn launches.
 contract RobynLaunchFactoryV2 {
@@ -65,7 +65,8 @@ contract RobynLaunchFactoryV2 {
     ) {
         if (
             address(baseAsset_) == address(0) || address(conversionRouter_) == address(0)
-                || address(launchDeployer_) == address(0) || address(launchDeployer_).code.length == 0
+                || address(launchDeployer_) == address(0)
+                || address(launchDeployer_).code.length == 0
         ) {
             revert InvalidAddress();
         }
@@ -109,8 +110,10 @@ contract RobynLaunchFactoryV2 {
         usedLaunchSalt[created.launchSaltHash] = true;
 
         if (launchDeployer.controller() != address(this)) revert Unauthorized();
-        bytes32 vaultSalt = keccak256(abi.encode(created.launchSaltHash, keccak256("ROBYN_VAULT_V2")));
-        bytes32 tokenSalt = keccak256(abi.encode(created.launchSaltHash, keccak256("ROBYN_TOKEN_V2")));
+        bytes32 vaultSalt =
+            keccak256(abi.encode(created.launchSaltHash, keccak256("ROBYN_VAULT_V2")));
+        bytes32 tokenSalt =
+            keccak256(abi.encode(created.launchSaltHash, keccak256("ROBYN_TOKEN_V2")));
         created.vault = launchDeployer.deployVault(
             vaultSalt,
             baseAsset,
@@ -135,14 +138,27 @@ contract RobynLaunchFactoryV2 {
         vaultByToken[address(created.token)] = address(created.vault);
         creatorByToken[address(created.token)] = creator;
         created.configurationHash = keccak256(
-            abi.encode(block.chainid, address(created.token), address(created.vault), request.assets, request.weights)
+            abi.encode(
+                block.chainid,
+                address(created.token),
+                address(created.vault),
+                request.assets,
+                request.weights
+            )
         );
         emit LaunchCreated(
-            created.launchId, creator, address(created.token), address(created.vault), created.configurationHash
+            created.launchId,
+            creator,
+            address(created.token),
+            address(created.vault),
+            created.configurationHash
         );
     }
 
-    function sealLaunchExclusionsFor(RobynLaunchToken token, address[] calldata accounts) external onlyCoordinator {
+    function sealLaunchExclusionsFor(RobynLaunchToken token, address[] calldata accounts)
+        external
+        onlyCoordinator
+    {
         if (creatorByToken[address(token)] == address(0)) revert InvalidAddress();
         launchDeployer.sealExclusions(token, accounts);
         emit LaunchExclusionsSealed(address(token), accounts);
@@ -153,7 +169,11 @@ contract RobynLaunchFactoryV2 {
         address supplyRecipient,
         uint256 initialSupply,
         LaunchRequest calldata request
-    ) external view returns (address predictedToken, address predictedVault, bytes32 launchSaltHash) {
+    )
+        external
+        view
+        returns (address predictedToken, address predictedVault, bytes32 launchSaltHash)
+    {
         launchSaltHash = _launchSaltHash(creator, initialSupply, request);
         bytes32 vaultSalt = keccak256(abi.encode(launchSaltHash, keccak256("ROBYN_VAULT_V2")));
         predictedVault = launchDeployer.predictVault(
@@ -167,7 +187,13 @@ contract RobynLaunchFactoryV2 {
         );
         bytes32 tokenSalt = keccak256(abi.encode(launchSaltHash, keccak256("ROBYN_TOKEN_V2")));
         predictedToken = launchDeployer.predictToken(
-            tokenSalt, request.name, request.symbol, supplyRecipient, initialSupply, predictedVault, request.assets
+            tokenSalt,
+            request.name,
+            request.symbol,
+            supplyRecipient,
+            initialSupply,
+            predictedVault,
+            request.assets
         );
     }
 

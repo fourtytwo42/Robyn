@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatEther, type Address } from "viem";
 import { NetworkTokenTradePanel } from "@robyn/network-token-trade";
+import { NetworkCreatorRewardsPanel } from "@robyn/network-creator-rewards";
 import deployment from "@robyn/deployment";
 import { LaunchRewardState } from "@/components/launch-reward-state";
 import { TokenMarketChart } from "@/components/token-market-chart";
@@ -189,6 +190,10 @@ export default async function LaunchDetail({
                 },
               }
             : {})}
+        />
+        <NetworkCreatorRewardsPanel
+          token={launch.token as Address}
+          creator={launch.creator as Address}
         />
 
         <section

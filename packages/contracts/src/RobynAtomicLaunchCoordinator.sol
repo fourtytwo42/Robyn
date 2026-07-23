@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {FeeBasketVault} from "./FeeBasketVault.sol";
-import {RobynLaunchFactoryV2} from "./RobynLaunchFactoryV2.sol";
-import {RobynLaunchToken} from "./RobynLaunchToken.sol";
-import {UniswapV3BondingCurveMarket} from "./uniswap/UniswapV3BondingCurveMarket.sol";
-import {UniswapV3GraduationAdapter} from "./uniswap/UniswapV3GraduationAdapter.sol";
-import {UniswapV3MarketFactoryV2} from "./uniswap/UniswapV3MarketFactoryV2.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { FeeBasketVault } from "./FeeBasketVault.sol";
+import { RobynLaunchFactoryV2 } from "./RobynLaunchFactoryV2.sol";
+import { RobynLaunchToken } from "./RobynLaunchToken.sol";
+import { UniswapV3BondingCurveMarket } from "./uniswap/UniswapV3BondingCurveMarket.sol";
+import { UniswapV3GraduationAdapter } from "./uniswap/UniswapV3GraduationAdapter.sol";
+import { UniswapV3MarketFactoryV2 } from "./uniswap/UniswapV3MarketFactoryV2.sol";
 
 /// @notice Single-transaction launch, market creation, inventory seeding, and exclusion sealing.
 contract RobynAtomicLaunchCoordinator is ReentrancyGuard {
@@ -52,12 +52,14 @@ contract RobynAtomicLaunchCoordinator is ReentrancyGuard {
     constructor(RobynLaunchFactoryV2 launchFactory_, UniswapV3MarketFactoryV2 marketFactory_) {
         if (
             address(launchFactory_) == address(0) || address(marketFactory_) == address(0)
-                || address(launchFactory_).code.length == 0 || address(marketFactory_).code.length == 0
+                || address(launchFactory_).code.length == 0
+                || address(marketFactory_).code.length == 0
                 || address(marketFactory_.launchFactory()) != address(launchFactory_)
         ) revert InvalidConfiguration();
         launchFactory = launchFactory_;
         marketFactory = marketFactory_;
-        initialSupply = marketFactory_.curveTokenAllocation() + marketFactory_.graduationTokenAllocation();
+        initialSupply =
+            marketFactory_.curveTokenAllocation() + marketFactory_.graduationTokenAllocation();
         if (initialSupply == 0) revert InvalidConfiguration();
     }
 
@@ -95,10 +97,12 @@ contract RobynAtomicLaunchCoordinator is ReentrancyGuard {
         if (
             launchAsset.balanceOf(address(this)) != 0
                 || launchAsset.allowance(address(this), address(artifacts.market)) != 0
-                || launchAsset.balanceOf(address(artifacts.market)) != initialSupply || !artifacts.market.seeded()
-                || !artifacts.token.exclusionsSealed() || !artifacts.token.isExcluded(address(artifacts.market))
+                || launchAsset.balanceOf(address(artifacts.market)) != initialSupply
+                || !artifacts.market.seeded() || !artifacts.token.exclusionsSealed()
+                || !artifacts.token.isExcluded(address(artifacts.market))
                 || !artifacts.token.isExcluded(address(artifacts.adapter))
-                || !artifacts.token.isExcluded(artifacts.locker) || !artifacts.token.isExcluded(artifacts.pool)
+                || !artifacts.token.isExcluded(artifacts.locker)
+                || !artifacts.token.isExcluded(artifacts.pool)
                 || !artifacts.token.isExcluded(address(this))
         ) revert AtomicLaunchInvariant();
 
@@ -117,7 +121,10 @@ contract RobynAtomicLaunchCoordinator is ReentrancyGuard {
         return (artifacts.token, artifacts.vault, artifacts.market);
     }
 
-    function predictLaunchAddresses(address creator, RobynLaunchFactoryV2.LaunchRequest calldata request)
+    function predictLaunchAddresses(
+        address creator,
+        RobynLaunchFactoryV2.LaunchRequest calldata request
+    )
         external
         view
         returns (address predictedToken, address predictedVault, bytes32 launchSaltHash)

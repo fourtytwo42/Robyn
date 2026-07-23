@@ -1,4 +1,5 @@
 import { NetworkPortfolioView } from "@robyn/network-portfolio";
+import { NetworkCreatorPortfolio } from "@robyn/network-creator-portfolio";
 import { SiteHeader } from "@/components/site-header";
 
 export default function Portfolio() {
@@ -10,13 +11,14 @@ export default function Portfolio() {
       <section className="page-shell">
         <header className="page-hero">
           <p className="eyebrow">Wallet-specific state</p>
-          <h1>Your rewards across every launch.</h1>
+          <h1>Your Robyn portfolio and creator profile.</h1>
           <p className="lede">
-            Held community tokens, pending launch-level cash, claimable assets
-            and claimed amounts remain separate. No wallet data is sent to the
-            indexer; routine reads use this browser&apos;s public RPC path.
+            Track held community tokens and basket rewards, then manage every
+            token you created and its independent ETH fees from one wallet
+            dashboard.
           </p>
         </header>
+        <NetworkCreatorPortfolio />
         <NetworkPortfolioView />
       </section>
       <section className="notice" aria-label="Portfolio disclosure">

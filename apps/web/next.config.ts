@@ -34,6 +34,14 @@ const nextConfig: NextConfig = {
       webRoot,
       `src/components/network-portfolio.${suffix}.tsx`,
     );
+    config.resolve.alias["@robyn/network-creator-portfolio"] = path.resolve(
+      webRoot,
+      `src/components/network-creator-portfolio.${suffix}.tsx`,
+    );
+    config.resolve.alias["@robyn/network-creator-rewards"] = path.resolve(
+      webRoot,
+      `src/components/network-creator-rewards.${suffix}.tsx`,
+    );
     config.resolve.alias["@robyn/network-dao"] = path.resolve(
       webRoot,
       `src/components/network-dao.${suffix}.tsx`,

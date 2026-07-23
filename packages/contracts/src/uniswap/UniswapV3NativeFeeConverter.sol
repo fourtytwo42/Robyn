@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {INativeFeeConverter} from "../dao/INativeFeeConverter.sol";
-import {IQuoterV2, ISwapRouter, IUniswapV3Factory, IUniswapV3Pool} from "./UniswapV3Interfaces.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { INativeFeeConverter } from "../dao/INativeFeeConverter.sol";
+import {
+    IQuoterV2,
+    ISwapRouter,
+    IUniswapV3Factory,
+    IUniswapV3Pool
+} from "./UniswapV3Interfaces.sol";
 
 interface IWrappedNative is IERC20 {
     function withdraw(uint256 amount) external;
@@ -39,7 +44,9 @@ contract UniswapV3NativeFeeConverter is INativeFeeConverter {
     address public feeRouter;
 
     event FeeRouterBound(address indexed feeRouter);
-    event FeeConverted(address indexed tokenIn, address indexed tokenOut, uint256 amountIn, uint256 amountOut);
+    event FeeConverted(
+        address indexed tokenIn, address indexed tokenOut, uint256 amountIn, uint256 amountOut
+    );
 
     constructor(
         IUniswapV3Factory factory_,
@@ -54,10 +61,12 @@ contract UniswapV3NativeFeeConverter is INativeFeeConverter {
         int24 maximumTickDeviation_
     ) {
         if (
-            address(factory_) == address(0) || address(swapRouter_) == address(0) || address(quoter_) == address(0)
-                || address(baseAsset_) == address(0) || address(wrappedNative_) == address(0)
-                || address(baseAsset_) == address(wrappedNative_) || launchPoolFee_ == 0 || nativePoolFee_ == 0
-                || twapWindow_ == 0 || maximumPriceImpactBps_ > 1_000 || maximumTickDeviation_ <= 0
+            address(factory_) == address(0) || address(swapRouter_) == address(0)
+                || address(quoter_) == address(0) || address(baseAsset_) == address(0)
+                || address(wrappedNative_) == address(0)
+                || address(baseAsset_) == address(wrappedNative_) || launchPoolFee_ == 0
+                || nativePoolFee_ == 0 || twapWindow_ == 0 || maximumPriceImpactBps_ > 1_000
+                || maximumTickDeviation_ <= 0
         ) revert InvalidConfiguration();
         factory = factory_;
         swapRouter = swapRouter_;
@@ -92,14 +101,23 @@ contract UniswapV3NativeFeeConverter is INativeFeeConverter {
         address payable recipient
     ) external returns (uint256 nativeOut) {
         _authorize(deadline);
-        if (address(baseAsset_) != address(baseAsset) || recipient == address(0)) revert InvalidConfiguration();
+        if (address(baseAsset_) != address(baseAsset) || recipient == address(0)) {
+            revert InvalidConfiguration();
+        }
         baseAsset.safeTransferFrom(msg.sender, address(this), amount);
         uint256 wrappedBefore = wrappedNative.balanceOf(address(this));
-        _swap(baseAsset, IERC20(address(wrappedNative)), nativePoolFee, amount, minimumNativeOut, address(this));
+        _swap(
+            baseAsset,
+            IERC20(address(wrappedNative)),
+            nativePoolFee,
+            amount,
+            minimumNativeOut,
+            address(this)
+        );
         nativeOut = wrappedNative.balanceOf(address(this)) - wrappedBefore;
         if (nativeOut < minimumNativeOut) revert BalanceDeltaMismatch();
         wrappedNative.withdraw(nativeOut);
-        (bool sent,) = recipient.call{value: nativeOut}("");
+        (bool sent,) = recipient.call{ value: nativeOut }("");
         if (!sent) revert BalanceDeltaMismatch();
     }
 
@@ -123,31 +141,47 @@ contract UniswapV3NativeFeeConverter is INativeFeeConverter {
         if (baseOut < minimumBaseOut) revert BalanceDeltaMismatch();
     }
 
-    function minimumSafeOutput(IERC20 tokenIn, IERC20 tokenOut, uint24 fee, uint256 amount) public returns (uint256) {
+    function minimumSafeOutput(IERC20 tokenIn, IERC20 tokenOut, uint24 fee, uint256 amount)
+        public
+        returns (uint256)
+    {
         if (amount == 0) revert InvalidConfiguration();
         address pool = factory.getPool(address(tokenIn), address(tokenOut), fee);
         if (pool == address(0) || pool.code.length == 0) revert MissingPool();
         _assertTwap(pool);
         (uint256 quote,,,) = quoter.quoteExactInputSingle(
             IQuoterV2.QuoteExactInputSingleParams({
-                tokenIn: address(tokenIn), tokenOut: address(tokenOut), amountIn: amount, fee: fee, sqrtPriceLimitX96: 0
+                tokenIn: address(tokenIn),
+                tokenOut: address(tokenOut),
+                amountIn: amount,
+                fee: fee,
+                sqrtPriceLimitX96: 0
             })
         );
-        uint256 idealAfterFee = (_spotOutput(IUniswapV3Pool(pool), tokenIn, amount) * (1_000_000 - fee)) / 1_000_000;
+        uint256 idealAfterFee =
+            (_spotOutput(IUniswapV3Pool(pool), tokenIn, amount) * (1_000_000 - fee)) / 1_000_000;
         uint256 minimumQuote = (idealAfterFee * (10_000 - maximumPriceImpactBps)) / 10_000;
         if (quote < minimumQuote) revert ExcessivePriceImpact(minimumQuote, quote);
         return (quote * (10_000 - maximumPriceImpactBps)) / 10_000;
     }
 
-    function _spotOutput(IUniswapV3Pool pool, IERC20 tokenIn, uint256 amount) private view returns (uint256 output) {
+    function _spotOutput(IUniswapV3Pool pool, IERC20 tokenIn, uint256 amount)
+        private
+        view
+        returns (uint256 output)
+    {
         (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
         bool zeroForOne = address(tokenIn) == pool.token0();
         if (sqrtPriceX96 <= type(uint128).max) {
             uint256 ratioX192 = uint256(sqrtPriceX96) * sqrtPriceX96;
-            output = zeroForOne ? Math.mulDiv(amount, ratioX192, 1 << 192) : Math.mulDiv(amount, 1 << 192, ratioX192);
+            output = zeroForOne
+                ? Math.mulDiv(amount, ratioX192, 1 << 192)
+                : Math.mulDiv(amount, 1 << 192, ratioX192);
         } else {
             uint256 ratioX128 = Math.mulDiv(sqrtPriceX96, sqrtPriceX96, 1 << 64);
-            output = zeroForOne ? Math.mulDiv(amount, ratioX128, 1 << 128) : Math.mulDiv(amount, 1 << 128, ratioX128);
+            output = zeroForOne
+                ? Math.mulDiv(amount, ratioX128, 1 << 128)
+                : Math.mulDiv(amount, 1 << 128, ratioX128);
         }
         if (output == 0) revert InvalidConfiguration();
     }
@@ -164,10 +198,14 @@ contract UniswapV3NativeFeeConverter is INativeFeeConverter {
         if (difference > maximumTickDeviation) revert TwapDeviation(currentTick, meanTick);
     }
 
-    function _swap(IERC20 tokenIn, IERC20 tokenOut, uint24 fee, uint256 amount, uint256 minimumOut, address recipient)
-        private
-        returns (uint256 amountOut)
-    {
+    function _swap(
+        IERC20 tokenIn,
+        IERC20 tokenOut,
+        uint24 fee,
+        uint256 amount,
+        uint256 minimumOut,
+        address recipient
+    ) private returns (uint256 amountOut) {
         uint256 safeMinimum = minimumSafeOutput(tokenIn, tokenOut, fee, amount);
         if (minimumOut < safeMinimum) revert UnsafeMinimum(safeMinimum, minimumOut);
         tokenIn.forceApprove(address(swapRouter), amount);

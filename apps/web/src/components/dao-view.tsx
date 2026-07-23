@@ -22,10 +22,6 @@ const daoTokenAbi = parseAbi([
   "function claimRewardsTo(address) returns (uint256)",
   "function delegate(address)",
 ]);
-const feeRouterAbi = parseAbi([
-  "function claimCreatorFees() returns (uint256)",
-  "function claimCreatorFeesTo(address) returns (uint256)",
-]);
 const governorAbi = parseAbi([
   "function propose(address[] targets,uint256[] values,bytes[] calldatas,string description) returns (uint256)",
   "function castVote(uint256 proposalId,uint8 support) returns (uint256)",
@@ -80,7 +76,6 @@ type DaoOverview = {
     votingPower: string;
     claimableRewards: string;
     lifetimeRewards: string;
-    claimableCreatorFees: string;
   };
 };
 type Proposal = {
@@ -221,7 +216,7 @@ export function DaoView({
   const transact = useCallback(
     async (
       address: Address,
-      abi: typeof daoTokenAbi | typeof feeRouterAbi | typeof governorAbi,
+      abi: typeof daoTokenAbi | typeof governorAbi,
       functionName: string,
       args: readonly unknown[] = [],
     ) => {
@@ -451,29 +446,6 @@ export function DaoView({
               </button>
             </div>
           </article>
-          <article className="panel">
-            <p className="eyebrow">Creator rewards</p>
-            <h2>
-              {tokenAmount(overview.account?.claimableCreatorFees ?? "0", 6)}{" "}
-              ETH claimable
-            </h2>
-            <p>
-              Creator payments use pull accounting and never block token trading
-              or fee harvesting.
-            </p>
-            <button
-              className="button primary"
-              onClick={() =>
-                void transact(
-                  overview.contracts.protocolFeeRouter,
-                  feeRouterAbi,
-                  "claimCreatorFees",
-                )
-              }
-            >
-              Claim creator fees
-            </button>
-          </article>
           <article className="panel dao-wide">
             <label className="field">
               <span>Optional claim recipient</span>
@@ -497,20 +469,6 @@ export function DaoView({
                 }
               >
                 Send member claim
-              </button>
-              <button
-                className="button"
-                disabled={!isAddress(recipient)}
-                onClick={() =>
-                  void transact(
-                    overview.contracts.protocolFeeRouter,
-                    feeRouterAbi,
-                    "claimCreatorFeesTo",
-                    [recipient],
-                  )
-                }
-              >
-                Send creator claim
               </button>
             </div>
           </article>

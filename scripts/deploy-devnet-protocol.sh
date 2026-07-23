@@ -106,7 +106,7 @@ native_pool="$(cast call "$uniswap_factory" "getPool(address,address,uint24)(add
 timelock="$(deploy_contract ../../node_modules/@openzeppelin/contracts/governance/TimelockController.sol:TimelockController "172800" "[]" "[]" "$deployer")"
 rdao="$(deploy_contract src/dao/RobynDaoToken.sol:RobynDaoToken "[$deployer,$timelock]" "[800000000000000000000000000,200000000000000000000000000]")"
 governor="$(deploy_contract src/dao/RobynGovernor.sol:RobynGovernor "$rdao" "$timelock")"
-fee_router="$(deploy_contract src/dao/RobynProtocolFeeRouter.sol:RobynProtocolFeeRouter "$base" "$rdao" "$timelock" "$deployer")"
+fee_router="$(deploy_contract src/dao/RobynProtocolFeeRouterV2.sol:RobynProtocolFeeRouterV2 "$base" "$rdao" "$timelock" "$deployer")"
 native_converter="$(deploy_contract src/uniswap/UniswapV3NativeFeeConverter.sol:UniswapV3NativeFeeConverter \
   "$uniswap_factory" "$swap_router" "$quoter" "$base" "$weth" "$pool_fee_pips" "$pool_fee_pips" \
   "$twap_window_seconds" "$maximum_conversion_price_impact_bps" "$maximum_conversion_tick_deviation")"
@@ -169,7 +169,7 @@ git_commit="$(git rev-parse HEAD)"
 mkdir -p "$(dirname "$manifest")"
 temporary_manifest="$(mktemp "$(dirname "$manifest")/.31337.XXXXXX")"
 jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson blockNumber "$block_number" --arg gitCommit "$git_commit" --arg deployer "$deployer" --arg base "$base" --arg weth "$weth" --arg nvda "$nvda" --arg spy "$spy" --arg ethReward "$eth_reward" --arg router "$router" --arg factory "$factory" --arg launchDeployer "$launch_deployer" --arg marketFactory "$market_factory" --arg coordinator "$coordinator" --arg adapterDeployer "$adapter_deployer" --arg marketDeployer "$market_deployer" --arg token "$token" --arg vault "$vault" --arg market "$market" --arg adapter "$adapter" --arg locker "$locker" --arg pool "$pool" --arg timelock "$timelock" --arg governor "$governor" --arg rdao "$rdao" --arg feeRouter "$fee_router" --arg nativeConverter "$native_converter" --arg nativePool "$native_pool" --argjson localUniswapV3 "$uniswap_json" --arg curveTokens "$curve_token_allocation" --arg graduationTokens "$graduation_token_allocation" --arg virtualTokens "$initial_virtual_token_reserve" --arg virtualBase "$initial_virtual_base_reserve" --arg threshold "$graduation_threshold_base" --arg initialPrice "$initial_base_per_token_x18" --argjson poolFee "$pool_fee_pips" --arg tickLower "$tick_lower" --arg tickUpper "$tick_upper" --arg minimumUse "$minimum_use_bps" --arg maximumDeviation "$maximum_price_deviation_bps" --arg twapWindow "$twap_window_seconds" --arg maximumConversionImpact "$maximum_conversion_price_impact_bps" --arg maximumTickDeviation "$maximum_conversion_tick_deviation" '{
-    schemaVersion: 3,
+    schemaVersion: 4,
     environment: $environment,
     chainId: $chainId,
     deploymentBlock: $blockNumber,
@@ -210,6 +210,7 @@ jq -n --arg environment "robyn-devnet" --argjson chainId "$chain_id" --argjson b
         {account: $timelock, shareBps: 2000, purpose: "dao-treasury-reserve"}
       ],
       feePolicy: {basketBps: 5000, creatorBps: 2500, daoRewardsBps: 2000, treasuryBps: 500},
+      creatorRewardsAccounting: "per-token-v2",
       governance: {votingDelaySeconds: 86400, votingPeriodSeconds: 259200, timelockSeconds: 172800, quorumBps: 1000, proposalThresholdBps: 100},
       conversion: {twapWindowSeconds: ($twapWindow | tonumber), maximumPriceImpactBps: ($maximumConversionImpact | tonumber), maximumTickDeviation: ($maximumTickDeviation | tonumber)}
     },
