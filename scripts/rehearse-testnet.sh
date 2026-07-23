@@ -24,8 +24,16 @@ done
 [[ "$(cast chain-id --rpc-url "$rpc_url")" == "46630" ]]
 
 manifest="$work/46630.json"
+dex_manifest="$work/46630-uniswap-v3.json"
+ROBYN_TESTNET_RPC_URL="$rpc_url" \
+ROBYN_TESTNET_DEX_MANIFEST="$dex_manifest" \
+ROBYN_TESTNET_REHEARSAL=true \
+ROBYN_ALLOW_UNLOCKED_REHEARSAL=true \
+ROBYN_TESTNET_DEX_BROADCAST=true \
+  scripts/deploy-testnet-uniswap-v3.sh >/dev/null
 ROBYN_TESTNET_RPC_URL="$rpc_url" \
 ROBYN_TESTNET_MANIFEST="$manifest" \
+ROBYN_TESTNET_DEX_MANIFEST="$dex_manifest" \
 ROBYN_TESTNET_REHEARSAL=true \
 ROBYN_ALLOW_UNLOCKED_REHEARSAL=true \
 ROBYN_TESTNET_BROADCAST=true \
@@ -48,8 +56,11 @@ call_uint() {
 }
 
 send_as_user "$base" 'claimFaucet(address)' "$user"
-send_as_user "$base" 'approve(address,uint256)' "$market" "1000000000000000000000"
-send_as_user "$market" 'buy(uint256,uint256)' "1000000000000000000000" "990000000000000000000000"
+send_as_user "$base" 'approve(address,uint256)' "$market" "10000000000000000000000"
+send_as_user "$market" 'buy(uint256,uint256)' "7000000000000000000000" "1"
+[[ "$(cast call "$market" 'graduated()(bool)' --rpc-url "$rpc_url")" == "true" ]]
+pool="$(jq -er '.contracts.genesisGraduatedPool' "$manifest")"
+[[ "$(cast call "$pool" 'liquidity()(uint128)' --rpc-url "$rpc_url" | awk '{print $1}')" -gt 0 ]]
 
 pending_before=()
 for i in 0 1 2; do
@@ -63,7 +74,7 @@ done
 send_as_user "$token" 'claimAll()'
 
 send_as_user "$token" 'approve(address,uint256)' "$market" "100000000000000000000000"
-send_as_user "$market" 'sell(uint256,uint256)' "100000000000000000000000" "99000000000000000000"
+send_as_user "$market" 'sell(uint256,uint256)' "100000000000000000000000" "1"
 
 base_balance="$(call_uint "$base" 'balanceOf(address)(uint256)' "$user")"
 token_balance="$(call_uint "$token" 'balanceOf(address)(uint256)' "$user")"
@@ -94,7 +105,7 @@ summary="$(jq -n \
   --argjson reward0 "${reward_balances[0]}" \
   --argjson reward1 "${reward_balances[1]}" \
   --argjson reward2 "${reward_balances[2]}" \
-  '{schemaVersion: 1, testedAt: $testedAt, gitSha: $gitSha, chainId: $chainId, passed: true, finalBlock: $finalBlock, user: $user, journey: {faucet: true, buy: true, convertAllLegs: true, claimAll: true, sell: true}, balances: {base: $baseBalance, token: $tokenBalance, rewards: [$reward0,$reward1,$reward2]}, accounting: {feesReceived: $feesReceived, baseConsumed: $baseConsumed, convertedPending: [$pending0,$pending1,$pending2]}}')"
+  '{schemaVersion: 2, testedAt: $testedAt, gitSha: $gitSha, chainId: $chainId, passed: true, dexProvenance:"robyn-controlled-uniswap-v3-testnet", user: $user, journey: {faucet: true, atomicLaunch: true, bondingBuy: true, automaticGraduation: true, postGraduationSell: true, convertAllLegs: true, claimAll: true}, balances: {base: $baseBalance, token: $tokenBalance, rewards: [$reward0,$reward1,$reward2]}, accounting: {feesReceived: $feesReceived, baseConsumed: $baseConsumed, convertedPending: [$pending0,$pending1,$pending2]}}')"
 if [[ -n "$evidence_path" ]]; then
   mkdir -p "$(dirname "$evidence_path")"
   printf '%s\n' "$summary" > "$evidence_path"

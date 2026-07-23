@@ -1,14 +1,22 @@
 import { readFile } from "node:fs/promises";
-import { createPublicClient, http, type Address } from "viem";
+import {
+  createPublicClient,
+  decodeEventLog,
+  http,
+  parseAbiItem,
+  type Address,
+} from "viem";
 import { createDatabase } from "@robyn/db";
 
 type Manifest = {
+  schemaVersion?: number;
   chainId: number;
   deploymentBlock: number;
   contracts: {
     factory: Address;
     marketFactory: Address;
     legacyMarketFactories?: Address[];
+    atomicLaunchCoordinator?: Address;
   };
 };
 const manifest = JSON.parse(
@@ -66,6 +74,58 @@ const marketFactoryAbi = [
   },
 ] as const;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
+const atomicLaunchEvent = parseAbiItem(
+  "event AtomicLaunchCreated(uint256 indexed launchId,address indexed creator,address indexed token,address vault,address market,address adapter,address pool,address locker,bytes32 configurationHash,bytes32 launchSaltHash)",
+);
+const marketStateAbi = [
+  {
+    type: "function",
+    name: "seeded",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bool" }],
+  },
+] as const;
+const tokenStateAbi = [
+  {
+    type: "function",
+    name: "exclusionsSealed",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bool" }],
+  },
+] as const;
+
+async function loadAtomicLaunches(asOfBlock: bigint) {
+  const coordinator = manifest.contracts.atomicLaunchCoordinator;
+  if (!coordinator)
+    return new Map<
+      string,
+      { blockNumber: bigint; args: Record<string, unknown> }
+    >();
+  const logs = await client.getLogs({
+    address: coordinator,
+    event: atomicLaunchEvent,
+    fromBlock: BigInt(manifest.deploymentBlock),
+    toBlock: asOfBlock,
+  });
+  const launches = new Map<
+    string,
+    { blockNumber: bigint; args: Record<string, unknown> }
+  >();
+  for (const log of logs) {
+    const decoded = decodeEventLog({
+      abi: [atomicLaunchEvent],
+      data: log.data,
+      topics: log.topics,
+    });
+    launches.set(String(decoded.args.launchId), {
+      blockNumber: log.blockNumber,
+      args: decoded.args as unknown as Record<string, unknown>,
+    });
+  }
+  return launches;
+}
 
 async function resolveMarket(token: Address) {
   const factories = [
@@ -129,6 +189,7 @@ const vaultAbi = [
 ] as const;
 
 async function rebuildLaunches(asOfBlock: bigint) {
+  const atomicLaunches = await loadAtomicLaunches(asOfBlock);
   const count = await client.readContract({
     address: manifest.contracts.factory,
     abi: factoryAbi,
@@ -166,6 +227,34 @@ async function rebuildLaunches(asOfBlock: bigint) {
         functionName: "symbol",
       }),
     ]);
+    const atomic = atomicLaunches.get(id.toString());
+    if (manifest.contracts.atomicLaunchCoordinator) {
+      if (!atomic) continue;
+      const eventToken = String(atomic.args.token).toLowerCase();
+      const eventVault = String(atomic.args.vault).toLowerCase();
+      const eventMarket = String(atomic.args.market).toLowerCase();
+      const eventCreator = String(atomic.args.creator).toLowerCase();
+      if (
+        eventToken !== token.toLowerCase() ||
+        eventVault !== vault.toLowerCase() ||
+        eventMarket !== market.toLowerCase() ||
+        eventCreator !== creator.toLowerCase()
+      )
+        continue;
+      const [seeded, exclusionsSealed] = await Promise.all([
+        client.readContract({
+          address: market,
+          abi: marketStateAbi,
+          functionName: "seeded",
+        }),
+        client.readContract({
+          address: token,
+          abi: tokenStateAbi,
+          functionName: "exclusionsSealed",
+        }),
+      ]);
+      if (!seeded || !exclusionsSealed) continue;
+    }
     const countLegs = await client.readContract({
       address: vault,
       abi: vaultAbi,
@@ -191,11 +280,13 @@ async function rebuildLaunches(asOfBlock: bigint) {
         "%" + token.slice(2).toLowerCase(),
       ],
     );
-    const created = found[0]
-      ? BigInt(found[0].block_number)
-      : BigInt(manifest.deploymentBlock);
+    const created =
+      atomic?.blockNumber ??
+      (found[0]
+        ? BigInt(found[0].block_number)
+        : BigInt(manifest.deploymentBlock));
     await sql.unsafe(
-      "INSERT INTO launches (chain_id,launch_id,token,vault,market,creator,name,symbol,assets,weights_bps,created_block,updated_block,formula_version) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12,'native-v1') ON CONFLICT (chain_id,token) DO UPDATE SET market=EXCLUDED.market,name=EXCLUDED.name,symbol=EXCLUDED.symbol,assets=EXCLUDED.assets,weights_bps=EXCLUDED.weights_bps,created_block=EXCLUDED.created_block,updated_block=EXCLUDED.updated_block",
+      "INSERT INTO launches (chain_id,launch_id,token,vault,market,creator,name,symbol,assets,weights_bps,created_block,updated_block,formula_version) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12,$13) ON CONFLICT (chain_id,token) DO UPDATE SET market=EXCLUDED.market,name=EXCLUDED.name,symbol=EXCLUDED.symbol,assets=EXCLUDED.assets,weights_bps=EXCLUDED.weights_bps,created_block=EXCLUDED.created_block,updated_block=EXCLUDED.updated_block,formula_version=EXCLUDED.formula_version",
       [
         manifest.chainId,
         id.toString(),
@@ -209,6 +300,7 @@ async function rebuildLaunches(asOfBlock: bigint) {
         JSON.stringify(weights),
         created.toString(),
         asOfBlock.toString(),
+        atomic ? "native-v2-atomic" : "native-v1",
       ],
     );
   }

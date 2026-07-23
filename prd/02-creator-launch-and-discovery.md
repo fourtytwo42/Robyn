@@ -152,4 +152,7 @@ Show launches by wallet, verified links where available, aggregate realized fees
 - Indexer behind: show last block and disable values that cannot be safely determined.
 - Asset route unavailable: preserve form where possible, explain that launch cannot use that asset now.
 - Transaction replaced/reverted: explain state using receipt evidence and allow safe retry.
+# Atomic creator launch requirement
+
+Every new creator launch uses one wallet confirmation and one reverting coordinator transaction. Supply is fixed by protocol policy; creators cannot select an arbitrary supply. The browser generates a fresh random salt immediately before simulation, decodes canonical identities from the transaction receipt, then waits for indexing and optionally binds sanitized artwork. An artwork/profile failure is reported as metadata failure after a successful launch, never as an onchain failure.
 

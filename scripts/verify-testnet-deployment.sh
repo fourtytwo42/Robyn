@@ -6,55 +6,60 @@ manifest="${1:-$repo_root/deployments/46630.json}"
 rpc_url="${ROBYN_TESTNET_RPC_URL:-https://rpc.testnet.chain.robinhood.com}"
 export PATH="$HOME/.foundry/bin:$PATH"
 
-jq -e '.schemaVersion == 1 and .environment == "robinhood-testnet" and .chainId == 46630 and .mockOnly == true and .assetStrategy == "project-owned-testnet-mocks"' "$manifest" >/dev/null
-if grep -Eqs 'DEVNET_ONLY|robyn-devnet|31337' "$manifest"; then
-  echo "Devnet content found in testnet manifest" >&2
-  exit 1
-fi
-if grep -RqsE 'DEVNET_ONLY|robyn-devnet' "$repo_root/packages/contracts/src/testnet"; then
-  echo "Devnet content found in testnet contract sources" >&2
-  exit 1
-fi
+jq -e '.schemaVersion == 2 and .environment == "robinhood-testnet" and .chainId == 46630 and .mockOnly == true and .assetStrategy == "project-owned-testnet-mocks" and .market.liquidityVenue == "robyn-controlled-uniswap-v3-testnet"' "$manifest" >/dev/null
+grep -Eqs 'DEVNET_ONLY|robyn-devnet|31337' "$manifest" && { echo "Devnet content found in testnet manifest" >&2; exit 1; }
 jq -e '.chainId == 46630 and .deployment.allowsUnlockedAccount == false' "$repo_root/config/networks/robinhood-testnet.json" >/dev/null
-
-chain_id="$(cast chain-id --rpc-url "$rpc_url")"
-[[ "$chain_id" == "46630" ]] || { echo "RPC chain is $chain_id, expected 46630" >&2; exit 1; }
+[[ "$(cast chain-id --rpc-url "$rpc_url")" == "46630" ]]
 
 contract() { jq -er ".contracts.$1" "$manifest"; }
-base="$(contract baseAsset)"
-router="$(contract conversionRouter)"
-factory="$(contract factory)"
-market_factory="$(contract marketFactory)"
-token="$(contract genesisToken)"
-vault="$(contract genesisVault)"
-market="$(contract genesisMarket)"
+base="$(contract baseAsset)"; router="$(contract conversionRouter)"; factory="$(contract factory)"
+launch_deployer="$(contract launchDeployer)"; market_factory="$(contract marketFactory)"; coordinator="$(contract atomicLaunchCoordinator)"
+adapter_deployer="$(contract adapterDeployer)"; market_deployer="$(contract marketDeployer)"
+token="$(contract genesisToken)"; vault="$(contract genesisVault)"; market="$(contract genesisMarket)"
+adapter="$(contract genesisGraduationAdapter)"; locker="$(contract genesisPositionLocker)"; pool="$(contract genesisGraduatedPool)"
 mapfile -t rewards < <(jq -er '.contracts.rewardAssets[]' "$manifest")
-[[ "${#rewards[@]}" == 3 ]] || { echo "Expected three reward assets" >&2; exit 1; }
+mapfile -t addresses < <(jq -r '.contracts.baseAsset,.contracts.rewardAssets[],.contracts.conversionRouter,.contracts.factory,.contracts.launchDeployer,.contracts.marketFactory,.contracts.atomicLaunchCoordinator,.contracts.adapterDeployer,.contracts.marketDeployer,.contracts.genesisToken,.contracts.genesisVault,.contracts.genesisMarket,.contracts.genesisGraduationAdapter,.contracts.genesisPositionLocker,.contracts.genesisGraduatedPool,.localUniswapV3.factory,.localUniswapV3.positionManager,.localUniswapV3.quoter,.localUniswapV3.swapRouter,.localUniswapV3.wrappedQuoteAsset' "$manifest")
+for address in "${addresses[@]}"; do [[ "$address" =~ ^0x[0-9a-fA-F]{40}$ && "$(cast code "$address" --rpc-url "$rpc_url")" != "0x" ]] || { echo "Missing code at $address" >&2; exit 1; }; done
 
-for address in "$base" "$router" "$factory" "$market_factory" "$token" "$vault" "$market" "${rewards[@]}"; do
-  [[ "$address" =~ ^0x[0-9a-fA-F]{40}$ ]] || { echo "Invalid contract address $address" >&2; exit 1; }
-  [[ "$(cast code "$address" --rpc-url "$rpc_url")" != "0x" ]] || { echo "No code at $address" >&2; exit 1; }
-done
+lower() { tr '[:upper:]' '[:lower:]' <<<"$1"; }
+eq_address() { [[ "$(lower "$(cast call "$1" "$2" ${3:-} --rpc-url "$rpc_url")")" == "$(lower "$4")" ]]; }
+[[ "$(cast call "$factory" 'chainId()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')" == "46630" ]]
+eq_address "$factory" 'baseAsset()(address)' "" "$base"
+eq_address "$factory" 'conversionRouter()(address)' "" "$router"
+eq_address "$factory" 'coordinator()(address)' "" "$coordinator"
+eq_address "$market_factory" 'launchFactory()(address)' "" "$factory"
+eq_address "$market_factory" 'coordinator()(address)' "" "$coordinator"
+eq_address "$coordinator" 'launchFactory()(address)' "" "$factory"
+eq_address "$coordinator" 'marketFactory()(address)' "" "$market_factory"
+eq_address "$launch_deployer" 'controller()(address)' "" "$factory"
+eq_address "$adapter_deployer" 'controller()(address)' "" "$market_factory"
+eq_address "$market_deployer" 'controller()(address)' "" "$market_factory"
+eq_address "$factory" 'vaultByToken(address)(address)' "$token" "$vault"
+eq_address "$market_factory" 'marketByToken(address)(address)' "$token" "$market"
+eq_address "$market_factory" 'adapterByToken(address)(address)' "$token" "$adapter"
+eq_address "$vault" 'launchToken()(address)' "" "$token"
+eq_address "$vault" 'baseAsset()(address)' "" "$base"
+eq_address "$vault" 'conversionRouter()(address)' "" "$router"
+eq_address "$market" 'graduationAdapter()(address)' "" "$adapter"
+eq_address "$market" 'positionLocker()(address)' "" "$locker"
+eq_address "$market" 'graduatedPool()(address)' "" "$pool"
+eq_address "$adapter" 'pool()(address)' "" "$pool"
 
-[[ "$(cast call "$factory" 'chainId()(uint256)' --rpc-url "$rpc_url" --json | jq -r '.[0]')" == "46630" ]]
-[[ "$(cast call "$factory" 'baseAsset()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" == "${base,,}" ]]
-[[ "$(cast call "$factory" 'conversionRouter()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" == "${router,,}" ]]
-[[ "$(cast call "$factory" 'vaultByToken(address)(address)' "$token" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" == "${vault,,}" ]]
-[[ "$(cast call "$vault" 'launchToken()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" == "${token,,}" ]]
-[[ "$(cast call "$token" 'controller()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" == "${vault,,}" ]]
-[[ "$(cast call "$market_factory" 'marketByToken(address)(address)' "$token" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" == "${market,,}" ]]
-[[ "$(cast call "$token" 'isExcluded(address)(bool)' "$market" --rpc-url "$rpc_url")" == "true" ]]
-[[ "$(cast call "$token" 'rewardAssetCount()(uint256)' --rpc-url "$rpc_url" --json | jq -r '.[0]')" == "3" ]]
-[[ "$(cast call "$base" 'faucetAmount()(uint256)' --rpc-url "$rpc_url" --json | jq -r '.[0]')" == "10000000000000000000000" ]]
+[[ "$(cast call "$market" 'seeded()(bool)' --rpc-url "$rpc_url")" == "true" ]]
+[[ "$(cast call "$token" 'exclusionsSealed()(bool)' --rpc-url "$rpc_url")" == "true" ]]
+for excluded in "$market" "$adapter" "$locker" "$pool" "$coordinator"; do [[ "$(cast call "$token" 'isExcluded(address)(bool)' "$excluded" --rpc-url "$rpc_url")" == "true" ]]; done
+[[ "$(cast call "$token" 'balanceOf(address)(uint256)' "$coordinator" --rpc-url "$rpc_url" | awk '{print $1}')" == "0" ]]
+[[ "$(cast call "$token" 'allowance(address,address)(uint256)' "$coordinator" "$market" --rpc-url "$rpc_url" | awk '{print $1}')" == "0" ]]
 [[ "$(cast call "$base" 'TESTNET_MOCK_ONLY()(string)' --rpc-url "$rpc_url" --json | jq -r '.[0]')" == "robinhood-testnet-mock" ]]
 [[ "$(cast call "$router" 'TESTNET_MOCK_ONLY()(string)' --rpc-url "$rpc_url" --json | jq -r '.[0]')" == "robinhood-testnet-mock" ]]
-[[ "$(cast call "$market" 'TESTNET_MOCK_ONLY()(string)' --rpc-url "$rpc_url" --json | jq -r '.[0]')" == "robinhood-testnet-mock" ]]
+[[ "$(cast call "$(jq -er '.localUniswapV3.wrappedQuoteAsset' "$manifest")" 'TESTNET_PROVENANCE()(string)' --rpc-url "$rpc_url" --json | jq -r '.[0]')" == "robyn-controlled-uniswap-v3-testnet" ]]
 
 expected_weights=(4000 4000 2000)
 for i in 0 1 2; do
-  [[ "$(cast call "$token" 'rewardAsset(uint256)(address)' "$i" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" == "${rewards[$i],,}" ]]
-  leg_weight="$(cast call "$vault" 'leg(uint256)((address,uint16,uint256,uint256,uint256,uint256))' "$i" --rpc-url "$rpc_url" --json | jq -r '.[0][1]')"
-  [[ "$leg_weight" == "${expected_weights[$i]}" ]] || { echo "Unexpected basket weight $i: $leg_weight" >&2; exit 1; }
+  eq_address "$token" 'rewardAsset(uint256)(address)' "$i" "${rewards[$i]}"
+  [[ "$(cast call "$vault" 'leg(uint256)((address,uint16,uint256,uint256,uint256,uint256))' "$i" --rpc-url "$rpc_url" --json | jq -r '.[0][1]')" == "${expected_weights[$i]}" ]]
 done
-
-printf 'Verified Robinhood testnet package deployment at block %s\n' "$(cast block-number --rpc-url "$rpc_url")"
+[[ "$(cast call "$market_factory" 'poolFee()(uint24)' --rpc-url "$rpc_url" | awk '{print $1}')" == "$(jq -r '.market.poolFeePips' "$manifest")" ]]
+[[ "$(cast call "$market_factory" 'curveTokenAllocation()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')" == "$(jq -r '.market.curveTokenAllocation' "$manifest")" ]]
+[[ "$(cast call "$market_factory" 'graduationThresholdBase()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')" == "$(jq -r '.market.graduationThresholdBase' "$manifest")" ]]
+echo "Verified atomic Robinhood testnet package at block $(cast block-number --rpc-url "$rpc_url")"

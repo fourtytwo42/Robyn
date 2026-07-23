@@ -145,3 +145,24 @@ Rollback stops and deletes only the five testnet PM2 processes, preserves devnet
 - Legal/issuer confirmation before substituting restricted Stock Tokens for mocks.
 
 These are not permission to weaken the local package. Mocks remain visibly labeled until canonical integrations are verified.
+# Two-phase atomic Uniswap deployment
+
+No command below is public-testnet authorization. A real broadcast additionally requires explicit user approval, clean exact `origin/main`, the protected build, a funded encrypted deployer, and the normal readiness gate.
+
+Phase one deploys the fallback venue only after a fresh official-registry check:
+
+```bash
+ROBYN_TESTNET_DEX_BROADCAST=true scripts/deploy-testnet-uniswap-v3.sh
+scripts/verify-testnet-uniswap-v3.sh deployments/46630-uniswap-v3.json
+```
+
+The venue must always be labeled `robyn-controlled-uniswap-v3-testnet`. It contains project-owned TestnetWETH9 plus pinned official Uniswap artifacts: v3-core 1.0.0, v3-periphery 1.4.4, and SwapRouter contracts 1.1.0.
+
+Phase two refuses to run without a passing DEX manifest:
+
+```bash
+ROBYN_TESTNET_BROADCAST=true scripts/deploy-testnet.sh
+scripts/verify-testnet-deployment.sh deployments/46630.json
+```
+
+The protocol manifest is schema version 2 and records the coordinator, helper deployers, pool, adapter, locker, exact release commit, and SHA-256 of the DEX provenance manifest. `scripts/rehearse-testnet.sh` executes both phases on an isolated chain-46630 Anvil instance and proves atomic launch, bonding buy, automatic graduation, nonzero locked liquidity, post-graduation sell, reward conversion, and claims.

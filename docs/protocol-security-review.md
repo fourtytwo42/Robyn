@@ -98,3 +98,13 @@ The candidate is blocked if any of these occurs:
 - a testnet/public deployment uses mock contracts without clear mock labeling.
 
 Before any real-value asset deployment, obtain an independent contract audit/review, resolve its findings, repeat all release gates, and cut a new immutable candidate. A local testnet-mock rehearsal does not substitute for that review.
+# Atomic launch and pool-precreation controls
+
+- The token and vault use CREATE2 salts bound to chain ID, factory, creator, supply recipient, configuration hash, and a browser-generated cryptographically random `bytes32` salt.
+- Salts are generated immediately before wallet submission and never prepublished. Reuse is rejected.
+- A pre-existing canonical token/base/fee pool causes `PoolAlreadyExists` and reverts the complete transaction. Tests prove no counter increment, mapping, deployed token/vault, approval, or surviving log.
+- Coordinator and both v2 factories are immutable fresh deployments. One-time binding prevents an initializer race after activation, and the factories are unusable before binding.
+- The coordinator asserts exact inventory custody, zero residual token balance and allowance, seeded state, and all five exclusions before emitting the canonical event.
+- Metadata and artwork remain offchain after confirmation. Their failure cannot change or obscure the onchain transaction result.
+
+Chain-46630 uses a project-controlled test-only Uniswap v3 fallback only when the official registry still lacks that chain. Its manifest binds every address, deployment transaction, constructor encoding, creation-input hash, runtime hash, package artifact hash, wiring, owner, and enabled fee tier. The configuration is explicitly rejected outside chain 46630 and must never be accepted as mainnet infrastructure.

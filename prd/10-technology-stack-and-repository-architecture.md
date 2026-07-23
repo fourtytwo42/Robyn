@@ -203,4 +203,7 @@ Tests use deterministic fixtures and pinned block numbers. Financial acceptance 
 - Final wallet-modal presentation package, provided it uses the settled wagmi/WalletConnect/injected connector layer.
 
 The runtime host and native service model are not deferred: the project VM is authoritative and containers are prohibited. The remaining choices require an architecture decision record before production procurement but do not block repository scaffolding or R0 development.
+# Deployment and manifest architecture
+
+Deployment manifests use schema version 2 for coordinator launches. The chain-46630 DEX provenance manifest is separate from the Robyn protocol manifest so venue verification is a fail-closed phase-one gate. Testnet builds accept only chain-46630 project-owned mock assets and the explicitly test-only venue; mainnet configuration cannot import these addresses.
 

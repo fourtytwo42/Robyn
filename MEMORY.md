@@ -10,9 +10,20 @@ Durable project context lives here. Update this file whenever information should
 - Last meaningful change: added the v2 coordinator-only CREATE2 launch factory, size-bounded launch helper, coordinator-only Uniswap market factory, and one-transaction launch/market/seed/exclusion coordinator.
 - Last verification: 2026-07-22 all 46 Foundry tests pass. New coverage proves predicted addresses, exact supply custody, zero residual coordinator allowance/balance, direct-call rejection, duplicate salt rejection, concurrent launch identity, complete rollback against a pre-created pool, and successful graduation.
 - Next step: integrate the coordinator into local/testnet deployment tooling, web creation, indexer canonicality, manifests, verification, documentation, and served browser acceptance.
+- Current progress: local and protected-testnet creation now simulate and submit one coordinator call, generate a browser-random salt, and decode the canonical token from that receipt. The indexer gates schema-v2 launches on coordinator event plus seeded/sealed state. Testnet tooling is split into a verified DEX phase and atomic protocol phase.
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-22 - Atomic app, indexer, and chain-46630 rehearsal
+
+- Web: local and protected-testnet creation now use one `RobynAtomicLaunchCoordinator.createLaunch` transaction. Both simulate first, generate a nonzero random browser salt, decode `AtomicLaunchCreated` from their own receipt, and distinguish indexing/artwork failures from onchain failure.
+- Indexer: schema-v2 manifests use coordinator logs as canonical identity and require event-to-mapping agreement plus `seeded` market and sealed token exclusions before exposing a launch.
+- Testnet DEX: `deploy-testnet-uniswap-v3.sh` and its verifier produce a separate `robyn-controlled-uniswap-v3-testnet` manifest with addresses, transaction inputs, constructor arguments, artifact/creation/runtime hashes, owner, fee tiers, pinned versions, and wiring. No public-testnet broadcast occurred.
+- Testnet protocol: the old fixed-price path is replaced by schema-v2 atomic Uniswap deployment and refuses to run without a passing DEX manifest.
+- Verification: formatting, lint, strict monorepo typecheck, and nine web tests pass. The isolated two-phase chain-46630 rehearsal passed atomic launch, bonding buy, automatic graduation, nonzero locked Uniswap liquidity, post-graduation sell, all reward conversions, and all claims.
+- Gas: isolated chain-46630 measurement used 54,297,844 gas across 29 DEX-plus-protocol deployment transactions; the single atomic genesis launch used 14,021,027 gas. At the then-live 10,000,000 wei gas price the execution-only total is 0.00054297844 ETH, excluding Arbitrum L1 data fees. A live `eth_estimateGas` against the deployed coordinator remains a mandatory post-phase-two, pre-smoke-launch gate.
+
 
 ### 2026-07-22 - Atomic local deployment tooling
 

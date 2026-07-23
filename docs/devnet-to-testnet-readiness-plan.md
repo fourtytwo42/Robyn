@@ -426,3 +426,10 @@ When the user later authorizes implementation, begin only with:
 4. a nonfunctional web health page reachable through the in-app browser.
 
 Do not start the full launchpad, install all infrastructure at once or expose a shared devnet until those foundations pass and are pushed.
+# Atomic launch release gate
+
+- Local and protected-testnet creation must simulate and submit exactly one coordinator call.
+- The UI identifies the launch only from `AtomicLaunchCreated` in its own receipt and shows simulation, wallet confirmation, chain confirmation, indexing, and optional metadata as distinct progress phases.
+- Schema-v2 indexing requires a matching coordinator event, factory mappings, seeded market, and sealed exclusions.
+- Chain-46630 deployment is two explicitly authorized phases: verified test-only Uniswap venue, then Robyn protocol.
+- The isolated chain-46630 rehearsal must pass before any estimate or broadcast. Mainnet remains excluded.

@@ -178,3 +178,6 @@ These are configurable policy hypotheses, not immutable product decisions. Chang
 - Use Alloy and Vladdy accounting behavior as references; do not deploy Alloy unchanged or copy unlicensed Vladdy source.
 - Call the selected upstream factory through a pinned, verified ABI and monitored implementation.
 - Do not depend on IndexPad, current Alloy, HoodETF or BASKET deployments for holder accounting.
+# Atomic inventory and graduation initialization
+
+The protocol-defined curve allocation plus graduation allocation equals the required one-billion-token supply. The coordinator temporarily receives all supply, seeds the entire inventory with zero initial base liquidity, clears allowance, seals exclusions, and must retain no tokens. Graduation remains automatic in the threshold-reaching buy, with locked LP fee collection feeding the existing basket conversion and holder-claim accounting.

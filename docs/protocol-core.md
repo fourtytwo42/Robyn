@@ -119,3 +119,10 @@ The following items remain required before Robinhood testnet or any real-value d
 - The old standalone accounting primitive is test-only under packages/contracts/test/fixtures.
 - Obtain an independent contract security review before any real-value deployment.
 - Treat the internal review as non-independent; the package is not approved for real assets.
+# Atomic launch v2
+
+All new native launches enter through immutable `RobynAtomicLaunchCoordinator`. One creator transaction creates the CREATE2 token and basket vault, creates the pre-bound Uniswap pool and bonding market, transfers and seeds the complete fixed one-billion-token inventory, clears allowance, and seals exclusions for the market, adapter, pool, locker, and coordinator. Any failed step reverts all contracts, mappings, approvals, logs, and the launch counter.
+
+`RobynLaunchFactoryV2` and `UniswapV3MarketFactoryV2` start inactive. Their initializer can bind a coordinator exactly once, after which creator-facing factory methods remain unavailable and only coordinator calls are accepted. The market's canonical creator is the wallet while its one-use seed authority is the coordinator.
+
+The canonical identity is `AtomicLaunchCreated` from the creator transaction receipt. Clients must not use the current `launchCount` to identify their result. The indexer exposes v2 launches only when the event agrees with both factory mappings and onchain seeded/sealed state.

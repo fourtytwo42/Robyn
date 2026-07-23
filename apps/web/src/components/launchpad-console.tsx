@@ -3,6 +3,7 @@
 import {
   createPublicClient,
   createWalletClient,
+  decodeEventLog,
   defineChain,
   formatEther,
   http,
@@ -17,6 +18,50 @@ import { TokenCardArt } from "@/components/launchpad-visuals";
 import { GuidedLaunchWizard } from "@/components/guided-launch-wizard";
 
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
+const atomicLaunchCoordinatorAbi = [
+  {
+    type: "function",
+    name: "createLaunch",
+    stateMutability: "nonpayable",
+    inputs: [
+      {
+        name: "request",
+        type: "tuple",
+        components: [
+          { name: "name", type: "string" },
+          { name: "symbol", type: "string" },
+          { name: "assets", type: "address[]" },
+          { name: "weights", type: "uint16[]" },
+          { name: "userSalt", type: "bytes32" },
+        ],
+      },
+    ],
+    outputs: [{ type: "address" }, { type: "address" }, { type: "address" }],
+  },
+  {
+    type: "event",
+    name: "AtomicLaunchCreated",
+    inputs: [
+      { indexed: true, name: "launchId", type: "uint256" },
+      { indexed: true, name: "creator", type: "address" },
+      { indexed: true, name: "token", type: "address" },
+      { indexed: false, name: "vault", type: "address" },
+      { indexed: false, name: "market", type: "address" },
+      { indexed: false, name: "adapter", type: "address" },
+      { indexed: false, name: "pool", type: "address" },
+      { indexed: false, name: "locker", type: "address" },
+      { indexed: false, name: "configurationHash", type: "bytes32" },
+      { indexed: false, name: "launchSaltHash", type: "bytes32" },
+    ],
+  },
+] as const;
+
+function randomLaunchSalt(): Hex {
+  const bytes = new Uint8Array(32);
+  do crypto.getRandomValues(bytes);
+  while (bytes.every((value) => value === 0));
+  return `0x${Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("")}`;
+}
 const factoryAbi = [
   {
     type: "function",
@@ -404,6 +449,7 @@ export function LaunchpadConsole({
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success")
         throw new Error("Transaction reverted.");
+      return receipt;
     },
     [publicClient, walletClient],
   );
@@ -493,93 +539,48 @@ export function LaunchpadConsole({
       );
     setBusy(true);
     try {
-      setStatus("1/5 Creating token and immutable basket...");
-      await submit({
-        address: deployment.contracts.factory,
-        abi: factoryAbi,
+      const coordinator = deployment.contracts.atomicLaunchCoordinator;
+      if (!coordinator)
+        throw new Error("Atomic launch coordinator is not configured.");
+      const request = {
+        name: name.trim(),
+        symbol: symbol.trim().toUpperCase(),
+        assets: basket.map((item) => item.asset),
+        weights: basket.map((item) => item.weight * 100),
+        userSalt: randomLaunchSalt(),
+      } as const;
+      setStatus("Simulating the complete atomic launch...");
+      const simulation = await publicClient.simulateContract({
+        address: coordinator,
+        abi: atomicLaunchCoordinatorAbi,
         functionName: "createLaunch",
-        args: [
-          name.trim(),
-          symbol.trim().toUpperCase(),
-          parseEther("1000000000"),
-          basket.map((item) => item.asset),
-          basket.map((item) => item.weight * 100),
-        ],
+        args: [request],
         account,
       });
-      const id = await publicClient.readContract({
-        address: deployment.contracts.factory,
-        abi: factoryAbi,
-        functionName: "launchCount",
-      });
-      const token = await publicClient.readContract({
-        address: deployment.contracts.factory,
-        abi: factoryAbi,
-        functionName: "launchTokenById",
-        args: [id],
-      });
-      setStatus(
-        "2/5 Deploying its bonding curve and canonical Uniswap pool...",
+      setStatus("Confirm one transaction in your wallet...");
+      const receipt = await submit(simulation.request);
+      setStatus("Confirming launch identity from its transaction receipt...");
+      const launchLog = receipt.logs.find(
+        (log) => log.address.toLowerCase() === coordinator.toLowerCase(),
       );
-      await submit({
-        address: deployment.contracts.marketFactory,
-        abi: marketFactoryAbi,
-        functionName: "createMarket",
-        args: [token],
-        account,
+      if (!launchLog) throw new Error("Atomic launch event was not emitted.");
+      const decoded = decodeEventLog({
+        abi: atomicLaunchCoordinatorAbi,
+        eventName: "AtomicLaunchCreated",
+        data: launchLog.data,
+        topics: launchLog.topics,
       });
-      const market = await publicClient.readContract({
-        address: deployment.contracts.marketFactory,
-        abi: marketFactoryAbi,
-        functionName: "marketByToken",
-        args: [token],
-      });
-      setStatus("3/5 Approving the fixed one-billion-token supply...");
-      await submit({
-        address: token,
-        abi: erc20Abi,
-        functionName: "approve",
-        args: [market, parseEther("1000000000")],
-        account,
-      });
-      setStatus("4/5 Seeding curve inventory and graduation reserves...");
-      await submit({
-        address: market,
-        abi: marketAbi,
-        functionName: "seed",
-        args: [parseEther("1000000000"), 0n],
-        account,
-      });
-      const graduatedPool = await publicClient.readContract({
-        address: market,
-        abi: marketAbi,
-        functionName: "graduatedPool",
-      });
-      const graduationAdapter = await publicClient.readContract({
-        address: market,
-        abi: marketAbi,
-        functionName: "graduationAdapter",
-      });
-      const positionLocker = await publicClient.readContract({
-        address: market,
-        abi: marketAbi,
-        functionName: "positionLocker",
-      });
-      setStatus(
-        "5/5 Sealing market, adapter, locker, and pool reward exclusions...",
-      );
-      await submit({
-        address: deployment.contracts.factory,
-        abi: factoryAbi,
-        functionName: "sealLaunchExclusions",
-        args: [
-          token,
-          [market, graduationAdapter, positionLocker, graduatedPool],
-        ],
-        account,
-      });
+      const token = decoded.args.token;
+      setStatus("Waiting for the canonical launch to be indexed...");
       await refresh();
-      await bindArtwork(token, artworkMediaId);
+      try {
+        await bindArtwork(token, artworkMediaId);
+      } catch (metadataError) {
+        setStatus(
+          `Onchain launch succeeded, but artwork binding needs attention: ${metadataError instanceof Error ? metadataError.message : "unknown metadata error"}`,
+        );
+        return;
+      }
       setStatus(
         "Launch complete. Its bonding curve is live, graduation into locked Uniswap liquidity is automatic, and basket rules are immutable.",
       );

@@ -10,6 +10,8 @@ export type Deployment = {
     conversionRouter?: Address;
     factory: Address;
     marketFactory: Address;
+    launchDeployer?: Address;
+    atomicLaunchCoordinator?: Address;
     adapterDeployer?: Address;
     marketDeployer?: Address;
     legacyMarketFactories?: Address[];
