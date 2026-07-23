@@ -29,13 +29,18 @@ if [[ -z "$deployer" || "$deployer" == "null" ]]; then
   echo "No unlocked operator account is available on loopback RPC" >&2
   exit 1
 fi
+gas_price="$(cast gas-price --rpc-url "$rpc_url")"
+if [[ ! "$gas_price" =~ ^[0-9]+$ || "$gas_price" == "0" ]]; then
+  echo "RPC returned an invalid gas price: $gas_price" >&2
+  exit 1
+fi
 
 forge build --root packages/contracts >/dev/null
 
 deploy_contract() {
   local contract="$1"
   shift
-  local command=(forge create "$contract" --root packages/contracts --rpc-url "$rpc_url" --from "$deployer" --unlocked --broadcast --json)
+  local command=(forge create "$contract" --root packages/contracts --rpc-url "$rpc_url" --from "$deployer" --unlocked --broadcast --json --gas-price "$gas_price")
   if [[ "$#" -gt 0 ]]; then
     command+=(--constructor-args "$@")
   fi
@@ -43,7 +48,7 @@ deploy_contract() {
 }
 
 send_transaction() {
-  cast send --rpc-url "$rpc_url" --from "$deployer" --unlocked --json "$@" |
+  cast send --rpc-url "$rpc_url" --from "$deployer" --unlocked --gas-price "$gas_price" --json "$@" |
     jq -e '.status == "0x1" or .status == 1' >/dev/null
 }
 

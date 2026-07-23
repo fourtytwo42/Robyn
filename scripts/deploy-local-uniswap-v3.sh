@@ -22,6 +22,11 @@ if [[ "$(cast code "$base_asset" --rpc-url "$rpc_url")" == "0x" ]]; then
 fi
 
 deployer="$(cast rpc eth_accounts --rpc-url "$rpc_url" | jq -er '.[0]')"
+gas_price="$(cast gas-price --rpc-url "$rpc_url")"
+if [[ ! "$gas_price" =~ ^[0-9]+$ || "$gas_price" == "0" ]]; then
+  echo "RPC returned an invalid gas price: $gas_price" >&2
+  exit 1
+fi
 zero_address="0x0000000000000000000000000000000000000000"
 
 deploy_artifact() {
@@ -35,7 +40,7 @@ deploy_artifact() {
     encoded="$(cast abi-encode "$constructor_signature" "$@")"
   fi
   creation="${bytecode}${encoded#0x}"
-  receipt="$(cast send --rpc-url "$rpc_url" --from "$deployer" --unlocked --json --create "$creation")"
+  receipt="$(cast send --rpc-url "$rpc_url" --from "$deployer" --unlocked --gas-price "$gas_price" --json --create "$creation")"
   deployed="$(jq -er '.contractAddress // .contract_address' <<<"$receipt")"
   if [[ "$(cast code "$deployed" --rpc-url "$rpc_url")" == "0x" ]]; then
     echo "Deployment produced no runtime code: $artifact" >&2
