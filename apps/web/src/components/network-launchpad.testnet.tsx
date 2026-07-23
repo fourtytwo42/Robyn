@@ -63,6 +63,23 @@ function randomLaunchSalt(): Hex {
   while (bytes.every((value) => value === 0));
   return `0x${Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("")}`;
 }
+
+function launchErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes("PoolAlreadyExists"))
+    return "A Uniswap pool already exists for the predicted token. The complete launch was reverted; generate a new launch salt and try again.";
+  if (message.includes("CoordinatorNotBound"))
+    return "The atomic launch coordinator is not bound. No launch was created.";
+  if (message.includes("LaunchSaltAlreadyUsed"))
+    return "That launch salt was already used. No launch was created; try again to generate a fresh salt.";
+  if (
+    message.includes("InvalidConfiguration") ||
+    message.includes("InvalidWeights") ||
+    message.includes("InvalidBasket")
+  )
+    return "The token or reward basket configuration is invalid. No launch was created.";
+  return message;
+}
 const factoryAbi = [
   {
     type: "function",
@@ -503,7 +520,7 @@ export function NetworkLaunchpadConsole({
         "Launch complete. Its market is live and basket rules are immutable.",
       );
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Launch failed.");
+      setStatus(launchErrorMessage(error));
     } finally {
       setBusy(false);
     }

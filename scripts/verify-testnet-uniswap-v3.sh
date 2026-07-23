@@ -8,8 +8,18 @@ export PATH="$HOME/.foundry/bin:$PATH"
 
 [[ "$(cast chain-id --rpc-url "$rpc_url")" == "46630" ]] || { echo "Expected chain 46630" >&2; exit 1; }
 jq -e '.chainId == 46630 and .testOnly == true and .officialDeployment == false and .provenance == "robyn-controlled-uniswap-v3-testnet"' "$manifest" >/dev/null
+jq -e '.packageVersions == {v3Core:"1.0.0",v3Periphery:"1.4.4",swapRouterContracts:"1.1.0"} and .sourceCommits == {v3Core:"e3589b192d0be27e100cd0daaf6c97204fdb1899",v3Periphery:"697c2474757ea89fec12a4e6db16a574fe259610",swapRouterContracts:"8fe4f086cee7c08f0bdb6ebe20c9ab615921c65f"}' "$manifest" >/dev/null
+
+declare -A artifacts=(
+  [weth9]="packages/contracts/out/TestnetWETH9.sol/TestnetWETH9.json"
+  [factory]="node_modules/@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json"
+  [positionManager]="node_modules/@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json"
+  [quoterV2]="node_modules/@uniswap/v3-periphery/artifacts/contracts/lens/QuoterV2.sol/QuoterV2.json"
+  [swapRouter02]="node_modules/@uniswap/swap-router-contracts/artifacts/contracts/SwapRouter02.sol/SwapRouter02.json"
+)
 
 for key in weth9 factory positionManager quoterV2 swapRouter02; do
+  [[ "$(sha256sum "${artifacts[$key]}" | awk '{print $1}')" == "$(jq -er ".artifactSha256.$key" "$manifest")" ]] || { echo "$key artifact hash mismatch" >&2; exit 1; }
   address="$(jq -er ".contracts.$key" "$manifest")"
   [[ "$(cast code "$address" --rpc-url "$rpc_url")" != "0x" ]] || { echo "$key has no code" >&2; exit 1; }
   [[ "$(cast codehash "$address" --rpc-url "$rpc_url" | tr A-F a-f)" == "$(jq -er ".runtimeCodeHashes.$key" "$manifest" | tr A-F a-f)" ]] || { echo "$key runtime hash mismatch" >&2; exit 1; }

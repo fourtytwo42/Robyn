@@ -128,6 +128,32 @@ contract AtomicLaunchCoordinatorTest {
             revert("direct launch accepted");
         } catch {}
         require(launchFactory.launchCount() == 0, "direct launch persisted");
+        coordinator.createLaunch(_request(bytes32(uint256(40))));
+        RobynLaunchToken token = RobynLaunchToken(launchFactory.launchTokenById(1));
+        try marketFactory.createMarketFor(token, address(this), address(this)) {
+            revert("direct market accepted");
+        } catch {}
+    }
+
+    function testFactoryIsInactiveBeforeCoordinatorBinding() public {
+        RobynLaunchDeployerV2 freshDeployer = new RobynLaunchDeployerV2();
+        RobynLaunchFactoryV2 freshFactory = new RobynLaunchFactoryV2(base, conversionRouter, freshDeployer, 1, 1 days);
+        freshDeployer.bindController(address(freshFactory));
+        try freshFactory.createLaunchFor(address(this), address(this), SUPPLY, _request(bytes32(uint256(41)))) {
+            revert("inactive factory accepted launch");
+        } catch {}
+        require(freshFactory.launchCount() == 0, "inactive launch persisted");
+    }
+
+    function testCoordinatorBindingsCannotChange() public {
+        try launchFactory.bindCoordinator(address(1)) {
+            revert("launch coordinator rebound");
+        } catch {}
+        try marketFactory.bindCoordinator(address(1)) {
+            revert("market coordinator rebound");
+        } catch {}
+        require(launchFactory.coordinator() == address(coordinator), "launch coordinator changed");
+        require(marketFactory.coordinator() == address(coordinator), "market coordinator changed");
     }
 
     function testDistinctSaltsCreateDistinctConcurrentLaunches() public {
