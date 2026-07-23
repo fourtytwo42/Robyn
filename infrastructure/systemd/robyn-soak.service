@@ -8,8 +8,8 @@ Type=simple
 User=hendo420
 Group=hendo420
 WorkingDirectory=/opt/robyn/current
-Environment=SOAK_DURATION_SECONDS=86400
-Environment=SOAK_INTERVAL_SECONDS=15
+Environment=SOAK_DURATION_SECONDS=28800
+Environment=SOAK_INTERVAL_SECONDS=30
 Environment=SOAK_OUTPUT_DIR=/var/lib/robyn/soak
 ExecStart=/opt/node-v24.18.0-linux-x64/bin/node /opt/robyn/current/scripts/soak-release.mjs
 NoNewPrivileges=true
@@ -36,6 +36,3 @@ SystemCallArchitectures=native
 SystemCallFilter=@system-service
 SystemCallErrorNumber=EPERM
 UMask=0077
-
-[Install]
-WantedBy=multi-user.target

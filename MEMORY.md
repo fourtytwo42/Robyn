@@ -40,6 +40,11 @@ Durable project context lives here. Update this file whenever information should
   SBOM. Next preview/Server Actions cryptographic values come from a
   protected VM-only input whose SHA-256, but never contents, is recorded in
   evidence. All normalization rules are recorded.
+- Final soak policy is one manually started, non-enabled eight-hour run with
+  30-second samples, 100 stable read actors and bounded five-minute onchain
+  trade/eligible-claim cycles. It must not advance chain time. Preserve its
+  checksummed evidence, then remove `robyn-soak.service`; no recurring schedule
+  remains.
 
 - Completed goal: schema-v4 contracts and every mapped product action on the
   controlled local network are validated; deterministic hundreds-user

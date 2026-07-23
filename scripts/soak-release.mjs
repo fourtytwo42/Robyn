@@ -2,10 +2,11 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 
-const durationSeconds = Number(process.env.SOAK_DURATION_SECONDS ?? "86400");
-const intervalSeconds = Number(process.env.SOAK_INTERVAL_SECONDS ?? "15");
+const durationSeconds = Number(process.env.SOAK_DURATION_SECONDS ?? "28800");
+const intervalSeconds = Number(process.env.SOAK_INTERVAL_SECONDS ?? "30");
 const outputBase = process.env.SOAK_OUTPUT_DIR ?? "/var/lib/robyn/soak";
 const expectedRelease = process.env.SOAK_EXPECTED_RELEASE;
 const minimumMemoryBytes = Number(
@@ -42,6 +43,9 @@ if (expectedRelease && releasePath !== fs.realpathSync(expectedRelease)) {
 const manifest = JSON.parse(
   fs.readFileSync(path.join(releasePath, "release-manifest.json"), "utf8"),
 );
+const deployment = JSON.parse(
+  fs.readFileSync(path.join(releasePath, "deployments/31337.json"), "utf8"),
+);
 const releaseId = manifest.releaseId;
 const startedAt = new Date();
 const runId = startedAt.toISOString().replaceAll(/[-:.]/g, "");
@@ -49,14 +53,27 @@ const outputDir = path.join(outputBase, releaseId);
 const samplesPath = path.join(outputDir, `soak-${runId}.jsonl`);
 const summaryPath = path.join(outputDir, `soak-${runId}-summary.json`);
 const lockPath = path.join(outputDir, "active.lock");
+const workloadPath = path.join(outputDir, `soak-${runId}-workload.jsonl`);
+const checksumPath = path.join(outputDir, `soak-${runId}-SHA256SUMS`);
 
 fs.mkdirSync(outputDir, { recursive: true, mode: 0o700 });
 const lock = fs.openSync(lockPath, "wx", 0o600);
 fs.writeFileSync(lock, `${process.pid}\n${startedAt.toISOString()}\n`);
+fs.writeFileSync(workloadPath, "", { flag: "wx", mode: 0o600 });
 
 const pm2Binary = path.join(releasePath, "node_modules/.bin/pm2");
 const endpointLatencies = new Map();
 const errors = [];
+const manifestLaunches = deployment.demoLaunches ?? [];
+const castBinary = "/home/hendo420/.foundry/bin/cast";
+const operatorRpc = "http://127.0.0.1:8545";
+const maximumUint256 =
+  "115792089237316195423570985008687907853269984665640564039457584007913129639935";
+const actorCount = 100;
+let actorCursor = 0;
+let actorRequestCount = 0;
+let workloadTransactionCount = 0;
+let workloadCycleCount = 0;
 let errorCount = 0;
 let sampleCount = 0;
 let minimumObservedMemory = Number.POSITIVE_INFINITY;
@@ -121,6 +138,224 @@ async function timedFetch(name, url, options) {
   return { response, latencyMs };
 }
 
+function castCall(address, signature, ...args) {
+  return execFileSync(
+    castBinary,
+    ["call", address, signature, ...args, "--rpc-url", operatorRpc],
+    { encoding: "utf8", maxBuffer: 1024 * 1024 },
+  ).trim();
+}
+
+function castSend(sender, address, signature, ...args) {
+  const receipt = JSON.parse(
+    execFileSync(
+      castBinary,
+      [
+        "send",
+        address,
+        signature,
+        ...args,
+        "--from",
+        sender,
+        "--unlocked",
+        "--rpc-url",
+        operatorRpc,
+        "--json",
+      ],
+      { encoding: "utf8", maxBuffer: 1024 * 1024 },
+    ),
+  );
+  if (receipt.status !== "0x1" && receipt.status !== 1) {
+    throw new Error(`workload transaction reverted: ${signature}`);
+  }
+  workloadTransactionCount += 1;
+  return receipt.transactionHash;
+}
+
+function firstInteger(output) {
+  const value = output.split(/\s+/)[0];
+  if (!/^\d+$/.test(value)) throw new Error(`invalid cast integer: ${output}`);
+  return BigInt(value);
+}
+
+function unlockedAccounts() {
+  return JSON.parse(
+    execFileSync(
+      castBinary,
+      ["rpc", "eth_accounts", "--rpc-url", operatorRpc],
+      { encoding: "utf8" },
+    ),
+  );
+}
+
+function appendWorkload(event) {
+  fs.appendFileSync(
+    workloadPath,
+    `${JSON.stringify({
+      recordedAt: new Date().toISOString(),
+      gitSha: manifest.gitSha,
+      ...event,
+    })}\n`,
+    { mode: 0o600 },
+  );
+}
+
+function runWriteWorkload() {
+  if (manifestLaunches.length === 0) throw new Error("soak has no launch workload");
+  const accounts = unlockedAccounts();
+  if (accounts.length < 7) throw new Error("soak requires seven unlocked devnet accounts");
+  const launch = manifestLaunches[workloadCycleCount % manifestLaunches.length];
+  const trader = accounts[1 + (workloadCycleCount % 6)];
+  const baseAsset = deployment.contracts.baseAsset;
+  const transactions = [];
+  const baseAllowance = firstInteger(
+    castCall(baseAsset, "allowance(address,address)(uint256)", trader, launch.market),
+  );
+  if (baseAllowance < 10n ** 18n) {
+    transactions.push(
+      castSend(trader, baseAsset, "approve(address,uint256)", launch.market, maximumUint256),
+    );
+  }
+  transactions.push(
+    castSend(trader, launch.market, "buy(uint256,uint256)", String(10n ** 18n), "0"),
+  );
+  const tokenBalance = firstInteger(
+    castCall(launch.token, "balanceOf(address)(uint256)", trader),
+  );
+  const sellAmount = tokenBalance / 20n;
+  if (sellAmount > 0n) {
+    const tokenAllowance = firstInteger(
+      castCall(
+        launch.token,
+        "allowance(address,address)(uint256)",
+        trader,
+        launch.market,
+      ),
+    );
+    if (tokenAllowance < sellAmount) {
+      transactions.push(
+        castSend(
+          trader,
+          launch.token,
+          "approve(address,uint256)",
+          launch.market,
+          maximumUint256,
+        ),
+      );
+    }
+    transactions.push(
+      castSend(trader, launch.market, "sell(uint256,uint256)", String(sellAmount), "0"),
+    );
+  }
+
+  const rewardCount = Number(
+    firstInteger(castCall(launch.token, "rewardAssetCount()(uint256)")),
+  );
+  let claimableHolderReward = 0n;
+  for (let index = 0; index < rewardCount; index += 1) {
+    claimableHolderReward += firstInteger(
+      castCall(
+        launch.token,
+        "withdrawableRewardOf(address,uint256)(uint256)",
+        trader,
+        String(index),
+      ),
+    );
+  }
+  if (claimableHolderReward > 0n) {
+    transactions.push(castSend(trader, launch.token, "claimAll()"));
+  }
+
+  const feeAccount = castCall(
+    deployment.contracts.protocolFeeRouter,
+    "launchAccount(address)(address,address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,bool)",
+    launch.token,
+  )
+    .split("\n")
+    .map((entry) => entry.trim().split(/\s+/)[0]);
+  const creator = feeAccount[0];
+  const claimableCreator = BigInt(feeAccount[10] ?? "0");
+  if (
+    claimableCreator > 0n &&
+    accounts.some((account) => account.toLowerCase() === creator.toLowerCase())
+  ) {
+    transactions.push(
+      castSend(
+        creator,
+        deployment.contracts.protocolFeeRouter,
+        "claimCreatorFees(address)",
+        launch.token,
+      ),
+    );
+  }
+
+  const daoAccount = accounts[0];
+  const claimableDao = firstInteger(
+    castCall(
+      deployment.contracts.daoToken,
+      "claimableRewardOf(address)(uint256)",
+      daoAccount,
+    ),
+  );
+  if (claimableDao > 0n) {
+    transactions.push(
+      castSend(daoAccount, deployment.contracts.daoToken, "claimRewards()"),
+    );
+  }
+
+  workloadCycleCount += 1;
+  appendWorkload({
+    kind: "write-cycle",
+    cycle: workloadCycleCount,
+    actor: trader,
+    token: launch.token,
+    market: launch.market,
+    transactions,
+    operations: {
+      buy: true,
+      sell: sellAmount > 0n,
+      holderClaim: claimableHolderReward > 0n,
+      creatorClaim: claimableCreator > 0n,
+      daoClaim: claimableDao > 0n,
+      conversion: "permissionless keeper continuously monitored",
+    },
+  });
+}
+
+async function runActorReads() {
+  const token = manifestLaunches[actorCursor % manifestLaunches.length]?.token;
+  const paths = [
+    "/",
+    "/discover",
+    "/portfolio",
+    "/dao",
+    token ? `/launches/${token}` : "/discover",
+    "/api/launches?limit=20",
+    "/api/dao",
+    "/api/dao/activity",
+    "/api/dao/members",
+    "/api/assets",
+  ];
+  await Promise.all(
+    paths.map(async (requestPath, offset) => {
+      const actor = (actorCursor + offset) % actorCount;
+      const result = await timedFetch(
+        `actor:${requestPath.split("?")[0]}`,
+        `http://127.0.0.1:3002${requestPath}`,
+        {
+          headers: {
+            "user-agent": `robyn-soak-actor/${actor}`,
+            "x-robyn-soak-actor": String(actor),
+          },
+        },
+      );
+      await result.response.arrayBuffer();
+      actorRequestCount += 1;
+    }),
+  );
+  actorCursor = (actorCursor + paths.length) % actorCount;
+}
+
 function percentile(values, percentileValue) {
   if (values.length === 0) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -156,6 +391,7 @@ async function collectSample() {
     timedFetch("artifactHealth", "http://127.0.0.1:3200/health"),
     timedFetch("alerts", "http://127.0.0.1:9090/api/v1/alerts"),
   ]);
+  await runActorReads();
 
   const discoveryBody = await discovery.response.text();
   const hasApprovedNetworkDisclosure = [
@@ -293,6 +529,7 @@ try {
     }
     if (aborted) break;
     try {
+      if (sampleCount > 0 && sampleCount % 10 === 0) runWriteWorkload();
       finalSample = await collectSample();
       fs.appendFileSync(samplesPath, `${JSON.stringify(finalSample)}\n`);
       sampleCount += 1;
@@ -363,6 +600,11 @@ try {
     elapsedSeconds,
     intervalSeconds,
     sampleCount,
+    actorCount,
+    actorRequestCount,
+    workloadCycleCount,
+    workloadTransactionCount,
+    workloadPath,
     errorCount,
     errors,
     aborted,
@@ -385,6 +627,13 @@ try {
   fs.writeFileSync(summaryPath, `${JSON.stringify(summary, null, 2)}\n`, {
     mode: 0o600,
   });
+  const checksums = [samplesPath, workloadPath, summaryPath].map((filePath) => {
+    const digest = createHash("sha256")
+      .update(fs.readFileSync(filePath))
+      .digest("hex");
+    return `${digest}  ${path.basename(filePath)}`;
+  });
+  fs.writeFileSync(checksumPath, `${checksums.join("\n")}\n`, { mode: 0o600 });
   fs.closeSync(lock);
   fs.rmSync(lockPath, { force: true });
   process.stdout.write(`${JSON.stringify(summary)}\n`);

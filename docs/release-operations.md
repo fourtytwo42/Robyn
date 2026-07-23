@@ -23,10 +23,10 @@ scripts/build-release.sh
 
 The builder:
 
-- runs formatting, lint, typecheck, all tests, production build, traceability, static security, full chain-46630 transaction journey and isolated five-service testnet rehearsal gates;
+- runs formatting, lint, typecheck, all tests, production build, traceability and static security gates; Robinhood Testnet journey and stack rehearsal remain explicitly deferred;
 - archives the exact Git commit instead of copying the mutable checkout;
 - installs the frozen pnpm lockfile with dependency copies rather than links to the shared pnpm store, then rebuilds inside staging;
-- records source, lock, dependency, migration, build and gate hashes;
+- records source, lock, dependency, license, CycloneDX SBOM, protected-build-input fingerprint, migration, build and gate hashes;
 - writes `release-manifest.json`, `release-files.sha256` and retained gate evidence; and
 - removes write permission and rejects writable files/directories, shared dependency hardlinks or external symlinks before accepting `/opt/robyn/releases/<git-sha>`.
 
@@ -59,7 +59,26 @@ systemctl status robyn-soak.service --no-pager
 sudo find /var/lib/robyn/soak -name "*-summary.json" -type f -print
 ~~~
 
-The service is installed but deliberately not enabled or started automatically. Its 24-hour run is bound to the selected release and fails if the symlink changes, an app leaves that immutable directory, a process restarts, health or onchain conservation fails, indexed state moves backward, an alert fires, p95 exceeds 500 ms, resource floors are crossed or RSS grows beyond the bounded allowance. Samples and the final summary are mode `0600` under `/var/lib/robyn/soak/<release-id>/`. A shortened run validates the harness only and never satisfies the release gate.
+The static service is installed but cannot be enabled and is started only by the
+explicit command above. Its eight-hour run is bound to the selected release and
+uses 100 stable actor identities for mixed market, portfolio, DAO, asset and
+token reads. Every ten samples it performs bounded real buys/sells and any
+currently eligible holder, creator and RDAO claims; the permissionless keeper
+continues conversions. It fails if the symlink changes, an app leaves that
+immutable directory, a process restarts, health or onchain conservation fails,
+indexed state moves backward, an alert fires, p95 exceeds 500 ms, resource
+floors are crossed or RSS grows beyond the bounded allowance. Thirty-second
+samples, transaction hashes, the final summary and SHA-256 evidence are mode
+`0600` under `/var/lib/robyn/soak/<release-id>/`. A shortened run validates the
+harness only and never satisfies the release gate.
+
+After the completed evidence is preserved:
+
+~~~bash
+sudo /home/hendo420/Robyn/scripts/remove-soak-service.sh
+~~~
+
+This removes the temporary unit. No recurring timer or scheduled soak remains.
 
 ## Release acceptance
 
@@ -70,7 +89,7 @@ Before identifying a release as a candidate:
 - run LAN edge/security smoke and in-app-browser journeys;
 - reboot and prove PM2 systemd resurrection through `current`;
 - complete a compatible promotion/rollback rehearsal;
-- run the exact release for a real uninterrupted 24-hour soak; and
+- run the exact release for a real uninterrupted eight-hour soak; and
 - push the release manifest/evidence and candidate tag.
 
 TLS remains mandatory before access leaves the trusted LAN. Human alert delivery and independent protocol/security review remain separate release gates.

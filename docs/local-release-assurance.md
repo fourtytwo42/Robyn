@@ -16,6 +16,11 @@ recovery.
 7. Promote one immutable candidate and explicitly start one uninterrupted
    eight-hour soak.
 
+The soak samples every 30 seconds, rotates mixed reads across 100 stable actor
+identities, and executes bounded real trading and eligible claim activity every
+five minutes. It does not advance chain time. Preserve the checksummed evidence,
+then remove the static soak unit with `scripts/remove-soak-service.sh`.
+
 Unexplained accounting drift stops the program. Restore the baseline in
 isolation, diagnose the defect, add regression coverage, and rerun every
 affected gate.
