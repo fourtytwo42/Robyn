@@ -29,6 +29,11 @@ Durable project context lives here. Update this file whenever information should
   strict types, application tests, Anvil smoke and all 72 Foundry tests pass;
   exact-release build, promotion, live drain validation and a fresh soak remain
   in progress.
+- Release security correction: the 2026-07-23 exact builder failed closed on
+  newly published `GHSA-c96f-x56v-gq3h`; Fastify resolved `find-my-way 9.6.0`.
+  The workspace now overrides the router to patched `9.7.0`. The dependency
+  audit reports zero high or critical advisories and the complete regression
+  plus static-security gate passes. Last verified 2026-07-23.
 - Baseline checkpoint: exact release `691e8cf` was clean and healthy; encrypted
   backup `robyn-state-20260723T070046Z` restored 14 tables, eight artifacts and
   chain state in isolation with `liveStateTouched=false`.
