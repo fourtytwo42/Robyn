@@ -4,6 +4,12 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Current goal: exhaustively validate schema-v4 contracts and every product action on the controlled local network, add a deterministic hundreds-user simulation, fix every in-scope defect, complete built-browser acceptance, and push verified checkpoints. Work is on `codex/system-exhaustive-testing`; the goal remains active.
+- Current checkpoint: the first schema-v4 production-shape simulation models 256 users, eight atomic launches, bonding and graduated trades, basket/native conversions, holder/RDAO/creator claims, 100 voters, and timelock execution. A 60-second 100 rps/200-concurrency/256-client live load produced 6,000/6,000 valid responses after fixes.
+- Defects fixed: devnet Next SSR now calls the internal API backend instead of the public per-IP rate-limited Nginx port; discovery analytics use a bounded 3-second single-flight cache to prevent identical concurrent queries/RPC fanout from exhausting the API's 384 MiB PM2 limit.
+- Evidence: `evidence/system-simulation/20260723T051734Z/` contains raw contract/load logs, JSON summary, and checksums. Contract mutations occur only in Foundry's isolated EVM; the live HTTP phase is read-only.
+- Next step: finish the machine-audited function/action/state matrix, expand adversarial and lifecycle tests for uncovered schema-v4/API/indexer/keeper/media/wallet paths, run complete in-app-browser journeys, then rebuild/restart/reconcile and push the next checkpoints. Public testnet broadcast remains unauthorized.
+
 - Current task: the approved multi-wallet connection release is implemented on branch `codex/multi-wallet`; no Robinhood Testnet transaction was broadcast.
 - Current checkpoint: protected testnet components use one RainbowKit/wagmi connection layer for Create, trading, Portfolio, creator rewards, DAO and governance. Devnet retains the generated/restored session wallet through compile-time aliases.
 - External gate: final WalletConnect/Robinhood Wallet acceptance still requires a real WalletConnect project ID, a stable registered HTTPS origin, and phone approval. The build-only fake project ID proves compilation and responsive modal behavior only.
@@ -27,6 +33,15 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-23 - Exhaustive system test and 256-user simulation checkpoint
+
+- Added `SchemaV4HundredsUsersSimulationTest`: 256 deterministic EOA actors, eight atomic launches by four creators, bonding buys/sells, two automatic graduations, post-graduation trades, basket conversion and holder claims, native conversion, RDAO transfer-aware rewards, per-token creator batch claims, 100 delegated voters, proposal voting, queue and timelock execution.
+- Added `scripts/simulate-real-use.sh` and expanded `scripts/load-test.mjs` with stable virtual-client identities and internal-backend mode. The fail-closed runner writes raw logs, JSON metrics and SHA-256 checksums under `evidence/system-simulation/<UTC run id>/`.
+- Initial live load failed with 2,907/6,000 requests: public Nginx per-IP limits returned 429 to internal SSR/load traffic, Next surfaced those as 500, and duplicate discovery analytics fanout pushed the API over its 384 MiB PM2 limit.
+- Fixed PM2 devnet web configuration with `DATA_API_URL=http://127.0.0.1:3101`. Added tested `SingleFlightTtlCache`, bounded to 16 keys and 3 seconds, around discovery analytics. Rejected work is evicted and retryable.
+- Rerun result: 6,000/6,000 requests passed at 100 rps, 200 concurrency and 256 modeled clients. P95 was 25.2 ms web discover, 5.5 ms API status, 4.1 ms API launches, 4.7 ms RPC chain ID and 4.5 ms RPC head. No API restart occurred during the passing run.
+- This is a checkpoint, not goal completion. The finite coverage model and remaining browser, failure-injection, operational, rebuild and reconciliation gates are documented in `docs/system-testing.md`.
 
 ### 2026-07-23 - Multi-wallet connection release
 

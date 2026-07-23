@@ -15,21 +15,28 @@ function positiveNumber(name, fallback) {
 const durationSeconds = positiveNumber("LOAD_DURATION_SECONDS", 60);
 const requestsPerSecond = positiveNumber("LOAD_REQUESTS_PER_SECOND", 25);
 const concurrency = Math.floor(positiveNumber("LOAD_CONCURRENCY", 25));
+const virtualUsers = Math.floor(positiveNumber("LOAD_VIRTUAL_USERS", concurrency));
 const p95LimitMs = positiveNumber("LOAD_P95_LIMIT_MS", 500);
 const timeoutMs = positiveNumber("LOAD_REQUEST_TIMEOUT_MS", 5_000);
 const baseHost = process.env.LOAD_BASE_HOST ?? "127.0.0.1";
+const useInternalBackends = process.env.LOAD_USE_INTERNAL_BACKENDS === "true";
+const webPort = useInternalBackends ? 3002 : 3000;
+const apiPort = useInternalBackends ? 3101 : 3100;
+const rpcPort = useInternalBackends ? 8547 : 8546;
 const outputPath = process.env.LOAD_OUTPUT;
 const endpoints = [
   {
     name: "web-discover",
-    url: "http://" + baseHost + ":3000/discover",
+    url: "http://" + baseHost + ":" + webPort + "/discover",
     init: { method: "GET" },
     validate: (status, body) =>
-      status === 200 && body.includes("Discover fee-funded reward tokens"),
+      status === 200 &&
+      body.includes("<title>Robyn") &&
+      body.includes("24h reward markets"),
   },
   {
     name: "api-status",
-    url: "http://" + baseHost + ":3100/status",
+    url: "http://" + baseHost + ":" + apiPort + "/status",
     init: { method: "GET" },
     validate: (status, body) => {
       if (status !== 200) return false;
@@ -39,7 +46,7 @@ const endpoints = [
   },
   {
     name: "api-launches",
-    url: "http://" + baseHost + ":3100/launches?limit=20",
+    url: "http://" + baseHost + ":" + apiPort + "/launches?limit=20",
     init: { method: "GET" },
     validate: (status, body) => {
       if (status !== 200) return false;
@@ -49,7 +56,7 @@ const endpoints = [
   },
   {
     name: "rpc-chain",
-    url: "http://" + baseHost + ":8546/",
+    url: "http://" + baseHost + ":" + rpcPort + "/",
     init: {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -65,7 +72,7 @@ const endpoints = [
   },
   {
     name: "rpc-head",
-    url: "http://" + baseHost + ":8546/",
+    url: "http://" + baseHost + ":" + rpcPort + "/",
     init: {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -106,13 +113,18 @@ function resources() {
   };
 }
 
-async function requestOnce(endpoint) {
+async function requestOnce(endpoint, virtualUser) {
   const result = results.get(endpoint.name);
   const started = performance.now();
   let status = 0;
   try {
     const response = await fetch(endpoint.url, {
       ...endpoint.init,
+      headers: {
+        ...endpoint.init.headers,
+        "user-agent": "robyn-system-simulation/" + virtualUser,
+        "x-robyn-simulated-user": String(virtualUser),
+      },
       signal: AbortSignal.timeout(timeoutMs),
     });
     status = response.status;
@@ -142,10 +154,11 @@ await new Promise((resolve) => {
     );
     while (scheduled < shouldHaveScheduled && active < concurrency) {
       const endpoint = endpoints[nextEndpoint % endpoints.length];
+      const virtualUser = scheduled % virtualUsers;
       nextEndpoint += 1;
       scheduled += 1;
       active += 1;
-      void requestOnce(endpoint).finally(() => {
+      void requestOnce(endpoint, virtualUser).finally(() => {
         active -= 1;
         if (schedulerDone && active === 0) resolve();
       });
@@ -195,9 +208,11 @@ const summary = {
   finishedAt: finishedAt.toISOString(),
   configuration: {
     baseHost,
+    useInternalBackends,
     durationSeconds,
     requestsPerSecond,
     concurrency,
+    virtualUsers,
     p95LimitMs,
     timeoutMs,
   },

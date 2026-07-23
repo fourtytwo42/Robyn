@@ -20,6 +20,7 @@ import {
 } from "./launch-analytics.js";
 import { registerCreatorRoutes } from "./creator-routes.js";
 import { registerDaoRoutes } from "./dao-routes.js";
+import { SingleFlightTtlCache } from "./single-flight-cache.js";
 
 const app = Fastify({
   logger: { level: process.env.LOG_LEVEL ?? "info" },
@@ -509,6 +510,17 @@ async function discoveryMetrics(rows: LaunchRow[]) {
   return metrics;
 }
 
+const discoveryMetricsCache = new SingleFlightTtlCache<
+  Map<string, ReturnType<typeof deriveLaunchAnalytics>>
+>(3_000, 16);
+
+function cachedDiscoveryMetrics(rows: LaunchRow[]) {
+  const key = rows
+    .map((row) => `${row.token.toLowerCase()}:${row.market.toLowerCase()}`)
+    .join(",");
+  return discoveryMetricsCache.get(key, () => discoveryMetrics(rows));
+}
+
 app.addHook("onSend", async (_request, reply, payload) => {
   reply.header("cache-control", "no-store");
   reply.header("x-content-type-options", "nosniff");
@@ -684,7 +696,7 @@ app.get<{
   }
   const rows = await hydrateMarkets(storedRows);
   const [marketMetrics, metadata] = await Promise.all([
-    discoveryMetrics(rows).catch((error) => {
+    cachedDiscoveryMetrics(rows).catch((error) => {
       request.log.warn({ error }, "discovery metrics unavailable");
       return new Map<string, ReturnType<typeof deriveLaunchAnalytics>>();
     }),

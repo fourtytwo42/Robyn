@@ -20,6 +20,7 @@ module.exports = {
         HOSTNAME: "127.0.0.1",
         RPC_GATEWAY_HEALTH_URL: "http://127.0.0.1:8547/health",
         DATA_API_STATUS_URL: "http://127.0.0.1:3101/status",
+        DATA_API_URL: "http://127.0.0.1:3101",
         PORT: "3002",
       },
       autorestart: true,
