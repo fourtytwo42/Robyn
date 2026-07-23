@@ -4,11 +4,11 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
-- Current goal: exhaustively validate schema-v4 contracts and every product
-  action on the controlled local network, add a deterministic hundreds-user
-  simulation, fix every in-scope defect, complete built-browser acceptance,
-  and push verified checkpoints. Work is on
-  `codex/system-exhaustive-testing`; final closure is in progress.
+- Completed goal: schema-v4 contracts and every mapped product action on the
+  controlled local network are validated; deterministic hundreds-user
+  simulation, built-browser acceptance, defect remediation, operational
+  recovery and pushed checkpoints are complete on
+  `codex/system-exhaustive-testing`.
 - Current checkpoint: 70 Foundry tests, four stateful invariants, 64 authenticated
   and anonymous API cases, 108 ABI functions, 25 API endpoints and all 12
   required browser/operational journeys pass. Built-browser acceptance covered
@@ -26,9 +26,14 @@ Durable project context lives here. Update this file whenever information should
 - Evidence: committed checkpoint
   `evidence/system-simulation/20260723T051734Z/` plus checksummed final evidence
   under `/var/backups/robyn/system-simulation/final-af0c27a/`.
-- Next step: freeze the final documented commit, repeat the exact-candidate
-  simulation and backup/restore, perform final built-browser smoke, then close
-  the active goal. Public testnet broadcast remains unauthorized.
+- Final closure: exact candidate `f54e3046f8df364a2809370ab377910fa6a1cf1c`
+  passed 18,000 of 18,000 requests with stable services, the complete contract
+  simulation, full repository gates, 64 API cases, the zero-pending action
+  manifest, encrypted off-VM backup and isolated restore. Final LAN and public
+  HTTPS browser smoke had no console entries or overflow.
+- Next step: review/merge the branch. Real WalletConnect/Robinhood Wallet phone
+  acceptance still needs a production project ID and stable registered HTTPS
+  origin. Public testnet broadcast remains unauthorized.
 
 - Current task: the approved multi-wallet connection release is implemented on branch `codex/multi-wallet`; no Robinhood Testnet transaction was broadcast.
 - Current checkpoint: protected testnet components use one RainbowKit/wagmi connection layer for Create, trading, Portfolio, creator rewards, DAO and governance. Devnet retains the generated/restored session wallet through compile-time aliases.
