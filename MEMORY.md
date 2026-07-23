@@ -80,6 +80,12 @@ Durable project context lives here. Update this file whenever information should
   alert now uses durable `dead_letter` state; BullMQ queue counts remain
   observable, and safely retrying work escalates through
   `RobynConversionStale` if it cannot progress.
+- After both corrections, a two-minute dense regression completed 18 write
+  cycles, 70 real transactions and 190 actor requests with zero alerts, errors,
+  restarts or accounting failures. Endpoint p95 values stayed below 500 ms,
+  total RSS growth was 82,341,888 bytes, and the keeper ended at 262,660,096
+  bytes RSS under its 384 MiB cap. Checksummed evidence is under
+  `/home/hendo420/robyn-evidence/soak-monitoring-regression-c446afd/`.
 - Immutable candidate `b7127d09878c7a9d193fb9264e20882a010b6232` was built,
   promoted and served with six zero-restart PM2 processes. Root in-app-browser
   UAT created/funded wallet `0xD673...46E8`, traded graduated ROBYN, atomically
