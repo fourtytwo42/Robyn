@@ -75,6 +75,22 @@ Durable project context lives here. Update this file whenever information should
   Checksum, decryption, all database row counts, artifact hashes, chain ID and
   factory bytecode passed; the rehearsal reported `liveStateTouched=false`.
 
+### 2026-07-23 - Higher-scale web memory restart finding
+
+- A 120-second, 150 rps, 256-concurrency, 512-client run produced 17,982 of
+  18,000 valid responses but failed because the web process crossed its 512
+  MiB PM2 ceiling twice. The 18 failed requests aligned with those restarts;
+  API and RPC endpoints had zero failures.
+- The production and preview Next.js memory ceilings are now 1 GiB, which fits
+  the VM's 8 GiB capacity while retaining a hard bound. Other service budgets
+  remain unchanged.
+- `scripts/load-test.mjs` now snapshots the participating PM2 process status,
+  restart count and PID before and after the run. A process restart or
+  non-online service fails the simulation even if all HTTP responses happen to
+  succeed.
+- A 100-request validation run passed with all five monitored services stable.
+  Follow-up: rerun the complete higher-scale profile before goal closure.
+
 ### 2026-07-23 - Built-browser lifecycle and defect checkpoint
 
 - Codex in-app-browser acceptance against the optimized LAN build completed

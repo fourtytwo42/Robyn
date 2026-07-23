@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import os from "node:os";
+import { execFileSync } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 
 function positiveNumber(name, fallback) {
@@ -24,6 +25,16 @@ const webPort = useInternalBackends ? 3002 : 3000;
 const apiPort = useInternalBackends ? 3101 : 3100;
 const rpcPort = useInternalBackends ? 8547 : 8546;
 const outputPath = process.env.LOAD_OUTPUT;
+const pm2Binary = process.env.LOAD_PM2_BINARY ?? "node_modules/.bin/pm2";
+const monitoredPm2Apps = (
+  process.env.LOAD_PM2_APP_NAMES ??
+  (useInternalBackends
+    ? "robyn-web,robyn-api,robyn-indexer,robyn-keeper,robyn-rpc-gateway"
+    : "")
+)
+  .split(",")
+  .map((name) => name.trim())
+  .filter(Boolean);
 const endpoints = [
   {
     name: "web-discover",
@@ -113,6 +124,31 @@ function resources() {
   };
 }
 
+function pm2Snapshot() {
+  if (monitoredPm2Apps.length === 0) return {};
+  const processes = JSON.parse(
+    execFileSync(pm2Binary, ["jlist"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }),
+  );
+  return Object.fromEntries(
+    monitoredPm2Apps.map((name) => {
+      const process = processes.find((candidate) => candidate.name === name);
+      return [
+        name,
+        process
+          ? {
+              status: process.pm2_env?.status ?? null,
+              restarts: process.pm2_env?.restart_time ?? null,
+              pid: process.pid ?? null,
+            }
+          : null,
+      ];
+    }),
+  );
+}
+
 async function requestOnce(endpoint, virtualUser) {
   const result = results.get(endpoint.name);
   const started = performance.now();
@@ -140,6 +176,7 @@ async function requestOnce(endpoint, virtualUser) {
 }
 
 const before = resources();
+const pm2Before = pm2Snapshot();
 const startedAt = new Date();
 const startMs = Date.now();
 const durationMs = durationSeconds * 1_000;
@@ -173,6 +210,14 @@ await new Promise((resolve) => {
 
 const finishedAt = new Date();
 const after = resources();
+const pm2After = pm2Snapshot();
+const pm2Stable = monitoredPm2Apps.every(
+  (name) =>
+    pm2Before[name] !== null &&
+    pm2After[name] !== null &&
+    pm2After[name].status === "online" &&
+    pm2After[name].restarts === pm2Before[name].restarts,
+);
 const endpointSummaries = Object.fromEntries(
   [...results].map(([name, result]) => [
     name,
@@ -199,6 +244,7 @@ const totals = Object.values(endpointSummaries).reduce(
 const passed =
   totals.requests > 0 &&
   totals.failed === 0 &&
+  pm2Stable &&
   Object.values(endpointSummaries).every(
     (result) => result.p95Ms !== null && result.p95Ms <= p95LimitMs,
   );
@@ -218,6 +264,12 @@ const summary = {
   },
   totals,
   endpoints: endpointSummaries,
+  pm2: {
+    monitoredApps: monitoredPm2Apps,
+    before: pm2Before,
+    after: pm2After,
+    stable: pm2Stable,
+  },
   resources: { before, after },
   passed,
 };

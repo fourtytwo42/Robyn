@@ -48,6 +48,15 @@ at configurable concurrency against the built VM services.
 The simulation produces raw logs, JSON metrics, and SHA-256 checksums below
 `evidence/system-simulation/<UTC run id>/`. The live shared devnet is read-only
 during the HTTP phase; all contract mutations run inside Foundry's isolated EVM.
+The HTTP gate snapshots the five participating PM2 processes before and after
+the run and fails if any process restarts, disappears, or leaves the online
+state, even when every individual HTTP response succeeds.
+
+The higher-scale acceptance profile is 512 virtual clients, 150 requests per
+second, 256 concurrent requests, and 120 seconds. An initial run exposed two
+web restarts at the previous 512 MiB PM2 ceiling. The production and preview
+web budgets are now 1 GiB on the 8 GiB VM; all backend budgets remain bounded
+at 256 or 384 MiB.
 
 ## Current automated matrix
 

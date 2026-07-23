@@ -25,7 +25,7 @@ module.exports = {
         ROBYN_ARTIFACT_SERVICE_URL: "http://127.0.0.1:3200",
       },
       autorestart: true,
-      max_memory_restart: "384M",
+      max_memory_restart: "1024M",
       time: true,
     },
     {
