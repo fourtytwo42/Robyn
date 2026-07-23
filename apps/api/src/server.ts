@@ -629,10 +629,14 @@ app.get("/status", async () => {
 });
 
 app.get("/operations", async () => {
-  const [keeper, counts, jobs, events] = await Promise.all([
+  const [keeper, counts, oldestPending, jobs, events] = await Promise.all([
     keeperState(),
     sql.unsafe<{ state: string; count: string }[]>(
       "SELECT state,count(*)::text count FROM job_audit WHERE queue=$1 GROUP BY state ORDER BY state",
+      [queueName],
+    ),
+    sql.unsafe<{ oldest_pending_created_at: string | null }[]>(
+      "SELECT min(created_at)::text oldest_pending_created_at FROM job_audit WHERE queue=$1 AND state IN ('queued','active','retrying')",
       [queueName],
     ),
     sql.unsafe(
@@ -649,6 +653,7 @@ app.get("/operations", async () => {
     queue: queueName,
     ...keeper,
     counts: Object.fromEntries(counts.map((row) => [row.state, row.count])),
+    oldestPendingCreatedAt: oldestPending[0]?.oldest_pending_created_at ?? null,
     recent: jobs,
     recentEvents: events,
   };

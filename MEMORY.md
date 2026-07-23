@@ -43,6 +43,15 @@ Durable project context lives here. Update this file whenever information should
   legacy jobs. Release verification now requires zero PM2 restart counters and
   promotion/rollback repeat verification after a five-second stability window.
   Build and live migration validation remain in progress.
+- Exact release `af2ad83081a3814d654a43e59b2d1c5e7af8d588` promoted with
+  zero PM2 restarts. It superseded 30 inactive legacy jobs, safely deferred and
+  reclaimed active locks, and began processing stable prioritized jobs with no
+  alerts. Pre-soak review found the monitoring age was derived from a recent
+  25-row sample and reusable audit rows retained their first-ever creation
+  time. The correction exposes the database-wide oldest pending timestamp and
+  resets a stable row's work-start time only when a completed/superseded stream
+  is genuinely requeued; retry age remains continuous. A replacement exact
+  release and live age/drain proof remain in progress.
 - Baseline checkpoint: exact release `691e8cf` was clean and healthy; encrypted
   backup `robyn-state-20260723T070046Z` restored 14 tables, eight artifacts and
   chain state in isolation with `liveStateTouched=false`.

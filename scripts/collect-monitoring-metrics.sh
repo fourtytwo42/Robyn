@@ -125,7 +125,7 @@ printf '# HELP robyn_alert_drill Whether the reversible monitoring alert drill i
 metric "robyn_alert_drill{chain_id=\"31337\",component=\"monitoring\",launch=\"all\",asset=\"all\"}" "${ROBYN_ALERT_DRILL:-0}"
 keeper_updated="$(json_get "${api_json}" '.keeperUpdatedAt')"
 keeper_epoch="$(date -d "${keeper_updated}" +%s 2>/dev/null || printf '0')"
-pending_created="$(jq -r '[.recent[]? | select(.state=="queued" or .state=="active" or .state=="retrying") | .created_at][0] // empty' <<<"${operations_json}" 2>/dev/null || true)"
+pending_created="$(json_get "${operations_json}" '.oldestPendingCreatedAt')"
 if [[ -n "${pending_created}" ]]; then
   pending_epoch="$(date -d "${pending_created}" +%s 2>/dev/null || printf '0')"
   pending_age=$(( $(date +%s) - pending_epoch ))

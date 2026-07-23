@@ -374,7 +374,7 @@ async function audit(
   ];
   await sql.begin(async (transaction) => {
     await transaction.unsafe(
-      "INSERT INTO job_audit (idempotency_key,queue,state,attempts,payload,last_error,result,completed_at) VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7::jsonb,CASE WHEN $3 IN ('completed','dead_letter') THEN now() ELSE NULL END) ON CONFLICT (idempotency_key) DO UPDATE SET state=EXCLUDED.state,attempts=EXCLUDED.attempts,payload=EXCLUDED.payload,last_error=EXCLUDED.last_error,result=EXCLUDED.result,completed_at=EXCLUDED.completed_at,updated_at=now()",
+      "INSERT INTO job_audit (idempotency_key,queue,state,attempts,payload,last_error,result,completed_at) VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7::jsonb,CASE WHEN $3 IN ('completed','dead_letter') THEN now() ELSE NULL END) ON CONFLICT (idempotency_key) DO UPDATE SET state=EXCLUDED.state,attempts=EXCLUDED.attempts,payload=EXCLUDED.payload,last_error=EXCLUDED.last_error,result=EXCLUDED.result,created_at=CASE WHEN EXCLUDED.state='queued' AND job_audit.state IN ('completed','superseded') THEN now() ELSE job_audit.created_at END,completed_at=EXCLUDED.completed_at,updated_at=now()",
       values,
     );
     await transaction.unsafe(
