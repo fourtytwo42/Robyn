@@ -16,14 +16,19 @@ Durable project context lives here. Update this file whenever information should
   preparation, atomic creation, indexing, immutable binding, bonding,
   graduation, post-graduation trading and eligible claims. Freeze and promote
   this changed harness, then start the fresh one-shot eight-hour soak.
-- Latest soak result: the original exact release `5844cf3` failed closed afte
-  1h01m on an API memory restart. Replacement `b02eae2` completed a compressed
-  240-second regression on an already exercised 31-launch chain with eight new
-  immutable-IPFS launches, four graduations, 173 workload transactions and zero
-  process restarts. API RSS ended at 328,855,552 bytes under the unchanged
-  402,653,184-byte watchdog. The deliberately compressed three-second cadence
-  exceeded the endpoint p95 gate; validate normal 30-second cadence, freeze one
-  final exact release, then restart the eight-hour clock.
+- Latest soak result: exact release
+  `4e2e740a2076b577fe4758b343a7c43cf5068d51` failed closed after 130 seconds
+  when `RobynConversionStale` detected 311 seconds of pending native conversion
+  work. All PM2 restart counters remained zero and the alert resolved after
+  termination. Root cause was amount-stamped BullMQ identifiers creating
+  multiple queued/retrying batches for the same token while one single-nonce
+  worker drained bounded 0.1-base conversions. The correction uses one
+  reusable prioritized job per token/locker stream, removes a completed stream
+  job only after its durable audit commits, and supersedes only inactive
+  legacy queue entries during startup reconciliation. Repository format, lint,
+  strict types, application tests, Anvil smoke and all 72 Foundry tests pass;
+  exact-release build, promotion, live drain validation and a fresh soak remain
+  in progress.
 - Baseline checkpoint: exact release `691e8cf` was clean and healthy; encrypted
   backup `robyn-state-20260723T070046Z` restored 14 tables, eight artifacts and
   chain state in isolation with `liveStateTouched=false`.
@@ -34,13 +39,14 @@ Durable project context lives here. Update this file whenever information should
 - Monitoring checkpoint: native Alertmanager and the append-only local receiver
   are loopback-only. All 14 assurance alerts produced checksummed firing and
   resolved evidence. This proves local delivery only, not external paging.
-- Keeper correction: protocol-native and protocol-launch jobs have an automatic
-  safe-retry path in the scanner, so exhausted BullMQ attempts remain
-  `retrying` instead of briefly becoming `dead_letter`; a stale-conversion alert
-  still catches work that cannot safely retry. Terminal convert-leg and harvest
-  jobs without that automatic path remain dead letters. Protocol jobs whose
-  observed amount no longer matches authoritative onchain pending work
-  transition to `superseded`; original failures remain in append-only events.
+- Keeper correction: protocol-native, protocol-launch and harvest work now use
+  one stable prioritized BullMQ job per financial stream. Completed stream jobs
+  are reusable only after their PostgreSQL audit commits; failed protocol jobs
+  keep the automatic safe-retry path. Startup reconciliation refuses active
+  legacy jobs and supersedes only inactive amount-stamped queue entries while
+  retaining their append-only events. Terminal convert-leg and harvest jobs
+  without an automatic retry path remain dead letters, and stale-conversion
+  monitoring remains fail-closed.
 - Chaos runner is fail-closed and requires a clean exact pushed commit. Live
   faults are limited to recoverable one-at-a-time PM2/native-service
   interruptions; reorg and corrupt-input cases use isolated ports/paths.

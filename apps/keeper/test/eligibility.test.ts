@@ -3,8 +3,13 @@ import {
   boundedProtocolInput,
   conversionJobId,
   failureAuditState,
+  harvestJobId,
+  isLegacyStreamJobId,
   isLegExecutable,
+  isReusableStreamJobKind,
   protocolObservationChanged,
+  protocolLaunchJobId,
+  protocolNativeJobId,
   shouldSupersedeProtocolFailure,
 } from "../src/eligibility.js";
 
@@ -44,6 +49,35 @@ describe("keeper eligibility", () => {
   it("builds a stable BullMQ-safe idempotency key", () => {
     expect(conversionJobId("0xABCDEF", 2n, 100n, 500n)).toBe(
       "convert-abcdef-2-100-500",
+    );
+  });
+
+  it("uses one reusable job id for each financial stream", () => {
+    expect(protocolNativeJobId("0xABCDEF")).toBe("protocol-native-0xabcdef");
+    expect(protocolLaunchJobId("0xABCDEF")).toBe("protocol-launch-0xabcdef");
+    expect(harvestJobId("0xABCDEF")).toBe("harvest-0xabcdef");
+  });
+
+  it("identifies reusable stream jobs", () => {
+    expect(isReusableStreamJobKind("protocol-native")).toBe(true);
+    expect(isReusableStreamJobKind("protocol-launch")).toBe(true);
+    expect(isReusableStreamJobKind("harvest")).toBe(true);
+    expect(isReusableStreamJobKind("convert")).toBe(false);
+  });
+
+  it("recognizes only legacy amount-stamped stream ids", () => {
+    const address = "0x1234567890123456789012345678901234567890";
+    expect(
+      isLegacyStreamJobId("protocol-native", `protocol-native-${address}-100`),
+    ).toBe(true);
+    expect(isLegacyStreamJobId("harvest", `harvest-${address}-1234`)).toBe(
+      true,
+    );
+    expect(
+      isLegacyStreamJobId("protocol-native", `protocol-native-${address}`),
+    ).toBe(false);
+    expect(isLegacyStreamJobId("convert", `convert-${address}-100`)).toBe(
+      false,
     );
   });
 

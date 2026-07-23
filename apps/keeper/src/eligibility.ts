@@ -29,6 +29,41 @@ export function conversionJobId(
   ].join("-");
 }
 
+function normalizedAddress(address: string): string {
+  return address.toLowerCase();
+}
+
+export function protocolNativeJobId(token: string): string {
+  return `protocol-native-${normalizedAddress(token)}`;
+}
+
+export function protocolLaunchJobId(locker: string): string {
+  return `protocol-launch-${normalizedAddress(locker)}`;
+}
+
+export function harvestJobId(locker: string): string {
+  return `harvest-${normalizedAddress(locker)}`;
+}
+
+export function isReusableStreamJobKind(kind: string | undefined): boolean {
+  return (
+    kind === "protocol-native" ||
+    kind === "protocol-launch" ||
+    kind === "harvest"
+  );
+}
+
+export function isLegacyStreamJobId(
+  kind: string | undefined,
+  id: string,
+): boolean {
+  if (!isReusableStreamJobKind(kind)) return false;
+  const prefix = `${kind}-0x`;
+  if (!id.startsWith(prefix)) return false;
+  const suffix = id.slice(prefix.length);
+  return /^[0-9a-f]{40}-[0-9]+$/i.test(suffix);
+}
+
 export function boundedProtocolInput(pending: bigint, maximum: bigint): bigint {
   if (maximum <= 0n) throw new Error("Maximum protocol batch must be positive");
   return pending < maximum ? pending : maximum;

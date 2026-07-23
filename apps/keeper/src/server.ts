@@ -16,7 +16,12 @@ import {
   boundedProtocolInput,
   conversionJobId,
   failureAuditState,
+  harvestJobId,
+  isLegacyStreamJobId,
   isLegExecutable,
+  isReusableStreamJobKind,
+  protocolLaunchJobId,
+  protocolNativeJobId,
   shouldSupersedeProtocolFailure,
 } from "./eligibility.js";
 
@@ -437,6 +442,60 @@ async function supersedeStaleProtocolDeadLetters(
   }
 }
 
+async function reconcileLegacyStreamJobs() {
+  const active = await queue.getJobs(["active"], 0, -1);
+  const activeLegacy = active.filter((job) =>
+    isLegacyStreamJobId(job.data.kind, job.id ?? ""),
+  );
+  if (activeLegacy.length > 0) {
+    throw new Error(
+      `Cannot reconcile ${activeLegacy.length} active legacy keeper jobs`,
+    );
+  }
+  const legacyJobs = (
+    await queue.getJobs(
+      ["wait", "delayed", "failed", "paused", "prioritized"],
+      0,
+      -1,
+    )
+  ).filter((job) => isLegacyStreamJobId(job.data.kind, job.id ?? ""));
+  for (const job of legacyJobs) {
+    const key = job.data.idempotencyKey;
+    const attempts = job.attemptsMade;
+    const payload = job.data;
+    let replacementJobId: string;
+    if (payload.kind === "protocol-native") {
+      replacementJobId = protocolNativeJobId(payload.token);
+    } else if (payload.kind === "protocol-launch") {
+      replacementJobId = protocolLaunchJobId(payload.locker);
+    } else if (payload.kind === "harvest") {
+      replacementJobId = harvestJobId(payload.locker);
+    } else {
+      throw new Error(`Unexpected legacy stream job kind for ${key}`);
+    }
+    await job.remove();
+    await audit(
+      key,
+      "superseded",
+      attempts,
+      payload,
+      "Legacy amount-stamped stream job removed during stable-stream reconciliation",
+      {
+        replacementJobId,
+      },
+    );
+  }
+  if (legacyJobs.length > 0) {
+    process.stdout.write(
+      JSON.stringify({
+        level: "info",
+        event: "legacy_stream_jobs_reconciled",
+        count: legacyJobs.length,
+      }) + "\n",
+    );
+  }
+}
+
 async function readLeg(vault: Address, legIndex: bigint) {
   const [minimum, delay, leg, block] = await Promise.all([
     publicClient.readContract({
@@ -513,7 +572,10 @@ async function scan() {
       const existing = await queue.getJob(key);
       if (!existing) {
         await audit(key, "queued", 0, payload);
-        await queue.add("convert-leg", payload, { jobId: key });
+        await queue.add("convert-leg", payload, {
+          jobId: key,
+          priority: 4,
+        });
       }
     }
   }
@@ -571,7 +633,7 @@ async function enqueueProtocolConversions(launch: {
         wrappedNative,
         boundedProtocolInput(nativePending, maximumProtocolBase),
       );
-      const key = `protocol-native-${launch.token.toLowerCase()}-${nativePending}`;
+      const key = protocolNativeJobId(launch.token);
       const payload: ProtocolConversionJob = {
         kind: "protocol-native",
         idempotencyKey: key,
@@ -582,7 +644,11 @@ async function enqueueProtocolConversions(launch: {
       const existing = await queue.getJob(key);
       if (!existing) {
         await audit(key, "queued", 0, payload);
-        await queue.add("convert-protocol-native", payload, { jobId: key });
+        await queue.add("convert-protocol-native", payload, {
+          jobId: key,
+          priority: 1,
+          removeOnComplete: false,
+        });
       } else if (await existing.isFailed()) {
         await audit(key, "queued", existing.attemptsMade, payload);
         await existing.retry();
@@ -604,7 +670,7 @@ async function enqueueProtocolConversions(launch: {
   if (pendingLaunch >= minimumLaunchFees) {
     try {
       await safeMinimum(launch.token, base, pendingLaunch);
-      const key = `protocol-launch-${account.locker.toLowerCase()}-${pendingLaunch}`;
+      const key = protocolLaunchJobId(account.locker);
       const payload: ProtocolConversionJob = {
         kind: "protocol-launch",
         idempotencyKey: key,
@@ -615,7 +681,11 @@ async function enqueueProtocolConversions(launch: {
       const existing = await queue.getJob(key);
       if (!existing) {
         await audit(key, "queued", 0, payload);
-        await queue.add("convert-launch-fees", payload, { jobId: key });
+        await queue.add("convert-launch-fees", payload, {
+          jobId: key,
+          priority: 2,
+          removeOnComplete: false,
+        });
       } else if (await existing.isFailed()) {
         await audit(key, "queued", existing.attemptsMade, payload);
         await existing.retry();
@@ -661,7 +731,7 @@ async function enqueueHarvest(launch: {
     throw error;
   }
   const observedBlock = await publicClient.getBlockNumber();
-  const key = `harvest-${locker.toLowerCase()}-${observedBlock}`;
+  const key = harvestJobId(locker);
   const payload: HarvestJob = {
     kind: "harvest",
     idempotencyKey: key,
@@ -674,7 +744,11 @@ async function enqueueHarvest(launch: {
   const existing = await queue.getJob(key);
   if (!existing) {
     await audit(key, "queued", 0, payload);
-    await queue.add("harvest-uniswap-fees", payload, { jobId: key });
+    await queue.add("harvest-uniswap-fees", payload, {
+      jobId: key,
+      priority: 3,
+      removeOnComplete: false,
+    });
   }
 }
 
@@ -904,8 +978,11 @@ const worker = new Worker<KeeperJob, KeeperResult>(
   processKeeperJob,
   { connection, concurrency: 1 },
 );
-worker.on("completed", (job, result) => {
-  void audit(
+async function finalizeCompletedJob(
+  job: Job<KeeperJob, KeeperResult>,
+  result: KeeperResult,
+) {
+  await audit(
     job.data.idempotencyKey,
     "completed",
     job.attemptsMade,
@@ -913,6 +990,21 @@ worker.on("completed", (job, result) => {
     null,
     result,
   );
+  if (isReusableStreamJobKind(job.data.kind)) {
+    await job.remove();
+  }
+}
+worker.on("completed", (job, result) => {
+  void finalizeCompletedJob(job, result).catch((error: unknown) => {
+    process.stderr.write(
+      JSON.stringify({
+        level: "error",
+        event: "completed_job_finalize_failed",
+        jobId: job.id,
+        message: error instanceof Error ? error.message : String(error),
+      }) + "\n",
+    );
+  });
 });
 worker.on("failed", (job, error) => {
   if (!job) return;
@@ -956,6 +1048,7 @@ process.on("SIGTERM", () => {
 process.on("SIGINT", () => {
   stopping = true;
 });
+await reconcileLegacyStreamJobs();
 await runScan();
 while (!stopping) {
   await new Promise((resolve) => setTimeout(resolve, scanMs));
