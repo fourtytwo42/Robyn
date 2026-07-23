@@ -138,17 +138,65 @@
     {"method": "GET", "path": "/dao/activity", "source": "apps/api/src/dao-routes.ts"}
   ],
   "journeys": [
-    {"id": "home-discovery-navigation", "status": "pending"},
-    {"id": "markets-search-filter-sort-pagination-watchlist", "status": "pending"},
-    {"id": "atomic-create-artwork-profile", "status": "pending"},
-    {"id": "bonding-buy-sell-graduation-post-graduation-trade", "status": "pending"},
-    {"id": "basket-convert-holder-claim", "status": "pending"},
-    {"id": "creator-token-claim-portfolio-batch", "status": "pending"},
-    {"id": "dao-reward-delegate-propose-vote-queue-execute-cancel", "status": "pending"},
-    {"id": "wallet-disconnect-switch-wrong-chain-rejection", "status": "pending"},
-    {"id": "desktop-tablet-mobile-keyboard-reduced-motion", "status": "pending"},
-    {"id": "quarantine-fallback-report-restore", "status": "pending"},
-    {"id": "keeper-indexer-restart-rebuild-reconcile", "status": "pending"},
-    {"id": "backup-isolated-restore-served-release", "status": "pending"}
+    {
+      "id": "home-discovery-navigation",
+      "status": "passed",
+      "evidence": ["Codex in-app-browser 2026-07-23", "docs/system-testing.md"]
+    },
+    {
+      "id": "markets-search-filter-sort-pagination-watchlist",
+      "status": "passed",
+      "evidence": ["Codex in-app-browser 2026-07-23", "scripts/test-api-surface.mjs"]
+    },
+    {
+      "id": "atomic-create-artwork-profile",
+      "status": "passed",
+      "evidence": ["Codex in-app-browser 2026-07-23", "AtomicLaunchCoordinator.t.sol"]
+    },
+    {
+      "id": "bonding-buy-sell-graduation-post-graduation-trade",
+      "status": "passed",
+      "evidence": ["Codex in-app-browser 2026-07-23", "UniswapGraduation.t.sol"]
+    },
+    {
+      "id": "basket-convert-holder-claim",
+      "status": "passed",
+      "evidence": ["Codex in-app-browser 2026-07-23", "RobynProtocol.t.sol"]
+    },
+    {
+      "id": "creator-token-claim-portfolio-batch",
+      "status": "passed",
+      "evidence": ["Codex in-app-browser 2026-07-23", "DaoFees.t.sol"]
+    },
+    {
+      "id": "dao-reward-delegate-propose-vote-queue-execute-cancel",
+      "status": "passed",
+      "evidence": ["Codex in-app-browser 2026-07-23", "DaoGovernanceMatrix.t.sol"]
+    },
+    {
+      "id": "wallet-disconnect-switch-wrong-chain-rejection",
+      "status": "passed",
+      "evidence": ["Codex in-app-browser 2026-07-23", "wallet-policy.test.ts"]
+    },
+    {
+      "id": "desktop-tablet-mobile-keyboard-reduced-motion",
+      "status": "passed",
+      "evidence": ["Codex in-app-browser 2026-07-23", "docs/system-testing.md"]
+    },
+    {
+      "id": "quarantine-fallback-report-restore",
+      "status": "passed",
+      "evidence": ["scripts/test-api-surface.mjs", "scripts/moderate-media.sh"]
+    },
+    {
+      "id": "keeper-indexer-restart-rebuild-reconcile",
+      "status": "passed",
+      "evidence": ["scripts/rehearse-testnet-stack.sh", "PM2 restart 2026-07-23"]
+    },
+    {
+      "id": "backup-isolated-restore-served-release",
+      "status": "passed",
+      "evidence": ["scripts/backup-state.sh", "scripts/rehearse-restore.sh"]
+    }
   ]
 }
