@@ -100,7 +100,9 @@ module.exports = {
         PGUSER: "hendo420",
       },
       autorestart: true,
-      max_memory_restart: "256M",
+      // The loaded schema-v4 keeper stabilizes near 270 MiB during conversion
+      // campaigns. Keep enough native/V8 headroom while retaining a hard cap.
+      max_memory_restart: "384M",
       time: true,
     },
     {

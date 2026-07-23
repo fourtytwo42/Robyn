@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
+import { assertProcessContinuity } from "./soak-policy.mjs";
 
 const durationSeconds = Number(process.env.SOAK_DURATION_SECONDS ?? "28800");
 const intervalSeconds = Number(process.env.SOAK_INTERVAL_SECONDS ?? "30");
@@ -91,6 +92,7 @@ let lastIndexedState;
 let initialProtocolVerification;
 let finalProtocolVerification;
 let aborted = false;
+let fatalFailure = false;
 
 process.on("SIGTERM", () => {
   aborted = true;
@@ -496,6 +498,9 @@ async function collectSample() {
       cwd: processEntry.pm2_env.pm_cwd,
     };
   });
+  if (baseline) {
+    assertProcessContinuity(baseline.processes, processState);
+  }
 
   const availableMemoryBytes = memAvailableBytes();
   const availableDiskBytes = diskAvailableBytes();
@@ -595,10 +600,12 @@ try {
     } catch (error) {
       const message = `${new Date().toISOString()} ${error instanceof Error ? error.message : String(error)}`;
       rememberError(message);
+      fatalFailure = true;
       fs.appendFileSync(
         samplesPath,
         `${JSON.stringify({ sampledAt: new Date().toISOString(), error: message })}\n`,
       );
+      break;
     }
   }
   if (!aborted) {
@@ -639,6 +646,7 @@ try {
   );
   const passed =
     !aborted &&
+    !fatalFailure &&
     completedDuration &&
     errorCount === 0 &&
     baselineRestarts === finalRestarts &&
@@ -668,6 +676,7 @@ try {
     errorCount,
     errors,
     aborted,
+    fatalFailure,
     completedDuration,
     baselineRestarts,
     finalRestarts,
@@ -697,5 +706,5 @@ try {
   fs.closeSync(lock);
   fs.rmSync(lockPath, { force: true });
   process.stdout.write(`${JSON.stringify(summary)}\n`);
-  if (!passed && !aborted) process.exitCode = 1;
+  if (!passed) process.exitCode = 1;
 }

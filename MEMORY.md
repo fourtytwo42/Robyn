@@ -45,6 +45,17 @@ Durable project context lives here. Update this file whenever information should
   trade/eligible-claim cycles. It must not advance chain time. Preserve its
   checksummed evidence, then remove `robyn-soak.service`; no recurring schedule
   remains.
+- The first full eight-hour attempt on `49e8013...` was stopped after 3h41m
+  and is invalid. It completed 33 workload cycles and 165 transactions but the
+  keeper crossed its undersized 256 MiB PM2 cap 11 times. The runner also
+  recorded 104 alert samples instead of terminating on the first assertion.
+  Checksummed failure evidence remains under
+  `/var/lib/robyn/soak/49e8013300f2c92f2efdf3f3ad7394c7fd8b5d70/`.
+- The correction raises only the devnet keeper cap to 384 MiB, matching its
+  measured 267-269 MiB loaded RSS with bounded headroom. The soak runner now
+  compares every process restart counter to its per-process baseline, marks
+  the first sample assertion fatal, breaks immediately, and exits nonzero for
+  all failed or interrupted runs.
 - Immutable candidate `b7127d09878c7a9d193fb9264e20882a010b6232` was built,
   promoted and served with six zero-restart PM2 processes. Root in-app-browser
   UAT created/funded wallet `0xD673...46E8`, traded graduated ROBYN, atomically
@@ -160,6 +171,26 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-23 - First full-soak failure and fail-closed correction
+
+- Context: The exact-release soak remained active after the keeper restarted
+  and Prometheus fired. It accumulated 104 errors rather than stopping.
+- Decision: Preserve the failed evidence, stop the invalid run, raise the
+  measured keeper memory cap from 256 MiB to 384 MiB, and make the first sample
+  assertion terminal. Compare restart counters per process rather than only in
+  the final aggregate.
+- Files: `infrastructure/pm2/ecosystem.config.cjs`,
+  `scripts/soak-policy.mjs`, `scripts/soak-policy.test.mjs`,
+  `scripts/soak-release.mjs`, `scripts/build-release.sh`.
+- Commands/tests: Three Node policy tests; PM2 configuration validation; a
+  controlled live keeper restart made the short runner exit 1 after one error
+  in 14.5 seconds and produced valid checksums.
+- Result: Fail-closed behavior is proven. A high-intensity short workload
+  regression under the new release and memory cap remains required before
+  restarting the full eight-hour clock.
+- Follow-up: Run complete release gates, promote the exact pushed artifact,
+  execute the compressed workload regression, then start a fresh one-shot soak.
 
 ### 2026-07-23 - Isolated recovery fingerprint and keeper terminal-state fix
 

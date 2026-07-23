@@ -66,6 +66,7 @@ NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(
   pnpm format
   pnpm lint
   node scripts/validate-pm2-config.mjs
+  node --test scripts/soak-policy.test.mjs
   scripts/test-release-immutability.sh
   pnpm typecheck
   pnpm test
