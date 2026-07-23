@@ -51,6 +51,17 @@ Durable project context lives here. Update this file whenever information should
   conversions, cleanup, and preserved devnet health.
 - No public Robinhood Testnet transaction was broadcast.
 
+### 2026-07-23 - Live-lifecycle deployment verifier repair
+
+- The final devnet verifier correctly found that the manifest's original demo
+  phase is not authoritative after users legitimately graduate a bonding
+  market. ROBYN had graduated during browser acceptance while its deployment
+  manifest still recorded the seed phase as bonding.
+- `scripts/verify-devnet-deployment.sh` now reads each market's live
+  `graduated()` state, requires 100 percent progress and locked-pool liquidity
+  after graduation, and otherwise requires bounded nonterminal progress.
+- The repaired verifier passed the exercised schema-v4 devnet at block 1961.
+
 ### 2026-07-23 - Built-browser lifecycle and defect checkpoint
 
 - Codex in-app-browser acceptance against the optimized LAN build completed

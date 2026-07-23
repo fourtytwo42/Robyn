@@ -145,11 +145,11 @@ if [[ "$market_type" == "bonding-curve-v1" || "$market_type" == "uniswap-v3-bond
   bonding_factory="$(jq -r '.contracts.bondingMarketFactory // .contracts.marketFactory' "$manifest")"
   test "$(cast call "$bonding_factory" "curveTokenAllocation()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "$(jq -r '.market.curveTokenAllocation' "$manifest")"
   test "$(cast call "$bonding_factory" "graduationThresholdBase()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "$(jq -r '.market.graduationThresholdBase' "$manifest")"
-  while read -r demo_market demo_pool expected_phase; do
+  while read -r demo_market demo_pool; do
     test "$(cast call "$demo_market" "seeded()(bool)" --rpc-url "$rpc_url")" = "true"
     test "$(cast call "$demo_market" "graduatedPool()(address)" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" = "$(echo "$demo_pool" | tr '[:upper:]' '[:lower:]')"
-    if [[ "$expected_phase" == "graduated" ]]; then
-      test "$(cast call "$demo_market" "graduated()(bool)" --rpc-url "$rpc_url")" = "true"
+    graduated="$(cast call "$demo_market" "graduated()(bool)" --rpc-url "$rpc_url")"
+    if [[ "$graduated" == "true" ]]; then
       test "$(cast call "$demo_market" "graduationProgressBps()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')" = "10000"
       if [[ "$market_type" == "uniswap-v3-bonding-curve-v1" ]]; then
         liquidity="$(cast call "$demo_pool" "liquidity()(uint128)" --rpc-url "$rpc_url" | awk '{print $1}')"
@@ -158,12 +158,12 @@ if [[ "$market_type" == "bonding-curve-v1" || "$market_type" == "uniswap-v3-bond
         test "$(cast call "$demo_pool" "initialized()(bool)" --rpc-url "$rpc_url")" = "true"
       fi
     else
-      test "$(cast call "$demo_market" "graduated()(bool)" --rpc-url "$rpc_url")" = "false"
+      test "$graduated" = "false"
       progress="$(cast call "$demo_market" "graduationProgressBps()(uint256)" --rpc-url "$rpc_url" | awk '{print $1}')"
       test "$progress" -gt 0
       test "$progress" -lt 10000
     fi
-  done < <(jq -r '(.bondingDemos // .demoLaunches // [])[] | [.market,.graduatedPool,.phase] | @tsv' "$manifest")
+  done < <(jq -r '(.bondingDemos // .demoLaunches // [])[] | [.market,.graduatedPool] | @tsv' "$manifest")
 
   if [[ "$market_type" == "uniswap-v3-bonding-curve-v1" ]]; then
     adapter="$(jq -r '.contracts.genesisGraduationAdapter' "$manifest")"
