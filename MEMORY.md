@@ -20,6 +20,10 @@ Durable project context lives here. Update this file whenever information should
   Escape defect was found and fixed; one Escape now closes only the asset
   picker and the mobile document remains 390 pixels wide with no overflow.
   Placeholder WalletConnect acceptance intentionally remains blocked.
+- Exact pushed checkpoint:
+  `e4ba4e1df44a8e49533b6b3cb0e50a8741bd0b90` passed the post-push isolated
+  five-service rehearsal. Checksummed evidence is under
+  `/home/hendo420/robyn-evidence/testnet-release-e4ba4e1/`.
 - Broadcast is fail-closed until four external inputs exist: a real 32-character
   WalletConnect/Reown project ID, a stable registered HTTPS hostname with named
   Cloudflare Tunnel, remote IPFS pinning credentials in the protected testnet
