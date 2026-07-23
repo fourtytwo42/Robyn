@@ -4,10 +4,15 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
-- Current task: execute the approved local release-assurance program on branch
-  `codex/local-release-assurance`: internal schema-v4 audit, adversarial
-  economics, chaos/alert/recovery drills, subagent UAT, reproducible builds and
-  a final one-shot eight-hour soak. No public testnet broadcast is authorized.
+- Current task: finish the immutable ERC-1046/IPFS token-metadata release on
+  branch `codex/ipfs-token-metadata`, promote one exact release, prove backup,
+  isolated restore and reboot recovery, then start a fresh one-shot eight-hour
+  soak. No Robinhood Testnet rehearsal or broadcast is authorized.
+- Current checkpoint: pushed commit `75f58dd7ea9b1b29329269767731f41edb7ceebc`
+  passes repository, Foundry, security, live-deployment, CID reconciliation,
+  512-wallet economic and reproducible-build gates. In-app-browser acceptance
+  created launch `0x2a482c145e1b64ef58257cd93574bac7f41b4b0a`
+  through the full sanitized upload and single atomic launch flow.
 - Baseline checkpoint: exact release `691e8cf` was clean and healthy; encrypted
   backup `robyn-state-20260723T070046Z` restored 14 tables, eight artifacts and
   chain state in isolation with `liveStateTouched=false`.
@@ -218,6 +223,16 @@ Durable project context lives here. Update this file whenever information should
 - Security: Remote pin credentials belong only in `/etc/robyn/ipfs.env`; none
   are present in Git or memory. Local devnet may disclose remote pins as
   pending, while protected testnet requires a configured remote pin provider.
+- Result: Six controlled launches now expose immutable ERC-1046 `tokenURI()`
+  values. Browser acceptance found and fixed Nginx request/proxy buffer
+  ownership drift; `install-lan-edge.sh` now restores both directories for the
+  configured worker. The accepted browser launch is bound to metadata CID
+  `bafkreif2hh2qb2rm37fw2yxjzoqr2hiq6pv4tzcvy4yuulqys7mf6m5bie`.
+- Validation: Exact commit `75f58dd7...` passed format, lint, strict typecheck,
+  application tests, Anvil smoke, 72 Foundry tests, optimized builds, gitleaks,
+  dependency audit, Slither high-severity gate, live deployment verification,
+  25-pin reconciliation, the 512-wallet/32-launch/25,000-action economic
+  campaign and two-clean-archive reproducibility comparison.
 - Checkpoint: The schema-v5 contracts/data plane/UI are implemented and the
   controlled devnet was reset and reseeded with five token-specific immutable
   metadata documents. All five live token bindings are `robyn-sanitized`, and
@@ -765,6 +780,14 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-23: Immutable IPFS browser acceptance created and independently
+  verified `$IPFSA` at `0x2a482c145e1b64ef58257cd93574bac7f41b4b0a`.
+  Its constructor-set `tokenURI()` matches the receipt-bound API record and
+  local Kubo block, whose canonical 302-byte JSON contains ERC-1046 interop,
+  name, symbol, decimals, description and pinned PNG/WebP CIDs. Remote pin
+  remains queued because no provider credential is configured, which is
+  permitted only for controlled devnet.
 
 - 2026-07-23: Root-agent release browser UAT on immutable candidate `b7127d0`
   passed discovery, graduated and bonding trading, charts, Portfolio, atomic
