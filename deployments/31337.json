@@ -3,7 +3,7 @@
   "environment": "robyn-devnet",
   "chainId": 31337,
   "deploymentBlock": 49,
-  "gitCommit": "efc05d3dcd3cde77d9cad6afd14522d58442c501",
+  "gitCommit": "179113a0973973fc91f34558933e6f272598ff05",
   "deployer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
   "contracts": {
     "baseAsset": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
