@@ -21,6 +21,7 @@ database="robyn_restore_$(date -u +%Y%m%d%H%M%S)_${RANDOM}"
 anvil_pid=""
 redis_pid=""
 minio_pid=""
+edge_pid=""
 app_pids=()
 live_current="$(readlink -f /opt/robyn/current)"
 live_deployment_sha="$(sha256sum /home/hendo420/Robyn/deployments/31337.json | cut -d' ' -f1)"
@@ -67,6 +68,10 @@ database_fingerprint() {
 live_database_sha="$(database_fingerprint robyn)"
 
 cleanup() {
+  if [[ -n "${edge_pid}" ]]; then
+    kill "${edge_pid}" 2>/dev/null || true
+    wait "${edge_pid}" 2>/dev/null || true
+  fi
   for app_pid in "${app_pids[@]}"; do
     kill "${app_pid}" 2>/dev/null || true
   done
@@ -93,7 +98,7 @@ trap cleanup EXIT
 test -r "${encrypted}"
 test -r "${checksum}"
 test -r "${identity}"
-for tool in age anvil curl git jq minio mcli node pg_dump pg_restore pnpm psql redis-server runuser sha256sum tar zstd; do
+for tool in age anvil curl file git jq minio mcli nginx node pg_dump pg_restore pnpm psql redis-server runuser sha256sum tar zstd; do
   command -v "${tool}" >/dev/null
 done
 
@@ -180,11 +185,15 @@ if [[ -n "$(runuser -u hendo420 -- git -C "${source_dir}" status --porcelain)" ]
   echo "Recovery source checkout is dirty." >&2
   exit 1
 fi
+source_epoch="$(
+  runuser -u hendo420 -- git -C "${source_dir}" show \
+    -s --format=%ct "${git_sha}"
+)"
 if ! runuser -u hendo420 -- env \
   HOME=/home/hendo420 \
   TZ=UTC \
   LC_ALL=C \
-  SOURCE_DATE_EPOCH="$(git -C "${source_dir}" show -s --format=%ct "${git_sha}")" \
+  SOURCE_DATE_EPOCH="${source_epoch}" \
   ROBYN_BUILD_ID="${git_sha}" \
   bash -lc "
       cd '${source_dir}'
@@ -244,7 +253,7 @@ app_pids+=("$!")
 runuser -u hendo420 -- env "${common_env[@]}" \
   HOST=127.0.0.1 PORT=13101 CHAIN_ID=31337 \
   ROBYN_QUEUE_NAME=robyn-restore-conversions \
-  ROBYN_AUTH_ORIGINS=http://127.0.0.1:13002 \
+  ROBYN_AUTH_ORIGINS=http://127.0.0.1:13000 \
   ROBYN_ARTIFACT_SERVICE_URL=http://127.0.0.1:13200 \
   node "${source_dir}/apps/api/dist/server.js" \
   >"${work}/api.log" 2>&1 &
@@ -270,10 +279,41 @@ runuser -u hendo420 -- env \
   >"${work}/web.log" 2>&1 &
 app_pids+=("$!")
 
+install -d -m 0700 "${work}/nginx"
+cat >"${work}/nginx/recovery.conf" <<EOF
+pid ${work}/nginx/nginx.pid;
+error_log ${work}/nginx/error.log info;
+events {
+  worker_connections 128;
+}
+http {
+  include /etc/nginx/mime.types;
+  access_log ${work}/nginx/access.log;
+  server {
+    listen 127.0.0.1:13000;
+    server_name _;
+    client_max_body_size 2m;
+    location /api/ {
+      proxy_pass http://127.0.0.1:13101/;
+      proxy_set_header Host \$host:\$server_port;
+      proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+    location / {
+      proxy_pass http://127.0.0.1:13002;
+      proxy_set_header Host \$host:\$server_port;
+      proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+  }
+}
+EOF
+nginx -c "${work}/nginx/recovery.conf" -p "${work}/nginx" \
+  -g 'daemon off;' >"${work}/nginx/stdout.log" 2>&1 &
+edge_pid=$!
+
 for _ in {1..120}; do
   if curl -fsS http://127.0.0.1:13200/health >/dev/null 2>&1 &&
     curl -fsS http://127.0.0.1:13101/health >/dev/null 2>&1 &&
-    curl -fsS http://127.0.0.1:13002/discover \
+    curl -fsS http://127.0.0.1:13000/discover \
       >"${work}/restored-discover.html" 2>/dev/null; then
     break
   fi
@@ -283,10 +323,18 @@ curl -fsS http://127.0.0.1:13200/health >"${work}/artifact-health.json"
 curl -fsS http://127.0.0.1:13101/status >"${work}/api-status.json"
 curl -fsS http://127.0.0.1:13101/launches?limit=5 \
   >"${work}/launches.json"
-curl -fsS http://127.0.0.1:13002/discover \
+curl -fsS http://127.0.0.1:13000/discover \
   >"${work}/restored-discover.html"
 grep -Eq 'Development network only|Controlled development network' \
   "${work}/restored-discover.html"
+media_id="$(
+  runuser -u postgres -- psql -d "${database}" -Atqc \
+    "SELECT media_id FROM media_assets WHERE status='active' ORDER BY created_at,media_id LIMIT 1"
+)"
+test -n "${media_id}"
+curl -fsS "http://127.0.0.1:13000/api/media/${media_id}" \
+  >"${work}/restored-media.webp"
+file "${work}/restored-media.webp" | grep -q 'Web/P image'
 HOME=/home/hendo420 ROBYN_OPERATOR_RPC_URL=http://127.0.0.1:18545 \
   ROBYN_DEVNET_MANIFEST="${source_dir}/deployments/31337.json" \
   "${source_dir}/scripts/verify-devnet-deployment.sh" \
@@ -302,10 +350,11 @@ jq -e '
 for app_pid in "${app_pids[@]}"; do
   kill -0 "${app_pid}"
 done
+kill -0 "${edge_pid}"
 
 if [[ "${ROBYN_RESTORE_HOLD_SECONDS:-0}" =~ ^[0-9]+$ ]] &&
   [[ "${ROBYN_RESTORE_HOLD_SECONDS:-0}" -gt 0 ]]; then
-  printf 'restoreBrowserUrl=http://127.0.0.1:13002/discover\n'
+  printf 'restoreBrowserUrl=http://127.0.0.1:13000/discover\n'
   sleep "${ROBYN_RESTORE_HOLD_SECONDS}"
 fi
 

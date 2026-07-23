@@ -85,6 +85,11 @@ Durable project context lives here. Update this file whenever information should
   rejection while cloning the operator repository. Recovery source clone,
   checkout and cleanliness verification now always run as unprivileged
   `hendo420`, independent of the invoking root environment.
+- Root in-app-browser inspection of the held recovery found that direct web
+  port access bypassed the production same-origin `/api/` edge, so bound
+  sanitized artwork returned 404 even though the restored API served a valid
+  1024x1024 WebP. Recovery now starts an isolated native Nginx edge on port
+  13000 and requires active-media delivery through that browser origin.
 - The immutable release gate exposed creator-metadata drift after the last
   controlled chain reset: PostgreSQL still held bindings for retired token
   addresses. `scripts/seed-devnet-creator-metadata.sh` authenticated as the
@@ -164,7 +169,9 @@ Durable project context lives here. Update this file whenever information should
   normalization is limited to `service_heartbeats` and
   `indexer_checkpoints`. A direct isolated restore passed all gates with
   `liveStateTouched=false`; transient-systemd browser hold then exposed and
-  fixed operator ownership for the clean source checkout.
+  fixed operator ownership for the clean source checkout. Visual browser
+  inspection then exposed missing same-origin media routing; the recovery edge
+  and WebP assertion are added for the final rerun.
 - Follow-up: Rebuild/promote the exact pushed checkpoint, create a new
   encrypted off-VM backup, and rerun isolated CLI plus in-app-browser recovery.
 
