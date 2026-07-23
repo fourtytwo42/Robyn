@@ -55,10 +55,7 @@ export function NetworkDaoView({
   const connect = useCallback(async () => {
     window.location.href = "/#devnet-console";
   }, []);
-  const dataApiUrl =
-    "http://" +
-    (typeof window === "undefined" ? "127.0.0.1" : window.location.hostname) +
-    ":3100";
+  const dataApiUrl = "/api";
   return (
     <DaoView
       deployment={deployment}

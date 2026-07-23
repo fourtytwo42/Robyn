@@ -142,10 +142,9 @@ export function PortfolioView() {
     const account = privateKeyToAccount(stored as Hex);
     setWallet(account.address);
     setStatus("Loading held tokens and reward state…");
-    const response = await fetch(
-      "http://" + window.location.hostname + ":3100/launches?limit=100",
-      { cache: "no-store" },
-    );
+    const response = await fetch("/api/launches?limit=100", {
+      cache: "no-store",
+    });
     if (!response.ok) throw new Error("Launch registry unavailable");
     const launches = (await response.json()) as LaunchList;
     setIndexedBlock(launches.asOfBlock);
