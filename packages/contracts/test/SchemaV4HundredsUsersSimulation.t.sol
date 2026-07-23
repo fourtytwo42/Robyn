@@ -191,6 +191,111 @@ contract SchemaV4HundredsUsersSimulationTest {
         require(target.value() == 256, "governance execution");
     }
 
+    function testSchemaV4AtomicRollbackAuthorizationAndPauseMatrix() external {
+        uint256 beforeCount = launchFactory.launchCount();
+
+        vm.prank(_user(0));
+        try coordinator.createLaunch(_request(1)) {
+            revert("duplicate salt accepted");
+        } catch { }
+        require(launchFactory.launchCount() == beforeCount, "duplicate launch persisted");
+
+        RobynLaunchFactoryV2.LaunchRequest memory zeroSalt = _request(90);
+        zeroSalt.userSalt = bytes32(0);
+        vm.prank(_user(90));
+        try coordinator.createLaunch(zeroSalt) {
+            revert("zero salt accepted");
+        } catch { }
+        require(launchFactory.launchCount() == beforeCount, "zero-salt launch persisted");
+
+        RobynLaunchFactoryV2.LaunchRequest memory invalidBasket = _request(91);
+        invalidBasket.weights[0] = 9_999;
+        (address invalidToken, address invalidVault, bytes32 invalidSaltHash) =
+            coordinator.predictLaunchAddresses(_user(91), invalidBasket);
+        vm.prank(_user(91));
+        try coordinator.createLaunch(invalidBasket) {
+            revert("invalid basket accepted");
+        } catch { }
+        require(invalidToken.code.length == 0, "invalid token persisted");
+        require(invalidVault.code.length == 0, "invalid vault persisted");
+        require(!launchFactory.usedLaunchSalt(invalidSaltHash), "invalid salt persisted");
+        require(launchFactory.launchCount() == beforeCount, "invalid launch persisted");
+
+        RobynLaunchFactoryV2.LaunchRequest memory squatted = _request(92);
+        (address predictedToken, address predictedVault, bytes32 predictedSaltHash) =
+            coordinator.predictLaunchAddresses(_user(92), squatted);
+        uniswapFactory.createPool(address(base), predictedToken, POOL_FEE);
+        vm.prank(_user(92));
+        try coordinator.createLaunch(squatted) {
+            revert("precreated pool accepted");
+        } catch { }
+        require(predictedToken.code.length == 0, "squatted token persisted");
+        require(predictedVault.code.length == 0, "squatted vault persisted");
+        require(!launchFactory.usedLaunchSalt(predictedSaltHash), "squatted salt persisted");
+        require(launchFactory.launchCount() == beforeCount, "squatted launch persisted");
+
+        try launchFactory.createLaunchFor(address(this), address(this), SUPPLY, _request(93)) {
+            revert("direct launch accepted");
+        } catch { }
+        try marketFactory.createMarketFor(tokens[0], _user(0), address(this)) {
+            revert("direct market accepted");
+        } catch { }
+        try feeRouter.registerLaunch(
+            tokens[0], address(this), vaults[0], address(markets[0]), address(this)
+        ) {
+            revert("direct fee registration accepted");
+        } catch { }
+        try launchFactory.bindCoordinator(address(this)) {
+            revert("launch coordinator rebound");
+        } catch { }
+        try marketFactory.bindCoordinator(address(this)) {
+            revert("market coordinator rebound");
+        } catch { }
+        try feeRouter.bindCoordinator(address(this)) {
+            revert("fee coordinator rebound");
+        } catch { }
+
+        address trader = _user(100);
+        base.mint(trader, 10 ether);
+        vm.startPrank(trader);
+        base.approve(address(markets[0]), 10 ether);
+        markets[0].buy(10 ether, 1);
+        vm.stopPrank();
+        RobynProtocolFeeRouterV2.LaunchFeeAccount memory beforePause =
+            feeRouter.launchAccount(address(tokens[0]));
+
+        vm.prank(_user(101));
+        try feeRouter.setPaused(true) {
+            revert("unauthorized pause accepted");
+        } catch { }
+        feeRouter.setPaused(true);
+        try feeRouter.convertPendingToNative(
+            IERC20(address(tokens[0])), 1 ether, 1, block.timestamp + 1
+        ) {
+            revert("paused conversion accepted");
+        } catch { }
+        RobynProtocolFeeRouterV2.LaunchFeeAccount memory duringPause =
+            feeRouter.launchAccount(address(tokens[0]));
+        require(
+            duringPause.pendingCreatorBase == beforePause.pendingCreatorBase
+                && duringPause.pendingDaoRewardBase == beforePause.pendingDaoRewardBase
+                && duringPause.pendingTreasuryBase == beforePause.pendingTreasuryBase,
+            "pause changed liabilities"
+        );
+        try feeRouter.setPaused(false) {
+            revert("guardian unpaused");
+        } catch { }
+        vm.prank(address(treasury));
+        feeRouter.setPaused(false);
+        require(!feeRouter.paused(), "treasury unpause failed");
+
+        vm.prank(_user(102));
+        try feeRouter.setConverter(nativeConverter) {
+            revert("unauthorized converter accepted");
+        } catch { }
+        require(address(feeRouter.converter()) == address(nativeConverter), "converter changed");
+    }
+
     function _distributeDaoAndDelegate() private {
         for (uint256 index; index < USER_COUNT; ++index) {
             address user = _user(index);

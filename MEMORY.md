@@ -9,6 +9,7 @@ Durable project context lives here. Update this file whenever information should
 - Defects fixed: devnet Next SSR now calls the internal API backend instead of the public per-IP rate-limited Nginx port; discovery analytics use a bounded 3-second single-flight cache to prevent identical concurrent queries/RPC fanout from exhausting the API's 384 MiB PM2 limit.
 - Evidence: `evidence/system-simulation/20260723T051734Z/` contains raw contract/load logs, JSON summary, and checksums. Contract mutations occur only in Foundry's isolated EVM; the live HTTP phase is read-only.
 - Next step: finish the machine-audited function/action/state matrix, expand adversarial and lifecycle tests for uncovered schema-v4/API/indexer/keeper/media/wallet paths, run complete in-app-browser journeys, then rebuild/restart/reconcile and push the next checkpoints. Public testnet broadcast remains unauthorized.
+- Current test expansion: 70 Foundry tests now pass, including new atomic rollback/pause, governance lifecycle, RDAO signature/reward, native-converter safety, and 256-user/100-voter matrices. The public API surface harness passes all 54 cases through the same-origin Nginx route.
 
 - Current task: the approved multi-wallet connection release is implemented on branch `codex/multi-wallet`; no Robinhood Testnet transaction was broadcast.
 - Current checkpoint: protected testnet components use one RainbowKit/wagmi connection layer for Create, trading, Portfolio, creator rewards, DAO and governance. Devnet retains the generated/restored session wallet through compile-time aliases.
@@ -42,6 +43,15 @@ Durable project context lives here. Update this file whenever information should
 - Fixed PM2 devnet web configuration with `DATA_API_URL=http://127.0.0.1:3101`. Added tested `SingleFlightTtlCache`, bounded to 16 keys and 3 seconds, around discovery analytics. Rejected work is evicted and retryable.
 - Rerun result: 6,000/6,000 requests passed at 100 rps, 200 concurrency and 256 modeled clients. P95 was 25.2 ms web discover, 5.5 ms API status, 4.1 ms API launches, 4.7 ms RPC chain ID and 4.5 ms RPC head. No API restart occurred during the passing run.
 - This is a checkpoint, not goal completion. The finite coverage model and remaining browser, failure-injection, operational, rebuild and reconciliation gates are documented in `docs/system-testing.md`.
+
+### 2026-07-23 - Contract and API failure-matrix expansion
+
+- Added schema-v4 atomic rollback/authorization/pause coverage, a five-test Governor/Timelock matrix, a four-test RDAO permit/delegation/reward matrix, and a four-test native fee-converter matrix.
+- The native converter matrix proves missing-pool, TWAP-deviation, excessive-impact, unsafe-minimum, expired, unauthorized, invalid-recipient/asset, dishonest balance-delta, success, and allowance-cleanup behavior.
+- Full Foundry result is 70 passing tests, including four 128-run/depth-64 stateful invariants. `forge coverage` cannot produce a reliable report: non-IR compilation hits stack depth, and `--ir-minimum` cannot resolve pnpm-linked OpenZeppelin imports in the coverage analyzer.
+- Added `scripts/test-api-surface.mjs`; all 54 public API route, query, validation, not-found, anonymous-session, invalid-signature/replay, profile, media, metadata, DAO, and artifact cases pass.
+- SIWE tests must traverse `http://192.168.50.250:3000/api` with Origin `http://192.168.50.250:3000`; a direct backend-port request intentionally fails because Host and Origin differ.
+- Follow-up: complete the machine-audited action manifest, authenticated creator/media integration, keeper/indexer failure matrix, full-scale final simulation, built-browser acceptance, and release reconciliation.
 
 ### 2026-07-23 - Multi-wallet connection release
 

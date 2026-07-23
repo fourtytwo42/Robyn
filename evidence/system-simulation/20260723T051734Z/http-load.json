@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-07-23T05:17:34.570Z",
+  "finishedAt": "2026-07-23T05:18:34.576Z",
+  "configuration": {
+    "baseHost": "127.0.0.1",
+    "useInternalBackends": true,
+    "durationSeconds": 60,
+    "requestsPerSecond": 100,
+    "concurrency": 200,
+    "virtualUsers": 256,
+    "p95LimitMs": 750,
+    "timeoutMs": 5000
+  },
+  "totals": {
+    "requests": 6000,
+    "ok": 6000,
+    "failed": 0
+  },
+  "endpoints": {
+    "web-discover": {
+      "requests": 1200,
+      "ok": 1200,
+      "failed": 0,
+      "statuses": {
+        "200": 1200
+      },
+      "p50Ms": 11.666556000000128,
+      "p95Ms": 25.172135999999227,
+      "p99Ms": 36.63000699999975,
+      "maxMs": 95.255172
+    },
+    "api-status": {
+      "requests": 1200,
+      "ok": 1200,
+      "failed": 0,
+      "statuses": {
+        "200": 1200
+      },
+      "p50Ms": 2.7436689999994996,
+      "p95Ms": 5.469073000000208,
+      "p99Ms": 12.972583000002487,
+      "maxMs": 21.94437900000048
+    },
+    "api-launches": {
+      "requests": 1200,
+      "ok": 1200,
+      "failed": 0,
+      "statuses": {
+        "200": 1200
+      },
+      "p50Ms": 2.8542410000009113,
+      "p95Ms": 4.11031300000468,
+      "p99Ms": 40.87986299999466,
+      "maxMs": 105.8269990000008
+    },
+    "rpc-chain": {
+      "requests": 1200,
+      "ok": 1200,
+      "failed": 0,
+      "statuses": {
+        "200": 1200
+      },
+      "p50Ms": 3.4193060000034166,
+      "p95Ms": 4.649180000000342,
+      "p99Ms": 128.54797500000132,
+      "maxMs": 183.5044999999991
+    },
+    "rpc-head": {
+      "requests": 1200,
+      "ok": 1200,
+      "failed": 0,
+      "statuses": {
+        "200": 1200
+      },
+      "p50Ms": 3.158815999995568,
+      "p95Ms": 4.478670999997121,
+      "p99Ms": 123.95462100000077,
+      "maxMs": 175.3277589999998
+    }
+  },
+  "resources": {
+    "before": {
+      "freeMemoryBytes": 5023830016,
+      "totalMemoryBytes": 8326938624,
+      "loadAverage": [
+        0.9,
+        1.25,
+        0.92
+      ]
+    },
+    "after": {
+      "freeMemoryBytes": 4805296128,
+      "totalMemoryBytes": 8326938624,
+      "loadAverage": [
+        0.46,
+        1.07,
+        0.88
+      ]
+    }
+  },
+  "passed": true
+}

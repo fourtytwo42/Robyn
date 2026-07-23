@@ -1,0 +1,498 @@
+{
+  "schemaVersion": 1,
+  "testedAt": "2026-07-23T05:33:29.649Z",
+  "baseUrl": "http://192.168.50.250:3000/api",
+  "manifestPath": "deployments/31337.json",
+  "total": 54,
+  "passedCount": 54,
+  "failedCount": 0,
+  "passed": true,
+  "results": [
+    {
+      "name": "health",
+      "method": "GET",
+      "path": "/health",
+      "status": 200,
+      "durationMs": 34.195935000000006,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "status",
+      "method": "GET",
+      "path": "/status",
+      "status": 200,
+      "durationMs": 4.631000999999998,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "operations",
+      "method": "GET",
+      "path": "/operations",
+      "status": 200,
+      "durationMs": 6.662716999999994,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "assets",
+      "method": "GET",
+      "path": "/assets",
+      "status": 200,
+      "durationMs": 3.5042899999999975,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-sort-new",
+      "method": "GET",
+      "path": "/launches?limit=5&sort=new&window=24h&phase=all",
+      "status": 200,
+      "durationMs": 55.352816000000004,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-sort-trending",
+      "method": "GET",
+      "path": "/launches?limit=5&sort=trending&window=24h&phase=all",
+      "status": 200,
+      "durationMs": 4.797309999999996,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-sort-near_graduation",
+      "method": "GET",
+      "path": "/launches?limit=5&sort=near_graduation&window=24h&phase=all",
+      "status": 200,
+      "durationMs": 3.702559999999991,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-sort-graduated",
+      "method": "GET",
+      "path": "/launches?limit=5&sort=graduated&window=24h&phase=all",
+      "status": 200,
+      "durationMs": 3.4016340000000014,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-sort-volume",
+      "method": "GET",
+      "path": "/launches?limit=5&sort=volume&window=24h&phase=all",
+      "status": 200,
+      "durationMs": 3.4174229999999852,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-sort-market_cap",
+      "method": "GET",
+      "path": "/launches?limit=5&sort=market_cap&window=24h&phase=all",
+      "status": 200,
+      "durationMs": 3.193253999999996,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-window-24h",
+      "method": "GET",
+      "path": "/launches?limit=5&sort=volume&window=24h&phase=all",
+      "status": 200,
+      "durationMs": 2.7734379999999987,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-window-7d",
+      "method": "GET",
+      "path": "/launches?limit=5&sort=volume&window=7d&phase=all",
+      "status": 200,
+      "durationMs": 2.3938610000000153,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-window-all",
+      "method": "GET",
+      "path": "/launches?limit=5&sort=volume&window=all&phase=all",
+      "status": 200,
+      "durationMs": 2.363792999999987,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-phase-all",
+      "method": "GET",
+      "path": "/launches?limit=5&sort=new&window=all&phase=all",
+      "status": 200,
+      "durationMs": 2.489434000000017,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-phase-bonding",
+      "method": "GET",
+      "path": "/launches?limit=5&sort=new&window=all&phase=bonding",
+      "status": 200,
+      "durationMs": 2.4423129999999844,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-phase-graduated",
+      "method": "GET",
+      "path": "/launches?limit=5&sort=new&window=all&phase=graduated",
+      "status": 200,
+      "durationMs": 2.40625399999999,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-creator",
+      "method": "GET",
+      "path": "/launches?creator=0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+      "status": 200,
+      "durationMs": 39.79024199999998,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-invalid-creator",
+      "method": "GET",
+      "path": "/launches?creator=not-an-address",
+      "status": 400,
+      "durationMs": 1.9425350000000208,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-invalid-cursor",
+      "method": "GET",
+      "path": "/launches?cursor=not-a-cursor",
+      "status": 400,
+      "durationMs": 1.8944239999999866,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launches-invalid-address-query",
+      "method": "GET",
+      "path": "/launches?q=0x1234",
+      "status": 200,
+      "durationMs": 2.4821699999999964,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launch-detail",
+      "method": "GET",
+      "path": "/launches/0xdb3E981e48E40b7a5e1eF8b479c709c793a4F414",
+      "status": 200,
+      "durationMs": 2.9649260000000197,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launch-detail-invalid",
+      "method": "GET",
+      "path": "/launches/not-a-token",
+      "status": 400,
+      "durationMs": 2.2375609999999995,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launch-detail-missing",
+      "method": "GET",
+      "path": "/launches/0x0000000000000000000000000000000000000001",
+      "status": 404,
+      "durationMs": 1.939629000000025,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launch-activity",
+      "method": "GET",
+      "path": "/launches/0xdb3E981e48E40b7a5e1eF8b479c709c793a4F414/activity?limit=10",
+      "status": 200,
+      "durationMs": 13.695110999999997,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launch-activity-invalid",
+      "method": "GET",
+      "path": "/launches/not-a-token/activity",
+      "status": 400,
+      "durationMs": 2.283188999999993,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launch-analytics",
+      "method": "GET",
+      "path": "/launches/0xdb3E981e48E40b7a5e1eF8b479c709c793a4F414/analytics",
+      "status": 200,
+      "durationMs": 22.965739000000013,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "launch-analytics-invalid",
+      "method": "GET",
+      "path": "/launches/not-a-token/analytics",
+      "status": 400,
+      "durationMs": 1.9324459999999988,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "creator-rewards-creator",
+      "method": "GET",
+      "path": "/launches/0xdb3E981e48E40b7a5e1eF8b479c709c793a4F414/creator-rewards?account=0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+      "status": 200,
+      "durationMs": 4.133455999999995,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "creator-rewards-viewer",
+      "method": "GET",
+      "path": "/launches/0xdb3E981e48E40b7a5e1eF8b479c709c793a4F414/creator-rewards?account=0x0000000000000000000000000000000000000001",
+      "status": 200,
+      "durationMs": 4.084983999999963,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "creator-rewards-invalid-token",
+      "method": "GET",
+      "path": "/launches/not-a-token/creator-rewards",
+      "status": 400,
+      "durationMs": 1.862150999999983,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "creator-rewards-invalid-account",
+      "method": "GET",
+      "path": "/launches/0xdb3E981e48E40b7a5e1eF8b479c709c793a4F414/creator-rewards?account=invalid",
+      "status": 400,
+      "durationMs": 1.6787390000000073,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "dao-overview",
+      "method": "GET",
+      "path": "/dao?account=0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+      "status": 200,
+      "durationMs": 14.270234999999957,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "dao-proposals",
+      "method": "GET",
+      "path": "/dao/proposals?account=0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+      "status": 200,
+      "durationMs": 10.825940000000003,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "dao-proposal-invalid",
+      "method": "GET",
+      "path": "/dao/proposals/not-a-number",
+      "status": 400,
+      "durationMs": 2.1323900000000435,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "dao-proposal-missing",
+      "method": "GET",
+      "path": "/dao/proposals/999999999999999999",
+      "status": 404,
+      "durationMs": 8.755550000000028,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "dao-members",
+      "method": "GET",
+      "path": "/dao/members",
+      "status": 200,
+      "durationMs": 4.849909999999966,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "dao-activity",
+      "method": "GET",
+      "path": "/dao/activity",
+      "status": 200,
+      "durationMs": 24.78996699999999,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "auth-session-anonymous",
+      "method": "GET",
+      "path": "/auth/session",
+      "status": 200,
+      "durationMs": 0.9739469999999528,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "auth-nonce-invalid-address",
+      "method": "POST",
+      "path": "/auth/nonce",
+      "status": 400,
+      "durationMs": 8.61764599999998,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "auth-nonce",
+      "method": "POST",
+      "path": "/auth/nonce",
+      "status": 200,
+      "durationMs": 2.998369999999966,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "auth-invalid-signature",
+      "method": "POST",
+      "path": "/auth/verify",
+      "status": 401,
+      "durationMs": 4.720983000000047,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "auth-replayed-nonce",
+      "method": "POST",
+      "path": "/auth/verify",
+      "status": 401,
+      "durationMs": 2.424480000000017,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "auth-logout-anonymous",
+      "method": "POST",
+      "path": "/auth/logout",
+      "status": 200,
+      "durationMs": 2.1598619999999755,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "profile-invalid-address",
+      "method": "GET",
+      "path": "/profiles/invalid",
+      "status": 400,
+      "durationMs": 1.6942900000000236,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "profile-read",
+      "method": "GET",
+      "path": "/profiles/0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+      "status": 200,
+      "durationMs": 2.0675449999999955,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "profile-update-unauthorized",
+      "method": "PUT",
+      "path": "/profile",
+      "status": 401,
+      "durationMs": 2.001337000000035,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "media-upload-unauthorized",
+      "method": "POST",
+      "path": "/media?purpose=token",
+      "status": 401,
+      "durationMs": 2.140826000000004,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "media-missing",
+      "method": "GET",
+      "path": "/media/00000000-0000-0000-0000-000000000000",
+      "status": 404,
+      "durationMs": 1.8822490000000016,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "metadata-read",
+      "method": "GET",
+      "path": "/launches/0xdb3E981e48E40b7a5e1eF8b479c709c793a4F414/metadata",
+      "status": 404,
+      "durationMs": 1.9787549999999783,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "metadata-bind-unauthorized",
+      "method": "POST",
+      "path": "/launches/0xdb3E981e48E40b7a5e1eF8b479c709c793a4F414/metadata",
+      "status": 401,
+      "durationMs": 1.8573620000000233,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "media-report-invalid-reason",
+      "method": "POST",
+      "path": "/media/00000000-0000-0000-0000-000000000000/reports",
+      "status": 400,
+      "durationMs": 1.9253320000000258,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "media-report-missing",
+      "method": "POST",
+      "path": "/media/00000000-0000-0000-0000-000000000000/reports",
+      "status": 404,
+      "durationMs": 2.245865999999978,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "artifact-invalid-sha",
+      "method": "GET",
+      "path": "/artifacts/invalid/metadata",
+      "status": 400,
+      "durationMs": 1.7900319999999965,
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "artifact-missing",
+      "method": "GET",
+      "path": "/artifacts/0000000000000000000000000000000000000000000000000000000000000000/metadata",
+      "status": 404,
+      "durationMs": 2.192204000000004,
+      "passed": true,
+      "error": null
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 ## Completion standard
 
-“Every combination” is not a finite claim for arbitrary calldata and action
+"Every combination" is not a finite claim for arbitrary calldata and action
 sequences. Robyn therefore uses an auditable finite model:
 
 1. Every product-owned public write function and every user-visible action is
@@ -40,14 +40,48 @@ claimed.
 ## Real-use simulation
 
 `scripts/simulate-real-use.sh` is deterministic and fail-closed. Its contract
-phase models 256 EOAs, eight creators’ launches, bonding and DEX trading,
+phase models 256 EOAs, eight creators' launches, bonding and DEX trading,
 graduation, both reward systems, creator batch claims, 100 delegated voters,
 and timelock execution. Its HTTP phase uses 256 stable virtual-client identities
 at configurable concurrency against the built VM services.
 
 The simulation produces raw logs, JSON metrics, and SHA-256 checksums below
 `evidence/system-simulation/<UTC run id>/`. The live shared devnet is read-only
-during the HTTP phase; all contract mutations run inside Foundry’s isolated EVM.
+during the HTTP phase; all contract mutations run inside Foundry's isolated EVM.
+
+## Current automated matrix
+
+The schema-v4 contract suite currently contains 70 passing tests, including four
+128-run, depth-64 stateful invariants. Dedicated matrices cover:
+
+- atomic launch rollback, duplicate salts, pool precreation, coordinator
+  authorization, pause authority, and exact supply custody;
+- 256 actors across eight launches plus 100 delegated voters;
+- RDAO permit, delegation by signature, replay/expiry, transfer-aware native
+  rewards, exclusions, and fixed-supply constraints;
+- governance threshold, quorum, for/against/abstain validation, double-vote
+  rejection, queue, early-execution rejection, guardian cancellation, and
+  timelock execution;
+- native conversion authorization, deadline, pool availability, TWAP
+  deviation, price impact, caller minimum, recipient/asset validation, measured
+  balance deltas, and allowance cleanup;
+- all 54 public API read/write/validation/anonymous-auth route cases.
+
+`scripts/test-api-surface.mjs` must run through the same-origin Nginx API route
+when testing SIWE endpoints so the request Host and Origin match exactly:
+
+```bash
+ROBYN_API_TEST_URL=http://192.168.50.250:3000/api \
+ROBYN_API_TEST_AUTH_ORIGIN=http://192.168.50.250:3000 \
+node scripts/test-api-surface.mjs
+```
+
+The standard Foundry coverage reporter is not a release gate in this repository:
+the non-IR mode cannot compile the production-shaped coordinator because of
+stack depth, while the `--ir-minimum` source analyzer cannot resolve pnpm-linked
+OpenZeppelin relative imports. The fail-closed action manifest and explicit
+test-to-action evidence are used instead; normal optimized compilation and
+tests remain mandatory.
 
 Run:
 
