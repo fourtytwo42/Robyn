@@ -14,7 +14,16 @@ command -v ufw >/dev/null || {
   exit 1
 }
 
+nginx_worker_user="$(
+  awk '$1 == "user" { gsub(/;/, "", $2); print $2; exit }' /etc/nginx/nginx.conf
+)"
+if [[ -z "${nginx_worker_user}" ]] || ! id "${nginx_worker_user}" >/dev/null 2>&1; then
+  echo "Unable to determine the nginx worker user." >&2
+  exit 1
+fi
+
 install -d -m 0755 /etc/systemd/system/nginx.service.d
+install -d -o "${nginx_worker_user}" -g root -m 0700 /var/lib/nginx/body
 install -m 0644 "${repo}/infrastructure/nginx/robyn.conf" /etc/nginx/conf.d/robyn.conf
 install -m 0644 "${repo}/infrastructure/systemd/nginx-robyn.conf" /etc/systemd/system/nginx.service.d/robyn.conf
 if [[ -L /etc/nginx/sites-enabled/default ]]; then

@@ -218,9 +218,18 @@ Durable project context lives here. Update this file whenever information should
 - Security: Remote pin credentials belong only in `/etc/robyn/ipfs.env`; none
   are present in Git or memory. Local devnet may disclose remote pins as
   pending, while protected testnet requires a configured remote pin provider.
-- Follow-up: Finish the schema-v5 contracts/data plane/UI, reset and reseed
-  devnet, complete browser and recovery acceptance, then start a fresh
-  one-shot eight-hour soak.
+- Checkpoint: The schema-v5 contracts/data plane/UI are implemented and the
+  controlled devnet was reset and reseeded with five token-specific immutable
+  metadata documents. All five live token bindings are `robyn-sanitized`, and
+  their PNG, WebP, and metadata objects are locally pinned. Remote status is
+  intentionally `queued` because no external pin credentials are configured.
+- Bugs fixed during reseeding: Nginx request-body temp ownership is now
+  installed explicitly for the configured worker user; the CID-only gateway
+  location is valid quoted PCRE; and the artifact service permits canonical
+  `image/png` objects in addition to WebP.
+- Follow-up: Pin and freeze the token list, complete recovery/documentation
+  closure, run browser and full release acceptance, promote an immutable
+  candidate, then start a fresh one-shot eight-hour soak.
 
 ### 2026-07-23 - First full-soak failure and fail-closed correction
 
