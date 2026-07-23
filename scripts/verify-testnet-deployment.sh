@@ -7,6 +7,14 @@ rpc_url="${ROBYN_TESTNET_RPC_URL:-https://rpc.testnet.chain.robinhood.com}"
 export PATH="$HOME/.foundry/bin:$PATH"
 
 jq -e '.schemaVersion == 3 and .environment == "robinhood-testnet" and .chainId == 46630 and .mockOnly == true and .assetStrategy == "project-owned-testnet-mocks" and .market.liquidityVenue == "robyn-controlled-uniswap-v3-testnet"' "$manifest" >/dev/null
+jq -e '. as $manifest |
+  (.dao.initialAllocationManifestSha256 | test("^[0-9a-f]{64}$")) and
+  (.dao.allocation | type == "array" and length > 1) and
+  (([.dao.allocation[].account | ascii_downcase] | unique | length) == (.dao.allocation | length)) and
+  ([.dao.allocation[].shareBps] | add == 10000) and
+  (all(.dao.allocation[]; (.account | test("^0x[0-9a-fA-F]{40}$")) and (.purpose | type == "string" and length > 0))) and
+  (any(.dao.allocation[]; (.account | ascii_downcase) == ($manifest.contracts.timelock | ascii_downcase) and .purpose == "dao-treasury-reserve"))
+' "$manifest" >/dev/null
 grep -Eqs 'DEVNET_ONLY|robyn-devnet|31337' "$manifest" && { echo "Devnet content found in testnet manifest" >&2; exit 1; }
 jq -e '.chainId == 46630 and .deployment.allowsUnlockedAccount == false' "$repo_root/config/networks/robinhood-testnet.json" >/dev/null
 [[ "$(cast chain-id --rpc-url "$rpc_url")" == "46630" ]]
@@ -65,6 +73,11 @@ for excluded in "$market" "$adapter" "$locker" "$pool" "$coordinator" "$fee_rout
 [[ "$(cast call "$router" 'TESTNET_MOCK_ONLY()(string)' --rpc-url "$rpc_url" --json | jq -r '.[0]')" == "robinhood-testnet-mock" ]]
 [[ "$(cast call "$(jq -er '.localUniswapV3.wrappedQuoteAsset' "$manifest")" 'TESTNET_PROVENANCE()(string)' --rpc-url "$rpc_url" --json | jq -r '.[0]')" == "robyn-controlled-uniswap-v3-testnet" ]]
 [[ "$(cast call "$dao_token" 'totalSupply()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')" == "1000000000000000000000000000" ]]
+while IFS=$'\t' read -r allocation_account share_bps; do
+  expected_allocation="$(cast to-wei "$((share_bps * 100000))" ether)"
+  actual_allocation="$(cast call "$dao_token" 'balanceOf(address)(uint256)' "$allocation_account" --rpc-url "$rpc_url" | awk '{print $1}')"
+  [[ "$actual_allocation" == "$expected_allocation" ]] || { echo "RDAO allocation mismatch for $allocation_account" >&2; exit 1; }
+done < <(jq -r '.dao.allocation[] | [.account, (.shareBps | tostring)] | @tsv' "$manifest")
 [[ "$(cast call "$dao_token" 'rewardDepositor()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]')" == "$(lower "$fee_router")" ]]
 [[ "$(cast call "$dao_token" 'exclusionsSealed()(bool)' --rpc-url "$rpc_url")" == "true" ]]
 for excluded in "$timelock" "$fee_router" "$governor" "$coordinator" "$market_factory"; do [[ "$(cast call "$dao_token" 'isRewardExcluded(address)(bool)' "$excluded" --rpc-url "$rpc_url")" == "true" ]]; done

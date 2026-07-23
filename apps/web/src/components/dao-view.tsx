@@ -229,28 +229,38 @@ export function DaoView({
         await connect();
         return;
       }
-      setStatus("Simulating transaction…");
-      const data = encodeFunctionData({
-        abi: abi as Abi,
-        functionName,
-        args,
-      });
-      await rpcClient.call({
-        account,
-        to: address,
-        data,
-      });
-      setStatus("Waiting for wallet confirmation…");
-      const hash = await walletClient.sendTransaction({
-        account,
-        chain: walletClient.chain,
-        to: address,
-        data,
-      });
-      setStatus("Transaction submitted. Waiting for confirmation…");
-      await rpcClient.waitForTransactionReceipt({ hash });
-      setStatus("Confirmed. Refreshing DAO state…");
-      await refresh();
+      try {
+        setStatus("Simulating transaction…");
+        const data = encodeFunctionData({
+          abi: abi as Abi,
+          functionName,
+          args,
+        });
+        await rpcClient.call({
+          account,
+          to: address,
+          data,
+        });
+        setStatus("Waiting for wallet confirmation…");
+        const hash = await walletClient.sendTransaction({
+          account: walletClient.account ?? account,
+          chain: walletClient.chain,
+          to: address,
+          data,
+        });
+        setStatus("Transaction submitted. Waiting for confirmation…");
+        await rpcClient.waitForTransactionReceipt({ hash });
+        setStatus("Confirmed. Refreshing DAO state…");
+        await refresh();
+      } catch (error) {
+        const detail =
+          error && typeof error === "object" && "shortMessage" in error
+            ? String(error.shortMessage)
+            : error instanceof Error
+              ? error.message.split("\n")[0]
+              : "Unknown contract error";
+        setStatus("Transaction failed: " + detail);
+      }
     },
     [account, connect, refresh, rpcClient, walletClient],
   );

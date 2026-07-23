@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "allocations": [
+    {
+      "account": "0x1111111111111111111111111111111111111111",
+      "shareBps": 3000,
+      "purpose": "founding-contributor-1"
+    },
+    {
+      "account": "0x2222222222222222222222222222222222222222",
+      "shareBps": 2500,
+      "purpose": "founding-contributor-2"
+    },
+    {
+      "account": "0x3333333333333333333333333333333333333333",
+      "shareBps": 2500,
+      "purpose": "founding-contributor-3"
+    },
+    {
+      "account": "timelock",
+      "shareBps": 2000,
+      "purpose": "dao-treasury-reserve"
+    }
+  ]
+}

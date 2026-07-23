@@ -48,3 +48,9 @@ For unsafe conversion behavior, guardian pauses immediately, operators preserve 
 ## Deployment gates
 
 Schema-v3 manifests bind RDAO, Governor, Timelock, guardian, fee router, native converter, native pool, fee policy, allocation, DEX provenance hash, and exact Git commit. Verification proves code presence, bindings, role renunciation, supply, exclusions, governance settings, launch fee registration, and chain ID. The isolated chain-46630 rehearsal must prove bonding, graduation, basket rewards, bounded native conversion, creator claim, and RDAO claim. Public testnet remains no-broadcast until separately authorized.
+
+### Initial RDAO allocation
+
+Real Robinhood Testnet deployment requires `ROBYN_RDAO_ALLOCATION_MANIFEST` to point to a reviewed JSON file matching `config/rdao-allocation.example.json`. Each row names a unique wallet, an integer `shareBps`, and a non-empty purpose. Shares must total exactly 10,000 basis points. The reserved `timelock` account is resolved only after deployment and must appear with purpose `dao-treasury-reserve`. The deployment records the resolved allocation plus the source file SHA-256 and the verifier independently checks every onchain balance. Do not commit the real member allocation until the participants approve public association of their wallet addresses.
+
+The isolated rehearsal deliberately substitutes a deterministic 80% contributor / 20% timelock allocation. It is test data only and cannot satisfy the real-broadcast gate.

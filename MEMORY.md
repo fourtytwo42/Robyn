@@ -5,7 +5,7 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - Current task: implementing the approved RDAO governance and immutable 50/25/20/5 protocol-fee release on branch `codex/dao-governance-fees`; public testnet broadcasting remains unauthorized.
-- Current checkpoint: the fixed-supply RDAO/governance/fee stack, schema-v3 deployment/verifier, DAO-aware indexer/API, permissionless conversion keeper jobs, and responsive `/dao` plus proposal interfaces compile and pass targeted tests. Persistent chain reset, demo reseed, browser acceptance, docs, and testnet manifest freeze remain.
+- Current checkpoint: the fixed-supply RDAO/governance/fee stack, schema-v3 deployment/verifier, DAO-aware indexer/API, permissionless conversion keeper jobs, responsive `/dao` plus proposal interfaces, controlled reset/reseed, and browser acceptance are complete. The final checkpoint is to commit the wallet-signing/allocation-manifest fixes, reset/rebuild from that exact clean commit, and perform the final served-build smoke.
 - Deployment checkpoint: schema-v3 local deployment now creates and seeds WETH/base conversion liquidity, deploys RDAO/Governor/Timelock/router/converter, binds v3 launch contracts, seals reward exclusions, assigns/renounces timelock roles, creates genesis atomically, and passes the expanded verifier on an isolated chain-31337 rehearsal.
 - Economic invariant: every collectible fee allocates 50% to the launch basket, 25% to creator native claims, 20% to RDAO-holder native claims, and 5% to the timelock treasury. Existing launch splits and baskets are immutable.
 - DAO decisions: RDAO is fully transferable and fixed at 1B; token balance controls instant native rewards, delegated checkpoints control votes; 1-day delay, 3-day vote, 2-day timelock, 10% quorum, 1% proposal threshold; guardian may pause conversion and cancel queued operations only.
@@ -19,6 +19,14 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-22 - DAO browser acceptance and allocation manifest gate
+
+- Browser acceptance on the persistent VM completed delegation, an 800M-vote proposal, quorum, queue, two-day timelock, successful target execution, and a 0.025 ETH RDAO member claim. Overview, Rewards, Governance, Treasury, Members, Activity, and proposal detail rendered without horizontal overflow at desktop, 768x1024, and 390x844.
+- The browser caught and fixed a local-wallet signing bug in `apps/web/src/components/dao-view.tsx`: DAO transactions now retain the connected local account instead of replacing it with a bare address, and transaction failures render as controlled feedback.
+- `scripts/deploy-testnet.sh` now refuses a real chain-46630 broadcast without `ROBYN_RDAO_ALLOCATION_MANIFEST`. The schema requires unique recipients, exactly 10,000 bps, non-empty purposes, and a `timelock` treasury reserve. The resolved allocation and source SHA-256 are frozen in schema-v3; `verify-testnet-deployment.sh` checks every onchain recipient balance.
+- `config/rdao-allocation.example.json` is documentation only. Real member addresses and allocations remain an explicit human input and must not be invented or broadcast without participant approval.
+- The isolated chain-46630 rehearsal passed again after this gate, including DEX verification, atomic launch, bonding, graduation, basket claims, bounded native conversion, creator claim, RDAO claim, and treasury receipt. No public testnet broadcast occurred.
 
 ### 2026-07-22 - DAO and fee-routing contract checkpoint
 
