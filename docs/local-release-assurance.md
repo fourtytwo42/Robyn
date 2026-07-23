@@ -30,10 +30,22 @@ affected gate.
 `scripts/rehearse-restore.sh` decrypts and verifies the selected off-VM backup,
 restores PostgreSQL, Redis, MinIO and Anvil into alternate native ports and
 directories, checks out and builds the recorded commit, starts isolated web,
-API, indexer, keeper and artifact processes, and runs API, contract, keeper and
-browser-HTTP smoke checks. It fingerprints the live release link, deployment,
-chain state and database before and after and fails if any live state changed.
-This remains same-host isolation, not proof of total-host recovery.
+API, indexer, keeper, artifact and Nginx edge processes, and runs API, contract,
+keeper, browser-HTTP and active-WebP smoke checks. It fingerprints the live
+release link, deployment, chain state and every durable database table before
+and after and fails if any live state changed. Row and table ordering are
+canonicalized; only service heartbeats and the indexer's last-poll timestamp
+are excluded as explicitly volatile. This remains same-host isolation, not
+proof of total-host recovery.
+
+The 2026-07-23 recovery rehearsal used a fresh download of encrypted backup
+`robyn-state-20260723T090852Z.tar.zst.age` from the private GitHub release. Its
+SHA-256 passed, 14 tables and eight content-addressed artifacts restored, the
+recorded commit rebuilt, all isolated service checks passed, and
+`liveStateTouched=false`. The Codex in-app browser then loaded discovery and a
+token page through the isolated same-origin edge with valid 1024x1024
+sanitized artwork, no broken images, no overflow, and no warning/error entries
+from that origin.
 
 ## Chaos runner
 
@@ -80,6 +92,31 @@ VM-local build input. Both builds consume the same input; evidence records only
 its SHA-256 fingerprint. Generate it once with
 `scripts/ensure-next-build-secrets.mjs`. Never commit or copy the secret JSON
 into release evidence.
+
+## Executed assurance evidence
+
+- Internal audit and deterministic economics:
+  `/var/backups/robyn/economic-simulation/20260723T071107Z/`; 512 wallets,
+  32 launches, 25,000 actions and 20 seeds passed. This is an internal
+  AI-assisted engineering audit, not independent assurance.
+- Alert delivery:
+  `/var/backups/robyn/alert-validation/20260723T072319Z/`; all 14 declared
+  local routes produced firing and resolved deliveries.
+- Chaos:
+  `/var/backups/robyn/chaos/20260723T073831Z/`; 19 one-fault-at-a-time
+  scenarios passed with reconciliation.
+- Root browser acceptance:
+  `docs/assurance/uat-root-2026-07-23.md`; independent subagent acceptance is
+  still blocked by the unavailable in-app-browser capability in their
+  runtimes.
+- Final exact-commit reproducibility, reboot recovery and the uninterrupted
+  eight-hour soak remain promotion gates until their final evidence is
+  recorded.
+
+To maintain disk headroom before the final build, twelve superseded immutable
+release directories were removed only after confirming they were neither
+`/opt/robyn/current` nor `/opt/robyn/previous`. Their pushed Git commits remain
+the recovery source; the active release and immediate rollback were preserved.
 
 ## Alert evidence
 

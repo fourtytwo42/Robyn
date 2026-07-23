@@ -90,6 +90,15 @@ Durable project context lives here. Update this file whenever information should
   sanitized artwork returned 404 even though the restored API served a valid
   1024x1024 WebP. Recovery now starts an isolated native Nginx edge on port
   13000 and requires active-media delivery through that browser origin.
+- Final recovery rerun passed 14 tables, eight artifacts, isolated chain/API/
+  keeper/contract/browser-HTTP/media checks and `liveStateTouched=false`.
+  In-app-browser discovery and token navigation through port 13000 showed
+  complete 1024x1024 sanitized artwork, no broken images or horizontal
+  overflow, and no warning/error entries from the restored origin.
+- Twelve superseded immutable release directories were removed after verifying
+  the active `71ac0fb...` and rollback `e4ccb8b...` targets were excluded.
+  Free root-disk headroom increased from 12 GiB to 19 GiB; all removed releases
+  remain reproducible from pushed Git commits.
 - The immutable release gate exposed creator-metadata drift after the last
   controlled chain reset: PostgreSQL still held bindings for retired token
   addresses. `scripts/seed-devnet-creator-metadata.sh` authenticated as the
@@ -170,8 +179,9 @@ Durable project context lives here. Update this file whenever information should
   `indexer_checkpoints`. A direct isolated restore passed all gates with
   `liveStateTouched=false`; transient-systemd browser hold then exposed and
   fixed operator ownership for the clean source checkout. Visual browser
-  inspection then exposed missing same-origin media routing; the recovery edge
-  and WebP assertion are added for the final rerun.
+  inspection then exposed missing same-origin media routing. The isolated edge
+  and WebP assertion were added, and the final CLI plus in-app-browser recovery
+  rerun passed without touching live state.
 - Follow-up: Rebuild/promote the exact pushed checkpoint, create a new
   encrypted off-VM backup, and rerun isolated CLI plus in-app-browser recovery.
 
