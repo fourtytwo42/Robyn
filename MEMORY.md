@@ -471,6 +471,25 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-24 - Native-v4 protocol deployed to Robinhood Testnet
+
+- Context: exact commit `63f2e05909a9f82cdb3d9a7bf0a3876a8f74e404`
+  passed the 446-check deployment verifier, 24-route financial smoke, full
+  regression, 25%-headroom gas gate and two-build reproducibility gate.
+- Decision: broadcast the fresh native-ETH v4 package while leaving the
+  accepted v3 application serving until post-deployment cutover acceptance.
+- Files: `deployments/46630-v4.json`; checksummed evidence under
+  `/home/hendo420/robyn-evidence/testnet-v4-live-63f2e05/`.
+- Commands/tests: 16 contract creations and 98 configuration transactions;
+  live independent verifier 446/446; shared-venue verifier 78/78 in pending
+  release mode.
+- Result: the verified schema-v7 deployment starts at block `92882804`; the
+  genesis token is `0x423e546cC1Ff61218844a73312Eb703c2543dB0C`.
+  The encrypted deployer retained `5217587778782403` wei after deployment.
+- Follow-up: perform bounded live route and end-to-end smoke, mark the venue
+  release-ready only with preserved evidence, rebuild isolated v4 indexes,
+  cut over the protected app, and complete in-app-browser acceptance.
+
 ### 2026-07-24 - Live v4 StateView deployment recovered and verified
 
 - Context: the first authorized chain-46630 StateView broadcast mined
