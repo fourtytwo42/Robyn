@@ -4,6 +4,13 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Deterministic campaign-fee correction (2026-07-24): the gas-aligned fork
+  showed viem independently suggesting a 1-gwei priority fee above the
+  campaign's reviewed 0.01-gwei fee cap. No funding transaction was sent.
+  Every campaign transaction now uses the exact gas price frozen by its
+  passing preflight; a later price change therefore fails closed and requires
+  a new preflight instead of silently overspending the reviewed budget.
+
 - Weighted campaign-funding correction (2026-07-24): the first exact
   `0761233` fork campaign failed closed before launch 1 because equal actor
   funding did not account for the atomic-launch gas concentrated on creators.

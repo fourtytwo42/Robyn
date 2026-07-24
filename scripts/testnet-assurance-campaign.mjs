@@ -245,7 +245,11 @@ async function recordTransaction(state, label, client, request) {
   state.submittedTransactions ??= {};
   let hash = state.submittedTransactions[label]?.hash;
   if (!hash) {
-    hash = await client.sendTransaction(request);
+    const pricedRequest =
+      state.preflight?.gasPriceWei && request.gasPrice === undefined
+        ? { ...request, gasPrice: BigInt(state.preflight.gasPriceWei) }
+        : request;
+    hash = await client.sendTransaction(pricedRequest);
     state.submittedTransactions[label] = {
       hash,
       submittedAt: new Date().toISOString(),
