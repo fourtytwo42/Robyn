@@ -57,6 +57,18 @@ Durable project context lives here. Update this file whenever information should
   registrar is bound; afterward only governance may configure them. A focused
   regression proves initializer access closes, governance remains functional,
   the v4 suite passes 10/10, and the complete Foundry suite passes.
+- V4 deployment-rehearsal checkpoint (2026-07-24): the first chain-46630 fork
+  rehearsal correctly failed because `RobynV4MarketFactory` embedded 44,675
+  bytes of child creation code and exceeded EIP-170. Creation is now split
+  across one-time-bound adapter, locker, and market deployers. Runtime sizes are
+  7,888, 10,793, 17,862, and 13,460 bytes for the factory and three helpers,
+  all below EIP-170; every v4 init code is below EIP-3860. The complete clean
+  fork deployment now succeeds through StateView, five faucet routes,
+  deterministic `0x1040` oracle hook, DAO/timelock role lock-down, all fresh
+  factories, and a receipt-decoded genesis launch. The independent verifier
+  passes 106/106 state, transaction, hash, role, mapping, pool, metadata, and
+  reward-exclusion checks. Tampered runtime hashes fail closed. Evidence is in
+  `/tmp/robyn-v4-fork-rehearsal/` and no live testnet transaction was sent.
 - Faucet-stock checkpoint (2026-07-24): the encrypted deployer holds 5 tokens
   each of exact faucet contracts TSLA `0xC9f9...Bd4E`, AMD `0x7117...778d`,
   AMZN `0x5884...9E02`, NFLX `0x3b82...8C93`, and PLTR `0x1FBE...98d0`.

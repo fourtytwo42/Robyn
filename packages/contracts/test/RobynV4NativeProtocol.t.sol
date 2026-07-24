@@ -25,9 +25,12 @@ import {RobynNativeLaunchDeployerV4} from "../src/uniswap/RobynNativeLaunchDeplo
 import {RobynNativeLaunchFactoryV4} from "../src/uniswap/RobynNativeLaunchFactoryV4.sol";
 import {RobynNativeProtocolFeeRouterV3} from "../src/uniswap/RobynNativeProtocolFeeRouterV3.sol";
 import {RobynV4AssetRouter} from "../src/uniswap/RobynV4AssetRouter.sol";
+import {RobynV4AdapterDeployer} from "../src/uniswap/RobynV4AdapterDeployer.sol";
 import {RobynV4BondingCurveMarket} from "../src/uniswap/RobynV4BondingCurveMarket.sol";
 import {RobynV4FeePositionLocker} from "../src/uniswap/RobynV4FeePositionLocker.sol";
 import {RobynV4LaunchCoordinatorV5} from "../src/uniswap/RobynV4LaunchCoordinatorV5.sol";
+import {RobynV4LockerDeployer} from "../src/uniswap/RobynV4LockerDeployer.sol";
+import {RobynV4MarketDeployer} from "../src/uniswap/RobynV4MarketDeployer.sol";
 import {RobynV4MarketFactory} from "../src/uniswap/RobynV4MarketFactory.sol";
 import {RobynV4OracleHook} from "../src/uniswap/RobynV4OracleHook.sol";
 
@@ -124,19 +127,30 @@ contract RobynV4NativeProtocolTest is Test {
             graduationThresholdNative: 1.4 ether,
             curveFeeBps: 100
         });
+        RobynV4AdapterDeployer adapterDeployer = new RobynV4AdapterDeployer();
+        RobynV4LockerDeployer lockerDeployer = new RobynV4LockerDeployer();
+        RobynV4MarketDeployer marketDeployer = new RobynV4MarketDeployer();
         marketFactory = new RobynV4MarketFactory(
-            launchFactory,
-            feeRouter,
-            assetRouter,
-            hook,
-            poolManager,
-            positionManager,
-            permit2,
-            stateView,
+            RobynV4MarketFactory.Dependencies({
+                launchFactory: launchFactory,
+                feeRouter: feeRouter,
+                assetRouter: assetRouter,
+                oracleHook: hook,
+                poolManager: poolManager,
+                positionManager: positionManager,
+                permit2: permit2,
+                stateView: stateView,
+                adapterDeployer: adapterDeployer,
+                lockerDeployer: lockerDeployer,
+                marketDeployer: marketDeployer
+            }),
             curve,
             9_900,
             0.25 ether
         );
+        adapterDeployer.bindController(address(marketFactory));
+        lockerDeployer.bindController(address(marketFactory));
+        marketDeployer.bindController(address(marketFactory));
         hook.bindRegistrar(address(marketFactory));
         assetRouter.bindLaunchRegistrar(address(marketFactory));
         coordinator = new RobynV4LaunchCoordinatorV5(launchFactory, marketFactory, feeRouter);

@@ -47,12 +47,13 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
     uint128 public immutable maximumNativeSwap;
     PoolKey private _poolKey;
     bytes32 public immutable poolId;
-    RobynV4FeePositionLocker public immutable locker;
+    RobynV4FeePositionLocker public locker;
 
     address public bondingMarket;
     bool public initialized;
 
     event MarketBound(address indexed market);
+    event LockerBound(address indexed locker);
     event FeeRouterBound(address indexed feeRouter);
     event LiquidityGraduated(
         bytes32 indexed poolId,
@@ -106,15 +107,6 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
             hooks: hook_
         });
         poolId = PoolId.unwrap(_poolKey.toId());
-        locker = new RobynV4FeePositionLocker(
-            IPositionManagerPermit2(address(positionManager_)),
-            permit2_,
-            poolManager_,
-            launchToken_,
-            _poolKey,
-            address(this),
-            maximumNativeSwap_
-        );
     }
 
     receive() external payable {}
@@ -131,8 +123,20 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
         emit MarketBound(market);
     }
 
+    function bindLocker(RobynV4FeePositionLocker locker_) external {
+        if (msg.sender != marketBindingAuthority) revert Unauthorized();
+        if (address(locker) != address(0)) revert AlreadyBound();
+        if (
+            address(locker_) == address(0) || address(locker_).code.length == 0
+                || address(locker_.launchToken()) != address(launchToken) || locker_.adapter() != address(this)
+        ) revert InvalidConfiguration();
+        locker = locker_;
+        emit LockerBound(address(locker_));
+    }
+
     function bindFeeRouter(RobynNativeProtocolFeeRouterV3 feeRouter) external {
         if (msg.sender != marketBindingAuthority) revert Unauthorized();
+        if (address(locker) == address(0)) revert InvalidConfiguration();
         locker.bindFeeRouter(feeRouter);
         emit FeeRouterBound(address(feeRouter));
     }
@@ -145,6 +149,7 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
     {
         if (msg.sender != bondingMarket) revert Unauthorized();
         if (initialized) revert AlreadyInitialized();
+        if (address(locker) == address(0)) revert InvalidConfiguration();
         if (tokenAmount == 0 || msg.value == 0) revert InvalidAmount();
         uint256 nativeBefore = address(this).balance - msg.value;
         launchToken.safeTransferFrom(msg.sender, address(locker), tokenAmount);

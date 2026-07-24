@@ -1,0 +1,446 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+rpc_url="${ROBYN_TESTNET_RPC_URL:-https://rpc.testnet.chain.robinhood.com}"
+venue_manifest="${ROBYN_TESTNET_V4_MANIFEST:-$repo_root/deployments/46630-uniswap-v4-shared.json}"
+output="${ROBYN_TESTNET_V4_PROTOCOL_MANIFEST:-$repo_root/deployments/46630-v4.json}"
+rehearsal="${ROBYN_TESTNET_REHEARSAL:-false}"
+create2_deployer="0x4e59b44847b379578588920cA78FbF26c0B4956C"
+zero="0x0000000000000000000000000000000000000000"
+export PATH="$HOME/.foundry/bin:$PATH"
+cd "$repo_root"
+
+[[ "${ROBYN_TESTNET_V4_PROTOCOL_BROADCAST:-false}" == "true" ]] || {
+  echo "Set ROBYN_TESTNET_V4_PROTOCOL_BROADCAST=true to authorize v4 protocol deployment" >&2
+  exit 1
+}
+[[ "$(cast chain-id --rpc-url "$rpc_url")" == "46630" ]] || {
+  echo "Refusing v4 protocol deployment outside chain 46630" >&2
+  exit 1
+}
+[[ -f "$venue_manifest" ]] || { echo "The reviewed shared-v4 manifest is required" >&2; exit 1; }
+
+wallet_args=()
+if [[ "$rehearsal" == "true" ]]; then
+  [[ "${ROBYN_ALLOW_UNLOCKED_REHEARSAL:-false}" == "true" &&
+     "$rpc_url" =~ ^http://(127\.0\.0\.1|localhost):[0-9]+$ ]] || {
+    echo "Unlocked signing is restricted to an explicitly allowed loopback rehearsal" >&2
+    exit 1
+  }
+  deployer="$(cast rpc eth_accounts --rpc-url "$rpc_url" | jq -er '.[0]')"
+  wallet_args=(--from "$deployer" --unlocked)
+else
+  keystore="${ROBYN_TESTNET_KEYSTORE:-${ROBYN_KEYSTORE:-}}"
+  password_file="${ROBYN_TESTNET_PASSWORD_FILE:-${ROBYN_PASSWORD_FILE:-}}"
+  [[ -f "$keystore" && -f "$password_file" ]] || {
+    echo "Readable testnet keystore and password files are required" >&2
+    exit 1
+  }
+  git fetch origin main >/dev/null
+  [[ -z "$(git status --porcelain)" &&
+     "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || {
+    echo "Real v4 deployment requires a clean exact origin/main commit" >&2
+    exit 1
+  }
+  [[ "${ROBYN_TESTNET_V4_PROTOCOL_CONFIRM_CHAIN:-}" == "46630" ]] || {
+    echo "Set ROBYN_TESTNET_V4_PROTOCOL_CONFIRM_CHAIN=46630 for explicit confirmation" >&2
+    exit 1
+  }
+  gas_evidence="${ROBYN_TESTNET_V4_GAS_EVIDENCE:-}"
+  [[ -f "$gas_evidence" && "$(jq -r '.chainId' "$gas_evidence")" == "46630" &&
+     "$(jq -r '.headroomBps' "$gas_evidence")" -ge 2500 &&
+     "$(jq -r '.sufficientBalance' "$gas_evidence")" == "true" ]] || {
+    echo "Reviewed chain-46630 gas evidence with 25% headroom is required" >&2
+    exit 1
+  }
+  deployer="$(cast wallet address --keystore "$keystore" --password-file "$password_file")"
+  [[ "${deployer,,}" == "0xecc5d6d032ad5c9ca9e0f4042128067b8366da17a" ]] || {
+    echo "The encrypted project deployer address does not match the reviewed wallet" >&2
+    exit 1
+  }
+  wallet_args=(--keystore "$keystore" --password-file "$password_file")
+fi
+
+ROBYN_TESTNET_RPC_URL="$rpc_url" ROBYN_V4_ALLOW_PENDING=true \
+  scripts/verify-testnet-uniswap-v4.sh "$venue_manifest" >/dev/null
+forge build --root packages/contracts >/dev/null
+
+declare -A addresses txs
+deploy_contract() {
+  local key="$1" contract="$2"
+  shift 2
+  local command=(forge create "$contract" --root packages/contracts --rpc-url "$rpc_url" "${wallet_args[@]}" --broadcast --json)
+  [[ "$#" -eq 0 ]] || command+=(--constructor-args "$@")
+  local receipt
+  receipt="$("${command[@]}")"
+  addresses[$key]="$(jq -er '.deployedTo' <<<"$receipt")"
+  txs[$key]="$(jq -er '.transactionHash' <<<"$receipt")"
+  [[ "$(cast code "${addresses[$key]}" --rpc-url "$rpc_url")" != "0x" ]] || {
+    echo "No runtime code after deploying $key" >&2
+    exit 1
+  }
+}
+send_transaction() {
+  local receipt
+  receipt="$(cast send --rpc-url "$rpc_url" "${wallet_args[@]}" --json "$@")"
+  [[ "$(jq -r '.status' <<<"$receipt")" == "0x1" ||
+     "$(jq -r '.status' <<<"$receipt")" == "1" ]] || return 1
+  jq -r '.transactionHash // .transaction_hash' <<<"$receipt"
+}
+
+pool_manager="$(jq -er '.contracts.poolManager.address' "$venue_manifest")"
+position_manager="$(jq -er '.contracts.positionManager.address' "$venue_manifest")"
+quoter="$(jq -er '.contracts.quoter.address' "$venue_manifest")"
+permit2="$(jq -er '.contracts.permit2.address' "$venue_manifest")"
+
+state_view="$(jq -r '.contracts.stateView.address // empty' "$venue_manifest")"
+if [[ -z "$state_view" ]]; then
+  [[ "$rehearsal" == "true" ]] || {
+    echo "The reviewed venue manifest must contain the verified StateView before live deployment" >&2
+    exit 1
+  }
+  deploy_contract stateView \
+    ../../node_modules/@uniswap/v4-periphery/src/lens/StateView.sol:StateView "$pool_manager"
+  state_view="${addresses[stateView]}"
+fi
+state_view_pool_manager="$(
+  cast call "$state_view" 'poolManager()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]'
+)"
+[[ "$state_view_pool_manager" == "${pool_manager,,}" ]] || {
+  echo "StateView PoolManager wiring mismatch" >&2
+  exit 1
+}
+
+guardian="${ROBYN_GUARDIAN_ADDRESS:-$deployer}"
+deploy_contract timelock \
+  ../../node_modules/@openzeppelin/contracts/governance/TimelockController.sol:TimelockController \
+  172800 "[]" "[]" "$deployer"
+timelock="${addresses[timelock]}"
+deploy_contract daoToken src/dao/RobynDaoToken.sol:RobynDaoToken \
+  "[$deployer]" "[1000000000000000000000000000]"
+dao_token="${addresses[daoToken]}"
+deploy_contract governor src/dao/RobynGovernor.sol:RobynGovernor "$dao_token" "$timelock"
+governor="${addresses[governor]}"
+deploy_contract assetRouter src/uniswap/RobynV4AssetRouter.sol:RobynV4AssetRouter \
+  "$pool_manager" "$quoter" "$state_view" "$timelock"
+asset_router="${addresses[assetRouter]}"
+
+verification_class="$(cast keccak 'ROBINHOOD_TESTNET_FAUCET_STOCK')"
+while IFS=$'\t' read -r symbol asset; do
+  route="(10000,200,$zero,1,1000000000000,$verification_class,true)"
+  send_transaction "$asset_router" \
+    'configureRoute(address,(uint24,int24,address,uint128,uint128,bytes32,bool))' \
+    "$asset" "$route" >/dev/null
+  ready="$(cast call "$asset_router" \
+    'routeStatus(address)((bytes32,uint128,uint128,uint128,bytes32,uint24,int24,address,bool,bytes32))' \
+    "$asset" --rpc-url "$rpc_url")"
+  [[ "$ready" == *"true"* ]] || { echo "$symbol route is not ready after bootstrap" >&2; exit 1; }
+done < <(jq -r '.faucetStockRoutes[] | [.symbol,.address] | @tsv' "$venue_manifest")
+
+deploy_contract launchDeployer \
+  src/uniswap/RobynNativeLaunchDeployerV4.sol:RobynNativeLaunchDeployerV4
+launch_deployer="${addresses[launchDeployer]}"
+deploy_contract launchFactory \
+  src/uniswap/RobynNativeLaunchFactoryV4.sol:RobynNativeLaunchFactoryV4 \
+  "$asset_router" "$launch_deployer" 1 3600
+launch_factory="${addresses[launchFactory]}"
+send_transaction "$launch_deployer" 'bindController(address)' "$launch_factory" >/dev/null
+
+deploy_contract feeRouter \
+  src/uniswap/RobynNativeProtocolFeeRouterV3.sol:RobynNativeProtocolFeeRouterV3 \
+  "$dao_token" "$asset_router" "$timelock" "$guardian"
+fee_router="${addresses[feeRouter]}"
+
+hook_artifact="packages/contracts/out/RobynV4OracleHook.sol/RobynV4OracleHook.json"
+hook_bytecode="$(jq -er '.bytecode.object' "$hook_artifact")"
+hook_args="$(cast abi-encode 'constructor(address,address)' "$pool_manager" "$deployer")"
+hook_init_code="${hook_bytecode}${hook_args#0x}"
+hook_mining="$(node scripts/mine-v4-hook-salt.mjs "$create2_deployer" "$hook_init_code")"
+hook="$(jq -er '.address' <<<"$hook_mining")"
+hook_salt="$(jq -er '.salt' <<<"$hook_mining")"
+[[ "$(cast code "$hook" --rpc-url "$rpc_url")" == "0x" ]] || {
+  echo "The mined v4 hook address already contains code" >&2
+  exit 1
+}
+hook_payload="${hook_salt}${hook_init_code#0x}"
+txs[oracleHook]="$(send_transaction "$create2_deployer" --data "$hook_payload")"
+[[ "$(cast code "$hook" --rpc-url "$rpc_url")" != "0x" ]] || {
+  echo "CREATE2 oracle hook deployment produced no code" >&2
+  exit 1
+}
+addresses[oracleHook]="$hook"
+hook_initializer="$(
+  cast call "$hook" 'initializer()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]'
+)"
+[[ "$hook_initializer" == "${deployer,,}" ]] || {
+  echo "Oracle hook initializer mismatch" >&2
+  exit 1
+}
+
+curve_tokens="800000000000000000000000000"
+graduation_tokens="200000000000000000000000000"
+virtual_tokens="1100000000000000000000000000"
+virtual_native="500000000000000"
+threshold_native="1400000000000000"
+curve_fee_bps="100"
+minimum_use_bps="9900"
+maximum_native_swap="250000000000000"
+curve="($curve_tokens,$graduation_tokens,$virtual_tokens,$virtual_native,$threshold_native,$curve_fee_bps)"
+deploy_contract adapterDeployer \
+  src/uniswap/RobynV4AdapterDeployer.sol:RobynV4AdapterDeployer
+adapter_deployer="${addresses[adapterDeployer]}"
+deploy_contract lockerDeployer \
+  src/uniswap/RobynV4LockerDeployer.sol:RobynV4LockerDeployer
+locker_deployer="${addresses[lockerDeployer]}"
+deploy_contract marketDeployer \
+  src/uniswap/RobynV4MarketDeployer.sol:RobynV4MarketDeployer
+market_deployer="${addresses[marketDeployer]}"
+dependencies="($launch_factory,$fee_router,$asset_router,$hook,$pool_manager,$position_manager,$permit2,$state_view,$adapter_deployer,$locker_deployer,$market_deployer)"
+deploy_contract marketFactory \
+  src/uniswap/RobynV4MarketFactory.sol:RobynV4MarketFactory \
+  "$dependencies" "$curve" "$minimum_use_bps" "$maximum_native_swap"
+market_factory="${addresses[marketFactory]}"
+send_transaction "$adapter_deployer" 'bindController(address)' "$market_factory" >/dev/null
+send_transaction "$locker_deployer" 'bindController(address)' "$market_factory" >/dev/null
+send_transaction "$market_deployer" 'bindController(address)' "$market_factory" >/dev/null
+send_transaction "$hook" 'bindRegistrar(address)' "$market_factory" >/dev/null
+send_transaction "$asset_router" 'bindLaunchRegistrar(address)' "$market_factory" >/dev/null
+
+deploy_contract coordinator \
+  src/uniswap/RobynV4LaunchCoordinatorV5.sol:RobynV4LaunchCoordinatorV5 \
+  "$launch_factory" "$market_factory" "$fee_router"
+coordinator="${addresses[coordinator]}"
+send_transaction "$launch_factory" 'bindCoordinator(address)' "$coordinator" >/dev/null
+send_transaction "$market_factory" 'bindCoordinator(address)' "$coordinator" >/dev/null
+send_transaction "$fee_router" 'bindCoordinator(address)' "$coordinator" >/dev/null
+
+exclusions="[$timelock,$fee_router,$governor,$coordinator,$market_factory,$launch_factory,$launch_deployer,$asset_router,$hook,$adapter_deployer,$locker_deployer,$market_deployer]"
+send_transaction "$dao_token" 'sealRewardExclusions(address[])' "$exclusions" >/dev/null
+send_transaction "$dao_token" 'bindRewardDepositor(address)' "$fee_router" >/dev/null
+
+proposer_role="$(cast call "$timelock" 'PROPOSER_ROLE()(bytes32)' --rpc-url "$rpc_url")"
+canceller_role="$(cast call "$timelock" 'CANCELLER_ROLE()(bytes32)' --rpc-url "$rpc_url")"
+executor_role="$(cast call "$timelock" 'EXECUTOR_ROLE()(bytes32)' --rpc-url "$rpc_url")"
+admin_role="$(cast call "$timelock" 'DEFAULT_ADMIN_ROLE()(bytes32)' --rpc-url "$rpc_url")"
+send_transaction "$timelock" 'grantRole(bytes32,address)' "$proposer_role" "$governor" >/dev/null
+send_transaction "$timelock" 'grantRole(bytes32,address)' "$canceller_role" "$guardian" >/dev/null
+send_transaction "$timelock" 'grantRole(bytes32,address)' "$executor_role" "$zero" >/dev/null
+send_transaction "$timelock" 'renounceRole(bytes32,address)' "$admin_role" "$deployer" >/dev/null
+
+tsla="$(jq -er '.faucetStockRoutes[] | select(.symbol=="TSLA") | .address' "$venue_manifest")"
+amd="$(jq -er '.faucetStockRoutes[] | select(.symbol=="AMD") | .address' "$venue_manifest")"
+amzn="$(jq -er '.faucetStockRoutes[] | select(.symbol=="AMZN") | .address' "$venue_manifest")"
+metadata_uri="ipfs://bafkreibys2cv4ijpoedcl7qdbi5u66wuwedwg3lsc6pios3wcyaoyz7cau"
+genesis_salt="$(cast keccak "robyn-v4-chain-46630-genesis-$(git rev-parse HEAD)")"
+launch_receipt="$(cast send --rpc-url "$rpc_url" "${wallet_args[@]}" --json "$coordinator" \
+  'createLaunch((string,string,address[],uint16[],string,bytes32))' \
+  "(\"Robyn V4 Testnet Genesis\",\"tRV4\",[$tsla,$amd,$amzn],[4000,4000,2000],\"$metadata_uri\",$genesis_salt)")"
+[[ "$(jq -r '.status' <<<"$launch_receipt")" == "0x1" ||
+   "$(jq -r '.status' <<<"$launch_receipt")" == "1" ]] || {
+  echo "Atomic v4 genesis launch failed" >&2
+  exit 1
+}
+launch_tx="$(jq -er '.transactionHash // .transaction_hash' <<<"$launch_receipt")"
+launch="$(ROBYN_TESTNET_RPC_URL="$rpc_url" node scripts/decode-v4-launch-receipt.mjs "$launch_tx")"
+launch_coordinator="$(jq -r '.coordinator' <<<"$launch" | tr '[:upper:]' '[:lower:]')"
+[[ "$launch_coordinator" == "${coordinator,,}" ]] || {
+  echo "Receipt-derived coordinator identity mismatch" >&2
+  exit 1
+}
+genesis_token="$(jq -er '.token' <<<"$launch")"
+factory_genesis_token="$(
+  cast call "$launch_factory" 'launchTokenById(uint256)(address)' \
+    "$(jq -r '.launchId' <<<"$launch")" --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]'
+)"
+[[ "$factory_genesis_token" == "${genesis_token,,}" ]] || {
+  echo "Receipt-derived token does not match factory state" >&2
+  exit 1
+}
+
+venue_hash="$(sha256sum "$venue_manifest" | awk '{print $1}')"
+state_view_tx="${txs[stateView]:-$(jq -r '.contracts.stateView.creationTransaction // empty' "$venue_manifest")}"
+deployment_transactions="$(
+  jq -n \
+    --arg stateView "$state_view_tx" \
+    --arg timelock "${txs[timelock]}" \
+    --arg daoToken "${txs[daoToken]}" \
+    --arg governor "${txs[governor]}" \
+    --arg assetRouter "${txs[assetRouter]}" \
+    --arg launchDeployer "${txs[launchDeployer]}" \
+    --arg launchFactory "${txs[launchFactory]}" \
+    --arg protocolFeeRouter "${txs[feeRouter]}" \
+    --arg oracleHook "${txs[oracleHook]}" \
+    --arg adapterDeployer "${txs[adapterDeployer]}" \
+    --arg lockerDeployer "${txs[lockerDeployer]}" \
+    --arg marketDeployer "${txs[marketDeployer]}" \
+    --arg marketFactory "${txs[marketFactory]}" \
+    --arg atomicLaunchCoordinator "${txs[coordinator]}" \
+    --arg genesis "$launch_tx" \
+    '{
+      stateView: $stateView,
+      timelock: $timelock,
+      daoToken: $daoToken,
+      governor: $governor,
+      assetRouter: $assetRouter,
+      launchDeployer: $launchDeployer,
+      launchFactory: $launchFactory,
+      protocolFeeRouter: $protocolFeeRouter,
+      oracleHook: $oracleHook,
+      adapterDeployer: $adapterDeployer,
+      lockerDeployer: $lockerDeployer,
+      marketDeployer: $marketDeployer,
+      marketFactory: $marketFactory,
+      atomicLaunchCoordinator: $atomicLaunchCoordinator,
+      genesis: $genesis
+    }'
+)"
+runtime_hashes="$(
+  jq -n \
+    --arg stateView "$(cast codehash "$state_view" --rpc-url "$rpc_url")" \
+    --arg timelock "$(cast codehash "$timelock" --rpc-url "$rpc_url")" \
+    --arg daoToken "$(cast codehash "$dao_token" --rpc-url "$rpc_url")" \
+    --arg governor "$(cast codehash "$governor" --rpc-url "$rpc_url")" \
+    --arg assetRouter "$(cast codehash "$asset_router" --rpc-url "$rpc_url")" \
+    --arg launchDeployer "$(cast codehash "$launch_deployer" --rpc-url "$rpc_url")" \
+    --arg launchFactory "$(cast codehash "$launch_factory" --rpc-url "$rpc_url")" \
+    --arg protocolFeeRouter "$(cast codehash "$fee_router" --rpc-url "$rpc_url")" \
+    --arg oracleHook "$(cast codehash "$hook" --rpc-url "$rpc_url")" \
+    --arg adapterDeployer "$(cast codehash "$adapter_deployer" --rpc-url "$rpc_url")" \
+    --arg lockerDeployer "$(cast codehash "$locker_deployer" --rpc-url "$rpc_url")" \
+    --arg marketDeployer "$(cast codehash "$market_deployer" --rpc-url "$rpc_url")" \
+    --arg marketFactory "$(cast codehash "$market_factory" --rpc-url "$rpc_url")" \
+    --arg atomicLaunchCoordinator "$(cast codehash "$coordinator" --rpc-url "$rpc_url")" \
+    --arg genesisToken "$(cast codehash "$genesis_token" --rpc-url "$rpc_url")" \
+    --arg genesisVault "$(cast codehash "$(jq -r '.vault' <<<"$launch")" --rpc-url "$rpc_url")" \
+    --arg genesisMarket "$(cast codehash "$(jq -r '.market' <<<"$launch")" --rpc-url "$rpc_url")" \
+    --arg genesisAdapter "$(cast codehash "$(jq -r '.graduationAdapter' <<<"$launch")" --rpc-url "$rpc_url")" \
+    --arg genesisLocker "$(cast codehash "$(jq -r '.positionLocker' <<<"$launch")" --rpc-url "$rpc_url")" \
+    '{
+      stateView: $stateView,
+      timelock: $timelock,
+      daoToken: $daoToken,
+      governor: $governor,
+      assetRouter: $assetRouter,
+      launchDeployer: $launchDeployer,
+      launchFactory: $launchFactory,
+      protocolFeeRouter: $protocolFeeRouter,
+      oracleHook: $oracleHook,
+      adapterDeployer: $adapterDeployer,
+      lockerDeployer: $lockerDeployer,
+      marketDeployer: $marketDeployer,
+      marketFactory: $marketFactory,
+      atomicLaunchCoordinator: $atomicLaunchCoordinator,
+      genesisToken: $genesisToken,
+      genesisVault: $genesisVault,
+      genesisMarket: $genesisMarket,
+      genesisAdapter: $genesisAdapter,
+      genesisLocker: $genesisLocker
+    }'
+)"
+mkdir -p "$(dirname "$output")"
+tmp="$(mktemp "$(dirname "$output")/.46630-v4.XXXXXX")"
+jq -n \
+  --argjson schemaVersion 7 \
+  --arg environment "$([[ "$rehearsal" == "true" ]] && echo robinhood-testnet-fork-rehearsal || echo robinhood-testnet)" \
+  --argjson chainId 46630 \
+  --arg gitCommit "$(git rev-parse HEAD)" \
+  --arg deployer "$deployer" \
+  --arg guardian "$guardian" \
+  --arg venueManifestSha256 "$venue_hash" \
+  --arg poolManager "$pool_manager" \
+  --arg positionManager "$position_manager" \
+  --arg quoter "$quoter" \
+  --arg permit2 "$permit2" \
+  --arg stateView "$state_view" \
+  --arg timelock "$timelock" \
+  --arg daoToken "$dao_token" \
+  --arg governor "$governor" \
+  --arg assetRouter "$asset_router" \
+  --arg launchDeployer "$launch_deployer" \
+  --arg launchFactory "$launch_factory" \
+  --arg feeRouter "$fee_router" \
+  --arg oracleHook "$hook" \
+  --arg hookSalt "$hook_salt" \
+  --arg adapterDeployer "$adapter_deployer" \
+  --arg lockerDeployer "$locker_deployer" \
+  --arg marketDeployer "$market_deployer" \
+  --arg marketFactory "$market_factory" \
+  --arg coordinator "$coordinator" \
+  --argjson genesis "$launch" \
+  --argjson deploymentTransactions "$deployment_transactions" \
+  --argjson runtimeCodeHashes "$runtime_hashes" \
+  --arg curveTokens "$curve_tokens" \
+  --arg graduationTokens "$graduation_tokens" \
+  --arg virtualTokens "$virtual_tokens" \
+  --arg virtualNative "$virtual_native" \
+  --arg thresholdNative "$threshold_native" \
+  --arg maximumNativeSwap "$maximum_native_swap" \
+  '{
+    schemaVersion: $schemaVersion,
+    environment: $environment,
+    chainId: $chainId,
+    gitCommit: $gitCommit,
+    deployer: $deployer,
+    guardian: $guardian,
+    liquidityVenue: "uniswap-v4",
+    venueProvenance: "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
+    venueManifestSha256: $venueManifestSha256,
+    contracts: {
+      poolManager: $poolManager,
+      positionManager: $positionManager,
+      quoter: $quoter,
+      permit2: $permit2,
+      stateView: $stateView,
+      timelock: $timelock,
+      daoToken: $daoToken,
+      governor: $governor,
+      assetRouter: $assetRouter,
+      launchDeployer: $launchDeployer,
+      launchFactory: $launchFactory,
+      protocolFeeRouter: $feeRouter,
+      oracleHook: $oracleHook,
+      adapterDeployer: $adapterDeployer,
+      lockerDeployer: $lockerDeployer,
+      marketDeployer: $marketDeployer,
+      marketFactory: $marketFactory,
+      atomicLaunchCoordinator: $coordinator
+    },
+    deploymentTransactions: $deploymentTransactions,
+    runtimeCodeHashes: $runtimeCodeHashes,
+    oracleHook: {
+      create2Deployer: "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      salt: $hookSalt,
+      permissionBits: "0x1040",
+      behavior: "observation-only"
+    },
+    dao: {
+      tokenName: "Robyn DAO",
+      tokenSymbol: "RDAO",
+      fixedSupply: "1000000000000000000000000000",
+      initialOwnerShareBps: 10000,
+      feePolicy: {
+        basketBps: 5000,
+        creatorBps: 2500,
+        daoRewardsBps: 2000,
+        treasuryBps: 500
+      }
+    },
+    market: {
+      quoteCurrency: "native-ETH",
+      poolFeePips: 10000,
+      tickSpacing: 200,
+      curveFeeBps: 100,
+      curveTokenAllocation: $curveTokens,
+      graduationTokenAllocation: $graduationTokens,
+      initialVirtualTokenReserve: $virtualTokens,
+      initialVirtualNativeReserve: $virtualNative,
+      graduationThresholdNative: $thresholdNative,
+      minimumUseBps: 9900,
+      maximumNativeSwap: $maximumNativeSwap
+    },
+    genesis: $genesis
+  }' >"$tmp"
+mv "$tmp" "$output"
+ROBYN_TESTNET_RPC_URL="$rpc_url" node scripts/verify-testnet-v4-deployment.mjs "$output" >/dev/null
+echo "Wrote verified v4 protocol manifest: $output"
