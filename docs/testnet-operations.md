@@ -146,7 +146,10 @@ Rollback stops and deletes only the five testnet PM2 processes, preserves devnet
 - Recheck for canonical testnet Stock Token, ETF, stablecoin, registry and oracle addresses.
 - Human alert receiver for unattended operation.
 - Independent contract security review before any real-value asset use.
-- TLS and a stable hostname before access leaves the trusted LAN.
+- Replace the owner-approved Quick Tunnel with a stable named hostname before
+  production-readiness or durable public-access claims.
+- Add external IPFS pin replication before production readiness; the current
+  local-only Kubo phase has no off-VM availability guarantee.
 - Legal/issuer confirmation before substituting restricted Stock Tokens for mocks.
 
 These are not permission to weaken the local package. Mocks remain visibly labeled until canonical integrations are verified.
@@ -184,4 +187,17 @@ Protected web builds require:
 - `NEXT_PUBLIC_APP_URL`: the exact stable HTTPS origin registered for that project.
 - `ROBYN_TESTNET_BROWSER_RPC_URL`: a public HTTPS chain-46630 RPC. Loopback and RFC1918 addresses are rejected.
 
-The ephemeral Quick Tunnel is suitable for visual previews but not final WalletConnect acceptance. Follow [Multi-wallet architecture and operations](multi-wallet-architecture.md) for Robinhood Wallet, installed EIP-6963, reconnect, chain-switch and SIWE invalidation acceptance. These are no-transaction tests unless a separate broadcast authorization is provided.
+The current owner-approved testnet preview may use a Quick Tunnel when
+`ROBYN_TESTNET_ALLOW_EPHEMERAL_PREVIEW=true`, the exact generated origin is
+registered in Reown, and
+`ROBYN_WALLETCONNECT_DOMAIN_ALLOWLIST_CONFIRMED=true`. Local-only IPFS is
+allowed only with `ROBYN_TESTNET_ALLOW_LOCAL_PIN_ONLY=true`; it must be exposed
+as non-redundant and is not production-ready. Follow
+[Multi-wallet architecture and operations](multi-wallet-architecture.md) for
+Robinhood Wallet, installed EIP-6963, reconnect, chain-switch and SIWE
+invalidation acceptance.
+
+The initial controlled testnet RDAO allocation is 100 percent to the encrypted
+deployer. This provides a simple bootstrap owner but is centralized governance;
+the manifest must record the allocation and the application must not imply
+decentralized control until tokens and delegated voting power are distributed.

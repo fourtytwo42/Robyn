@@ -24,12 +24,12 @@ Durable project context lives here. Update this file whenever information should
   `e4ba4e1df44a8e49533b6b3cb0e50a8741bd0b90` passed the post-push isolated
   five-service rehearsal. Checksummed evidence is under
   `/home/hendo420/robyn-evidence/testnet-release-e4ba4e1/`.
-- Broadcast is fail-closed until four external inputs exist: a real 32-character
-  WalletConnect/Reown project ID, a stable registered HTTPS hostname with named
-  Cloudflare Tunnel, remote IPFS pinning credentials in the protected testnet
-  API environment, and a reviewed RDAO member allocation manifest totaling
-  100%. The encrypted deployer is funded, but no Robinhood Testnet transaction
-  has been broadcast.
+- The user supplied the remaining bootstrap decisions on 2026-07-23. A real
+  Reown project exists, the current Quick Tunnel origin is allowlisted, local
+  Kubo pinning is explicitly accepted without a remote replica, and the initial
+  RDAO manifest assigns 100% to the existing encrypted testnet deployer. These
+  are testnet-preview exceptions, not production-readiness claims. No Robinhood
+  Testnet transaction has yet been broadcast.
 - Current task: finish the immutable ERC-1046/IPFS token-metadata release on
   branch `codex/ipfs-token-metadata`, promote one exact release, prove backup,
   isolated restore and reboot recovery, then start a fresh one-shot eight-hour
@@ -290,6 +290,31 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-23 - Testnet bootstrap inputs resolved
+
+- Context: The user asked Codex to obtain WalletConnect configuration and
+  approved an ephemeral `trycloudflare.com` hostname, local-only IPFS pinning,
+  and a sole-owner DAO bootstrap.
+- Decision: Use the existing encrypted deployer as the sole initial RDAO
+  recipient. Quick Tunnel and local-only pinning require explicit release flags
+  and remain disclosed, temporary testnet-preview exceptions.
+- Files: `scripts/check-testnet-external-inputs.sh`,
+  `scripts/validate-rdao-allocation.sh`, `scripts/deploy-testnet.sh`,
+  `scripts/run-testnet-tunnel.sh`,
+  `infrastructure/systemd/robyn-testnet-tunnel.service`.
+- Commands/tests: Reown project creation and exact Quick Tunnel allowlisting
+  passed through the in-app browser. The protected allocation manifest passed
+  with `allocationCount=1` and `soleOwnerBootstrap=true`; the external-input
+  gate passed in exception mode and failed closed when the Quick Tunnel flag
+  was omitted. User-story traceability now covers 208/208 requirements.
+- Result: Protected runtime configuration exists outside Git under
+  `/home/hendo420/.config/robyn/testnet/`; the Quick Tunnel is persistent under
+  systemd. The public origin returns 502 until the isolated testnet application
+  services are deployed and started.
+- Follow-up: Validate and push the exact release, deploy the DEX and Robyn
+  contracts to chain 46630, start the isolated testnet services, then complete
+  onchain and in-app-browser acceptance.
 
 ### 2026-07-23 - Robinhood Testnet asset release candidate
 

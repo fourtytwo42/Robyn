@@ -1,5 +1,5 @@
 [Unit]
-Description=Robyn Robinhood Testnet named Cloudflare Tunnel
+Description=Robyn Robinhood Testnet Cloudflare Tunnel
 Documentation=https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
 After=network-online.target nginx.service
 Wants=network-online.target
@@ -10,6 +10,7 @@ Type=simple
 User=hendo420
 Group=hendo420
 WorkingDirectory=/home/hendo420/Robyn
+EnvironmentFile=-/etc/robyn/testnet-tunnel.env
 Environment=ROBYN_TESTNET_TUNNEL_CONFIG=/etc/cloudflared/robyn-testnet.yml
 ExecStart=/home/hendo420/Robyn/scripts/run-testnet-tunnel.sh
 Restart=on-failure

@@ -12,16 +12,22 @@ PRD = ROOT / "prd"
 STORIES = ROOT / "user-stories"
 OUTPUT = STORIES / "TRACEABILITY.md"
 
-REQ_RE = re.compile(r"\b(?:CORE|CREATE|DISC|TRADE|REWARD|PROTO|EXEC|DATA|INFRA|SEC|LEGAL|OPS|ANALYTICS|DESIGN|STACK)-\d{3}\b")
+REQUIREMENT_PREFIX = (
+    r"(?:CORE|CREATE|DISC|TRADE|REWARD|PROTO|EXEC|DATA|INFRA|SEC|LEGAL|OPS|"
+    r"ANALYTICS|DESIGN|STACK|TESTNET|ASSET)"
+)
+REQ_RE = re.compile(rf"\b{REQUIREMENT_PREFIX}-\d{{3}}\b")
 STORY_RE = re.compile(r"^### (US-[A-Z]+-\d{3}): (.+)$", re.MULTILINE)
-PRD_DEF_RE = re.compile(r"^\| ((?:CORE|CREATE|DISC|TRADE|REWARD|PROTO|EXEC|DATA|INFRA|SEC|LEGAL|OPS|ANALYTICS|DESIGN|STACK)-\d{3}) \|", re.MULTILINE)
+PRD_DEF_RE = re.compile(rf"^\| ({REQUIREMENT_PREFIX}-\d{{3}}) \|", re.MULTILINE)
+HEADING_PRD_DEF_RE = re.compile(r"^### ((?:TESTNET|ASSET)-\d{3}):", re.MULTILINE)
 
 
 def main() -> None:
     requirements: dict[str, str] = {}
     for path in sorted(PRD.glob("*.md")):
         text = path.read_text(encoding="utf-8")
-        for req in PRD_DEF_RE.findall(text):
+        definitions = PRD_DEF_RE.findall(text) + HEADING_PRD_DEF_RE.findall(text)
+        for req in definitions:
             if req in requirements:
                 raise SystemExit(f"Duplicate PRD definition: {req}")
             requirements[req] = path.name

@@ -16,7 +16,7 @@ The testnet web, API, indexer, keeper, artifact service, PostgreSQL database, Re
 
 ### TESTNET-002: Broadcast boundary
 
-Every real broadcast MUST require chain `46630`, a clean exact `origin/main`, encrypted testnet signer, verified DEX manifest, remote IPFS replica, reviewed RDAO allocation, stable HTTPS hostname, real WalletConnect project ID, fresh execution and conservative L1-data cost estimate, and at least 25 percent balance headroom.
+Every real broadcast MUST require chain `46630`, a clean exact `origin/main`, encrypted testnet signer, verified DEX manifest, reviewed RDAO allocation, real WalletConnect project ID, fresh execution and conservative L1-data cost estimate, and at least 25 percent balance headroom. The current owner-approved testnet preview MAY use local-only IPFS pinning and an explicitly allowlisted Quick Tunnel when both exceptions are enabled by named operator flags and disclosed in the manifest and UI. These exceptions MUST remain forbidden for mainnet or production-readiness claims.
 
 ### TESTNET-003: Wallet switching
 
@@ -60,12 +60,16 @@ The API MUST expose catalog search, opaque pagination cursor, address resolution
 
 ### TESTNET-005: Stable public candidate
 
-The public candidate MUST use a named Cloudflare Tunnel and stable registered HTTPS hostname routed through loopback Nginx. Quick Tunnels remain preview-only. Raw RPC, Kubo RPC, databases, and PM2 ports MUST NOT be exposed.
+The temporary public candidate MAY use an owner-approved Quick Tunnel routed through loopback Nginx. Its exact origin MUST be registered in Reown and rebuilt into the protected bundle. The URL is ephemeral and MUST be replaced by a named Cloudflare Tunnel and stable registered HTTPS hostname before production readiness. Raw RPC, Kubo RPC, databases, and PM2 ports MUST NOT be exposed.
+
+### TESTNET-006: Initial DAO concentration
+
+The initial controlled testnet deployment allocates 100 percent of fixed-supply RDAO to the encrypted deployer wallet. The UI and manifest MUST disclose this centralized starting state. Governance decentralization and contributor allocations are later onchain transfers or governance actions, not hidden deployment assumptions.
 
 ## Acceptance
 
 - The chain-46630 contract and five-service rehearsals pass from an isolated native Anvil process.
 - The protected testnet build contains WalletConnect and chain `46630` and contains no devnet key, session-wallet, faucet API, private RPC, or loopback marker.
 - All 24 catalog routes are live in the rehearsal manifest and the three genesis legs convert and claim.
-- MetaMask add/switch, WalletConnect, Robinhood Wallet, SIWE invalidation, manual address lookup, responsive picker, and all transaction surfaces pass browser acceptance on the stable HTTPS candidate.
+- MetaMask add/switch, WalletConnect, Robinhood Wallet, SIWE invalidation, manual address lookup, responsive picker, and all transaction surfaces pass browser acceptance on the currently registered HTTPS candidate.
 - A real testnet launch/trade/graduation/conversion/claim journey is verified by RPC and explorer only after all broadcast gates pass.

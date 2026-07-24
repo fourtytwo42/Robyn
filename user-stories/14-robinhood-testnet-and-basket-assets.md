@@ -73,7 +73,7 @@ Acceptance criteria:
 - Release: Robinhood Testnet candidate
 - Priority: Must
 - Persona: Operator
-- PRD: TESTNET-001, TESTNET-002, TESTNET-005
+- PRD: TESTNET-001, TESTNET-002, TESTNET-005, TESTNET-006
 - Depends on: US-INFRA-001, US-TESTNET-001
 
 As an operator, I want testnet isolated and fail-closed so that public testing cannot corrupt devnet or leak secrets.
@@ -81,9 +81,10 @@ As an operator, I want testnet isolated and fail-closed so that public testing c
 Acceptance criteria:
 
 1. Testnet uses separate PM2 names, ports, database, Redis DB/queue, manifest, logs, and release root.
-2. A named tunnel routes only web, API, and pinned IPFS paths through loopback Nginx.
-3. Remote pin secrets are loaded at runtime from a protected file and never enter PM2 configuration, bundles, Git, or manifests.
-4. Real deployment cannot begin until every external input, signer, chain, provenance, gas, balance, build, and manifest gate passes.
+2. A named tunnel normally routes only web, API, and pinned IPFS paths through loopback Nginx; an explicitly enabled Quick Tunnel may be used for the temporary testnet preview.
+3. Remote pin secrets are loaded at runtime from a protected file and never enter PM2 configuration, bundles, Git, or manifests. The owner-approved local-only phase is explicitly flagged and cannot be represented as redundant pinning.
+4. Real deployment cannot begin until every applicable input, signer, chain, provenance, gas, balance, build, and manifest gate passes.
+5. The initial manifest records the encrypted deployer as the sole RDAO recipient and visibly discloses the centralized 100 percent allocation.
 
 ### US-TESTNET-003: Verify the real testnet journey
 

@@ -30,10 +30,12 @@ else
   [[ -z "$(git status --porcelain)" && "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || { echo "Real testnet deployment requires clean exact origin/main" >&2; exit 1; }
   deployer="$(cast wallet address --keystore "$keystore" --password-file "$password_file")"
   wallet_args=(--keystore "$keystore" --password-file "$password_file")
-  [[ -n "${ROBYN_REMOTE_PIN_URL:-}" && -n "${ROBYN_REMOTE_PIN_TOKEN:-}" ]] || {
-    echo "Protected testnet deployment requires configured remote IPFS pinning" >&2
-    exit 1
-  }
+  if [[ "${ROBYN_TESTNET_ALLOW_LOCAL_PIN_ONLY:-false}" != "true" ]]; then
+    [[ -n "${ROBYN_REMOTE_PIN_URL:-}" && -n "${ROBYN_REMOTE_PIN_TOKEN:-}" ]] || {
+      echo "Protected testnet deployment requires configured remote IPFS pinning or an explicit local-only override" >&2
+      exit 1
+    }
+  fi
 fi
 
 forge build --root packages/contracts >/dev/null
@@ -115,18 +117,7 @@ if [[ "$rehearsal" == "true" ]]; then
   allocation_hash="$(printf '%s' "$allocation_json" | sha256sum | awk '{print $1}')"
 else
   [[ -n "$allocation_manifest" && -f "$allocation_manifest" ]] || { echo "ROBYN_RDAO_ALLOCATION_MANIFEST must name a readable allocation manifest" >&2; exit 1; }
-  jq -e '
-    .schemaVersion == 1 and
-    (.allocations | type == "array" and length > 1) and
-    (([.allocations[].account | ascii_downcase] | unique | length) == (.allocations | length)) and
-    ([.allocations[].shareBps] | add == 10000) and
-    (all(.allocations[];
-      (.shareBps | type == "number" and . > 0 and . <= 10000) and
-      (.purpose | type == "string" and length > 0) and
-      ((.account == "timelock") or (.account == "deployer") or (.account | test("^0x[0-9a-fA-F]{40}$")))
-    )) and
-    (any(.allocations[]; .account == "timelock" and .purpose == "dao-treasury-reserve"))
-  ' "$allocation_manifest" >/dev/null || { echo "Invalid RDAO allocation manifest: shares must total 10000 bps and include the timelock reserve" >&2; exit 1; }
+  "$(dirname "$0")/validate-rdao-allocation.sh" "$allocation_manifest" >/dev/null
   allocation_json="$(jq -c --arg deployer "$deployer" --arg timelock "$timelock" '.allocations |= map(.account = (if .account == "deployer" then $deployer elif .account == "timelock" then $timelock else .account end))' "$allocation_manifest")"
   allocation_hash="$(sha256sum "$allocation_manifest" | awk '{print $1}')"
 fi
@@ -239,14 +230,15 @@ jq \
    | .genesisBasket=[{symbol:"tmNVDA",weightBps:4000},{symbol:"tmSPY",weightBps:4000},{symbol:"tmAAPL",weightBps:2000}]' \
   "$tmp" >"$catalog_tmp"
 mv "$catalog_tmp" "$tmp"
-jq --arg fallbackMetadataUri "$fallback_metadata_uri" '
+jq --arg fallbackMetadataUri "$fallback_metadata_uri" \
+  --argjson remotePinRequired "$([[ "${ROBYN_TESTNET_ALLOW_LOCAL_PIN_ONLY:-false}" == "true" ]] && echo false || echo true)" '
   .schemaVersion = 6
   | .ipfsMetadata = {
       standard: "ERC-1046",
       cidVersion: 1,
       kuboVersion: "0.42.0",
       localPolicy: "pinned-no-fetch",
-      remotePinRequired: true,
+      remotePinRequired: $remotePinRequired,
       fallbackMetadataUri: $fallbackMetadataUri
     }
 ' "$tmp" >"$ipfs_tmp"

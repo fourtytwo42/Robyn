@@ -3,11 +3,15 @@ set -euo pipefail
 
 config="${ROBYN_TESTNET_TUNNEL_CONFIG:-/etc/cloudflared/robyn-testnet.yml}"
 cloudflared_bin="${CLOUDFLARED_BIN:-$(command -v cloudflared)}"
+ephemeral_preview="${ROBYN_TESTNET_ALLOW_EPHEMERAL_PREVIEW:-false}"
 
 [[ -x "$cloudflared_bin" ]] || {
   echo "cloudflared is not installed" >&2
   exit 1
 }
+if [[ "$ephemeral_preview" == "true" ]]; then
+  exec "$cloudflared_bin" tunnel --no-autoupdate --url http://127.0.0.1:3081
+fi
 [[ -r "$config" ]] || {
   echo "Named-tunnel config is not readable: $config" >&2
   exit 1
