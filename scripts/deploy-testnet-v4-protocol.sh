@@ -13,6 +13,7 @@ expected_deployer="0xecc5d6d032ADc9ca9E0F4042128067b8366da17A"
 zero="0x0000000000000000000000000000000000000000"
 export PATH="$HOME/.foundry/bin:$PATH"
 cd "$repo_root"
+source "$repo_root/scripts/lib/transaction-nonce.sh"
 
 [[ "${ROBYN_TESTNET_V4_PROTOCOL_BROADCAST:-false}" == "true" ]] || {
   echo "Set ROBYN_TESTNET_V4_PROTOCOL_BROADCAST=true to authorize v4 protocol deployment" >&2
@@ -75,6 +76,22 @@ else
   wallet_args=(--keystore "$keystore" --password-file "$password_file")
 fi
 
+highest_observed_nonce=0
+for _ in {1..5}; do
+  for nonce_block in latest pending; do
+    observed_nonce="$(cast nonce "$deployer" --block "$nonce_block" --rpc-url "$rpc_url")"
+    [[ "$observed_nonce" =~ ^[0-9]+$ ]] || {
+      echo "RPC returned an invalid $nonce_block transaction nonce" >&2
+      exit 1
+    }
+    if ((observed_nonce > highest_observed_nonce)); then
+      highest_observed_nonce="$observed_nonce"
+    fi
+  done
+  sleep 0.2
+done
+transaction_nonce_initialize "$highest_observed_nonce"
+
 ROBYN_TESTNET_RPC_URL="$rpc_url" ROBYN_V4_ALLOW_PENDING=true \
   scripts/verify-testnet-uniswap-v4.sh "$venue_manifest" >/dev/null
 forge build --root packages/contracts >/dev/null
@@ -90,7 +107,9 @@ trap cleanup EXIT
 deploy_contract() {
   local key="$1" contract="$2"
   shift 2
-  local command=(forge create "$contract" --root packages/contracts --rpc-url "$rpc_url" "${wallet_args[@]}" --broadcast --json)
+  transaction_nonce_allocate
+  local nonce="$TRANSACTION_NONCE_ALLOCATED"
+  local command=(forge create "$contract" --root packages/contracts --rpc-url "$rpc_url" "${wallet_args[@]}" --nonce "$nonce" --broadcast --json)
   [[ "$#" -eq 0 ]] || command+=(--constructor-args "$@")
   local receipt
   receipt="$("${command[@]}")"
@@ -102,14 +121,15 @@ deploy_contract() {
   }
 }
 send_transaction() {
+  transaction_nonce_allocate
+  local nonce="$TRANSACTION_NONCE_ALLOCATED"
   local receipt
-  receipt="$(cast send --rpc-url "$rpc_url" "${wallet_args[@]}" --json "$@")"
+  receipt="$(cast send --rpc-url "$rpc_url" "${wallet_args[@]}" --nonce "$nonce" --json "$@")"
   [[ "$(jq -r '.status' <<<"$receipt")" == "0x1" ||
      "$(jq -r '.status' <<<"$receipt")" == "1" ]] || return 1
-  local hash
-  hash="$(jq -er '.transactionHash // .transaction_hash' <<<"$receipt")"
-  printf '%s\n' "$hash" >>"$configuration_transaction_log"
-  printf '%s\n' "$hash"
+  LAST_TRANSACTION_HASH="$(jq -er '.transactionHash // .transaction_hash' <<<"$receipt")"
+  printf '%s\n' "$LAST_TRANSACTION_HASH" >>"$configuration_transaction_log"
+  printf '%s\n' "$LAST_TRANSACTION_HASH"
 }
 runtime_code_hash() {
   local code
@@ -386,7 +406,8 @@ hook_salt="$(jq -er '.salt' <<<"$hook_mining")"
   exit 1
 }
 hook_payload="${hook_salt}${hook_init_code#0x}"
-txs[oracleHook]="$(send_transaction "$create2_deployer" --data "$hook_payload")"
+send_transaction "$create2_deployer" --data "$hook_payload" >/dev/null
+txs[oracleHook]="$LAST_TRANSACTION_HASH"
 [[ "$(cast code "$hook" --rpc-url "$rpc_url")" != "0x" ]] || {
   echo "CREATE2 oracle hook deployment produced no code" >&2
   exit 1
@@ -459,7 +480,9 @@ amd="$(jq -er '.faucetStockRoutes[] | select(.symbol=="AMD") | .address' "$venue
 amzn="$(jq -er '.faucetStockRoutes[] | select(.symbol=="AMZN") | .address' "$venue_manifest")"
 metadata_uri="ipfs://bafkreibys2cv4ijpoedcl7qdbi5u66wuwedwg3lsc6pios3wcyaoyz7cau"
 genesis_salt="$(cast keccak "robyn-v4-chain-46630-genesis-$(git rev-parse HEAD)")"
-launch_receipt="$(cast send --rpc-url "$rpc_url" "${wallet_args[@]}" --json "$coordinator" \
+transaction_nonce_allocate
+genesis_nonce="$TRANSACTION_NONCE_ALLOCATED"
+launch_receipt="$(cast send --rpc-url "$rpc_url" "${wallet_args[@]}" --nonce "$genesis_nonce" --json "$coordinator" \
   'createLaunch((string,string,address[],uint16[],string,bytes32))' \
   "(\"Robyn V4 Testnet Genesis\",\"tRV4\",[$tsla,$amd,$amzn],[4000,4000,2000],\"$metadata_uri\",$genesis_salt)")"
 [[ "$(jq -r '.status' <<<"$launch_receipt")" == "0x1" ||

@@ -4,6 +4,23 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Schema-v8 public deployment nonce correction (2026-07-24): exact commit
+  `aef5afd14ff87101fb3dbe2096d6260179392df1` passed the complete fresh
+  chain-46630 rehearsal (490 verifier checks, 2,156 successful transactions,
+  2,056 product writes, every campaign phase, no sweep dust, and idempotent
+  resume) plus reproducible builds and current venue verification. The first
+  public deployment attempt then stopped before producing or activating a
+  manifest when the load-balanced public RPC supplied stale nonce `273` after
+  that nonce had already confirmed. Nonces `229` through `273` are successful
+  but form an abandoned, unindexed partial stack; schema v7 remains live.
+  `scripts/deploy-testnet-v4-protocol.sh` now samples latest and pending nonce,
+  allocates one monotonic nonce locally, passes it explicitly to every create
+  and send, and avoids losing allocator state through the CREATE2 hook command
+  substitution. `scripts/lib/transaction-nonce.sh` and its regression test
+  freeze the sequence. Full lint, strict types, application/Anvil/Foundry tests,
+  the nonce regression, and the security audit pass. A fresh exact-commit fork
+  rehearsal is required before retrying public deployment.
+
 - Secondary faucet wallet transfer completed (2026-07-24): the encrypted wallet
   at `/home/hendo420/.config/robyn/wallets/robinhood-testnet-faucet-2`
   (`0xeCD975C493959b7E9157433a86097ba55014D3eA`) received `0.01 ETH` plus five

@@ -13,10 +13,11 @@
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "lint": "turbo run lint",
-    "test": "turbo run test && pnpm test:anvil && pnpm test:contracts",
+    "test": "turbo run test && pnpm test:anvil && pnpm test:contracts && pnpm test:deployment-nonce",
     "test:anvil": "bash scripts/smoke-anvil.sh",
     "test:campaign": "node --test scripts/test/testnet-assurance-campaign.test.mjs",
     "test:contracts": "PATH=$HOME/.foundry/bin:$PATH forge test --root packages/contracts -vv",
+    "test:deployment-nonce": "bash scripts/test/testnet-deployment-nonce.test.sh",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
