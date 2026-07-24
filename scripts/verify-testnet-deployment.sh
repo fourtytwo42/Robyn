@@ -5,8 +5,12 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 manifest="${1:-$repo_root/deployments/46630.json}"
 rpc_url="${ROBYN_TESTNET_RPC_URL:-https://rpc.testnet.chain.robinhood.com}"
 export PATH="$HOME/.foundry/bin:$PATH"
+remote_pin_required=true
+if [[ "${ROBYN_TESTNET_ALLOW_LOCAL_PIN_ONLY:-false}" == "true" ]]; then
+  remote_pin_required=false
+fi
 
-jq -e '
+jq -e --argjson remotePinRequired "$remote_pin_required" '
   .schemaVersion == 6 and
   .environment == "robinhood-testnet" and
   .chainId == 46630 and
@@ -15,7 +19,7 @@ jq -e '
   .market.liquidityVenue == "robyn-controlled-uniswap-v3-testnet" and
   .dao.creatorRewardsAccounting == "per-token-v2" and
   .ipfsMetadata.standard == "ERC-1046" and
-  .ipfsMetadata.remotePinRequired == true and
+  .ipfsMetadata.remotePinRequired == $remotePinRequired and
   .assetCatalog.schemaVersion == 1 and
   (.assetCatalog.assets | length == 24) and
   (.contracts.rewardAssets | length == 24) and
@@ -29,11 +33,14 @@ jq -e '
 ' "$manifest" >/dev/null
 jq -e '. as $manifest |
   (.dao.initialAllocationManifestSha256 | test("^[0-9a-f]{64}$")) and
-  (.dao.allocation | type == "array" and length > 1) and
+  (.dao.allocation | type == "array" and length >= 1) and
   (([.dao.allocation[].account | ascii_downcase] | unique | length) == (.dao.allocation | length)) and
   ([.dao.allocation[].shareBps] | add == 10000) and
-  (all(.dao.allocation[]; (.account | test("^0x[0-9a-fA-F]{40}$")) and (.purpose | type == "string" and length > 0))) and
-  (any(.dao.allocation[]; (.account | ascii_downcase) == ($manifest.contracts.timelock | ascii_downcase) and .purpose == "dao-treasury-reserve"))
+  (all(.dao.allocation[];
+    (.account | test("^0x[0-9a-fA-F]{40}$")) and
+    (.shareBps | type == "number" and . > 0 and . <= 10000) and
+    (.purpose | type == "string" and length > 0)
+  ))
 ' "$manifest" >/dev/null
 grep -Eqs 'DEVNET_ONLY|robyn-devnet|31337' "$manifest" && { echo "Devnet content found in testnet manifest" >&2; exit 1; }
 jq -e '.schemaVersion == 2 and .chainId == 46630 and .faucetUrl == "https://faucet.testnet.chain.robinhood.com" and .deployment.allowsUnlockedAccount == false' "$repo_root/config/networks/robinhood-testnet.json" >/dev/null

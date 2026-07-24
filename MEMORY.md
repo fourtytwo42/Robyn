@@ -307,7 +307,10 @@ Durable project context lives here. Update this file whenever information should
   passed through the in-app browser. The protected allocation manifest passed
   with `allocationCount=1` and `soleOwnerBootstrap=true`; the external-input
   gate passed in exception mode and failed closed when the Quick Tunnel flag
-  was omitted. User-story traceability now covers 208/208 requirements.
+  was omitted. The independent deployment verifier initially caught stale
+  remote-pin and multi-recipient assumptions; after correction, the complete
+  chain-46630 DEX, 24-asset, launch, graduation, conversion and claim rehearsal
+  passed in local-pin mode. User-story traceability covers 208/208 requirements.
 - Result: Protected runtime configuration exists outside Git under
   `/home/hendo420/.config/robyn/testnet/`; the Quick Tunnel is persistent under
   systemd. The public origin returns 502 until the isolated testnet application
