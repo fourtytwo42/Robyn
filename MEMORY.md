@@ -4,6 +4,16 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Dependency audit rollover (2026-07-24): after exact `f67fa90` passed its
+  fresh 490-check deployment and complete 2,156-transaction campaign rehearsal,
+  GitHub advisory `GHSA-mh99-v99m-4gvg` newly classified all installed
+  `brace-expansion <=5.0.7` paths as high severity. The root
+  `pnpm-workspace.yaml` now overrides the transitive package to patched `5.0.8`.
+  The frozen install, lint, strict types, zero-high/zero-critical dependency
+  audit, and complete security audit pass. This dependency-only SHA rollover
+  still requires a fresh exact-commit deployment rehearsal because the v4 hook
+  deployment domain commits to the Git SHA.
+
 - Live campaign keystore correction (2026-07-24): the corrected nonce allocator
   completed a fresh exact-SHA rehearsal and a fully verified public schema-v8
   deployment at commit `8c5fc663d4d8c8864047545e80430eafe984c1a8` without
