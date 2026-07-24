@@ -96,6 +96,7 @@ const abis = {
   market: await artifactAbi("RobynV4BondingCurveMarket"),
   adapter: await artifactAbi("RobynV4GraduationAdapter"),
   token: await artifactAbi("RobynLaunchToken"),
+  vault: await artifactAbi("RobynNativeBasketVaultV2"),
 };
 
 async function read(address, abi, functionName, args = []) {
@@ -281,7 +282,13 @@ check(
 );
 
 const genesis = manifest.genesis;
+check(genesis.assets?.length === 3, "genesis freezes its three basket assets");
+check(
+  genesis.weightsBps?.reduce((total, weight) => total + weight, 0) === 10_000,
+  "genesis freezes a 100 percent basket allocation",
+);
 const token = getAddress(genesis.token);
+const vault = getAddress(genesis.vault);
 const market = getAddress(genesis.market);
 const adapter = getAddress(genesis.graduationAdapter);
 const locker = getAddress(genesis.positionLocker);
@@ -298,6 +305,17 @@ check(
     getAddress(genesis.creator),
   "canonical creator matches the receipt",
 );
+for (const [index, asset] of (genesis.assets ?? []).entries()) {
+  const leg = await read(vault, abis.vault, "leg", [BigInt(index)]);
+  check(
+    getAddress(leg.asset) === getAddress(asset),
+    `genesis basket leg ${index + 1} address matches`,
+  );
+  check(
+    leg.weightBps === genesis.weightsBps[index],
+    `genesis basket leg ${index + 1} weight matches`,
+  );
+}
 check(
   getAddress(await read(contracts.marketFactory, abis.marketFactory, "marketByToken", [token])) ===
     market,

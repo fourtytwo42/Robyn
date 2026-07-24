@@ -742,23 +742,32 @@ export function DaoView({
             <div className="dao-table">
               <div className="dao-table-row header">
                 <span>Token</span>
-                <span>Base fees</span>
+                <span>
+                  {deployment.liquidityVenue === "uniswap-v4"
+                    ? "Native fees"
+                    : "Base fees"}
+                </span>
                 <span>Pending conversion</span>
                 <span>Native realized</span>
               </div>
               {overview.launchFees.map((fees) => (
                 <div className="dao-table-row" key={fees.token}>
                   <code title={fees.token}>{short(fees.token)}</code>
-                  <span>{tokenAmount(fees.cumulativeBaseFees, 5)}</span>
                   <span>
-                    {tokenAmount(
-                      (
-                        BigInt(fees.pendingCreatorBase) +
-                        BigInt(fees.pendingDaoRewardBase) +
-                        BigInt(fees.pendingTreasuryBase)
-                      ).toString(),
-                      5,
-                    )}
+                    {tokenAmount(fees.cumulativeBaseFees, 5)}{" "}
+                    {deployment.liquidityVenue === "uniswap-v4" ? "ETH" : ""}
+                  </span>
+                  <span>
+                    {deployment.liquidityVenue === "uniswap-v4"
+                      ? "Not required"
+                      : tokenAmount(
+                          (
+                            BigInt(fees.pendingCreatorBase) +
+                            BigInt(fees.pendingDaoRewardBase) +
+                            BigInt(fees.pendingTreasuryBase)
+                          ).toString(),
+                          5,
+                        )}
                   </span>
                   <span>
                     {tokenAmount(fees.cumulativeNativeConverted, 5)} ETH

@@ -83,6 +83,12 @@ export default async function LaunchDetail({
   }
   const launch = detail.data;
   const market = analytics.data;
+  const quoteSymbol =
+    market.liquidityVenue === "uniswap-v4"
+      ? "ETH"
+      : isTestnet
+        ? "tmUSD"
+        : "mUSD";
   const basket = launch.assets.map((asset, index) => ({
     ...rewardAssetMetadata(
       asset,
@@ -169,9 +175,10 @@ export default async function LaunchDetail({
           </div>
           <div className="token-hero-quote">
             <span>Market cap</span>
-            <strong>{metric(market.marketCapBase)}</strong>
+            <strong>{metric(market.marketCapBase, quoteSymbol)}</strong>
             <small>
-              Price {priceMetric(market.priceBasePerToken)} / {launch.symbol}
+              Price {priceMetric(market.priceBasePerToken, quoteSymbol)} /{" "}
+              {launch.symbol}
             </small>
             <span
               className={`market-change ${
@@ -224,9 +231,9 @@ export default async function LaunchDetail({
           aria-label="Token market metrics"
         >
           {[
-            ["Price", priceMetric(market.priceBasePerToken)],
+            ["Price", priceMetric(market.priceBasePerToken, quoteSymbol)],
             ["24h change", changeLabel(market.change24hBps)],
-            ["24h volume", metric(market.volume24hBase)],
+            ["24h volume", metric(market.volume24hBase, quoteSymbol)],
             [
               "24h buy / sell",
               buyShare === null
@@ -271,7 +278,7 @@ export default async function LaunchDetail({
             </div>
             <div className="graduation-rail">
               <div>
-                <span>{metric(market.baseRaised)} raised</span>
+                <span>{metric(market.baseRaised, quoteSymbol)} raised</span>
                 <strong>
                   {(market.graduationProgressBps / 100).toFixed(1)}%
                 </strong>
@@ -291,7 +298,7 @@ export default async function LaunchDetail({
                 />
               </div>
               <small>
-                Target {metric(market.graduationThresholdBase)}
+                Target {metric(market.graduationThresholdBase, quoteSymbol)}
                 {market.marketPhase === "bonding"
                   ? ` · ${quantity(market.remainingCurveTokens)} ${launch.symbol} remain on curve`
                   : " · migration complete and irreversible"}
@@ -329,6 +336,7 @@ export default async function LaunchDetail({
               vault={launch.vault}
               indexedBlock={detail.asOfBlock}
               detailed
+              nativeV4={market.liquidityVenue === "uniswap-v4"}
             />
           </section>
 
@@ -341,15 +349,15 @@ export default async function LaunchDetail({
             <dl className="economy-metrics">
               <div>
                 <dt>Total fees generated</dt>
-                <dd>{metric(market.totalFeesBase)}</dd>
+                <dd>{metric(market.totalFeesBase, quoteSymbol)}</dd>
               </div>
               <div>
                 <dt>Buy volume</dt>
-                <dd>{metric(market.buyVolumeBase)}</dd>
+                <dd>{metric(market.buyVolumeBase, quoteSymbol)}</dd>
               </div>
               <div>
                 <dt>Sell volume</dt>
-                <dd>{metric(market.sellVolumeBase)}</dd>
+                <dd>{metric(market.sellVolumeBase, quoteSymbol)}</dd>
               </div>
               <div>
                 <dt>Unique traders</dt>
@@ -457,7 +465,7 @@ export default async function LaunchDetail({
                           <small>Block {trade.blockNumber}</small>
                         </td>
                         <td>
-                          {metric(trade.baseAmount)}
+                          {metric(trade.baseAmount, quoteSymbol)}
                           <small>
                             {quantity(trade.tokenAmount)} {launch.symbol}
                           </small>

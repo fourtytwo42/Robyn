@@ -108,6 +108,22 @@ Durable project context lives here. Update this file whenever information should
   funding `854060708288640` wei versus wallet balance
   `6920854708782403` wei. Evidence is under
   `/tmp/robyn-v4-24-route-rehearsal-v2/`. No live v4 transaction was sent.
+- V4 wallet and keeper integration checkpoint (2026-07-24): testnet trading,
+  homepage actions, reward-state, Portfolio, creator rewards and DAO views now
+  branch explicitly between legacy v3 and native v4. V4 buys are payable ETH,
+  sells approve only the launch token, basket views read `pendingNative`, the
+  fee API reads the native router tuple, and the asset picker recognizes
+  faucet-stock and v4-route classifications. The keeper now collects v4
+  position fees, routes collected ETH, preflights bounded launch-token fee
+  sales, and converts vault legs in route-limited native batches. A live
+  isolated fork run completed 62 conversions with all three pending legs at
+  zero. Testing found and fixed PostgreSQL NUL-byte crashes in provider error
+  audit text and Redis URL parsing that discarded database/auth/TLS isolation;
+  15 keeper tests cover the new runtime configuration. The v4 manifest now
+  freezes the genesis basket assets and weights so the 24-asset catalog cannot
+  make the three-leg console query nonexistent legs. Repository format, lint,
+  strict types, application tests, 87 Foundry tests, optimized builds and
+  `git diff --check` pass. No live v4 testnet transaction was sent.
 - Faucet-stock checkpoint (2026-07-24): the encrypted deployer holds 5 tokens
   each of exact faucet contracts TSLA `0xC9f9...Bd4E`, AMD `0x7117...778d`,
   AMZN `0x5884...9E02`, NFLX `0x3b82...8C93`, and PLTR `0x1FBE...98d0`.
@@ -119,8 +135,8 @@ Durable project context lives here. Update this file whenever information should
   `deployments/archive/46630-v3-b3ab91f/`; raw database, chain, PM2 and checksum
   evidence is under
   `/home/hendo420/robyn-evidence/testnet-v3-archive-20260724T014728Z`.
-- Current task (2026-07-24): complete browser acceptance and release
-  verification for the live Robinhood Testnet deployment. The protected app is
+- Prior v3 acceptance checkpoint (2026-07-24, superseded by the active v4
+  release): the protected v3 app was
   public through the temporary Quick Tunnel
   `https://october-assumptions-cleaners-skirt.trycloudflare.com`; the exact
   origin is registered in Reown. Chain-46630 DEX and Robyn protocol broadcasts

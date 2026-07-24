@@ -41,6 +41,34 @@ const vaultAbi = [
     ],
   },
 ] as const;
+const nativeVaultAbi = [
+  {
+    type: "function",
+    name: "legCount",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "leg",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "asset", type: "address" },
+          { name: "weightBps", type: "uint16" },
+          { name: "pendingNative", type: "uint256" },
+          { name: "consumedNative", type: "uint256" },
+          { name: "rewardsDeposited", type: "uint256" },
+          { name: "pendingSince", type: "uint256" },
+        ],
+      },
+    ],
+  },
+] as const;
 
 const erc20Abi = [
   {
@@ -71,10 +99,12 @@ export function LaunchRewardState({
   vault,
   indexedBlock,
   detailed = false,
+  nativeV4 = false,
 }: {
   vault: string;
   indexedBlock: string | null;
   detailed?: boolean;
+  nativeV4?: boolean;
 }) {
   const [legs, setLegs] = useState<LegState[]>();
   const [chainBlock, setChainBlock] = useState<bigint>();
@@ -117,12 +147,19 @@ export function LaunchRewardState({
         ]);
         const next = await Promise.all(
           Array.from({ length: Number(count) }, async (_, index) => {
-            const leg = await client.readContract({
-              address: vault as Address,
-              abi: vaultAbi,
-              functionName: "leg",
-              args: [BigInt(index)],
-            });
+            const leg = nativeV4
+              ? await client.readContract({
+                  address: vault as Address,
+                  abi: nativeVaultAbi,
+                  functionName: "leg",
+                  args: [BigInt(index)],
+                })
+              : await client.readContract({
+                  address: vault as Address,
+                  abi: vaultAbi,
+                  functionName: "leg",
+                  args: [BigInt(index)],
+                });
             const symbol = await client.readContract({
               address: leg.asset,
               abi: erc20Abi,
@@ -132,8 +169,10 @@ export function LaunchRewardState({
               asset: leg.asset,
               symbol,
               weightBps: leg.weightBps,
-              pendingBase: leg.pendingBase,
-              consumedBase: leg.consumedBase,
+              pendingBase:
+                "pendingNative" in leg ? leg.pendingNative : leg.pendingBase,
+              consumedBase:
+                "consumedNative" in leg ? leg.consumedNative : leg.consumedBase,
               rewardsDeposited: leg.rewardsDeposited,
             };
           }),
@@ -149,9 +188,9 @@ export function LaunchRewardState({
     return () => {
       active = false;
     };
-  }, [client, vault]);
+  }, [client, nativeV4, vault]);
 
-  const baseSymbol = isTestnet ? "tmUSD" : "mUSD";
+  const baseSymbol = nativeV4 ? "ETH" : isTestnet ? "tmUSD" : "mUSD";
 
   if (error)
     return (
@@ -179,7 +218,7 @@ export function LaunchRewardState({
           </div>
           <dl>
             <div>
-              <dt>Pending cash</dt>
+              <dt>Pending {nativeV4 ? "basket conversion" : "cash"}</dt>
               <dd>
                 {units(leg.pendingBase)} {baseSymbol}
               </dd>
@@ -192,7 +231,7 @@ export function LaunchRewardState({
             </div>
             {detailed ? (
               <div>
-                <dt>Converted base</dt>
+                <dt>Converted {nativeV4 ? "native" : "base"}</dt>
                 <dd>
                   {units(leg.consumedBase)} {baseSymbol}
                 </dd>

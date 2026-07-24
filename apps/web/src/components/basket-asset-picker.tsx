@@ -14,6 +14,7 @@ export type BasketAsset = {
   logoUrl: string | null;
   verification:
     | "official-robinhood-current-chain"
+    | "robinhood-testnet-faucet-stock"
     | "robyn-testnet-mock"
     | "robyn-controlled-testnet-dex"
     | "robyn-token-list"
@@ -24,7 +25,7 @@ export type BasketAsset = {
   referencePriceUsd: string | null;
   referencePriceAt: string | null;
   route: {
-    kind: "none" | "fixed-testnet" | "uniswap-v3";
+    kind: "none" | "fixed-testnet" | "uniswap-v3" | "uniswap-v4";
     ready: boolean;
     venue: Address | null;
     poolFee: number | null;
@@ -43,6 +44,8 @@ function shortAddress(address: string) {
 }
 
 function verificationLabel(asset: BasketAsset) {
+  if (asset.verification === "robinhood-testnet-faucet-stock")
+    return "Robinhood faucet stock";
   if (asset.verification === "official-robinhood-current-chain")
     return "Official on this chain";
   if (asset.verification === "robyn-testnet-mock") return "Robyn testnet mock";

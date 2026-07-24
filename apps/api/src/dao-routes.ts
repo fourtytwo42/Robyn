@@ -10,6 +10,7 @@ import {
 
 type DaoDeployment = {
   deploymentBlock: number;
+  liquidityVenue?: "uniswap-v4" | "uniswap-v3";
   contracts: {
     daoToken: Address;
     governor: Address;
@@ -69,6 +70,9 @@ const launchRegisteredEvent = parseAbiItem(
 );
 const launchAccountAbi = parseAbi([
   "function launchAccount(address) view returns ((address creator,address vault,address market,address locker,uint256 pendingCreatorBase,uint256 pendingDaoRewardBase,uint256 pendingTreasuryBase,uint256 cumulativeBaseFees,uint256 cumulativeLaunchFeesConverted,uint256 cumulativeNativeConverted,uint256 claimableCreatorNative,uint256 cumulativeCreatorNative,uint256 claimedCreatorNative,bool registered))",
+]);
+const nativeLaunchAccountAbi = parseAbi([
+  "function launchAccount(address) view returns ((address creator,address vault,address market,address locker,uint256 cumulativeNativeFees,uint256 cumulativeLaunchFeesConverted,uint256 claimableCreatorNative,uint256 cumulativeCreatorNative,uint256 claimedCreatorNative,bool registered))",
 ]);
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const stateNames = [
@@ -348,6 +352,35 @@ export function registerDaoRoutes(
     ]);
     const launchFees = await Promise.all(
       registeredLogs.map(async (log) => {
+        if (deployment.liquidityVenue === "uniswap-v4") {
+          const feeAccount = await rpcClient.readContract({
+            address: protocolFeeRouter,
+            abi: nativeLaunchAccountAbi,
+            functionName: "launchAccount",
+            args: [log.args.token],
+          });
+          return {
+            token: log.args.token,
+            creator: feeAccount.creator,
+            vault: feeAccount.vault,
+            market: feeAccount.market,
+            locker: feeAccount.locker,
+            pendingCreatorBase: "0",
+            pendingDaoRewardBase: "0",
+            pendingTreasuryBase: "0",
+            cumulativeBaseFees: feeAccount.cumulativeNativeFees.toString(),
+            cumulativeNativeFees: feeAccount.cumulativeNativeFees.toString(),
+            cumulativeLaunchFeesConverted:
+              feeAccount.cumulativeLaunchFeesConverted.toString(),
+            cumulativeNativeConverted:
+              feeAccount.cumulativeNativeFees.toString(),
+            claimableCreatorNative:
+              feeAccount.claimableCreatorNative.toString(),
+            cumulativeCreatorNative:
+              feeAccount.cumulativeCreatorNative.toString(),
+            claimedCreatorNative: feeAccount.claimedCreatorNative.toString(),
+          };
+        }
         const feeAccount = await rpcClient.readContract({
           address: protocolFeeRouter,
           abi: launchAccountAbi,
@@ -435,12 +468,20 @@ export function registerDaoRoutes(
     const viewer = request.query.account
       ? getAddress(request.query.account)
       : undefined;
-    const feeAccount = await rpcClient.readContract({
-      address: deployment.contracts.protocolFeeRouter,
-      abi: launchAccountAbi,
-      functionName: "launchAccount",
-      args: [token],
-    });
+    const feeAccount =
+      deployment.liquidityVenue === "uniswap-v4"
+        ? await rpcClient.readContract({
+            address: deployment.contracts.protocolFeeRouter,
+            abi: nativeLaunchAccountAbi,
+            functionName: "launchAccount",
+            args: [token],
+          })
+        : await rpcClient.readContract({
+            address: deployment.contracts.protocolFeeRouter,
+            abi: launchAccountAbi,
+            functionName: "launchAccount",
+            args: [token],
+          });
     if (!feeAccount.registered) {
       return reply.code(404).send({ error: "launch_not_found" });
     }
@@ -450,7 +491,11 @@ export function registerDaoRoutes(
         creator: feeAccount.creator,
         viewerIsCreator:
           viewer?.toLowerCase() === feeAccount.creator.toLowerCase(),
-        pendingCreatorBase: feeAccount.pendingCreatorBase.toString(),
+        pendingCreatorBase:
+          "pendingCreatorBase" in feeAccount
+            ? feeAccount.pendingCreatorBase.toString()
+            : "0",
+        pendingCreatorNative: "0",
         claimableNative: feeAccount.claimableCreatorNative.toString(),
         lifetimeAccruedNative: feeAccount.cumulativeCreatorNative.toString(),
         lifetimeClaimedNative: feeAccount.claimedCreatorNative.toString(),

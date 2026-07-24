@@ -24,15 +24,18 @@ import {
   protocolNativeJobId,
   shouldSupersedeProtocolFailure,
 } from "./eligibility.js";
+import { databaseText, redisConnectionOptions } from "./runtime-config.js";
 
 type Manifest = {
   chainId: number;
+  liquidityVenue?: "uniswap-v4" | "uniswap-v3";
   contracts: {
     factory: Address;
     baseAsset?: Address;
     wrappedNative?: Address;
     protocolFeeRouter?: Address;
     nativeFeeConverter?: Address;
+    assetRouter?: Address;
   };
   market?: { type?: string; poolFeePips?: number };
 };
@@ -88,6 +91,7 @@ if (manifest.chainId !== expectedChainId) {
     `Keeper manifest chain ${manifest.chainId} does not match ${expectedChainId}`,
   );
 }
+const isNativeV4 = manifest.liquidityVenue === "uniswap-v4";
 
 const rpcUrl =
   process.env.ROBYN_OPERATOR_RPC_URL ??
@@ -138,11 +142,7 @@ if ((await publicClient.getChainId()) !== manifest.chainId) {
 }
 
 const redisUrl = new URL(process.env.REDIS_URL ?? "redis://127.0.0.1:6379");
-const connection = {
-  host: redisUrl.hostname,
-  port: Number(redisUrl.port || "6379"),
-  maxRetriesPerRequest: null,
-};
+const connection = redisConnectionOptions(redisUrl.toString());
 const auditRedis = new Redis(redisUrl.toString(), {
   maxRetriesPerRequest: 1,
   enableReadyCheck: true,
@@ -239,6 +239,67 @@ const vaultAbi = [
     outputs: [{ type: "uint256" }],
   },
 ] as const;
+const nativeVaultAbi = [
+  {
+    type: "function",
+    name: "legCount",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "minimumConversionNative",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "maximumPendingDelay",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "assetRouter",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "leg",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "asset", type: "address" },
+          { name: "weightBps", type: "uint16" },
+          { name: "pendingNative", type: "uint256" },
+          { name: "consumedNative", type: "uint256" },
+          { name: "rewardsDeposited", type: "uint256" },
+          { name: "pendingSince", type: "uint256" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "convertLeg",
+    stateMutability: "nonpayable",
+    inputs: [
+      { type: "uint256" },
+      { type: "uint256" },
+      { type: "uint256" },
+      { type: "uint256" },
+    ],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
 const routerAbi = [
   {
     type: "function",
@@ -253,6 +314,42 @@ const routerAbi = [
     stateMutability: "view",
     inputs: [{ type: "address" }, { type: "address" }, { type: "uint256" }],
     outputs: [{ type: "uint256" }],
+  },
+] as const;
+const v4AssetRouterAbi = [
+  {
+    type: "function",
+    name: "route",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "fee", type: "uint24" },
+          { name: "tickSpacing", type: "int24" },
+          { name: "hooks", type: "address" },
+          { name: "minimumLiquidity", type: "uint128" },
+          { name: "maximumNativeInput", type: "uint128" },
+          { name: "verificationClass", type: "bytes32" },
+          { name: "enabled", type: "bool" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "quoteNativeToAsset",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "address" }, { type: "uint128" }],
+    outputs: [{ type: "uint256" }, { type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "quoteAssetToNative",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "address" }, { type: "uint128" }],
+    outputs: [{ type: "uint256" }, { type: "uint256" }],
   },
 ] as const;
 const uniswapMarketAbi = [
@@ -300,6 +397,77 @@ const positionLockerAbi = [
     stateMutability: "nonpayable",
     inputs: [],
     outputs: [{ type: "uint256" }, { type: "uint256" }],
+  },
+] as const;
+const v4PositionLockerAbi = [
+  {
+    type: "function",
+    name: "maximumNativeSaleOutput",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint128" }],
+  },
+  {
+    type: "function",
+    name: "initialized",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "collectFees",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "uint128" }, { type: "uint128" }],
+    outputs: [{ type: "uint256" }, { type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "routeCollectedNative",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "uint256" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "convertCollectedToken",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "uint128" }, { type: "uint256" }, { type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+const nativeProtocolFeeRouterAbi = [
+  {
+    type: "function",
+    name: "launchAccount",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "creator", type: "address" },
+          { name: "vault", type: "address" },
+          { name: "market", type: "address" },
+          { name: "locker", type: "address" },
+          { name: "cumulativeNativeFees", type: "uint256" },
+          { name: "cumulativeLaunchFeesConverted", type: "uint256" },
+          { name: "claimableCreatorNative", type: "uint256" },
+          { name: "cumulativeCreatorNative", type: "uint256" },
+          { name: "claimedCreatorNative", type: "uint256" },
+          { name: "registered", type: "bool" },
+        ],
+      },
+    ],
+  },
+] as const;
+const erc20BalanceAbi = [
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "uint256" }],
   },
 ] as const;
 const protocolFeeRouterAbi = [
@@ -376,7 +544,7 @@ async function audit(
     state,
     attempts,
     JSON.stringify(payload),
-    lastError,
+    databaseText(lastError),
     JSON.stringify(result),
   ];
   await sql.begin(async (transaction) => {
@@ -386,7 +554,14 @@ async function audit(
     );
     await transaction.unsafe(
       "INSERT INTO job_audit_events (idempotency_key,queue,state,attempts,last_error,result) VALUES ($1,$2,$3,$4,$5,$6::jsonb)",
-      [key, queueName, state, attempts, lastError, JSON.stringify(result)],
+      [
+        key,
+        queueName,
+        state,
+        attempts,
+        databaseText(lastError),
+        JSON.stringify(result),
+      ],
     );
   });
 }
@@ -508,6 +683,40 @@ async function reconcileLegacyStreamJobs() {
 }
 
 async function readLeg(vault: Address, legIndex: bigint) {
+  if (isNativeV4) {
+    const [minimum, delay, leg, block] = await Promise.all([
+      publicClient.readContract({
+        address: vault,
+        abi: nativeVaultAbi,
+        functionName: "minimumConversionNative",
+      }),
+      publicClient.readContract({
+        address: vault,
+        abi: nativeVaultAbi,
+        functionName: "maximumPendingDelay",
+      }),
+      publicClient.readContract({
+        address: vault,
+        abi: nativeVaultAbi,
+        functionName: "leg",
+        args: [legIndex],
+      }),
+      publicClient.getBlock(),
+    ]);
+    return {
+      minimum,
+      delay,
+      leg: {
+        asset: leg.asset,
+        weightBps: leg.weightBps,
+        pendingBase: leg.pendingNative,
+        consumedBase: leg.consumedNative,
+        rewardsDeposited: leg.rewardsDeposited,
+        pendingSince: leg.pendingSince,
+      },
+      timestamp: block.timestamp,
+    };
+  }
   const [minimum, delay, leg, block] = await Promise.all([
     publicClient.readContract({
       address: vault,
@@ -539,10 +748,12 @@ async function scan() {
     [manifest.chainId],
   );
   for (const launch of launches) {
-    if (manifest.market?.type === "uniswap-v3-bonding-curve-v1") {
+    if (isNativeV4 || manifest.market?.type === "uniswap-v3-bonding-curve-v1") {
       await enqueueHarvest(launch);
     }
-    if (
+    if (isNativeV4 && manifest.contracts.protocolFeeRouter) {
+      await enqueueV4LaunchFeeConversion(launch);
+    } else if (
       manifest.contracts.protocolFeeRouter &&
       manifest.contracts.nativeFeeConverter
     ) {
@@ -550,7 +761,7 @@ async function scan() {
     }
     const count = await publicClient.readContract({
       address: launch.vault,
-      abi: vaultAbi,
+      abi: isNativeV4 ? nativeVaultAbi : vaultAbi,
       functionName: "legCount",
     });
     for (let index = 0n; index < count; index++) {
@@ -610,6 +821,116 @@ async function safeMinimum(
     account: operator,
   });
   return simulation.result;
+}
+
+async function v4LaunchFeePlan(
+  token: Address,
+  locker: Address,
+  pending: bigint,
+) {
+  const assetRouter = manifest.contracts.assetRouter;
+  if (!assetRouter) throw new Error("V4 asset router is missing");
+  let input = pending > 2n ** 128n - 1n ? 2n ** 128n - 1n : pending;
+  let quotedNative = (
+    await publicClient.simulateContract({
+      address: assetRouter,
+      abi: v4AssetRouterAbi,
+      functionName: "quoteAssetToNative",
+      args: [token, input],
+      account: operator,
+    })
+  ).result[0];
+  const maximumNative = await publicClient.readContract({
+    address: locker,
+    abi: v4PositionLockerAbi,
+    functionName: "maximumNativeSaleOutput",
+  });
+  if (quotedNative > maximumNative) {
+    input = (input * maximumNative * 9_900n) / quotedNative / 10_000n;
+    if (input < minimumLaunchFees) {
+      throw new Error("Safe v4 launch-fee sale batch is below minimum");
+    }
+    quotedNative = (
+      await publicClient.simulateContract({
+        address: assetRouter,
+        abi: v4AssetRouterAbi,
+        functionName: "quoteAssetToNative",
+        args: [token, input],
+        account: operator,
+      })
+    ).result[0];
+  }
+  const minimumNative = (quotedNative * 9_950n) / 10_000n;
+  if (minimumNative === 0n) {
+    throw new Error("V4 launch-fee quote returned zero");
+  }
+  const block = await publicClient.getBlock();
+  return { input, minimumNative, deadline: block.timestamp + 300n };
+}
+
+async function enqueueV4LaunchFeeConversion(launch: {
+  token: Address;
+  vault: Address;
+  market: Address;
+}) {
+  const router = manifest.contracts.protocolFeeRouter;
+  if (!router) return;
+  const account = await publicClient.readContract({
+    address: router,
+    abi: nativeProtocolFeeRouterAbi,
+    functionName: "launchAccount",
+    args: [launch.token],
+  });
+  if (!account.registered) return;
+  const pendingLaunch = await publicClient.readContract({
+    address: launch.token,
+    abi: erc20BalanceAbi,
+    functionName: "balanceOf",
+    args: [account.locker],
+  });
+  await supersedeStaleProtocolDeadLetters(
+    launch.token,
+    "protocol-launch",
+    pendingLaunch,
+  );
+  if (pendingLaunch < minimumLaunchFees) return;
+  try {
+    const plan = await v4LaunchFeePlan(
+      launch.token,
+      account.locker,
+      pendingLaunch,
+    );
+    await publicClient.simulateContract({
+      address: account.locker,
+      abi: v4PositionLockerAbi,
+      functionName: "convertCollectedToken",
+      args: [plan.input, plan.minimumNative, plan.deadline],
+      account: operator,
+    });
+  } catch {
+    // Unsafe oracle, impact, liquidity, or dust state remains queued onchain.
+    return;
+  }
+  const key = protocolLaunchJobId(account.locker);
+  const payload: ProtocolConversionJob = {
+    kind: "protocol-launch",
+    idempotencyKey: key,
+    token: launch.token,
+    locker: account.locker,
+    observedAmount: pendingLaunch.toString(),
+  };
+  const existing = await queue.getJob(key);
+  if (!existing) {
+    await audit(key, "queued", 0, payload);
+    await queue.add("convert-v4-launch-fees", payload, {
+      jobId: key,
+      priority: 2,
+      removeOnComplete: false,
+    });
+  } else if (await existing.isFailed()) {
+    await audit(key, "queued", existing.attemptsMade, payload);
+    await existing.retry();
+  }
 }
 
 async function enqueueProtocolConversions(launch: {
@@ -723,23 +1044,56 @@ async function enqueueHarvest(launch: {
     abi: uniswapMarketAbi,
     functionName: "positionLocker",
   });
-  const positionBound = await publicClient.readContract({
-    address: locker,
-    abi: positionLockerAbi,
-    functionName: "positionBound",
-  });
-  if (!positionBound) return;
-  try {
-    const simulation = await publicClient.simulateContract({
+  if (isNativeV4) {
+    const initialized = await publicClient.readContract({
+      address: locker,
+      abi: v4PositionLockerAbi,
+      functionName: "initialized",
+    });
+    if (!initialized) return;
+    const [nativeBalance, tokenBalance, simulation] = await Promise.all([
+      publicClient.getBalance({ address: locker }),
+      publicClient.readContract({
+        address: launch.token,
+        abi: erc20BalanceAbi,
+        functionName: "balanceOf",
+        args: [locker],
+      }),
+      publicClient.simulateContract({
+        address: locker,
+        abi: v4PositionLockerAbi,
+        functionName: "collectFees",
+        args: [0n, 0n],
+        account: operator,
+      }),
+    ]);
+    if (
+      nativeBalance === 0n &&
+      tokenBalance === 0n &&
+      simulation.result[0] === 0n &&
+      simulation.result[1] === 0n
+    ) {
+      return;
+    }
+  } else {
+    const positionBound = await publicClient.readContract({
       address: locker,
       abi: positionLockerAbi,
-      functionName: "harvest",
-      account: operator,
+      functionName: "positionBound",
     });
-    if (simulation.result[0] === 0n && simulation.result[1] === 0n) return;
-  } catch (error) {
-    if (isEmptyHarvest(error)) return;
-    throw error;
+    if (!positionBound) return;
+    try {
+      const simulation = await publicClient.simulateContract({
+        address: locker,
+        abi: positionLockerAbi,
+        functionName: "harvest",
+        account: operator,
+      });
+      if (simulation.result[0] === 0n && simulation.result[1] === 0n) return;
+    } catch (error) {
+      if (isEmptyHarvest(error)) return;
+      throw error;
+    }
   }
   const observedBlock = await publicClient.getBlockNumber();
   const key = harvestJobId(locker);
@@ -787,6 +1141,64 @@ async function processConversion(
       operation: "convert",
       transactionHash: ("0x" + "0".repeat(64)) as Hash,
       inputAmount: "0",
+    };
+  }
+  if (isNativeV4) {
+    if (current.leg.pendingBase > 2n ** 128n - 1n) {
+      throw new Error("Pending native conversion exceeds uint128");
+    }
+    const assetRouter = await publicClient.readContract({
+      address: job.data.vault,
+      abi: nativeVaultAbi,
+      functionName: "assetRouter",
+    });
+    const route = await publicClient.readContract({
+      address: assetRouter,
+      abi: v4AssetRouterAbi,
+      functionName: "route",
+      args: [current.leg.asset],
+    });
+    const conversionInput =
+      current.leg.pendingBase > route.maximumNativeInput
+        ? route.maximumNativeInput
+        : current.leg.pendingBase;
+    if (conversionInput === 0n) {
+      throw new Error("Native conversion route has a zero input limit");
+    }
+    const quote = await publicClient.simulateContract({
+      address: assetRouter,
+      abi: v4AssetRouterAbi,
+      functionName: "quoteNativeToAsset",
+      args: [current.leg.asset, conversionInput],
+      account: operator,
+    });
+    const expected = quote.result[0];
+    const minimumOutput = (expected * 9_950n) / 10_000n;
+    if (expected === 0n || minimumOutput === 0n) {
+      throw new Error("Native conversion route is unavailable");
+    }
+    const deadline = current.timestamp + 300n;
+    const simulation = await publicClient.simulateContract({
+      address: job.data.vault,
+      abi: nativeVaultAbi,
+      functionName: "convertLeg",
+      args: [legIndex, conversionInput, minimumOutput, deadline],
+      account: operator,
+    });
+    const transactionHash = await walletClient.writeContract(
+      simulation.request,
+    );
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: transactionHash,
+      timeout: 30_000,
+    });
+    if (receipt.status !== "success") {
+      throw new Error("Native basket conversion transaction reverted");
+    }
+    return {
+      operation: "convert",
+      transactionHash,
+      inputAmount: conversionInput.toString(),
     };
   }
   const [baseAsset, router] = await Promise.all([
@@ -854,6 +1266,52 @@ async function processHarvest(
     job.attemptsMade + 1,
     job.data,
   );
+  if (isNativeV4) {
+    const collection = await publicClient.simulateContract({
+      address: job.data.locker,
+      abi: v4PositionLockerAbi,
+      functionName: "collectFees",
+      args: [0n, 0n],
+      account: operator,
+    });
+    let transactionHash = ("0x" + "0".repeat(64)) as Hash;
+    if (collection.result[0] > 0n || collection.result[1] > 0n) {
+      transactionHash = await walletClient.writeContract(collection.request);
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: transactionHash,
+        timeout: 30_000,
+      });
+      if (receipt.status !== "success") {
+        throw new Error("Uniswap v4 fee collection reverted");
+      }
+    }
+    const nativeBalance = await publicClient.getBalance({
+      address: job.data.locker,
+    });
+    if (nativeBalance > 0n) {
+      const routing = await publicClient.simulateContract({
+        address: job.data.locker,
+        abi: v4PositionLockerAbi,
+        functionName: "routeCollectedNative",
+        args: [nativeBalance],
+        account: operator,
+      });
+      transactionHash = await walletClient.writeContract(routing.request);
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: transactionHash,
+        timeout: 30_000,
+      });
+      if (receipt.status !== "success") {
+        throw new Error("Collected native fee routing reverted");
+      }
+    }
+    return {
+      operation: "harvest",
+      transactionHash,
+      inputAmount: nativeBalance.toString(),
+      launchTokenFees: collection.result[1].toString(),
+    };
+  }
   let simulation;
   try {
     simulation = await publicClient.simulateContract({
@@ -896,6 +1354,51 @@ async function processProtocolConversion(
     job.attemptsMade + 1,
     job.data,
   );
+  if (isNativeV4) {
+    if (job.data.kind !== "protocol-launch") {
+      throw new Error("Native v4 has no base-to-native protocol conversion");
+    }
+    const pending = await publicClient.readContract({
+      address: job.data.token,
+      abi: erc20BalanceAbi,
+      functionName: "balanceOf",
+      args: [job.data.locker],
+    });
+    if (pending < minimumLaunchFees) {
+      return {
+        operation: "protocol-launch",
+        transactionHash: ("0x" + "0".repeat(64)) as Hash,
+        inputAmount: "0",
+      };
+    }
+    const plan = await v4LaunchFeePlan(
+      job.data.token,
+      job.data.locker,
+      pending,
+    );
+    const simulation = await publicClient.simulateContract({
+      address: job.data.locker,
+      abi: v4PositionLockerAbi,
+      functionName: "convertCollectedToken",
+      args: [plan.input, plan.minimumNative, plan.deadline],
+      account: operator,
+    });
+    const transactionHash = await walletClient.writeContract(
+      simulation.request,
+    );
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: transactionHash,
+      timeout: 30_000,
+    });
+    if (receipt.status !== "success") {
+      throw new Error("V4 launch-fee conversion reverted");
+    }
+    return {
+      operation: "protocol-launch",
+      transactionHash,
+      inputAmount: plan.input.toString(),
+    };
+  }
   const router = manifest.contracts.protocolFeeRouter;
   const base = manifest.contracts.baseAsset;
   const wrappedNative = manifest.contracts.wrappedNative;

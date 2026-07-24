@@ -85,4 +85,8 @@ export type Deployment = {
       proposalThresholdBps: number;
     };
   };
+  genesis?: {
+    assets: Address[];
+    weightsBps: number[];
+  };
 };

@@ -73,6 +73,34 @@ const vaultAbi = [
     ],
   },
 ] as const;
+const nativeVaultAbi = [
+  {
+    type: "function",
+    name: "legCount",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "leg",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "asset", type: "address" },
+          { name: "weightBps", type: "uint16" },
+          { name: "pendingNative", type: "uint256" },
+          { name: "consumedNative", type: "uint256" },
+          { name: "rewardsDeposited", type: "uint256" },
+          { name: "pendingSince", type: "uint256" },
+        ],
+      },
+    ],
+  },
+] as const;
 
 const symbolAbi = [
   {
@@ -144,7 +172,10 @@ export function NetworkPortfolioView() {
           }),
           client.readContract({
             address: launch.vault as Address,
-            abi: vaultAbi,
+            abi:
+              launch.metrics?.liquidityVenue === "uniswap-v4"
+                ? nativeVaultAbi
+                : vaultAbi,
             functionName: "legCount",
           }),
         ]);
@@ -180,20 +211,30 @@ export function NetworkPortfolioView() {
           }),
         );
         const legs = await Promise.all(
-          Array.from({ length: Number(legCount) }, (_, index) =>
-            client.readContract({
+          Array.from({ length: Number(legCount) }, async (_, index) => {
+            if (launch.metrics?.liquidityVenue === "uniswap-v4") {
+              const leg = await client.readContract({
+                address: launch.vault as Address,
+                abi: nativeVaultAbi,
+                functionName: "leg",
+                args: [BigInt(index)],
+              });
+              return leg.pendingNative;
+            }
+            const leg = await client.readContract({
               address: launch.vault as Address,
               abi: vaultAbi,
               functionName: "leg",
               args: [BigInt(index)],
-            }),
-          ),
+            });
+            return leg.pendingBase;
+          }),
         );
         return {
           launch,
           balance,
           rewards,
-          pendingBase: legs.reduce((sum, leg) => sum + leg.pendingBase, 0n),
+          pendingBase: legs.reduce((sum, pending) => sum + pending, 0n),
         };
       }),
     );
@@ -276,8 +317,13 @@ export function NetworkPortfolioView() {
                   </dd>
                 </div>
                 <div>
-                  <dt>Launch-level pending cash</dt>
-                  <dd>{amount(position.pendingBase)} tmUSD</dd>
+                  <dt>Launch-level pending basket conversion</dt>
+                  <dd>
+                    {amount(position.pendingBase)}{" "}
+                    {position.launch.metrics?.liquidityVenue === "uniswap-v4"
+                      ? "ETH"
+                      : "tmUSD"}
+                  </dd>
                 </div>
               </dl>
               <div className="reward-columns">

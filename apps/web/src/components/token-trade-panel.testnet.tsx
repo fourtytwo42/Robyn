@@ -24,12 +24,28 @@ const erc20Abi = [
     outputs: [{ type: "bool" }],
   },
 ] as const;
-const marketAbi = [
+const legacyMarketAbi = [
   {
     type: "function",
     name: "buy",
     stateMutability: "nonpayable",
     inputs: [{ type: "uint256" }, { type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "sell",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "uint256" }, { type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+const nativeMarketAbi = [
+  {
+    type: "function",
+    name: "buy",
+    stateMutability: "payable",
+    inputs: [{ type: "uint256" }],
     outputs: [{ type: "uint256" }],
   },
   {
@@ -63,8 +79,9 @@ export function NetworkTokenTradePanel({
   basePerToken: string;
 }) {
   const router = useRouter();
+  const isNativeV4 = deployment.liquidityVenue === "uniswap-v4";
   const [side, setSide] = useState<"buy" | "sell">("buy");
-  const [input, setInput] = useState("100");
+  const [input, setInput] = useState(isNativeV4 ? "0.001" : "100");
   const {
     account,
     publicClient,
@@ -92,12 +109,14 @@ export function NetworkTokenTradePanel({
   async function refresh(address: Address) {
     if (!publicClient) return;
     const [base, held] = await Promise.all([
-      publicClient.readContract({
-        address: deployment.contracts.baseAsset,
-        abi: erc20Abi,
-        functionName: "balanceOf",
-        args: [address],
-      }),
+      isNativeV4
+        ? publicClient.getBalance({ address })
+        : publicClient.readContract({
+            address: deployment.contracts.baseAsset,
+            abi: erc20Abi,
+            functionName: "balanceOf",
+            args: [address],
+          }),
       publicClient.readContract({
         address: token,
         abi: erc20Abi,
@@ -142,22 +161,53 @@ export function NetworkTokenTradePanel({
     setBusy(true);
     try {
       const amount = parseEther(input);
-      const asset = side === "buy" ? deployment.contracts.baseAsset : token;
-      setStatus(`Approving ${side === "buy" ? "mUSD" : symbol}…`);
-      const approval = await walletClient.writeContract({
-        address: asset,
-        abi: erc20Abi,
-        functionName: "approve",
-        args: [market, amount],
-      });
-      await publicClient.waitForTransactionReceipt({ hash: approval });
+      if (!isNativeV4 || side === "sell") {
+        const asset = side === "buy" ? deployment.contracts.baseAsset : token;
+        setStatus(`Approving ${side === "buy" ? "mUSD" : symbol}…`);
+        const approval = await walletClient.writeContract({
+          address: asset,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [market, amount],
+        });
+        const approvalReceipt = await publicClient.waitForTransactionReceipt({
+          hash: approval,
+        });
+        if (approvalReceipt.status !== "success") {
+          throw new Error("Token approval reverted.");
+        }
+      }
       setStatus(`${side === "buy" ? "Buying" : "Selling"} ${symbol}…`);
-      const hash = await walletClient.writeContract({
-        address: market,
-        abi: marketAbi,
-        functionName: side,
-        args: [amount, 1n],
-      });
+      let hash;
+      if (isNativeV4 && side === "buy") {
+        const simulation = await publicClient.simulateContract({
+          account,
+          address: market,
+          abi: nativeMarketAbi,
+          functionName: "buy",
+          args: [1n],
+          value: amount,
+        });
+        hash = await walletClient.writeContract(simulation.request);
+      } else if (isNativeV4) {
+        const simulation = await publicClient.simulateContract({
+          account,
+          address: market,
+          abi: nativeMarketAbi,
+          functionName: "sell",
+          args: [amount, 1n],
+        });
+        hash = await walletClient.writeContract(simulation.request);
+      } else {
+        const simulation = await publicClient.simulateContract({
+          account,
+          address: market,
+          abi: legacyMarketAbi,
+          functionName: side,
+          args: [amount, 1n],
+        });
+        hash = await walletClient.writeContract(simulation.request);
+      }
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success")
         throw new Error("Transaction reverted.");
@@ -177,9 +227,22 @@ export function NetworkTokenTradePanel({
       side={side}
       onSideChange={(value) => {
         setSide(value);
-        setInput(value === "buy" ? "100" : "10000");
+        setInput(
+          value === "buy" && isNativeV4
+            ? "0.001"
+            : value === "buy"
+              ? "100"
+              : "10000",
+        );
       }}
-      dirty={input !== (side === "buy" ? "100" : "10000")}
+      dirty={
+        input !==
+        (side === "buy" && isNativeV4
+          ? "0.001"
+          : side === "buy"
+            ? "100"
+            : "10000")
+      }
     >
       <div className="trade-tabs" role="tablist" aria-label="Trade side">
         {(["buy", "sell"] as const).map((value) => (
@@ -191,7 +254,13 @@ export function NetworkTokenTradePanel({
             className={side === value ? "active" : ""}
             onClick={() => {
               setSide(value);
-              setInput(value === "buy" ? "100" : "10000");
+              setInput(
+                value === "buy" && isNativeV4
+                  ? "0.001"
+                  : value === "buy"
+                    ? "100"
+                    : "10000",
+              );
             }}
           >
             {value}
@@ -212,32 +281,44 @@ export function NetworkTokenTradePanel({
             inputMode="decimal"
             onChange={(event) => setInput(event.target.value)}
             aria-label={
-              side === "buy" ? "Amount in mUSD" : `Amount in ${symbol}`
+              side === "buy"
+                ? `Amount in ${isNativeV4 ? "ETH" : "mUSD"}`
+                : `Amount in ${symbol}`
             }
           />
-          <strong>{side === "buy" ? "mUSD" : symbol}</strong>
+          <strong>
+            {side === "buy" ? (isNativeV4 ? "ETH" : "mUSD") : symbol}
+          </strong>
         </div>
       </label>
       <div className="quick-amounts">
-        {(side === "buy" ? [25, 100, 250] : [10000, 100000, 500000]).map(
-          (value) => (
-            <button
-              type="button"
-              key={value}
-              onClick={() => setInput(String(value))}
-            >
-              {value.toLocaleString()}
-            </button>
-          ),
-        )}
+        {(side === "buy"
+          ? isNativeV4
+            ? [0.0005, 0.001, 0.0025]
+            : [25, 100, 250]
+          : [10000, 100000, 500000]
+        ).map((value) => (
+          <button
+            type="button"
+            key={value}
+            onClick={() => setInput(String(value))}
+          >
+            {value.toLocaleString()}
+          </button>
+        ))}
       </div>
       <div className="trade-receive">
         <span>You receive approximately</span>
         <strong>
           {output.toLocaleString(undefined, { maximumFractionDigits: 2 })}{" "}
-          {side === "buy" ? symbol : "mUSD"}
+          {side === "buy" ? symbol : isNativeV4 ? "ETH" : "mUSD"}
         </strong>
-        <small>Testnet mock market · {(feeBps / 100).toFixed(2)}% fee</small>
+        <small>
+          {isNativeV4
+            ? "Native ETH bonding and locked Uniswap v4 market"
+            : "Testnet mock market"}{" "}
+          · {(feeBps / 100).toFixed(2)}% fee
+        </small>
       </div>
       <button
         className="button primary trade-submit"

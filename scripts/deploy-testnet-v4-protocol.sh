@@ -338,6 +338,14 @@ launch_receipt="$(cast send --rpc-url "$rpc_url" "${wallet_args[@]}" --json "$co
 }
 launch_tx="$(jq -er '.transactionHash // .transaction_hash' <<<"$launch_receipt")"
 launch="$(ROBYN_TESTNET_RPC_URL="$rpc_url" node scripts/decode-v4-launch-receipt.mjs "$launch_tx")"
+launch="$(
+  jq -c \
+    --arg tsla "$tsla" \
+    --arg amd "$amd" \
+    --arg amzn "$amzn" \
+    '. + {assets: [$tsla, $amd, $amzn], weightsBps: [4000, 4000, 2000]}' \
+    <<<"$launch"
+)"
 launch_coordinator="$(jq -r '.coordinator' <<<"$launch" | tr '[:upper:]' '[:lower:]')"
 [[ "$launch_coordinator" == "${coordinator,,}" ]] || {
   echo "Receipt-derived coordinator identity mismatch" >&2

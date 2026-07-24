@@ -288,6 +288,68 @@ const vaultAbi = [
     outputs: [{ type: "uint256" }],
   },
 ] as const;
+const nativeVaultAbi = [
+  {
+    type: "function",
+    name: "legCount",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "leg",
+    stateMutability: "view",
+    inputs: [{ type: "uint256" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "asset", type: "address" },
+          { name: "weightBps", type: "uint16" },
+          { name: "pendingNative", type: "uint256" },
+          { name: "consumedNative", type: "uint256" },
+          { name: "rewardsDeposited", type: "uint256" },
+          { name: "pendingSince", type: "uint256" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "convertLeg",
+    stateMutability: "nonpayable",
+    inputs: [
+      { type: "uint256" },
+      { type: "uint256" },
+      { type: "uint256" },
+      { type: "uint256" },
+    ],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+const v4AssetRouterAbi = [
+  {
+    type: "function",
+    name: "route",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "fee", type: "uint24" },
+          { name: "tickSpacing", type: "int24" },
+          { name: "hooks", type: "address" },
+          { name: "minimumLiquidity", type: "uint128" },
+          { name: "maximumNativeInput", type: "uint128" },
+          { name: "verificationClass", type: "bytes32" },
+          { name: "enabled", type: "bool" },
+        ],
+      },
+    ],
+  },
+] as const;
 
 type Launch = {
   id: bigint;
@@ -669,27 +731,55 @@ export function NetworkLaunchpadConsole({
         setStatus("Converting every eligible pending basket leg...");
         const legCount = await publicClient.readContract({
           address: launch.vault,
-          abi: vaultAbi,
+          abi:
+            deployment.liquidityVenue === "uniswap-v4"
+              ? nativeVaultAbi
+              : vaultAbi,
           functionName: "legCount",
         });
         for (let index = 0n; index < legCount; index++) {
-          const leg = await publicClient.readContract({
-            address: launch.vault,
-            abi: vaultAbi,
-            functionName: "leg",
-            args: [index],
-          });
-          const threshold =
+          const leg =
             deployment.liquidityVenue === "uniswap-v4"
-              ? 1_000_000_000_000n
-              : parseEther("1");
-          if (leg.pendingBase === 0n) continue;
-          const conversionAmount =
-            leg.pendingBase > threshold ? threshold : leg.pendingBase;
+              ? await publicClient.readContract({
+                  address: launch.vault,
+                  abi: nativeVaultAbi,
+                  functionName: "leg",
+                  args: [index],
+                })
+              : await publicClient.readContract({
+                  address: launch.vault,
+                  abi: vaultAbi,
+                  functionName: "leg",
+                  args: [index],
+                });
+          const pending =
+            "pendingNative" in leg ? leg.pendingNative : leg.pendingBase;
+          const threshold =
+            deployment.liquidityVenue === "uniswap-v4" ? 1n : parseEther("1");
+          if (pending === 0n) continue;
+          let conversionAmount = pending > threshold ? threshold : pending;
+          if (deployment.liquidityVenue === "uniswap-v4") {
+            const assetRouter = deployment.contracts.assetRouter;
+            if (!assetRouter)
+              throw new Error("V4 asset router is not configured.");
+            const route = await publicClient.readContract({
+              address: assetRouter,
+              abi: v4AssetRouterAbi,
+              functionName: "route",
+              args: [leg.asset],
+            });
+            conversionAmount =
+              pending > route.maximumNativeInput
+                ? route.maximumNativeInput
+                : pending;
+          }
           try {
             await submit({
               address: launch.vault,
-              abi: vaultAbi,
+              abi:
+                deployment.liquidityVenue === "uniswap-v4"
+                  ? nativeVaultAbi
+                  : vaultAbi,
               functionName: "convertLeg",
               args: [
                 index,
@@ -700,13 +790,25 @@ export function NetworkLaunchpadConsole({
               account,
             });
           } catch (error) {
-            const latest = await publicClient.readContract({
-              address: launch.vault,
-              abi: vaultAbi,
-              functionName: "leg",
-              args: [index],
-            });
-            if (latest.pendingBase >= threshold) throw error;
+            const latest =
+              deployment.liquidityVenue === "uniswap-v4"
+                ? await publicClient.readContract({
+                    address: launch.vault,
+                    abi: nativeVaultAbi,
+                    functionName: "leg",
+                    args: [index],
+                  })
+                : await publicClient.readContract({
+                    address: launch.vault,
+                    abi: vaultAbi,
+                    functionName: "leg",
+                    args: [index],
+                  });
+            const latestPending =
+              "pendingNative" in latest
+                ? latest.pendingNative
+                : latest.pendingBase;
+            if (latestPending >= threshold) throw error;
           }
         }
       } else {
