@@ -965,6 +965,7 @@ async function conversions() {
   const tokenAbi = artifactAbi("RobynLaunchToken");
   state.conversions ??= { legs: [] };
   state.conversions.harvests ??= [];
+  state.conversions.batchAdjustments ??= [];
   for (const launchIndex of state.trading.graduatedLaunches) {
     const launch = state.launches[launchIndex];
     const account = privateKeyToAccount(accounts[graduationActorIndex(launchIndex)].privateKey);
@@ -991,16 +992,47 @@ async function conversions() {
       if (before.pendingNative === 0n) throw new Error(`No pending basket fees for ${label}`);
       const status = await publicClient.readContract({ address: manifest.contracts.assetRouter, abi: assetRouterAbi, functionName: "routeStatus", args: [before.asset] });
       if (!status.ready) throw new Error(`Basket route is not ready for ${before.asset}`);
-      const amount = before.pendingNative < status.maximumNativeInput ? before.pendingNative : status.maximumNativeInput;
-      const [quoted] = await publicClient.readContract({
-        address: manifest.contracts.assetRouter,
-        abi: assetRouterAbi,
-        functionName: "quoteNativeToAsset",
-        args: [before.asset, amount],
-      });
-      if (quoted === 0n) throw new Error(`Zero basket quote for ${label}`);
       const account = privateKeyToAccount(accounts[80 + launch.index].privateKey);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
+      let amount = before.pendingNative < status.maximumNativeInput ? before.pendingNative : status.maximumNativeInput;
+      let quoted;
+      let minimumOutput;
+      for (let attempt = 0; attempt < 16; attempt += 1) {
+        [quoted] = await publicClient.readContract({
+          address: manifest.contracts.assetRouter,
+          abi: assetRouterAbi,
+          functionName: "quoteNativeToAsset",
+          args: [before.asset, amount],
+        });
+        if (quoted === 0n) throw new Error(`Zero basket quote for ${label}`);
+        minimumOutput = (quoted * 99n) / 100n;
+        const request = {
+          account: account.address,
+          to: launch.vault,
+          data: encodeFunctionData({
+            abi: vaultAbi,
+            functionName: "convertLeg",
+            args: [BigInt(legIndex), amount, minimumOutput, deadline],
+          }),
+        };
+        try {
+          await publicClient.call(request);
+          break;
+        } catch (error) {
+          const message = String(error?.shortMessage ?? error?.message ?? error);
+          state.conversions.batchAdjustments.push({
+            label,
+            attempt,
+            rejectedAmount: amount.toString(),
+            reason: message.slice(0, 500),
+          });
+          saveState(state);
+          if (amount <= 1n || attempt === 15) {
+            throw new Error(`No safe basket conversion batch for ${label}: ${message}`);
+          }
+          amount /= 2n;
+        }
+      }
       if (launch.index === 0 && legIndex === 0) {
         await expectSimulationFailure(
           state,
@@ -1013,7 +1045,7 @@ async function conversions() {
           /revert|execution/i,
         );
       }
-      await contractTransaction(state, label, account, launch.vault, vaultAbi, "convertLeg", [BigInt(legIndex), amount, (quoted * 99n) / 100n, deadline]);
+      await contractTransaction(state, label, account, launch.vault, vaultAbi, "convertLeg", [BigInt(legIndex), amount, minimumOutput, deadline]);
       const after = await publicClient.readContract({ address: launch.vault, abi: vaultAbi, functionName: "leg", args: [BigInt(legIndex)] });
       if (after.pendingNative >= before.pendingNative || after.rewardsDeposited <= before.rewardsDeposited) {
         throw new Error(`Basket conversion did not advance ${label}`);

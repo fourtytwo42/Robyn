@@ -28,6 +28,15 @@ Durable project context lives here. Update this file whenever information should
   graduation top-ups include ample remaining gas without increasing the
   preflight-approved total or adding top-up transactions.
 
+- Adaptive basket-batch correction (2026-07-24): after all three graduated
+  locker harvest, native routing and launch-token conversion paths passed, the
+  first basket conversion correctly reverted before broadcast because its
+  configured maximum batch had drifted just beyond the fixed 1% price-impact
+  ceiling. The campaign now quotes and simulates the exact vault call, halves
+  the batch after each guarded rejection, records every rejected size, and
+  broadcasts only the first batch that passes the contract's current route,
+  reference-price, liquidity, impact and minimum-output checks.
+
 - Timestamp-sensitive gas correction (2026-07-24): exact fork `a902415`
   completed 1,282 product transactions through all buys, transfers, approvals,
   three graduations, and 32 sells before a graduated sell exhausted viem's
