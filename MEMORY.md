@@ -37,6 +37,16 @@ Durable project context lives here. Update this file whenever information should
   broadcasts only the first batch that passes the contract's current route,
   reference-price, liquidity, impact and minimum-output checks.
 
+- Release-blocking protected-route correction (2026-07-24): adaptive batches
+  proved every nonzero faucet-stock conversion could remain impossible because
+  `RobynV4AssetRouter` compared the fee-inclusive v4 quote with a fee-exclusive
+  spot ideal and applied the complete 1% allowance to both pool fee and price
+  impact. Version 1.2.0 now removes the configured pool fee from the ideal
+  output before applying the separate 1% impact ceiling, rejects invalid fee
+  values, and exposes a deterministic quote-floor calculation for boundary
+  tests. This contract change invalidates the preserved schema-v8 rehearsal;
+  fresh contracts and a complete exact-SHA campaign are required.
+
 - Timestamp-sensitive gas correction (2026-07-24): exact fork `a902415`
   completed 1,282 product transactions through all buys, transfers, approvals,
   three graduations, and 32 sells before a graduated sell exhausted viem's
