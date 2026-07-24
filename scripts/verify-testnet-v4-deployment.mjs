@@ -33,6 +33,7 @@ check(
   manifest.venueProvenance === "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
   "unlisted venue disclosure is exact",
 );
+check(manifest.schemaVersion === 7, "deployment manifest schema is v7");
 
 for (const [key, address] of Object.entries(contracts)) {
   const code = await client.getCode({ address });
@@ -55,6 +56,16 @@ for (const [key, transactionHash] of Object.entries(manifest.deploymentTransacti
       `${key} deployment transaction created the manifest address`,
     );
   }
+}
+const configurationTransactions = manifest.configurationTransactions ?? [];
+check(configurationTransactions.length >= 20, "all configuration transactions are frozen");
+check(
+  new Set(configurationTransactions).size === configurationTransactions.length,
+  "configuration transactions contain no duplicates",
+);
+for (const [index, transactionHash] of configurationTransactions.entries()) {
+  const receipt = await client.getTransactionReceipt({ hash: transactionHash });
+  check(receipt.status === "success", `configuration transaction ${index + 1} succeeded`);
 }
 check(
   manifest.deploymentTransactions?.genesis === manifest.genesis.transactionHash,
@@ -82,6 +93,21 @@ const abis = {
 
 async function read(address, abi, functionName, args = []) {
   return client.readContract({ address, abi, functionName, args });
+}
+
+const assetRoutes = manifest.assetRoutes ?? [];
+check(assetRoutes.length === 5, "five exact faucet-stock routes are frozen");
+for (const route of assetRoutes) {
+  const asset = getAddress(route.address);
+  const status = await read(contracts.assetRouter, abis.assetRouter, "routeStatus", [asset]);
+  check(status.ready, `${route.symbol} route is ready`);
+  check(status.fee === 10_000, `${route.symbol} route uses the 1% fee tier`);
+  check(status.tickSpacing === 200, `${route.symbol} route uses tick spacing 200`);
+  check(
+    status.hooks === getAddress("0x0000000000000000000000000000000000000000"),
+    `${route.symbol} faucet route is hookless`,
+  );
+  check(status.poolId === route.poolId, `${route.symbol} pool ID matches frozen provenance`);
 }
 
 check(

@@ -69,6 +69,19 @@ Durable project context lives here. Update this file whenever information should
   passes 106/106 state, transaction, hash, role, mapping, pool, metadata, and
   reward-exclusion checks. Tampered runtime hashes fail closed. Evidence is in
   `/tmp/robyn-v4-fork-rehearsal/` and no live testnet transaction was sent.
+- V4 full-bundle and financial-smoke checkpoint (2026-07-24): the deployment
+  manifest now freezes 21 setup/binding transactions in addition to 14 contract
+  creations and the genesis launch. An exact-commit chain-46630 fork rehearsal
+  passes 156 independent pre-smoke checks, all five faucet-stock routes swap in
+  both directions, the genesis launch bonds and graduates, its v4 position NFT
+  is owned by the immutable locker, post-graduation buy/sell works, all three
+  basket legs convert and pay holder rewards, creator/RDAO claims succeed, and
+  the fee router remains solvent. The complete 35-transaction bundle used
+  49,147,663 gas. At the sampled live gas and L1 base fee, the conservative
+  25%-headroom requirement was 673,765,911,376,520 wei versus the encrypted
+  deployer's 6,920,854,708,782,403 wei. Evidence is checksummed under
+  `/tmp/robyn-v4-release-gates-ca68d27/`. This is fork evidence only; no live v4
+  transaction has been broadcast.
 - Faucet-stock checkpoint (2026-07-24): the encrypted deployer holds 5 tokens
   each of exact faucet contracts TSLA `0xC9f9...Bd4E`, AMD `0x7117...778d`,
   AMZN `0x5884...9E02`, NFLX `0x3b82...8C93`, and PLTR `0x1FBE...98d0`.

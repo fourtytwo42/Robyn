@@ -67,6 +67,11 @@ ROBYN_TESTNET_RPC_URL="$rpc_url" ROBYN_V4_ALLOW_PENDING=true \
 forge build --root packages/contracts >/dev/null
 
 declare -A addresses txs
+configuration_transaction_log="$(mktemp)"
+cleanup() {
+  rm -f -- "$configuration_transaction_log"
+}
+trap cleanup EXIT
 deploy_contract() {
   local key="$1" contract="$2"
   shift 2
@@ -86,7 +91,10 @@ send_transaction() {
   receipt="$(cast send --rpc-url "$rpc_url" "${wallet_args[@]}" --json "$@")"
   [[ "$(jq -r '.status' <<<"$receipt")" == "0x1" ||
      "$(jq -r '.status' <<<"$receipt")" == "1" ]] || return 1
-  jq -r '.transactionHash // .transaction_hash' <<<"$receipt"
+  local hash
+  hash="$(jq -er '.transactionHash // .transaction_hash' <<<"$receipt")"
+  printf '%s\n' "$hash" >>"$configuration_transaction_log"
+  printf '%s\n' "$hash"
 }
 
 pool_manager="$(jq -er '.contracts.poolManager.address' "$venue_manifest")"
@@ -259,6 +267,7 @@ factory_genesis_token="$(
 }
 
 venue_hash="$(sha256sum "$venue_manifest" | awk '{print $1}')"
+asset_routes="$(jq -c '.faucetStockRoutes' "$venue_manifest")"
 state_view_tx="${txs[stateView]:-$(jq -r '.contracts.stateView.creationTransaction // empty' "$venue_manifest")}"
 deployment_transactions="$(
   jq -n \
@@ -294,6 +303,9 @@ deployment_transactions="$(
       atomicLaunchCoordinator: $atomicLaunchCoordinator,
       genesis: $genesis
     }'
+)"
+configuration_transactions="$(
+  jq -Rsc 'split("\n") | map(select(length > 0))' "$configuration_transaction_log"
 )"
 runtime_hashes="$(
   jq -n \
@@ -348,6 +360,7 @@ jq -n \
   --arg deployer "$deployer" \
   --arg guardian "$guardian" \
   --arg venueManifestSha256 "$venue_hash" \
+  --argjson assetRoutes "$asset_routes" \
   --arg poolManager "$pool_manager" \
   --arg positionManager "$position_manager" \
   --arg quoter "$quoter" \
@@ -369,6 +382,7 @@ jq -n \
   --arg coordinator "$coordinator" \
   --argjson genesis "$launch" \
   --argjson deploymentTransactions "$deployment_transactions" \
+  --argjson configurationTransactions "$configuration_transactions" \
   --argjson runtimeCodeHashes "$runtime_hashes" \
   --arg curveTokens "$curve_tokens" \
   --arg graduationTokens "$graduation_tokens" \
@@ -386,6 +400,7 @@ jq -n \
     liquidityVenue: "uniswap-v4",
     venueProvenance: "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
     venueManifestSha256: $venueManifestSha256,
+    assetRoutes: $assetRoutes,
     contracts: {
       poolManager: $poolManager,
       positionManager: $positionManager,
@@ -407,6 +422,7 @@ jq -n \
       atomicLaunchCoordinator: $coordinator
     },
     deploymentTransactions: $deploymentTransactions,
+    configurationTransactions: $configurationTransactions,
     runtimeCodeHashes: $runtimeCodeHashes,
     oracleHook: {
       create2Deployer: "0x4e59b44847b379578588920cA78FbF26c0B4956C",
