@@ -4,6 +4,28 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Exact schema-v8 campaign rehearsal passed (2026-07-24): pushed commit
+  `6ba989f61947aea2933751e5b712ca1e6552fc86` was deployed on a fresh isolated
+  chain-46630 fork and passed all 490 deployment checks. The 100-wallet
+  campaign completed eight atomic launches, 900 buys, 200 transfers, 150
+  approvals, 150 sells, three graduations, five distinct bonding states, all
+  24 basket conversions, successful/defeated/cancelled governance, 20 holder
+  claims, eight token-specific creator claims, ten RDAO claims, and a complete
+  residual sweep. Final status recorded 2,156 successful transactions, 2,056
+  product writes, no sweep dust, a preserved reserve, and a second `all` run
+  that did not repeat any confirmed transaction. Checksummed raw evidence is
+  under `/tmp/schema8-6ba989f-exact-rehearsal`. This validates campaign
+  execution but is not authorization for public-testnet broadcast; full
+  predeployment gates, exact fork index/API reconciliation, reproducibility,
+  backup, funding preflight, and clean exact `origin/main` remain required.
+
+- Verifier invocation correction (2026-07-24):
+  `scripts/verify-testnet-v4-deployment.mjs` takes the deployment manifest as a
+  positional JSON argument. Setting `ROBYN_TESTNET_V4_PROTOCOL_MANIFEST` alone
+  does not select it and can accidentally verify the default archived manifest.
+  The exact rehearsal was rerun correctly with the schema-v8 manifest path and
+  passed all 490 checks.
+
 - Conversion-runner ABI correction (2026-07-24): exact rehearsal
   `04cd86c` completed the full trading phase with 1,517 confirmed transactions,
   including 900 buys, 200 transfers, 150 approvals, 150 sells, three
