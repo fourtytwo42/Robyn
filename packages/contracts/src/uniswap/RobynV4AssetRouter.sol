@@ -114,7 +114,9 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
     }
 
     function configureRoute(address asset, Route calldata route_) external {
-        if (msg.sender != governor) revert Unauthorized();
+        if (msg.sender != governor && (msg.sender != initializer || launchRegistrar != address(0))) {
+            revert Unauthorized();
+        }
         _configureRoute(asset, route_);
     }
 

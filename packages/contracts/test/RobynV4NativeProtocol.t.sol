@@ -169,6 +169,27 @@ contract RobynV4NativeProtocolTest is Test {
         new RobynV4OracleHook(poolManager, address(0));
     }
 
+    function testAssetRouterBootstrapConfigurationClosesWhenRegistrarBinds() public {
+        RobynV4AssetRouter bootstrapRouter = new RobynV4AssetRouter(poolManager, quoter, stateView, address(0xF00D));
+        RobynV4AssetRouter.Route memory configured = RobynV4AssetRouter.Route({
+            fee: 3_000,
+            tickSpacing: 60,
+            hooks: IHooks(address(0)),
+            minimumLiquidity: 1,
+            maximumNativeInput: 0.1 ether,
+            verificationClass: keccak256("TEST"),
+            enabled: true
+        });
+
+        bootstrapRouter.configureRoute(address(basketAsset), configured);
+        bootstrapRouter.bindLaunchRegistrar(address(marketFactory));
+        vm.expectRevert(RobynV4AssetRouter.Unauthorized.selector);
+        bootstrapRouter.configureRoute(address(basketAsset), configured);
+
+        vm.prank(address(0xF00D));
+        bootstrapRouter.configureRoute(address(basketAsset), configured);
+    }
+
     function testCurveFeesConserveImmutableSplit() public {
         (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
             coordinator.createLaunch(_request(bytes32(uint256(2))));

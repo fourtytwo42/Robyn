@@ -51,6 +51,12 @@ Durable project context lives here. Update this file whenever information should
   `RobynV4OracleHook` now takes an explicit nonzero initializer committed into
   its CREATE2 init code. The focused v4 suite passes 9/9 and the complete
   Foundry suite passes after the correction.
+- Asset-route bootstrap correction (2026-07-24): live route configuration must
+  occur before the immutable timelock becomes the router governor. The asset
+  router now permits its initializer to configure routes only until the launch
+  registrar is bound; afterward only governance may configure them. A focused
+  regression proves initializer access closes, governance remains functional,
+  the v4 suite passes 10/10, and the complete Foundry suite passes.
 - Faucet-stock checkpoint (2026-07-24): the encrypted deployer holds 5 tokens
   each of exact faucet contracts TSLA `0xC9f9...Bd4E`, AMD `0x7117...778d`,
   AMZN `0x5884...9E02`, NFLX `0x3b82...8C93`, and PLTR `0x1FBE...98d0`.
