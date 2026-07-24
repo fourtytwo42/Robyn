@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "provenance": "robyn-controlled-uniswap-v3-testnet",
+  "officialDeployment": false,
+  "testOnly": true,
+  "chainId": 46630,
+  "deploymentBlock": 92819428,
+  "gitCommit": "effed83837c1754138da80db0c54ad4b1dbae1f8",
+  "deployer": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",
+  "registryCheck": {
+    "url": "https://github.com/Uniswap/contracts/tree/main/deployments",
+    "chain46630Entry": false
+  },
+  "packageVersions": {
+    "v3Core": "1.0.0",
+    "v3Periphery": "1.4.4",
+    "swapRouterContracts": "1.1.0"
+  },
+  "sourceCommits": {
+    "v3Core": "e3589b192d0be27e100cd0daaf6c97204fdb1899",
+    "v3Periphery": "697c2474757ea89fec12a4e6db16a574fe259610",
+    "swapRouterContracts": "8fe4f086cee7c08f0bdb6ebe20c9ab615921c65f"
+  },
+  "packageIntegrity": {
+    "v3Core": "sha512-kSC4djMGKMHj7sLMYVnn61k9nu+lHjMIxgg9CDQT+s2QYLoA56GbSK9Oxr+qJXzzygbkrmuY6cwgP6cW2JXPFA==",
+    "v3Periphery": "sha512-S4+m+wh8HbWSO3DKk4LwUCPZJTpCugIsHrWR86m/OrUyvSqGDTXKFfc2sMuGXCZrD1ZqO3rhQsKgdWg3Hbb2Kw==",
+    "swapRouterContracts": "sha512-GPmpx1lvjXWloB95+YUabr3UHJYr3scnSS8EzaNXnNrIz9nYZ+XQcMaJxOKe85Yi7IfcUQpj0HzD2TW99dtolA=="
+  },
+  "sourceUrls": {
+    "v3Core": "https://www.npmjs.com/package/@uniswap/v3-core/v/1.0.0",
+    "v3Periphery": "https://www.npmjs.com/package/@uniswap/v3-periphery/v/1.4.4",
+    "swapRouterContracts": "https://www.npmjs.com/package/@uniswap/swap-router-contracts/v/1.1.0"
+  },
+  "contracts": {
+    "weth9": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+    "factory": "0xc9c37b9555c7f13a1aa8734ee683d01f6dd990c0",
+    "positionManager": "0x12d65b45e17bafd6b3879dcf1d1851961be8677b",
+    "quoterV2": "0xd014ce0fb0d0cd106a000c2b568b3e5ac1d3d313",
+    "swapRouter02": "0x36b9813408ee6750213db50fe769df730fa00b9b"
+  },
+  "deploymentTransactions": {
+    "weth9": "0xab5830a49bcd27b09f6a6899acff4a2625549ab60b704106822a1c9500b2f4ac",
+    "factory": "0xbe954ae27ea47258ed0373736d3a9a338a2d0d14bb9a1a3bbdf5340374f9e304",
+    "positionManager": "0xdef74057402dd0b50db5c02314a45da3c36650129d0487742b32d48237aff579",
+    "quoterV2": "0x2525d350221754919e707012b5aac4d0750725338f8606341f3dc6f7030cdf7d",
+    "swapRouter02": "0x35440930256f49ab99d5794a67517e8583e10c824efd7515c1644925b2f0e3f5"
+  },
+  "creationBytecodeHashes": {
+    "weth9": "0x54804d5919ea422704bbd994c8f14a7487a43c8593547c507eb86315237f3aaf",
+    "factory": "0xa9cb11ffa1b1bf9a9a2b70b66f6a22db3e8328b37ec44e6ce602749081efdb6d",
+    "positionManager": "0x4752c44d498ca4edd90d377937087a51c83fd31e1cf1d642914ddfc05f043326",
+    "quoterV2": "0x65e6d428db34afa4b516fbe615a61133bd9a54d608b2b78b920a95e45988bf51",
+    "swapRouter02": "0xe009e997ad24f1aac43ff0afe1e237bbbfa356e2282e63f5d9c10e78a08288ae"
+  },
+  "runtimeCodeHashes": {
+    "weth9": "0xa1513c4410cec44875c9b4877dabf3b4c3fc38230be914ac7ab5caf941daabcb",
+    "factory": "0x3034de36f5ee94e72e3e499f9610ec3ca7400ab5d70cdce4db98e157a4b568f7",
+    "positionManager": "0x2d1f5ac89d8e5ee80f931735c9d69d2e82eaccd76c98c24a353b1545cd6ad32a",
+    "quoterV2": "0xac3e154a5f4cdc852ff9f146396f76bcb894f444373f35cbc0f45e3e435c2f59",
+    "swapRouter02": "0x16bcb851d988525eeaff39dad33779182d78b9f542862a5f8c16b2fd96622e29"
+  },
+  "artifactSha256": {
+    "weth9": "21ad6c17427d7984e407cc7fde52cbd5a6264deb25d0b1da7aa03171f3924a27",
+    "factory": "599479f60ebb056804aff7b2d05bdd0830ddbb1fdfaa0b6c62c02294ca7188b0",
+    "positionManager": "bb4f9f1ca393293831e73db52c5425cc336b49dbda2cd9cd2708c4c885221675",
+    "quoterV2": "9d0b8700b8b144aced9b5dd95bce4a68e03eb9a809eac53ac2e3ce739cc7d289",
+    "swapRouter02": "210a7bf29f26de9f45d35dac1214943eca41c3a002007dd6a0e1aa870bf2d2d1"
+  },
+  "constructorArguments": {
+    "weth9": "0x",
+    "factory": "0x",
+    "positionManager": "0x000000000000000000000000c9c37b9555c7f13a1aa8734ee683d01f6dd990c0000000000000000000000000b1babe777effc0c27fd45e34b15dc50fdc6b7d190000000000000000000000000000000000000000000000000000000000000000",
+    "quoterV2": "0x000000000000000000000000c9c37b9555c7f13a1aa8734ee683d01f6dd990c0000000000000000000000000b1babe777effc0c27fd45e34b15dc50fdc6b7d19",
+    "swapRouter02": "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c9c37b9555c7f13a1aa8734ee683d01f6dd990c000000000000000000000000012d65b45e17bafd6b3879dcf1d1851961be8677b000000000000000000000000b1babe777effc0c27fd45e34b15dc50fdc6b7d19"
+  },
+  "factoryConfiguration": {
+    "owner": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",
+    "feeTiers": {
+      "500": 10,
+      "3000": 60,
+      "10000": 200
+    }
+  }
+}

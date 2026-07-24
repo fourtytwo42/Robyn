@@ -21,12 +21,21 @@ importers:
       '@openzeppelin/contracts':
         specifier: 5.4.0
         version: 5.4.0
+      '@uniswap/universal-router':
+        specifier: 2.1.0
+        version: 2.1.0
       '@uniswap/v3-core':
         specifier: 1.0.0
         version: 1.0.0
       '@uniswap/v3-periphery':
         specifier: 1.4.4
         version: 1.4.4
+      '@uniswap/v4-core':
+        specifier: 1.0.2
+        version: 1.0.2
+      '@uniswap/v4-periphery':
+        specifier: 1.0.3
+        version: 1.0.3
       pm2:
         specifier: 7.0.3
         version: 7.0.3(bufferutil@4.1.0)(supports-color@8.1.1)(utf-8-validate@5.0.10)
@@ -1110,6 +1119,9 @@ packages:
   '@openzeppelin/contracts@3.4.2-solc-0.7':
     resolution: {integrity: sha512-W6QmqgkADuFcTLzHL8vVoNBtkwjvQRpYIAom7KiUNoLKghyx3FgH0GBjt8NRvigV1ZmMOBllvE1By1C+bi8WpA==}
 
+  '@openzeppelin/contracts@5.0.2':
+    resolution: {integrity: sha512-ytPc6eLGcHHnapAZ9S+5qsdomhjo6QBHTDRRBFfTxXIpsicMhVPouPgmUPebZZZGX7vt9USA+Z+0M0dSVtSUEA==}
+
   '@openzeppelin/contracts@5.4.0':
     resolution: {integrity: sha512-eCYgWnLg6WO+X52I16TZt8uEjbtdkgLC0SUX/xnAksjjrQI4Xfn4iBRoI5j55dmlOhDv1Y7BoR3cU7e3WWhC6A==}
 
@@ -2032,6 +2044,10 @@ packages:
     resolution: {integrity: sha512-f6UIliwBbRsgVLxIaBANF6w09tYqc6Y/qXdsrbEmXHyFA7ILiKrIwRFXe1yOg8M3cksgVsO9N7yuL2DdCGQKBA==}
     engines: {node: '>=10'}
 
+  '@uniswap/universal-router@2.1.0':
+    resolution: {integrity: sha512-rt18RUsZd9xDfyVfIONJo+TEQ8w+olOYxu9+A1g4Thil1R7IMa+8mnyVQjdLPK2REhejScDwjYbOGpeaAce0hg==}
+    engines: {node: '>=14'}
+
   '@uniswap/v2-core@1.0.1':
     resolution: {integrity: sha512-MtybtkUPSyysqLY2U210NBDeCHX+ltHt3oADGdjqoThZaFRDKwM6k1Nb3F0A3hk5hwuQvytFWhrWHOEq6nVJ8Q==}
     engines: {node: '>=10'}
@@ -2043,6 +2059,12 @@ packages:
   '@uniswap/v3-periphery@1.4.4':
     resolution: {integrity: sha512-S4+m+wh8HbWSO3DKk4LwUCPZJTpCugIsHrWR86m/OrUyvSqGDTXKFfc2sMuGXCZrD1ZqO3rhQsKgdWg3Hbb2Kw==}
     engines: {node: '>=10'}
+
+  '@uniswap/v4-core@1.0.2':
+    resolution: {integrity: sha512-X15Tm2wWd+USAzEExMbo+g9naA6QN6mPgWm0MzDwRNlOfaNlepfUpSyt9RSrUfEODspwbyWbcLg6t5nwc/e7lg==}
+
+  '@uniswap/v4-periphery@1.0.3':
+    resolution: {integrity: sha512-JxLL0Djv9XcMvI2PatEnWrCrxuEaYNVhHxstndBOP+aJfh1XLg5ec8SDZ0xyoVfg2ElJTvuKpBgnu90bNValsg==}
 
   '@unrs/resolver-binding-android-arm-eabi@1.12.2':
     resolution: {integrity: sha512-g5T90pqg1bo/7mytQx6F4iBNC0Wsh9cu+z9veDbFjc7HjpesJFWD7QMS0NGStXM075+7dJPPVvBbpZlnrdpi/w==}
@@ -6287,6 +6309,8 @@ snapshots:
 
   '@openzeppelin/contracts@3.4.2-solc-0.7': {}
 
+  '@openzeppelin/contracts@5.0.2': {}
+
   '@openzeppelin/contracts@5.4.0': {}
 
   '@oxc-project/types@0.139.0': {}
@@ -7522,6 +7546,12 @@ snapshots:
 
   '@uniswap/lib@4.0.1-alpha': {}
 
+  '@uniswap/universal-router@2.1.0':
+    dependencies:
+      '@openzeppelin/contracts': 5.0.2
+      '@uniswap/v2-core': 1.0.1
+      '@uniswap/v3-core': 1.0.0
+
   '@uniswap/v2-core@1.0.1': {}
 
   '@uniswap/v3-core@1.0.0': {}
@@ -7533,6 +7563,10 @@ snapshots:
       '@uniswap/v2-core': 1.0.1
       '@uniswap/v3-core': 1.0.0
       base64-sol: 1.0.1
+
+  '@uniswap/v4-core@1.0.2': {}
+
+  '@uniswap/v4-periphery@1.0.3': {}
 
   '@unrs/resolver-binding-android-arm-eabi@1.12.2':
     optional: true

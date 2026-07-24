@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "archivedAt": "2026-07-24T01:47:28Z",
+  "releaseSha": "b3ab91fc95d318a3bbce0b85b0e19b8ba1fb0170",
+  "chainId": 46630,
+  "reason": "Superseded by native-ETH Uniswap v4 candidate; retained read-only",
+  "activeAtArchive": true
+}

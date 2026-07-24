@@ -19,8 +19,11 @@
   },
   "devDependencies": {
     "@openzeppelin/contracts": "5.4.0",
+    "@uniswap/universal-router": "2.1.0",
     "@uniswap/v3-core": "1.0.0",
     "@uniswap/v3-periphery": "1.4.4",
+    "@uniswap/v4-core": "1.0.2",
+    "@uniswap/v4-periphery": "1.0.3",
     "pm2": "7.0.3",
     "prettier": "3.9.5",
     "prettier-plugin-tailwindcss": "0.8.1",

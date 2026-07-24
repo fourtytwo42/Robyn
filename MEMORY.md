@@ -4,6 +4,39 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Current task (2026-07-24): implement the Mainnet-Fidelity Robinhood Testnet v4
+  release on branch `codex/robinhood-v4-mainnet-fidelity`. The exact starting
+  commit is `b3ab91fc95d318a3bbce0b85b0e19b8ba1fb0170`. The v3 application and
+  deployment remain live and must not be cut over until every v4 gate passes.
+- V4 contract checkpoint (2026-07-24): fresh native-ETH launch factory,
+  coordinator, market factory, bonding market, graduation adapter, oracle-only
+  hook, immutable position locker, basket vault, protocol fee router and asset
+  router are implemented. Eight focused end-to-end tests pass for atomic launch,
+  pool-squatting rejection, exact 50/25/20/5 fee conservation, graduation,
+  locked principal, post-graduation trading, five-minute TWAP history, stale
+  observations, spot/TWAP deviation and bounded fee conversion. The complete
+  Foundry suite also passes. No v4 testnet transaction has been broadcast.
+- Shared v4 venue checkpoint (2026-07-24): chain 46630 exposes PoolManager
+  `0x8366a39cc670b4001a1121b8f6a443a643e40951`, PositionManager
+  `0x58daec3116aae6D93017bAAea7749052E8a04fA7`, Quoter
+  `0x8dc178efb8111bb0973dd9d722ebeff267c98f94`, Universal Router
+  `0x8876789976decbfcbbbe364623c63652db8c0904`, and canonical Permit2.
+  PoolManager and Quoter runtime hashes match chain 4663; the other three do
+  not. PositionManager references descriptor `0x963944...8dC06` and WETH
+  `0x0Bd7...AD73`, neither of which has code on testnet. Treat the venue as
+  `shared-unlisted-robinhood-testnet-uniswap-v4-mirror`, never official
+  Uniswap, and fail closed if frozen hashes or wiring change.
+- Faucet-stock checkpoint (2026-07-24): the encrypted deployer holds 5 tokens
+  each of exact faucet contracts TSLA `0xC9f9...Bd4E`, AMD `0x7117...778d`,
+  AMZN `0x5884...9E02`, NFLX `0x3b82...8C93`, and PLTR `0x1FBE...98d0`.
+  All share runtime hash `0x2f367e6a...a27c440`, report 18 decimals, and have
+  live hookless native-ETH 1%/tick-200 pools initialized at block `91000224`.
+  Small bidirectional Quoter calls pass for all five. Live swap proof remains a
+  pre-cutover gate and must use bounded values.
+- V3 archive checkpoint (2026-07-24): the existing release was preserved under
+  `deployments/archive/46630-v3-b3ab91f/`; raw database, chain, PM2 and checksum
+  evidence is under
+  `/home/hendo420/robyn-evidence/testnet-v3-archive-20260724T014728Z`.
 - Current task (2026-07-24): complete browser acceptance and release
   verification for the live Robinhood Testnet deployment. The protected app is
   public through the temporary Quick Tunnel
@@ -323,6 +356,29 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-24 - Native-ETH Uniswap v4 contract checkpoint
+
+- Context: the user approved replacing active v3/tmUSD testnet architecture
+  with a fresh native-ETH v4 release while preserving v3 until cutover.
+- Decision: use the shared unlisted chain-46630 v4 mirror only when its frozen
+  provenance passes. Robyn launch pools initialize atomically with the
+  observation-only hook and graduate into an immutable full-range position.
+- Files: `packages/contracts/src/uniswap/RobynNative*.sol`,
+  `packages/contracts/src/uniswap/RobynV4*.sol`,
+  `packages/contracts/test/RobynV4NativeProtocol.t.sol`,
+  `deployments/archive/46630-v3-b3ab91f/`.
+- Commands/tests: focused `RobynV4NativeProtocolTest` 8/8 pass; complete
+  `forge test --root packages/contracts -q` passes.
+- Result: atomic launch, native trading, graduation, locked-liquidity
+  invariants, fee routing, oracle safety and bounded launch-token fee sales are
+  implemented locally. Graduation ETH that cannot enter the exact
+  terminal-price full-range position is returned and routed through the
+  immutable fee policy; token rounding dust stays permanently immobilized.
+- Follow-up: freeze and verify the venue manifest, deploy/verify StateView,
+  finish deployment scripts and invariants, integrate faucet-first catalog,
+  indexer/API and UI, then perform gated testnet deployment and browser
+  acceptance. No v4 broadcast has occurred.
 
 ### 2026-07-23 - Robyn protocol deployed to Robinhood Testnet
 

@@ -1,0 +1,611 @@
+{
+  "schemaVersion": 6,
+  "environment": "robinhood-testnet",
+  "chainId": 46630,
+  "deploymentBlock": 92820861,
+  "gitCommit": "8fc564f7a676697d6f165f8ce7cc0dfd3fd76ed8",
+  "gitSha": "8fc564f7a676697d6f165f8ce7cc0dfd3fd76ed8",
+  "deployer": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",
+  "assetStrategy": "project-owned-testnet-mocks",
+  "mockOnly": true,
+  "dexProvenanceManifestSha256": "ce4e1a77d497be149faee7bf8ef66092c50483a7407560363b7dfa51195dae38",
+  "contracts": {
+    "baseAsset": "0x8C58a93dc3d269c7af1629698b6C8911E68A0081",
+    "wrappedNative": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+    "rewardAssets": [
+      "0xa4C65774e3b5006dDd70E9b1F2309E8066b0d24C",
+      "0x03392c5434A198927BBFD6258fE906b108681026",
+      "0x86fD7f47263B76804573Eff87B340fA63C14FF89",
+      "0xe963759DecDa94E97D13B86A76474c30A4cdA663",
+      "0x5d20641ec585D716E468387be2E8553e3b751Dd9",
+      "0x58aF703fe2DCDCEfCc8eBFD0D61Ff12D0B45F4be",
+      "0x72F50c647D3B2099eCea8BdcF9A8B10fEc061C0A",
+      "0xFD38DCc7529350bdB26491107FE1Aa0421a488Cc",
+      "0x8895A170799F1Ee0076ccA73a832e6efe53faa17",
+      "0x35C342D0DCB296Ca8Fcdf66EbF87a27B05E66BE0",
+      "0x8549353256aFCe7DbB9d895eD6b035D5FAD012D4",
+      "0x30516309382e24db38B89aD74e1139A1Eeaf45f9",
+      "0x39f9aa3055690637043203c355790E735b3C22D1",
+      "0x46578e0371e22C4561C6FD7F56811C3D09Bb2c04",
+      "0x53ceFbbC884Da4745835B9209B74f0eb6B3DAA01",
+      "0x9FcD640bE732e991c5fee03D0c1698cEe90DB78F",
+      "0x4D69991Cb26D81a123EE7C7D0f4F9174Ded9Cb88",
+      "0xBec636391146e1fD72598e4c86Aa728BB6F87239",
+      "0x9c84d627F33a0333398F67655697380296e4464F",
+      "0x17b2D3Dbc9Ca05A9564119A669Ef4a1038FA5061",
+      "0x2689ba5183232d6846e5ab0e8EC332832d4e9AA7",
+      "0x749fa2Fdd10386D03a0926c531c790e85a11e1C3",
+      "0x49837123a8ec9ac34410afe5E4B8F3fFCE88f5D1",
+      "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19"
+    ],
+    "conversionRouter": "0x9cc8d92b8C45F95843136dD802B7a3b4816100CE",
+    "factory": "0x059fE7c79D7a0c2416c708E698C788b952E8eF80",
+    "launchDeployer": "0x79eEaf109734E21342445a811b55724C60458CA8",
+    "marketFactory": "0x6Beee002f107Ca99ce19Ff51557E959F4fD5cbB4",
+    "atomicLaunchCoordinator": "0x7bfF926aeef64932327720Fafe19091AB47E7FB2",
+    "daoToken": "0x14c6E842Cd0f279BbBd1c6459b0264487Fc21c9f",
+    "governor": "0x5d3e5d310Ec5A1D95d71B004452c188c10819879",
+    "timelock": "0x2b8069A60050a00c858f0426dddcA88A27425c59",
+    "guardian": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",
+    "protocolFeeRouter": "0x272e729b6B4B29Eab6EC3495ae96f1B9b3F0eEDA",
+    "nativeFeeConverter": "0x2Bc290E09B2BcdF3f2bFdB00908c6242186EaB73",
+    "nativeConversionPool": "0x1Ef499f3ea7226139fb4171299CdC160a1931892",
+    "adapterDeployer": "0x693f4765796DC8b0312F455A1A7e22DF556239fA",
+    "marketDeployer": "0xE60EEC1f0d09665BE4334F7098eD686ef10BE773",
+    "genesisToken": "0x2e8536feb01e9081f3cec1f933e4a44dca2a20a4",
+    "genesisVault": "0x9a77e129cd5c8898f019c89763db56b4e3de2b37",
+    "genesisMarket": "0x5ed9d095acef4120b2340ed4e69a5a1000eea808",
+    "genesisGraduationAdapter": "0xd7dbee4a37cb9a829c963649b9f900fd14e41dcc",
+    "genesisPositionLocker": "0x7287e9bbc2d5fdd3211760b50d854bba9ba63747",
+    "genesisGraduatedPool": "0xdfef4df91fccdd1429830d3bdf3f26e796d90168",
+    "routeRegistry": "0x9cc8d92b8C45F95843136dD802B7a3b4816100CE"
+  },
+  "localUniswapV3": {
+    "factory": "0xc9c37b9555c7f13a1aa8734ee683d01f6dd990c0",
+    "positionManager": "0x12d65b45e17bafd6b3879dcf1d1851961be8677b",
+    "quoter": "0xd014ce0fb0d0cd106a000c2b568b3e5ac1d3d313",
+    "swapRouter": "0x36b9813408ee6750213db50fe769df730fa00b9b",
+    "wrappedQuoteAsset": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+    "provenance": "robyn-controlled-uniswap-v3-testnet",
+    "runtimeCodeHashes": {
+      "factory": "0x3034de36f5ee94e72e3e499f9610ec3ca7400ab5d70cdce4db98e157a4b568f7",
+      "positionManager": "0x2d1f5ac89d8e5ee80f931735c9d69d2e82eaccd76c98c24a353b1545cd6ad32a",
+      "quoter": "0xac3e154a5f4cdc852ff9f146396f76bcb894f444373f35cbc0f45e3e435c2f59",
+      "swapRouter": "0x16bcb851d988525eeaff39dad33779182d78b9f542862a5f8c16b2fd96622e29",
+      "weth9": "0xa1513c4410cec44875c9b4877dabf3b4c3fc38230be914ac7ab5caf941daabcb"
+    }
+  },
+  "dao": {
+    "tokenName": "Robyn DAO",
+    "tokenSymbol": "RDAO",
+    "fixedSupply": "1000000000000000000000000000",
+    "initialAllocationManifestSha256": "20fbdb3508052c27f5a211586db6b7a7c69f6b7c958d4ec4fd19a655a8b6f94d",
+    "allocation": [
+      {
+        "account": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",
+        "shareBps": 10000,
+        "purpose": "initial-owner-bootstrap"
+      }
+    ],
+    "feePolicy": {
+      "basketBps": 5000,
+      "creatorBps": 2500,
+      "daoRewardsBps": 2000,
+      "treasuryBps": 500
+    },
+    "creatorRewardsAccounting": "per-token-v2",
+    "governance": {
+      "votingDelaySeconds": 86400,
+      "votingPeriodSeconds": 259200,
+      "timelockSeconds": 172800,
+      "quorumBps": 1000,
+      "proposalThresholdBps": 100
+    },
+    "conversion": {
+      "twapWindowSeconds": 60,
+      "maximumPriceImpactBps": 100,
+      "maximumTickDeviation": 100
+    }
+  },
+  "genesisBasket": [
+    {
+      "symbol": "tmNVDA",
+      "weightBps": 4000
+    },
+    {
+      "symbol": "tmSPY",
+      "weightBps": 4000
+    },
+    {
+      "symbol": "tmAAPL",
+      "weightBps": 2000
+    }
+  ],
+  "market": {
+    "type": "uniswap-v3-bonding-curve-v1",
+    "liquidityVenue": "robyn-controlled-uniswap-v3-testnet",
+    "feeBps": 100,
+    "poolFeePips": 10000,
+    "tickLower": -887200,
+    "tickUpper": 887200,
+    "initialBasePerTokenX18": "32500000000000",
+    "minimumUseBps": 9900,
+    "maximumPriceDeviationBps": 100,
+    "curveTokenAllocation": "800000000000000000000000000",
+    "graduationTokenAllocation": "200000000000000000000000000",
+    "initialVirtualTokenReserve": "1066666666666666666666666666",
+    "initialVirtualBaseReserve": "2166666666666666666667",
+    "graduationThresholdBase": "6500000000000000000000"
+  },
+  "assetCatalog": {
+    "schemaVersion": 1,
+    "snapshotAt": "2026-07-23T23:00:35.731262472Z",
+    "disclosure": "Robyn testnet mocks are not official Robinhood Stock Tokens and have no real-world value or redemption rights.",
+    "assets": [
+      {
+        "symbol": "AAPL",
+        "mockSymbol": "tmAAPL",
+        "name": "Apple",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xaf3d76f1834a1d425780943c99ea8a608f8a93f9.png",
+        "mainnetAddress": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+        "referencePriceUsd": "321.52",
+        "fixedRateX18": "3110226424483702",
+        "address": "0xa4C65774e3b5006dDd70E9b1F2309E8066b0d24C",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "AMD",
+        "mockSymbol": "tmAMD",
+        "name": "AMD",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x86923f96303d656e4aa86d9d42d1e57ad2023fdc.png",
+        "mainnetAddress": "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC",
+        "referencePriceUsd": "548.705",
+        "fixedRateX18": "1822472913496323",
+        "address": "0x03392c5434A198927BBFD6258fE906b108681026",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "AMZN",
+        "mockSymbol": "tmAMZN",
+        "name": "Amazon",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x12f190a9f9d7d37a250758b26824b97ce941bf54.png",
+        "mainnetAddress": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+        "referencePriceUsd": "234.61",
+        "fixedRateX18": "4262392907378202",
+        "address": "0x86fD7f47263B76804573Eff87B340fA63C14FF89",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "COIN",
+        "mockSymbol": "tmCOIN",
+        "name": "Coinbase",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x6330d8c3178a418788df01a47479c0ce7ccf450b.png",
+        "mainnetAddress": "0x6330D8C3178a418788dF01a47479c0ce7CCF450b",
+        "referencePriceUsd": "162.16",
+        "fixedRateX18": "6166748889985200",
+        "address": "0xe963759DecDa94E97D13B86A76474c30A4cdA663",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "COST",
+        "mockSymbol": "tmCOST",
+        "name": "Costco",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x4ea005168d7f09a7a0ba9d1def21a479950e44c2.png",
+        "mainnetAddress": "0x4EA005168D7F09a7A0Ba9D1DEf21a479950E44C2",
+        "referencePriceUsd": "925.22",
+        "fixedRateX18": "1080824020233026",
+        "address": "0x5d20641ec585D716E468387be2E8553e3b751Dd9",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "GOOGL",
+        "mockSymbol": "tmGOOGL",
+        "name": "Alphabet Class A",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x2e0847e8910a9732eb3fb1bb4b70a580adad4fe3.png",
+        "mainnetAddress": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+        "referencePriceUsd": "319.64",
+        "fixedRateX18": "3128519584532599",
+        "address": "0x58aF703fe2DCDCEfCc8eBFD0D61Ff12D0B45F4be",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "META",
+        "mockSymbol": "tmMETA",
+        "name": "Meta Platforms",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xc0d6457c16cc70d6790dd43521c899c87ce02f35.png",
+        "mainnetAddress": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+        "referencePriceUsd": "607.47",
+        "fixedRateX18": "1646171827415346",
+        "address": "0x72F50c647D3B2099eCea8BdcF9A8B10fEc061C0A",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "MSFT",
+        "mockSymbol": "tmMSFT",
+        "name": "Microsoft",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xe93237c50d904957cf27e7b1133b510c669c2e74.png",
+        "mainnetAddress": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+        "referencePriceUsd": "383.25",
+        "fixedRateX18": "2609262883235486",
+        "address": "0xFD38DCc7529350bdB26491107FE1Aa0421a488Cc",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "MSTR",
+        "mockSymbol": "tmMSTR",
+        "name": "Strategy Inc.",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xec262a75e413fafd0df80480274532c79d42da09.png",
+        "mainnetAddress": "0xec262a75e413fAfD0dF80480274532C79D42da09",
+        "referencePriceUsd": "94.3",
+        "fixedRateX18": "10604453870625663",
+        "address": "0x8895A170799F1Ee0076ccA73a832e6efe53faa17",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "NFLX",
+        "mockSymbol": "tmNFLX",
+        "name": "Netflix",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xe0444ef8bf4ed74f74fd73686e2ddf4c1c5591e8.png",
+        "mainnetAddress": "0xE0444EF8BF4eD74f74FD73686e2ddF4C1c5591E8",
+        "referencePriceUsd": "68.605",
+        "fixedRateX18": "14576197070184389",
+        "address": "0x35C342D0DCB296Ca8Fcdf66EbF87a27B05E66BE0",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "mockSymbol": "tmNVDA",
+        "name": "NVIDIA",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec.png",
+        "mainnetAddress": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+        "referencePriceUsd": "208.34",
+        "fixedRateX18": "4799846404915043",
+        "address": "0x8549353256aFCe7DbB9d895eD6b035D5FAD012D4",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "PLTR",
+        "mockSymbol": "tmPLTR",
+        "name": "Palantir Technologies",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x894e1ec2d74ffe5aef8dc8a9e84686accb964f2a.png",
+        "mainnetAddress": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+        "referencePriceUsd": "122.88",
+        "fixedRateX18": "8138020833333333",
+        "address": "0x30516309382e24db38B89aD74e1139A1Eeaf45f9",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "RDDT",
+        "mockSymbol": "tmRDDT",
+        "name": "Reddit",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x05b37fb53a299a1b874a619e1c4c404d52c36f4c.png",
+        "mainnetAddress": "0x05b37Fb53A299a1b874A619e1c4C404D52C36F4C",
+        "referencePriceUsd": "170.235",
+        "fixedRateX18": "5874232678356390",
+        "address": "0x39f9aa3055690637043203c355790E735b3C22D1",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "RIVN",
+        "mockSymbol": "tmRIVN",
+        "name": "Rivian Automotive",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xb1bf26c1d20ff267a4f93550d1e0d06ac40a114b.png",
+        "mainnetAddress": "0xB1BF26c1D20ff267A4f93550d1E0d06ac40a114B",
+        "referencePriceUsd": "16.495",
+        "fixedRateX18": "60624431645953319",
+        "address": "0x46578e0371e22C4561C6FD7F56811C3D09Bb2c04",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "SOFI",
+        "mockSymbol": "tmSOFI",
+        "name": "SoFi Technologies",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x98e75885157c80992a8d41b696d8c9c6fb30a926.png",
+        "mainnetAddress": "0x98E75885157C80992A8D41b696D8c9C6Fb30A926",
+        "referencePriceUsd": "16.655",
+        "fixedRateX18": "60042029420594416",
+        "address": "0x53ceFbbC884Da4745835B9209B74f0eb6B3DAA01",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "TSLA",
+        "mockSymbol": "tmTSLA",
+        "name": "Tesla",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x322f0929c4625ed5bad873c95208d54e1c003b2d.png",
+        "mainnetAddress": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+        "referencePriceUsd": "324.07",
+        "fixedRateX18": "3085753078038695",
+        "address": "0x9FcD640bE732e991c5fee03D0c1698cEe90DB78F",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "QQQ",
+        "mockSymbol": "tmQQQ",
+        "name": "Invesco QQQ",
+        "category": "etf-commodity",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xd5f3879160bc7c32ebb4dc785f8a4f505888de68.png",
+        "mainnetAddress": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+        "referencePriceUsd": "694.88",
+        "fixedRateX18": "1439097398111904",
+        "address": "0x4D69991Cb26D81a123EE7C7D0f4F9174Ded9Cb88",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "SGOV",
+        "mockSymbol": "tmSGOV",
+        "name": "iShares 0-3 Month Treasury Bond",
+        "category": "etf-commodity",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x92fd66527192e3e61d4ddd13322aa222de86f9b5.png",
+        "mainnetAddress": "0x92FD66527192E3e61d4DDd13322Aa222DE86F9B5",
+        "referencePriceUsd": "100.595",
+        "fixedRateX18": "9940851931010488",
+        "address": "0xBec636391146e1fD72598e4c86Aa728BB6F87239",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "SLV",
+        "mockSymbol": "tmSLV",
+        "name": "iShares Silver Trust",
+        "category": "etf-commodity",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x411efb0e7f985935daec3d4c3ebaea0d0ad7d89f.png",
+        "mainnetAddress": "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f",
+        "referencePriceUsd": "52.11",
+        "fixedRateX18": "19190174630589138",
+        "address": "0x9c84d627F33a0333398F67655697380296e4464F",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "SOXX",
+        "mockSymbol": "tmSOXX",
+        "name": "iShares Semiconductor ETF",
+        "category": "etf-commodity",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x75742c18bc1f1c5c5f448f4c9d9c6f66dafaaa38.png",
+        "mainnetAddress": "0x75742c18BC1f1C5c5f448f4C9D9C6F66dafAAa38",
+        "referencePriceUsd": "555.205",
+        "fixedRateX18": "1801136517142317",
+        "address": "0x17b2D3Dbc9Ca05A9564119A669Ef4a1038FA5061",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "SPY",
+        "mockSymbol": "tmSPY",
+        "name": "SPDR S&P 500 ETF Trust",
+        "category": "etf-commodity",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x117cc2133c37b721f49de2a7a74833232b3b4c0c.png",
+        "mainnetAddress": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+        "referencePriceUsd": "739.22",
+        "fixedRateX18": "1352777251697735",
+        "address": "0x2689ba5183232d6846e5ab0e8EC332832d4e9AA7",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "USO",
+        "mockSymbol": "tmUSO",
+        "name": "United States Oil Fund",
+        "category": "etf-commodity",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xa30fa36db767ad9ed3f7a60fc79526fb4d56d344.png",
+        "mainnetAddress": "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344",
+        "referencePriceUsd": "140.29",
+        "fixedRateX18": "7128091809822511",
+        "address": "0x749fa2Fdd10386D03a0926c531c790e85a11e1C3",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "XLK",
+        "mockSymbol": "tmXLK",
+        "name": "Technology Select Sector SPDR ETF",
+        "category": "etf-commodity",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x15cd20759ce7f3285c29a319de2d1a2e098c6f43.png",
+        "mainnetAddress": "0x15Cd20759CE7F3285c29A319dE2D1A2e098c6f43",
+        "referencePriceUsd": "179.275",
+        "fixedRateX18": "5578022590991494",
+        "address": "0x49837123a8ec9ac34410afe5E4B8F3fFCE88f5D1",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "fixed-testnet",
+          "ready": true
+        }
+      },
+      {
+        "symbol": "WETH",
+        "mockSymbol": "WETH",
+        "name": "Wrapped Ether",
+        "category": "crypto",
+        "logoUrl": "/assets/brand/robyn-mark.png",
+        "mainnetAddress": null,
+        "referencePriceUsd": null,
+        "fixedRateX18": null,
+        "address": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-controlled-testnet-dex",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v3",
+          "ready": false
+        }
+      }
+    ]
+  },
+  "ipfsMetadata": {
+    "standard": "ERC-1046",
+    "cidVersion": 1,
+    "kuboVersion": "0.42.0",
+    "localPolicy": "pinned-no-fetch",
+    "remotePinRequired": false,
+    "fallbackMetadataUri": "ipfs://bafkreibys2cv4ijpoedcl7qdbi5u66wuwedwg3lsc6pios3wcyaoyz7cau"
+  }
+}
