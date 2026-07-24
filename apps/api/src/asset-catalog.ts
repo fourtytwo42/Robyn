@@ -11,13 +11,14 @@ import { SingleFlightTtlCache } from "./single-flight-cache.js";
 export type AssetCategory = "stock" | "etf-commodity" | "crypto" | "custom";
 export type AssetVerification =
   | "official-robinhood-current-chain"
+  | "robinhood-testnet-faucet-stock"
   | "robyn-testnet-mock"
   | "robyn-controlled-testnet-dex"
   | "robyn-token-list"
   | "unverified-erc20";
 
 export type AssetRoute = {
-  kind: "none" | "fixed-testnet" | "uniswap-v3";
+  kind: "none" | "fixed-testnet" | "uniswap-v3" | "uniswap-v4";
   ready: boolean;
   venue: Address | null;
   poolFee: number | null;
@@ -141,6 +142,38 @@ const routeRegistryAbi = [
     stateMutability: "view",
     inputs: [{ type: "address" }, { type: "address" }, { type: "uint256" }],
     outputs: [{ type: "uint256" }],
+  },
+] as const;
+const v4AssetRouterAbi = [
+  {
+    type: "function",
+    name: "routeStatus",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "poolId", type: "bytes32" },
+          { name: "liquidity", type: "uint128" },
+          { name: "minimumLiquidity", type: "uint128" },
+          { name: "maximumNativeInput", type: "uint128" },
+          { name: "verificationClass", type: "bytes32" },
+          { name: "fee", type: "uint24" },
+          { name: "tickSpacing", type: "int24" },
+          { name: "hooks", type: "address" },
+          { name: "ready", type: "bool" },
+          { name: "reason", type: "bytes32" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "quoteNativeToAsset",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "address" }, { type: "uint128" }],
+    outputs: [{ type: "uint256" }, { type: "uint256" }],
   },
 ] as const;
 
@@ -269,6 +302,15 @@ export class AssetCatalogService {
 
   async quote(address: Address, amount: bigint) {
     if (!this.routeRegistry || amount <= 0n) return null;
+    if (this.baseAsset === zeroAddress) {
+      const result = await this.rpcClient.simulateContract({
+        address: this.routeRegistry,
+        abi: v4AssetRouterAbi,
+        functionName: "quoteNativeToAsset",
+        args: [address, amount],
+      });
+      return result.result[0];
+    }
     return this.rpcClient.readContract({
       address: this.routeRegistry,
       abi: routeRegistryAbi,
@@ -315,6 +357,33 @@ export class AssetCatalogService {
         liquidity: null,
         reason: "route-registry-unavailable",
       };
+    }
+    if (this.baseAsset === zeroAddress) {
+      try {
+        const status = await this.rpcClient.readContract({
+          address: this.routeRegistry,
+          abi: v4AssetRouterAbi,
+          functionName: "routeStatus",
+          args: [outputToken],
+        });
+        return {
+          kind: "uniswap-v4",
+          ready: status.ready,
+          venue: this.routeRegistry,
+          poolFee: status.fee === 0 ? null : status.fee,
+          liquidity: status.liquidity.toString(),
+          reason: status.ready ? null : reasonText(status.reason),
+        };
+      } catch {
+        return {
+          kind: "none",
+          ready: false,
+          venue: null,
+          poolFee: null,
+          liquidity: null,
+          reason: "route-read-failed",
+        };
+      }
     }
     try {
       const status = await this.rpcClient.readContract({

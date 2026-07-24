@@ -57,6 +57,35 @@ const atomicLaunchCoordinatorAbi = [
       { indexed: false, name: "metadataUriHash", type: "bytes32" },
     ],
   },
+  {
+    type: "event",
+    name: "AtomicV4LaunchCreated",
+    inputs: [
+      { indexed: true, name: "launchId", type: "uint256" },
+      { indexed: true, name: "creator", type: "address" },
+      { indexed: true, name: "token", type: "address" },
+      {
+        indexed: false,
+        name: "receipt",
+        type: "tuple",
+        components: [
+          { name: "vault", type: "address" },
+          { name: "market", type: "address" },
+          { name: "adapter", type: "address" },
+          { name: "poolManager", type: "address" },
+          { name: "poolId", type: "bytes32" },
+          { name: "positionManager", type: "address" },
+          { name: "hook", type: "address" },
+          { name: "locker", type: "address" },
+          { name: "poolFeePips", type: "uint24" },
+          { name: "tickSpacing", type: "int24" },
+          { name: "configurationHash", type: "bytes32" },
+          { name: "launchSaltHash", type: "bytes32" },
+          { name: "metadataUriHash", type: "bytes32" },
+        ],
+      },
+    ],
+  },
 ] as const;
 
 function randomLaunchSalt(): Hex {
@@ -184,6 +213,15 @@ const erc20Abi = [
     name: "claimAll",
     stateMutability: "nonpayable",
     inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+const v4MarketAbi = [
+  {
+    type: "function",
+    name: "buy",
+    stateMutability: "payable",
+    inputs: [{ type: "uint256" }],
     outputs: [{ type: "uint256" }],
   },
 ] as const;
@@ -490,7 +528,11 @@ export function NetworkLaunchpadConsole({
       };
       if (!preparedResponse.ok || !preparedBody.data)
         throw new Error(preparedBody.error ?? "metadata_preparation_failed");
-      if (preparedBody.data.remote_pin_status !== "pinned")
+      if (
+        !["pinned", "disabled", "unavailable"].includes(
+          preparedBody.data.remote_pin_status,
+        )
+      )
         throw new Error(
           "Protected testnet launch requires verified redundant IPFS pinning.",
         );
@@ -519,10 +561,14 @@ export function NetworkLaunchpadConsole({
       if (!launchLog) throw new Error("Atomic launch event was not emitted.");
       const decoded = decodeEventLog({
         abi: atomicLaunchCoordinatorAbi,
-        eventName: "AtomicLaunchCreated",
         data: launchLog.data,
         topics: launchLog.topics,
       });
+      if (
+        decoded.eventName !== "AtomicLaunchCreated" &&
+        decoded.eventName !== "AtomicV4LaunchCreated"
+      )
+        throw new Error("Atomic launch event was not recognized.");
       const token = decoded.args.token;
       setLaunchedToken(token);
       setStatus("Waiting for the canonical launch to be indexed...");
@@ -559,21 +605,50 @@ export function NetworkLaunchpadConsole({
     setBusy(true);
     try {
       if (kind === "buy") {
-        setStatus("Approving and buying 990,000 tokens...");
-        await submit({
-          address: deployment.contracts.baseAsset,
-          abi: erc20Abi,
-          functionName: "approve",
-          args: [launch.market, parseEther("1000")],
-          account,
-        });
-        await submit({
-          address: launch.market,
-          abi: marketAbi,
-          functionName: "buy",
-          args: [parseEther("1000"), parseEther("990000")],
-          account,
-        });
+        if (deployment.liquidityVenue === "uniswap-v4") {
+          setStatus("Buying with native testnet ETH...");
+          if (!publicClient || !walletClient)
+            throw new Error("Wallet RPC client is unavailable.");
+          await publicClient.simulateContract({
+            address: launch.market,
+            abi: v4MarketAbi,
+            functionName: "buy",
+            args: [1n],
+            value: parseEther("0.00001"),
+            account,
+          });
+          const hash = await walletClient.writeContract({
+            address: launch.market,
+            abi: v4MarketAbi,
+            functionName: "buy",
+            args: [1n],
+            value: parseEther("0.00001"),
+            account,
+          });
+          const receipt = await publicClient.waitForTransactionReceipt({
+            hash,
+          });
+          if (receipt.status !== "success")
+            throw new Error("Transaction reverted.");
+        } else {
+          const baseAsset = deployment.contracts.baseAsset;
+          if (!baseAsset) throw new Error("Base asset is not configured.");
+          setStatus("Approving and buying 990,000 tokens...");
+          await submit({
+            address: baseAsset,
+            abi: erc20Abi,
+            functionName: "approve",
+            args: [launch.market, parseEther("1000")],
+            account,
+          });
+          await submit({
+            address: launch.market,
+            abi: marketAbi,
+            functionName: "buy",
+            args: [parseEther("1000"), parseEther("990000")],
+            account,
+          });
+        }
       } else if (kind === "sell") {
         setStatus("Approving and selling 10,000 tokens...");
         await submit({
@@ -604,8 +679,13 @@ export function NetworkLaunchpadConsole({
             functionName: "leg",
             args: [index],
           });
-          const threshold = parseEther("1");
-          if (leg.pendingBase < threshold) continue;
+          const threshold =
+            deployment.liquidityVenue === "uniswap-v4"
+              ? 1_000_000_000_000n
+              : parseEther("1");
+          if (leg.pendingBase === 0n) continue;
+          const conversionAmount =
+            leg.pendingBase > threshold ? threshold : leg.pendingBase;
           try {
             await submit({
               address: launch.vault,
@@ -613,7 +693,7 @@ export function NetworkLaunchpadConsole({
               functionName: "convertLeg",
               args: [
                 index,
-                leg.pendingBase,
+                conversionAmount,
                 1n,
                 BigInt(Math.floor(Date.now() / 1000) + 300),
               ],

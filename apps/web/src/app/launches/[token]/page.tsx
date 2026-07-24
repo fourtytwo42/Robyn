@@ -252,17 +252,21 @@ export default async function LaunchDetail({
               <p className="card-label">Launch lifecycle</p>
               <h2 id="graduation-heading">
                 {market.marketPhase === "graduated"
-                  ? market.liquidityVenue === "uniswap-v3"
-                    ? "Graduated to locked Uniswap v3 liquidity"
-                    : "Graduated to locked liquidity"
+                  ? market.liquidityVenue === "uniswap-v4"
+                    ? "Graduated to locked Uniswap v4 liquidity"
+                    : market.liquidityVenue === "uniswap-v3"
+                      ? "Graduated to locked Uniswap v3 liquidity"
+                      : "Graduated to locked liquidity"
                   : "Climbing the bonding curve"}
               </h2>
               <p>
                 {market.marketPhase === "graduated"
-                  ? market.liquidityVenue === "uniswap-v3"
-                    ? "The curve sold out atomically. Its reserved tokens and quote liquidity now trade in a canonical Uniswap v3 position whose NFT cannot be withdrawn. Quote-side fees continue funding this token's reward basket."
-                    : "The curve sold out atomically. Its remaining token allocation and raised mUSD now trade in a permanently locked local pool."
-                  : "Every buy moves the price along the curve. When the curve allocation sells out, the market automatically moves its reserved tokens and raised mUSD into locked liquidity."}
+                  ? market.liquidityVenue === "uniswap-v4"
+                    ? "The curve sold out atomically. Native testnet ETH and reserved tokens now trade in a full-range Uniswap v4 position whose NFT and principal cannot be withdrawn. Fees continue funding the basket, creator, RDAO members, and treasury."
+                    : market.liquidityVenue === "uniswap-v3"
+                      ? "The curve sold out atomically. Its reserved tokens and quote liquidity now trade in a canonical Uniswap v3 position whose NFT cannot be withdrawn. Quote-side fees continue funding this token's reward basket."
+                      : "The curve sold out atomically. Its remaining token allocation and raised mUSD now trade in a permanently locked local pool."
+                  : `Every buy moves the price along the curve. When the curve allocation sells out, the market automatically moves its reserved tokens and raised ${market.baseSymbol} into locked liquidity.`}
               </p>
             </div>
             <div className="graduation-rail">
@@ -496,6 +500,18 @@ export default async function LaunchDetail({
                   }
                   value={market.graduatedPool}
                 />
+              ) : null}
+              {market.poolManager ? (
+                <AddressRow
+                  label="Uniswap v4 PoolManager"
+                  value={market.poolManager}
+                />
+              ) : null}
+              {market.poolId ? (
+                <AddressRow label="Uniswap v4 pool ID" value={market.poolId} />
+              ) : null}
+              {market.hook ? (
+                <AddressRow label="Oracle-only hook" value={market.hook} />
               ) : null}
               {market.positionLocker ? (
                 <AddressRow

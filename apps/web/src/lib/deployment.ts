@@ -1,9 +1,13 @@
 import type { Address } from "viem";
 
 export type Deployment = {
+  schemaVersion?: number;
   chainId: number;
+  deploymentBlock?: number;
   environment?: string;
   gitCommit: string;
+  liquidityVenue?: "uniswap-v4" | "uniswap-v3";
+  venueProvenance?: string;
   contracts: {
     baseAsset: Address;
     rewardAssets: Address[];
@@ -28,7 +32,19 @@ export type Deployment = {
     guardian: Address;
     protocolFeeRouter: Address;
     nativeFeeConverter: Address;
+    poolManager?: Address;
+    positionManager?: Address;
+    quoter?: Address;
+    permit2?: Address;
+    stateView?: Address;
+    oracleHook?: Address;
+    assetRouter?: Address;
   };
+  assetRoutes?: Array<{
+    symbol: string;
+    address: Address;
+    poolId: `0x${string}`;
+  }>;
   localUniswapV3?: {
     factory: Address;
     positionManager: Address;

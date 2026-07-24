@@ -11,13 +11,18 @@ const tokenEvents = parseAbi([
 ]);
 const marketEvents = parseAbi([
   "event LiquiditySeeded(address indexed provider,uint256 tokenAmount,uint256 baseAmount)",
+  "event LiquiditySeeded(address indexed provider,uint256 tokenAmount)",
   "event Bought(address indexed buyer,uint256 baseInput,uint256 feeAmount,uint256 tokenOutput)",
   "event Sold(address indexed seller,uint256 tokenInput,uint256 feeAmount,uint256 baseOutput)",
   "event Graduated(address indexed pool,uint256 tokenLiquidity,uint256 baseLiquidity,uint256 finalCurvePrice)",
   "event Graduated(address indexed pool,address indexed locker,uint256 indexed positionTokenId,uint256 tokenLiquidity,uint256 baseLiquidity,uint256 finalCurvePrice)",
+  "event Graduated(bytes32 indexed poolId,address indexed locker,uint256 indexed positionTokenId,uint256 tokenLiquidity,uint256 nativeLiquidity,uint256 finalCurvePrice)",
 ]);
 const poolEvents = parseAbi([
   "event Swap(address indexed sender,address indexed recipient,int256 amount0,int256 amount1,uint160 sqrtPriceX96,uint128 liquidity,int24 tick)",
+]);
+const v4PoolEvents = parseAbi([
+  "event Swap(bytes32 indexed id,address indexed sender,int128 amount0,int128 amount1,uint160 sqrtPriceX96,uint128 liquidity,int24 tick,uint24 fee)",
 ]);
 
 export type AnalyticsLog = {
@@ -36,15 +41,21 @@ type LaunchIdentity = {
   creator: Address;
   baseAsset?: Address;
   liquidityPool?: Address;
+  poolManager?: Address;
+  poolId?: Hex;
 };
 
 export function analyticsLogAddresses(
-  launch: Pick<LaunchIdentity, "token" | "market" | "liquidityPool">,
+  launch: Pick<
+    LaunchIdentity,
+    "token" | "market" | "liquidityPool" | "poolManager"
+  >,
 ) {
   return [
     launch.token.toLowerCase(),
     launch.market.toLowerCase(),
     ...(launch.liquidityPool ? [launch.liquidityPool.toLowerCase()] : []),
+    ...(launch.poolManager ? [launch.poolManager.toLowerCase()] : []),
   ] as Address[];
 }
 
@@ -117,7 +128,10 @@ export function deriveLaunchAnalytics({
     baseRaised: bigint;
     remainingCurveTokens: bigint;
     graduatedPool: Address | null;
-    liquidityVenue?: "uniswap-v3" | "devnet-locked-pool" | null;
+    liquidityVenue?: "uniswap-v4" | "uniswap-v3" | "devnet-locked-pool" | null;
+    poolManager?: Address | null;
+    poolId?: Hex | null;
+    hook?: Address | null;
     positionLocker?: Address | null;
     positionTokenId?: bigint | null;
     poolFeePips?: number | null;
@@ -134,6 +148,8 @@ export function deriveLaunchAnalytics({
   const market = launch.market.toLowerCase();
   const creator = launch.creator.toLowerCase();
   const liquidityPool = launch.liquidityPool?.toLowerCase();
+  const poolManager = launch.poolManager?.toLowerCase();
+  const launchPoolId = launch.poolId?.toLowerCase();
   const baseAsset = launch.baseAsset?.toLowerCase();
   const positionLocker = lifecycle?.positionLocker?.toLowerCase();
   const poolFeePips = lifecycle?.poolFeePips ?? feeBps * 100;
@@ -297,6 +313,71 @@ export function deriveLaunchAnalytics({
       }
       continue;
     }
+    if (
+      poolManager &&
+      launchPoolId &&
+      log.address.toLowerCase() === poolManager &&
+      !marketTradeTransactions.has(log.transaction_hash.toLowerCase())
+    ) {
+      try {
+        const decoded = decodeEventLog({
+          abi: v4PoolEvents,
+          data: log.data,
+          topics: log.topics as [Hex, ...Hex[]],
+        });
+        if (
+          decoded.eventName !== "Swap" ||
+          decoded.args.id.toLowerCase() !== launchPoolId
+        )
+          continue;
+        const nativeDelta = decoded.args.amount0;
+        const tokenDelta = decoded.args.amount1;
+        const isBuy = nativeDelta > 0n && tokenDelta < 0n;
+        const isSell = tokenDelta > 0n && nativeDelta < 0n;
+        if (!isBuy && !isSell) continue;
+        const nativeAmount = nativeDelta > 0n ? nativeDelta : -nativeDelta;
+        const tokenAmount = tokenDelta > 0n ? tokenDelta : -tokenDelta;
+        const feeAmount = isBuy
+          ? (nativeAmount * BigInt(poolFeePips)) / 1_000_000n
+          : (nativeAmount * BigInt(poolFeePips)) /
+            BigInt(1_000_000 - poolFeePips);
+        const baseVolume = isBuy ? nativeAmount : nativeAmount + feeAmount;
+        const executionPrice = isBuy
+          ? ((nativeAmount - feeAmount) * 10n ** 18n) / tokenAmount
+          : (nativeAmount * 10n ** 18n) / tokenAmount;
+        if (isBuy) buyVolume += baseVolume;
+        else sellVolume += baseVolume;
+        totalVolume += baseVolume;
+        totalFees += feeAmount;
+        cumulativeVolume += baseVolume;
+        traders.add(decoded.args.sender.toLowerCase());
+        trades.push({
+          side: isBuy ? "buy" : "sell",
+          trader: decoded.args.sender,
+          baseAmount: baseVolume.toString(),
+          tokenAmount: tokenAmount.toString(),
+          feeAmount: feeAmount.toString(),
+          blockNumber: log.block_number,
+          timestamp: isoTime(log.timestamp),
+          transactionHash: log.transaction_hash,
+          price: executionPrice.toString(),
+        });
+        chart.push({
+          blockNumber: log.block_number,
+          timestamp: isoTime(log.timestamp),
+          price: executionPrice.toString(),
+          cumulativeVolume: cumulativeVolume.toString(),
+          eventType: "trade",
+          side: isBuy ? "buy" : "sell",
+          baseAmount: baseVolume.toString(),
+          transactionHash: log.transaction_hash,
+          logIndex: log.log_index,
+        });
+      } catch {
+        continue;
+      }
+      continue;
+    }
     if (log.address.toLowerCase() !== market) continue;
     try {
       const decoded = decodeEventLog({
@@ -306,7 +387,8 @@ export function deriveLaunchAnalytics({
       });
       if (decoded.eventName === "LiquiditySeeded") {
         tokenReserve += decoded.args.tokenAmount;
-        baseReserve += decoded.args.baseAmount;
+        if ("baseAmount" in decoded.args)
+          baseReserve += decoded.args.baseAmount;
         continue;
       }
       if (decoded.eventName === "Graduated") {
@@ -468,13 +550,16 @@ export function deriveLaunchAnalytics({
     formula: "canonical-events-plus-onchain-state-v1",
     marketType:
       lifecycle?.marketPhase === "graduated" &&
-      lifecycle.liquidityVenue === "uniswap-v3"
-        ? "locked-uniswap-v3-position"
-        : lifecycle?.marketPhase === "bonding"
-          ? "constant-product-bonding-curve"
-          : lifecycle?.marketPhase === "graduated"
-            ? "locked-constant-product-pool"
-            : "fixed-price-development-market",
+      lifecycle.liquidityVenue === "uniswap-v4"
+        ? "locked-uniswap-v4-position"
+        : lifecycle?.marketPhase === "graduated" &&
+            lifecycle.liquidityVenue === "uniswap-v3"
+          ? "locked-uniswap-v3-position"
+          : lifecycle?.marketPhase === "bonding"
+            ? "constant-product-bonding-curve"
+            : lifecycle?.marketPhase === "graduated"
+              ? "locked-constant-product-pool"
+              : "fixed-price-development-market",
     marketPhase: lifecycle?.marketPhase ?? "legacy_fixed",
     graduationProgressBps: lifecycle?.graduationProgressBps ?? 10_000,
     graduationThresholdBase: (
@@ -484,10 +569,13 @@ export function deriveLaunchAnalytics({
     remainingCurveTokens: (lifecycle?.remainingCurveTokens ?? 0n).toString(),
     graduatedPool: lifecycle?.graduatedPool ?? null,
     liquidityVenue: lifecycle?.liquidityVenue ?? null,
+    poolManager: lifecycle?.poolManager ?? null,
+    poolId: lifecycle?.poolId ?? null,
+    hook: lifecycle?.hook ?? null,
     positionLocker: lifecycle?.positionLocker ?? null,
     positionTokenId: lifecycle?.positionTokenId?.toString() ?? null,
     poolFeePips: lifecycle?.poolFeePips ?? null,
-    baseSymbol: "mUSD",
+    baseSymbol: lifecycle?.liquidityVenue === "uniswap-v4" ? "ETH" : "mUSD",
     feeBps,
     priceBasePerToken: basePerToken.toString(),
     priceChangeBps,

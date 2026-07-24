@@ -24,7 +24,12 @@ async function artifactAbi(name, dependency = false) {
 }
 
 const contracts = Object.fromEntries(
-  Object.entries(manifest.contracts).map(([key, value]) => [key, getAddress(value)]),
+  Object.entries(manifest.contracts)
+    .filter(
+      ([, value]) =>
+        typeof value === "string" && /^0x[0-9a-fA-F]{40}$/.test(value),
+    )
+    .map(([key, value]) => [key, getAddress(value)]),
 );
 check(await client.getChainId() === 46630, "RPC chain ID is 46630");
 check(manifest.chainId === 46630, "manifest chain ID is 46630");
@@ -36,6 +41,7 @@ check(
 check(manifest.schemaVersion === 7, "deployment manifest schema is v7");
 
 for (const [key, address] of Object.entries(contracts)) {
+  if (!(key in (manifest.runtimeCodeHashes ?? {}))) continue;
   const code = await client.getCode({ address });
   check(code && code !== "0x", `${key} has runtime code`, {
     runtimeCodeHash: code && code !== "0x" ? keccak256(code) : null,

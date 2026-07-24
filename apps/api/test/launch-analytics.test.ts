@@ -35,6 +35,10 @@ const productionMarketAbi = parseAbi([
 const poolAbi = parseAbi([
   "event Swap(address indexed sender,address indexed recipient,int256 amount0,int256 amount1,uint160 sqrtPriceX96,uint128 liquidity,int24 tick)",
 ]);
+const v4PoolAbi = parseAbi([
+  "event Swap(bytes32 indexed id,address indexed sender,int128 amount0,int128 amount1,uint160 sqrtPriceX96,uint128 liquidity,int24 tick,uint24 fee)",
+]);
+const v4PoolId = `0x${"a".repeat(64)}` as Hex;
 
 function row(
   address: Address,
@@ -403,6 +407,79 @@ describe("launch analytics", () => {
     expect(result.positionLocker).toBe(locker);
     expect(result.positionTokenId).toBe("42");
     expect(result.poolFeePips).toBe(10_000);
+  });
+
+  it("indexes only the launch pool from the v4 singleton", () => {
+    const directSwap = row(
+      pool,
+      encodeEventTopics({
+        abi: v4PoolAbi,
+        eventName: "Swap",
+        args: { id: v4PoolId, sender: trader },
+      }),
+      encodeAbiParameters(
+        [
+          { type: "int128" },
+          { type: "int128" },
+          { type: "uint160" },
+          { type: "uint128" },
+          { type: "int24" },
+          { type: "uint24" },
+        ],
+        [parseEther("100"), -parseEther("99"), 1n, 1n, 0, 10_000],
+      ),
+      50,
+    );
+    const unrelatedSwap = row(
+      pool,
+      encodeEventTopics({
+        abi: v4PoolAbi,
+        eventName: "Swap",
+        args: { id: `0x${"b".repeat(64)}` as Hex, sender: trader },
+      }),
+      directSwap.data,
+      51,
+    );
+    const result = deriveLaunchAnalytics({
+      launch: {
+        token,
+        market,
+        creator,
+        liquidityPool: pool,
+        poolManager: pool,
+        poolId: v4PoolId,
+      },
+      logs: [directSwap, unrelatedSwap],
+      createdTimestamp: null,
+      basePerToken: parseEther("1"),
+      feeBps: 100,
+      initialSupply: parseEther("1000"),
+      lifecycle: {
+        marketPhase: "graduated",
+        graduationProgressBps: 10_000,
+        graduationThresholdBase: parseEther("666"),
+        baseRaised: parseEther("666"),
+        remainingCurveTokens: 0n,
+        graduatedPool: null,
+        liquidityVenue: "uniswap-v4",
+        poolManager: pool,
+        poolId: v4PoolId,
+        hook: locker,
+        positionLocker: locker,
+        positionTokenId: 453n,
+        poolFeePips: 10_000,
+      },
+    });
+
+    expect(result.tradeCount).toBe(1);
+    expect(result.totalVolumeBase).toBe(parseEther("100").toString());
+    expect(result.totalFeesBase).toBe(parseEther("1").toString());
+    expect(result.marketType).toBe("locked-uniswap-v4-position");
+    expect(result.baseSymbol).toBe("ETH");
+    expect(result.poolManager).toBe(pool);
+    expect(result.poolId).toBe(v4PoolId);
+    expect(result.hook).toBe(locker);
+    expect(result.positionTokenId).toBe("453");
   });
 
   it("decodes the production graduation event with locker and position id", () => {

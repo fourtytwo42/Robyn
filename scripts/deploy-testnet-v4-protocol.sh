@@ -268,6 +268,32 @@ factory_genesis_token="$(
 
 venue_hash="$(sha256sum "$venue_manifest" | awk '{print $1}')"
 asset_routes="$(jq -c '.faucetStockRoutes' "$venue_manifest")"
+deployment_block_raw="$(
+  cast receipt "${txs[timelock]}" --rpc-url "$rpc_url" --json | jq -er '.blockNumber'
+)"
+deployment_block="$((deployment_block_raw))"
+asset_catalog="$(
+  jq -c --slurpfile venue "$venue_manifest" '
+    [$venue[0].faucetStockRoutes[] as $route
+      | .assetCatalog.assets[] as $catalog
+      | select($route.symbol == $catalog.symbol)
+      | $catalog
+        + {
+            address: $route.address,
+            chainId: 46630,
+            decimals: 18,
+            verification: "robinhood-testnet-faucet-stock",
+            mockOnly: false,
+            disclosure: "Robinhood Testnet faucet asset. Not a production Stock Token and has no value or redemption rights.",
+            route: {kind:"uniswap-v4",ready:true},
+            poolId: $route.poolId,
+            poolFee: $route.fee,
+            tickSpacing: $route.tickSpacing,
+            hook: $route.hooks
+          }
+      | del(.mockSymbol,.fixedRateX18)]
+  ' deployments/46630.json
+)"
 state_view_tx="${txs[stateView]:-$(jq -r '.contracts.stateView.creationTransaction // empty' "$venue_manifest")}"
 deployment_transactions="$(
   jq -n \
@@ -356,11 +382,13 @@ jq -n \
   --argjson schemaVersion 7 \
   --arg environment "$([[ "$rehearsal" == "true" ]] && echo robinhood-testnet-fork-rehearsal || echo robinhood-testnet)" \
   --argjson chainId 46630 \
+  --argjson deploymentBlock "$deployment_block" \
   --arg gitCommit "$(git rev-parse HEAD)" \
   --arg deployer "$deployer" \
   --arg guardian "$guardian" \
   --arg venueManifestSha256 "$venue_hash" \
   --argjson assetRoutes "$asset_routes" \
+  --argjson assetCatalog "$asset_catalog" \
   --arg poolManager "$pool_manager" \
   --arg positionManager "$position_manager" \
   --arg quoter "$quoter" \
@@ -394,6 +422,7 @@ jq -n \
     schemaVersion: $schemaVersion,
     environment: $environment,
     chainId: $chainId,
+    deploymentBlock: $deploymentBlock,
     gitCommit: $gitCommit,
     deployer: $deployer,
     guardian: $guardian,
@@ -401,12 +430,23 @@ jq -n \
     venueProvenance: "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
     venueManifestSha256: $venueManifestSha256,
     assetRoutes: $assetRoutes,
+    assetCatalog: {
+      schemaVersion: 2,
+      snapshotAt: (now | todateiso8601),
+      disclosure: "Robinhood Testnet faucet assets are test-only and are not production Stock Tokens, backed shares, or redeemable securities.",
+      assets: $assetCatalog
+    },
     contracts: {
       poolManager: $poolManager,
       positionManager: $positionManager,
       quoter: $quoter,
       permit2: $permit2,
       stateView: $stateView,
+      baseAsset: "0x0000000000000000000000000000000000000000",
+      rewardAssets: [$assetRoutes[].address],
+      conversionRouter: $assetRouter,
+      routeRegistry: $assetRouter,
+      factory: $launchFactory,
       timelock: $timelock,
       daoToken: $daoToken,
       governor: $governor,
@@ -419,7 +459,14 @@ jq -n \
       lockerDeployer: $lockerDeployer,
       marketDeployer: $marketDeployer,
       marketFactory: $marketFactory,
-      atomicLaunchCoordinator: $coordinator
+      atomicLaunchCoordinator: $coordinator,
+      guardian: $guardian,
+      nativeFeeConverter: "0x0000000000000000000000000000000000000000",
+      genesisToken: $genesis.token,
+      genesisVault: $genesis.vault,
+      genesisMarket: $genesis.market,
+      genesisGraduationAdapter: $genesis.graduationAdapter,
+      genesisPositionLocker: $genesis.positionLocker
     },
     deploymentTransactions: $deploymentTransactions,
     configurationTransactions: $configurationTransactions,

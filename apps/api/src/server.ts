@@ -66,15 +66,28 @@ const rpcClient = createPublicClient({
     process.env.ROBYN_OPERATOR_RPC_URL ?? "http://127.0.0.1:8545",
   ),
 });
+const zeroAddress = "0x0000000000000000000000000000000000000000";
 const deployment = JSON.parse(
   await readFile(
     process.env.ROBYN_MANIFEST ?? "/home/hendo420/Robyn/deployments/31337.json",
     "utf8",
   ),
 ) as {
+  schemaVersion?: number;
+  liquidityVenue?: "uniswap-v4" | "uniswap-v3";
+  venueProvenance?: string;
+  venueManifestSha256?: string;
+  assetRoutes?: Array<{
+    symbol: string;
+    address: Address;
+    poolId: `0x${string}`;
+    fee: number;
+    tickSpacing: number;
+    hooks: Address;
+  }>;
   deploymentBlock: number;
   contracts: {
-    baseAsset: Address;
+    baseAsset?: Address;
     conversionRouter?: Address;
     routeRegistry?: Address;
     marketFactory: Address;
@@ -85,6 +98,12 @@ const deployment = JSON.parse(
     guardian: Address;
     protocolFeeRouter: Address;
     nativeFeeConverter: Address;
+    poolManager?: Address;
+    positionManager?: Address;
+    quoter?: Address;
+    stateView?: Address;
+    oracleHook?: Address;
+    assetRouter?: Address;
   };
   ipfsMetadata?: {
     tokenListCid?: string | null;
@@ -96,11 +115,12 @@ const deployment = JSON.parse(
 const assetCatalog = new AssetCatalogService(
   rpcClient,
   chainId,
-  deployment.contracts.baseAsset,
-  deployment.contracts.routeRegistry ?? deployment.contracts.conversionRouter,
+  deployment.contracts.baseAsset ?? (zeroAddress as Address),
+  deployment.contracts.assetRouter ??
+    deployment.contracts.routeRegistry ??
+    deployment.contracts.conversionRouter,
   deployment.assetCatalog,
 );
-const zeroAddress = "0x0000000000000000000000000000000000000000";
 const erc20ViewAbi = [
   {
     type: "function",
@@ -118,6 +138,13 @@ const erc20ViewAbi = [
   },
 ] as const;
 const marketViewAbi = [
+  {
+    type: "function",
+    name: "nativePerToken",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
   {
     type: "function",
     name: "baseAsset",
@@ -183,6 +210,13 @@ const marketViewAbi = [
   },
   {
     type: "function",
+    name: "graduationThresholdNative",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
     name: "baseRaised",
     stateMutability: "view",
     inputs: [],
@@ -190,10 +224,40 @@ const marketViewAbi = [
   },
   {
     type: "function",
+    name: "nativeRaised",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "poolId",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
     name: "realCurveTokenReserve",
     stateMutability: "view",
     inputs: [],
     outputs: [{ type: "uint256" }],
+  },
+] as const;
+const v4LockerViewAbi = [
+  {
+    type: "function",
+    name: "positionTokenId",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "principalLiquidity",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint128" }],
   },
 ] as const;
 const graduationAdapterViewAbi = [
@@ -247,6 +311,9 @@ const analyticsEventTopics = [
   "0xcb64f2436060c9575db20c5dcf9cdc11657017ee5b0301949f531b3dd7da6b19",
   "0x8d0453dc55ff49f0c8c7ca816943faff3ced84a6a1a9b3831f8bcf12b4d700c3",
   "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67",
+  "0x40e9cecb9f5f1f1c5b9c97dec2917b7ee92e57ba5563708daca94dd84ad7112f",
+  "0xa5c83464d6124f18b54a3ee18b226e2fd57959f9b2b5e862f8142d6332b74493",
+  "0x4867cbb119af3e45df01db401a69825a79a97a50984b1ddaca56f25b51c17d85",
 ] as const;
 
 async function resolveLaunchMarket(token: string, storedMarket: string) {
@@ -308,7 +375,10 @@ type MarketConfiguration = {
   baseRaised: bigint;
   remainingCurveTokens: bigint;
   graduatedPool: Address | null;
-  liquidityVenue: "uniswap-v3" | "devnet-locked-pool" | null;
+  liquidityVenue: "uniswap-v4" | "uniswap-v3" | "devnet-locked-pool" | null;
+  poolManager: Address | null;
+  poolId: `0x${string}` | null;
+  hook: Address | null;
   positionLocker: Address | null;
   positionTokenId: bigint | null;
   poolFeePips: number | null;
@@ -318,6 +388,87 @@ const tokenSupply = new Map<string, Promise<bigint>>();
 async function getMarketConfiguration(
   market: Address,
 ): Promise<MarketConfiguration> {
+  if (deployment.liquidityVenue === "uniswap-v4") {
+    const [
+      nativePerToken,
+      feeBps,
+      graduated,
+      progress,
+      threshold,
+      raised,
+      remaining,
+      poolId,
+      locker,
+    ] = await Promise.all([
+      rpcClient.readContract({
+        address: market,
+        abi: marketViewAbi,
+        functionName: "nativePerToken",
+      }),
+      rpcClient.readContract({
+        address: market,
+        abi: marketViewAbi,
+        functionName: "feeBps",
+      }),
+      rpcClient.readContract({
+        address: market,
+        abi: marketViewAbi,
+        functionName: "graduated",
+      }),
+      rpcClient.readContract({
+        address: market,
+        abi: marketViewAbi,
+        functionName: "graduationProgressBps",
+      }),
+      rpcClient.readContract({
+        address: market,
+        abi: marketViewAbi,
+        functionName: "graduationThresholdNative",
+      }),
+      rpcClient.readContract({
+        address: market,
+        abi: marketViewAbi,
+        functionName: "nativeRaised",
+      }),
+      rpcClient.readContract({
+        address: market,
+        abi: marketViewAbi,
+        functionName: "realCurveTokenReserve",
+      }),
+      rpcClient.readContract({
+        address: market,
+        abi: marketViewAbi,
+        functionName: "poolId",
+      }),
+      rpcClient.readContract({
+        address: market,
+        abi: marketViewAbi,
+        functionName: "positionLocker",
+      }),
+    ]);
+    const positionTokenId = await rpcClient.readContract({
+      address: locker,
+      abi: v4LockerViewAbi,
+      functionName: "positionTokenId",
+    });
+    return {
+      basePerToken: nativePerToken,
+      feeBps: Number(feeBps),
+      marketPhase: graduated ? "graduated" : "bonding",
+      graduationProgressBps: Number(progress),
+      graduationThresholdBase: threshold,
+      baseRaised: raised,
+      remainingCurveTokens: remaining,
+      graduatedPool: null,
+      liquidityVenue: "uniswap-v4",
+      poolManager: deployment.contracts.poolManager ?? null,
+      poolId,
+      hook: deployment.contracts.oracleHook ?? null,
+      positionLocker: locker,
+      positionTokenId: positionTokenId === 0n ? null : positionTokenId,
+      poolFeePips: 10_000,
+    };
+  }
   const [basePerToken, feeBps] = await Promise.all([
     rpcClient.readContract({
       address: market,
@@ -411,6 +562,9 @@ async function getMarketConfiguration(
       remainingCurveTokens: remaining,
       graduatedPool,
       liquidityVenue,
+      poolManager: null,
+      poolId: null,
+      hook: null,
       positionLocker,
       positionTokenId,
       poolFeePips,
@@ -426,6 +580,9 @@ async function getMarketConfiguration(
       remainingCurveTokens: 0n,
       graduatedPool: null,
       liquidityVenue: null,
+      poolManager: null,
+      poolId: null,
+      hook: null,
       positionLocker: null,
       positionTokenId: null,
       poolFeePips: null,
@@ -471,7 +628,11 @@ async function discoveryMetrics(rows: LaunchRow[]) {
         (row) =>
           configurations
             .get(row.token.toLowerCase())
-            ?.graduatedPool?.toLowerCase() ?? zeroAddress,
+            ?.poolManager?.toLowerCase() ??
+          configurations
+            .get(row.token.toLowerCase())
+            ?.graduatedPool?.toLowerCase() ??
+          zeroAddress,
       ),
       analyticsEventTopics,
     ],
@@ -494,11 +655,14 @@ async function discoveryMetrics(rows: LaunchRow[]) {
         config.marketPhase === "graduated" && config.graduatedPool
           ? config.graduatedPool
           : (row.market as Address);
-      const baseAssetAddress = await rpcClient.readContract({
-        address: row.market as Address,
-        abi: marketViewAbi,
-        functionName: "baseAsset",
-      });
+      const baseAssetAddress =
+        config.liquidityVenue === "uniswap-v4"
+          ? (zeroAddress as Address)
+          : await rpcClient.readContract({
+              address: row.market as Address,
+              abi: marketViewAbi,
+              functionName: "baseAsset",
+            });
       const [tokenReserve, baseReserve] = await Promise.all([
         rpcClient.readContract({
           address: row.token as Address,
@@ -506,12 +670,14 @@ async function discoveryMetrics(rows: LaunchRow[]) {
           functionName: "balanceOf",
           args: [activeLiquidityAddress],
         }),
-        rpcClient.readContract({
-          address: baseAssetAddress,
-          abi: erc20ViewAbi,
-          functionName: "balanceOf",
-          args: [activeLiquidityAddress],
-        }),
+        config.liquidityVenue === "uniswap-v4"
+          ? rpcClient.getBalance({ address: activeLiquidityAddress })
+          : rpcClient.readContract({
+              address: baseAssetAddress,
+              abi: erc20ViewAbi,
+              functionName: "balanceOf",
+              args: [activeLiquidityAddress],
+            }),
       ]);
       const input = {
         launch: {
@@ -521,6 +687,9 @@ async function discoveryMetrics(rows: LaunchRow[]) {
           baseAsset: baseAssetAddress,
           ...(config.graduatedPool
             ? { liquidityPool: config.graduatedPool }
+            : {}),
+          ...(config.poolManager && config.poolId
+            ? { poolManager: config.poolManager, poolId: config.poolId }
             : {}),
         },
         logs: tokenLogs,
@@ -773,6 +942,9 @@ app.get<{
             remainingCurveTokens: metric.remainingCurveTokens,
             graduatedPool: metric.graduatedPool,
             liquidityVenue: metric.liquidityVenue,
+            poolManager: metric.poolManager,
+            poolId: metric.poolId,
+            hook: metric.hook,
             positionLocker: metric.positionLocker,
             positionTokenId: metric.positionTokenId,
             poolFeePips: metric.poolFeePips,
@@ -944,13 +1116,15 @@ app.get<{ Params: { token: string } }>(
     if (!launch) return reply.code(404).send({ error: "launch_not_found" });
     const tokenAddress = launch.token as Address;
     const marketAddress = launch.market as Address;
-    const [baseAsset, config, totalSupply] = await Promise.all([
-      rpcClient.readContract({
-        address: marketAddress,
-        abi: marketViewAbi,
-        functionName: "baseAsset",
-      }),
-      getMarketConfiguration(marketAddress),
+    const config = await getMarketConfiguration(marketAddress);
+    const [baseAsset, totalSupply] = await Promise.all([
+      config.liquidityVenue === "uniswap-v4"
+        ? Promise.resolve(zeroAddress as Address)
+        : rpcClient.readContract({
+            address: marketAddress,
+            abi: marketViewAbi,
+            functionName: "baseAsset",
+          }),
       rpcClient.readContract({
         address: tokenAddress,
         abi: erc20ViewAbi,
@@ -967,6 +1141,7 @@ app.get<{ Params: { token: string } }>(
           ...(config.graduatedPool
             ? { liquidityPool: config.graduatedPool }
             : {}),
+          ...(config.poolManager ? { poolManager: config.poolManager } : {}),
         }),
         analyticsEventTopics,
       ],
@@ -1000,12 +1175,14 @@ app.get<{ Params: { token: string } }>(
           }),
         ),
       ),
-      rpcClient.readContract({
-        address: baseAsset,
-        abi: erc20ViewAbi,
-        functionName: "balanceOf",
-        args: [activeLiquidityAddress],
-      }),
+      config.liquidityVenue === "uniswap-v4"
+        ? rpcClient.getBalance({ address: activeLiquidityAddress })
+        : rpcClient.readContract({
+            address: baseAsset,
+            abi: erc20ViewAbi,
+            functionName: "balanceOf",
+            args: [activeLiquidityAddress],
+          }),
     ]);
     const balances = new Map(
       accountList.map((address, index) => [
@@ -1021,6 +1198,9 @@ app.get<{ Params: { token: string } }>(
         baseAsset,
         ...(config.graduatedPool
           ? { liquidityPool: config.graduatedPool }
+          : {}),
+        ...(config.poolManager && config.poolId
+          ? { poolManager: config.poolManager, poolId: config.poolId }
           : {}),
       },
       logs,
@@ -1061,6 +1241,37 @@ const assetCategories = new Set([
   "crypto",
   "custom",
 ]);
+
+app.get("/dex/venue", async () => ({
+  data: {
+    liquidityVenue: deployment.liquidityVenue ?? "uniswap-v3",
+    provenance: deployment.venueProvenance ?? null,
+    manifestSha256: deployment.venueManifestSha256 ?? null,
+    verificationStatus:
+      deployment.liquidityVenue === "uniswap-v4"
+        ? "frozen-manifest-verified"
+        : "legacy-deployment",
+    unlistedTestnet:
+      deployment.venueProvenance ===
+      "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
+    disclosure:
+      deployment.liquidityVenue === "uniswap-v4"
+        ? "This shared chain-46630 Uniswap v4 mirror is not listed in Uniswap's official deployment registry. Robyn independently freezes and verifies its runtime hashes and wiring."
+        : null,
+    contracts: {
+      poolManager: deployment.contracts.poolManager ?? null,
+      positionManager: deployment.contracts.positionManager ?? null,
+      stateView: deployment.contracts.stateView ?? null,
+      quoter: deployment.contracts.quoter ?? null,
+      hook: deployment.contracts.oracleHook ?? null,
+    },
+    missingOptionalComponents:
+      deployment.liquidityVenue === "uniswap-v4"
+        ? ["canonical-state-view", "position-descriptor", "reserves-lens"]
+        : [],
+    routes: deployment.assetRoutes ?? [],
+  },
+}));
 const assetPageSize = 24;
 
 function assetCursor(address: string) {

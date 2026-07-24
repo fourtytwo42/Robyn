@@ -11,6 +11,7 @@ import { createDatabase } from "@robyn/db";
 type Manifest = {
   schemaVersion?: number;
   chainId: number;
+  liquidityVenue?: "uniswap-v4" | "uniswap-v3";
   deploymentBlock: number;
   contracts: {
     factory: Address;
@@ -78,6 +79,9 @@ const zeroAddress = "0x0000000000000000000000000000000000000000";
 const atomicLaunchEvent = parseAbiItem(
   "event AtomicLaunchCreated(uint256 indexed launchId,address indexed creator,address indexed token,address vault,address market,address adapter,address pool,address locker,bytes32 configurationHash,bytes32 launchSaltHash,bytes32 metadataUriHash)",
 );
+const atomicV4LaunchEvent = parseAbiItem(
+  "event AtomicV4LaunchCreated(uint256 indexed launchId,address indexed creator,address indexed token,(address vault,address market,address adapter,address poolManager,bytes32 poolId,address positionManager,address hook,address locker,uint24 poolFeePips,int24 tickSpacing,bytes32 configurationHash,bytes32 launchSaltHash,bytes32 metadataUriHash) receipt)",
+);
 const marketStateAbi = [
   {
     type: "function",
@@ -125,6 +129,31 @@ const feeRouterStateAbi = [
     ],
   },
 ] as const;
+const nativeV4FeeRouterStateAbi = [
+  {
+    type: "function",
+    name: "launchAccount",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "creator", type: "address" },
+          { name: "vault", type: "address" },
+          { name: "market", type: "address" },
+          { name: "locker", type: "address" },
+          { name: "cumulativeNativeFees", type: "uint256" },
+          { name: "cumulativeLaunchFeesConverted", type: "uint256" },
+          { name: "claimableCreatorNative", type: "uint256" },
+          { name: "cumulativeCreatorNative", type: "uint256" },
+          { name: "claimedCreatorNative", type: "uint256" },
+          { name: "registered", type: "bool" },
+        ],
+      },
+    ],
+  },
+] as const;
 
 async function loadAtomicLaunches(asOfBlock: bigint) {
   const coordinator = manifest.contracts.atomicLaunchCoordinator;
@@ -133,9 +162,11 @@ async function loadAtomicLaunches(asOfBlock: bigint) {
       string,
       { blockNumber: bigint; args: Record<string, unknown> }
     >();
+  const v4 = manifest.liquidityVenue === "uniswap-v4";
+  const event = v4 ? atomicV4LaunchEvent : atomicLaunchEvent;
   const logs = await client.getLogs({
     address: coordinator,
-    event: atomicLaunchEvent,
+    event,
     fromBlock: BigInt(manifest.deploymentBlock),
     toBlock: asOfBlock,
   });
@@ -145,13 +176,15 @@ async function loadAtomicLaunches(asOfBlock: bigint) {
   >();
   for (const log of logs) {
     const decoded = decodeEventLog({
-      abi: [atomicLaunchEvent],
+      abi: [event],
       data: log.data,
       topics: log.topics,
     });
-    launches.set(String(decoded.args.launchId), {
+    const eventArgs = decoded.args as unknown as Record<string, unknown>;
+    const receipt = eventArgs.receipt as Record<string, unknown> | undefined;
+    launches.set(String(eventArgs.launchId), {
       blockNumber: log.blockNumber,
-      args: decoded.args as unknown as Record<string, unknown>,
+      args: receipt ? { ...eventArgs, ...receipt } : eventArgs,
     });
   }
   return launches;
@@ -287,7 +320,10 @@ async function rebuildLaunches(asOfBlock: bigint) {
       if (manifest.contracts.protocolFeeRouter) {
         const feeAccount = await client.readContract({
           address: manifest.contracts.protocolFeeRouter,
-          abi: feeRouterStateAbi,
+          abi:
+            manifest.liquidityVenue === "uniswap-v4"
+              ? nativeV4FeeRouterStateAbi
+              : feeRouterStateAbi,
           functionName: "launchAccount",
           args: [token],
         });
@@ -348,7 +384,9 @@ async function rebuildLaunches(asOfBlock: bigint) {
         created.toString(),
         asOfBlock.toString(),
         atomic && manifest.contracts.protocolFeeRouter
-          ? "native-v3-dao-atomic"
+          ? manifest.liquidityVenue === "uniswap-v4"
+            ? "native-v4-dao-atomic"
+            : "native-v3-dao-atomic"
           : atomic
             ? "native-v2-atomic"
             : "native-v1",

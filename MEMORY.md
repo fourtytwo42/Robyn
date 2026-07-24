@@ -82,6 +82,17 @@ Durable project context lives here. Update this file whenever information should
   deployer's 6,920,854,708,782,403 wei. Evidence is checksummed under
   `/tmp/robyn-v4-release-gates-ca68d27/`. This is fork evidence only; no live v4
   transaction has been broadcast.
+- V4 application/indexer checkpoint (2026-07-24): the schema-v7 rehearsal
+  manifest now exposes the five verified faucet assets and native-v4 contract
+  aliases, the indexer reconstructs `AtomicV4LaunchCreated`, and the API/web
+  expose ETH market state, PoolManager, pool ID, hook, immutable position and
+  the unlisted-venue disclosure. An isolated `PGDATABASE=robyn_v4_api_it`
+  rebuild against the clean fork indexed one `native-v4-dao-atomic` launch and
+  returned the exact pool ID `0x44c1...3fefd` on both detail and discovery
+  responses. V4 asset-route and singleton-PoolManager swap regressions pass.
+  Repository format, lint, strict types, application tests, Anvil smoke and the
+  complete 85-test Foundry suite pass. The production v3 services remain
+  untouched; no live v4 transaction has been broadcast.
 - Faucet-stock checkpoint (2026-07-24): the encrypted deployer holds 5 tokens
   each of exact faucet contracts TSLA `0xC9f9...Bd4E`, AMD `0x7117...778d`,
   AMZN `0x5884...9E02`, NFLX `0x3b82...8C93`, and PLTR `0x1FBE...98d0`.

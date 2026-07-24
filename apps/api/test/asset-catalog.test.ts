@@ -8,6 +8,7 @@ import {
 const base = "0x0000000000000000000000000000000000000001" as Address;
 const asset = "0x0000000000000000000000000000000000000002" as Address;
 const registry = "0x0000000000000000000000000000000000000003" as Address;
+const native = "0x0000000000000000000000000000000000000000" as Address;
 
 function manifest(): AssetCatalogManifest {
   return {
@@ -95,6 +96,52 @@ describe("AssetCatalogService", () => {
     });
     expect(second).toEqual(first);
     expect(codeReads).toBe(1);
+  });
+
+  it("reads and quotes native Uniswap v4 routes", async () => {
+    const client = {
+      getCode: async () => "0x01",
+      readContract: async ({ functionName }: { functionName: string }) => {
+        if (functionName === "name") return "Tesla";
+        if (functionName === "symbol") return "TSLA";
+        if (functionName === "decimals") return 18;
+        if (functionName === "totalSupply") return 100n;
+        if (functionName === "routeStatus") {
+          return {
+            poolId: `0x${"1".repeat(64)}`,
+            liquidity: 5_000n,
+            minimumLiquidity: 1_000n,
+            maximumNativeInput: 1_000_000n,
+            verificationClass: `0x${"0".repeat(64)}`,
+            fee: 10_000,
+            tickSpacing: 200,
+            hooks: native,
+            ready: true,
+            reason: `0x${"0".repeat(64)}`,
+          };
+        }
+        throw new Error(`unexpected ${functionName}`);
+      },
+      simulateContract: async () => ({ result: [25n, 0n] }),
+    } as unknown as PublicClient;
+    const service = new AssetCatalogService(
+      client,
+      46630,
+      native,
+      registry,
+      manifest(),
+    );
+
+    await expect(service.resolve(asset)).resolves.toMatchObject({
+      route: {
+        kind: "uniswap-v4",
+        ready: true,
+        venue: registry,
+        poolFee: 10_000,
+        liquidity: "5000",
+      },
+    });
+    await expect(service.quote(asset, 10n)).resolves.toBe(25n);
   });
 
   it("classifies an unknown contract as unverified even when its symbol spoofs a curated asset", async () => {
