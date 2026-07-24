@@ -29,6 +29,13 @@ Durable project context lives here. Update this file whenever information should
   ciphertext, or passphrase fields from evidence. Launch/trade/governance/
   sweep commands remain intentionally unavailable until implemented and
   rehearsed; no live transaction was broadcast.
+- Campaign rehearsal correction (2026-07-24): the first isolated CLI preflight
+  reached the exact contract stack but an old Anvil fork could not retrieve the
+  Nitro `0x6c` fee-estimator trie node. The CLI now accepts an explicit L1
+  base-fee only with both `--rehearsal` and a loopback RPC; every live or remote
+  invocation rejects the override and must read the onchain estimator. This
+  preserves live fail-closed pricing while allowing deterministic fork
+  rehearsal. No public-testnet state changed.
 - Schema-v8 internal-audit checkpoint (2026-07-24): manual review found and
   fixed a release-blocking economic gap in permissionless basket conversion.
   All 24 basket routes now freeze a deployment reference tick, fail closed

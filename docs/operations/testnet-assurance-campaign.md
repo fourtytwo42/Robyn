@@ -19,6 +19,10 @@ automation, or daemon.
 - Live preflight requires chain 46630, schema v8, a clean exact
   `origin/main`/manifest release, runtime code at every required contract, 25%
   execution and Nitro L1-data headroom, and the fixed 0.0015 ETH reserve.
+- A loopback rehearsal may supply `--l1-base-fee-wei` when an old Anvil fork
+  cannot retrieve the Nitro fee-estimator trie node. The override is rejected
+  for every non-loopback or non-rehearsal invocation; live testnet always reads
+  the chain estimator.
 
 ## Operator phases
 
@@ -47,4 +51,3 @@ governance, final write-count filling, and residual sweeping are release gates
 and must be present and pass an isolated rehearsal before the live campaign is
 authorized. Until then, the operator must not use the foundation commands to
 claim that the public campaign is complete.
-

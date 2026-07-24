@@ -308,19 +308,30 @@ async function preflight() {
   const state = loadState();
   const releaseSha = await verifyRelease(manifest);
   const gasPriceWei = await publicClient.getGasPrice();
-  const l1BaseFeeWei = await publicClient.readContract({
-    address: "0x000000000000000000000000000000000000006C",
-    abi: [
-      {
-        type: "function",
-        name: "getL1BaseFeeEstimate",
-        stateMutability: "view",
-        inputs: [],
-        outputs: [{ type: "uint256" }],
-      },
-    ],
-    functionName: "getL1BaseFeeEstimate",
-  });
+  const l1Override = option("l1-base-fee-wei");
+  if (
+    l1Override !== undefined &&
+    (!flag("rehearsal") ||
+      !/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/.test(rpcUrl))
+  ) {
+    throw new Error("L1 base-fee override is restricted to loopback rehearsals");
+  }
+  const l1BaseFeeWei =
+    l1Override !== undefined
+      ? BigInt(l1Override)
+      : await publicClient.readContract({
+          address: "0x000000000000000000000000000000000000006C",
+          abi: [
+            {
+              type: "function",
+              name: "getL1BaseFeeEstimate",
+              stateMutability: "view",
+              inputs: [],
+              outputs: [{ type: "uint256" }],
+            },
+          ],
+          functionName: "getL1BaseFeeEstimate",
+        });
   const graduationValue =
     BigInt(manifest.market.graduationThresholdNative) * 3n +
     100_000_000_000n;
