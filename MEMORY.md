@@ -313,6 +313,10 @@ Durable project context lives here. Update this file whenever information should
   the launch receipt block and the independent verifier requires the coordinator
   event to be discoverable from `deploymentBlock`. Rebuild the isolated index
   from the corrected manifest.
+- Wallet correction: Public in-app-browser acceptance opened the multi-wallet
+  modal, but selecting WalletConnect crashed because `cuer 0.0.3` passes
+  `border: 0` while newly resolved `qr 0.6.0` rejects zero. Pin transitive
+  `qr 0.5.5`, rebuild the protected bundle and rerun the WalletConnect flow.
 - Follow-up: Restart the isolated testnet data plane against the corrected
   block, verify the public Quick Tunnel and complete browser/onchain acceptance.
   Do not describe local-only IPFS as redundant.
