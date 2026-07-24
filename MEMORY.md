@@ -4,6 +4,15 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Timestamp-sensitive gas correction (2026-07-24): exact fork `a902415`
+  completed 1,282 product transactions through all buys, transfers, approvals,
+  three graduations, and 32 sells before a graduated sell exhausted viem's
+  near-exact gas limit. Estimation updated the current hook observation in
+  place, while the mined next-timestamp transaction wrote a new observation
+  and cost more gas. The transaction reverted completely. Campaign sends now
+  estimate explicitly and apply 25% gas-limit headroom while retaining the
+  preflight-frozen gas price; the cap cannot increase actual gas charged.
+
 - Weighted-tree correction (2026-07-24): exact fork `8110894` completed 809
   buys before an ordinary high-value actor exhausted an equal shared wallet
   budget. No partial transaction survived. The binary funding tree now accepts

@@ -33,6 +33,7 @@ import {
   weightedFundingTreeTransfers,
 } from "./lib/campaign-wallets.mjs";
 import {
+  applyHeadroom,
   assertSchema8Manifest,
   launchBasketPlan,
   plannedBuyValueWei,
@@ -251,7 +252,11 @@ async function recordTransaction(state, label, client, request) {
       state.preflight?.gasPriceWei && request.gasPrice === undefined
         ? { ...request, gasPrice: BigInt(state.preflight.gasPriceWei) }
         : request;
-    hash = await client.sendTransaction(pricedRequest);
+    const estimatedGas = await publicClient.estimateGas(pricedRequest);
+    hash = await client.sendTransaction({
+      ...pricedRequest,
+      gas: applyHeadroom(estimatedGas),
+    });
     state.submittedTransactions[label] = {
       hash,
       submittedAt: new Date().toISOString(),
