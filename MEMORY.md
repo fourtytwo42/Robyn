@@ -50,6 +50,17 @@ Durable project context lives here. Update this file whenever information should
   live execution price, the fixed campaign is expected to fit the funded
   wallets, subject to a fresh preflight before broadcast. No public-testnet
   state changed.
+- Campaign atomic-launch rehearsal checkpoint (2026-07-24): the operator now
+  supports eight resumable atomic launches. Live mode performs creator SIWE,
+  sanitized image upload, campaign-tagged immutable IPFS metadata preparation,
+  coordinator receipt decoding, index visibility wait, and one-time metadata
+  binding; only a loopback rehearsal may use a fixed metadata URI. A fresh
+  schema-v8 fork created eight unique tokens and covered all 24 routes exactly
+  once. Re-running the phase sent zero duplicate transactions. Public evidence
+  now includes all launch identities and baskets; it records 108 successful
+  funding/launch transactions. Trading, graduation, conversions, claims,
+  governance, write-count completion, and sweeping remain pending. No
+  public-testnet state changed.
 - Schema-v8 internal-audit checkpoint (2026-07-24): manual review found and
   fixed a release-blocking economic gap in permissionless basket conversion.
   All 24 basket routes now freeze a deployment reference tick, fail closed

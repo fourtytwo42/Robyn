@@ -13,10 +13,14 @@ import process from "node:process";
 import {
   createPublicClient,
   createWalletClient,
+  decodeEventLog,
   defineChain,
+  encodeFunctionData,
   formatEther,
   getAddress,
   http,
+  keccak256,
+  stringToHex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import {
@@ -108,6 +112,19 @@ function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
+function artifactAbi(contractName) {
+  return readJson(
+    join(
+      repoRoot,
+      "packages",
+      "contracts",
+      "out",
+      `${contractName}.sol`,
+      `${contractName}.json`,
+    ),
+  ).abi;
+}
+
 async function mapWithConcurrency(values, concurrency, worker) {
   const results = new Array(values.length);
   let cursor = 0;
@@ -158,6 +175,8 @@ function saveState(state) {
     actors: state.actors,
     phases: state.phases,
     transactions: state.transactions,
+    launches: state.launches ?? [],
+    funding: state.funding ?? null,
     preflight: state.preflight ?? null,
     updatedAt: state.updatedAt,
   });
@@ -235,6 +254,115 @@ async function recordTransaction(state, label, client, request) {
   state.transactions.push(entry);
   saveState(state);
   return entry;
+}
+
+async function apiJson(url, init = {}) {
+  const response = await fetch(url, init);
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(
+      `API ${response.status} ${url}: ${body.error ?? "request_failed"}`,
+    );
+  }
+  return { body, response };
+}
+
+async function creatorSession(account) {
+  const apiBase = process.env.ROBYN_CAMPAIGN_API_URL;
+  const origin = process.env.ROBYN_CAMPAIGN_APP_ORIGIN;
+  if (!apiBase || !origin) {
+    throw new Error("Campaign API URL and application origin are required");
+  }
+  const common = { "content-type": "application/json", origin };
+  const nonce = await apiJson(`${apiBase}/auth/nonce`, {
+    method: "POST",
+    headers: common,
+    body: JSON.stringify({ address: account.address }),
+  });
+  const message = nonce.body.data.message;
+  const signature = await account.signMessage({ message });
+  const verified = await apiJson(`${apiBase}/auth/verify`, {
+    method: "POST",
+    headers: common,
+    body: JSON.stringify({ message, signature }),
+  });
+  const cookie = verified.response.headers.get("set-cookie")?.split(";")[0];
+  if (!cookie) throw new Error("Authentication response did not set a session cookie");
+  return { apiBase, origin, cookie };
+}
+
+async function prepareCampaignMetadata(account, launch, releaseSha) {
+  const session = await creatorSession(account);
+  const artworkPath = resolve(
+    process.env.ROBYN_CAMPAIGN_ARTWORK ??
+      join(
+        repoRoot,
+        "apps",
+        "web",
+        "public",
+        "assets",
+        "launchpad",
+        "token-fallback.webp",
+      ),
+  );
+  const media = await apiJson(`${session.apiBase}/media?purpose=token`, {
+    method: "POST",
+    headers: {
+      "content-type": "image/webp",
+      origin: session.origin,
+      cookie: session.cookie,
+    },
+    body: readFileSync(artworkPath),
+  });
+  const operatorToken = requireProtectedFile(
+    resolve(process.env.ROBYN_CAMPAIGN_OPERATOR_TOKEN_FILE ?? "/nonexistent"),
+    "Campaign operator token",
+  );
+  const prepared = await apiJson(`${session.apiBase}/launch-metadata/prepare`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: session.origin,
+      cookie: session.cookie,
+      "x-robyn-operator-token": operatorToken,
+    },
+    body: JSON.stringify({
+      mediaId: media.body.data.media_id,
+      name: launch.name,
+      symbol: launch.symbol,
+      description: `Automated Robinhood Testnet assurance launch ${launch.index + 1}.`,
+      campaignId,
+      releaseSha,
+    }),
+  });
+  return {
+    session,
+    mediaId: media.body.data.media_id,
+    preparationId: prepared.body.data.preparation_id,
+    metadataUri: prepared.body.data.metadata_uri,
+    metadataCid: prepared.body.data.metadata_cid,
+  };
+}
+
+async function waitForLaunchAndBind(token, metadata) {
+  const deadline = Date.now() + 300_000;
+  while (Date.now() < deadline) {
+    const response = await fetch(`${metadata.session.apiBase}/launches/${token}`, {
+      headers: { origin: metadata.session.origin },
+    });
+    if (response.ok) break;
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 2_000));
+  }
+  if (Date.now() >= deadline) throw new Error(`Indexer did not expose ${token}`);
+  await apiJson(`${metadata.session.apiBase}/launches/${token}/metadata`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: metadata.session.origin,
+      cookie: metadata.session.cookie,
+    },
+    body: JSON.stringify({ preparationId: metadata.preparationId }),
+  });
 }
 
 async function init() {
@@ -460,6 +588,106 @@ async function fund() {
   console.log(json(state.funding));
 }
 
+async function launches() {
+  const manifest = loadManifest();
+  const state = loadState();
+  if (!state.phases.funded) throw new Error("Fund the campaign before launching");
+  const accounts = loadAccounts();
+  const plan = launchBasketPlan(manifest);
+  const coordinatorAbi = artifactAbi("RobynV4LaunchCoordinatorV5");
+  state.launches ??= [];
+  for (const launch of plan) {
+    if (state.launches.some((existing) => existing.index === launch.index)) continue;
+    const account = privateKeyToAccount(accounts[launch.index].privateKey);
+    let metadata;
+    const rehearsalUri = option("metadata-uri");
+    if (rehearsalUri !== undefined) {
+      if (
+        !flag("rehearsal") ||
+        !/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/.test(rpcUrl) ||
+        !/^ipfs:\/\/b[a-z2-7]+$/.test(rehearsalUri)
+      ) {
+        throw new Error("Metadata override is restricted to loopback rehearsals");
+      }
+      metadata = { metadataUri: rehearsalUri, preparationId: null, metadataCid: null };
+    } else {
+      metadata = await prepareCampaignMetadata(account, launch, state.releaseSha);
+    }
+    const userSalt = keccak256(
+      stringToHex(
+        `${accounts[launch.index].privateKey}:${campaignId}:${state.releaseSha}:${launch.index}`,
+      ),
+    );
+    const request = {
+      name: launch.name,
+      symbol: launch.symbol,
+      assets: launch.assets,
+      weights: launch.weights,
+      metadataUri: metadata.metadataUri,
+      userSalt,
+    };
+    const data = encodeFunctionData({
+      abi: coordinatorAbi,
+      functionName: "createLaunch",
+      args: [request],
+    });
+    const client = createWalletClient({
+      account,
+      chain,
+      transport: http(rpcUrl),
+    });
+    const transaction = await recordTransaction(
+      state,
+      `launch-${launch.index}`,
+      client,
+      {
+        account,
+        to: manifest.contracts.atomicLaunchCoordinator,
+        data,
+      },
+    );
+    const receipt = await publicClient.getTransactionReceipt({
+      hash: transaction.hash,
+    });
+    const decoded = receipt.logs
+      .map((log) => {
+        try {
+          return decodeEventLog({
+            abi: coordinatorAbi,
+            eventName: "AtomicV4LaunchCreated",
+            data: log.data,
+            topics: log.topics,
+          });
+        } catch {
+          return null;
+        }
+      })
+      .find(Boolean);
+    if (!decoded) throw new Error(`Missing coordinator event for launch ${launch.index}`);
+    const created = {
+      ...launch,
+      creator: account.address,
+      transactionHash: transaction.hash,
+      launchId: decoded.args.launchId.toString(),
+      token: decoded.args.token,
+      vault: decoded.args.receipt.vault,
+      market: decoded.args.receipt.market,
+      adapter: decoded.args.receipt.adapter,
+      poolId: decoded.args.receipt.poolId,
+      locker: decoded.args.receipt.locker,
+      metadataUri: metadata.metadataUri,
+      preparationId: metadata.preparationId,
+      metadataCid: metadata.metadataCid,
+    };
+    state.launches.push(created);
+    saveState(state);
+    if (metadata.preparationId) await waitForLaunchAndBind(created.token, metadata);
+  }
+  state.phases.launched = new Date().toISOString();
+  saveState(state);
+  console.log(json({ launchCount: state.launches.length, launches: state.launches }));
+}
+
 async function status() {
   const manifest = loadManifest();
   const state = loadState();
@@ -497,7 +725,9 @@ async function status() {
   );
 }
 
-if (!["init", "preflight", "fund", "status"].includes(command)) {
-  throw new Error("Usage: testnet-assurance-campaign.mjs <init|preflight|fund|status> --campaign ID");
+if (!["init", "preflight", "fund", "launches", "status"].includes(command)) {
+  throw new Error(
+    "Usage: testnet-assurance-campaign.mjs <init|preflight|fund|launches|status> --campaign ID",
+  );
 }
-await { init, preflight, fund, status }[command]();
+await { init, preflight, fund, launches, status }[command]();

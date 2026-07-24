@@ -39,6 +39,7 @@ export ROBYN_TESTNET_RPC_URL=https://rpc.testnet.chain.robinhood.com
 pnpm campaign:testnet init
 pnpm campaign:testnet preflight
 pnpm campaign:testnet fund
+pnpm campaign:testnet launches
 pnpm campaign:testnet status
 ```
 
@@ -47,8 +48,13 @@ passing preflight and journals every confirmed transaction before continuing.
 It funds the actors through a binary tree and is safe to resume because labels
 are unique and already-confirmed labels are skipped.
 
-The transaction-execution phases for launches, trading, conversions, claims,
+`launches` authenticates each creator with SIWE, uploads sanitized artwork,
+prepares campaign-tagged immutable IPFS metadata, submits one atomic launch,
+derives identity only from the coordinator receipt, waits for index visibility,
+and immutably binds the preparation. A fixed metadata URI may replace the API
+pipeline only on an explicitly marked loopback rehearsal.
+
+The remaining transaction-execution phases for trading, conversions, claims,
 governance, final write-count filling, and residual sweeping are release gates
-and must be present and pass an isolated rehearsal before the live campaign is
-authorized. Until then, the operator must not use the foundation commands to
-claim that the public campaign is complete.
+and must pass an isolated rehearsal before the live campaign is authorized.
+Until then, the operator must not claim that the public campaign is complete.
