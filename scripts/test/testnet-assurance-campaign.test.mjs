@@ -17,6 +17,7 @@ import {
   weightedWalletFunding,
   projectCampaignCost,
   REQUIRED_RESERVE_WEI,
+  V4_FEE_COLLECTION_MINIMUMS,
 } from "../lib/campaign-plan.mjs";
 
 const root = Buffer.from(
@@ -122,6 +123,10 @@ test("cost projection includes Nitro L1 data, 25 percent headroom, and hard rese
 
 test("fixed action inventory exceeds the 1,500-write gate before optional retries", () => {
   assert.ok(minimumActionCount() >= 1_500);
+});
+
+test("v4 fee collection accepts every nonnegative amount owed", () => {
+  assert.deepEqual(V4_FEE_COLLECTION_MINIMUMS, [0n, 0n]);
 });
 
 test("campaign value projection includes every planned payable user action", () => {

@@ -10,9 +10,13 @@ Durable project context lives here. Update this file whenever information should
   graduations, five distinct bonding states and bidirectional direct-v4 swaps.
   The first conversion attempt failed before broadcast because the campaign
   encoded `collectFees` with four inputs although the locker ABI has two
-  inputs and two return values. The runner now passes only the two uint128
-  maxima. The preserved rehearsal state remains safe for conversion debugging;
-  a fresh exact-SHA rehearsal is still required after the correction is pushed.
+  inputs and two return values. The next dry estimate proved those two inputs
+  are minimum acceptable amounts, so uint128 maxima correctly reverted with
+  `MinimumAmountInsufficient` before broadcast. The runner now passes `(0, 0)`
+  to collect every nonnegative amount owed and a focused test freezes this
+  semantic. The preserved rehearsal state remains safe for conversion
+  debugging; a fresh exact-SHA rehearsal is still required after the correction
+  is pushed.
 
 - Timestamp-sensitive gas correction (2026-07-24): exact fork `a902415`
   completed 1,282 product transactions through all buys, transfers, approvals,
