@@ -509,6 +509,20 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: rerun the complete financial smoke and gas measurement from a
   fresh fork before live protocol broadcast.
 
+### 2026-07-24 - V4 live deployer guard correction
+
+- Context: the first real protocol invocation failed before broadcast because
+  its reviewed-address literal contained an extra `5`.
+- Decision: define the reviewed deployer once in the protocol script and
+  compare normalized addresses against that exact value, matching the
+  StateView phase.
+- Files: `scripts/deploy-testnet-v4-protocol.sh`.
+- Commands/tests: encrypted keystore address preflight on chain 46630.
+- Result: the fail-closed guard prevented all sends; no protocol transaction
+  occurred under the incorrect check.
+- Follow-up: rerun the exact-commit gates required by the changed release
+  script, then perform the authorized broadcast.
+
 ### 2026-07-24 - Native-ETH Uniswap v4 contract checkpoint
 
 - Context: the user approved replacing active v3/tmUSD testnet architecture

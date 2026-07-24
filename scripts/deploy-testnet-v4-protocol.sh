@@ -8,6 +8,7 @@ legacy_asset_manifest="${ROBYN_TESTNET_V3_ASSET_MANIFEST:-$repo_root/deployments
 output="${ROBYN_TESTNET_V4_PROTOCOL_MANIFEST:-$repo_root/deployments/46630-v4.json}"
 rehearsal="${ROBYN_TESTNET_REHEARSAL:-false}"
 create2_deployer="0x4e59b44847b379578588920cA78FbF26c0B4956C"
+expected_deployer="0xecc5d6d032ADc9ca9E0F4042128067b8366da17A"
 zero="0x0000000000000000000000000000000000000000"
 export PATH="$HOME/.foundry/bin:$PATH"
 cd "$repo_root"
@@ -66,7 +67,7 @@ else
     exit 1
   }
   deployer="$(cast wallet address --keystore "$keystore" --password-file "$password_file")"
-  [[ "${deployer,,}" == "0xecc5d6d032ad5c9ca9e0f4042128067b8366da17a" ]] || {
+  [[ "${deployer,,}" == "${expected_deployer,,}" ]] || {
     echo "The encrypted project deployer address does not match the reviewed wallet" >&2
     exit 1
   }
