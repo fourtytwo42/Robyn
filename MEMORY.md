@@ -11,10 +11,19 @@ Durable project context lives here. Update this file whenever information should
   this file or repository.
 - Named-tunnel checkpoint (2026-07-24): Cloudflare tunnel
   `1c61bc58-6412-43c5-bb52-d64cfb96c9ff` is installed as the enabled
-  `cloudflared.service` with four healthy QUIC connections. Local ingress maps
-  `sherwoodforest.trade` and `www.sherwoodforest.trade` to
-  `http://127.0.0.1:3081`. Cloudflare DNS/public-hostname creation remains
-  required because the supplied tunnel token cannot mutate zone DNS.
+  `cloudflared.service` with healthy QUIC connections. Cloudflare published
+  both `sherwoodforest.trade` and `www.sherwoodforest.trade` to
+  `http://127.0.0.1:3081` and created their proxied DNS records. Both HTTPS
+  hostnames return the schema-v7 Robinhood Testnet v4 application. The old
+  ephemeral Quick Tunnel unit is stopped and disabled.
+- Sherwood Forest public-release checkpoint (2026-07-24): the pushed v4
+  application uses the green Sherwood Forest visual system, generated
+  tree/arrow/coin mark, matching favicon, testnet-first messaging and the
+  custom-domain WalletConnect metadata. Reown project
+  `ff5c6e7499443bc840541207e30e3401` allowlists the root and `www` origins;
+  Reown reports that allowlist changes may take up to six hours to propagate.
+  Never store the tunnel service token or any wallet credentials in Git or
+  memory.
 - V4 indexer recovery checkpoint (2026-07-24): the public-RPC bootstrap
   bottleneck was the indexer reading every block and every chain log
   individually from deployment height. It now scans only manifest contract
@@ -1361,6 +1370,15 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-24: Sherwood Forest custom-domain acceptance passed on
+  `https://sherwoodforest.trade`. Root, Markets, the canonical v4 token,
+  Create, DAO and Portfolio rendered the exact protected build with no
+  horizontal overflow at desktop or 390x844. The mobile guided creator flow
+  reached the three-asset TSLA/AMD/AMZN basket editor at 100%, Cloudflare
+  reported the named tunnel healthy, both root and `www` API status returned
+  HTTP 200 on chain 46630, and the WalletConnect selector exposed Robinhood,
+  MetaMask, Rabby, Coinbase, Rainbow, Trust, Ledger and browser-wallet paths.
+
 - 2026-07-23: Immutable IPFS browser acceptance created and independently
   verified `$IPFSA` at `0x2a482c145e1b64ef58257cd93574bac7f41b4b0a`.
   Its constructor-set `tokenURI()` matches the receipt-bound API record and
@@ -1771,10 +1789,6 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Supply a real 32-character WalletConnect/Reown project ID and register the
-  final stable HTTPS hostname in its allowlist.
-- Supply the stable hostname/domain and provision the named Cloudflare Tunnel
-  routing it to `http://127.0.0.1:3081`.
 - Configure a vendor-neutral IPFS Pinning Service endpoint/token in the
   protected testnet API environment.
 - Supply and review the actual RDAO member wallet/percentage allocation

@@ -434,9 +434,9 @@ export function BasketAssetPicker({
                   />
                 ) : null}
                 <p className="form-hint">
-                  Unverified contracts can be malicious. Robyn reads metadata
-                  defensively and requires a funded conversion route, but route
-                  availability is not an endorsement.
+                  Unverified contracts can be malicious. Sherwood Forest reads
+                  metadata defensively and requires a funded conversion route,
+                  but route availability is not an endorsement.
                 </p>
               </div>
             ) : (

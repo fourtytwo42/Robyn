@@ -160,7 +160,7 @@ export default async function LaunchDetail({
               <div className="identity-links">
                 <span>
                   {launch.metadata.verification_status === "robyn-sanitized"
-                    ? "Robyn-verified media"
+                    ? "Sherwood Forest verified media"
                     : "External metadata"}
                 </span>
                 <a

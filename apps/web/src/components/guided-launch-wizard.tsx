@@ -327,7 +327,7 @@ function CreatorSetup({
               style={{ transform: `scale(${zoom})` }}
             />
           ) : (
-            <TokenArt symbol="NEW" alt="Robyn fallback artwork" />
+            <TokenArt symbol="NEW" alt="Sherwood Forest fallback artwork" />
           )}
         </div>
         <div className="artwork-controls">
@@ -660,7 +660,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
           >
             <header className="launch-modal-header">
               <div>
-                <p className="eyebrow">Create on Robyn</p>
+                <p className="eyebrow">Create on Sherwood Forest</p>
                 <h2 id={titleId}>
                   {step === 1
                     ? "Token and artwork"
@@ -845,7 +845,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
                     <strong>
                       {artworkMediaId
                         ? "Sanitized custom artwork"
-                        : "Robyn fallback artwork"}
+                        : "Sherwood Forest fallback artwork"}
                     </strong>
                   </div>
                   <p className="form-hint">
