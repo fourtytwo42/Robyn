@@ -4,6 +4,16 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Secondary faucet wallet created (2026-07-24): a persistent encrypted
+  Robinhood Testnet wallet is stored outside the repository at
+  `/home/hendo420/.config/robyn/wallets/robinhood-testnet-faucet-2`. Its public
+  address is `0xeCD975C493959b7E9157433a86097ba55014D3eA`. The wallet and keystore
+  directories are mode `0700`; its password, keystore, and address files are
+  mode `0600`. It currently has zero balance and is intended to receive a
+  separate faucet claim, then transfer the received testnet ETH to the canonical
+  deployer `0xecc5d6d032ADc9ca9E0F4042128067b8366da17A`. No secret or recovery
+  material is stored in Git or this memory file. Last verified 2026-07-24.
+
 - Public schema-v8 broadcast is funding-blocked (2026-07-24): `main` was
   fast-forwarded and pushed to validated commit
   `2858bc8dd00d89e03bc9c3138b2d3461edcfdc07`. A fresh deployment and complete
