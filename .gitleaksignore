@@ -1,2 +1,4 @@
 # Immutable public IPFS token-list CID, not a credential.
 8467a8939cd98d0316ba87a2ea7b6bcaa72f3450:deployments/31337.json:generic-api-key:64
+# Solidity type declaration misclassified as a generic API key.
+9803bb129d84815dee74f7acdc4d9fc8ca21eb1f:packages/contracts/test/RobynV4ProtocolInvariant.t.sol:generic-api-key:21

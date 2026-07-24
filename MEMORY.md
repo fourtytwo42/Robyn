@@ -4,6 +4,31 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Schema-v8 predeployment gates advanced (2026-07-24): full repository
+  formatting, lint, strict typecheck, 96 application/service tests, Anvil smoke,
+  and all 123 Foundry tests passed. The active native-v4 security audit now
+  reports zero Git-history secrets, zero high/critical dependency advisories,
+  zero unresolved critical/high findings, and zero unresolved medium findings.
+  Thirty-seven medium detector results across four explicitly reviewed classes
+  are documented in `docs/protocol-security-review.md`; any new medium class
+  fails `scripts/security-audit.sh`. High false positives use only line-scoped
+  source annotations, not global detector suppression.
+
+- Exact-fork data-plane reconstruction passed (2026-07-24): an isolated
+  `robyn_schema8_reconcile` PostgreSQL database indexed the complete exact-fork
+  campaign state into nine native-v4 atomic launches, 2,470 raw logs and 1,215
+  chain-block rows through block 93,104,050. An isolated API, artifact service,
+  and keeper reached healthy status and returned all nine launches. Deleting
+  only this isolated chain projection and rebuilding solely from logs reproduced
+  the exact canonical launch hash `0187cb658f31d500d0acf0e995935bed` and identical
+  row counts. Evidence is under `/tmp/schema8-c4a38b2-gates/reconcile`.
+
+- Action-coverage regeneration (2026-07-24): the generated active schema-v8
+  inventory now covers 18 contracts, 131 public/external contract functions,
+  35 API endpoints, seven UI routes and three workers, including the new
+  `protectedQuoteFloor` function. Its verifier remains intentionally red while
+  14 browser/operational journeys are pending; no pending journey was waived.
+
 - Exact schema-v8 campaign rehearsal passed (2026-07-24): pushed commit
   `6ba989f61947aea2933751e5b712ca1e6552fc86` was deployed on a fresh isolated
   chain-46630 fork and passed all 490 deployment checks. The 100-wallet

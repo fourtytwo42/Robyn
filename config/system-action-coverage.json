@@ -195,6 +195,7 @@
         "configureLaunchRoute",
         "configureRoute",
         "poolKey",
+        "protectedQuoteFloor",
         "quoteAssetToNative",
         "quoteNativeToAsset",
         "route",

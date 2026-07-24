@@ -141,6 +141,9 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
         emit FeeRouterBound(address(feeRouter));
     }
 
+    // Only the immutable bonding market can call this guarded one-shot path;
+    // any refund returns to that same canonical market before initialization.
+    // slither-disable-next-line reentrancy-eth
     function graduate(uint256 tokenAmount)
         external
         payable

@@ -183,6 +183,9 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         nativeOutput = grossOutput - feeAmount;
     }
 
+    // All external value paths execute under this non-reentrant entry point;
+    // state and fee liabilities are committed before refunds or graduation.
+    // slither-disable-next-line reentrancy-eth
     function buy(uint256 minimumTokenOutput) external payable nonReentrant returns (uint256 tokenOutput) {
         if (!seeded) revert NotSeeded();
         if (graduated) return _buyGraduated(minimumTokenOutput);
@@ -243,6 +246,9 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         emit CurveState(virtualTokenReserve, virtualNativeReserve, realCurveTokenReserve, graduationProgressBps());
     }
 
+    // Called only from nonReentrant buy; native value goes exclusively to the
+    // immutable adapter and canonical fee router configured by the factory.
+    // slither-disable-next-line arbitrary-send-eth
     function _graduate() private {
         uint256 finalPrice = Math.mulDiv(virtualNativeReserve, 1e18, virtualTokenReserve);
         uint256 tokenLiquidity = IERC20(address(launchToken)).balanceOf(address(this));

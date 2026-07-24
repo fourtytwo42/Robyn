@@ -72,6 +72,45 @@ Fresh 2026-07-21 result:
 
 The raw result is regenerated into every immutable release as `release-evidence/static-security-audit.json`.
 
+## Schema-v8 native-v4 review addendum
+
+Last verified: 2026-07-24
+
+The active release scanner now limits detector results to the 18 contracts in
+the generated schema-v8 action inventory: the v4 coordinator, factories,
+deployers, bonding market, graduation adapter, oracle hook, immutable locker,
+asset router, native basket/fee accounting, launch token, RDAO token, shortened
+testnet Governor, and sealed test-asset liquidity locker. Archived v3 and fixed
+price test fixtures remain compiled and tested, but their findings are not
+misrepresented as active schema-v8 runtime findings.
+
+The current active-scope result is:
+
+- Git-history secret findings: 0. One Solidity type declaration false positive
+  is suppressed by its immutable commit/file/rule/line fingerprint only.
+- Known high/critical dependency vulnerabilities: 0.
+- Unresolved Slither critical/high findings: 0.
+- Unresolved Slither medium findings: 0.
+- Reviewed Slither medium findings: 37 across four known detector classes.
+- All 123 Foundry tests pass, including the 512-wallet/25,000-action simulation
+  and 128-run/depth-128 stateful invariants.
+
+Every medium result belongs to a reviewed class enforced by
+`scripts/security-audit.sh`; any new medium detector class fails the gate:
+
+| Detector class | Active-v4 disposition |
+|---|---|
+| `incorrect-equality` | Exact zero, balance-delta, conservation, and same-block observation checks are intentional fail-closed accounting conditions. Unit and stateful invariants exercise each financial equality. |
+| `reentrancy-no-eth` | The reported sell, market creation, and sealed-liquidity initialization paths use explicit guards or one-time coordinator/factory authority. State is committed before interaction where required, allowances are cleared, and malicious callback fixtures plus stateful invariants pass. |
+| `uninitialized-local` | Solidity value types and memory structs are deliberately zero-initialized before additive accounting or field assignment. Deployment and campaign invariants prove no stale-memory assumption exists. |
+| `unused-return` | Tuple members are intentionally ignored when the consumed member, measured balance delta, post-call ownership/liquidity assertion, or downstream revert is authoritative. No ignored return is used as proof of payment or solvency. |
+
+The high-severity `arbitrary-send-*`, `weak-prng`, and reentrancy detector false
+positives carry line-scoped annotations beside the reviewed code. No detector
+class is globally disabled. In particular, the v4 callback payer is always the
+external swap caller encoded by Robyn, and `SafeCallback` permits invocation
+only by the immutable PoolManager.
+
 ## Finding triage
 
 | Finding | Scope | Disposition |

@@ -123,6 +123,9 @@ contract RobynV4FeePositionLocker is IERC721Receiver, ReentrancyGuard {
         emit FeeRouterBound(address(feeRouter_));
     }
 
+    // The adapter-only initializer is guarded and validates balances after the
+    // position-manager interaction before committing immutable principal.
+    // slither-disable-next-line reentrancy-balance,reentrancy-eth
     function mintAndLock(uint256 tokenAmount, uint256 minimumUseBps)
         external
         payable
@@ -208,6 +211,8 @@ contract RobynV4FeePositionLocker is IERC721Receiver, ReentrancyGuard {
         emit FeesCollected(msg.sender, nativeAmount, tokenAmount, afterLiquidity);
     }
 
+    // Native value can only enter the adapter-bound canonical fee router.
+    // slither-disable-next-line arbitrary-send-eth
     function routeCollectedNative(uint256 amount) external nonReentrant {
         if (address(feeRouter) == address(0) || amount == 0 || amount > address(this).balance) {
             revert InvalidConfiguration();

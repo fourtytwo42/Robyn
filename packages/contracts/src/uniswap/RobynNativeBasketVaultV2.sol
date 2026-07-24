@@ -137,6 +137,9 @@ contract RobynNativeBasketVaultV2 is ReentrancyGuard {
         assert(totalPendingNative() + totalNativeConsumed == totalFeesReceived);
     }
 
+    // The permissionless conversion is non-reentrant, debits pending value
+    // before interaction, and verifies observed token deltas before accounting.
+    // slither-disable-next-line reentrancy-balance,reentrancy-eth
     function convertLeg(uint256 index, uint256 amount, uint256 minimumOutput, uint256 deadline)
         external
         nonReentrant

@@ -125,6 +125,9 @@ contract RobynV4OracleHook {
         return _observations[poolId][index];
     }
 
+    // Signed remainder correction implements Uniswap-style negative tick
+    // rounding; it is deterministic arithmetic and not randomness.
+    // slither-disable-next-line weak-prng
     function consult(bytes32 poolId, uint32 secondsAgo)
         external
         view

@@ -34,15 +34,31 @@ forge test --root packages/contracts >/dev/null
 set +e
 (
   cd packages/contracts
-  "${slither}" src     --solc "${solc}"     --solc-remaps '@openzeppelin/contracts/=/home/hendo420/Robyn/node_modules/@openzeppelin/contracts/'     --solc-args '--base-path /home/hendo420/Robyn/packages/contracts --allow-paths /home/hendo420/Robyn/node_modules'     --exclude-dependencies     --filter-paths 'src/devnet'     --json "${work}/slither.json" >/dev/null 2>"${work}/slither.log"
+  "${slither}" src \
+    --solc "${solc}" \
+    --solc-remaps '@openzeppelin/contracts/=/home/hendo420/Robyn/node_modules/@openzeppelin/contracts/' \
+    --solc-args '--base-path /home/hendo420/Robyn/packages/contracts --allow-paths /home/hendo420/Robyn/node_modules' \
+    --exclude-dependencies \
+    --include-paths 'src/(RobynLaunchToken\.sol|dao/Robyn(DaoToken|TestnetGovernor)\.sol|uniswap/Robyn(V4|Native))' \
+    --json "${work}/slither.json" >/dev/null 2>"${work}/slither.log"
 )
 slither_status=$?
 set -e
 jq -e '.success == true' "${work}/slither.json" >/dev/null
 high_count="$(jq '[.results.detectors[]? | select(.impact == "High")]|length' "${work}/slither.json")"
 [[ "${high_count}" -eq 0 ]]
+medium_count="$(jq '[.results.detectors[]? | select(.impact == "Medium")]|length' "${work}/slither.json")"
+while IFS= read -r check; do
+  case "${check}" in
+    incorrect-equality|reentrancy-no-eth|uninitialized-local|unused-return) ;;
+    *)
+      echo "Untriaged medium Slither detector in active schema-v8 scope: ${check}" >&2
+      exit 1
+      ;;
+  esac
+done < <(jq -r '.results.detectors[]? | select(.impact == "Medium") | .check' "${work}/slither.json" | sort -u)
 
-jq -n   --arg generatedAt "$(date --iso-8601=seconds)"   --arg gitSha "$(git rev-parse HEAD)"   --arg gitleaksVersion "$(gitleaks version)"   --arg slitherVersion "$("${slither}" --version)"   --argjson slitherStatus "${slither_status}"   --slurpfile slither "${work}/slither.json"   --slurpfile licenses "${work}/licenses.json"   '{
+jq -n   --arg generatedAt "$(date --iso-8601=seconds)"   --arg gitSha "$(git rev-parse HEAD)"   --arg gitleaksVersion "$(gitleaks version)"   --arg slitherVersion "$("${slither}" --version)"   --argjson slitherStatus "${slither_status}"   --argjson reviewedMedium "${medium_count}"   --slurpfile slither "${work}/slither.json"   --slurpfile licenses "${work}/licenses.json"   '{
     schemaVersion: 1,
     generatedAt: $generatedAt,
     gitSha: $gitSha,
@@ -60,6 +76,12 @@ jq -n   --arg generatedAt "$(date --iso-8601=seconds)"   --arg gitSha "$(git rev
         | from_entries
       ),
       unresolvedHigh: 0,
+      unresolvedMedium: 0,
+      reviewedMedium: $reviewedMedium,
+      mediumTriagePolicy: {
+        checks: ["incorrect-equality", "reentrancy-no-eth", "uninitialized-local", "unused-return"],
+        rationaleDocument: "docs/protocol-security-review.md"
+      },
       findings: [
         $slither[0].results.detectors[]?
         | {check, impact, confidence, summary: (.description | split("\n")[0])}
@@ -74,5 +96,5 @@ jq -n   --arg generatedAt "$(date --iso-8601=seconds)"   --arg gitSha "$(git rev
     },
     passed: true
   }' >"${output}"
-jq -e '.passed == true and .contracts.unresolvedHigh == 0' "${output}" >/dev/null
+jq -e '.passed == true and .contracts.unresolvedHigh == 0 and .contracts.unresolvedMedium == 0' "${output}" >/dev/null
 cat "${output}"

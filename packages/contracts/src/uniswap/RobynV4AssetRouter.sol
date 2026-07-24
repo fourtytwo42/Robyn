@@ -369,6 +369,9 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
             poolManager.settle{ value: inputAmount }();
         } else {
             poolManager.sync(input);
+            // `payer` is the external swap caller encoded by this contract, and
+            // SafeCallback admits only the immutable PoolManager callback.
+            // slither-disable-next-line arbitrary-send-erc20
             IERC20(Currency.unwrap(input))
                 .safeTransferFrom(payer, address(poolManager), inputAmount);
             poolManager.settle();

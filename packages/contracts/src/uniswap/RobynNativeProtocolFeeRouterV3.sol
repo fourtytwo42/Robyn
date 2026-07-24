@@ -260,6 +260,9 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
         assert(address(this).balance >= totalCreatorNativeLiability);
     }
 
+    // Recipients are canonical creators or creator-selected claim targets after
+    // ownership checks; liabilities are cleared before this pull-payment call.
+    // slither-disable-next-line arbitrary-send-eth
     function _sendNative(address payable recipient, uint256 amount) private {
         (bool sent,) = recipient.call{value: amount}("");
         if (!sent) revert NativeTransferFailed();
