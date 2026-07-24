@@ -164,6 +164,11 @@ contract RobynV4NativeProtocolTest is Test {
         assertFalse(assetRouter.routeStatus(address(token)).ready);
     }
 
+    function testOracleHookRejectsZeroInitializer() public {
+        vm.expectRevert(RobynV4OracleHook.InvalidConfiguration.selector);
+        new RobynV4OracleHook(poolManager, address(0));
+    }
+
     function testCurveFeesConserveImmutableSplit() public {
         (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
             coordinator.createLaunch(_request(bytes32(uint256(2))));
@@ -286,9 +291,10 @@ contract RobynV4NativeProtocolTest is Test {
 
     function _deployHook() private returns (RobynV4OracleHook deployed) {
         uint160 flags = Hooks.AFTER_INITIALIZE_FLAG | Hooks.AFTER_SWAP_FLAG;
-        (address predicted, bytes32 salt) =
-            HookMiner.find(address(this), flags, type(RobynV4OracleHook).creationCode, abi.encode(poolManager));
-        deployed = new RobynV4OracleHook{salt: salt}(poolManager);
+        (address predicted, bytes32 salt) = HookMiner.find(
+            address(this), flags, type(RobynV4OracleHook).creationCode, abi.encode(poolManager, address(this))
+        );
+        deployed = new RobynV4OracleHook{salt: salt}(poolManager, address(this));
         assertEq(address(deployed), predicted);
     }
 

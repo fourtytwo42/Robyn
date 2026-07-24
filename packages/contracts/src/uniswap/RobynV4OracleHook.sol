@@ -45,12 +45,13 @@ contract RobynV4OracleHook {
         bytes32 indexed poolId, uint8 indexed index, uint32 timestamp, int24 tick, int56 cumulative
     );
 
-    constructor(IPoolManager poolManager_) {
-        if (address(poolManager_) == address(0) || address(poolManager_).code.length == 0) {
+    constructor(IPoolManager poolManager_, address initializer_) {
+        if (address(poolManager_) == address(0) || address(poolManager_).code.length == 0 || initializer_ == address(0))
+        {
             revert InvalidConfiguration();
         }
         poolManager = poolManager_;
-        initializer = msg.sender;
+        initializer = initializer_;
         Hooks.validateHookPermissions(
             IHooks(address(this)),
             Hooks.Permissions({

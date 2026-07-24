@@ -45,6 +45,12 @@ Durable project context lives here. Update this file whenever information should
   encrypted project keystore, explicit chain-46630 confirmation, and post-send
   runtime/wiring verification. Candidate evidence is written outside Git at
   `/home/hendo420/robyn-evidence/46630-v4-state-view-candidate.json`.
+- Oracle hook deployment correction (2026-07-24): deployment rehearsal found
+  that deriving `initializer` from `msg.sender` would assign control to the
+  canonical CREATE2 deployer proxy and make registrar binding impossible.
+  `RobynV4OracleHook` now takes an explicit nonzero initializer committed into
+  its CREATE2 init code. The focused v4 suite passes 9/9 and the complete
+  Foundry suite passes after the correction.
 - Faucet-stock checkpoint (2026-07-24): the encrypted deployer holds 5 tokens
   each of exact faucet contracts TSLA `0xC9f9...Bd4E`, AMD `0x7117...778d`,
   AMZN `0x5884...9E02`, NFLX `0x3b82...8C93`, and PLTR `0x1FBE...98d0`.
