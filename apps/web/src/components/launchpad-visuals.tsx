@@ -9,6 +9,9 @@ const tokenArt: Record<string, string> = {
 };
 
 export const basketArt = {
+  TSLA: "/assets/launchpad/asset-tsla.png",
+  AMD: "/assets/launchpad/asset-amd.png",
+  AMZN: "/assets/launchpad/asset-amzn.png",
   mNVDA: "/assets/launchpad/asset-mnvda.webp",
   mSPY: "/assets/launchpad/asset-mspy.webp",
   mETH: "/assets/launchpad/asset-meth.webp",

@@ -36,9 +36,8 @@ export default async function Home() {
   ]);
   const health = getHealthStatus();
   const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
-  const marketShowcase = ["ROBYN", "SOAK", "ONE", "EVID"].flatMap(
-    (symbol) => launches.data.find((launch) => launch.symbol === symbol) ?? [],
-  );
+  const marketShowcase = launches.data.slice(0, 4);
+  const featuredMarket = marketShowcase[0];
   const rewardAssetCount = new Set(
     launches.data.flatMap((launch) =>
       launch.assets.map((asset) => asset.toLowerCase()),
@@ -82,14 +81,22 @@ export default async function Home() {
           className="hero-token-card"
           aria-label="Sherwood Forest genesis market"
         >
-          <TokenArt symbol="ROBYN" priority />
+          <TokenArt
+            symbol={featuredMarket?.symbol ?? "TREE"}
+            artworkSrc={
+              featuredMarket?.metadata?.media_status === "active"
+                ? `/api/media/${featuredMarket.metadata.media_id}?cid=${featuredMarket.metadata.optimized_webp_cid ?? "active"}`
+                : undefined
+            }
+            priority
+          />
           <div className="hero-token-overlay">
             <span className="hot-chip">Live reward basket</span>
             <div>
-              <strong>Sherwood Genesis</strong>
-              <span>ROBYN</span>
+              <strong>{featuredMarket?.name ?? "Sherwood Genesis"}</strong>
+              <span>{featuredMarket?.symbol ?? "TREE"}</span>
             </div>
-            <p>Holders earn 40% mNVDA / 40% mSPY / 20% mETH.</p>
+            <p>Holders earn 40% TSLA / 40% AMD / 20% AMZN.</p>
           </div>
         </aside>
       </section>
@@ -105,7 +112,7 @@ export default async function Home() {
         </article>
         <article>
           <span>Indexed volume</span>
-          <strong>{compactBase(totalVolume.toString())} mUSD</strong>
+          <strong>{compactBase(totalVolume.toString())} ETH</strong>
         </article>
         <article>
           <span>Basket rules</span>
@@ -130,7 +137,7 @@ export default async function Home() {
             <MarketCard
               launch={market}
               isTestnet={isTestnet}
-              priority={market.symbol === "ROBYN"}
+              priority={market.token === featuredMarket?.token}
               key={market.token}
             />
           ))}
@@ -146,9 +153,9 @@ export default async function Home() {
           <h2>Recognizable rewards, earned by holding.</h2>
         </div>
         {[
-          { symbol: "mNVDA", name: "Mock NVIDIA", weight: "40%" },
-          { symbol: "mSPY", name: "Mock S&P 500", weight: "40%" },
-          { symbol: "mETH", name: "Mock Ether", weight: "20%" },
+          { symbol: "TSLA", name: "Testnet Tesla", weight: "40%" },
+          { symbol: "AMD", name: "Testnet AMD", weight: "40%" },
+          { symbol: "AMZN", name: "Testnet Amazon", weight: "20%" },
         ].map((asset) => (
           <article className="basket-asset-tile" key={asset.symbol}>
             <BasketAssetArt symbol={asset.symbol as BasketArtSymbol} />
@@ -201,7 +208,7 @@ export default async function Home() {
 
       <section className="notice" aria-label="Development disclaimer">
         {isTestnet
-          ? "Robinhood Chain Testnet only. Every displayed basket asset is a project-owned mock with no real-world value."
+          ? "Robinhood Chain Testnet only. Faucet-issued test stocks and Robyn testnet mocks have no real-world value, backing, or redemption rights."
           : "Development network only. Every asset is a mock with no real-world value. This environment proves the full protocol workflow before testnet deployment."}
       </section>
     </main>

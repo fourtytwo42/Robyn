@@ -606,7 +606,7 @@ export function NetworkConsole({ deployment }: { deployment: Deployment }) {
           <strong>{compact(state.base)}</strong>
         </div>
         <div>
-          <span>tROBYN</span>
+          <span>{isNativeV4 ? "tRV4" : "tROBYN"}</span>
           <strong>{compact(state.token)}</strong>
         </div>
       </div>
