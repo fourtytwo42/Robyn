@@ -19,7 +19,8 @@ automation, or daemon.
 - Live preflight requires chain 46630, schema v8, a clean exact
   `origin/main`/manifest release, runtime code at every required contract, 25%
   execution and Nitro L1-data headroom, the complete recovery sweep, and the
-  fixed 0.0015 ETH reserve.
+  fixed 0.0015 ETH reserve. It also requires at least 5 GiB free on the state
+  filesystem before funding begins.
 - A loopback rehearsal may supply `--gas-price-wei` and
   `--l1-base-fee-wei` when Anvil pricing differs from Robinhood Testnet or an
   old fork cannot retrieve the Nitro fee-estimator trie node. Overrides are

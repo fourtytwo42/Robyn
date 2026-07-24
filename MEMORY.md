@@ -75,6 +75,15 @@ Durable project context lives here. Update this file whenever information should
   1.6-million-gas sweep budget with 25% headroom to every actor. A live run must
   request more faucet funding rather than reducing recovery coverage.
 
+- Rehearsal disk-headroom correction (2026-07-24): the next exact campaign
+  stopped fail-closed during an atomic state write when the root filesystem
+  reached 100%. The source was 27 GB of inactive Foundry fork-cache directories
+  from terminated rehearsals; no running process had them open, the persistent
+  devnet uses `/var/lib/robyn/anvil/state.json`, and only the verified inactive
+  `~/.foundry/anvil/tmp/anvil-state-*` directories were removed. Root usage
+  returned to 55% with 27 GB free. Campaign preflight now records available
+  bytes and requires at least 5 GiB before any funding transaction.
+
 - Timestamp-sensitive gas correction (2026-07-24): exact fork `a902415`
   completed 1,282 product transactions through all buys, transfers, approvals,
   three graduations, and 32 sells before a graduated sell exhausted viem's

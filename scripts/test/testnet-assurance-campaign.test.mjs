@@ -21,6 +21,7 @@ import {
   weightedWalletFunding,
   projectCampaignCost,
   REQUIRED_RESERVE_WEI,
+  REQUIRED_DISK_HEADROOM_BYTES,
   V4_FEE_COLLECTION_MINIMUMS,
   V4_ORACLE_WINDOW_MATURITY_SECONDS,
 } from "../lib/campaign-plan.mjs";
@@ -110,6 +111,7 @@ test("eight baskets cover every route exactly once", () => {
 });
 
 test("cost projection includes Nitro L1 data, 25 percent headroom, and hard reserve", () => {
+  assert.equal(REQUIRED_DISK_HEADROOM_BYTES, 5n * 1024n * 1024n * 1024n);
   assert.equal(applyHeadroom(100n), 125n);
   const cost = projectCampaignCost({
     gasPriceWei: 2n,

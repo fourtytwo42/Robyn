@@ -6,6 +6,7 @@ import {
   readFileSync,
   renameSync,
   statSync,
+  statfsSync,
   writeFileSync,
 } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
@@ -45,6 +46,7 @@ import {
   PLANNED_SWEEP_GAS_UNITS_PER_ACTOR,
   projectCampaignCost,
   REQUIRED_HEADROOM_BPS,
+  REQUIRED_DISK_HEADROOM_BYTES,
   REQUIRED_RESERVE_WEI,
   V4_FEE_COLLECTION_MINIMUMS,
   V4_ORACLE_WINDOW_MATURITY_SECONDS,
@@ -565,6 +567,14 @@ async function preflight() {
     )
   ).reduce((total, value) => total + value, 0n);
   const combinedBalanceWei = projectBalanceWei + actorBalanceWei;
+  const filesystem = statfsSync(stateDir, { bigint: true });
+  const diskAvailableBytes = filesystem.bavail * filesystem.bsize;
+  if (diskAvailableBytes < REQUIRED_DISK_HEADROOM_BYTES) {
+    throw new Error(
+      `Insufficient campaign disk headroom: ${diskAvailableBytes} bytes available; ` +
+        `${REQUIRED_DISK_HEADROOM_BYTES} required`,
+    );
+  }
   if (combinedBalanceWei < cost.totalRequiredWei) {
     throw new Error(
       `Insufficient combined balance: ${formatEther(combinedBalanceWei)} ETH; ` +
@@ -583,6 +593,8 @@ async function preflight() {
     projectBalanceWei: projectBalanceWei.toString(),
     actorBalanceWei: actorBalanceWei.toString(),
     combinedBalanceWei: combinedBalanceWei.toString(),
+    diskAvailableBytes: diskAvailableBytes.toString(),
+    requiredDiskHeadroomBytes: REQUIRED_DISK_HEADROOM_BYTES.toString(),
     cost,
     passed: true,
   };
