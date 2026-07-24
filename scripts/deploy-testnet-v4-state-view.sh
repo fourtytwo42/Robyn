@@ -150,7 +150,10 @@ address="$(jq -er '.contractAddress // .contract_address' <<<"$receipt")"
 block_number="$(jq -er '.blockNumber // .block_number' <<<"$receipt")"
 runtime_code="$(cast code "$address" --rpc-url "$rpc_url")"
 [[ "$runtime_code" != "0x" ]] || { echo "StateView deployment produced no code" >&2; exit 1; }
-[[ "$(cast call "$address" 'poolManager()(address)' --rpc-url "$rpc_url")" == "$pool_manager" ]] || {
+deployed_pool_manager="$(
+  cast call "$address" 'poolManager()(address)' --rpc-url "$rpc_url"
+)"
+[[ "${deployed_pool_manager,,}" == "${pool_manager,,}" ]] || {
   echo "Deployed StateView PoolManager wiring mismatch" >&2
   exit 1
 }

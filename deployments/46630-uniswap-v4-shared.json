@@ -78,9 +78,17 @@
       "mainnetHashMatches": false
     },
     "stateView": {
-      "address": null,
-      "runtimeCodeHash": null,
-      "status": "pending-robyn-controlled-deployment"
+      "address": "0x8c5db7b072e586ea4ea3ade80d5bac9a34e90fa5",
+      "creationTransaction": "0xe67c4bb139e9ca72b470ad698f23974017158c411b45ad062d0f034c909f0175",
+      "deploymentBlock": 92878941,
+      "transactionSender": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",
+      "poolManager": "0x8366a39cc670b4001a1121b8f6a443a643e40951",
+      "package": "@uniswap/v4-periphery@1.0.3",
+      "artifactSha256": "f63f14a8607acb90e7a19f6ceaf56aab63a3b3fb0501b7d356d864f4a37f6672",
+      "creationCodeHash": "0xd1a3b7780b831fbddf3407643b70cd7fc1af1140b0e41ad5f10ff74aac004a82",
+      "constructorArguments": "0x0000000000000000000000008366a39cc670b4001a1121b8f6a443a643e40951",
+      "runtimeCodeHash": "0x7d9c591e0956fd89d98feb4ffcfe8bf1f7a62bd485edd979fa21d104b49878a6",
+      "status": "robyn-controlled-deployment-verified"
     }
   },
   "missingOrBrokenOptionalComponents": {
@@ -153,7 +161,7 @@
     "positionManagerWiring": "passed-with-disclosed-missing-code",
     "faucetStockBidirectionalQuotes": "passed",
     "faucetStockBidirectionalSwaps": "pending-live-bounded-test",
-    "stateView": "pending",
+    "stateView": "passed",
     "releaseReady": false
   }
 }

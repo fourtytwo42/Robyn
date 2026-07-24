@@ -471,6 +471,30 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-24 - Live v4 StateView deployment recovered and verified
+
+- Context: the first authorized chain-46630 StateView broadcast mined
+  successfully but the deployment script rejected checksum-cased
+  `poolManager()` output after the transaction.
+- Decision: never rebroadcast the already-mined creation. Normalize EVM
+  addresses before wiring comparisons and freeze the recovered deployment in
+  the shared-v4 venue manifest.
+- Files: `scripts/deploy-testnet-v4-state-view.sh`,
+  `deployments/46630-uniswap-v4-shared.json`.
+- Commands/tests: recovered deployer nonce 116 from block `92878941`; verified
+  transaction input against the pinned creation bytecode and constructor,
+  verified runtime code, runtime hash and PoolManager wiring.
+- Result: StateView `0x8c5db7b072e586ea4ea3ade80d5bac9a34e90fa5`
+  is live at transaction
+  `0xe67c4bb139e9ca72b470ad698f23974017158c411b45ad062d0f034c909f0175`.
+  Runtime hash is
+  `0x7d9c591e0956fd89d98feb4ffcfe8bf1f7a62bd485edd979fa21d104b49878a6`;
+  its immutable PoolManager is the reviewed shared mirror at
+  `0x8366a39cc670b4001a1121b8f6a443a643e40951`.
+- Follow-up: run strict venue verification and final exact-commit rehearsal,
+  then broadcast the fresh native-v4 Robyn protocol only after every remaining
+  gate passes.
+
 ### 2026-07-24 - Native-ETH Uniswap v4 contract checkpoint
 
 - Context: the user approved replacing active v3/tmUSD testnet architecture
