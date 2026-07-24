@@ -16,7 +16,7 @@ contract RobynV4OracleHook {
     using StateLibrary for IPoolManager;
 
     uint8 public constant OBSERVATION_CAPACITY = 64;
-    string public constant CONTRACT_VERSION = "1.0.0";
+    string public constant CONTRACT_VERSION = "1.1.0";
 
     error Unauthorized();
     error AlreadyBound();
@@ -33,6 +33,7 @@ contract RobynV4OracleHook {
 
     IPoolManager public immutable poolManager;
     address public immutable initializer;
+    bytes32 public immutable deploymentDomain;
     address public registrar;
     mapping(bytes32 poolId => bool registered) public registeredPool;
     mapping(bytes32 poolId => uint8 count) public observationCount;
@@ -45,13 +46,16 @@ contract RobynV4OracleHook {
         bytes32 indexed poolId, uint8 indexed index, uint32 timestamp, int24 tick, int56 cumulative
     );
 
-    constructor(IPoolManager poolManager_, address initializer_) {
-        if (address(poolManager_) == address(0) || address(poolManager_).code.length == 0 || initializer_ == address(0))
-        {
+    constructor(IPoolManager poolManager_, address initializer_, bytes32 deploymentDomain_) {
+        if (
+            address(poolManager_) == address(0) || address(poolManager_).code.length == 0 || initializer_ == address(0)
+                || deploymentDomain_ == bytes32(0)
+        ) {
             revert InvalidConfiguration();
         }
         poolManager = poolManager_;
         initializer = initializer_;
+        deploymentDomain = deploymentDomain_;
         Hooks.validateHookPermissions(
             IHooks(address(this)),
             Hooks.Permissions({

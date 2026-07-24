@@ -5,6 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 rpc_url="${ROBYN_TESTNET_RPC_URL:-https://rpc.testnet.chain.robinhood.com}"
 venue_manifest="${ROBYN_TESTNET_V4_MANIFEST:-$repo_root/deployments/46630-uniswap-v4-shared.json}"
 legacy_asset_manifest="${ROBYN_TESTNET_V3_ASSET_MANIFEST:-$repo_root/deployments/46630.json}"
+reuse_routes_manifest="${ROBYN_TESTNET_V4_REUSE_ROUTES_MANIFEST:-}"
 output="${ROBYN_TESTNET_V4_PROTOCOL_MANIFEST:-$repo_root/deployments/46630-v4.json}"
 rehearsal="${ROBYN_TESTNET_REHEARSAL:-false}"
 create2_deployer="0x4e59b44847b379578588920cA78FbF26c0B4956C"
@@ -109,6 +110,15 @@ send_transaction() {
   printf '%s\n' "$hash" >>"$configuration_transaction_log"
   printf '%s\n' "$hash"
 }
+runtime_code_hash() {
+  local code
+  code="$(cast code "$1" --rpc-url "$rpc_url")"
+  [[ "$code" != "0x" ]] || {
+    echo "Cannot hash empty runtime code at $1" >&2
+    exit 1
+  }
+  cast keccak "$code"
+}
 
 pool_manager="$(jq -er '.contracts.poolManager.address' "$venue_manifest")"
 position_manager="$(jq -er '.contracts.positionManager.address' "$venue_manifest")"
@@ -136,22 +146,50 @@ state_view_pool_manager="$(
 guardian="${ROBYN_GUARDIAN_ADDRESS:-$deployer}"
 deploy_contract timelock \
   ../../node_modules/@openzeppelin/contracts/governance/TimelockController.sol:TimelockController \
-  172800 "[]" "[]" "$deployer"
+  600 "[]" "[]" "$deployer"
 timelock="${addresses[timelock]}"
 deploy_contract daoToken src/dao/RobynDaoToken.sol:RobynDaoToken \
   "[$deployer]" "[1000000000000000000000000000]"
 dao_token="${addresses[daoToken]}"
-deploy_contract governor src/dao/RobynGovernor.sol:RobynGovernor "$dao_token" "$timelock"
+deploy_contract governor \
+  src/dao/RobynTestnetGovernor.sol:RobynTestnetGovernor "$dao_token" "$timelock"
 governor="${addresses[governor]}"
 deploy_contract assetRouter src/uniswap/RobynV4AssetRouter.sol:RobynV4AssetRouter \
   "$pool_manager" "$quoter" "$state_view" "$timelock"
 asset_router="${addresses[assetRouter]}"
-deploy_contract testAssetLiquidityLocker \
-  src/uniswap/RobynV4TestAssetLiquidityLocker.sol:RobynV4TestAssetLiquidityLocker \
-  "$pool_manager"
-test_asset_liquidity_locker="${addresses[testAssetLiquidityLocker]}"
+
+if [[ -n "$reuse_routes_manifest" ]]; then
+  [[ -f "$reuse_routes_manifest" ]] || {
+    echo "The route-reuse manifest does not exist: $reuse_routes_manifest" >&2
+    exit 1
+  }
+  [[ "$(jq -r '.chainId' "$reuse_routes_manifest")" == "46630" &&
+     "$(jq -r '.liquidityVenue' "$reuse_routes_manifest")" == "uniswap-v4" &&
+     "$(jq -r '.assetRoutes | length' "$reuse_routes_manifest")" == "24" ]] || {
+    echo "The route-reuse manifest is not a complete chain-46630 v4 manifest" >&2
+    exit 1
+  }
+  test_asset_liquidity_locker="$(
+    jq -er '.contracts.testAssetLiquidityLocker' "$reuse_routes_manifest"
+  )"
+  [[ "$(cast code "$test_asset_liquidity_locker" --rpc-url "$rpc_url")" != "0x" ]] || {
+    echo "The reused test-asset liquidity locker has no runtime code" >&2
+    exit 1
+  }
+  [[ "$(cast call "$test_asset_liquidity_locker" 'configurationSealed()(bool)' \
+      --rpc-url "$rpc_url")" == "true" ]] || {
+    echo "The reused test-asset liquidity locker is not sealed" >&2
+    exit 1
+  }
+else
+  deploy_contract testAssetLiquidityLocker \
+    src/uniswap/RobynV4TestAssetLiquidityLocker.sol:RobynV4TestAssetLiquidityLocker \
+    "$pool_manager"
+  test_asset_liquidity_locker="${addresses[testAssetLiquidityLocker]}"
+fi
 
 verification_class="$(cast keccak 'ROBINHOOD_TESTNET_FAUCET_STOCK')"
+if [[ -z "$reuse_routes_manifest" ]]; then
 while IFS=$'\t' read -r symbol asset; do
   route="(10000,200,$zero,1,1000000000000,$verification_class,true)"
   send_transaction "$asset_router" \
@@ -162,11 +200,13 @@ while IFS=$'\t' read -r symbol asset; do
     "$asset" --rpc-url "$rpc_url")"
   [[ "$ready" == *"true"* ]] || { echo "$symbol route is not ready after bootstrap" >&2; exit 1; }
 done < <(jq -r '.faucetStockRoutes[] | [.symbol,.address] | @tsv' "$venue_manifest")
+fi
 
 mock_native_seed="100000000000000"
 mock_token_seed_max="100000000000000"
 mock_liquidity="50000000000000"
 mock_maximum_native_input="10000000000"
+if [[ -z "$reuse_routes_manifest" ]]; then
 while IFS=$'\t' read -r symbol asset verification; do
   if [[ "$verification" == "robyn-controlled-testnet-dex" ]]; then
     send_transaction --value "$mock_token_seed_max" "$asset" 'deposit()' >/dev/null
@@ -233,6 +273,44 @@ done < <(
   ' "$legacy_asset_manifest"
 )
 send_transaction "$test_asset_liquidity_locker" 'seal()' >/dev/null
+else
+  while IFS=$'\t' read -r symbol asset pool_id verification provenance locker; do
+    case "$verification" in
+      robinhood-testnet-faucet-stock)
+        route_verification_class="$(cast keccak 'ROBINHOOD_TESTNET_FAUCET_STOCK')"
+        maximum_native_input="1000000000000"
+        ;;
+      robyn-controlled-testnet-dex)
+        route_verification_class="$(cast keccak 'ROBYN_CONTROLLED_TESTNET_WETH')"
+        maximum_native_input="$mock_maximum_native_input"
+        ;;
+      robyn-testnet-mock)
+        route_verification_class="$(cast keccak 'ROBYN_TESTNET_MOCK_V4_ROUTE')"
+        maximum_native_input="$mock_maximum_native_input"
+        ;;
+      *)
+        echo "Unsupported reused route verification class for $symbol: $verification" >&2
+        exit 1
+        ;;
+    esac
+    route="(10000,200,$zero,1,$maximum_native_input,$route_verification_class,true)"
+    send_transaction "$asset_router" \
+      'configureRoute(address,(uint24,int24,address,uint128,uint128,bytes32,bool))' \
+      "$asset" "$route" >/dev/null
+    status="$(
+      cast call "$asset_router" \
+        'routeStatus(address)((bytes32,uint128,uint128,uint128,bytes32,uint24,int24,address,bool,bytes32))' \
+        "$asset" --rpc-url "$rpc_url" --json
+    )"
+    [[ "$(jq -r '.[0][8]' <<<"$status")" == "true" &&
+       "$(jq -r '.[0][0]' <<<"$status")" == "$pool_id" ]] || {
+      echo "$symbol reused route is not ready or changed pool identity" >&2
+      exit 1
+    }
+  done < <(jq -r '.assetRoutes[] | [
+    .symbol,.address,.poolId,.verification,.provenance,(.liquidityLocker // "")
+  ] | @tsv' "$reuse_routes_manifest")
+fi
 
 deploy_contract launchDeployer \
   src/uniswap/RobynNativeLaunchDeployerV4.sol:RobynNativeLaunchDeployerV4
@@ -250,7 +328,11 @@ fee_router="${addresses[feeRouter]}"
 
 hook_artifact="packages/contracts/out/RobynV4OracleHook.sol/RobynV4OracleHook.json"
 hook_bytecode="$(jq -er '.bytecode.object' "$hook_artifact")"
-hook_args="$(cast abi-encode 'constructor(address,address)' "$pool_manager" "$deployer")"
+hook_domain="$(cast keccak "sherwood-forest-v4-schema8:$(git rev-parse HEAD)")"
+hook_args="$(
+  cast abi-encode 'constructor(address,address,bytes32)' \
+    "$pool_manager" "$deployer" "$hook_domain"
+)"
 hook_init_code="${hook_bytecode}${hook_args#0x}"
 hook_mining="$(node scripts/mine-v4-hook-salt.mjs "$create2_deployer" "$hook_init_code")"
 hook="$(jq -er '.address' <<<"$hook_mining")"
@@ -271,6 +353,10 @@ hook_initializer="$(
 )"
 [[ "$hook_initializer" == "${deployer,,}" ]] || {
   echo "Oracle hook initializer mismatch" >&2
+  exit 1
+}
+[[ "$(cast call "$hook" 'deploymentDomain()(bytes32)' --rpc-url "$rpc_url")" == "$hook_domain" ]] || {
+  echo "Oracle hook deployment domain mismatch" >&2
   exit 1
 }
 
@@ -373,10 +459,14 @@ official_asset_routes="$(
   ' "$venue_manifest"
 )"
 mock_asset_routes="$(jq -sc '.' "$mock_route_log")"
-asset_routes="$(
-  jq -nc --argjson official "$official_asset_routes" --argjson mocks "$mock_asset_routes" \
-    '$official + $mocks'
-)"
+if [[ -n "$reuse_routes_manifest" ]]; then
+  asset_routes="$(jq -c '.assetRoutes' "$reuse_routes_manifest")"
+else
+  asset_routes="$(
+    jq -nc --argjson official "$official_asset_routes" --argjson mocks "$mock_asset_routes" \
+      '$official + $mocks'
+  )"
+fi
 deployment_block_raw="$(
   cast receipt "${txs[timelock]}" --rpc-url "$rpc_url" --json | jq -er '.blockNumber'
 )"
@@ -429,7 +519,7 @@ deployment_transactions="$(
     --arg daoToken "${txs[daoToken]}" \
     --arg governor "${txs[governor]}" \
     --arg assetRouter "${txs[assetRouter]}" \
-    --arg testAssetLiquidityLocker "${txs[testAssetLiquidityLocker]}" \
+    --arg testAssetLiquidityLocker "${txs[testAssetLiquidityLocker]:-}" \
     --arg launchDeployer "${txs[launchDeployer]}" \
     --arg launchFactory "${txs[launchFactory]}" \
     --arg protocolFeeRouter "${txs[feeRouter]}" \
@@ -464,26 +554,26 @@ configuration_transactions="$(
 )"
 runtime_hashes="$(
   jq -n \
-    --arg stateView "$(cast codehash "$state_view" --rpc-url "$rpc_url")" \
-    --arg timelock "$(cast codehash "$timelock" --rpc-url "$rpc_url")" \
-    --arg daoToken "$(cast codehash "$dao_token" --rpc-url "$rpc_url")" \
-    --arg governor "$(cast codehash "$governor" --rpc-url "$rpc_url")" \
-    --arg assetRouter "$(cast codehash "$asset_router" --rpc-url "$rpc_url")" \
-    --arg testAssetLiquidityLocker "$(cast codehash "$test_asset_liquidity_locker" --rpc-url "$rpc_url")" \
-    --arg launchDeployer "$(cast codehash "$launch_deployer" --rpc-url "$rpc_url")" \
-    --arg launchFactory "$(cast codehash "$launch_factory" --rpc-url "$rpc_url")" \
-    --arg protocolFeeRouter "$(cast codehash "$fee_router" --rpc-url "$rpc_url")" \
-    --arg oracleHook "$(cast codehash "$hook" --rpc-url "$rpc_url")" \
-    --arg adapterDeployer "$(cast codehash "$adapter_deployer" --rpc-url "$rpc_url")" \
-    --arg lockerDeployer "$(cast codehash "$locker_deployer" --rpc-url "$rpc_url")" \
-    --arg marketDeployer "$(cast codehash "$market_deployer" --rpc-url "$rpc_url")" \
-    --arg marketFactory "$(cast codehash "$market_factory" --rpc-url "$rpc_url")" \
-    --arg atomicLaunchCoordinator "$(cast codehash "$coordinator" --rpc-url "$rpc_url")" \
-    --arg genesisToken "$(cast codehash "$genesis_token" --rpc-url "$rpc_url")" \
-    --arg genesisVault "$(cast codehash "$(jq -r '.vault' <<<"$launch")" --rpc-url "$rpc_url")" \
-    --arg genesisMarket "$(cast codehash "$(jq -r '.market' <<<"$launch")" --rpc-url "$rpc_url")" \
-    --arg genesisAdapter "$(cast codehash "$(jq -r '.graduationAdapter' <<<"$launch")" --rpc-url "$rpc_url")" \
-    --arg genesisLocker "$(cast codehash "$(jq -r '.positionLocker' <<<"$launch")" --rpc-url "$rpc_url")" \
+    --arg stateView "$(runtime_code_hash "$state_view")" \
+    --arg timelock "$(runtime_code_hash "$timelock")" \
+    --arg daoToken "$(runtime_code_hash "$dao_token")" \
+    --arg governor "$(runtime_code_hash "$governor")" \
+    --arg assetRouter "$(runtime_code_hash "$asset_router")" \
+    --arg testAssetLiquidityLocker "$(runtime_code_hash "$test_asset_liquidity_locker")" \
+    --arg launchDeployer "$(runtime_code_hash "$launch_deployer")" \
+    --arg launchFactory "$(runtime_code_hash "$launch_factory")" \
+    --arg protocolFeeRouter "$(runtime_code_hash "$fee_router")" \
+    --arg oracleHook "$(runtime_code_hash "$hook")" \
+    --arg adapterDeployer "$(runtime_code_hash "$adapter_deployer")" \
+    --arg lockerDeployer "$(runtime_code_hash "$locker_deployer")" \
+    --arg marketDeployer "$(runtime_code_hash "$market_deployer")" \
+    --arg marketFactory "$(runtime_code_hash "$market_factory")" \
+    --arg atomicLaunchCoordinator "$(runtime_code_hash "$coordinator")" \
+    --arg genesisToken "$(runtime_code_hash "$genesis_token")" \
+    --arg genesisVault "$(runtime_code_hash "$(jq -r '.vault' <<<"$launch")")" \
+    --arg genesisMarket "$(runtime_code_hash "$(jq -r '.market' <<<"$launch")")" \
+    --arg genesisAdapter "$(runtime_code_hash "$(jq -r '.graduationAdapter' <<<"$launch")")" \
+    --arg genesisLocker "$(runtime_code_hash "$(jq -r '.positionLocker' <<<"$launch")")" \
     '{
       stateView: $stateView,
       timelock: $timelock,
@@ -509,8 +599,13 @@ runtime_hashes="$(
 )"
 mkdir -p "$(dirname "$output")"
 tmp="$(mktemp "$(dirname "$output")/.46630-v4.XXXXXX")"
+archived_predecessor_sha="$(
+  if [[ -n "$reuse_routes_manifest" ]]; then
+    sha256sum "$reuse_routes_manifest" | awk '{print $1}'
+  fi
+)"
 jq -n \
-  --argjson schemaVersion 7 \
+  --argjson schemaVersion 8 \
   --arg environment "$([[ "$rehearsal" == "true" ]] && echo robinhood-testnet-fork-rehearsal || echo robinhood-testnet)" \
   --argjson chainId 46630 \
   --argjson deploymentBlock "$deployment_block" \
@@ -518,6 +613,7 @@ jq -n \
   --arg deployer "$deployer" \
   --arg guardian "$guardian" \
   --arg venueManifestSha256 "$venue_hash" \
+  --arg archivedPredecessorManifestSha256 "$archived_predecessor_sha" \
   --argjson assetRoutes "$asset_routes" \
   --argjson assetCatalog "$asset_catalog" \
   --arg poolManager "$pool_manager" \
@@ -535,6 +631,7 @@ jq -n \
   --arg feeRouter "$fee_router" \
   --arg oracleHook "$hook" \
   --arg hookSalt "$hook_salt" \
+  --arg hookDomain "$hook_domain" \
   --arg adapterDeployer "$adapter_deployer" \
   --arg lockerDeployer "$locker_deployer" \
   --arg marketDeployer "$market_deployer" \
@@ -558,6 +655,13 @@ jq -n \
     gitCommit: $gitCommit,
     deployer: $deployer,
     guardian: $guardian,
+    governanceProfile: "robinhood-testnet-short-assurance",
+    archivedPredecessorManifestSha256: (
+      if $archivedPredecessorManifestSha256 == ""
+      then null
+      else $archivedPredecessorManifestSha256
+      end
+    ),
     liquidityVenue: "uniswap-v4",
     venueProvenance: "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
     venueManifestSha256: $venueManifestSha256,
@@ -607,6 +711,7 @@ jq -n \
     oracleHook: {
       create2Deployer: "0x4e59b44847b379578588920cA78FbF26c0B4956C",
       salt: $hookSalt,
+      deploymentDomain: $hookDomain,
       permissionBits: "0x1040",
       behavior: "observation-only"
     },
@@ -620,6 +725,14 @@ jq -n \
         creatorBps: 2500,
         daoRewardsBps: 2000,
         treasuryBps: 500
+      },
+      governance: {
+        profile: "robinhood-testnet-short-assurance",
+        votingDelaySeconds: 600,
+        votingPeriodSeconds: 1800,
+        timelockSeconds: 600,
+        quorumBps: 1000,
+        proposalThresholdBps: 100
       }
     },
     market: {

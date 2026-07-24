@@ -95,15 +95,65 @@ for (const [field, functionName] of [
   );
 }
 
-for (const [label, component] of Object.entries({
-  "PositionManager descriptor has no code":
-    manifest.missingOrBrokenOptionalComponents.positionDescriptor,
-  "PositionManager WETH9 has no code":
-    manifest.missingOrBrokenOptionalComponents.positionManagerWeth9,
-})) {
-  const code = await client.getCode({ address: getAddress(component.address) });
-  check(code === undefined || code === "0x", label);
-}
+const descriptor = manifest.contracts.positionDescriptor;
+const descriptorAddress = getAddress(descriptor.address);
+const descriptorCode = await client.getCode({ address: descriptorAddress });
+const mainnetDescriptorCode = await mainnetClient.getCode({ address: descriptorAddress });
+check(
+  descriptorCode && keccak256(descriptorCode) === descriptor.proxyRuntimeCodeHash,
+  "PositionDescriptor proxy runtime hash matches",
+);
+check(
+  mainnetDescriptorCode &&
+    keccak256(mainnetDescriptorCode) === descriptor.robinhoodMainnetProxyRuntimeCodeHash,
+  "PositionDescriptor proxy matches Robinhood mainnet",
+);
+
+const implementationSlot =
+  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
+const adminSlot =
+  "0xb53127684a568b3173ae13b9f8a6016e019d1c3213e399bbc8285597d3e2405d";
+const implementationStorage = await client.getStorageAt({
+  address: descriptorAddress,
+  slot: implementationSlot,
+});
+const adminStorage = await client.getStorageAt({
+  address: descriptorAddress,
+  slot: adminSlot,
+});
+check(
+  `0x${implementationStorage.slice(-40)}`.toLowerCase() ===
+    descriptor.implementation.toLowerCase(),
+  "PositionDescriptor implementation wiring matches",
+);
+check(
+  `0x${adminStorage.slice(-40)}`.toLowerCase() === descriptor.admin.toLowerCase(),
+  "PositionDescriptor proxy admin matches",
+);
+
+const implementationAddress = getAddress(descriptor.implementation);
+const implementationCode = await client.getCode({ address: implementationAddress });
+const mainnetImplementationCode = await mainnetClient.getCode({
+  address: implementationAddress,
+});
+check(
+  implementationCode &&
+    keccak256(implementationCode) === descriptor.implementationRuntimeCodeHash,
+  "PositionDescriptor implementation runtime hash matches",
+);
+check(
+  mainnetImplementationCode &&
+    keccak256(mainnetImplementationCode) ===
+      descriptor.robinhoodMainnetImplementationRuntimeCodeHash,
+  "PositionDescriptor implementation matches Robinhood mainnet",
+);
+
+const weth9 = manifest.missingOrBrokenOptionalComponents.positionManagerWeth9;
+const weth9Code = await client.getCode({ address: getAddress(weth9.address) });
+check(
+  weth9Code === undefined || weth9Code === "0x",
+  "PositionManager WETH9 has no code",
+);
 
 const erc20Abi = parseAbi([
   "function name() view returns (string)",

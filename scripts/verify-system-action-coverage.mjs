@@ -10,6 +10,13 @@ const manifest = JSON.parse(
 const failures = [];
 let checkedFunctions = 0;
 
+if (
+  manifest.schemaVersion !== 2 ||
+  manifest.protocolProfile !== "native-eth-uniswap-v4-schema8"
+) {
+  failures.push("action coverage is not the active native-v4 schema8 profile");
+}
+
 function contractBody(source, contractName) {
   const declaration = new RegExp(`\\bcontract\\s+${contractName}\\b`).exec(source);
   if (!declaration) throw new Error(`contract ${contractName} not found`);
@@ -88,8 +95,30 @@ for (const contract of manifest.contracts) {
 
 for (const endpoint of manifest.api) {
   const source = await readFile(join(root, endpoint.source), "utf8");
-  if (!source.includes(`"${endpoint.path}"`))
+  if (!source.includes(endpoint.path))
     failures.push(`${endpoint.method} ${endpoint.path} missing from ${endpoint.source}`);
+}
+
+for (const page of manifest.ui ?? []) {
+  try {
+    await stat(join(root, page.source));
+  } catch {
+    failures.push(`UI route ${page.route} missing source ${page.source}`);
+  }
+}
+
+for (const worker of manifest.workers ?? []) {
+  let source;
+  try {
+    source = await readFile(join(root, worker.source), "utf8");
+  } catch {
+    failures.push(`worker ${worker.id} missing source ${worker.source}`);
+    continue;
+  }
+  for (const marker of worker.markers) {
+    if (!source.includes(marker))
+      failures.push(`worker ${worker.id} missing marker ${marker}`);
+  }
 }
 
 const pending = manifest.journeys.filter((journey) => journey.status !== "passed");
@@ -101,6 +130,8 @@ const summary = {
   checkedContracts: manifest.contracts.length,
   checkedContractFunctions: checkedFunctions,
   checkedApiEndpoints: manifest.api.length,
+  checkedUiRoutes: manifest.ui?.length ?? 0,
+  checkedWorkers: manifest.workers?.length ?? 0,
   browserAndOperationalJourneys: manifest.journeys.length,
   pendingJourneys: pending.length,
   allowPending,

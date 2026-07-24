@@ -4,6 +4,16 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Assurance schema-v8 checkpoint (2026-07-24): the fresh release adds the
+  10-minute/30-minute/10-minute testnet governance profile, a generated
+  native-v4 action inventory, and a deterministic 512-wallet/32-launch/25,000
+  action campaign. An exact-project-wallet chain-46630 fork deployment passes
+  393 independent checks. The oracle hook is now release-domain-separated to
+  prevent deterministic collisions with archived releases, and deployment
+  manifests hash fetched runtime bytes rather than relying on `eth_getProof`
+  behavior in forked Anvil. Repository format, lint, strict types, application
+  tests, Anvil smoke, and all 102 Foundry tests pass. No live transaction was
+  broadcast.
 - DAO availability repair (2026-07-24): the public DAO page initially failed
   because an explicitly empty `NEXT_PUBLIC_DATA_API_URL` bypassed the intended
   `/api` fallback, while `/dao/activity` scanned backward in 250-block RPC
@@ -506,6 +516,34 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-24 - Schema-v8 assurance contracts and fork rehearsal pass
+
+- Context: the full-system assurance release requires shortened testnet
+  governance, a current action inventory, a large native-v4 economic campaign,
+  and a clean fresh-stack rehearsal before public-chain replacement.
+- Decision: domain-separate the CREATE2 oracle hook by exact release and hash
+  fetched runtime bytecode directly when writing manifests. This prevents an
+  archived hook from occupying the fresh release address and avoids Anvil
+  fork-backend `eth_getProof` inconsistencies for reused contracts.
+- Files: `packages/contracts/src/dao/RobynTestnetGovernor.sol`,
+  `packages/contracts/src/uniswap/RobynV4OracleHook.sol`,
+  `packages/contracts/test/RobynTestnetGovernor.t.sol`,
+  `packages/contracts/test/RobynV4HundredsUsersSimulation.t.sol`,
+  `scripts/deploy-testnet-v4-protocol.sh`,
+  `scripts/verify-testnet-v4-deployment.mjs`,
+  `scripts/generate-system-action-coverage.mjs`, and
+  `config/system-action-coverage.json`.
+- Commands/tests: exact-wallet chain-46630 fork deployment and 393-check
+  verifier; repository format, lint, strict types, app tests, Anvil smoke, and
+  the complete 102-test Foundry suite.
+- Result: all checks pass. The large campaign uses 512 actors, 32 atomic
+  launches, all 24 assets, 25,000 state-changing trades partitioned over 20
+  fixed seeds, three graduations, claims, and shortened governance. No live
+  chain transaction was sent.
+- Follow-up: commit and push this checkpoint, add campaign identity/API/UI,
+  run the deeper audit and high-depth invariant gates, then prepare a fresh
+  live deployment only after the complete release gate passes.
 
 ### 2026-07-24 - Native-v4 protocol deployed to Robinhood Testnet
 
@@ -1377,6 +1415,12 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-24: schema-v8 assurance checkpoint passed a fresh exact-project-wallet
+  chain-46630 fork deployment with 393 independent manifest, runtime, role,
+  route, governance, pool, and launch checks. Repository format, lint, strict
+  types, application tests, Anvil smoke, all 102 Foundry tests, and the
+  generated native-v4 action-coverage gate passed.
 
 - 2026-07-24: DAO availability regression tests passed: web format, lint,
   strict types and 17 tests; API strict types and 46 tests. The live

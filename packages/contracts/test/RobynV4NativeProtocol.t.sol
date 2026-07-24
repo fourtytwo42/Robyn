@@ -75,7 +75,7 @@ contract RobynV4NativeProtocolTest is Test {
 
     receive() external payable {}
 
-    function setUp() public {
+    function setUp() public virtual {
         vm.deal(address(this), 100 ether);
         poolManager = IPoolManager(
             _deployPinned(
@@ -180,7 +180,12 @@ contract RobynV4NativeProtocolTest is Test {
 
     function testOracleHookRejectsZeroInitializer() public {
         vm.expectRevert(RobynV4OracleHook.InvalidConfiguration.selector);
-        new RobynV4OracleHook(poolManager, address(0));
+        new RobynV4OracleHook(poolManager, address(0), keccak256("invalid-initializer"));
+    }
+
+    function testOracleHookRejectsZeroDeploymentDomain() public {
+        vm.expectRevert(RobynV4OracleHook.InvalidConfiguration.selector);
+        new RobynV4OracleHook(poolManager, address(this), bytes32(0));
     }
 
     function testAssetRouterBootstrapConfigurationClosesWhenRegistrarBinds() public {
@@ -315,7 +320,7 @@ contract RobynV4NativeProtocolTest is Test {
         assertEq(address(token), predictedToken);
     }
 
-    function _deployPinned(string memory artifact, bytes memory constructorArgs) private returns (address deployed) {
+    function _deployPinned(string memory artifact, bytes memory constructorArgs) internal returns (address deployed) {
         bytes memory creationCode = vm.getCode(artifact);
         bytes memory initCode = abi.encodePacked(creationCode, constructorArgs);
         assembly {
@@ -324,19 +329,27 @@ contract RobynV4NativeProtocolTest is Test {
         require(deployed != address(0) && deployed.code.length != 0, "pinned deploy failed");
     }
 
-    function _deployHook() private returns (RobynV4OracleHook deployed) {
+    function _deployHook() internal returns (RobynV4OracleHook deployed) {
         uint160 flags = Hooks.AFTER_INITIALIZE_FLAG | Hooks.AFTER_SWAP_FLAG;
+        bytes32 deploymentDomain = keccak256("robyn-v4-native-protocol-test");
         (address predicted, bytes32 salt) = HookMiner.find(
-            address(this), flags, type(RobynV4OracleHook).creationCode, abi.encode(poolManager, address(this))
+            address(this),
+            flags,
+            type(RobynV4OracleHook).creationCode,
+            abi.encode(poolManager, address(this), deploymentDomain)
         );
-        deployed = new RobynV4OracleHook{salt: salt}(poolManager, address(this));
+        deployed = new RobynV4OracleHook{salt: salt}(poolManager, address(this), deploymentDomain);
         assertEq(address(deployed), predicted);
     }
 
-    function _seedBasketPool() private {
+    function _seedBasketPool() internal {
+        _seedAssetPool(basketAsset);
+    }
+
+    function _seedAssetPool(V4TestAsset asset) internal {
         PoolKey memory key = PoolKey({
             currency0: Currency.wrap(address(0)),
-            currency1: Currency.wrap(address(basketAsset)),
+            currency1: Currency.wrap(address(asset)),
             fee: 3_000,
             tickSpacing: 60,
             hooks: IHooks(address(0))
@@ -348,7 +361,7 @@ contract RobynV4NativeProtocolTest is Test {
                 abi.encode(poolManager)
             )
         );
-        basketAsset.approve(address(liquidityRouter), type(uint256).max);
+        asset.approve(address(liquidityRouter), type(uint256).max);
         uint128 liquidity = 10 ether;
         uint160 upper = TickMath.getSqrtPriceAtTick(600);
         uint256 nativeAmount = SqrtPriceMath.getAmount0Delta(uint160(1 << 96), upper, liquidity, true);
@@ -360,7 +373,7 @@ contract RobynV4NativeProtocolTest is Test {
             bytes("")
         );
         assetRouter.configureRoute(
-            address(basketAsset),
+            address(asset),
             RobynV4AssetRouter.Route({
                 fee: 3_000,
                 tickSpacing: 60,
@@ -371,10 +384,10 @@ contract RobynV4NativeProtocolTest is Test {
                 enabled: true
             })
         );
-        assertTrue(assetRouter.routeStatus(address(basketAsset)).ready);
+        assertTrue(assetRouter.routeStatus(address(asset)).ready);
     }
 
-    function _request(bytes32 salt) private view returns (RobynNativeLaunchFactoryV4.LaunchRequest memory request) {
+    function _request(bytes32 salt) internal view returns (RobynNativeLaunchFactoryV4.LaunchRequest memory request) {
         address[] memory assets = new address[](1);
         assets[0] = address(basketAsset);
         uint16[] memory weights = new uint16[](1);

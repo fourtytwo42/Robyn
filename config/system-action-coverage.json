@@ -1,202 +1,645 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "protocolProfile": "native-eth-uniswap-v4-schema8",
+  "generatedFrom": {
+    "contracts": "Solidity public and external functions",
+    "api": "Fastify route registrations",
+    "ui": "Next.js page routes",
+    "workers": "declared runtime markers"
+  },
   "contracts": [
     {
-      "contract": "RobynDaoLaunchCoordinator",
-      "source": "packages/contracts/src/RobynDaoLaunchCoordinator.sol",
-      "artifact": "RobynDaoLaunchCoordinator",
-      "functions": ["createLaunch", "predictLaunchAddresses"],
-      "evidence": ["AtomicLaunchCoordinator.t.sol", "SchemaV4HundredsUsersSimulation.t.sol"]
+      "contract": "RobynV4LaunchCoordinatorV5",
+      "source": "packages/contracts/src/uniswap/RobynV4LaunchCoordinatorV5.sol",
+      "artifact": "RobynV4LaunchCoordinatorV5",
+      "functions": [
+        "createLaunch",
+        "predictLaunchAddresses"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
     },
     {
-      "contract": "RobynLaunchFactoryV2",
-      "source": "packages/contracts/src/RobynLaunchFactoryV2.sol",
-      "artifact": "RobynLaunchFactoryV2",
-      "functions": ["bindCoordinator", "createLaunchFor", "sealLaunchExclusionsFor", "predictLaunchAddresses"],
-      "evidence": ["AtomicLaunchCoordinator.t.sol", "SchemaV4HundredsUsersSimulation.t.sol"]
+      "contract": "RobynNativeLaunchFactoryV4",
+      "source": "packages/contracts/src/uniswap/RobynNativeLaunchFactoryV4.sol",
+      "artifact": "RobynNativeLaunchFactoryV4",
+      "functions": [
+        "bindCoordinator",
+        "createLaunchFor",
+        "predictLaunchAddresses",
+        "requireBasketRoutes",
+        "sealLaunchExclusionsFor"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
     },
     {
-      "contract": "RobynLaunchDeployerV2",
-      "source": "packages/contracts/src/RobynLaunchDeployerV2.sol",
-      "artifact": "RobynLaunchDeployerV2",
-      "functions": ["bindController", "deployVault", "deployToken", "sealExclusions", "predictVault", "predictToken"],
-      "evidence": ["AtomicLaunchCoordinator.t.sol"]
+      "contract": "RobynNativeLaunchDeployerV4",
+      "source": "packages/contracts/src/uniswap/RobynNativeLaunchDeployerV4.sol",
+      "artifact": "RobynNativeLaunchDeployerV4",
+      "functions": [
+        "bindController",
+        "deployToken",
+        "deployVault",
+        "predictToken",
+        "predictVault",
+        "sealExclusions"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
     },
     {
-      "contract": "UniswapV3MarketFactoryV3",
-      "source": "packages/contracts/src/uniswap/UniswapV3MarketFactoryV3.sol",
-      "artifact": "UniswapV3MarketFactoryV3",
-      "functions": ["bindCoordinator", "requiredTokenSupply", "createMarketFor"],
-      "evidence": ["AtomicLaunchCoordinator.t.sol", "SchemaV4HundredsUsersSimulation.t.sol"]
+      "contract": "RobynV4MarketFactory",
+      "source": "packages/contracts/src/uniswap/RobynV4MarketFactory.sol",
+      "artifact": "RobynV4MarketFactory",
+      "functions": [
+        "bindCoordinator",
+        "createMarketFor",
+        "requiredTokenSupply"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
     },
     {
-      "contract": "UniswapV3MarketDeployer",
-      "source": "packages/contracts/src/uniswap/UniswapV3MarketDeployer.sol",
-      "artifact": "UniswapV3MarketDeployer",
-      "functions": ["bindController", "deploy"],
-      "evidence": ["AtomicLaunchCoordinator.t.sol"]
+      "contract": "RobynV4AdapterDeployer",
+      "source": "packages/contracts/src/uniswap/RobynV4AdapterDeployer.sol",
+      "artifact": "RobynV4AdapterDeployer",
+      "functions": [
+        "bindController",
+        "deploy"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
     },
     {
-      "contract": "UniswapV3AdapterDeployer",
-      "source": "packages/contracts/src/uniswap/UniswapV3AdapterDeployer.sol",
-      "artifact": "UniswapV3AdapterDeployer",
-      "functions": ["bindController", "deploy"],
-      "evidence": ["AtomicLaunchCoordinator.t.sol"]
+      "contract": "RobynV4LockerDeployer",
+      "source": "packages/contracts/src/uniswap/RobynV4LockerDeployer.sol",
+      "artifact": "RobynV4LockerDeployer",
+      "functions": [
+        "bindController",
+        "deploy"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
     },
     {
-      "contract": "RobynProtocolFeeRouter",
-      "source": "packages/contracts/src/dao/RobynProtocolFeeRouter.sol",
-      "artifact": "RobynProtocolFeeRouterV2",
-      "functions": ["bindCoordinator", "setConverter", "setPaused", "registerLaunch", "launchAccount", "routeBaseFees", "convertAndRouteLaunchFees", "convertPendingToNative", "claimCreatorFees", "claimCreatorFeesTo", "claimCreatorFeesBatch", "claimCreatorFeesBatchTo"],
-      "evidence": ["DaoFees.t.sol", "SchemaV4HundredsUsersSimulation.t.sol"]
+      "contract": "RobynV4MarketDeployer",
+      "source": "packages/contracts/src/uniswap/RobynV4MarketDeployer.sol",
+      "artifact": "RobynV4MarketDeployer",
+      "functions": [
+        "bindController",
+        "deploy"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
     },
     {
-      "contract": "FeeBasketVault",
-      "source": "packages/contracts/src/FeeBasketVault.sol",
-      "artifact": "FeeBasketVault",
-      "functions": ["bindLaunchToken", "leg", "totalPendingBase", "recordFees", "convertLeg"],
-      "evidence": ["RobynProtocol.t.sol", "RobynProtocolInvariant.t.sol", "FeeBasketAccounting.t.sol"]
+      "contract": "RobynV4BondingCurveMarket",
+      "source": "packages/contracts/src/uniswap/RobynV4BondingCurveMarket.sol",
+      "artifact": "RobynV4BondingCurveMarket",
+      "functions": [
+        "bindFeeRouter",
+        "buy",
+        "graduationProgressBps",
+        "nativePerToken",
+        "nativeRaised",
+        "poolId",
+        "positionLocker",
+        "quoteBuy",
+        "quoteSell",
+        "seed",
+        "sell"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
+    },
+    {
+      "contract": "RobynV4GraduationAdapter",
+      "source": "packages/contracts/src/uniswap/RobynV4GraduationAdapter.sol",
+      "artifact": "RobynV4GraduationAdapter",
+      "functions": [
+        "bindFeeRouter",
+        "bindLocker",
+        "bindMarket",
+        "buyFor",
+        "graduate",
+        "poolKey",
+        "quoteBuy",
+        "quoteSell",
+        "sellFor",
+        "spotNativePerTokenX18"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
+    },
+    {
+      "contract": "RobynV4FeePositionLocker",
+      "source": "packages/contracts/src/uniswap/RobynV4FeePositionLocker.sol",
+      "artifact": "RobynV4FeePositionLocker",
+      "functions": [
+        "bindFeeRouter",
+        "collectFees",
+        "convertCollectedToken",
+        "mintAndLock",
+        "onERC721Received",
+        "poolKey",
+        "routeCollectedNative"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
+    },
+    {
+      "contract": "RobynV4OracleHook",
+      "source": "packages/contracts/src/uniswap/RobynV4OracleHook.sol",
+      "artifact": "RobynV4OracleHook",
+      "functions": [
+        "afterInitialize",
+        "afterSwap",
+        "bindRegistrar",
+        "consult",
+        "latestObservation",
+        "observation",
+        "registerPool"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
+    },
+    {
+      "contract": "RobynV4AssetRouter",
+      "source": "packages/contracts/src/uniswap/RobynV4AssetRouter.sol",
+      "artifact": "RobynV4AssetRouter",
+      "functions": [
+        "bindLaunchRegistrar",
+        "configureLaunchRoute",
+        "configureRoute",
+        "poolKey",
+        "quoteAssetToNative",
+        "quoteNativeToAsset",
+        "route",
+        "routeStatus",
+        "swapExactAssetForNative",
+        "swapExactNativeForAsset"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
+    },
+    {
+      "contract": "RobynNativeBasketVaultV2",
+      "source": "packages/contracts/src/uniswap/RobynNativeBasketVaultV2.sol",
+      "artifact": "RobynNativeBasketVaultV2",
+      "functions": [
+        "bindLaunchToken",
+        "convertLeg",
+        "leg",
+        "recordFees",
+        "totalPendingNative"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
+    },
+    {
+      "contract": "RobynNativeProtocolFeeRouterV3",
+      "source": "packages/contracts/src/uniswap/RobynNativeProtocolFeeRouterV3.sol",
+      "artifact": "RobynNativeProtocolFeeRouterV3",
+      "functions": [
+        "bindCoordinator",
+        "claimCreatorFees",
+        "claimCreatorFeesBatch",
+        "claimCreatorFeesBatchTo",
+        "claimCreatorFeesTo",
+        "convertAndRouteLaunchFees",
+        "launchAccount",
+        "registerLaunch",
+        "routeNativeFees",
+        "setPaused"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
     },
     {
       "contract": "RobynLaunchToken",
       "source": "packages/contracts/src/RobynLaunchToken.sol",
       "artifact": "RobynLaunchToken",
-      "functions": ["sealExclusions", "rewardAsset", "distributeReward", "accumulativeRewardOf", "withdrawnRewardOf", "withdrawableRewardOf", "claim", "claimAll"],
-      "inheritedFunctions": ["approve", "transfer", "transferFrom"],
-      "evidence": ["RobynProtocol.t.sol", "RobynProtocolInvariant.t.sol"]
-    },
-    {
-      "contract": "UniswapV3BondingCurveMarket",
-      "source": "packages/contracts/src/uniswap/UniswapV3BondingCurveMarket.sol",
-      "artifact": "UniswapV3BondingCurveMarket",
-      "functions": ["bindFeeRouter", "seed", "graduatedPool", "positionLocker", "basePerToken", "baseRaised", "graduationProgressBps", "quoteBuy", "quoteSell", "buy", "sell"],
-      "evidence": ["UniswapGraduation.t.sol", "SchemaV4HundredsUsersSimulation.t.sol"]
-    },
-    {
-      "contract": "UniswapV3GraduationAdapter",
-      "source": "packages/contracts/src/uniswap/UniswapV3GraduationAdapter.sol",
-      "artifact": "UniswapV3GraduationAdapter",
-      "functions": ["bindMarket", "bindFeeRouter", "initialize", "buyFor", "quoteBuy", "quoteSell", "sellFor", "spotBasePerTokenX18", "configuredBasePerTokenX18"],
-      "evidence": ["UniswapGraduation.t.sol"]
-    },
-    {
-      "contract": "RewardFeePositionLocker",
-      "source": "packages/contracts/src/uniswap/RewardFeePositionLocker.sol",
-      "artifact": "RewardFeePositionLocker",
-      "functions": ["bindFeeRouter", "onERC721Received", "bindPosition", "harvest", "convertLaunchFees"],
-      "evidence": ["UniswapGraduation.t.sol", "DaoFees.t.sol"]
-    },
-    {
-      "contract": "UniswapV3NativeFeeConverter",
-      "source": "packages/contracts/src/uniswap/UniswapV3NativeFeeConverter.sol",
-      "artifact": "UniswapV3NativeFeeConverter",
-      "functions": ["bindFeeRouter", "convertBaseToNative", "convertLaunchToBase", "minimumSafeOutput"],
-      "evidence": ["NativeFeeConverterMatrix.t.sol", "DaoFees.t.sol"]
+      "functions": [
+        "accumulativeRewardOf",
+        "claim",
+        "claimAll",
+        "distributeReward",
+        "rewardAsset",
+        "sealExclusions",
+        "tokenURI",
+        "withdrawableRewardOf",
+        "withdrawnRewardOf"
+      ],
+      "inheritedFunctions": [
+        "approve",
+        "transfer",
+        "transferFrom"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
     },
     {
       "contract": "RobynDaoToken",
       "source": "packages/contracts/src/dao/RobynDaoToken.sol",
       "artifact": "RobynDaoToken",
-      "functions": ["bindRewardDepositor", "sealRewardExclusions", "rewardExclusions", "eligibleRewardSupply", "depositRewards", "accumulativeRewardOf", "claimableRewardOf", "claimRewards", "claimRewardsTo", "clock", "CLOCK_MODE", "nonces"],
-      "inheritedFunctions": ["approve", "transfer", "transferFrom", "permit", "delegate", "delegateBySig", "getVotes", "getPastVotes"],
-      "evidence": ["DaoTokenMatrix.t.sol", "DaoFees.t.sol", "SchemaV4HundredsUsersSimulation.t.sol"]
+      "functions": [
+        "CLOCK_MODE",
+        "accumulativeRewardOf",
+        "bindRewardDepositor",
+        "claimRewards",
+        "claimRewardsTo",
+        "claimableRewardOf",
+        "clock",
+        "depositRewards",
+        "eligibleRewardSupply",
+        "nonces",
+        "rewardExclusions",
+        "sealRewardExclusions"
+      ],
+      "inheritedFunctions": [
+        "approve",
+        "transfer",
+        "transferFrom",
+        "permit",
+        "delegate",
+        "delegateBySig",
+        "getVotes",
+        "getPastVotes"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
     },
     {
-      "contract": "RobynGovernor",
-      "source": "packages/contracts/src/dao/RobynGovernor.sol",
-      "artifact": "RobynGovernor",
-      "functions": ["proposalThreshold", "votingDelay", "votingPeriod", "state", "proposalNeedsQueuing", "supportsInterface"],
-      "inheritedFunctions": ["propose", "castVote", "castVoteWithReason", "queue", "execute", "cancel"],
-      "evidence": ["DaoGovernance.t.sol", "DaoGovernanceMatrix.t.sol", "SchemaV4HundredsUsersSimulation.t.sol"]
+      "contract": "RobynTestnetGovernor",
+      "source": "packages/contracts/src/dao/RobynTestnetGovernor.sol",
+      "artifact": "RobynTestnetGovernor",
+      "functions": [
+        "proposalNeedsQueuing",
+        "proposalThreshold",
+        "state",
+        "supportsInterface",
+        "votingDelay",
+        "votingPeriod"
+      ],
+      "inheritedFunctions": [
+        "propose",
+        "castVote",
+        "castVoteWithReason",
+        "queue",
+        "execute",
+        "cancel"
+      ],
+      "evidence": [
+        "RobynTestnetGovernor.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
+    },
+    {
+      "contract": "RobynV4TestAssetLiquidityLocker",
+      "source": "packages/contracts/src/uniswap/RobynV4TestAssetLiquidityLocker.sol",
+      "artifact": "RobynV4TestAssetLiquidityLocker",
+      "functions": [
+        "poolKey",
+        "position",
+        "seal",
+        "seed"
+      ],
+      "evidence": [
+        "RobynV4TestAssetLiquidityLocker.t.sol"
+      ]
     }
   ],
   "api": [
-    {"method": "GET", "path": "/health", "source": "apps/api/src/server.ts"},
-    {"method": "GET", "path": "/status", "source": "apps/api/src/server.ts"},
-    {"method": "GET", "path": "/operations", "source": "apps/api/src/server.ts"},
-    {"method": "GET", "path": "/launches", "source": "apps/api/src/server.ts"},
-    {"method": "GET", "path": "/launches/:token", "source": "apps/api/src/server.ts"},
-    {"method": "GET", "path": "/launches/:token/activity", "source": "apps/api/src/server.ts"},
-    {"method": "GET", "path": "/launches/:token/analytics", "source": "apps/api/src/server.ts"},
-    {"method": "GET", "path": "/launches/:token/creator-rewards", "source": "apps/api/src/dao-routes.ts"},
-    {"method": "GET", "path": "/assets", "source": "apps/api/src/server.ts"},
-    {"method": "POST", "path": "/auth/nonce", "source": "apps/api/src/creator-routes.ts"},
-    {"method": "POST", "path": "/auth/verify", "source": "apps/api/src/creator-routes.ts"},
-    {"method": "GET", "path": "/auth/session", "source": "apps/api/src/creator-routes.ts"},
-    {"method": "POST", "path": "/auth/logout", "source": "apps/api/src/creator-routes.ts"},
-    {"method": "GET", "path": "/profiles/:address", "source": "apps/api/src/creator-routes.ts"},
-    {"method": "PUT", "path": "/profile", "source": "apps/api/src/creator-routes.ts"},
-    {"method": "POST", "path": "/media", "source": "apps/api/src/creator-routes.ts"},
-    {"method": "GET", "path": "/media/:mediaId", "source": "apps/api/src/creator-routes.ts"},
-    {"method": "GET", "path": "/launches/:token/metadata", "source": "apps/api/src/creator-routes.ts"},
-    {"method": "POST", "path": "/launches/:token/metadata", "source": "apps/api/src/creator-routes.ts"},
-    {"method": "POST", "path": "/media/:mediaId/reports", "source": "apps/api/src/creator-routes.ts"},
-    {"method": "GET", "path": "/dao", "source": "apps/api/src/dao-routes.ts"},
-    {"method": "GET", "path": "/dao/proposals", "source": "apps/api/src/dao-routes.ts"},
-    {"method": "GET", "path": "/dao/proposals/:id", "source": "apps/api/src/dao-routes.ts"},
-    {"method": "GET", "path": "/dao/members", "source": "apps/api/src/dao-routes.ts"},
-    {"method": "GET", "path": "/dao/activity", "source": "apps/api/src/dao-routes.ts"}
+    {
+      "method": "GET",
+      "path": "/artifacts/:sha256/metadata",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/assets",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/:address",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/:address/quote",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/assets/catalog-manifest",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/logout",
+      "source": "apps/api/src/creator-routes.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/nonce",
+      "source": "apps/api/src/creator-routes.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/session",
+      "source": "apps/api/src/creator-routes.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/verify",
+      "source": "apps/api/src/creator-routes.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/dao",
+      "source": "apps/api/src/dao-routes.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/dao/activity",
+      "source": "apps/api/src/dao-routes.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/dao/members",
+      "source": "apps/api/src/dao-routes.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/dao/proposals",
+      "source": "apps/api/src/dao-routes.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/dao/proposals/:id",
+      "source": "apps/api/src/dao-routes.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/dex/venue",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/launch-metadata/:preparationId",
+      "source": "apps/api/src/creator-routes.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/launch-metadata/prepare",
+      "source": "apps/api/src/creator-routes.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/launches",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/launches/:token",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/launches/:token/activity",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/launches/:token/analytics",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/launches/:token/creator-rewards",
+      "source": "apps/api/src/dao-routes.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/launches/:token/metadata",
+      "source": "apps/api/src/creator-routes.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/launches/:token/metadata",
+      "source": "apps/api/src/creator-routes.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/media",
+      "source": "apps/api/src/creator-routes.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/media/:mediaId",
+      "source": "apps/api/src/creator-routes.ts"
+    },
+    {
+      "method": "POST",
+      "path": "/media/:mediaId/reports",
+      "source": "apps/api/src/creator-routes.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/operations",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "PUT",
+      "path": "/profile",
+      "source": "apps/api/src/creator-routes.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/profiles/:address",
+      "source": "apps/api/src/creator-routes.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/status",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/token-list",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "GET",
+      "path": "/token-list/status",
+      "source": "apps/api/src/server.ts"
+    }
+  ],
+  "ui": [
+    {
+      "route": "/",
+      "source": "apps/web/src/app/page.tsx"
+    },
+    {
+      "route": "/create",
+      "source": "apps/web/src/app/create/page.tsx"
+    },
+    {
+      "route": "/dao",
+      "source": "apps/web/src/app/dao/page.tsx"
+    },
+    {
+      "route": "/dao/proposals/[id]",
+      "source": "apps/web/src/app/dao/proposals/[id]/page.tsx"
+    },
+    {
+      "route": "/discover",
+      "source": "apps/web/src/app/discover/page.tsx"
+    },
+    {
+      "route": "/launches/[token]",
+      "source": "apps/web/src/app/launches/[token]/page.tsx"
+    },
+    {
+      "route": "/portfolio",
+      "source": "apps/web/src/app/portfolio/page.tsx"
+    }
+  ],
+  "workers": [
+    {
+      "id": "native-v4-index-rebuild",
+      "source": "apps/indexer/src/server.ts",
+      "markers": [
+        "AtomicV4LaunchCreated",
+        "indexer_checkpoints"
+      ]
+    },
+    {
+      "id": "native-v4-keeper",
+      "source": "apps/keeper/src/server.ts",
+      "markers": [
+        "convert-v4-launch-fees",
+        "collectFees"
+      ]
+    },
+    {
+      "id": "ipfs-artifact-service",
+      "source": "apps/artifacts/src/server.ts",
+      "markers": [
+        "/health",
+        "artifact"
+      ]
+    }
   ],
   "journeys": [
     {
       "id": "home-discovery-navigation",
-      "status": "passed",
-      "evidence": ["Codex in-app-browser 2026-07-23", "docs/system-testing.md"]
+      "status": "pending",
+      "evidence": []
     },
     {
       "id": "markets-search-filter-sort-pagination-watchlist",
-      "status": "passed",
-      "evidence": ["Codex in-app-browser 2026-07-23", "scripts/test-api-surface.mjs"]
+      "status": "pending",
+      "evidence": []
     },
     {
-      "id": "atomic-create-artwork-profile",
-      "status": "passed",
-      "evidence": ["Codex in-app-browser 2026-07-23", "AtomicLaunchCoordinator.t.sol"]
+      "id": "atomic-create-ipfs-metadata-profile",
+      "status": "pending",
+      "evidence": []
     },
     {
-      "id": "bonding-buy-sell-graduation-post-graduation-trade",
-      "status": "passed",
-      "evidence": ["Codex in-app-browser 2026-07-23", "UniswapGraduation.t.sol"]
+      "id": "bonding-buy-sell-graduation-post-graduation-v4-trade",
+      "status": "pending",
+      "evidence": []
     },
     {
-      "id": "basket-convert-holder-claim",
-      "status": "passed",
-      "evidence": ["Codex in-app-browser 2026-07-23", "RobynProtocol.t.sol"]
+      "id": "all-24-assets-basket-convert-holder-claim",
+      "status": "pending",
+      "evidence": []
     },
     {
       "id": "creator-token-claim-portfolio-batch",
-      "status": "passed",
-      "evidence": ["Codex in-app-browser 2026-07-23", "DaoFees.t.sol"]
+      "status": "pending",
+      "evidence": []
     },
     {
       "id": "dao-reward-delegate-propose-vote-queue-execute-cancel",
-      "status": "passed",
-      "evidence": ["Codex in-app-browser 2026-07-23", "DaoGovernanceMatrix.t.sol"]
+      "status": "pending",
+      "evidence": []
     },
     {
       "id": "wallet-disconnect-switch-wrong-chain-rejection",
-      "status": "passed",
-      "evidence": ["Codex in-app-browser 2026-07-23", "wallet-policy.test.ts"]
+      "status": "pending",
+      "evidence": []
     },
     {
       "id": "desktop-tablet-mobile-keyboard-reduced-motion",
-      "status": "passed",
-      "evidence": ["Codex in-app-browser 2026-07-23", "docs/system-testing.md"]
+      "status": "pending",
+      "evidence": []
     },
     {
       "id": "quarantine-fallback-report-restore",
-      "status": "passed",
-      "evidence": ["scripts/test-api-surface.mjs", "scripts/moderate-media.sh"]
+      "status": "pending",
+      "evidence": []
     },
     {
       "id": "keeper-indexer-restart-rebuild-reconcile",
-      "status": "passed",
-      "evidence": ["scripts/rehearse-testnet-stack.sh", "PM2 restart 2026-07-23"]
+      "status": "pending",
+      "evidence": []
     },
     {
       "id": "backup-isolated-restore-served-release",
-      "status": "passed",
-      "evidence": ["scripts/backup-state.sh", "scripts/rehearse-restore.sh"]
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "public-100-wallet-1500-write-campaign",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "two-hour-public-testnet-endurance",
+      "status": "pending",
+      "evidence": []
     }
   ]
 }

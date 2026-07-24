@@ -89,20 +89,29 @@
       "constructorArguments": "0x0000000000000000000000008366a39cc670b4001a1121b8f6a443a643e40951",
       "runtimeCodeHash": "0x7d9c591e0956fd89d98feb4ffcfe8bf1f7a62bd485edd979fa21d104b49878a6",
       "status": "robyn-controlled-deployment-verified"
+    },
+    "positionDescriptor": {
+      "address": "0x9639443158E8C5efa35Bd45287bf2EFfd3D8dC06",
+      "proxyRuntimeCodeHash": "0x09d3b199609b46e8921e47c5d0d98ae083e70d2d3b63a6099dc7e947b2f58b20",
+      "implementation": "0xC1514AdF9caEd7Ab2cf2Dd7B3225761DF61f03A8",
+      "implementationRuntimeCodeHash": "0xbeab06ab5e9c62ebde72d025ee6dad81f3ce57348ab73cff399ef545398ad255",
+      "admin": "0x0000000000000000000000000000000000000000",
+      "robinhoodMainnetProxyRuntimeCodeHash": "0x09d3b199609b46e8921e47c5d0d98ae083e70d2d3b63a6099dc7e947b2f58b20",
+      "robinhoodMainnetImplementationRuntimeCodeHash": "0xbeab06ab5e9c62ebde72d025ee6dad81f3ce57348ab73cff399ef545398ad255",
+      "mainnetHashesMatch": true,
+      "mainnetExplorerVerified": true,
+      "testnetExplorerVerified": false,
+      "firstVerifiedAtBlock": 93000665
     }
   },
   "missingOrBrokenOptionalComponents": {
     "canonicalStateView": "absent",
     "canonicalReservesLens": "absent",
-    "positionDescriptor": {
-      "address": "0x9639443158E8C5efa35Bd45287bf2EFfd3D8dC06",
-      "codePresent": false
-    },
     "positionManagerWeth9": {
       "address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
       "codePresent": false
     },
-    "impact": "Native pools and position custody work. Position tokenURI and wrapped-native PositionManager paths must not be relied upon."
+    "impact": "Native pools, position custody, and the mainnet-matching PositionDescriptor work. Wrapped-native PositionManager paths must not be relied upon."
   },
   "faucetStockRoutes": [
     {
@@ -158,7 +167,7 @@
   ],
   "verification": {
     "sharedContracts": "passed",
-    "positionManagerWiring": "passed-with-disclosed-missing-code",
+    "positionManagerWiring": "passed-with-mainnet-matching-descriptor-and-missing-weth9",
     "faucetStockBidirectionalQuotes": "passed",
     "faucetStockBidirectionalSwaps": "pending-live-bounded-test",
     "stateView": "passed",

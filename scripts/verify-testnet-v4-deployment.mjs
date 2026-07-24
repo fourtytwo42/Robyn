@@ -38,7 +38,11 @@ check(
   manifest.venueProvenance === "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
   "unlisted venue disclosure is exact",
 );
-check(manifest.schemaVersion === 7, "deployment manifest schema is v7");
+check(manifest.schemaVersion === 8, "deployment manifest schema is v8");
+check(
+  manifest.governanceProfile === "robinhood-testnet-short-assurance",
+  "manifest selects the shortened testnet assurance governance profile",
+);
 
 for (const [key, address] of Object.entries(contracts)) {
   if (!(key in (manifest.runtimeCodeHashes ?? {}))) continue;
@@ -82,6 +86,7 @@ const abis = {
   stateView: await artifactAbi("StateView", true),
   daoToken: await artifactAbi("RobynDaoToken"),
   timelock: await artifactAbi("TimelockController"),
+  governor: await artifactAbi("RobynTestnetGovernor"),
   assetRouter: await artifactAbi("RobynV4AssetRouter"),
   testAssetLiquidityLocker: await artifactAbi("RobynV4TestAssetLiquidityLocker"),
   launchDeployer: await artifactAbi("RobynNativeLaunchDeployerV4"),
@@ -205,6 +210,11 @@ check(
   getAddress(await read(contracts.oracleHook, abis.hook, "registrar")) === contracts.marketFactory,
   "oracle-hook registrar is the market factory",
 );
+check(
+  (await read(contracts.oracleHook, abis.hook, "deploymentDomain")) ===
+    manifest.oracleHook.deploymentDomain,
+  "oracle-hook deployment domain matches manifest",
+);
 for (const key of ["adapterDeployer", "lockerDeployer", "marketDeployer"]) {
   check(
     getAddress(await read(contracts[key], abis[key], "controller")) === contracts.marketFactory,
@@ -250,6 +260,31 @@ for (const key of [
     `${key} is excluded from RDAO rewards`,
   );
 }
+
+check(
+  await read(contracts.governor, abis.governor, "votingDelay") === 600n,
+  "testnet Governor voting delay is 10 minutes",
+);
+check(
+  await read(contracts.governor, abis.governor, "votingPeriod") === 1_800n,
+  "testnet Governor voting period is 30 minutes",
+);
+check(
+  await read(contracts.governor, abis.governor, "proposalThreshold") ===
+    10_000_000n * 10n ** 18n,
+  "testnet Governor proposal threshold is one percent",
+);
+check(
+  await read(contracts.timelock, abis.timelock, "getMinDelay") === 600n,
+  "testnet Timelock delay is 10 minutes",
+);
+check(
+  manifest.dao?.governance?.profile === "robinhood-testnet-short-assurance" &&
+    manifest.dao.governance.votingDelaySeconds === 600 &&
+    manifest.dao.governance.votingPeriodSeconds === 1_800 &&
+    manifest.dao.governance.timelockSeconds === 600,
+  "manifest governance timing matches live contracts",
+);
 
 const proposerRole = await read(contracts.timelock, abis.timelock, "PROPOSER_ROLE");
 const cancellerRole = await read(contracts.timelock, abis.timelock, "CANCELLER_ROLE");
