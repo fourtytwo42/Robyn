@@ -5,6 +5,7 @@ import {
   deriveCampaignAccounts,
   encryptCampaignRoot,
   fundingTreeTransfers,
+  weightedFundingTreeTransfers,
 } from "../lib/campaign-wallets.mjs";
 import {
   applyHeadroom,
@@ -12,6 +13,7 @@ import {
   minimumActionCount,
   plannedBuyValueWei,
   plannedTransactionValueWei,
+  plannedWalletValueWei,
   weightedWalletFunding,
   projectCampaignCost,
   REQUIRED_RESERVE_WEI,
@@ -56,6 +58,15 @@ test("binary funding tree conserves per-wallet budgets plus one cost per edge", 
       1,
     );
   }
+});
+
+test("weighted funding tree preserves distinct wallet budgets and edge costs", () => {
+  const plan = weightedFundingTreeTransfers([10n, 20n, 30n, 40n], 2n);
+  assert.equal(plan.rootFundingWei, 106n);
+  assert.deepEqual(
+    plan.transfers.map((entry) => entry.amountWei),
+    [62n, 30n, 40n],
+  );
 });
 
 test("eight baskets cover every route exactly once", () => {
@@ -124,6 +135,10 @@ test("campaign value projection includes every planned payable user action", () 
   assert.ok(expected > 3n * 1_400_000_000_000_000n);
   assert.equal(plannedBuyValueWei(896), 300_000_000_000_000n);
   assert.equal(plannedBuyValueWei(888), 10_000_000_000_000n);
+  const distributed = Array.from({ length: 100 }, (_, index) =>
+    plannedWalletValueWei(index),
+  ).reduce((total, value) => total + value, 0n);
+  assert.equal(distributed, plannedTransactionValueWei());
 });
 
 test("weighted wallet funding preserves the total while funding creator gas skew", () => {
@@ -134,6 +149,10 @@ test("weighted wallet funding preserves the total while funding creator gas skew
   assert.equal(funding.basePerWalletWei, 104n);
   assert.equal(funding.topupTotalWei, 1_600n);
   assert.equal(funding.allocatedWei, 12_000n);
+  assert.equal(
+    funding.walletBudgetsWei.reduce((total, value) => total + value, 0n),
+    12_000n,
+  );
   assert.ok(funding.basePerWalletWei + funding.topups[0].amountWei > 800n);
   assert.throws(
     () => weightedWalletFunding(1_000n, [{ index: 0, amountWei: 1_000n }]),

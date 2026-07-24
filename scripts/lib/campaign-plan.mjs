@@ -95,6 +95,23 @@ export function plannedTransactionValueWei() {
   return value;
 }
 
+export function plannedWalletValueWei(actorIndex) {
+  if (
+    !Number.isInteger(actorIndex) ||
+    actorIndex < 0 ||
+    actorIndex >= REQUIRED_WALLET_COUNT
+  ) {
+    throw new Error("Actor index is outside the fixed campaign plan");
+  }
+  let value = 0n;
+  for (let index = actorIndex; index < 900; index += REQUIRED_WALLET_COUNT) {
+    value += plannedBuyValueWei(index);
+  }
+  if (actorIndex >= 90 && actorIndex <= 92) value += 250_000_000_000n;
+  if (actorIndex < 10) value += 200_000_000_000n;
+  return value;
+}
+
 export function plannedBuyValueWei(index) {
   if (!Number.isInteger(index) || index < 0 || index >= 900) {
     throw new Error("Buy index is outside the fixed campaign plan");
@@ -117,6 +134,7 @@ export function weightedWalletFunding(campaignBudgetWei, topups) {
     throw new Error("Wallet funding budgets must be positive");
   }
   const seen = new Set();
+  const byIndex = new Map();
   let topupTotalWei = 0n;
   for (const topup of topups) {
     if (
@@ -129,6 +147,7 @@ export function weightedWalletFunding(campaignBudgetWei, topups) {
       throw new Error("Wallet funding top-ups are invalid or duplicated");
     }
     seen.add(topup.index);
+    byIndex.set(topup.index, topup.amountWei);
     topupTotalWei += topup.amountWei;
   }
   if (topupTotalWei >= campaignBudgetWei) {
@@ -142,6 +161,10 @@ export function weightedWalletFunding(campaignBudgetWei, topups) {
     basePerWalletWei,
     topups,
     topupTotalWei,
+    walletBudgetsWei: Array.from(
+      { length: REQUIRED_WALLET_COUNT },
+      (_, index) => basePerWalletWei + (byIndex.get(index) ?? 0n),
+    ),
     allocatedWei:
       basePerWalletWei * BigInt(REQUIRED_WALLET_COUNT) + topupTotalWei,
   };

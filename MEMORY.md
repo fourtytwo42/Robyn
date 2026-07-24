@@ -4,6 +4,15 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Weighted-tree correction (2026-07-24): exact fork `8110894` completed 809
+  buys before an ordinary high-value actor exhausted an equal shared wallet
+  budget. No partial transaction survived. The binary funding tree now accepts
+  100 distinct budgets and delivers each actor's exact planned payable value,
+  shared gas budget, creator gas where applicable, and graduation gas for
+  actors 96-98. The weighting is embedded in the original 99 tree edges, so it
+  adds no top-up transactions and its root amount exactly conserves all wallet
+  budgets plus one transfer cost per edge.
+
 - Deterministic graduation-funding correction (2026-07-24): the exact
   `dd13c70` fork completed 824 buys before the next buy correctly failed for
   insufficient graduation-execution gas. The protocol did not enter a partial

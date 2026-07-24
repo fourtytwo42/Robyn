@@ -29,14 +29,15 @@ import {
   decryptCampaignRoot,
   deriveCampaignAccounts,
   encryptCampaignRoot,
-  fundingTreeTransfers,
   publicCampaignAccounts,
+  weightedFundingTreeTransfers,
 } from "./lib/campaign-wallets.mjs";
 import {
   assertSchema8Manifest,
   launchBasketPlan,
   plannedBuyValueWei,
   plannedTransactionValueWei,
+  plannedWalletValueWei,
   PRICED_TRANSACTION_COUNT,
   projectCampaignCost,
   REQUIRED_HEADROOM_BPS,
@@ -601,38 +602,28 @@ async function fund() {
       (10_000n + REQUIRED_HEADROOM_BPS) +
       9_999n) /
     10_000n;
-  const graduationBudgetWei =
-    ((15_000_000n * gasPriceWei +
-      2_048n * 16n * l1BaseFeeWei +
-      300_000_000_000_000n) *
+  const graduationGasBudgetWei =
+    ((15_000_000n * gasPriceWei + 2_048n * 16n * l1BaseFeeWei) *
       (10_000n + REQUIRED_HEADROOM_BPS) +
       9_999n) /
     10_000n;
-  const allocation = weightedWalletFunding(campaignBudget, [
-    ...Array.from({ length: 8 }, (_, index) => ({
+  const allocation = weightedWalletFunding(
+    campaignBudget,
+    Array.from({ length: REQUIRED_WALLET_COUNT }, (_, index) => ({
       index,
-      amountWei: creatorLaunchBudgetWei,
+      amountWei:
+        plannedWalletValueWei(index) +
+        (index < 8 ? creatorLaunchBudgetWei : 0n) +
+        (index >= 96 && index <= 98 ? graduationGasBudgetWei : 0n),
     })),
-    ...Array.from({ length: 3 }, (_, index) => ({
-      index: 96 + index,
-      amountWei: graduationBudgetWei,
-    })),
-  ]);
-  const perWalletWei = allocation.basePerWalletWei;
-  const plan = fundingTreeTransfers(
-    REQUIRED_WALLET_COUNT,
-    perWalletWei,
-    transferCostWei,
   );
+  const plan = weightedFundingTreeTransfers(allocation.walletBudgetsWei, transferCostWei);
   const projectBalance = await publicClient.getBalance({
     address: project.address,
   });
-  const weightedTopupGas = transferCostWei * BigInt(allocation.topups.length);
   if (
     projectBalance <
     plan.rootFundingWei +
-      allocation.topupTotalWei +
-      weightedTopupGas +
       transferCostWei +
       REQUIRED_RESERVE_WEI
   ) {
@@ -661,27 +652,16 @@ async function fund() {
       },
     );
   }
-  for (const topup of allocation.topups) {
-    await recordTransaction(
-      state,
-      `fund-weighted-topup-${topup.index}`,
-      projectClient,
-      {
-        account: project,
-        to: accounts[topup.index].address,
-        value: topup.amountWei,
-      },
-    );
-  }
   state.phases.funded = new Date().toISOString();
   state.funding = {
-    perWalletWei: perWalletWei.toString(),
+    basePerWalletWei: allocation.basePerWalletWei.toString(),
     transferCostWei: transferCostWei.toString(),
     rootFundingWei: plan.rootFundingWei.toString(),
     creatorLaunchBudgetWei: creatorLaunchBudgetWei.toString(),
-    graduationBudgetWei: graduationBudgetWei.toString(),
+    graduationGasBudgetWei: graduationGasBudgetWei.toString(),
     weightedTopupTotalWei: allocation.topupTotalWei.toString(),
-    weightedTopupWallets: allocation.topups.map((topup) => topup.index),
+    minimumWalletBudgetWei: allocation.walletBudgetsWei.reduce((left, right) => left < right ? left : right).toString(),
+    maximumWalletBudgetWei: allocation.walletBudgetsWei.reduce((left, right) => left > right ? left : right).toString(),
     allocatedActorBudgetWei: allocation.allocatedWei.toString(),
   };
   saveState(state);

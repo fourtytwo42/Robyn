@@ -143,13 +143,41 @@ export function fundingTreeTransfers(
       "Funding amounts must be nonnegative and per-wallet funding must be positive",
     );
   }
-  const subtreeSize = (index) => {
-    if (index >= walletCount) return 0;
-    return 1 + subtreeSize(index * 2 + 1) + subtreeSize(index * 2 + 2);
-  };
+  return weightedFundingTreeTransfers(
+    Array.from({ length: walletCount }, () => perWalletWei),
+    transferCostWei,
+  );
+}
+
+export function weightedFundingTreeTransfers(
+  walletBudgetsWei,
+  transferCostWei,
+) {
+  if (
+    !Array.isArray(walletBudgetsWei) ||
+    walletBudgetsWei.length < 1 ||
+    walletBudgetsWei.length > 512 ||
+    walletBudgetsWei.some(
+      (value) => typeof value !== "bigint" || value <= 0n,
+    ) ||
+    transferCostWei < 0n
+  ) {
+    throw new Error(
+      "Weighted wallet budgets must contain 1-512 positive bigint values",
+    );
+  }
+  const walletCount = walletBudgetsWei.length;
   const subtreeBudget = (index) => {
-    const size = BigInt(subtreeSize(index));
-    return size * perWalletWei + (size - 1n) * transferCostWei;
+    if (index >= walletCount) return 0n;
+    const left = subtreeBudget(index * 2 + 1);
+    const right = subtreeBudget(index * 2 + 2);
+    return (
+      walletBudgetsWei[index] +
+      left +
+      right +
+      (left > 0n ? transferCostWei : 0n) +
+      (right > 0n ? transferCostWei : 0n)
+    );
   };
   const transfers = [];
   for (let parent = 0; parent < walletCount; parent += 1) {
