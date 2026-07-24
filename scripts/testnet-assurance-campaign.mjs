@@ -39,6 +39,7 @@ import {
   graduationActorIndex,
   assertSchema8Manifest,
   launchBasketPlan,
+  nativeSweepReserveWei,
   plannedBuyValueWei,
   plannedTransactionValueWei,
   plannedWalletValueWei,
@@ -1349,13 +1350,14 @@ async function sweep() {
     }
     saveState(state);
   }
-  const gasPrice = await publicClient.getGasPrice();
+  const gasPrice = BigInt(state.preflight.gasPriceWei);
+  const l1BaseFee = BigInt(state.preflight.l1BaseFeeWei);
+  const nativeSweepReserve = nativeSweepReserveWei(gasPrice, l1BaseFee);
   for (let actorIndex = 0; actorIndex < accounts.length; actorIndex += 1) {
     const account = privateKeyToAccount(accounts[actorIndex].privateKey);
     const balance = await publicClient.getBalance({ address: account.address });
-    const reserve = 21_000n * gasPrice * 2n;
-    if (balance > reserve) {
-      await recordTransaction(state, `sweep-native-${actorIndex}`, walletClient(account), { account, to: manifest.deployer, value: balance - reserve });
+    if (balance > nativeSweepReserve) {
+      await recordTransaction(state, `sweep-native-${actorIndex}`, walletClient(account), { account, to: manifest.deployer, value: balance - nativeSweepReserve });
       state.sweep.nativeTransfers += 1;
     } else if (balance > 0n) {
       state.sweep.dust.push({ actorIndex, amount: balance.toString() });
@@ -1365,6 +1367,7 @@ async function sweep() {
   const projectBalance = await publicClient.getBalance({ address: manifest.deployer });
   if (projectBalance < REQUIRED_RESERVE_WEI) throw new Error("Project reserve was not preserved after sweep");
   state.sweep.projectBalanceWei = projectBalance.toString();
+  state.sweep.nativeReserveWeiPerActor = nativeSweepReserve.toString();
   state.phases.swept = new Date().toISOString();
   saveState(state);
   console.log(json(state.sweep));

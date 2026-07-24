@@ -84,6 +84,14 @@ Durable project context lives here. Update this file whenever information should
   returned to 55% with 27 GB free. Campaign preflight now records available
   bytes and requires at least 5 GiB before any funding transaction.
 
+- Native-sweep fee correction (2026-07-24): exact rehearsal `d4ce214`
+  completed 408 launch-token and ten RDAO recovery transfers. Its first native
+  sweep stopped before broadcast because the value reserve used Anvil's
+  decayed current base fee while `recordTransaction` correctly submitted with
+  the preflight-frozen 0.01-gwei price. Native sweep value now reserves the
+  21,000-gas transfer plus Nitro L1 data using the same frozen prices and 25%
+  headroom, eliminating the internal fee-price mismatch.
+
 - Timestamp-sensitive gas correction (2026-07-24): exact fork `a902415`
   completed 1,282 product transactions through all buys, transfers, approvals,
   three graduations, and 32 sells before a graduated sell exhausted viem's

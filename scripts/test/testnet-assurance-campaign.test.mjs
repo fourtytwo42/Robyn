@@ -13,6 +13,7 @@ import {
   graduationActorIndex,
   launchBasketPlan,
   minimumActionCount,
+  nativeSweepReserveWei,
   plannedBuyValueWei,
   plannedTransactionValueWei,
   plannedWalletValueWei,
@@ -126,6 +127,11 @@ test("cost projection includes Nitro L1 data, 25 percent headroom, and hard rese
   assert.equal(cost.baseWei, 1_365n);
   assert.equal(cost.withHeadroomWei, 1_707n);
   assert.equal(cost.totalRequiredWei, 1_707n + REQUIRED_RESERVE_WEI);
+});
+
+test("native sweep reserve uses the frozen execution and L1 prices with headroom", () => {
+  assert.equal(nativeSweepReserveWei(10n, 2n), 267_620n);
+  assert.throws(() => nativeSweepReserveWei(-1n, 0n), /cannot be negative/);
 });
 
 test("fixed action inventory exceeds the 1,500-write gate before optional retries", () => {

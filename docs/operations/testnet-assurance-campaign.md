@@ -76,7 +76,9 @@ creator rejection.
 `fill` counts product writes separately from funding and adds real token
 transfers only if fewer than 1,510 product transactions have succeeded. `sweep`
 returns campaign ERC-20, RDAO, and recoverable ETH balances to the project
-wallet while recording unavoidable dust and enforcing the hard reserve. The
+wallet while recording unavoidable dust and enforcing the hard reserve. Native
+sweeps reserve their fee from the same preflight-frozen execution and Nitro L1
+prices used for submission, plus 25% headroom. The
 `all` command resumes the complete ordered workflow and skips every confirmed
 label. Submitted transaction hashes are journaled before receipt waiting so an
 interrupted process resumes the same hash rather than broadcasting a duplicate.

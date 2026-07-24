@@ -208,6 +208,13 @@ export function applyHeadroom(value, headroomBps = REQUIRED_HEADROOM_BPS) {
   return value + (value * headroomBps + 9_999n) / 10_000n;
 }
 
+export function nativeSweepReserveWei(gasPriceWei, l1BaseFeeWei) {
+  if (gasPriceWei < 0n || l1BaseFeeWei < 0n) {
+    throw new Error("Sweep fee inputs cannot be negative");
+  }
+  return applyHeadroom(21_000n * gasPriceWei + 128n * 16n * l1BaseFeeWei);
+}
+
 export function projectCampaignCost({
   gasPriceWei,
   l1BaseFeeWei,
