@@ -4,17 +4,25 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
-- Secondary faucet wallet created (2026-07-24): a persistent encrypted
-  Robinhood Testnet wallet is stored outside the repository at
-  `/home/hendo420/.config/robyn/wallets/robinhood-testnet-faucet-2`. Its public
-  address is `0xeCD975C493959b7E9157433a86097ba55014D3eA`. The wallet and keystore
-  directories are mode `0700`; its password, keystore, and address files are
-  mode `0600`. It currently has zero balance and is intended to receive a
-  separate faucet claim, then transfer the received testnet ETH to the canonical
-  deployer `0xecc5d6d032ADc9ca9E0F4042128067b8366da17A`. No secret or recovery
-  material is stored in Git or this memory file. Last verified 2026-07-24.
+- Secondary faucet wallet transfer completed (2026-07-24): the encrypted wallet
+  at `/home/hendo420/.config/robyn/wallets/robinhood-testnet-faucet-2`
+  (`0xeCD975C493959b7E9157433a86097ba55014D3eA`) received `0.01 ETH` plus five
+  each of the faucet-issued TSLA, AMD, AMZN, NFLX, and PLTR contracts. All five
+  token balances and `0.00999659638 ETH` were transferred to the canonical
+  deployer `0xecc5d6d032ADc9ca9E0F4042128067b8366da17A`; the source retains only
+  `82230000000 wei` of unavoidable gas dust. The five token transaction receipts
+  are `0x9ec9294b81de73cc66d077a6aac29b31ad6526d83cdcfbab6ad38ec22a3acfba`,
+  `0x7f1dcb50db823ddd5b30610321ed767fbb00a82ba08814e781d251f3e916e302`,
+  `0x7248476b839188d948b7035558c10426cb97da0fc72c529e7a81c483a5ee80ab`,
+  `0xecef01be4ad70f245991f481016f77a6794764642866ea8f4f05abc300091b36`,
+  and `0xb1270be6e55ccd201f26dbea2f79663ae393648c3654183ed08d6d271c011f80`;
+  the ETH receipt is
+  `0x184d0e828a83a1e073d04e61522954d7ed1d7fd217c2eaac0459a5d4ab122ddd`.
+  The destination now holds `0.025214184158782403 ETH` and 15 of each faucet
+  stock. No secret or recovery material is stored in Git or this memory file.
+  Last verified on chain 46630 on 2026-07-24.
 
-- Public schema-v8 broadcast is funding-blocked (2026-07-24): `main` was
+- Public schema-v8 funding gate is now clear (2026-07-24): `main` was
   fast-forwarded and pushed to validated commit
   `2858bc8dd00d89e03bc9c3138b2d3461edcfdc07`. A fresh deployment and complete
   100-wallet campaign at that exact SHA again passed all 490 verifier checks,
@@ -22,10 +30,13 @@ Durable project context lives here. Update this file whenever information should
   governance, claims, sweep, and reserve gates. Live-priced rehearsal receipts
   estimate schema-v8 deployment at `743832099255000 wei`; deployment plus the
   fixed campaign and reserve requires `16537769625879000 wei`. The encrypted
-  project wallet has `15217587778782403 wei`, leaving a fail-closed shortfall
-  of `1320181847096597 wei` (about 0.00132018 testnet ETH). Request at least
-  0.003 additional testnet ETH to leave reasonable price/retry margin, then
-  rerun live preflight before any broadcast. Schema v7 remains live and no
+  project wallet now has `25214184158782403 wei`. Against the last complete
+  deployment-plus-campaign requirement of `16537769625879000 wei`, this leaves
+  `8676414532903403 wei` (`0.008676414532903403 ETH`) of margin while preserving
+  the fixed reserve. Current execution gas is `10000000 wei` and the Nitro L1
+  base-fee estimate is `19842679 wei`. Funding is sufficient to resume work,
+  but the exact-release validation, fresh deployment estimates, and live
+  preflight must still pass before broadcast. Schema v7 remains live and no
   schema-v8 public transaction has been sent.
 
 - Schema-v7 pre-cutover recovery passed (2026-07-24): the active schema-v7
