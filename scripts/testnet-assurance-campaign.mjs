@@ -36,11 +36,13 @@ import {
   assertSchema8Manifest,
   launchBasketPlan,
   plannedTransactionValueWei,
+  PRICED_TRANSACTION_COUNT,
   projectCampaignCost,
   REQUIRED_HEADROOM_BPS,
   REQUIRED_RESERVE_WEI,
   REQUIRED_SUCCESSFUL_WRITES,
   REQUIRED_WALLET_COUNT,
+  weightedWalletFunding,
 } from "./lib/campaign-plan.mjs";
 
 const argv = process.argv.slice(2);
@@ -534,6 +536,7 @@ async function preflight() {
     l1BaseFeeWei,
     averageGasPerWrite: 250_000n,
     averageCalldataBytes: 512n,
+    successfulWrites: PRICED_TRANSACTION_COUNT,
     transactionValueWei: plannedTransactionValueWei(),
   });
   const projectAddress = getAddress(manifest.deployer);
@@ -588,9 +591,16 @@ async function fund() {
   const transferCostWei =
     21_000n * gasPriceWei + 128n * 16n * l1BaseFeeWei;
   const campaignBudget = BigInt(state.preflight.cost.withHeadroomWei);
-  const perWalletWei =
-    (campaignBudget + BigInt(REQUIRED_WALLET_COUNT) - 1n) /
-    BigInt(REQUIRED_WALLET_COUNT);
+  const creatorLaunchBudgetWei =
+    ((15_000_000n * gasPriceWei + 2_048n * 16n * l1BaseFeeWei) *
+      (10_000n + REQUIRED_HEADROOM_BPS) +
+      9_999n) /
+    10_000n;
+  const allocation = weightedWalletFunding(
+    campaignBudget,
+    creatorLaunchBudgetWei,
+  );
+  const perWalletWei = allocation.basePerWalletWei;
   const plan = fundingTreeTransfers(
     REQUIRED_WALLET_COUNT,
     perWalletWei,
@@ -599,7 +609,17 @@ async function fund() {
   const projectBalance = await publicClient.getBalance({
     address: project.address,
   });
-  if (projectBalance < plan.rootFundingWei + transferCostWei + REQUIRED_RESERVE_WEI) {
+  const creatorTopupTotal =
+    allocation.creatorTopupWei * BigInt(state.launches?.length ?? 8);
+  const creatorTopupGas = transferCostWei * BigInt(state.launches?.length ?? 8);
+  if (
+    projectBalance <
+    plan.rootFundingWei +
+      creatorTopupTotal +
+      creatorTopupGas +
+      transferCostWei +
+      REQUIRED_RESERVE_WEI
+  ) {
     throw new Error("Project wallet cannot fund the tree while preserving the reserve");
   }
   await recordTransaction(state, "fund-root", projectClient, {
@@ -625,11 +645,26 @@ async function fund() {
       },
     );
   }
+  for (let index = 0; index < 8; index += 1) {
+    await recordTransaction(
+      state,
+      `fund-creator-topup-${index}`,
+      projectClient,
+      {
+        account: project,
+        to: accounts[index].address,
+        value: allocation.creatorTopupWei,
+      },
+    );
+  }
   state.phases.funded = new Date().toISOString();
   state.funding = {
     perWalletWei: perWalletWei.toString(),
     transferCostWei: transferCostWei.toString(),
     rootFundingWei: plan.rootFundingWei.toString(),
+    creatorTopupWei: allocation.creatorTopupWei.toString(),
+    creatorTopupTotalWei: creatorTopupTotal.toString(),
+    allocatedActorBudgetWei: allocation.allocatedWei.toString(),
   };
   saveState(state);
   console.log(json(state.funding));

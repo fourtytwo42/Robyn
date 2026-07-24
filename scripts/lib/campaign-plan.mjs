@@ -2,6 +2,7 @@ export const REQUIRED_WALLET_COUNT = 100;
 export const REQUIRED_LAUNCH_COUNT = 8;
 export const REQUIRED_GRADUATED_COUNT = 3;
 export const REQUIRED_SUCCESSFUL_WRITES = 1_500;
+export const PRICED_TRANSACTION_COUNT = 1_650;
 export const REQUIRED_RESERVE_WEI = 1_500_000_000_000_000n;
 export const REQUIRED_HEADROOM_BPS = 2_500n;
 
@@ -96,6 +97,28 @@ export function plannedTransactionValueWei() {
   value += 3n * 250_000_000_000n;
   value += 10n * 200_000_000_000n;
   return value;
+}
+
+export function weightedWalletFunding(campaignBudgetWei, creatorBudgetWei) {
+  if (campaignBudgetWei <= 0n || creatorBudgetWei <= 0n) {
+    throw new Error("Wallet funding budgets must be positive");
+  }
+  const creatorTotal = creatorBudgetWei * BigInt(REQUIRED_LAUNCH_COUNT);
+  if (creatorTotal >= campaignBudgetWei) {
+    throw new Error(
+      "Creator launch budgets consume the complete campaign budget",
+    );
+  }
+  const sharedBudget = campaignBudgetWei - creatorTotal;
+  const basePerWalletWei =
+    (sharedBudget + BigInt(REQUIRED_WALLET_COUNT) - 1n) /
+    BigInt(REQUIRED_WALLET_COUNT);
+  return {
+    basePerWalletWei,
+    creatorTopupWei: creatorBudgetWei,
+    allocatedWei:
+      basePerWalletWei * BigInt(REQUIRED_WALLET_COUNT) + creatorTotal,
+  };
 }
 
 export function applyHeadroom(value, headroomBps = REQUIRED_HEADROOM_BPS) {

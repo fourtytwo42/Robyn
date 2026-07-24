@@ -4,6 +4,15 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Weighted campaign-funding correction (2026-07-24): the first exact
+  `0761233` fork campaign failed closed before launch 1 because equal actor
+  funding did not account for the atomic-launch gas concentrated on creators.
+  No launch transaction was broadcast. Campaign pricing now includes 1,650
+  transactions so the 100-wallet distribution is not omitted, and the same
+  conserved campaign budget is weighted with 25%-headroom creator top-ups
+  sized for 15M gas plus Nitro L1 data. A fresh exact-commit rehearsal must
+  validate this correction before live authorization.
+
 - Campaign execution-engine checkpoint (2026-07-24): the schema-v8 one-shot
   runner now implements resumable trading, three exact graduations, five
   distinct bonding states, bidirectional direct-v4 swaps, locked-position fee

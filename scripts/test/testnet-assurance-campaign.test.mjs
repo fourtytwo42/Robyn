@@ -11,6 +11,7 @@ import {
   launchBasketPlan,
   minimumActionCount,
   plannedTransactionValueWei,
+  weightedWalletFunding,
   projectCampaignCost,
   REQUIRED_RESERVE_WEI,
 } from "../lib/campaign-plan.mjs";
@@ -124,4 +125,16 @@ test("campaign value projection includes every planned payable user action", () 
   expected += 10n * 200_000_000_000n;
   assert.equal(plannedTransactionValueWei(), expected);
   assert.ok(expected > 3n * 1_400_000_000_000_000n);
+});
+
+test("weighted wallet funding preserves the total while funding creator gas skew", () => {
+  const funding = weightedWalletFunding(12_000n, 200n);
+  assert.equal(funding.basePerWalletWei, 104n);
+  assert.equal(funding.creatorTopupWei, 200n);
+  assert.equal(funding.allocatedWei, 12_000n);
+  assert.ok(funding.basePerWalletWei + funding.creatorTopupWei > 200n);
+  assert.throws(
+    () => weightedWalletFunding(1_000n, 200n),
+    /complete campaign budget/,
+  );
 });
