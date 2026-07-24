@@ -1620,6 +1620,23 @@ main > .notice {
   white-space: nowrap;
 }
 
+.campaign-test-chip {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border: 1px solid rgba(245, 194, 94, 0.38);
+  border-radius: 999px;
+  padding: 0.3rem 0.55rem;
+  background: rgba(245, 194, 94, 0.1);
+  color: #f5c25e;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .wallet-empty,
 .wallet-bar {
   margin-top: 1.5rem;

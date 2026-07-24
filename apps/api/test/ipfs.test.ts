@@ -61,4 +61,38 @@ describe("IPFS token metadata", () => {
       state: "queued",
     });
   });
+
+  it("commits a validated automated campaign marker to immutable bytes", () => {
+    const metadata = JSON.parse(
+      canonicalTokenMetadata({
+        name: "Assurance Oak",
+        symbol: "AOK",
+        pngCid,
+        webpCid,
+        hasAlpha: false,
+        testCampaign: {
+          campaignId: "schema8-assurance",
+          releaseSha: "a".repeat(40),
+        },
+      }).toString(),
+    );
+    expect(metadata.robynTestCampaign).toEqual({
+      campaignId: "schema8-assurance",
+      releaseSha: "a".repeat(40),
+      automatedTestLaunch: true,
+    });
+    expect(() =>
+      canonicalTokenMetadata({
+        name: "Bad",
+        symbol: "BAD",
+        pngCid,
+        webpCid,
+        hasAlpha: false,
+        testCampaign: {
+          campaignId: "../escape",
+          releaseSha: "not-a-sha",
+        },
+      }),
+    ).toThrow("invalid_test_campaign");
+  });
 });

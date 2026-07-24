@@ -73,6 +73,11 @@ export const launches = pgTable(
     createdBlock: bigint("created_block", { mode: "bigint" }).notNull(),
     updatedBlock: bigint("updated_block", { mode: "bigint" }).notNull(),
     formulaVersion: text("formula_version").notNull().default("native-v1"),
+    campaignId: text("campaign_id"),
+    campaignReleaseSha: text("campaign_release_sha"),
+    automatedTestLaunch: boolean("automated_test_launch")
+      .notNull()
+      .default(false),
   },
   (table) => [
     primaryKey({ columns: [table.chainId, table.token] }),
@@ -224,6 +229,11 @@ export const launchMetadataBindings = pgTable(
     metadataCid: text("metadata_cid"),
     metadataUri: text("metadata_uri"),
     verificationStatus: text("verification_status").notNull().default("legacy"),
+    campaignId: text("campaign_id"),
+    campaignReleaseSha: text("campaign_release_sha"),
+    automatedTestLaunch: boolean("automated_test_launch")
+      .notNull()
+      .default(false),
     boundAt: timestamp("bound_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -277,6 +287,11 @@ export const preparedTokenMetadata = pgTable(
     metadataUri: text("metadata_uri").notNull(),
     status: text("status").notNull().default("ready"),
     boundToken: text("bound_token"),
+    campaignId: text("campaign_id"),
+    campaignReleaseSha: text("campaign_release_sha"),
+    automatedTestLaunch: boolean("automated_test_launch")
+      .notNull()
+      .default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

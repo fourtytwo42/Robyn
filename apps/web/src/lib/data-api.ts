@@ -11,6 +11,9 @@ export type LaunchRecord = {
   created_block: string;
   updated_block: string;
   formula_version: string;
+  campaign_id: string | null;
+  campaign_release_sha: string | null;
+  automated_test_launch: boolean;
   metadata?: {
     token: string;
     media_id: string;

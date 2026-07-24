@@ -46,6 +46,14 @@ export function MarketCard({
           : {})}
       />
       <div className="market-card-copy">
+        {launch.automated_test_launch ? (
+          <span
+            className="campaign-test-chip"
+            title={`Assurance campaign ${launch.campaign_id ?? "unavailable"}`}
+          >
+            Automated test launch
+          </span>
+        ) : null}
         <div
           className="home-market-basket"
           aria-label="Immutable basket weights"

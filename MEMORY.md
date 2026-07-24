@@ -4,6 +4,14 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Assurance campaign identity checkpoint (2026-07-24): Robyn-verified
+  ERC-1046 metadata can now commit a validated campaign ID, exact release SHA,
+  and automated-test marker. These fields project additively through schema,
+  indexer, launch APIs, token cards, token detail, and an operator-token-only
+  status endpoint. Public metadata preparation cannot set campaign fields
+  without the protected operator token. Isolated migration and exact-fork
+  index rebuild tests pass; no production/testnet database migration or live
+  chain transaction has been performed.
 - Assurance schema-v8 checkpoint (2026-07-24): the fresh release adds the
   10-minute/30-minute/10-minute testnet governance profile, a generated
   native-v4 action inventory, and a deterministic 512-wallet/32-launch/25,000
@@ -516,6 +524,29 @@ Durable project context lives here. Update this file whenever information should
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
 
 ## Current State
+
+### 2026-07-24 - Automated campaign identity is immutable and indexed
+
+- Context: public assurance launches must remain visible while being
+  unmistakably labeled and tied to the exact release that created them.
+- Decision: embed `robynTestCampaign` in sanitized immutable ERC-1046 JSON,
+  allow it only with a protected operator token, and project the verified
+  binding into additive launch fields. Unknown external metadata cannot acquire
+  the Robyn automated-test badge.
+- Files: migration `0007_test_campaigns.sql`,
+  `apps/api/src/campaign-routes.ts`, metadata preparation/binding routes,
+  indexer launch reconstruction, launch API types, market cards, and token
+  detail.
+- Commands/tests: isolated clean migration through 0007; exact chain-46630
+  fork index reconstruction; API campaign authorization and canonical metadata
+  tests; repository format, lint, strict types, app tests, Anvil smoke, and all
+  102 Foundry tests.
+- Result: the isolated indexer reproduced
+  `schema8-assurance:<release-sha>:true`; unauthorized operator status requests
+  return 404, and campaign fields increase the generated API inventory to 35.
+- Follow-up: commit and push, build the encrypted 100-wallet public campaign
+  runner, and keep all live cutover/deployment work blocked on the remaining
+  audit, funding, reproducibility, and acceptance gates.
 
 ### 2026-07-24 - Schema-v8 assurance contracts and fork rehearsal pass
 
@@ -1415,6 +1446,12 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-24: immutable assurance-campaign metadata, migration, API, indexer,
+  UI badge, and protected status endpoint passed isolated migration and
+  chain-46630 fork index-rebuild integration. Format, lint, strict types, 48
+  API tests, 17 web tests, the complete app suite, Anvil smoke, and all 102
+  Foundry tests passed.
 
 - 2026-07-24: schema-v8 assurance checkpoint passed a fresh exact-project-wallet
   chain-46630 fork deployment with 393 independent manifest, runtime, role,

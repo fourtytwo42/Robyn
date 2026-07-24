@@ -16,11 +16,21 @@ export function canonicalTokenMetadata(input: {
   pngCid: string;
   webpCid: string;
   hasAlpha: boolean;
+  testCampaign?: {
+    campaignId: string;
+    releaseSha: string;
+  };
 }) {
   if (!input.name.trim() || !input.symbol.trim())
     throw new Error("name_and_symbol_required");
   const description = input.description?.trim() ?? "";
   if (description.length > 280) throw new Error("description_too_long");
+  if (
+    input.testCampaign &&
+    (!/^[a-z0-9][a-z0-9-]{2,63}$/.test(input.testCampaign.campaignId) ||
+      !/^[0-9a-f]{40}$/.test(input.testCampaign.releaseSha))
+  )
+    throw new Error("invalid_test_campaign");
   const image = `ipfs://${input.pngCid}`;
   const metadata = {
     interop: { erc1046: true },
@@ -31,6 +41,15 @@ export function canonicalTokenMetadata(input: {
     image,
     images: [`ipfs://${input.webpCid}`],
     ...(input.hasAlpha ? { icons: [image] } : {}),
+    ...(input.testCampaign
+      ? {
+          robynTestCampaign: {
+            campaignId: input.testCampaign.campaignId,
+            releaseSha: input.testCampaign.releaseSha,
+            automatedTestLaunch: true,
+          },
+        }
+      : {}),
   };
   return Buffer.from(JSON.stringify(metadata));
 }

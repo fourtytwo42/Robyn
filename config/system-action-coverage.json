@@ -489,6 +489,11 @@
       "source": "apps/api/src/server.ts"
     },
     {
+      "method": "GET",
+      "path": "/operator/campaigns/:campaignId",
+      "source": "apps/api/src/campaign-routes.ts"
+    },
+    {
       "method": "PUT",
       "path": "/profile",
       "source": "apps/api/src/creator-routes.ts"

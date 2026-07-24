@@ -21,6 +21,7 @@ import {
 } from "./launch-analytics.js";
 import { registerCreatorRoutes } from "./creator-routes.js";
 import { registerDaoRoutes } from "./dao-routes.js";
+import { registerCampaignRoutes } from "./campaign-routes.js";
 import { SingleFlightTtlCache } from "./single-flight-cache.js";
 import {
   AssetCatalogService,
@@ -299,6 +300,9 @@ type LaunchRow = {
   created_block: string;
   updated_block: string;
   formula_version: string;
+  campaign_id: string | null;
+  campaign_release_sha: string | null;
+  automated_test_launch: boolean;
 };
 
 type DiscoveryMetricLog = AnalyticsLog & { launch_token: string };
@@ -885,7 +889,7 @@ app.get<{
     request.query.phase !== undefined;
   const candidateLimit = rankedRequest ? 1001 : limit;
   const storedRows = await sql.unsafe<LaunchRow[]>(
-    "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version FROM launches WHERE chain_id=$1 AND ($2::bigint IS NULL OR launch_id::bigint<$2::bigint) AND ($4::text IS NULL OR token=$4 OR strpos(lower(name),$4)>0 OR strpos(lower(symbol),$4)>0) AND ($5::text IS NULL OR assets ? $5) AND ($6::integer IS NULL OR jsonb_array_length(assets)=$6) AND ($7::text IS NULL OR creator=$7) ORDER BY CASE WHEN token=$4 THEN 0 ELSE 1 END,launch_id::bigint DESC LIMIT $3",
+    "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version,campaign_id,campaign_release_sha,automated_test_launch FROM launches WHERE chain_id=$1 AND ($2::bigint IS NULL OR launch_id::bigint<$2::bigint) AND ($4::text IS NULL OR token=$4 OR strpos(lower(name),$4)>0 OR strpos(lower(symbol),$4)>0) AND ($5::text IS NULL OR assets ? $5) AND ($6::integer IS NULL OR jsonb_array_length(assets)=$6) AND ($7::text IS NULL OR creator=$7) ORDER BY CASE WHEN token=$4 THEN 0 ELSE 1 END,launch_id::bigint DESC LIMIT $3",
     [
       chainId,
       rankedRequest ? null : before,
@@ -1043,7 +1047,7 @@ app.get<{ Params: { token: string } }>(
     if (!/^0x[0-9a-fA-F]{40}$/.test(request.params.token))
       return reply.code(400).send({ error: "invalid_token" });
     const storedRows = await sql.unsafe<LaunchRow[]>(
-      "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version FROM launches WHERE chain_id=$1 AND token=$2",
+      "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version,campaign_id,campaign_release_sha,automated_test_launch FROM launches WHERE chain_id=$1 AND token=$2",
       [chainId, request.params.token.toLowerCase()],
     );
     const rows = await hydrateMarkets(storedRows);
@@ -1446,6 +1450,17 @@ await registerCreatorRoutes(app, {
   ...(process.env.ROBYN_REMOTE_PIN_TOKEN
     ? { remotePinToken: process.env.ROBYN_REMOTE_PIN_TOKEN }
     : {}),
+  ...(process.env.ROBYN_CAMPAIGN_OPERATOR_TOKEN
+    ? { campaignOperatorToken: process.env.ROBYN_CAMPAIGN_OPERATOR_TOKEN }
+    : {}),
+});
+registerCampaignRoutes(app, {
+  sql,
+  chainId,
+  ...(process.env.ROBYN_CAMPAIGN_OPERATOR_TOKEN
+    ? { operatorToken: process.env.ROBYN_CAMPAIGN_OPERATOR_TOKEN }
+    : {}),
+  releaseSha: process.env.ROBYN_RELEASE_SHA ?? "unknown",
 });
 registerDaoRoutes(app, rpcClient, deployment);
 

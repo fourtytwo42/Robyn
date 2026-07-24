@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { Redis } from "ioredis";
 import type { Address, Hex, PublicClient } from "viem";
@@ -43,6 +43,15 @@ function bodyObject(body: unknown) {
   if (!body || typeof body !== "object" || Array.isArray(body))
     throw new Error("json_object_required");
   return body as Record<string, unknown>;
+}
+
+function hasOperatorToken(request: FastifyRequest, expected?: string) {
+  if (!expected || expected.length < 32) return false;
+  const supplied = header(request.headers["x-robyn-operator-token"]);
+  if (!supplied) return false;
+  const left = Buffer.from(supplied);
+  const right = Buffer.from(expected);
+  return left.length === right.length && timingSafeEqual(left, right);
 }
 
 function authOriginFor(
@@ -130,6 +139,7 @@ export async function registerCreatorRoutes(
     ipfsApiUrl: string;
     remotePinUrl?: string;
     remotePinToken?: string;
+    campaignOperatorToken?: string;
   },
 ) {
   const {
@@ -142,6 +152,7 @@ export async function registerCreatorRoutes(
     ipfsApiUrl,
     remotePinUrl,
     remotePinToken,
+    campaignOperatorToken,
   } = options;
 
   async function storeArtifact(bytes: Buffer, contentType: string) {
@@ -486,6 +497,24 @@ export async function registerCreatorRoutes(
         (body.description !== undefined && typeof body.description !== "string")
       )
         return reply.code(400).send({ error: "invalid_metadata_request" });
+      const hasCampaignFields =
+        body.campaignId !== undefined || body.releaseSha !== undefined;
+      if (
+        hasCampaignFields &&
+        !hasOperatorToken(request, campaignOperatorToken)
+      )
+        return reply.code(403).send({ error: "campaign_operator_required" });
+      const campaign =
+        hasCampaignFields &&
+        typeof body.campaignId === "string" &&
+        typeof body.releaseSha === "string"
+          ? {
+              campaignId: body.campaignId,
+              releaseSha: body.releaseSha,
+            }
+          : undefined;
+      if (hasCampaignFields && !campaign)
+        return reply.code(400).send({ error: "invalid_test_campaign" });
       const media = await sql.unsafe<
         {
           media_id: string;
@@ -510,6 +539,7 @@ export async function registerCreatorRoutes(
           pngCid: media[0].canonical_png_cid,
           webpCid: media[0].optimized_webp_cid,
           hasAlpha: media[0].has_alpha,
+          ...(campaign ? { testCampaign: campaign } : {}),
         });
       } catch (error) {
         return reply.code(400).send({
@@ -534,7 +564,7 @@ export async function registerCreatorRoutes(
       const preparationId = randomUUID();
       const metadataUri = `ipfs://${metadataCid}`;
       const rows = await sql.unsafe(
-        "INSERT INTO prepared_token_metadata(preparation_id,chain_id,owner_address,media_id,name,symbol,description,metadata_artifact_sha256,metadata_cid,metadata_uri,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'ready') RETURNING preparation_id,media_id,name,symbol,description,metadata_cid,metadata_uri,status,created_at::text,expires_at::text",
+        "INSERT INTO prepared_token_metadata(preparation_id,chain_id,owner_address,media_id,name,symbol,description,metadata_artifact_sha256,metadata_cid,metadata_uri,status,campaign_id,campaign_release_sha,automated_test_launch) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'ready',$11,$12,$13) RETURNING preparation_id,media_id,name,symbol,description,metadata_cid,metadata_uri,status,campaign_id,campaign_release_sha,automated_test_launch,created_at::text,expires_at::text",
         [
           preparationId,
           chainId,
@@ -546,6 +576,9 @@ export async function registerCreatorRoutes(
           artifactSha256,
           metadataCid,
           metadataUri,
+          campaign?.campaignId ?? null,
+          campaign?.releaseSha ?? null,
+          Boolean(campaign),
         ],
       );
       return reply.code(201).send({
@@ -564,7 +597,7 @@ export async function registerCreatorRoutes(
       if (!/^[0-9a-f-]{36}$/.test(request.params.preparationId))
         return reply.code(400).send({ error: "invalid_preparation_id" });
       const rows = await sql.unsafe(
-        "SELECT p.preparation_id,p.media_id,p.name,p.symbol,p.description,p.metadata_cid,p.metadata_uri,p.status,p.bound_token,p.created_at::text,p.expires_at::text,i.local_status,i.remote_status,i.last_error FROM prepared_token_metadata p JOIN ipfs_pins i ON i.cid=p.metadata_cid WHERE p.preparation_id=$1 AND p.chain_id=$2",
+        "SELECT p.preparation_id,p.media_id,p.name,p.symbol,p.description,p.metadata_cid,p.metadata_uri,p.status,p.bound_token,p.campaign_id,p.campaign_release_sha,p.automated_test_launch,p.created_at::text,p.expires_at::text,i.local_status,i.remote_status,i.last_error FROM prepared_token_metadata p JOIN ipfs_pins i ON i.cid=p.metadata_cid WHERE p.preparation_id=$1 AND p.chain_id=$2",
         [request.params.preparationId, chainId],
       );
       if (!rows[0])
@@ -644,9 +677,12 @@ export async function registerCreatorRoutes(
                 metadata_cid: string;
                 metadata_uri: string;
                 status: string;
+                campaign_id: string | null;
+                campaign_release_sha: string | null;
+                automated_test_launch: boolean;
               }[]
             >(
-              "SELECT preparation_id,media_id,metadata_cid,metadata_uri,status FROM prepared_token_metadata WHERE preparation_id=$1 AND chain_id=$2 AND owner_address=$3 AND status='ready' AND expires_at>now()",
+              "SELECT preparation_id,media_id,metadata_cid,metadata_uri,status,campaign_id,campaign_release_sha,automated_test_launch FROM prepared_token_metadata WHERE preparation_id=$1 AND chain_id=$2 AND owner_address=$3 AND status='ready' AND expires_at>now()",
               [body.preparationId, chainId, session.address],
             )
           : [];
@@ -672,7 +708,7 @@ export async function registerCreatorRoutes(
       }
       const inserted = await sql.begin(async (transaction) => {
         const rows = await transaction.unsafe(
-          "INSERT INTO launch_metadata_bindings(chain_id,token,creator_address,media_id,preparation_id,metadata_cid,metadata_uri,verification_status) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(chain_id,token) DO NOTHING RETURNING chain_id,token,creator_address,media_id,preparation_id,metadata_cid,metadata_uri,verification_status,bound_at::text",
+          "INSERT INTO launch_metadata_bindings(chain_id,token,creator_address,media_id,preparation_id,metadata_cid,metadata_uri,verification_status,campaign_id,campaign_release_sha,automated_test_launch) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(chain_id,token) DO NOTHING RETURNING chain_id,token,creator_address,media_id,preparation_id,metadata_cid,metadata_uri,verification_status,campaign_id,campaign_release_sha,automated_test_launch,bound_at::text",
           [
             chainId,
             token,
@@ -682,6 +718,9 @@ export async function registerCreatorRoutes(
             preparation[0]?.metadata_cid ?? null,
             preparation[0]?.metadata_uri ?? null,
             preparation[0] ? "robyn-sanitized" : "legacy",
+            preparation[0]?.campaign_id ?? null,
+            preparation[0]?.campaign_release_sha ?? null,
+            preparation[0]?.automated_test_launch ?? false,
           ],
         );
         if (rows[0] && preparation[0]) {
@@ -704,7 +743,7 @@ export async function registerCreatorRoutes(
       if (!/^0x[0-9a-fA-F]{40}$/.test(request.params.token))
         return reply.code(400).send({ error: "invalid_token" });
       const rows = await sql.unsafe(
-        "SELECT b.chain_id,b.token,b.creator_address,b.media_id,b.preparation_id,b.metadata_cid,b.metadata_uri,b.verification_status,b.bound_at::text,m.status,m.canonical_png_cid,m.optimized_webp_cid,p.display_name,p.bio,p.website,p.x_url,p.telegram_url,p.discord_url,p.avatar_media_id,ip.local_status,ip.remote_status FROM launch_metadata_bindings b JOIN media_assets m ON m.media_id=b.media_id LEFT JOIN creator_profiles p ON p.chain_id=b.chain_id AND p.address=b.creator_address LEFT JOIN ipfs_pins ip ON ip.cid=b.metadata_cid WHERE b.chain_id=$1 AND b.token=$2",
+        "SELECT b.chain_id,b.token,b.creator_address,b.media_id,b.preparation_id,b.metadata_cid,b.metadata_uri,b.verification_status,b.campaign_id,b.campaign_release_sha,b.automated_test_launch,b.bound_at::text,m.status,m.canonical_png_cid,m.optimized_webp_cid,p.display_name,p.bio,p.website,p.x_url,p.telegram_url,p.discord_url,p.avatar_media_id,ip.local_status,ip.remote_status FROM launch_metadata_bindings b JOIN media_assets m ON m.media_id=b.media_id LEFT JOIN creator_profiles p ON p.chain_id=b.chain_id AND p.address=b.creator_address LEFT JOIN ipfs_pins ip ON ip.cid=b.metadata_cid WHERE b.chain_id=$1 AND b.token=$2",
         [chainId, request.params.token.toLowerCase()],
       );
       if (!rows[0])

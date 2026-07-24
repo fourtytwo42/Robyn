@@ -134,6 +134,14 @@ export default async function LaunchDetail({
               <span className="live-chip">
                 {marketPhaseLabel(market.marketPhase)}
               </span>
+              {launch.automated_test_launch ? (
+                <span
+                  className="campaign-test-chip"
+                  title={`Campaign ${launch.campaign_id ?? "unavailable"} · release ${launch.campaign_release_sha ?? "unavailable"}`}
+                >
+                  Automated test launch
+                </span>
+              ) : null}
             </div>
             <h1>
               {launch.name} <span>${launch.symbol}</span>

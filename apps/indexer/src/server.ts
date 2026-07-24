@@ -399,8 +399,18 @@ async function rebuildLaunches(asOfBlock: bigint) {
       (found[0]
         ? BigInt(found[0].block_number)
         : BigInt(manifest.deploymentBlock));
+    const [campaign] = await sql.unsafe<
+      {
+        campaign_id: string;
+        campaign_release_sha: string;
+        automated_test_launch: boolean;
+      }[]
+    >(
+      "SELECT campaign_id,campaign_release_sha,automated_test_launch FROM launch_metadata_bindings WHERE chain_id=$1 AND token=$2 AND verification_status='robyn-sanitized' AND automated_test_launch=true",
+      [manifest.chainId, token.toLowerCase()],
+    );
     await sql.unsafe(
-      "INSERT INTO launches (chain_id,launch_id,token,vault,market,creator,name,symbol,assets,weights_bps,created_block,updated_block,formula_version) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12,$13) ON CONFLICT (chain_id,token) DO UPDATE SET market=EXCLUDED.market,name=EXCLUDED.name,symbol=EXCLUDED.symbol,assets=EXCLUDED.assets,weights_bps=EXCLUDED.weights_bps,created_block=EXCLUDED.created_block,updated_block=EXCLUDED.updated_block,formula_version=EXCLUDED.formula_version",
+      "INSERT INTO launches (chain_id,launch_id,token,vault,market,creator,name,symbol,assets,weights_bps,created_block,updated_block,formula_version,campaign_id,campaign_release_sha,automated_test_launch) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12,$13,$14,$15,$16) ON CONFLICT (chain_id,token) DO UPDATE SET market=EXCLUDED.market,name=EXCLUDED.name,symbol=EXCLUDED.symbol,assets=EXCLUDED.assets,weights_bps=EXCLUDED.weights_bps,created_block=EXCLUDED.created_block,updated_block=EXCLUDED.updated_block,formula_version=EXCLUDED.formula_version,campaign_id=EXCLUDED.campaign_id,campaign_release_sha=EXCLUDED.campaign_release_sha,automated_test_launch=EXCLUDED.automated_test_launch",
       [
         manifest.chainId,
         id.toString(),
@@ -421,6 +431,9 @@ async function rebuildLaunches(asOfBlock: bigint) {
           : atomic
             ? "native-v2-atomic"
             : "native-v1",
+        campaign?.campaign_id ?? null,
+        campaign?.campaign_release_sha ?? null,
+        campaign?.automated_test_launch ?? false,
       ],
     );
   }
