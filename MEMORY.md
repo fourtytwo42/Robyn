@@ -4,6 +4,36 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Public schema-v8 broadcast is funding-blocked (2026-07-24): `main` was
+  fast-forwarded and pushed to validated commit
+  `2858bc8dd00d89e03bc9c3138b2d3461edcfdc07`. A fresh deployment and complete
+  100-wallet campaign at that exact SHA again passed all 490 verifier checks,
+  2,156 successful transactions, 2,056 product writes, all 24 conversions,
+  governance, claims, sweep, and reserve gates. Live-priced rehearsal receipts
+  estimate schema-v8 deployment at `743832099255000 wei`; deployment plus the
+  fixed campaign and reserve requires `16537769625879000 wei`. The encrypted
+  project wallet has `15217587778782403 wei`, leaving a fail-closed shortfall
+  of `1320181847096597 wei` (about 0.00132018 testnet ETH). Request at least
+  0.003 additional testnet ETH to leave reasonable price/retry margin, then
+  rerun live preflight before any broadcast. Schema v7 remains live and no
+  schema-v8 public transaction has been sent.
+
+- Schema-v7 pre-cutover recovery passed (2026-07-24): the active schema-v7
+  deployment manifest, served-release manifest, `robyn_testnet_v4` database,
+  and API snapshots were checksummed, encrypted, and uploaded to the private
+  `robyn-testnet-schema-archives` GitHub release. The encrypted archive at
+  `/var/backups/robyn/testnet-schema7-archive-166e201-20260724T205158Z.tar.zst.age`
+  passed its checksum, decrypted through the separately protected recovery
+  identity, and restored into isolated database
+  `robyn_schema7_restore_166e201` with all 16 tables and the canonical launch.
+
+- Reproducibility passed (2026-07-24): exact pushed commit `2858bc8` built from
+  two clean Git archives with separate fresh pnpm stores. Application bundles,
+  contract ABI/creation/runtime/storage semantics, operational inputs,
+  dependency graph, license inventory, CycloneDX SBOM, and second-artifact
+  serving matched. All checksums under
+  `/var/backups/robyn/reproducibility/schema8-2858bc8-final` verify.
+
 - Schema-v8 predeployment gates advanced (2026-07-24): full repository
   formatting, lint, strict typecheck, 96 application/service tests, Anvil smoke,
   and all 123 Foundry tests passed. The active native-v4 security audit now
