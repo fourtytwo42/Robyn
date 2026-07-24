@@ -4,6 +4,21 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Current task (2026-07-24): complete browser acceptance and release
+  verification for the live Robinhood Testnet deployment. The protected app is
+  public through the temporary Quick Tunnel
+  `https://october-assumptions-cleaners-skirt.trycloudflare.com`; the exact
+  origin is registered in Reown. Chain-46630 DEX and Robyn protocol broadcasts
+  are complete and independently verified. RDAO initially assigns 100% to the
+  encrypted deployer address. Kubo pinning is local-only by explicit preview
+  decision. Never describe the Quick Tunnel or local-only IPFS topology as
+  production-ready.
+- Wallet checkpoint (2026-07-24): the real Reown project is configured outside
+  Git and WalletConnect produces a QR code after pinning the compatible `qr`
+  renderer. Browser acceptance found that the testnet CSP blocked Reown project
+  configuration at `https://api.web3modal.org`; the CSP now permits that exact
+  origin. Run the protected build, restart the web candidate, and verify the
+  warning is gone before closing this checkpoint.
 - Current task (2026-07-23): finish and push the Robinhood Testnet, multi-wallet,
   and basket-asset release on branch `codex/robinhood-testnet-assets`. The
   controlled Anvil devnet remains the internal regression environment.

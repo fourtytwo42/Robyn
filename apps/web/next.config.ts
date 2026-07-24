@@ -41,6 +41,7 @@ const nextConfig: NextConfig = {
               rpcOrigin,
               "https://relay.walletconnect.com",
               "wss://relay.walletconnect.com",
+              "https://api.web3modal.org",
               "https://*.walletconnect.com",
               "wss://*.walletconnect.com",
               "https://*.walletconnect.org",
