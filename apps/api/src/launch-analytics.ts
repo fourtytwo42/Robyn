@@ -38,6 +38,16 @@ type LaunchIdentity = {
   liquidityPool?: Address;
 };
 
+export function analyticsLogAddresses(
+  launch: Pick<LaunchIdentity, "token" | "market" | "liquidityPool">,
+) {
+  return [
+    launch.token.toLowerCase(),
+    launch.market.toLowerCase(),
+    ...(launch.liquidityPool ? [launch.liquidityPool.toLowerCase()] : []),
+  ] as Address[];
+}
+
 function addBalance(
   balances: Map<string, bigint>,
   address: Address,

@@ -8,6 +8,7 @@ import {
   type Hex,
 } from "viem";
 import {
+  analyticsLogAddresses,
   collectTokenAccounts,
   deriveLaunchAnalytics,
   type AnalyticsLog,
@@ -53,6 +54,20 @@ function row(
 }
 
 describe("launch analytics", () => {
+  it("normalizes mixed-case pool addresses for indexed log queries", () => {
+    expect(
+      analyticsLogAddresses({
+        token: "0x10000000000000000000000000000000000000Aa",
+        market: "0x20000000000000000000000000000000000000Bb",
+        liquidityPool: "0x30000000000000000000000000000000000000Cc",
+      }),
+    ).toEqual([
+      "0x10000000000000000000000000000000000000aa",
+      "0x20000000000000000000000000000000000000bb",
+      "0x30000000000000000000000000000000000000cc",
+    ]);
+  });
+
   it("reconciles an initial supply when constructor mint logs predate indexing", () => {
     const logs: AnalyticsLog[] = [
       row(

@@ -19,6 +19,21 @@ Durable project context lives here. Update this file whenever information should
   configuration at `https://api.web3modal.org`; the CSP now permits that exact
   origin. Run the protected build, restart the web candidate, and verify the
   warning is gone before closing this checkpoint.
+- Live testnet checkpoint (2026-07-24): the one-shot public chain-46630 smoke
+  passed from exact pushed commit `4574b4b`. It proved faucet funding, bonding
+  buy, automatic graduation, locked Uniswap v3 liquidity, all three basket
+  conversions, holder claim, post-graduation sell, bounded native conversion,
+  token-specific creator claim, RDAO claim, and independent deployment
+  verification. Checksummed evidence is under
+  `/home/hendo420/robyn-evidence/testnet-live-smoke/`. The smoke uses the
+  dedicated protected operator key for user actions and the encrypted deployer
+  only for owner claims; no key material enters Git or evidence.
+- Live acceptance found that the single-token analytics query supplied the
+  checksum-cased graduated-pool address to a lowercase PostgreSQL text index,
+  which omitted real post-graduation `Swap` logs even though the chain,
+  indexer, and derivation logic were correct. `analyticsLogAddresses` now
+  normalizes every queried address, with a regression test. Rebuild/restart the
+  API and prove the public chart includes the real sell before final closure.
 - Current task (2026-07-23): finish and push the Robinhood Testnet, multi-wallet,
   and basket-asset release on branch `codex/robinhood-testnet-assets`. The
   controlled Anvil devnet remains the internal regression environment.

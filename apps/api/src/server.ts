@@ -14,6 +14,7 @@ import {
   isDemoMarketChangeEnabled,
 } from "./demo-market-change.js";
 import {
+  analyticsLogAddresses,
   collectTokenAccounts,
   deriveLaunchAnalytics,
   type AnalyticsLog,
@@ -960,11 +961,13 @@ app.get<{ Params: { token: string } }>(
       "SELECT l.block_number::text,l.transaction_hash,l.log_index,l.address,l.topics,l.data,b.timestamp::text FROM raw_logs l LEFT JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number WHERE l.chain_id=$1 AND l.address=ANY($2::text[]) AND l.topics->>0=ANY($3::text[]) ORDER BY l.block_number,l.transaction_index,l.log_index LIMIT 10001",
       [
         chainId,
-        [
-          launch.token,
-          launch.market,
-          ...(config.graduatedPool ? [config.graduatedPool] : []),
-        ],
+        analyticsLogAddresses({
+          token: launch.token as Address,
+          market: launch.market as Address,
+          ...(config.graduatedPool
+            ? { liquidityPool: config.graduatedPool }
+            : {}),
+        }),
         analyticsEventTopics,
       ],
     );
