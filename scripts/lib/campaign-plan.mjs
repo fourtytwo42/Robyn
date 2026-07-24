@@ -7,6 +7,19 @@ export const REQUIRED_RESERVE_WEI = 1_500_000_000_000_000n;
 export const REQUIRED_HEADROOM_BPS = 2_500n;
 export const V4_FEE_COLLECTION_MINIMUMS = [0n, 0n];
 
+export function graduationActorIndex(launchIndex) {
+  if (
+    !Number.isInteger(launchIndex) ||
+    launchIndex < 0 ||
+    launchIndex >= REQUIRED_GRADUATED_COUNT
+  ) {
+    throw new Error(
+      "Graduated launch index is outside the fixed campaign plan",
+    );
+  }
+  return 96 + launchIndex;
+}
+
 export function assertSchema8Manifest(manifest) {
   if (manifest?.schemaVersion !== 8 || manifest?.chainId !== 46630) {
     throw new Error("Campaign requires a schema-v8 chain-46630 manifest");

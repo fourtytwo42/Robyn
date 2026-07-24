@@ -9,6 +9,7 @@ import {
 } from "../lib/campaign-wallets.mjs";
 import {
   applyHeadroom,
+  graduationActorIndex,
   launchBasketPlan,
   minimumActionCount,
   plannedBuyValueWei,
@@ -127,6 +128,14 @@ test("fixed action inventory exceeds the 1,500-write gate before optional retrie
 
 test("v4 fee collection accepts every nonnegative amount owed", () => {
   assert.deepEqual(V4_FEE_COLLECTION_MINIMUMS, [0n, 0n]);
+});
+
+test("graduated launches reuse their deliberately funded terminal actors", () => {
+  assert.deepEqual([0, 1, 2].map(graduationActorIndex), [96, 97, 98]);
+  assert.throws(
+    () => graduationActorIndex(3),
+    /outside the fixed campaign plan/,
+  );
 });
 
 test("campaign value projection includes every planned payable user action", () => {

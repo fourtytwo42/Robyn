@@ -34,6 +34,7 @@ import {
 } from "./lib/campaign-wallets.mjs";
 import {
   applyHeadroom,
+  graduationActorIndex,
   assertSchema8Manifest,
   launchBasketPlan,
   plannedBuyValueWei,
@@ -966,7 +967,7 @@ async function conversions() {
   state.conversions.harvests ??= [];
   for (const launchIndex of state.trading.graduatedLaunches) {
     const launch = state.launches[launchIndex];
-    const account = privateKeyToAccount(accounts[70 + launchIndex].privateKey);
+    const account = privateKeyToAccount(accounts[graduationActorIndex(launchIndex)].privateKey);
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
     await contractTransaction(state, `locker-collect-${launchIndex}`, account, launch.locker, lockerAbi, "collectFees", V4_FEE_COLLECTION_MINIMUMS);
     const nativeBalance = await publicClient.getBalance({ address: launch.locker });

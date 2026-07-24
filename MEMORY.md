@@ -18,6 +18,16 @@ Durable project context lives here. Update this file whenever information should
   debugging; a fresh exact-SHA rehearsal is still required after the correction
   is pushed.
 
+- Conversion-keeper funding correction (2026-07-24): the preserved `04cd86c`
+  rehearsal successfully confirmed locker fee collection and native routing,
+  then stopped before launch-token conversion because actor 70 had only
+  `0.00000658 ETH` left and Anvil's pending-state estimate could not fund the
+  required execution ceiling. A traced call proved the conversion and
+  50/25/20/5 routing path itself succeeds. Locker harvest and conversion now
+  reuse the corresponding deliberately funded terminal actors 96-98, whose
+  graduation top-ups include ample remaining gas without increasing the
+  preflight-approved total or adding top-up transactions.
+
 - Timestamp-sensitive gas correction (2026-07-24): exact fork `a902415`
   completed 1,282 product transactions through all buys, transfers, approvals,
   three graduations, and 32 sells before a graduated sell exhausted viem's
