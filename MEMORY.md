@@ -495,6 +495,20 @@ Durable project context lives here. Update this file whenever information should
   then broadcast the fresh native-v4 Robyn protocol only after every remaining
   gate passes.
 
+### 2026-07-24 - V4 financial smoke identity correction
+
+- Context: the final exact-commit rehearsal passed all 446 independent
+  deployment checks, then its creator-claim step reverted `Unauthorized`.
+- Decision: the smoke actor defaults to the deployment manifest's canonical
+  deployer rather than Anvil's unrelated first account. An explicit
+  `ROBYN_TESTNET_V4_SMOKE_ACCOUNT` override remains available.
+- Files: `scripts/smoke-testnet-v4-protocol.sh`.
+- Commands/tests: clean chain-46630 fork deployment and independent verifier.
+- Result: the failure proved creator authorization was enforced correctly and
+  exposed a test-harness identity mismatch, not a protocol-accounting defect.
+- Follow-up: rerun the complete financial smoke and gas measurement from a
+  fresh fork before live protocol broadcast.
+
 ### 2026-07-24 - Native-ETH Uniswap v4 contract checkpoint
 
 - Context: the user approved replacing active v3/tmUSD testnet architecture

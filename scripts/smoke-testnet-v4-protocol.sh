@@ -28,7 +28,7 @@ account="$(
   if [[ -n "${ROBYN_TESTNET_V4_SMOKE_ACCOUNT:-}" ]]; then
     cast to-check-sum-address "$ROBYN_TESTNET_V4_SMOKE_ACCOUNT"
   else
-    cast rpc eth_accounts --rpc-url "$rpc_url" | jq -er '.[0]'
+    cast to-check-sum-address "$(jq -er '.deployer' "$manifest")"
   fi
 )"
 wallet_args=(--from "$account" --unlocked)
