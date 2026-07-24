@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Address } from "viem";
+import {
+  compareBasketAssets,
+  type BasketAssetVerification,
+} from "@/lib/basket-asset-order";
 
 export type BasketAsset = {
   chainId: number;
@@ -12,13 +16,7 @@ export type BasketAsset = {
   totalSupply: string;
   category: "stock" | "etf-commodity" | "crypto" | "custom";
   logoUrl: string | null;
-  verification:
-    | "official-robinhood-current-chain"
-    | "robinhood-testnet-faucet-stock"
-    | "robyn-testnet-mock"
-    | "robyn-controlled-testnet-dex"
-    | "robyn-token-list"
-    | "unverified-erc20";
+  verification: BasketAssetVerification;
   mockOnly: boolean;
   disclosure: string | null;
   mainnetAddress: Address | null;
@@ -150,14 +148,16 @@ export function BasketAssetPicker({
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return catalog.filter(
-      (asset) =>
-        (category === "all" || asset.category === category) &&
-        (!needle ||
-          asset.name.toLowerCase().includes(needle) ||
-          asset.symbol.toLowerCase().includes(needle) ||
-          asset.address.toLowerCase().includes(needle)),
-    );
+    return catalog
+      .filter(
+        (asset) =>
+          (category === "all" || asset.category === category) &&
+          (!needle ||
+            asset.name.toLowerCase().includes(needle) ||
+            asset.symbol.toLowerCase().includes(needle) ||
+            asset.address.toLowerCase().includes(needle)),
+      )
+      .sort(compareBasketAssets);
   }, [catalog, category, query]);
 
   function evenly(count: number) {

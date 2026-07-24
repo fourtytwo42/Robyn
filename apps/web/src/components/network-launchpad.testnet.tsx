@@ -481,7 +481,7 @@ export function NetworkLaunchpadConsole({
         return (await response.json()) as { data: BasketAsset[] };
       })
       .then((body) => {
-        const defaults = ["tmNVDA", "tmSPY", "tmAAPL"]
+        const defaults = ["TSLA", "AMD", "AMZN"]
           .map((symbol) => body.data.find((asset) => asset.symbol === symbol))
           .filter((asset): asset is BasketAsset => Boolean(asset));
         if (defaults.length !== 3)
