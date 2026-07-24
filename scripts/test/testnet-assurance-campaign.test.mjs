@@ -10,6 +10,7 @@ import {
   applyHeadroom,
   launchBasketPlan,
   minimumActionCount,
+  plannedBuyValueWei,
   plannedTransactionValueWei,
   weightedWalletFunding,
   projectCampaignCost,
@@ -115,26 +116,27 @@ test("fixed action inventory exceeds the 1,500-write gate before optional retrie
 test("campaign value projection includes every planned payable user action", () => {
   let expected = 0n;
   for (let index = 0; index < 900; index += 1) {
-    const launchIndex = index % 8;
-    expected +=
-      launchIndex < 3
-        ? 13_000_000_000_000n
-        : BigInt(launchIndex - 2) * 400_000_000_000n;
+    expected += plannedBuyValueWei(index);
   }
   expected += 3n * 250_000_000_000n;
   expected += 10n * 200_000_000_000n;
   assert.equal(plannedTransactionValueWei(), expected);
   assert.ok(expected > 3n * 1_400_000_000_000_000n);
+  assert.equal(plannedBuyValueWei(896), 300_000_000_000_000n);
+  assert.equal(plannedBuyValueWei(888), 10_000_000_000_000n);
 });
 
 test("weighted wallet funding preserves the total while funding creator gas skew", () => {
-  const funding = weightedWalletFunding(12_000n, 200n);
+  const funding = weightedWalletFunding(12_000n, [
+    { index: 0, amountWei: 800n },
+    { index: 96, amountWei: 800n },
+  ]);
   assert.equal(funding.basePerWalletWei, 104n);
-  assert.equal(funding.creatorTopupWei, 200n);
+  assert.equal(funding.topupTotalWei, 1_600n);
   assert.equal(funding.allocatedWei, 12_000n);
-  assert.ok(funding.basePerWalletWei + funding.creatorTopupWei > 200n);
+  assert.ok(funding.basePerWalletWei + funding.topups[0].amountWei > 800n);
   assert.throws(
-    () => weightedWalletFunding(1_000n, 200n),
+    () => weightedWalletFunding(1_000n, [{ index: 0, amountWei: 1_000n }]),
     /complete campaign budget/,
   );
 });

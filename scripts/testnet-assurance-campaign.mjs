@@ -35,6 +35,7 @@ import {
 import {
   assertSchema8Manifest,
   launchBasketPlan,
+  plannedBuyValueWei,
   plannedTransactionValueWei,
   PRICED_TRANSACTION_COUNT,
   projectCampaignCost,
@@ -600,10 +601,23 @@ async function fund() {
       (10_000n + REQUIRED_HEADROOM_BPS) +
       9_999n) /
     10_000n;
-  const allocation = weightedWalletFunding(
-    campaignBudget,
-    creatorLaunchBudgetWei,
-  );
+  const graduationBudgetWei =
+    ((15_000_000n * gasPriceWei +
+      2_048n * 16n * l1BaseFeeWei +
+      300_000_000_000_000n) *
+      (10_000n + REQUIRED_HEADROOM_BPS) +
+      9_999n) /
+    10_000n;
+  const allocation = weightedWalletFunding(campaignBudget, [
+    ...Array.from({ length: 8 }, (_, index) => ({
+      index,
+      amountWei: creatorLaunchBudgetWei,
+    })),
+    ...Array.from({ length: 3 }, (_, index) => ({
+      index: 96 + index,
+      amountWei: graduationBudgetWei,
+    })),
+  ]);
   const perWalletWei = allocation.basePerWalletWei;
   const plan = fundingTreeTransfers(
     REQUIRED_WALLET_COUNT,
@@ -613,14 +627,12 @@ async function fund() {
   const projectBalance = await publicClient.getBalance({
     address: project.address,
   });
-  const creatorTopupTotal =
-    allocation.creatorTopupWei * BigInt(state.launches?.length ?? 8);
-  const creatorTopupGas = transferCostWei * BigInt(state.launches?.length ?? 8);
+  const weightedTopupGas = transferCostWei * BigInt(allocation.topups.length);
   if (
     projectBalance <
     plan.rootFundingWei +
-      creatorTopupTotal +
-      creatorTopupGas +
+      allocation.topupTotalWei +
+      weightedTopupGas +
       transferCostWei +
       REQUIRED_RESERVE_WEI
   ) {
@@ -649,15 +661,15 @@ async function fund() {
       },
     );
   }
-  for (let index = 0; index < 8; index += 1) {
+  for (const topup of allocation.topups) {
     await recordTransaction(
       state,
-      `fund-creator-topup-${index}`,
+      `fund-weighted-topup-${topup.index}`,
       projectClient,
       {
         account: project,
-        to: accounts[index].address,
-        value: allocation.creatorTopupWei,
+        to: accounts[topup.index].address,
+        value: topup.amountWei,
       },
     );
   }
@@ -666,8 +678,10 @@ async function fund() {
     perWalletWei: perWalletWei.toString(),
     transferCostWei: transferCostWei.toString(),
     rootFundingWei: plan.rootFundingWei.toString(),
-    creatorTopupWei: allocation.creatorTopupWei.toString(),
-    creatorTopupTotalWei: creatorTopupTotal.toString(),
+    creatorLaunchBudgetWei: creatorLaunchBudgetWei.toString(),
+    graduationBudgetWei: graduationBudgetWei.toString(),
+    weightedTopupTotalWei: allocation.topupTotalWei.toString(),
+    weightedTopupWallets: allocation.topups.map((topup) => topup.index),
     allocatedActorBudgetWei: allocation.allocatedWei.toString(),
   };
   saveState(state);
@@ -790,9 +804,7 @@ async function trading() {
     const launch = state.launches[index % state.launches.length];
     const actorIndex = index % accounts.length;
     const account = privateKeyToAccount(accounts[actorIndex].privateKey);
-    const value = launch.shouldGraduate
-      ? 13_000_000_000_000n
-      : BigInt(launch.index - 2) * 400_000_000_000n;
+    const value = plannedBuyValueWei(index);
     const [, quoted] = await publicClient.readContract({
       address: launch.market,
       abi: marketAbi,

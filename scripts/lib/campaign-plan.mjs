@@ -88,36 +88,62 @@ export function minimumActionCount() {
 export function plannedTransactionValueWei() {
   let value = 0n;
   for (let index = 0; index < 900; index += 1) {
-    const launchIndex = index % REQUIRED_LAUNCH_COUNT;
-    value +=
-      launchIndex < REQUIRED_GRADUATED_COUNT
-        ? 13_000_000_000_000n
-        : BigInt(launchIndex - 2) * 400_000_000_000n;
+    value += plannedBuyValueWei(index);
   }
   value += 3n * 250_000_000_000n;
   value += 10n * 200_000_000_000n;
   return value;
 }
 
-export function weightedWalletFunding(campaignBudgetWei, creatorBudgetWei) {
-  if (campaignBudgetWei <= 0n || creatorBudgetWei <= 0n) {
+export function plannedBuyValueWei(index) {
+  if (!Number.isInteger(index) || index < 0 || index >= 900) {
+    throw new Error("Buy index is outside the fixed campaign plan");
+  }
+  const launchIndex = index % REQUIRED_LAUNCH_COUNT;
+  if (launchIndex >= REQUIRED_GRADUATED_COUNT) {
+    return BigInt(launchIndex - 2) * 400_000_000_000n;
+  }
+  return index === 896 + launchIndex
+    ? 300_000_000_000_000n
+    : 10_000_000_000_000n;
+}
+
+export function weightedWalletFunding(campaignBudgetWei, topups) {
+  if (
+    campaignBudgetWei <= 0n ||
+    !Array.isArray(topups) ||
+    topups.length === 0
+  ) {
     throw new Error("Wallet funding budgets must be positive");
   }
-  const creatorTotal = creatorBudgetWei * BigInt(REQUIRED_LAUNCH_COUNT);
-  if (creatorTotal >= campaignBudgetWei) {
-    throw new Error(
-      "Creator launch budgets consume the complete campaign budget",
-    );
+  const seen = new Set();
+  let topupTotalWei = 0n;
+  for (const topup of topups) {
+    if (
+      !Number.isInteger(topup.index) ||
+      topup.index < 0 ||
+      topup.index >= REQUIRED_WALLET_COUNT ||
+      topup.amountWei <= 0n ||
+      seen.has(topup.index)
+    ) {
+      throw new Error("Wallet funding top-ups are invalid or duplicated");
+    }
+    seen.add(topup.index);
+    topupTotalWei += topup.amountWei;
   }
-  const sharedBudget = campaignBudgetWei - creatorTotal;
+  if (topupTotalWei >= campaignBudgetWei) {
+    throw new Error("Weighted top-ups consume the complete campaign budget");
+  }
+  const sharedBudget = campaignBudgetWei - topupTotalWei;
   const basePerWalletWei =
     (sharedBudget + BigInt(REQUIRED_WALLET_COUNT) - 1n) /
     BigInt(REQUIRED_WALLET_COUNT);
   return {
     basePerWalletWei,
-    creatorTopupWei: creatorBudgetWei,
+    topups,
+    topupTotalWei,
     allocatedWei:
-      basePerWalletWei * BigInt(REQUIRED_WALLET_COUNT) + creatorTotal,
+      basePerWalletWei * BigInt(REQUIRED_WALLET_COUNT) + topupTotalWei,
   };
 }
 

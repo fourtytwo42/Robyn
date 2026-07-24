@@ -4,6 +4,15 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Deterministic graduation-funding correction (2026-07-24): the exact
+  `dd13c70` fork completed 824 buys before the next buy correctly failed for
+  insufficient graduation-execution gas. The protocol did not enter a partial
+  graduated state. The fixed campaign now keeps early graduated-launch buys
+  below terminal inventory, assigns the final three 0.0003-ETH buys to actors
+  96-98, and weights those wallets for terminal value plus 15M graduation gas
+  with 25% headroom. Creator and graduation top-ups remain a redistribution of
+  the preflight-approved total, not extra unpriced funding.
+
 - Deterministic campaign-fee correction (2026-07-24): the gas-aligned fork
   showed viem independently suggesting a 1-gwei priority fee above the
   campaign's reviewed 0.01-gwei fee cap. No funding transaction was sent.
