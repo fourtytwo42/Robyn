@@ -83,7 +83,7 @@ const deployment = JSON.parse(
     poolId: `0x${string}`;
     fee: number;
     tickSpacing: number;
-    hooks: Address;
+    hook: Address;
   }>;
   deploymentBlock: number;
   contracts: {

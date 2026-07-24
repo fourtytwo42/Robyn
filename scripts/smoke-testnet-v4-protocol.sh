@@ -24,7 +24,13 @@ if [[ ! "$rpc_url" =~ ^http://(127\.0\.0\.1|localhost):[0-9]+$ ]]; then
   exit 1
 fi
 
-account="$(cast rpc eth_accounts --rpc-url "$rpc_url" | jq -er '.[0]')"
+account="$(
+  if [[ -n "${ROBYN_TESTNET_V4_SMOKE_ACCOUNT:-}" ]]; then
+    cast to-check-sum-address "$ROBYN_TESTNET_V4_SMOKE_ACCOUNT"
+  else
+    cast rpc eth_accounts --rpc-url "$rpc_url" | jq -er '.[0]'
+  fi
+)"
 wallet_args=(--from "$account" --unlocked)
 router="$(jq -er '.contracts.assetRouter' "$manifest")"
 market="$(jq -er '.genesis.market' "$manifest")"
@@ -33,7 +39,6 @@ vault="$(jq -er '.genesis.vault' "$manifest")"
 fee_router="$(jq -er '.contracts.protocolFeeRouter' "$manifest")"
 dao_token="$(jq -er '.contracts.daoToken' "$manifest")"
 locker="$(jq -er '.genesis.positionLocker' "$manifest")"
-venue_manifest="${ROBYN_TESTNET_V4_MANIFEST:-$repo_root/deployments/46630-uniswap-v4-shared.json}"
 
 declare -a transactions=()
 send() {
@@ -96,7 +101,7 @@ while IFS=$'\t' read -r symbol asset; do
     '. + [{symbol:$symbol,asset:$asset,acquired:$acquired,transactions:{
       nativeToAsset:$nativeToAsset,approval:$approval,assetToNative:$assetToNative
     }}]' <<<"$route_results")"
-done < <(jq -r '.faucetStockRoutes[] | [.symbol,.address] | @tsv' "$venue_manifest")
+done < <(jq -r '.assetRoutes[] | [.symbol,.address] | @tsv' "$manifest")
 
 [[ "$(cast call "$market" 'graduated()(bool)' --rpc-url "$rpc_url")" == "false" ]] || {
   echo "Genesis market was already graduated; use a fresh rehearsal" >&2

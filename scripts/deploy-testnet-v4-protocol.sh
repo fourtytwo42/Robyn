@@ -4,6 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 rpc_url="${ROBYN_TESTNET_RPC_URL:-https://rpc.testnet.chain.robinhood.com}"
 venue_manifest="${ROBYN_TESTNET_V4_MANIFEST:-$repo_root/deployments/46630-uniswap-v4-shared.json}"
+legacy_asset_manifest="${ROBYN_TESTNET_V3_ASSET_MANIFEST:-$repo_root/deployments/46630.json}"
 output="${ROBYN_TESTNET_V4_PROTOCOL_MANIFEST:-$repo_root/deployments/46630-v4.json}"
 rehearsal="${ROBYN_TESTNET_REHEARSAL:-false}"
 create2_deployer="0x4e59b44847b379578588920cA78FbF26c0B4956C"
@@ -20,6 +21,10 @@ cd "$repo_root"
   exit 1
 }
 [[ -f "$venue_manifest" ]] || { echo "The reviewed shared-v4 manifest is required" >&2; exit 1; }
+[[ -f "$legacy_asset_manifest" ]] || {
+  echo "The reviewed v3 asset manifest is required to preserve disclosed mock-asset addresses" >&2
+  exit 1
+}
 
 wallet_args=()
 if [[ "$rehearsal" == "true" ]]; then
@@ -28,7 +33,13 @@ if [[ "$rehearsal" == "true" ]]; then
     echo "Unlocked signing is restricted to an explicitly allowed loopback rehearsal" >&2
     exit 1
   }
-  deployer="$(cast rpc eth_accounts --rpc-url "$rpc_url" | jq -er '.[0]')"
+  deployer="$(
+    if [[ -n "${ROBYN_TESTNET_REHEARSAL_DEPLOYER:-}" ]]; then
+      cast to-check-sum-address "$ROBYN_TESTNET_REHEARSAL_DEPLOYER"
+    else
+      cast rpc eth_accounts --rpc-url "$rpc_url" | jq -er '.[0]'
+    fi
+  )"
   wallet_args=(--from "$deployer" --unlocked)
 else
   keystore="${ROBYN_TESTNET_KEYSTORE:-${ROBYN_KEYSTORE:-}}"
@@ -68,8 +79,9 @@ forge build --root packages/contracts >/dev/null
 
 declare -A addresses txs
 configuration_transaction_log="$(mktemp)"
+mock_route_log="$(mktemp)"
 cleanup() {
-  rm -f -- "$configuration_transaction_log"
+  rm -f -- "$configuration_transaction_log" "$mock_route_log"
 }
 trap cleanup EXIT
 deploy_contract() {
@@ -133,6 +145,10 @@ governor="${addresses[governor]}"
 deploy_contract assetRouter src/uniswap/RobynV4AssetRouter.sol:RobynV4AssetRouter \
   "$pool_manager" "$quoter" "$state_view" "$timelock"
 asset_router="${addresses[assetRouter]}"
+deploy_contract testAssetLiquidityLocker \
+  src/uniswap/RobynV4TestAssetLiquidityLocker.sol:RobynV4TestAssetLiquidityLocker \
+  "$pool_manager"
+test_asset_liquidity_locker="${addresses[testAssetLiquidityLocker]}"
 
 verification_class="$(cast keccak 'ROBINHOOD_TESTNET_FAUCET_STOCK')"
 while IFS=$'\t' read -r symbol asset; do
@@ -145,6 +161,77 @@ while IFS=$'\t' read -r symbol asset; do
     "$asset" --rpc-url "$rpc_url")"
   [[ "$ready" == *"true"* ]] || { echo "$symbol route is not ready after bootstrap" >&2; exit 1; }
 done < <(jq -r '.faucetStockRoutes[] | [.symbol,.address] | @tsv' "$venue_manifest")
+
+mock_native_seed="100000000000000"
+mock_token_seed_max="100000000000000"
+mock_liquidity="50000000000000"
+mock_maximum_native_input="10000000000"
+while IFS=$'\t' read -r symbol asset verification; do
+  if [[ "$verification" == "robyn-controlled-testnet-dex" ]]; then
+    send_transaction --value "$mock_token_seed_max" "$asset" 'deposit()' >/dev/null
+    route_verification_class="$(cast keccak 'ROBYN_CONTROLLED_TESTNET_WETH')"
+  else
+    owner="$(
+      cast call "$asset" 'owner()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]'
+    )"
+    [[ "$owner" == "${deployer,,}" ]] || {
+      echo "$symbol mock owner does not match the reviewed deployer" >&2
+      exit 1
+    }
+    send_transaction "$asset" 'mint(address,uint256)' "$deployer" "$mock_token_seed_max" >/dev/null
+    route_verification_class="$(cast keccak 'ROBYN_TESTNET_MOCK_V4_ROUTE')"
+  fi
+  send_transaction "$asset" 'approve(address,uint256)' \
+    "$test_asset_liquidity_locker" "$mock_token_seed_max" >/dev/null
+  seed_tx="$(
+    send_transaction --value "$mock_native_seed" "$test_asset_liquidity_locker" \
+      'seed(address,uint128,uint256)' "$asset" "$mock_liquidity" "$mock_token_seed_max"
+  )"
+  route="(10000,200,$zero,1,$mock_maximum_native_input,$route_verification_class,true)"
+  send_transaction "$asset_router" \
+    'configureRoute(address,(uint24,int24,address,uint128,uint128,bytes32,bool))' \
+    "$asset" "$route" >/dev/null
+  status="$(
+    cast call "$asset_router" \
+      'routeStatus(address)((bytes32,uint128,uint128,uint128,bytes32,uint24,int24,address,bool,bytes32))' \
+      "$asset" --rpc-url "$rpc_url" --json
+  )"
+  [[ "$(jq -r '.[0][8]' <<<"$status")" == "true" ]] || {
+    echo "$symbol mock route is not ready after liquidity lock" >&2
+    exit 1
+  }
+  jq -nc \
+    --arg symbol "$symbol" \
+    --arg address "$asset" \
+    --arg poolId "$(jq -r '.[0][0]' <<<"$status")" \
+    --arg verification "$verification" \
+    --arg liquidityLocker "$test_asset_liquidity_locker" \
+    --arg seedTransaction "$seed_tx" \
+    '{
+      symbol:$symbol,
+      address:$address,
+      poolId:$poolId,
+      fee:10000,
+      tickSpacing:200,
+      hook:"0x0000000000000000000000000000000000000000",
+      verification:$verification,
+      provenance:"robyn-controlled-mock-v4-pool",
+      liquidityLocker:$liquidityLocker,
+      seedTransaction:$seedTransaction
+    }' >>"$mock_route_log"
+done < <(
+  jq -r '
+    ["AMD","AMZN","NFLX","PLTR","TSLA"] as $official
+    | .assetCatalog.assets[]
+    | . as $asset
+    | select(
+        (.verification == "robyn-testnet-mock" and ($official | index($asset.symbol) | not))
+        or .verification == "robyn-controlled-testnet-dex"
+      )
+    | [.symbol,.address,.verification] | @tsv
+  ' "$legacy_asset_manifest"
+)
+send_transaction "$test_asset_liquidity_locker" 'seal()' >/dev/null
 
 deploy_contract launchDeployer \
   src/uniswap/RobynNativeLaunchDeployerV4.sol:RobynNativeLaunchDeployerV4
@@ -223,7 +310,7 @@ send_transaction "$launch_factory" 'bindCoordinator(address)' "$coordinator" >/d
 send_transaction "$market_factory" 'bindCoordinator(address)' "$coordinator" >/dev/null
 send_transaction "$fee_router" 'bindCoordinator(address)' "$coordinator" >/dev/null
 
-exclusions="[$timelock,$fee_router,$governor,$coordinator,$market_factory,$launch_factory,$launch_deployer,$asset_router,$hook,$adapter_deployer,$locker_deployer,$market_deployer]"
+exclusions="[$timelock,$fee_router,$governor,$coordinator,$market_factory,$launch_factory,$launch_deployer,$asset_router,$hook,$adapter_deployer,$locker_deployer,$market_deployer,$test_asset_liquidity_locker]"
 send_transaction "$dao_token" 'sealRewardExclusions(address[])' "$exclusions" >/dev/null
 send_transaction "$dao_token" 'bindRewardDepositor(address)' "$fee_router" >/dev/null
 
@@ -267,32 +354,63 @@ factory_genesis_token="$(
 }
 
 venue_hash="$(sha256sum "$venue_manifest" | awk '{print $1}')"
-asset_routes="$(jq -c '.faucetStockRoutes' "$venue_manifest")"
+official_asset_routes="$(
+  jq -c '
+    .faucetStockRoutes
+    | map(. + {
+        verification:"robinhood-testnet-faucet-stock",
+        provenance:"shared-unlisted-robinhood-testnet-uniswap-v4-mirror"
+      })
+  ' "$venue_manifest"
+)"
+mock_asset_routes="$(jq -sc '.' "$mock_route_log")"
+asset_routes="$(
+  jq -nc --argjson official "$official_asset_routes" --argjson mocks "$mock_asset_routes" \
+    '$official + $mocks'
+)"
 deployment_block_raw="$(
   cast receipt "${txs[timelock]}" --rpc-url "$rpc_url" --json | jq -er '.blockNumber'
 )"
 deployment_block="$((deployment_block_raw))"
 asset_catalog="$(
-  jq -c --slurpfile venue "$venue_manifest" '
-    [$venue[0].faucetStockRoutes[] as $route
-      | .assetCatalog.assets[] as $catalog
+  jq -c --argjson routes "$asset_routes" '
+    [.assetCatalog.assets[] as $catalog
+      | $routes[] as $route
       | select($route.symbol == $catalog.symbol)
       | $catalog
         + {
+            name: (
+              if $route.verification == "robyn-testnet-mock"
+              then "Robyn Testnet Mock " + $catalog.name
+              else $catalog.name
+              end
+            ),
             address: $route.address,
             chainId: 46630,
             decimals: 18,
-            verification: "robinhood-testnet-faucet-stock",
-            mockOnly: false,
-            disclosure: "Robinhood Testnet faucet asset. Not a production Stock Token and has no value or redemption rights.",
+            verification: $route.verification,
+            mockOnly: ($route.verification != "robinhood-testnet-faucet-stock"),
+            disclosure: (
+              if $route.verification == "robinhood-testnet-faucet-stock"
+              then "Robinhood Testnet faucet asset. Not a production Stock Token and has no value or redemption rights."
+              elif $route.verification == "robyn-controlled-testnet-dex"
+              then "Robyn-controlled testnet WETH route. Test-only and not an official Robinhood asset."
+              else "Robyn testnet mock. Not an official Robinhood Stock Token, backed share, or redeemable security."
+              end
+            ),
             route: {kind:"uniswap-v4",ready:true},
             poolId: $route.poolId,
             poolFee: $route.fee,
             tickSpacing: $route.tickSpacing,
-            hook: $route.hooks
+            hook: $route.hook,
+            routeProvenance: $route.provenance
           }
-      | del(.mockSymbol,.fixedRateX18)]
-  ' deployments/46630.json
+      | del(.fixedRateX18)
+      | if .verification == "robinhood-testnet-faucet-stock"
+        then del(.mockSymbol)
+        else .
+        end]
+  ' "$legacy_asset_manifest"
 )"
 state_view_tx="${txs[stateView]:-$(jq -r '.contracts.stateView.creationTransaction // empty' "$venue_manifest")}"
 deployment_transactions="$(
@@ -302,6 +420,7 @@ deployment_transactions="$(
     --arg daoToken "${txs[daoToken]}" \
     --arg governor "${txs[governor]}" \
     --arg assetRouter "${txs[assetRouter]}" \
+    --arg testAssetLiquidityLocker "${txs[testAssetLiquidityLocker]}" \
     --arg launchDeployer "${txs[launchDeployer]}" \
     --arg launchFactory "${txs[launchFactory]}" \
     --arg protocolFeeRouter "${txs[feeRouter]}" \
@@ -318,6 +437,7 @@ deployment_transactions="$(
       daoToken: $daoToken,
       governor: $governor,
       assetRouter: $assetRouter,
+      testAssetLiquidityLocker: $testAssetLiquidityLocker,
       launchDeployer: $launchDeployer,
       launchFactory: $launchFactory,
       protocolFeeRouter: $protocolFeeRouter,
@@ -340,6 +460,7 @@ runtime_hashes="$(
     --arg daoToken "$(cast codehash "$dao_token" --rpc-url "$rpc_url")" \
     --arg governor "$(cast codehash "$governor" --rpc-url "$rpc_url")" \
     --arg assetRouter "$(cast codehash "$asset_router" --rpc-url "$rpc_url")" \
+    --arg testAssetLiquidityLocker "$(cast codehash "$test_asset_liquidity_locker" --rpc-url "$rpc_url")" \
     --arg launchDeployer "$(cast codehash "$launch_deployer" --rpc-url "$rpc_url")" \
     --arg launchFactory "$(cast codehash "$launch_factory" --rpc-url "$rpc_url")" \
     --arg protocolFeeRouter "$(cast codehash "$fee_router" --rpc-url "$rpc_url")" \
@@ -360,6 +481,7 @@ runtime_hashes="$(
       daoToken: $daoToken,
       governor: $governor,
       assetRouter: $assetRouter,
+      testAssetLiquidityLocker: $testAssetLiquidityLocker,
       launchDeployer: $launchDeployer,
       launchFactory: $launchFactory,
       protocolFeeRouter: $protocolFeeRouter,
@@ -398,6 +520,7 @@ jq -n \
   --arg daoToken "$dao_token" \
   --arg governor "$governor" \
   --arg assetRouter "$asset_router" \
+  --arg testAssetLiquidityLocker "$test_asset_liquidity_locker" \
   --arg launchDeployer "$launch_deployer" \
   --arg launchFactory "$launch_factory" \
   --arg feeRouter "$fee_router" \
@@ -433,7 +556,7 @@ jq -n \
     assetCatalog: {
       schemaVersion: 2,
       snapshotAt: (now | todateiso8601),
-      disclosure: "Robinhood Testnet faucet assets are test-only and are not production Stock Tokens, backed shares, or redeemable securities.",
+      disclosure: "Faucet assets and Robyn mock assets are test-only and are not production Stock Tokens, backed shares, or redeemable securities.",
       assets: $assetCatalog
     },
     contracts: {
@@ -451,6 +574,7 @@ jq -n \
       daoToken: $daoToken,
       governor: $governor,
       assetRouter: $assetRouter,
+      testAssetLiquidityLocker: $testAssetLiquidityLocker,
       launchDeployer: $launchDeployer,
       launchFactory: $launchFactory,
       protocolFeeRouter: $feeRouter,

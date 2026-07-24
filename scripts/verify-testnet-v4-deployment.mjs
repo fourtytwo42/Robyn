@@ -83,6 +83,7 @@ const abis = {
   daoToken: await artifactAbi("RobynDaoToken"),
   timelock: await artifactAbi("TimelockController"),
   assetRouter: await artifactAbi("RobynV4AssetRouter"),
+  testAssetLiquidityLocker: await artifactAbi("RobynV4TestAssetLiquidityLocker"),
   launchDeployer: await artifactAbi("RobynNativeLaunchDeployerV4"),
   launchFactory: await artifactAbi("RobynNativeLaunchFactoryV4"),
   feeRouter: await artifactAbi("RobynNativeProtocolFeeRouterV3"),
@@ -102,7 +103,21 @@ async function read(address, abi, functionName, args = []) {
 }
 
 const assetRoutes = manifest.assetRoutes ?? [];
-check(assetRoutes.length === 5, "five exact faucet-stock routes are frozen");
+const faucetRoutes = assetRoutes.filter(
+  (route) => route.verification === "robinhood-testnet-faucet-stock",
+);
+const mockRoutes = assetRoutes.filter(
+  (route) =>
+    route.verification === "robyn-testnet-mock" ||
+    route.verification === "robyn-controlled-testnet-dex",
+);
+check(assetRoutes.length === 24, "all 24 catalog routes are frozen");
+check(faucetRoutes.length === 5, "five exact faucet-stock routes are frozen");
+check(mockRoutes.length === 19, "18 mock routes and WETH route are frozen");
+check(
+  new Set(assetRoutes.map((route) => route.address.toLowerCase())).size === 24,
+  "route assets are unique by address",
+);
 for (const route of assetRoutes) {
   const asset = getAddress(route.address);
   const status = await read(contracts.assetRouter, abis.assetRouter, "routeStatus", [asset]);
@@ -110,11 +125,51 @@ for (const route of assetRoutes) {
   check(status.fee === 10_000, `${route.symbol} route uses the 1% fee tier`);
   check(status.tickSpacing === 200, `${route.symbol} route uses tick spacing 200`);
   check(
-    status.hooks === getAddress("0x0000000000000000000000000000000000000000"),
-    `${route.symbol} faucet route is hookless`,
+    status.hooks === getAddress(route.hook ?? route.hooks),
+    `${route.symbol} route hook matches manifest`,
   );
   check(status.poolId === route.poolId, `${route.symbol} pool ID matches frozen provenance`);
 }
+check(
+  await read(
+    contracts.testAssetLiquidityLocker,
+    abis.testAssetLiquidityLocker,
+    "configurationSealed",
+  ),
+  "test-asset liquidity locker configuration is sealed",
+);
+for (const route of mockRoutes) {
+  check(
+    getAddress(route.liquidityLocker) === contracts.testAssetLiquidityLocker,
+    `${route.symbol} names the immutable test-asset liquidity locker`,
+  );
+  const position = await read(
+    contracts.testAssetLiquidityLocker,
+    abis.testAssetLiquidityLocker,
+    "position",
+    [route.poolId],
+  );
+  check(getAddress(position.asset) === getAddress(route.address), `${route.symbol} locked position asset matches`);
+  check(position.liquidity > 0n, `${route.symbol} has nonzero permanently locked liquidity`);
+  check(position.nativeAmount > 0n, `${route.symbol} locked native principal is nonzero`);
+  check(position.tokenAmount > 0n, `${route.symbol} locked token principal is nonzero`);
+}
+const catalogAssets = manifest.assetCatalog?.assets ?? [];
+check(catalogAssets.length === 24, "asset catalog contains 24 entries");
+check(
+  catalogAssets.filter((asset) => asset.verification === "robinhood-testnet-faucet-stock")
+    .length === 5,
+  "asset catalog distinguishes the five faucet stocks",
+);
+check(
+  catalogAssets.filter((asset) => asset.verification === "robyn-testnet-mock").length === 18,
+  "asset catalog distinguishes 18 Robyn mocks",
+);
+check(
+  catalogAssets.filter((asset) => asset.verification === "robyn-controlled-testnet-dex")
+    .length === 1,
+  "asset catalog distinguishes the Robyn-controlled WETH route",
+);
 
 check(
   getAddress(await read(contracts.stateView, abis.stateView, "poolManager")) === contracts.poolManager,
@@ -187,6 +242,7 @@ for (const key of [
   "adapterDeployer",
   "lockerDeployer",
   "marketDeployer",
+  "testAssetLiquidityLocker",
 ]) {
   check(
     await read(contracts.daoToken, abis.daoToken, "isRewardExcluded", [contracts[key]]),

@@ -93,6 +93,21 @@ Durable project context lives here. Update this file whenever information should
   Repository format, lint, strict types, application tests, Anvil smoke and the
   complete 85-test Foundry suite pass. The production v3 services remain
   untouched; no live v4 transaction has been broadcast.
+- V4 24-asset route checkpoint (2026-07-24): the catalog now preserves five
+  exact Robinhood Testnet faucet stocks, replaces their corresponding mocks,
+  and retains 18 unmistakably disclosed Robyn stock/ETF mocks plus the
+  controlled WETH test route. `RobynV4TestAssetLiquidityLocker` creates
+  hookless native-ETH pools, owns their full-range core positions forever,
+  exposes no removal/collection/rescue path, and seals after bootstrap. A
+  fresh exact-project-wallet fork rehearsal produced 24 route-ready assets,
+  98 configuration transactions, and a 113-transaction total package. All 24
+  routes swapped successfully in both directions; graduation, post-graduation
+  trading, three basket conversions, holder claims, creator claim and RDAO
+  claim passed. The verifier passed 438 checks, the tamper regression failed
+  closed, and the package used 62,409,172 gas with conservative required
+  funding `854060708288640` wei versus wallet balance
+  `6920854708782403` wei. Evidence is under
+  `/tmp/robyn-v4-24-route-rehearsal-v2/`. No live v4 transaction was sent.
 - Faucet-stock checkpoint (2026-07-24): the encrypted deployer holds 5 tokens
   each of exact faucet contracts TSLA `0xC9f9...Bd4E`, AMD `0x7117...778d`,
   AMZN `0x5884...9E02`, NFLX `0x3b82...8C93`, and PLTR `0x1FBE...98d0`.

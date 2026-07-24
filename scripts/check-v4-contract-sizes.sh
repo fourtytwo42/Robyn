@@ -18,6 +18,7 @@ contracts=(
   RobynNativeBasketVaultV2
   RobynNativeProtocolFeeRouterV3
   RobynV4AssetRouter
+  RobynV4TestAssetLiquidityLocker
   RobynV4AdapterDeployer
   RobynV4LockerDeployer
   RobynV4MarketDeployer
