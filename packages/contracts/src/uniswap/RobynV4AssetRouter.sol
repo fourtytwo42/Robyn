@@ -3,6 +3,7 @@ pragma solidity 0.8.30;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
@@ -23,13 +24,17 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
     using PoolIdLibrary for PoolKey;
     using SafeERC20 for IERC20;
 
-    string public constant CONTRACT_VERSION = "1.0.0";
+    string public constant CONTRACT_VERSION = "1.1.0";
+    uint16 public constant BPS = 10_000;
+    uint16 public constant MAX_PROTECTED_ROUTE_SLIPPAGE_BPS = 100;
 
     error Unauthorized();
     error AlreadyBound();
     error InvalidConfiguration();
     error RouteUnavailable(address asset);
     error InvalidAmount();
+    error WeakMinimumOutput(uint256 supplied, uint256 required);
+    error ExcessivePriceImpact(uint256 idealOutput, uint256 quotedOutput);
     error DeadlineExpired();
     error NativeTransferFailed();
 
@@ -39,6 +44,9 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         IHooks hooks;
         uint128 minimumLiquidity;
         uint128 maximumNativeInput;
+        int24 referenceTick;
+        uint24 maximumReferenceTickDeviation;
+        bool enforceReferencePrice;
         bytes32 verificationClass;
         bool enabled;
     }
@@ -48,6 +56,10 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         uint128 liquidity;
         uint128 minimumLiquidity;
         uint128 maximumNativeInput;
+        int24 spotTick;
+        int24 referenceTick;
+        uint24 maximumReferenceTickDeviation;
+        bool enforceReferencePrice;
         bytes32 verificationClass;
         uint24 fee;
         int24 tickSpacing;
@@ -60,6 +72,7 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
     bytes32 public constant REASON_DISABLED = keccak256("ROUTE_DISABLED");
     bytes32 public constant REASON_UNINITIALIZED = keccak256("POOL_UNINITIALIZED");
     bytes32 public constant REASON_THIN_LIQUIDITY = keccak256("INSUFFICIENT_LIQUIDITY");
+    bytes32 public constant REASON_REFERENCE_PRICE_DEVIATION = keccak256("REFERENCE_PRICE_DEVIATION");
 
     address public immutable governor;
     address public immutable initializer;
@@ -77,6 +90,9 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         address hooks,
         uint128 minimumLiquidity,
         uint128 maximumNativeInput,
+        int24 referenceTick,
+        uint24 maximumReferenceTickDeviation,
+        bool enforceReferencePrice,
         bytes32 verificationClass,
         bool enabled
     );
@@ -124,6 +140,9 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         if (
             asset == address(0) || asset.code.length == 0 || route_.fee == 0 || route_.tickSpacing <= 0
                 || route_.minimumLiquidity == 0 || route_.maximumNativeInput == 0
+                || (route_.enforceReferencePrice && route_.maximumReferenceTickDeviation == 0)
+                || (!route_.enforceReferencePrice
+                    && (route_.referenceTick != 0 || route_.maximumReferenceTickDeviation != 0))
         ) revert InvalidConfiguration();
         _routes[asset] = route_;
         emit RouteConfigured(
@@ -134,6 +153,9 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
             address(route_.hooks),
             route_.minimumLiquidity,
             route_.maximumNativeInput,
+            route_.referenceTick,
+            route_.maximumReferenceTickDeviation,
+            route_.enforceReferencePrice,
             route_.verificationClass,
             route_.enabled
         );
@@ -161,6 +183,9 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         status.hooks = address(configured.hooks);
         status.minimumLiquidity = configured.minimumLiquidity;
         status.maximumNativeInput = configured.maximumNativeInput;
+        status.referenceTick = configured.referenceTick;
+        status.maximumReferenceTickDeviation = configured.maximumReferenceTickDeviation;
+        status.enforceReferencePrice = configured.enforceReferencePrice;
         status.verificationClass = configured.verificationClass;
         if (configured.fee == 0) {
             status.reason = REASON_NOT_CONFIGURED;
@@ -168,7 +193,8 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         }
         PoolId id = _poolKey(asset, configured).toId();
         status.poolId = PoolId.unwrap(id);
-        (uint160 sqrtPriceX96,,,) = stateView.getSlot0(id);
+        (uint160 sqrtPriceX96, int24 spotTick,,) = stateView.getSlot0(id);
+        status.spotTick = spotTick;
         if (sqrtPriceX96 == 0) {
             status.reason = REASON_UNINITIALIZED;
             return status;
@@ -180,6 +206,14 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         }
         if (status.liquidity < configured.minimumLiquidity) {
             status.reason = REASON_THIN_LIQUIDITY;
+            return status;
+        }
+        if (
+            configured.enforceReferencePrice
+                && _absoluteTickDifference(spotTick, configured.referenceTick)
+                    > configured.maximumReferenceTickDeviation
+        ) {
+            status.reason = REASON_REFERENCE_PRICE_DEVIATION;
             return status;
         }
         status.ready = true;
@@ -220,6 +254,25 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
             revert InvalidAmount();
         }
         Route memory configured = _requireReady(asset, uint128(msg.value));
+        if (configured.enforceReferencePrice) {
+            (uint256 currentQuote,) = quoter.quoteExactInputSingle(
+                IV4Quoter.QuoteExactSingleParams({
+                    poolKey: _poolKey(asset, configured),
+                    zeroForOne: true,
+                    exactAmount: uint128(msg.value),
+                    hookData: bytes("")
+                })
+            );
+            (uint160 spotSqrtPriceX96,,,) = stateView.getSlot0(_poolKey(asset, configured).toId());
+            uint256 idealOutput = _idealAssetOutput(uint128(msg.value), spotSqrtPriceX96);
+            if (currentQuote < Math.mulDiv(idealOutput, BPS - MAX_PROTECTED_ROUTE_SLIPPAGE_BPS, BPS)) {
+                revert ExcessivePriceImpact(idealOutput, currentQuote);
+            }
+            uint256 requiredMinimum = Math.mulDiv(currentQuote, BPS - MAX_PROTECTED_ROUTE_SLIPPAGE_BPS, BPS);
+            if (minimumOutput < requiredMinimum) {
+                revert WeakMinimumOutput(minimumOutput, requiredMinimum);
+            }
+        }
         amountOut = _executeSwap(_poolKey(asset, configured), true, uint128(msg.value), minimumOutput, recipient);
         emit AssetSwap(msg.sender, asset, recipient, true, msg.value, amountOut);
     }
@@ -317,5 +370,15 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
 
     function _checkDeadline(uint256 deadline) private view {
         if (deadline < block.timestamp) revert DeadlineExpired();
+    }
+
+    function _absoluteTickDifference(int24 left, int24 right) private pure returns (uint24) {
+        int256 difference = int256(left) - int256(right);
+        return uint24(uint256(difference < 0 ? -difference : difference));
+    }
+
+    function _idealAssetOutput(uint128 nativeInput, uint160 sqrtPriceX96) private pure returns (uint256) {
+        uint256 scaled = Math.mulDiv(nativeInput, sqrtPriceX96, 1 << 96);
+        return Math.mulDiv(scaled, sqrtPriceX96, 1 << 96);
     }
 }

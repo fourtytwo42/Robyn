@@ -4,6 +4,20 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Schema-v8 internal-audit checkpoint (2026-07-24): manual review found and
+  fixed a release-blocking economic gap in permissionless basket conversion.
+  All 24 basket routes now freeze a deployment reference tick, fail closed
+  beyond 198 ticks of spot deviation, reject more than 1% estimated price
+  impact, and reject caller minimums below 99% of the current quote.
+  Launch-token routes remain floating-price and do not use the fixed-reference
+  guard. The dependency tree now resolves only `uuid` 11.1.1, eliminating the
+  prior moderate advisory. The complete 120-test Foundry suite, 512-wallet
+  25,000-action campaign, 256-run/depth-128 native-v4 invariants, application
+  suite, optimized builds, protected bundle scan, zero-advisory dependency
+  audit, zero-finding Git-history secret scan, and fresh 490-check chain-46630
+  fork deployment pass. The internal review is documented in
+  `docs/assurance/schema8-internal-contract-audit-2026-07-24.md`; it is not an
+  independent professional audit. No live transaction was broadcast.
 - Assurance campaign identity checkpoint (2026-07-24): Robyn-verified
   ERC-1046 metadata can now commit a validated campaign ID, exact release SHA,
   and automated-test marker. These fields project additively through schema,
@@ -1446,6 +1460,15 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-24: schema-v8 route-safety and internal-audit checkpoint passed the
+  120-test Foundry suite, the deterministic 512-wallet/32-launch/25,000-action
+  campaign, and native-v4 stateful invariants at 256 runs and depth 128 with
+  32,768 calls per invariant. A fresh exact-project-wallet chain-46630 fork
+  deployment passed 490 checks and froze reference protection for all 24
+  basket routes. Application format, lint, strict types, unit tests, optimized
+  build, protected testnet bundle scan, `pnpm audit` with zero advisories, and
+  `gitleaks` with zero findings passed. No live transaction was sent.
 
 - 2026-07-24: immutable assurance-campaign metadata, migration, API, indexer,
   UI badge, and protected status endpoint passed isolated migration and

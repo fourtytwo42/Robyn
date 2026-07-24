@@ -240,6 +240,9 @@ contract RobynV4MarketFactory {
                 hooks: IHooks(address(oracleHook)),
                 minimumLiquidity: 1,
                 maximumNativeInput: maximumNativeSwap,
+                referenceTick: 0,
+                maximumReferenceTickDeviation: 0,
+                enforceReferencePrice: false,
                 verificationClass: keccak256("ROBYN_V4_LAUNCH_POOL"),
                 enabled: true
             })

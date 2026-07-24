@@ -196,6 +196,9 @@ contract RobynV4NativeProtocolTest is Test {
             hooks: IHooks(address(0)),
             minimumLiquidity: 1,
             maximumNativeInput: 0.1 ether,
+            referenceTick: 0,
+            maximumReferenceTickDeviation: 198,
+            enforceReferencePrice: true,
             verificationClass: keccak256("TEST"),
             enabled: true
         });
@@ -222,6 +225,22 @@ contract RobynV4NativeProtocolTest is Test {
         assertEq(feeRouter.totalBasketNative(), 0.0005 ether);
         assertEq(TREASURY.balance - treasuryBefore, 0.00005 ether);
         assertEq(address(feeRouter).balance, feeRouter.totalCreatorNativeLiability());
+    }
+
+    function testProtectedBasketRouteRejectsWeakMinimumOutputAndReferenceDeviation() public {
+        uint128 amount = 0.002 ether;
+        vm.expectPartialRevert(RobynV4AssetRouter.WeakMinimumOutput.selector);
+        assetRouter.swapExactNativeForAsset{value: amount}(address(basketAsset), 1, address(this), block.timestamp);
+
+        for (uint256 index; index < 128 && assetRouter.routeStatus(address(basketAsset)).ready; ++index) {
+            (uint256 quote,) = assetRouter.quoteNativeToAsset(address(basketAsset), amount);
+            assetRouter.swapExactNativeForAsset{value: amount}(
+                address(basketAsset), (quote * 99) / 100, address(this), block.timestamp
+            );
+        }
+        RobynV4AssetRouter.RouteStatus memory status = assetRouter.routeStatus(address(basketAsset));
+        assertFalse(status.ready);
+        assertEq(status.reason, assetRouter.REASON_REFERENCE_PRICE_DEVIATION());
     }
 
     function testGraduationLocksPrincipalAndPostGraduationTrades() public {
@@ -380,6 +399,9 @@ contract RobynV4NativeProtocolTest is Test {
                 hooks: IHooks(address(0)),
                 minimumLiquidity: 1,
                 maximumNativeInput: 0.25 ether,
+                referenceTick: 0,
+                maximumReferenceTickDeviation: 198,
+                enforceReferencePrice: true,
                 verificationClass: keccak256("TEST_BASKET_ASSET"),
                 enabled: true
             })

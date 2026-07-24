@@ -68,7 +68,7 @@ minimum_99() {
 route_results='[]'
 while IFS=$'\t' read -r symbol asset; do
   status="$(cast call "$router" \
-    'routeStatus(address)((bytes32,uint128,uint128,uint128,bytes32,uint24,int24,address,bool,bytes32))' \
+    'routeStatus(address)((bytes32,uint128,uint128,uint128,int24,int24,uint24,bool,bytes32,uint24,int24,address,bool,bytes32))' \
     "$asset" --rpc-url "$rpc_url")"
   [[ "$status" == *"true"* ]] || { echo "$symbol route is not ready" >&2; exit 1; }
 

@@ -135,7 +135,28 @@ for (const route of assetRoutes) {
     `${route.symbol} route hook matches manifest`,
   );
   check(status.poolId === route.poolId, `${route.symbol} pool ID matches frozen provenance`);
+  check(status.enforceReferencePrice, `${route.symbol} enforces its frozen reference price`);
+  check(
+    status.referenceTick === route.referenceTick,
+    `${route.symbol} reference tick matches the manifest`,
+  );
+  check(
+    status.maximumReferenceTickDeviation === route.maximumReferenceTickDeviation,
+    `${route.symbol} reference deviation matches the manifest`,
+  );
+  check(
+    route.maximumProtectedRouteSlippageBps === 100,
+    `${route.symbol} freezes the 1% protected-route slippage ceiling`,
+  );
 }
+check(
+  await read(
+    contracts.assetRouter,
+    abis.assetRouter,
+    "MAX_PROTECTED_ROUTE_SLIPPAGE_BPS",
+  ) === 100,
+  "asset router enforces a 1% protected-route slippage ceiling",
+);
 check(
   await read(
     contracts.testAssetLiquidityLocker,

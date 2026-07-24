@@ -82,8 +82,9 @@ forge build --root packages/contracts >/dev/null
 declare -A addresses txs
 configuration_transaction_log="$(mktemp)"
 mock_route_log="$(mktemp)"
+route_safety_log="$(mktemp)"
 cleanup() {
-  rm -f -- "$configuration_transaction_log" "$mock_route_log"
+  rm -f -- "$configuration_transaction_log" "$mock_route_log" "$route_safety_log"
 }
 trap cleanup EXIT
 deploy_contract() {
@@ -189,17 +190,34 @@ else
 fi
 
 verification_class="$(cast keccak 'ROBINHOOD_TESTNET_FAUCET_STOCK')"
+maximum_reference_tick_deviation=198
 if [[ -z "$reuse_routes_manifest" ]]; then
-while IFS=$'\t' read -r symbol asset; do
-  route="(10000,200,$zero,1,1000000000000,$verification_class,true)"
+while IFS=$'\t' read -r symbol asset pool_id; do
+  slot0="$(
+    cast call "$state_view" 'getSlot0(bytes32)(uint160,int24,uint24,uint24)' \
+      "$pool_id" --rpc-url "$rpc_url" --json
+  )"
+  reference_tick="$(jq -r '.[1]' <<<"$slot0")"
+  route="(10000,200,$zero,1,1000000000000,$reference_tick,$maximum_reference_tick_deviation,true,$verification_class,true)"
   send_transaction "$asset_router" \
-    'configureRoute(address,(uint24,int24,address,uint128,uint128,bytes32,bool))' \
+    'configureRoute(address,(uint24,int24,address,uint128,uint128,int24,uint24,bool,bytes32,bool))' \
     "$asset" "$route" >/dev/null
   ready="$(cast call "$asset_router" \
-    'routeStatus(address)((bytes32,uint128,uint128,uint128,bytes32,uint24,int24,address,bool,bytes32))' \
+    'routeStatus(address)((bytes32,uint128,uint128,uint128,int24,int24,uint24,bool,bytes32,uint24,int24,address,bool,bytes32))' \
     "$asset" --rpc-url "$rpc_url")"
   [[ "$ready" == *"true"* ]] || { echo "$symbol route is not ready after bootstrap" >&2; exit 1; }
-done < <(jq -r '.faucetStockRoutes[] | [.symbol,.address] | @tsv' "$venue_manifest")
+  jq -nc \
+    --arg symbol "$symbol" \
+    --argjson referenceTick "$reference_tick" \
+    --argjson maximumReferenceTickDeviation "$maximum_reference_tick_deviation" \
+    '{
+      symbol:$symbol,
+      referenceTick:$referenceTick,
+      maximumReferenceTickDeviation:$maximumReferenceTickDeviation,
+      enforceReferencePrice:true,
+      maximumProtectedRouteSlippageBps:100
+    }' >>"$route_safety_log"
+done < <(jq -r '.faucetStockRoutes[] | [.symbol,.address,.poolId] | @tsv' "$venue_manifest")
 fi
 
 mock_native_seed="100000000000000"
@@ -228,19 +246,29 @@ while IFS=$'\t' read -r symbol asset verification; do
     send_transaction --value "$mock_native_seed" "$test_asset_liquidity_locker" \
       'seed(address,uint128,uint256)' "$asset" "$mock_liquidity" "$mock_token_seed_max"
   )"
-  route="(10000,200,$zero,1,$mock_maximum_native_input,$route_verification_class,true)"
+  route="(10000,200,$zero,1,$mock_maximum_native_input,0,$maximum_reference_tick_deviation,true,$route_verification_class,true)"
   send_transaction "$asset_router" \
-    'configureRoute(address,(uint24,int24,address,uint128,uint128,bytes32,bool))' \
+    'configureRoute(address,(uint24,int24,address,uint128,uint128,int24,uint24,bool,bytes32,bool))' \
     "$asset" "$route" >/dev/null
   status="$(
     cast call "$asset_router" \
-      'routeStatus(address)((bytes32,uint128,uint128,uint128,bytes32,uint24,int24,address,bool,bytes32))' \
+      'routeStatus(address)((bytes32,uint128,uint128,uint128,int24,int24,uint24,bool,bytes32,uint24,int24,address,bool,bytes32))' \
       "$asset" --rpc-url "$rpc_url" --json
   )"
-  [[ "$(jq -r '.[0][8]' <<<"$status")" == "true" ]] || {
+  [[ "$(jq -r '.[0][12]' <<<"$status")" == "true" ]] || {
     echo "$symbol mock route is not ready after liquidity lock" >&2
     exit 1
   }
+  jq -nc \
+    --arg symbol "$symbol" \
+    --argjson maximumReferenceTickDeviation "$maximum_reference_tick_deviation" \
+    '{
+      symbol:$symbol,
+      referenceTick:0,
+      maximumReferenceTickDeviation:$maximumReferenceTickDeviation,
+      enforceReferencePrice:true,
+      maximumProtectedRouteSlippageBps:100
+    }' >>"$route_safety_log"
   jq -nc \
     --arg symbol "$symbol" \
     --arg address "$asset" \
@@ -293,20 +321,36 @@ else
         exit 1
         ;;
     esac
-    route="(10000,200,$zero,1,$maximum_native_input,$route_verification_class,true)"
+    slot0="$(
+      cast call "$state_view" 'getSlot0(bytes32)(uint160,int24,uint24,uint24)' \
+        "$pool_id" --rpc-url "$rpc_url" --json
+    )"
+    reference_tick="$(jq -r '.[1]' <<<"$slot0")"
+    route="(10000,200,$zero,1,$maximum_native_input,$reference_tick,$maximum_reference_tick_deviation,true,$route_verification_class,true)"
     send_transaction "$asset_router" \
-      'configureRoute(address,(uint24,int24,address,uint128,uint128,bytes32,bool))' \
+      'configureRoute(address,(uint24,int24,address,uint128,uint128,int24,uint24,bool,bytes32,bool))' \
       "$asset" "$route" >/dev/null
     status="$(
       cast call "$asset_router" \
-        'routeStatus(address)((bytes32,uint128,uint128,uint128,bytes32,uint24,int24,address,bool,bytes32))' \
+        'routeStatus(address)((bytes32,uint128,uint128,uint128,int24,int24,uint24,bool,bytes32,uint24,int24,address,bool,bytes32))' \
         "$asset" --rpc-url "$rpc_url" --json
     )"
-    [[ "$(jq -r '.[0][8]' <<<"$status")" == "true" &&
+    [[ "$(jq -r '.[0][12]' <<<"$status")" == "true" &&
        "$(jq -r '.[0][0]' <<<"$status")" == "$pool_id" ]] || {
       echo "$symbol reused route is not ready or changed pool identity" >&2
       exit 1
     }
+    jq -nc \
+      --arg symbol "$symbol" \
+      --argjson referenceTick "$reference_tick" \
+      --argjson maximumReferenceTickDeviation "$maximum_reference_tick_deviation" \
+      '{
+        symbol:$symbol,
+        referenceTick:$referenceTick,
+        maximumReferenceTickDeviation:$maximumReferenceTickDeviation,
+        enforceReferencePrice:true,
+        maximumProtectedRouteSlippageBps:100
+      }' >>"$route_safety_log"
   done < <(jq -r '.assetRoutes[] | [
     .symbol,.address,.poolId,.verification,.provenance,(.liquidityLocker // "")
   ] | @tsv' "$reuse_routes_manifest")
@@ -467,6 +511,17 @@ else
       '$official + $mocks'
   )"
 fi
+route_safety="$(jq -sc '.' "$route_safety_log")"
+asset_routes="$(
+  jq -nc --argjson routes "$asset_routes" --argjson safety "$route_safety" '
+    $routes
+    | map(
+        . as $route
+        | ($safety[] | select(.symbol == $route.symbol)) as $routeSafety
+        | $route + $routeSafety
+      )
+  '
+)"
 deployment_block_raw="$(
   cast receipt "${txs[timelock]}" --rpc-url "$rpc_url" --json | jq -er '.blockNumber'
 )"

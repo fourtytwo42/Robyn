@@ -133,7 +133,9 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
             for (uint256 legIndex; legIndex < 3; ++legIndex) {
                 RobynNativeBasketVaultV2.BasketLeg memory selected = vault.leg(legIndex);
                 if (selected.pendingNative != 0) {
-                    vault.convertLeg(legIndex, selected.pendingNative, 1, block.timestamp + 1 hours);
+                    (uint256 quote,) =
+                        assetRouter.quoteNativeToAsset(address(selected.asset), uint128(selected.pendingNative));
+                    vault.convertLeg(legIndex, selected.pendingNative, (quote * 99) / 100, block.timestamp + 1 hours);
                 }
             }
             assertEq(vault.totalPendingNative(), 0);
