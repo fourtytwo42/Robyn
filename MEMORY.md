@@ -4,6 +4,24 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Shared-v4 live route verification completed (2026-07-24): exact release
+  `baab23518e7cfa317a99e24d6b346071b9cc06cc` passed a fresh 490-check
+  chain-46630 deployment rehearsal, the complete 100-wallet campaign with
+  2,156 successful transactions and 2,056 product writes, idempotent resume,
+  live-priced deployment measurement, and two-clean-archive reproducibility.
+  A release-gate recheck then correctly rejected the venue manifest because its
+  bounded live swaps were still marked pending. A disposable verifier at
+  `0x8E02E29F2Fe1a6fbF25F6B9aCDDd53600C8dC818` executed a 1-gwei native-to-stock
+  and exact acquired-balance stock-to-native round trip through each shared TSLA,
+  AMD, AMZN, NFLX, and PLTR pool. Every receipt succeeded and every stock balance
+  returned exactly to its starting value. Protected evidence is under
+  `/home/hendo420/.local/state/robyn-testnet-deployments/v4-venue-live-swaps-baab235`.
+  The versioned venue manifest now records the probe and route receipts and is
+  release-ready. This manifest and memory update roll the release SHA, so a
+  fresh exact-commit rehearsal, campaign, reproducibility check, gas measurement,
+  and public schema-v8 deployment remain required. Schema v7 remains public.
+  Last verified on chain 46630 on 2026-07-24.
+
 - Dependency audit rollover (2026-07-24): after exact `f67fa90` passed its
   fresh 490-check deployment and complete 2,156-transaction campaign rehearsal,
   GitHub advisory `GHSA-mh99-v99m-4gvg` newly classified all installed

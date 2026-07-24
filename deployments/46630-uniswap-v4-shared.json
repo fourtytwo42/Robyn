@@ -169,8 +169,48 @@
     "sharedContracts": "passed",
     "positionManagerWiring": "passed-with-mainnet-matching-descriptor-and-missing-weth9",
     "faucetStockBidirectionalQuotes": "passed",
-    "faucetStockBidirectionalSwaps": "pending-live-bounded-test",
+    "faucetStockBidirectionalSwaps": "passed",
     "stateView": "passed",
-    "releaseReady": false
+    "releaseReady": true,
+    "liveSwapEvidence": {
+      "testedAt": "2026-07-24T22:41:06Z",
+      "gitCommit": "baab23518e7cfa317a99e24d6b346071b9cc06cc",
+      "probeRouter": "0x8E02E29F2Fe1a6fbF25F6B9aCDDd53600C8dC818",
+      "probeRouterDeploymentTransaction": "0x1e332fcc075f27df0b6f9842ee5cbb4c0d6db2a5ed270ee198477b01a2308dd1",
+      "nativeInputWeiPerRoute": "1000000000",
+      "evidenceSha256": "d29b157ac9dc41a69e7b3f0773cb79743111c31f6dc7eb36c05f3e51e1fabf0b",
+      "routes": [
+        {
+          "symbol": "TSLA",
+          "buyTransaction": "0x07fa19a8ae61990aed4922c878f7c3d99bcf873ce05b7f1e2ef4eb7f6e57025d",
+          "sellTransaction": "0x649822f0e7776ea807bbb2438198ec32afb39faa304dca949b1ebca11056825c",
+          "assetRoundTripRestored": true
+        },
+        {
+          "symbol": "AMD",
+          "buyTransaction": "0x27e139b4300fc078c7e88698c6003af27041fbe41221a1c2f5130e0f13124016",
+          "sellTransaction": "0x3ab95436978e8f91cbb956b72456112232f6071ebfd3ac4391f6aa5c5fccd9a0",
+          "assetRoundTripRestored": true
+        },
+        {
+          "symbol": "AMZN",
+          "buyTransaction": "0xe2fc500a4a4643086e4f1037a8ffc6148c3db1b624445cd717a4baf5cb711fd2",
+          "sellTransaction": "0x277989891ad56216e634f64013636d58683b9c83e7aa47c231213f4cefae2891",
+          "assetRoundTripRestored": true
+        },
+        {
+          "symbol": "NFLX",
+          "buyTransaction": "0x4dc44984f57cfb38edb455541d7ce804b661400dbf28ae9fffc86140cd46b24b",
+          "sellTransaction": "0x980774ec4126b6eebec3d739501271e498cbc0e6b001c9bf323bbb129ddb806e",
+          "assetRoundTripRestored": true
+        },
+        {
+          "symbol": "PLTR",
+          "buyTransaction": "0x6a195846de7ee00f2df57544e9e848725bd1c83ea7135cdf7a67839b44807746",
+          "sellTransaction": "0xe52d921fe809d199f330b3d0ad95d3624b88bee6d162226cd8046315f78e3064",
+          "assetRoundTripRestored": true
+        }
+      ]
+    }
   }
 }
