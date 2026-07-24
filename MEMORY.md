@@ -26,6 +26,15 @@ Durable project context lives here. Update this file whenever information should
   `0x0Bd7...AD73`, neither of which has code on testnet. Treat the venue as
   `shared-unlisted-robinhood-testnet-uniswap-v4-mirror`, never official
   Uniswap, and fail closed if frozen hashes or wiring change.
+- Shared v4 manifest checkpoint (2026-07-24): the frozen venue manifest is
+  `deployments/46630-uniswap-v4-shared.json`. The read-only verifier
+  `scripts/verify-testnet-uniswap-v4.sh` proves chain ID, shared-contract
+  hashes and blocks, PositionManager wiring, missing descriptor/WETH code,
+  exact faucet-stock pool identities, bidirectional quotes, and the absence of
+  chain 46630 from Uniswap's official registry. Strict verification remains
+  intentionally blocked on Robyn StateView deployment, bounded live swap
+  evidence, and final release readiness. A tamper regression proves a changed
+  runtime hash fails closed.
 - Faucet-stock checkpoint (2026-07-24): the encrypted deployer holds 5 tokens
   each of exact faucet contracts TSLA `0xC9f9...Bd4E`, AMD `0x7117...778d`,
   AMZN `0x5884...9E02`, NFLX `0x3b82...8C93`, and PLTR `0x1FBE...98d0`.

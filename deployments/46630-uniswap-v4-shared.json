@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "chainId": 46630,
+  "venue": "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
+  "officialUniswapDeployment": false,
+  "officialRegistry": {
+    "repository": "https://github.com/Uniswap/contracts/tree/main/deployments",
+    "chain46630Listed": false,
+    "lastCheckedAt": "2026-07-24T00:00:00Z"
+  },
+  "disclosure": "Shared chain-46630 contracts are not listed as an official Uniswap deployment. Robyn independently freezes and verifies them and aborts if provenance changes.",
+  "contracts": {
+    "poolManager": {
+      "address": "0x8366a39cc670b4001a1121b8f6a443a643e40951",
+      "creationTransaction": "0x6733aa333c0cf8db03ff4011875cec727325134d405021786d8f87ed6258ff0d",
+      "deploymentBlock": 89068706,
+      "transactionSender": "0x8328F51d97B185eDAc241e4323c6EaF96eB897ce",
+      "create2Deployer": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "runtimeCodeHash": "0xbd3881180b547f5fe817545743cfb4343e96b1bc6640dcd70c106b0066e95626",
+      "robinhoodMainnetRuntimeCodeHash": "0xbd3881180b547f5fe817545743cfb4343e96b1bc6640dcd70c106b0066e95626",
+      "mainnetHashMatches": true
+    },
+    "positionManager": {
+      "address": "0x58daec3116aae6D93017bAAea7749052E8a04fA7",
+      "creationTransaction": "0xafcf39e3decafcc07c3b7ed806fe9cdd55f4305157fe7dfa8c54fcc91501addd",
+      "deploymentBlock": 89068260,
+      "transactionSender": "0x8328F51d97B185eDAc241e4323c6EaF96eB897ce",
+      "create2Deployer": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "runtimeCodeHash": "0xf3a0edb689229fa4bf135a728f2ec2eb4a2fbee2e41e3e74ffadb7b4c56e8a6d",
+      "robinhoodMainnetRuntimeCodeHash": "0xc873e135dc9aaec88489cfbad146b4cb49d6a32e0d80326377784b7ba17670b2",
+      "mainnetHashMatches": false,
+      "poolManager": "0x8366a39cc670b4001a1121b8f6a443a643e40951",
+      "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+      "tokenDescriptor": "0x9639443158E8C5efa35Bd45287bf2EFfd3D8dC06",
+      "weth9": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73"
+    },
+    "quoter": {
+      "address": "0x8dc178efb8111bb0973dd9d722ebeff267c98f94",
+      "creationTransaction": "0x83e8d6e50eb162cd33a1a02f12763c5d989ca2b20c49fbcdadd5f5bd0199d345",
+      "deploymentBlock": 91141877,
+      "transactionSender": "0x0B73FEcBf1a1dE2e62c1502F90759192f10E9E17",
+      "create2Deployer": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "runtimeCodeHash": "0xd707b1da8cb165e5ea35a3b4450d971eb562ec171e23492aa117036b78a868f6",
+      "robinhoodMainnetRuntimeCodeHash": "0xd707b1da8cb165e5ea35a3b4450d971eb562ec171e23492aa117036b78a868f6",
+      "mainnetHashMatches": true
+    },
+    "universalRouter": {
+      "address": "0x8876789976decbfcbbbe364623c63652db8c0904",
+      "creationTransaction": "0x5ed49024fd0a48136cd7d9dc67bc69ebcf07bc534a420d50129f862af27d458d",
+      "deploymentBlock": 89067561,
+      "transactionSender": "0x8328F51d97B185eDAc241e4323c6EaF96eB897ce",
+      "create2Deployer": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "runtimeCodeHash": "0xfdd90802f39ce5fc8bac4c2f1b3ac7bac530fd17ff46b0630f1bd00f1e14082f",
+      "robinhoodMainnetRuntimeCodeHash": "0x2ce6aaaf9f4151f5e1cbf774668772f17f532ae11b15e9284fd0a072a8b0fbde",
+      "mainnetHashMatches": false,
+      "v4CommandSmoke": "pending-live-bounded-test"
+    },
+    "permit2": {
+      "address": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+      "creationTransaction": "0xf26bc808ef43817d6c094ee9216c0d3b2103e50f9a7d5d7bc15957c23192bb58",
+      "deploymentBlock": 22,
+      "transactionSender": "0xb71f9759FB6416E952F314b5FB422c902F3D8613",
+      "create2Deployer": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+      "runtimeCodeHash": "0x0117e0ed818bc3f2a8729ffc336c837e63e965f04b473047b39b35ad86aac259",
+      "robinhoodMainnetRuntimeCodeHash": "0x5208783f52488f7d3493e5e38311ab707c1d75457fe472a19b0b4d57d66a7fca",
+      "mainnetHashMatches": false
+    },
+    "stateView": {
+      "address": null,
+      "runtimeCodeHash": null,
+      "status": "pending-robyn-controlled-deployment"
+    }
+  },
+  "missingOrBrokenOptionalComponents": {
+    "canonicalStateView": "absent",
+    "canonicalReservesLens": "absent",
+    "positionDescriptor": {
+      "address": "0x9639443158E8C5efa35Bd45287bf2EFfd3D8dC06",
+      "codePresent": false
+    },
+    "positionManagerWeth9": {
+      "address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+      "codePresent": false
+    },
+    "impact": "Native pools and position custody work. Position tokenURI and wrapped-native PositionManager paths must not be relied upon."
+  },
+  "faucetStockRoutes": [
+    {
+      "symbol": "TSLA",
+      "address": "0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E",
+      "poolId": "0x197d7e73cb45f6f3974316879f46fc19c80c78f3f1096ecd58effe52cd9b2152",
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hook": "0x0000000000000000000000000000000000000000",
+      "initializeTransaction": "0xa96fceb2c39944563f872826d4807640b8dfd0ed48ba969c6cd123cb407228d5",
+      "initializeBlock": 91000224
+    },
+    {
+      "symbol": "AMD",
+      "address": "0x71178BAc73cBeb415514eB542a8995b82669778d",
+      "poolId": "0xb8153b22310c84eb2f20f0c8ef9189cf97e706bc449384cd4f87adc556d589f8",
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hook": "0x0000000000000000000000000000000000000000",
+      "initializeTransaction": "0x69dde5d3f1b4f5912b8571318dd8275dd5c8f55393c390df0586794a7cc8843d",
+      "initializeBlock": 91000224
+    },
+    {
+      "symbol": "AMZN",
+      "address": "0x5884aD2f920c162CFBbACc88C9C51AA75eC09E02",
+      "poolId": "0x978bf7f3949ffc284ed352e28b0bc32efecc9efd0f4f0c4bc971ff742ac3b066",
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hook": "0x0000000000000000000000000000000000000000",
+      "initializeTransaction": "0x172c3a02e2507fc8ee3d647909aeffebd4447957544b750b2ca6b67065f0a896",
+      "initializeBlock": 91000224
+    },
+    {
+      "symbol": "NFLX",
+      "address": "0x3b8262A63d25f0477c4DDE23F83cfe22Cb768C93",
+      "poolId": "0xb445c05bebb8a2fb61cf8dc6427c65a4aeea36d6f9527edf22fff59da0fc846a",
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hook": "0x0000000000000000000000000000000000000000",
+      "initializeTransaction": "0x8f472a1a5b5c645fa760629293d33addb1b6bf3eb06269b98443573a4289b51a",
+      "initializeBlock": 91000224
+    },
+    {
+      "symbol": "PLTR",
+      "address": "0x1FBE1a0e43594b3455993B5dE5Fd0A7A266298d0",
+      "poolId": "0xaf250b056bbe12c268c19e837927431c661d51b92f78471c1e5f9477a048a500",
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hook": "0x0000000000000000000000000000000000000000",
+      "initializeTransaction": "0xe37af94e50c558017396d6786db048e92741b67892f465ec525ea24922788a8c",
+      "initializeBlock": 91000224
+    }
+  ],
+  "verification": {
+    "sharedContracts": "passed",
+    "positionManagerWiring": "passed-with-disclosed-missing-code",
+    "faucetStockBidirectionalQuotes": "passed",
+    "faucetStockBidirectionalSwaps": "pending-live-bounded-test",
+    "stateView": "pending",
+    "releaseReady": false
+  }
+}
