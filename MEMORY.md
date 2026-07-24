@@ -17,8 +17,9 @@ Durable project context lives here. Update this file whenever information should
   Git and WalletConnect produces a QR code after pinning the compatible `qr`
   renderer. Browser acceptance found that the testnet CSP blocked Reown project
   configuration at `https://api.web3modal.org`; the CSP now permits that exact
-  origin. Run the protected build, restart the web candidate, and verify the
-  warning is gone before closing this checkpoint.
+  origin. The protected build was restarted and WalletConnect QR acceptance,
+  Reown project configuration, catalog search, manual-address lookup and
+  390x844 no-overflow checks all pass with zero browser warnings or errors.
 - Live testnet checkpoint (2026-07-24): the one-shot public chain-46630 smoke
   passed from exact pushed commit `4574b4b`. It proved faucet funding, bonding
   buy, automatic graduation, locked Uniswap v3 liquidity, all three basket
@@ -32,8 +33,10 @@ Durable project context lives here. Update this file whenever information should
   checksum-cased graduated-pool address to a lowercase PostgreSQL text index,
   which omitted real post-graduation `Swap` logs even though the chain,
   indexer, and derivation logic were correct. `analyticsLogAddresses` now
-  normalizes every queried address, with a regression test. Rebuild/restart the
-  API and prove the public chart includes the real sell before final closure.
+  normalizes every queried address, with a regression test. Exact pushed commit
+  `28458ea` was rebuilt and restarted; the public API reports two trades and the
+  in-app browser shows the real post-graduation sell in both the chart and
+  recent-trades table with zero browser warnings or errors.
 - Current task (2026-07-23): finish and push the Robinhood Testnet, multi-wallet,
   and basket-asset release on branch `codex/robinhood-testnet-assets`. The
   controlled Anvil devnet remains the internal regression environment.
