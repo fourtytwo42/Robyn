@@ -6,6 +6,7 @@ export const PRICED_TRANSACTION_COUNT = 1_650;
 export const REQUIRED_RESERVE_WEI = 1_500_000_000_000_000n;
 export const REQUIRED_HEADROOM_BPS = 2_500n;
 export const V4_FEE_COLLECTION_MINIMUMS = [0n, 0n];
+export const V4_ORACLE_WINDOW_MATURITY_SECONDS = 301;
 
 export function graduationActorIndex(launchIndex) {
   if (

@@ -19,6 +19,7 @@ import {
   projectCampaignCost,
   REQUIRED_RESERVE_WEI,
   V4_FEE_COLLECTION_MINIMUMS,
+  V4_ORACLE_WINDOW_MATURITY_SECONDS,
 } from "../lib/campaign-plan.mjs";
 
 const root = Buffer.from(
@@ -136,6 +137,10 @@ test("graduated launches reuse their deliberately funded terminal actors", () =>
     () => graduationActorIndex(3),
     /outside the fixed campaign plan/,
   );
+});
+
+test("launch-fee conversion waits beyond the complete five-minute oracle window", () => {
+  assert.equal(V4_ORACLE_WINDOW_MATURITY_SECONDS, 301);
 });
 
 test("campaign value projection includes every planned payable user action", () => {

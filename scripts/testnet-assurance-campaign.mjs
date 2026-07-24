@@ -45,6 +45,7 @@ import {
   REQUIRED_HEADROOM_BPS,
   REQUIRED_RESERVE_WEI,
   V4_FEE_COLLECTION_MINIMUMS,
+  V4_ORACLE_WINDOW_MATURITY_SECONDS,
   REQUIRED_SUCCESSFUL_WRITES,
   REQUIRED_WALLET_COUNT,
   weightedWalletFunding,
@@ -966,6 +967,23 @@ async function conversions() {
   state.conversions ??= { legs: [] };
   state.conversions.harvests ??= [];
   state.conversions.batchAdjustments ??= [];
+  if (!state.conversions.oracleWindowTargetTimestamp) {
+    const current = await publicClient.getBlock();
+    state.conversions.oracleWindowTargetTimestamp = (
+      current.timestamp + BigInt(V4_ORACLE_WINDOW_MATURITY_SECONDS)
+    ).toString();
+    saveState(state);
+  }
+  const current = await publicClient.getBlock();
+  const remaining =
+    BigInt(state.conversions.oracleWindowTargetTimestamp) > current.timestamp
+      ? Number(BigInt(state.conversions.oracleWindowTargetTimestamp) - current.timestamp)
+      : 0;
+  if (remaining > 0) {
+    await advanceOrWait(remaining, "launch-fee oracle maturity");
+  }
+  state.conversions.oracleWindowReadyAt = new Date().toISOString();
+  saveState(state);
   for (const launchIndex of state.trading.graduatedLaunches) {
     const launch = state.launches[launchIndex];
     const account = privateKeyToAccount(accounts[graduationActorIndex(launchIndex)].privateKey);

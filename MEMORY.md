@@ -47,6 +47,15 @@ Durable project context lives here. Update this file whenever information should
   tests. This contract change invalidates the preserved schema-v8 rehearsal;
   fresh contracts and a complete exact-SHA campaign are required.
 
+- Oracle-maturity campaign correction (2026-07-24): fresh exact commit
+  `e7bf6e0` deployed schema v8, passed all 490 independent checks and again
+  completed 1,517 trading transactions. The first launch-token fee conversion
+  then failed before broadcast with `InsufficientHistory` because the runner
+  did not honor the locker's five-minute TWAP requirement. Conversions now
+  persist a chain-time target 301 seconds after entry, resume toward the same
+  target without extending it, wait normally on live testnet, and advance time
+  only on an explicitly marked loopback rehearsal.
+
 - Timestamp-sensitive gas correction (2026-07-24): exact fork `a902415`
   completed 1,282 product transactions through all buys, transfers, approvals,
   three graduations, and 32 sells before a graduated sell exhausted viem's
