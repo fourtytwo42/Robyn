@@ -33,6 +33,7 @@ import {
   publicCampaignAccounts,
   weightedFundingTreeTransfers,
 } from "./lib/campaign-wallets.mjs";
+import { parseCastDecryptedPrivateKey } from "./lib/campaign-keystore.mjs";
 import {
   applyHeadroom,
   basketConversionActorIndex,
@@ -230,7 +231,7 @@ function projectPrivateKey(manifest) {
     "Project keystore password",
   );
   statSync(keystore);
-  const privateKey = execFileSync(
+  const decrypted = execFileSync(
     join(process.env.HOME, ".foundry", "bin", "cast"),
     [
       "wallet",
@@ -238,11 +239,14 @@ function projectPrivateKey(manifest) {
       basename(keystore),
       "--keystore-dir",
       dirname(keystore),
-      "--unsafe-password",
-      password,
     ],
-    { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
-  ).trim();
+    {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env, CAST_UNSAFE_PASSWORD: password },
+    },
+  );
+  const privateKey = parseCastDecryptedPrivateKey(decrypted);
   const account = privateKeyToAccount(privateKey);
   if (account.address.toLowerCase() !== manifest.deployer.toLowerCase()) {
     throw new Error("Project keystore does not match manifest deployer");

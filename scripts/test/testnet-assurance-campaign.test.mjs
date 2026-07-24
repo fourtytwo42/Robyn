@@ -7,6 +7,7 @@ import {
   fundingTreeTransfers,
   weightedFundingTreeTransfers,
 } from "../lib/campaign-wallets.mjs";
+import { parseCastDecryptedPrivateKey } from "../lib/campaign-keystore.mjs";
 import {
   applyHeadroom,
   basketConversionActorIndex,
@@ -31,6 +32,24 @@ const root = Buffer.from(
   "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
   "hex",
 );
+
+test("Foundry keystore output yields exactly one validated private key", () => {
+  const key = `0x${"ab".repeat(32)}`;
+  assert.equal(
+    parseCastDecryptedPrivateKey(
+      `deployment wallet's private key is: ${key}\n`,
+    ),
+    key,
+  );
+  assert.throws(
+    () => parseCastDecryptedPrivateKey("no private key here"),
+    /exactly one private key/,
+  );
+  assert.throws(
+    () => parseCastDecryptedPrivateKey(`${key}\n${key}`),
+    /exactly one private key/,
+  );
+});
 
 test("wallet derivation is deterministic, unique, and address-only evidence is safe", () => {
   const first = deriveCampaignAccounts(root, "schema8-assurance", 100);

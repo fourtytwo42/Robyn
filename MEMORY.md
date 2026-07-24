@@ -4,6 +4,19 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Live campaign keystore correction (2026-07-24): the corrected nonce allocator
+  completed a fresh exact-SHA rehearsal and a fully verified public schema-v8
+  deployment at commit `8c5fc663d4d8c8864047545e80430eafe984c1a8` without
+  replacing schema v7. Its isolated index rebuilt the genesis launch and the
+  live campaign preflight passed, but funding stopped before its first
+  transaction because Foundry prefixes `decrypt-keystore` output with prose.
+  `scripts/lib/campaign-keystore.mjs` now requires and extracts exactly one
+  32-byte hex key, and the runner supplies the keystore password through the
+  child environment instead of a command-line argument. Parser rejection tests,
+  lint, strict types, and a real encrypted-keystore address check pass. Because
+  the campaign runner changed, the verified `8c5fc66` deployment remains an
+  inactive candidate and a fresh exact-commit rehearsal/deployment is required.
+
 - Schema-v8 public deployment nonce correction (2026-07-24): exact commit
   `aef5afd14ff87101fb3dbe2096d6260179392df1` passed the complete fresh
   chain-46630 rehearsal (490 verifier checks, 2,156 successful transactions,
