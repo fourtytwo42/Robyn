@@ -18,7 +18,8 @@ automation, or daemon.
   loopback RPC URL.
 - Live preflight requires chain 46630, schema v8, a clean exact
   `origin/main`/manifest release, runtime code at every required contract, 25%
-  execution and Nitro L1-data headroom, and the fixed 0.0015 ETH reserve.
+  execution and Nitro L1-data headroom, the complete recovery sweep, and the
+  fixed 0.0015 ETH reserve.
 - A loopback rehearsal may supply `--gas-price-wei` and
   `--l1-base-fee-wei` when Anvil pricing differs from Robinhood Testnet or an
   old fork cannot retrieve the Nitro fee-estimator trie node. Overrides are
@@ -80,5 +81,7 @@ label. Submitted transaction hashes are journaled before receipt waiting so an
 interrupted process resumes the same hash rather than broadcasting a duplicate.
 
 The funding projection includes every planned payable action, not merely the
-three graduation thresholds. Every phase remains a release gate and must pass
-an exact-release isolated rehearsal before live use is authorized.
+three graduation thresholds. It prices 2,600 transactions and assigns each
+actor a dedicated sweep-gas budget for up to eight launch-token transfers, one
+RDAO transfer, and one native transfer. Every phase remains a release gate and
+must pass an exact-release isolated rehearsal before live use is authorized.

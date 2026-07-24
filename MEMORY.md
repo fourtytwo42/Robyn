@@ -65,6 +65,16 @@ Durable project context lives here. Update this file whenever information should
   graduation/keeper top-ups without increasing total funding or transaction
   count.
 
+- Sweep-cost preflight correction (2026-07-24): the rehearsal completed all
+  conversions, governance states, 20 holder claims, eight creator claims and
+  ten RDAO claims with 1,638 product transactions. Sweep then recovered 35
+  token and eight RDAO balances before actor 8 lacked gas for another token
+  transfer. The former 1,650-transaction preflight omitted the worst-case
+  recovery surface of up to eight launch tokens, RDAO and native ETH across
+  100 actors. Preflight now prices 2,600 transactions and partitions a
+  1.6-million-gas sweep budget with 25% headroom to every actor. A live run must
+  request more faucet funding rather than reducing recovery coverage.
+
 - Timestamp-sensitive gas correction (2026-07-24): exact fork `a902415`
   completed 1,282 product transactions through all buys, transfers, approvals,
   three graduations, and 32 sells before a graduated sell exhausted viem's

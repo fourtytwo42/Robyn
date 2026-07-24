@@ -42,6 +42,7 @@ import {
   plannedTransactionValueWei,
   plannedWalletValueWei,
   PRICED_TRANSACTION_COUNT,
+  PLANNED_SWEEP_GAS_UNITS_PER_ACTOR,
   projectCampaignCost,
   REQUIRED_HEADROOM_BPS,
   REQUIRED_RESERVE_WEI,
@@ -616,12 +617,19 @@ async function fund() {
       (10_000n + REQUIRED_HEADROOM_BPS) +
       9_999n) /
     10_000n;
+  const sweepGasBudgetWei =
+    ((PLANNED_SWEEP_GAS_UNITS_PER_ACTOR * gasPriceWei +
+      1_152n * 16n * l1BaseFeeWei) *
+      (10_000n + REQUIRED_HEADROOM_BPS) +
+      9_999n) /
+    10_000n;
   const allocation = weightedWalletFunding(
     campaignBudget,
     Array.from({ length: REQUIRED_WALLET_COUNT }, (_, index) => ({
       index,
       amountWei:
         plannedWalletValueWei(index) +
+        sweepGasBudgetWei +
         (index < 8 ? creatorLaunchBudgetWei : 0n) +
         (index >= 96 && index <= 98 ? graduationGasBudgetWei : 0n),
     })),
@@ -668,6 +676,7 @@ async function fund() {
     rootFundingWei: plan.rootFundingWei.toString(),
     creatorLaunchBudgetWei: creatorLaunchBudgetWei.toString(),
     graduationGasBudgetWei: graduationGasBudgetWei.toString(),
+    sweepGasBudgetWei: sweepGasBudgetWei.toString(),
     weightedTopupTotalWei: allocation.topupTotalWei.toString(),
     minimumWalletBudgetWei: allocation.walletBudgetsWei.reduce((left, right) => left < right ? left : right).toString(),
     maximumWalletBudgetWei: allocation.walletBudgetsWei.reduce((left, right) => left > right ? left : right).toString(),

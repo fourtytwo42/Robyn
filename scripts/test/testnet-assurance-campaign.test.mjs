@@ -16,6 +16,8 @@ import {
   plannedBuyValueWei,
   plannedTransactionValueWei,
   plannedWalletValueWei,
+  PLANNED_SWEEP_GAS_UNITS_PER_ACTOR,
+  PRICED_TRANSACTION_COUNT,
   weightedWalletFunding,
   projectCampaignCost,
   REQUIRED_RESERVE_WEI,
@@ -126,6 +128,8 @@ test("cost projection includes Nitro L1 data, 25 percent headroom, and hard rese
 
 test("fixed action inventory exceeds the 1,500-write gate before optional retries", () => {
   assert.ok(minimumActionCount() >= 1_500);
+  assert.ok(PRICED_TRANSACTION_COUNT >= 2_500);
+  assert.equal(PLANNED_SWEEP_GAS_UNITS_PER_ACTOR, 1_600_000n);
 });
 
 test("v4 fee collection accepts every nonnegative amount owed", () => {
