@@ -4,6 +4,20 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Schema-v8 reproducibility and campaign-foundation checkpoint (2026-07-24):
+  exact pushed commit `9803bb129d84815dee74f7acdc4d9fc8ca21eb1f`
+  reproduced from two clean Git archives with separate fresh pnpm stores.
+  Application bundles, contract semantics, operations, dependency graph,
+  licenses, CycloneDX SBOM, and a temporarily served second artifact matched;
+  every evidence checksum under
+  `/var/backups/robyn/reproducibility/schema8-9803bb1` verifies. The new
+  campaign foundation derives 100 deterministic wallets from an AES-256-GCM
+  encrypted VM-only root, exposes only addresses in evidence, conserves funds
+  through a binary distribution tree, covers all 24 routes in eight
+  three-asset launches, and estimates execution plus Nitro L1 data cost with
+  25% headroom and the immutable `0.0015 ETH` reserve. Its six focused tests
+  pass. Transaction execution, governance, sweeping, and live deployment are
+  still pending; no live transaction was broadcast.
 - Schema-v8 internal-audit checkpoint (2026-07-24): manual review found and
   fixed a release-blocking economic gap in permissionless basket conversion.
   All 24 basket routes now freeze a deployment reference tick, fail closed
