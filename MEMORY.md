@@ -307,9 +307,15 @@ Durable project context lives here. Update this file whenever information should
   is `0x2e8536feb01e9081f3cec1f933e4a44dca2a20a4`; the atomic coordinator is
   `0x7bfF926aeef64932327720Fafe19091AB47E7FB2`. Checksummed evidence is under
   `/home/hendo420/robyn-evidence/testnet-release-effed83/`.
-- Follow-up: Commit the protocol manifest, build the protected application,
-  start isolated testnet services, verify the public Quick Tunnel and complete
-  browser/onchain acceptance. Do not describe local-only IPFS as redundant.
+- Runtime correction: The first live index showed zero launches because the
+  manifest used the network head read after launch, block 92820872, while the
+  canonical coordinator event was at block 92820861. The generator now records
+  the launch receipt block and the independent verifier requires the coordinator
+  event to be discoverable from `deploymentBlock`. Rebuild the isolated index
+  from the corrected manifest.
+- Follow-up: Restart the isolated testnet data plane against the corrected
+  block, verify the public Quick Tunnel and complete browser/onchain acceptance.
+  Do not describe local-only IPFS as redundant.
 
 ### 2026-07-23 - Robinhood Testnet DEX phase deployed
 

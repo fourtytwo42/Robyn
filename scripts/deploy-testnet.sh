@@ -209,7 +209,7 @@ locker="$(event_address 4)"
   exit 1
 }
 
-block_number="$(cast block-number --rpc-url "$rpc_url")"
+block_number="$(cast to-dec "$(jq -r '.blockNumber // .block_number' <<<"$launch_receipt")")"
 git_commit="$(git rev-parse HEAD)"
 dex_hash="$(sha256sum "$dex_manifest" | awk '{print $1}')"
 uniswap_json="$(jq '{factory:.contracts.factory,positionManager:.contracts.positionManager,quoter:.contracts.quoterV2,swapRouter:.contracts.swapRouter02,wrappedQuoteAsset:.contracts.weth9,provenance,runtimeCodeHashes:{factory:.runtimeCodeHashes.factory,positionManager:.runtimeCodeHashes.positionManager,quoter:.runtimeCodeHashes.quoterV2,swapRouter:.runtimeCodeHashes.swapRouter02,weth9:.runtimeCodeHashes.weth9}}' "$dex_manifest")"

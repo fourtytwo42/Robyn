@@ -54,6 +54,18 @@ dao_token="$(contract daoToken)"; governor="$(contract governor)"; timelock="$(c
 guardian="$(contract guardian)"; fee_router="$(contract protocolFeeRouter)"; native_converter="$(contract nativeFeeConverter)"
 token="$(contract genesisToken)"; vault="$(contract genesisVault)"; market="$(contract genesisMarket)"
 adapter="$(contract genesisGraduationAdapter)"; locker="$(contract genesisPositionLocker)"; pool="$(contract genesisGraduatedPool)"
+deployment_block="$(jq -er '.deploymentBlock' "$manifest")"
+launch_topic="$(cast keccak 'AtomicLaunchCreated(uint256,address,address,address,address,address,address,address,bytes32,bytes32,bytes32)')"
+launch_filter="$(jq -nc \
+  --arg fromBlock "$(printf '0x%x' "$deployment_block")" \
+  --arg address "$coordinator" \
+  --arg topic "$launch_topic" \
+  '{fromBlock:$fromBlock,toBlock:"latest",address:$address,topics:[$topic]}')"
+cast rpc eth_getLogs "$launch_filter" --rpc-url "$rpc_url" |
+  jq -e 'length >= 1' >/dev/null || {
+    echo "Manifest deploymentBlock excludes the canonical coordinator launch event" >&2
+    exit 1
+  }
 mapfile -t rewards < <(jq -er '.contracts.rewardAssets[]' "$manifest")
 mapfile -t addresses < <(jq -r '.contracts.baseAsset,.contracts.wrappedNative,.contracts.rewardAssets[],.contracts.conversionRouter,.contracts.factory,.contracts.launchDeployer,.contracts.marketFactory,.contracts.atomicLaunchCoordinator,.contracts.daoToken,.contracts.governor,.contracts.timelock,.contracts.protocolFeeRouter,.contracts.nativeFeeConverter,.contracts.nativeConversionPool,.contracts.adapterDeployer,.contracts.marketDeployer,.contracts.genesisToken,.contracts.genesisVault,.contracts.genesisMarket,.contracts.genesisGraduationAdapter,.contracts.genesisPositionLocker,.contracts.genesisGraduatedPool,.localUniswapV3.factory,.localUniswapV3.positionManager,.localUniswapV3.quoter,.localUniswapV3.swapRouter,.localUniswapV3.wrappedQuoteAsset' "$manifest")
 for address in "${addresses[@]}"; do [[ "$address" =~ ^0x[0-9a-fA-F]{40}$ && "$(cast code "$address" --rpc-url "$rpc_url")" != "0x" ]] || { echo "Missing code at $address" >&2; exit 1; }; done

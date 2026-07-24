@@ -2,7 +2,7 @@
   "schemaVersion": 6,
   "environment": "robinhood-testnet",
   "chainId": 46630,
-  "deploymentBlock": 92820872,
+  "deploymentBlock": 92820861,
   "gitCommit": "8fc564f7a676697d6f165f8ce7cc0dfd3fd76ed8",
   "gitSha": "8fc564f7a676697d6f165f8ce7cc0dfd3fd76ed8",
   "deployer": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",
