@@ -4,6 +4,16 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Conversion-runner ABI correction (2026-07-24): exact rehearsal
+  `04cd86c` completed the full trading phase with 1,517 confirmed transactions,
+  including 900 buys, 200 transfers, 150 approvals, 150 sells, three
+  graduations, five distinct bonding states and bidirectional direct-v4 swaps.
+  The first conversion attempt failed before broadcast because the campaign
+  encoded `collectFees` with four inputs although the locker ABI has two
+  inputs and two return values. The runner now passes only the two uint128
+  maxima. The preserved rehearsal state remains safe for conversion debugging;
+  a fresh exact-SHA rehearsal is still required after the correction is pushed.
+
 - Timestamp-sensitive gas correction (2026-07-24): exact fork `a902415`
   completed 1,282 product transactions through all buys, transfers, approvals,
   three graduations, and 32 sells before a graduated sell exhausted viem's

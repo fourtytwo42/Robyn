@@ -967,7 +967,7 @@ async function conversions() {
     const launch = state.launches[launchIndex];
     const account = privateKeyToAccount(accounts[70 + launchIndex].privateKey);
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
-    await contractTransaction(state, `locker-collect-${launchIndex}`, account, launch.locker, lockerAbi, "collectFees", [(1n << 128n) - 1n, (1n << 128n) - 1n, 0n, deadline]);
+    await contractTransaction(state, `locker-collect-${launchIndex}`, account, launch.locker, lockerAbi, "collectFees", [(1n << 128n) - 1n, (1n << 128n) - 1n]);
     const nativeBalance = await publicClient.getBalance({ address: launch.locker });
     if (nativeBalance > 0n) await contractTransaction(state, `locker-route-native-${launchIndex}`, account, launch.locker, lockerAbi, "routeCollectedNative", [nativeBalance]);
     const tokenBalance = await publicClient.readContract({ address: launch.token, abi: tokenAbi, functionName: "balanceOf", args: [launch.locker] });
