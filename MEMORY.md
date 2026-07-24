@@ -291,6 +291,26 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-23 - Robyn protocol deployed to Robinhood Testnet
+
+- Context: The committed DEX manifest and exact `origin/main` release passed a
+  fresh full-bundle estimate with 25% headroom.
+- Decision: Broadcast the schema-v6 Robyn package using the encrypted deployer
+  and the user-approved local-pin and sole-owner DAO bootstrap modes.
+- Files: `deployments/46630.json`, `deployments/46630-uniswap-v3.json`.
+- Commands/tests: 108 phase-two transactions completed; the independent
+  verifier proved contract code and wiring, the 24 route-ready mock assets,
+  immutable ERC-1046 metadata, coordinator-seeded launch, sealed exclusions,
+  DEX configuration, DAO allocation and 50/25/20/5 fee policy.
+- Result: The package was verified at block 92821105. The deployer nonce is 113
+  and its remaining balance is about 0.0079218514 ETH. The testnet genesis token
+  is `0x2e8536feb01e9081f3cec1f933e4a44dca2a20a4`; the atomic coordinator is
+  `0x7bfF926aeef64932327720Fafe19091AB47E7FB2`. Checksummed evidence is under
+  `/home/hendo420/robyn-evidence/testnet-release-effed83/`.
+- Follow-up: Commit the protocol manifest, build the protected application,
+  start isolated testnet services, verify the public Quick Tunnel and complete
+  browser/onchain acceptance. Do not describe local-only IPFS as redundant.
+
 ### 2026-07-23 - Robinhood Testnet DEX phase deployed
 
 - Context: Exact `origin/main` passed the live gas and external-input gates and

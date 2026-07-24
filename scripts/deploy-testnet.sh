@@ -243,5 +243,6 @@ jq --arg fallbackMetadataUri "$fallback_metadata_uri" \
     }
 ' "$tmp" >"$ipfs_tmp"
 mv "$ipfs_tmp" "$manifest"
+rm -f "$tmp"
 ROBYN_TESTNET_RPC_URL="$rpc_url" scripts/verify-testnet-deployment.sh "$manifest"
 echo "Wrote $manifest"
