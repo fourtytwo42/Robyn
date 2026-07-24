@@ -291,6 +291,22 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-23 - Robinhood Testnet DEX phase deployed
+
+- Context: Exact `origin/main` passed the live gas and external-input gates and
+  the official Uniswap chain-46630 registry still returned 404.
+- Decision: Deploy the pinned, explicitly test-only
+  `robyn-controlled-uniswap-v3-testnet` suite before the Robyn protocol.
+- Files: `deployments/46630-uniswap-v3.json`.
+- Commands/tests: Five encrypted-keystore transactions deployed WETH9, factory,
+  position manager, QuoterV2 and SwapRouter02. The independent manifest verifier
+  proved chain 46630, bytecode/runtime hashes, constructor wiring and fee tiers.
+- Result: Phase one completed at deployment block 92819428. The manifest and
+  checksummed evidence are preserved under
+  `/home/hendo420/robyn-evidence/testnet-release-effed83/`.
+- Follow-up: Commit the immutable DEX manifest, rerun exact-release readiness,
+  then broadcast and independently verify the Robyn protocol phase.
+
 ### 2026-07-23 - Testnet bootstrap inputs resolved
 
 - Context: The user asked Codex to obtain WalletConnect configuration and
