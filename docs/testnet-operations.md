@@ -201,3 +201,32 @@ The initial controlled testnet RDAO allocation is 100 percent to the encrypted
 deployer. This provides a simple bootstrap owner but is centralized governance;
 the manifest must record the allocation and the application must not imply
 decentralized control until tokens and delegated voting power are distributed.
+
+# One-shot live testnet acceptance
+
+`scripts/smoke-live-testnet.sh` is the explicitly authorized, one-shot
+chain-46630 acceptance journey for a fresh genesis market. It refuses every
+other chain, a dirty or unpushed checkout, missing protected signer inputs, or
+an already graduated genesis market. It uses the dedicated test operator for
+user actions and the encrypted deployer only for creator and RDAO claims.
+
+Run it only after the deployment and protected application are verified:
+
+```bash
+set -a
+. "$HOME/.config/robyn/testnet/release.env"
+set +a
+
+ROBYN_TESTNET_LIVE_SMOKE=true \
+ROBYN_TESTNET_PAUSE_KEEPER_FOR_SMOKE=true \
+ROBYN_TESTNET_SMOKE_EVIDENCE="$HOME/robyn-evidence/testnet-live-smoke/summary.json" \
+  scripts/smoke-live-testnet.sh
+```
+
+The optional keeper pause makes conversions deterministic and is protected by a
+trap that restores and saves the PM2 process set. The evidence binds transaction
+hashes to faucet funding, bonding buy, automatic graduation, basket conversion,
+holder claim, post-graduation sell, native conversion, creator claim, RDAO
+claim, final block, exact Git SHA, and independent deployment verification.
+This smoke spends testnet ETH and changes public testnet state; it is not a
+rehearsal and is intentionally not repeatable against the same genesis market.
