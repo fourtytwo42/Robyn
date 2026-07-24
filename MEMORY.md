@@ -38,6 +38,18 @@ Durable project context lives here. Update this file whenever information should
   rehearsal. The next attempt proved that 100 simultaneous native-balance
   requests can saturate a fork/public RPC, so preflight and status now use
   bounded concurrency of four. No public-testnet state changed.
+- Campaign funding rehearsal checkpoint (2026-07-24): a fresh chain-46630 fork
+  reused the already sealed schema-v7 24-asset liquidity locker and deployed a
+  clean exact schema-v8 stack. The 100-wallet binary funding rehearsal then
+  confirmed 100 transactions, preserved the reserve, and checksummed public
+  evidence. Anvil reported a 1 gwei local execution price versus the live
+  chain's observed 10,000,000 wei, which inflated the first campaign estimate
+  to about `0.476 ETH`. Rehearsals now accept a loopback-only execution-gas
+  override alongside the existing L1 override and persist both reviewed prices
+  into funding state; live runs cannot override either price. At the sampled
+  live execution price, the fixed campaign is expected to fit the funded
+  wallets, subject to a fresh preflight before broadcast. No public-testnet
+  state changed.
 - Schema-v8 internal-audit checkpoint (2026-07-24): manual review found and
   fixed a release-blocking economic gap in permissionless basket conversion.
   All 24 basket routes now freeze a deployment reference tick, fail closed

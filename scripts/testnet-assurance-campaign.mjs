@@ -322,15 +322,19 @@ async function preflight() {
   const manifest = loadManifest();
   const state = loadState();
   const releaseSha = await verifyRelease(manifest);
-  const gasPriceWei = await publicClient.getGasPrice();
+  const gasPriceOverride = option("gas-price-wei");
   const l1Override = option("l1-base-fee-wei");
   if (
-    l1Override !== undefined &&
+    (gasPriceOverride !== undefined || l1Override !== undefined) &&
     (!flag("rehearsal") ||
       !/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/.test(rpcUrl))
   ) {
-    throw new Error("L1 base-fee override is restricted to loopback rehearsals");
+    throw new Error("Fee overrides are restricted to loopback rehearsals");
   }
+  const gasPriceWei =
+    gasPriceOverride !== undefined
+      ? BigInt(gasPriceOverride)
+      : await publicClient.getGasPrice();
   const l1BaseFeeWei =
     l1Override !== undefined
       ? BigInt(l1Override)
@@ -379,6 +383,8 @@ async function preflight() {
     chainId: 46630,
     headroomBps: REQUIRED_HEADROOM_BPS.toString(),
     requiredSuccessfulWrites: REQUIRED_SUCCESSFUL_WRITES,
+    gasPriceWei: gasPriceWei.toString(),
+    l1BaseFeeWei: l1BaseFeeWei.toString(),
     projectAddress,
     projectBalanceWei: projectBalanceWei.toString(),
     actorBalanceWei: actorBalanceWei.toString(),
@@ -402,9 +408,8 @@ async function fund() {
     chain,
     transport: http(rpcUrl),
   });
-  const gasPriceWei = await publicClient.getGasPrice();
-  const l1BaseFeeWei = BigInt(state.preflight.cost.l1DataWei) /
-    (BigInt(REQUIRED_SUCCESSFUL_WRITES) * 512n * 16n);
+  const gasPriceWei = BigInt(state.preflight.gasPriceWei);
+  const l1BaseFeeWei = BigInt(state.preflight.l1BaseFeeWei);
   const transferCostWei =
     21_000n * gasPriceWei + 128n * 16n * l1BaseFeeWei;
   const campaignBudget = BigInt(state.preflight.cost.withHeadroomWei);
