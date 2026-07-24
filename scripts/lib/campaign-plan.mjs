@@ -21,6 +21,20 @@ export function graduationActorIndex(launchIndex) {
   return 96 + launchIndex;
 }
 
+export function basketConversionActorIndex(launchIndex, legIndex) {
+  if (
+    !Number.isInteger(launchIndex) ||
+    launchIndex < 0 ||
+    launchIndex >= REQUIRED_LAUNCH_COUNT ||
+    !Number.isInteger(legIndex) ||
+    legIndex < 0 ||
+    legIndex >= 3
+  ) {
+    throw new Error("Basket conversion is outside the fixed campaign plan");
+  }
+  return 96 + ((launchIndex * 3 + legIndex) % REQUIRED_GRADUATED_COUNT);
+}
+
 export function assertSchema8Manifest(manifest) {
   if (manifest?.schemaVersion !== 8 || manifest?.chainId !== 46630) {
     throw new Error("Campaign requires a schema-v8 chain-46630 manifest");

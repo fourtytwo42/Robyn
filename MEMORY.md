@@ -56,6 +56,15 @@ Durable project context lives here. Update this file whenever information should
   target without extending it, wait normally on live testnet, and advance time
   only on an explicitly marked loopback rehearsal.
 
+- Basket-keeper funding correction (2026-07-24): after oracle maturity and all
+  locker paths passed, exact rehearsal `e7bf6e0` converted its first two basket
+  legs before actor 80 exhausted the budget needed for a third proxy-token
+  conversion estimate. A full trace proved AMZN swap, transfer, reward deposit
+  and allowance cleanup succeed. The 24 permissionless basket conversions now
+  rotate evenly across actors 96-98, eight each, reusing their reviewed
+  graduation/keeper top-ups without increasing total funding or transaction
+  count.
+
 - Timestamp-sensitive gas correction (2026-07-24): exact fork `a902415`
   completed 1,282 product transactions through all buys, transfers, approvals,
   three graduations, and 32 sells before a graduated sell exhausted viem's

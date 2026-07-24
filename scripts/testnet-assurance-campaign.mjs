@@ -34,6 +34,7 @@ import {
 } from "./lib/campaign-wallets.mjs";
 import {
   applyHeadroom,
+  basketConversionActorIndex,
   graduationActorIndex,
   assertSchema8Manifest,
   launchBasketPlan,
@@ -1010,7 +1011,9 @@ async function conversions() {
       if (before.pendingNative === 0n) throw new Error(`No pending basket fees for ${label}`);
       const status = await publicClient.readContract({ address: manifest.contracts.assetRouter, abi: assetRouterAbi, functionName: "routeStatus", args: [before.asset] });
       if (!status.ready) throw new Error(`Basket route is not ready for ${before.asset}`);
-      const account = privateKeyToAccount(accounts[80 + launch.index].privateKey);
+      const account = privateKeyToAccount(
+        accounts[basketConversionActorIndex(launch.index, legIndex)].privateKey,
+      );
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
       let amount = before.pendingNative < status.maximumNativeInput ? before.pendingNative : status.maximumNativeInput;
       let quoted;

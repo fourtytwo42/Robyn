@@ -9,6 +9,7 @@ import {
 } from "../lib/campaign-wallets.mjs";
 import {
   applyHeadroom,
+  basketConversionActorIndex,
   graduationActorIndex,
   launchBasketPlan,
   minimumActionCount,
@@ -141,6 +142,24 @@ test("graduated launches reuse their deliberately funded terminal actors", () =>
 
 test("launch-fee conversion waits beyond the complete five-minute oracle window", () => {
   assert.equal(V4_ORACLE_WINDOW_MATURITY_SECONDS, 301);
+});
+
+test("basket conversions are balanced across the three funded keeper actors", () => {
+  const actors = Array.from({ length: 8 }, (_, launchIndex) =>
+    Array.from({ length: 3 }, (_, legIndex) =>
+      basketConversionActorIndex(launchIndex, legIndex),
+    ),
+  ).flat();
+  assert.deepEqual(
+    [96, 97, 98].map(
+      (actor) => actors.filter((candidate) => candidate === actor).length,
+    ),
+    [8, 8, 8],
+  );
+  assert.throws(
+    () => basketConversionActorIndex(8, 0),
+    /outside the fixed campaign plan/,
+  );
 });
 
 test("campaign value projection includes every planned payable user action", () => {
