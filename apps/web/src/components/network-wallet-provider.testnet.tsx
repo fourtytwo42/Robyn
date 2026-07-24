@@ -33,10 +33,10 @@ if (!projectId || !appUrl) {
 }
 
 const config = getDefaultConfig({
-  appName: "Robyn",
+  appName: "Sherwood Forest",
   appDescription: "Launch tokens with holder-selected reward baskets.",
   appUrl,
-  appIcon: `${appUrl.replace(/\/$/, "")}/assets/brand/robyn-logo.webp`,
+  appIcon: `${appUrl.replace(/\/$/, "")}/assets/brand/sherwood-mark.webp`,
   projectId,
   chains: [robinhoodTestnet],
   transports: {

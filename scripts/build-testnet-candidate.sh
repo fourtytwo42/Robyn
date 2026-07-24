@@ -11,7 +11,14 @@ app_url="${NEXT_PUBLIC_APP_URL:-}"
 [[ -n "$manifest" && -f "$manifest" ]] || { echo "Usage: $0 TESTNET_MANIFEST" >&2; exit 1; }
 cd "$repo_root"
 
-jq -e '.environment == "robinhood-testnet" and .chainId == 46630 and .mockOnly == true' "$manifest" >/dev/null
+jq -e '
+  .environment == "robinhood-testnet" and
+  .chainId == 46630 and
+  (
+    .mockOnly == true or
+    (.schemaVersion >= 7 and .liquidityVenue == "uniswap-v4")
+  )
+' "$manifest" >/dev/null
 [[ "$walletconnect_project_id" =~ ^[a-fA-F0-9]{32}$ ]] || {
   echo "NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID must be a 32-character WalletConnect project ID" >&2
   exit 1

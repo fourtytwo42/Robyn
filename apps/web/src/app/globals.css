@@ -3,15 +3,15 @@
 
 :root {
   color-scheme: dark;
-  --canvas: #0b1020;
-  --surface: #121a2f;
-  --surface-strong: #17223c;
-  --text: #eef3ff;
-  --muted: #9daac2;
-  --line: rgba(157, 170, 194, 0.2);
-  --primary: #35d0ba;
-  --secondary: #8b7cf6;
-  --reward: #f2b84b;
+  --canvas: #06110d;
+  --surface: #0c2018;
+  --surface-strong: #123124;
+  --text: #ecfdf5;
+  --muted: #9fb8aa;
+  --line: rgba(110, 231, 183, 0.2);
+  --primary: #34d399;
+  --secondary: #84cc16;
+  --reward: #f4c95d;
 }
 
 .creator-earnings-panel,
@@ -21,8 +21,8 @@
   border-radius: 20px;
   background: linear-gradient(
     145deg,
-    rgba(53, 208, 186, 0.08),
-    rgba(11, 16, 32, 0.96)
+    rgba(52, 211, 153, 0.1),
+    rgba(6, 17, 13, 0.96)
   );
 }
 

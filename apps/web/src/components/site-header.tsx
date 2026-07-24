@@ -8,17 +8,17 @@ export function SiteHeader() {
   return (
     <>
       <header className="site-header">
-        <Link className="brand" href="/" aria-label="Robyn home">
+        <Link className="brand" href="/" aria-label="Sherwood Forest home">
           <span className="brand-mark" aria-hidden="true">
             <Image
-              src="/assets/brand/robyn-logo.webp"
+              src="/assets/brand/sherwood-mark.webp"
               alt=""
               width={32}
               height={32}
               priority
             />
           </span>
-          <span>ROBYN</span>
+          <span>SHERWOOD FOREST</span>
         </Link>
         <nav className="site-nav" aria-label="Primary navigation">
           <Link href="/discover">Markets</Link>

@@ -6,10 +6,16 @@ import "./globals.css";
 
 const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
 export const metadata: Metadata = {
-  title: isTestnet ? "Robyn | Robinhood Testnet" : "Robyn | Controlled Network",
+  title: isTestnet
+    ? "Sherwood Forest | Robinhood Testnet"
+    : "Sherwood Forest | Controlled Network",
   description: isTestnet
-    ? "Launch and discover tokens with holder reward baskets on Robinhood Chain Testnet."
-    : "Launch and discover tokens with holder reward baskets on the controlled Robyn development network.",
+    ? "Launch and discover tokens with community-selected reward baskets on Robinhood Chain Testnet."
+    : "Launch and discover tokens with community-selected reward baskets on the controlled development network.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({

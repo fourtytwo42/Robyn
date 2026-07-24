@@ -9,8 +9,8 @@ export default function DaoPage() {
       <SiteHeader />
       <section className="page-shell dao-page">
         <header className="page-hero dao-hero">
-          <p className="eyebrow">Robyn DAO · RDAO</p>
-          <h1>Earn protocol ETH. Govern what Robyn becomes.</h1>
+          <p className="eyebrow">Sherwood Forest DAO · RDAO</p>
+          <h1>Earn protocol ETH. Govern what Sherwood Forest becomes.</h1>
           <p className="lede">
             RDAO holders share 20% of every launch&apos;s fees and direct the
             timelocked treasury. Token-specific reward baskets and creator

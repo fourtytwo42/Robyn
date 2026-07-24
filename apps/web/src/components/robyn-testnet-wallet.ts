@@ -48,7 +48,7 @@ export const robinhoodTestnet = defineChain({
         "https://explorer.testnet.chain.robinhood.com",
     },
   },
-  iconUrl: "/assets/brand/robyn-logo.webp",
+  iconUrl: "/assets/brand/sherwood-mark.webp",
   testnet: true,
 });
 

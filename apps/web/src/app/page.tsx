@@ -60,7 +60,7 @@ export default async function Home() {
           <p className="eyebrow">Fair launches · built-in reward baskets</p>
           <h1 id="hero-heading">Every token launches with rewards.</h1>
           <p className="lede">
-            Every Robyn token has its own immutable mix of{" "}
+            Every Sherwood Forest token has its own immutable mix of{" "}
             {isTestnet ? "testnet mock" : "mock"} stock and crypto rewards.
             Discover a community, trade its market, then claim the basket assets
             its activity creates.
@@ -78,12 +78,15 @@ export default async function Home() {
             </span>
           </div>
         </div>
-        <aside className="hero-token-card" aria-label="Robyn genesis market">
+        <aside
+          className="hero-token-card"
+          aria-label="Sherwood Forest genesis market"
+        >
           <TokenArt symbol="ROBYN" priority />
           <div className="hero-token-overlay">
             <span className="hot-chip">Live reward basket</span>
             <div>
-              <strong>Robyn Genesis</strong>
+              <strong>Sherwood Genesis</strong>
               <span>ROBYN</span>
             </div>
             <p>Holders earn 40% mNVDA / 40% mSPY / 20% mETH.</p>

@@ -11,7 +11,7 @@ export default function Portfolio() {
       <section className="page-shell">
         <header className="page-hero">
           <p className="eyebrow">Wallet-specific state</p>
-          <h1>Your Robyn portfolio and creator profile.</h1>
+          <h1>Your Sherwood Forest portfolio and creator profile.</h1>
           <p className="lede">
             Track held community tokens and basket rewards, then manage every
             token you created and its independent ETH fees from one wallet

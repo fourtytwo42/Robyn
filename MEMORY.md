@@ -4,6 +4,25 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Current task (2026-07-24): transition the public testnet candidate to
+  `sherwoodforest.trade`, rebrand the application as Sherwood Forest with a
+  green visual system and new mark/favicon, and complete the live v4 cutover.
+  Tunnel token material is protected outside Git and must never be copied into
+  this file or repository.
+- Named-tunnel checkpoint (2026-07-24): Cloudflare tunnel
+  `1c61bc58-6412-43c5-bb52-d64cfb96c9ff` is installed as the enabled
+  `cloudflared.service` with four healthy QUIC connections. Local ingress maps
+  `sherwoodforest.trade` and `www.sherwoodforest.trade` to
+  `http://127.0.0.1:3081`. Cloudflare DNS/public-hostname creation remains
+  required because the supplied tunnel token cannot mutate zone DNS.
+- V4 indexer recovery checkpoint (2026-07-24): the public-RPC bootstrap
+  bottleneck was the indexer reading every block and every chain log
+  individually from deployment height. It now scans only manifest contract
+  addresses in bounded ranges and fetches metadata only for blocks containing
+  relevant logs plus the head, with bounded concurrency. A clean live rebuild
+  of `robyn_testnet_v4` indexed the schema-v7 genesis token
+  `0x423e546cc1ff61218844a73312eb703c2543db0c` as
+  `native-v4-dao-atomic` and checkpointed block `92888760` in 34 seconds.
 - Current task (2026-07-24): implement the Mainnet-Fidelity Robinhood Testnet v4
   release on branch `codex/robinhood-v4-mainnet-fidelity`. The exact starting
   commit is `b3ab91fc95d318a3bbce0b85b0e19b8ba1fb0170`. The v3 application and

@@ -93,8 +93,8 @@ export function TokenActions({
 
   async function share() {
     const data = {
-      title: `${symbol} on Robyn`,
-      text: `View the ${symbol} reward market on Robyn.`,
+      title: `${symbol} on Sherwood Forest`,
+      text: `View the ${symbol} reward market on Sherwood Forest.`,
       url: window.location.href,
     };
     try {

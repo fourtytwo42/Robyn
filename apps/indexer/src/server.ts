@@ -14,6 +14,7 @@ type Manifest = {
   liquidityVenue?: "uniswap-v4" | "uniswap-v3";
   deploymentBlock: number;
   contracts: {
+    [key: string]: Address | Address[] | undefined;
     factory: Address;
     marketFactory: Address;
     legacyMarketFactories?: Address[];
@@ -34,7 +35,37 @@ const client = createPublicClient({
 });
 const { sql } = createDatabase();
 const pollMs = Number(process.env.INDEXER_POLL_MS ?? "3000");
+const blockRange = BigInt(process.env.INDEXER_BLOCK_RANGE ?? "250");
+const blockReadConcurrency = Number(
+  process.env.INDEXER_BLOCK_READ_CONCURRENCY ?? "6",
+);
 let stopping = false;
+
+const indexedAddresses = [
+  ...new Set(
+    Object.values(manifest.contracts)
+      .filter((value): value is Address => typeof value === "string")
+      .map((address) => address.toLowerCase() as Address),
+  ),
+];
+
+async function loadBlocks(numbers: bigint[]) {
+  const blocks = [];
+  for (
+    let offset = 0;
+    offset < numbers.length;
+    offset += blockReadConcurrency
+  ) {
+    blocks.push(
+      ...(await Promise.all(
+        numbers
+          .slice(offset, offset + blockReadConcurrency)
+          .map((number) => client.getBlock({ blockNumber: number })),
+      )),
+    );
+  }
+  return blocks;
+}
 
 const factoryAbi = [
   {
@@ -435,24 +466,37 @@ async function syncOnce() {
       else await resetCanonical();
     }
   }
-  for (let number = start; number <= head; number++) {
-    const [block, logs] = await Promise.all([
-      client.getBlock({ blockNumber: number }),
-      client.getLogs({ fromBlock: number, toBlock: number }),
-    ]);
-    if (!block.hash) throw new Error("Block hash unavailable");
+  for (let rangeStart = start; rangeStart <= head; rangeStart += blockRange) {
+    const rangeEnd =
+      rangeStart + blockRange - 1n > head ? head : rangeStart + blockRange - 1n;
+    const logs = await client.getLogs({
+      address: indexedAddresses,
+      fromBlock: rangeStart,
+      toBlock: rangeEnd,
+    });
+    const requiredBlocks = new Set(logs.map((log) => log.blockNumber));
+    if (rangeEnd === head) requiredBlocks.add(head);
+    const blocks = await loadBlocks([...requiredBlocks]);
+    const blocksByNumber = new Map(
+      blocks.map((block) => [block.number, block]),
+    );
     await sql.begin(async (tx) => {
-      await tx.unsafe(
-        "INSERT INTO chain_blocks (chain_id,number,hash,parent_hash,timestamp,canonical) VALUES ($1,$2,$3,$4,$5,true) ON CONFLICT (chain_id,number) DO UPDATE SET hash=EXCLUDED.hash,parent_hash=EXCLUDED.parent_hash,timestamp=EXCLUDED.timestamp,canonical=true,observed_at=now()",
-        [
-          manifest.chainId,
-          number.toString(),
-          block.hash.toLowerCase(),
-          block.parentHash.toLowerCase(),
-          block.timestamp.toString(),
-        ],
-      );
+      for (const block of blocks) {
+        if (!block.hash) throw new Error("Block hash unavailable");
+        await tx.unsafe(
+          "INSERT INTO chain_blocks (chain_id,number,hash,parent_hash,timestamp,canonical) VALUES ($1,$2,$3,$4,$5,true) ON CONFLICT (chain_id,number) DO UPDATE SET hash=EXCLUDED.hash,parent_hash=EXCLUDED.parent_hash,timestamp=EXCLUDED.timestamp,canonical=true,observed_at=now()",
+          [
+            manifest.chainId,
+            block.number.toString(),
+            block.hash.toLowerCase(),
+            block.parentHash.toLowerCase(),
+            block.timestamp.toString(),
+          ],
+        );
+      }
       for (const log of logs) {
+        if (!blocksByNumber.has(log.blockNumber))
+          throw new Error("Log block metadata unavailable");
         if (
           !log.blockHash ||
           !log.transactionHash ||
@@ -464,7 +508,7 @@ async function syncOnce() {
           "INSERT INTO raw_logs (chain_id,block_number,block_hash,transaction_hash,transaction_index,log_index,address,topics,data,removed) VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10) ON CONFLICT (chain_id,transaction_hash,log_index) DO UPDATE SET block_number=EXCLUDED.block_number,block_hash=EXCLUDED.block_hash,transaction_index=EXCLUDED.transaction_index,address=EXCLUDED.address,topics=EXCLUDED.topics,data=EXCLUDED.data,removed=EXCLUDED.removed",
           [
             manifest.chainId,
-            number.toString(),
+            log.blockNumber.toString(),
             log.blockHash.toLowerCase(),
             log.transactionHash.toLowerCase(),
             Number(log.transactionIndex),
