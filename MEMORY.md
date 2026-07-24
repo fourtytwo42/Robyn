@@ -18,6 +18,17 @@ Durable project context lives here. Update this file whenever information should
   25% headroom and the immutable `0.0015 ETH` reserve. Its six focused tests
   pass. Transaction execution, governance, sweeping, and live deployment are
   still pending; no live transaction was broadcast.
+- Campaign operator CLI checkpoint (2026-07-24): the one-shot CLI at
+  `scripts/testnet-assurance-campaign.mjs` now initializes protected campaign
+  state, validates schema-v8/chain-46630/exact-release/runtime-code gates,
+  prices 1,500 writes using execution gas plus Nitro L1 data and 25% headroom,
+  enforces the combined-wallet reserve, funds 100 actors through an
+  idempotently journaled binary tree, and reconciles public status. A temporary
+  rehearsal proved mode-0700 state storage, mode-0600 encrypted root/state/
+  evidence, exactly 100 public actor addresses, and absence of private-key,
+  ciphertext, or passphrase fields from evidence. Launch/trade/governance/
+  sweep commands remain intentionally unavailable until implemented and
+  rehearsed; no live transaction was broadcast.
 - Schema-v8 internal-audit checkpoint (2026-07-24): manual review found and
   fixed a release-blocking economic gap in permissionless basket conversion.
   All 24 basket routes now freeze a deployment reference tick, fail closed

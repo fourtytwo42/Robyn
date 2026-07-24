@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "turbo run build",
+    "campaign:testnet": "node scripts/testnet-assurance-campaign.mjs",
     "dev": "turbo run dev",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
