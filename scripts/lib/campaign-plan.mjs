@@ -84,6 +84,20 @@ export function minimumActionCount() {
   );
 }
 
+export function plannedTransactionValueWei() {
+  let value = 0n;
+  for (let index = 0; index < 900; index += 1) {
+    const launchIndex = index % REQUIRED_LAUNCH_COUNT;
+    value +=
+      launchIndex < REQUIRED_GRADUATED_COUNT
+        ? 13_000_000_000_000n
+        : BigInt(launchIndex - 2) * 400_000_000_000n;
+  }
+  value += 3n * 250_000_000_000n;
+  value += 10n * 200_000_000_000n;
+  return value;
+}
+
 export function applyHeadroom(value, headroomBps = REQUIRED_HEADROOM_BPS) {
   if (value < 0n || headroomBps < REQUIRED_HEADROOM_BPS) {
     throw new Error("Cost headroom must be at least 25%");

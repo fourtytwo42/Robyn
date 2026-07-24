@@ -40,6 +40,12 @@ pnpm campaign:testnet init
 pnpm campaign:testnet preflight
 pnpm campaign:testnet fund
 pnpm campaign:testnet launches
+pnpm campaign:testnet trading
+pnpm campaign:testnet conversions
+pnpm campaign:testnet governance
+pnpm campaign:testnet claims
+pnpm campaign:testnet fill
+pnpm campaign:testnet sweep
 pnpm campaign:testnet status
 ```
 
@@ -54,7 +60,25 @@ derives identity only from the coordinator receipt, waits for index visibility,
 and immutably binds the preparation. A fixed metadata URI may replace the API
 pipeline only on an explicitly marked loopback rehearsal.
 
-The remaining transaction-execution phases for trading, conversions, claims,
-governance, final write-count filling, and residual sweeping are release gates
-and must pass an isolated rehearsal before the live campaign is authorized.
-Until then, the operator must not claim that the public campaign is complete.
+`trading` executes 900 quote-bounded buys, 200 token transfers, 150 approvals,
+150 sells, three graduations, five distinct bonding states, bidirectional
+direct-v4 swaps, and an expected slippage rejection. `conversions` harvests the
+three locked positions, routes their native and launch-token fees, exercises
+all 24 unique basket routes, and proves a failed minimum-output request can be
+retried safely. `governance` distributes and delegates test RDAO, exercises a
+successful, defeated, and cancelled proposal, all three vote choices, rejection
+cases, queueing, and timelock execution. `claims` proves 20 holder claims, eight
+token-specific creator claims, ten transfer-aware RDAO claims, and a foreign
+creator rejection.
+
+`fill` counts product writes separately from funding and adds real token
+transfers only if fewer than 1,510 product transactions have succeeded. `sweep`
+returns campaign ERC-20, RDAO, and recoverable ETH balances to the project
+wallet while recording unavoidable dust and enforcing the hard reserve. The
+`all` command resumes the complete ordered workflow and skips every confirmed
+label. Submitted transaction hashes are journaled before receipt waiting so an
+interrupted process resumes the same hash rather than broadcasting a duplicate.
+
+The funding projection includes every planned payable action, not merely the
+three graduation thresholds. Every phase remains a release gate and must pass
+an exact-release isolated rehearsal before live use is authorized.

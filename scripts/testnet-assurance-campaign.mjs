@@ -35,6 +35,7 @@ import {
 import {
   assertSchema8Manifest,
   launchBasketPlan,
+  plannedTransactionValueWei,
   projectCampaignCost,
   REQUIRED_HEADROOM_BPS,
   REQUIRED_RESERVE_WEI,
@@ -178,6 +179,13 @@ function saveState(state) {
     launches: state.launches ?? [],
     funding: state.funding ?? null,
     preflight: state.preflight ?? null,
+    expectedFailures: state.expectedFailures ?? [],
+    trading: state.trading ?? null,
+    conversions: state.conversions ?? null,
+    governance: state.governance ?? null,
+    claims: state.claims ?? null,
+    fill: state.fill ?? null,
+    sweep: state.sweep ?? null,
     updatedAt: state.updatedAt,
   });
 }
@@ -232,7 +240,18 @@ function projectPrivateKey(manifest) {
 async function recordTransaction(state, label, client, request) {
   const previous = state.transactions.find((entry) => entry.label === label);
   if (previous) return previous;
-  const hash = await client.sendTransaction(request);
+  state.submittedTransactions ??= {};
+  let hash = state.submittedTransactions[label]?.hash;
+  if (!hash) {
+    hash = await client.sendTransaction(request);
+    state.submittedTransactions[label] = {
+      hash,
+      submittedAt: new Date().toISOString(),
+      from: request.account.address,
+      to: request.to,
+    };
+    saveState(state);
+  }
   const receipt = await publicClient.waitForTransactionReceipt({
     hash,
     confirmations: 1,
@@ -252,8 +271,39 @@ async function recordTransaction(state, label, client, request) {
     transactionIndex: receipt.transactionIndex,
   };
   state.transactions.push(entry);
+  delete state.submittedTransactions[label];
   saveState(state);
   return entry;
+}
+
+function walletClient(account) {
+  return createWalletClient({ account, chain, transport: http(rpcUrl) });
+}
+
+async function contractTransaction(state, label, account, address, abi, functionName, args = [], value) {
+  return recordTransaction(state, label, walletClient(account), {
+    account,
+    to: address,
+    data: encodeFunctionData({ abi, functionName, args }),
+    ...(value === undefined ? {} : { value }),
+  });
+}
+
+async function expectSimulationFailure(state, label, request, pattern) {
+  state.expectedFailures ??= [];
+  if (state.expectedFailures.some((entry) => entry.label === label)) return;
+  try {
+    await publicClient.call(request);
+  } catch (error) {
+    const message = String(error?.shortMessage ?? error?.message ?? error);
+    if (pattern && !pattern.test(message)) {
+      throw new Error(`Unexpected failure for ${label}: ${message}`);
+    }
+    state.expectedFailures.push({ label, observedAt: new Date().toISOString(), message: message.slice(0, 500) });
+    saveState(state);
+    return;
+  }
+  throw new Error(`Expected ${label} to fail`);
 }
 
 async function apiJson(url, init = {}) {
@@ -479,15 +529,12 @@ async function preflight() {
           ],
           functionName: "getL1BaseFeeEstimate",
         });
-  const graduationValue =
-    BigInt(manifest.market.graduationThresholdNative) * 3n +
-    100_000_000_000n;
   const cost = projectCampaignCost({
     gasPriceWei,
     l1BaseFeeWei,
     averageGasPerWrite: 250_000n,
     averageCalldataBytes: 512n,
-    transactionValueWei: graduationValue,
+    transactionValueWei: plannedTransactionValueWei(),
   });
   const projectAddress = getAddress(manifest.deployer);
   const projectBalanceWei = await publicClient.getBalance({
@@ -688,6 +735,543 @@ async function launches() {
   console.log(json({ launchCount: state.launches.length, launches: state.launches }));
 }
 
+async function trading() {
+  const manifest = loadManifest();
+  const state = loadState();
+  if (!state.phases.launched || state.launches?.length !== 8) {
+    throw new Error("Create all eight launches before trading");
+  }
+  const accounts = loadAccounts();
+  const marketAbi = artifactAbi("RobynV4BondingCurveMarket");
+  const tokenAbi = artifactAbi("RobynLaunchToken");
+  const assetRouterAbi = artifactAbi("RobynV4AssetRouter");
+  state.trading ??= { approvals: [] };
+
+  for (let index = 0; index < 900; index += 1) {
+    const launch = state.launches[index % state.launches.length];
+    const actorIndex = index % accounts.length;
+    const account = privateKeyToAccount(accounts[actorIndex].privateKey);
+    const value = launch.shouldGraduate
+      ? 13_000_000_000_000n
+      : BigInt(launch.index - 2) * 400_000_000_000n;
+    const [, quoted] = await publicClient.readContract({
+      address: launch.market,
+      abi: marketAbi,
+      functionName: "quoteBuy",
+      args: [value],
+      account: account.address,
+    });
+    const minimum = (quoted * 98n) / 100n || 1n;
+    await contractTransaction(
+      state,
+      `trade-buy-${index}`,
+      account,
+      launch.market,
+      marketAbi,
+      "buy",
+      [minimum],
+      value,
+    );
+  }
+
+  for (let index = 0; index < 200; index += 1) {
+    const launch = state.launches[index % state.launches.length];
+    let actorIndex = index % accounts.length;
+    let balance = 0n;
+    for (let attempts = 0; attempts < accounts.length; attempts += 1) {
+      balance = await publicClient.readContract({
+        address: launch.token,
+        abi: tokenAbi,
+        functionName: "balanceOf",
+        args: [accounts[actorIndex].address],
+      });
+      if (balance > 1n) break;
+      actorIndex = (actorIndex + 1) % accounts.length;
+    }
+    if (balance <= 1n) throw new Error(`No holder available for transfer ${index}`);
+    const account = privateKeyToAccount(accounts[actorIndex].privateKey);
+    const recipient = accounts[(actorIndex + 37) % accounts.length].address;
+    const amount = balance / 100n || 1n;
+    await contractTransaction(state, `trade-transfer-${index}`, account, launch.token, tokenAbi, "transfer", [recipient, amount]);
+  }
+
+  for (let index = 0; index < 150; index += 1) {
+    const launch = state.launches[index % state.launches.length];
+    let actorIndex = index % accounts.length;
+    let balance = 0n;
+    for (let attempts = 0; attempts < accounts.length; attempts += 1) {
+      balance = await publicClient.readContract({
+        address: launch.token,
+        abi: tokenAbi,
+        functionName: "balanceOf",
+        args: [accounts[actorIndex].address],
+      });
+      if (balance > 100n) break;
+      actorIndex = (actorIndex + 1) % accounts.length;
+    }
+    if (balance <= 100n) throw new Error(`No holder available for approval ${index}`);
+    const amount = balance / 20n;
+    const account = privateKeyToAccount(accounts[actorIndex].privateKey);
+    await contractTransaction(state, `trade-approve-${index}`, account, launch.token, tokenAbi, "approve", [launch.market, amount]);
+    if (!state.trading.approvals.some((entry) => entry.index === index)) {
+      state.trading.approvals.push({ index, actorIndex, launchIndex: launch.index, amount: amount.toString() });
+      saveState(state);
+    }
+  }
+
+  for (const approval of state.trading.approvals) {
+    const launch = state.launches[approval.launchIndex];
+    const account = privateKeyToAccount(accounts[approval.actorIndex].privateKey);
+    const balance = await publicClient.readContract({
+      address: launch.token,
+      abi: tokenAbi,
+      functionName: "balanceOf",
+      args: [account.address],
+    });
+    const amount = [BigInt(approval.amount), balance / 100n].reduce((left, right) => left < right ? left : right);
+    if (amount === 0n) throw new Error(`No balance available for sell ${approval.index}`);
+    const [, quoted] = await publicClient.readContract({
+      address: launch.market,
+      abi: marketAbi,
+      functionName: "quoteSell",
+      args: [amount],
+      account: account.address,
+    });
+    await contractTransaction(state, `trade-sell-${approval.index}`, account, launch.market, marketAbi, "sell", [amount, (quoted * 98n) / 100n || 1n]);
+  }
+
+  const graduated = [];
+  const bondingProgress = [];
+  for (const launch of state.launches) {
+    const isGraduated = await publicClient.readContract({ address: launch.market, abi: marketAbi, functionName: "graduated" });
+    const progress = await publicClient.readContract({ address: launch.market, abi: marketAbi, functionName: "graduationProgressBps" });
+    if (isGraduated) graduated.push(launch.index);
+    else bondingProgress.push({ index: launch.index, progressBps: progress.toString() });
+  }
+  if (graduated.length !== 3 || bondingProgress.length !== 5) {
+    throw new Error(`Expected exactly three graduated and five bonding launches; got ${graduated.length}/${bondingProgress.length}`);
+  }
+  if (new Set(bondingProgress.map((entry) => entry.progressBps)).size !== 5) {
+    throw new Error("Five bonding launches do not have distinct progress states");
+  }
+
+  for (const launchIndex of graduated) {
+    const launch = state.launches[launchIndex];
+    const account = privateKeyToAccount(accounts[90 + launchIndex].privateKey);
+    const value = 250_000_000_000n;
+    const [quoted] = await publicClient.readContract({
+      address: manifest.contracts.assetRouter,
+      abi: assetRouterAbi,
+      functionName: "quoteNativeToAsset",
+      args: [launch.token, value],
+      account: account.address,
+    });
+    await contractTransaction(state, `direct-v4-buy-${launchIndex}`, account, manifest.contracts.assetRouter, assetRouterAbi, "swapExactNativeForAsset", [launch.token, (quoted * 98n) / 100n || 1n, account.address, BigInt(Math.floor(Date.now() / 1000) + 600)], value);
+    const tokenBalance = await publicClient.readContract({ address: launch.token, abi: tokenAbi, functionName: "balanceOf", args: [account.address] });
+    const sellAmount = tokenBalance / 4n;
+    await contractTransaction(state, `direct-v4-approve-${launchIndex}`, account, launch.token, tokenAbi, "approve", [manifest.contracts.assetRouter, sellAmount]);
+    const [nativeQuoted] = await publicClient.readContract({ address: manifest.contracts.assetRouter, abi: assetRouterAbi, functionName: "quoteAssetToNative", args: [launch.token, sellAmount], account: account.address });
+    await contractTransaction(state, `direct-v4-sell-${launchIndex}`, account, manifest.contracts.assetRouter, assetRouterAbi, "swapExactAssetForNative", [launch.token, sellAmount, (nativeQuoted * 98n) / 100n || 1n, account.address, BigInt(Math.floor(Date.now() / 1000) + 600)]);
+  }
+
+  const first = state.launches[0];
+  const firstAccount = privateKeyToAccount(accounts[0].privateKey);
+  await expectSimulationFailure(
+    state,
+    "buy-impossible-slippage",
+    {
+      account: firstAccount.address,
+      to: first.market,
+      data: encodeFunctionData({ abi: marketAbi, functionName: "buy", args: [(1n << 256n) - 1n] }),
+      value: 1_000_000_000n,
+    },
+    /revert|execution/i,
+  );
+
+  state.trading.graduatedLaunches = graduated;
+  state.trading.bondingProgress = bondingProgress;
+  state.phases.trading = new Date().toISOString();
+  saveState(state);
+  console.log(json({ buys: 900, transfers: 200, approvals: 150, sells: 150, graduated, bondingProgress }));
+}
+
+function loopbackRehearsal() {
+  return flag("rehearsal") && /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/.test(rpcUrl);
+}
+
+async function advanceOrWait(seconds, label) {
+  if (loopbackRehearsal()) {
+    await publicClient.request({ method: "evm_increaseTime", params: [seconds] });
+    await publicClient.request({ method: "evm_mine", params: [] });
+    return;
+  }
+  const start = await publicClient.getBlock();
+  const target = Number(start.timestamp) + seconds;
+  while (true) {
+    const current = await publicClient.getBlock();
+    if (Number(current.timestamp) >= target) return;
+    const remaining = target - Number(current.timestamp);
+    console.error(`${label}: waiting ${remaining}s of chain time`);
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, Math.min(30, remaining) * 1_000));
+  }
+}
+
+async function conversions() {
+  const manifest = loadManifest();
+  const state = loadState();
+  if (!state.phases.trading) throw new Error("Complete trading before conversions");
+  const accounts = loadAccounts();
+  const vaultAbi = artifactAbi("RobynNativeBasketVaultV2");
+  const assetRouterAbi = artifactAbi("RobynV4AssetRouter");
+  const lockerAbi = artifactAbi("RobynV4FeePositionLocker");
+  const tokenAbi = artifactAbi("RobynLaunchToken");
+  state.conversions ??= { legs: [] };
+  state.conversions.harvests ??= [];
+  for (const launchIndex of state.trading.graduatedLaunches) {
+    const launch = state.launches[launchIndex];
+    const account = privateKeyToAccount(accounts[70 + launchIndex].privateKey);
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
+    await contractTransaction(state, `locker-collect-${launchIndex}`, account, launch.locker, lockerAbi, "collectFees", [(1n << 128n) - 1n, (1n << 128n) - 1n, 0n, deadline]);
+    const nativeBalance = await publicClient.getBalance({ address: launch.locker });
+    if (nativeBalance > 0n) await contractTransaction(state, `locker-route-native-${launchIndex}`, account, launch.locker, lockerAbi, "routeCollectedNative", [nativeBalance]);
+    const tokenBalance = await publicClient.readContract({ address: launch.token, abi: tokenAbi, functionName: "balanceOf", args: [launch.locker] });
+    if (tokenBalance > 0n) {
+      const amount = tokenBalance > (1n << 128n) - 1n ? (1n << 128n) - 1n : tokenBalance;
+      const [quoted] = await publicClient.readContract({ address: manifest.contracts.assetRouter, abi: assetRouterAbi, functionName: "quoteAssetToNative", args: [launch.token, amount] });
+      await contractTransaction(state, `locker-convert-token-${launchIndex}`, account, launch.locker, lockerAbi, "convertCollectedToken", [amount, (quoted * 99n) / 100n || 1n, deadline]);
+    }
+    if (!state.conversions.harvests.some((entry) => entry.launchIndex === launchIndex)) {
+      state.conversions.harvests.push({ launchIndex, nativeRouted: nativeBalance.toString(), launchTokenCollected: tokenBalance.toString() });
+      saveState(state);
+    }
+  }
+  for (const launch of state.launches) {
+    for (let legIndex = 0; legIndex < 3; legIndex += 1) {
+      const label = `basket-convert-${launch.index}-${legIndex}`;
+      if (state.transactions.some((entry) => entry.label === label)) continue;
+      const before = await publicClient.readContract({ address: launch.vault, abi: vaultAbi, functionName: "leg", args: [BigInt(legIndex)] });
+      if (before.pendingNative === 0n) throw new Error(`No pending basket fees for ${label}`);
+      const status = await publicClient.readContract({ address: manifest.contracts.assetRouter, abi: assetRouterAbi, functionName: "routeStatus", args: [before.asset] });
+      if (!status.ready) throw new Error(`Basket route is not ready for ${before.asset}`);
+      const amount = before.pendingNative < status.maximumNativeInput ? before.pendingNative : status.maximumNativeInput;
+      const [quoted] = await publicClient.readContract({
+        address: manifest.contracts.assetRouter,
+        abi: assetRouterAbi,
+        functionName: "quoteNativeToAsset",
+        args: [before.asset, amount],
+      });
+      if (quoted === 0n) throw new Error(`Zero basket quote for ${label}`);
+      const account = privateKeyToAccount(accounts[80 + launch.index].privateKey);
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
+      if (launch.index === 0 && legIndex === 0) {
+        await expectSimulationFailure(
+          state,
+          "basket-minimum-output-rejection",
+          {
+            account: account.address,
+            to: launch.vault,
+            data: encodeFunctionData({ abi: vaultAbi, functionName: "convertLeg", args: [0n, amount, quoted + 1n, deadline] }),
+          },
+          /revert|execution/i,
+        );
+      }
+      await contractTransaction(state, label, account, launch.vault, vaultAbi, "convertLeg", [BigInt(legIndex), amount, (quoted * 99n) / 100n, deadline]);
+      const after = await publicClient.readContract({ address: launch.vault, abi: vaultAbi, functionName: "leg", args: [BigInt(legIndex)] });
+      if (after.pendingNative >= before.pendingNative || after.rewardsDeposited <= before.rewardsDeposited) {
+        throw new Error(`Basket conversion did not advance ${label}`);
+      }
+      state.conversions.legs.push({
+        launchIndex: launch.index,
+        legIndex,
+        asset: before.asset,
+        nativeInput: amount.toString(),
+        minimumOutput: ((quoted * 99n) / 100n).toString(),
+        rewardDelta: (after.rewardsDeposited - before.rewardsDeposited).toString(),
+      });
+      saveState(state);
+    }
+  }
+  if (state.conversions.legs.length !== 24 || new Set(state.conversions.legs.map((entry) => entry.asset.toLowerCase())).size !== 24) {
+    throw new Error("Conversions did not exercise all 24 unique basket assets");
+  }
+  state.phases.conversions = new Date().toISOString();
+  saveState(state);
+  console.log(json(state.conversions));
+}
+
+function decodeProposalId(receipt, governorAbi) {
+  for (const log of receipt.logs) {
+    try {
+      const decoded = decodeEventLog({ abi: governorAbi, eventName: "ProposalCreated", data: log.data, topics: log.topics });
+      return decoded.args.proposalId;
+    } catch {}
+  }
+  throw new Error("Proposal receipt did not contain ProposalCreated");
+}
+
+async function governance() {
+  const manifest = loadManifest();
+  const state = loadState();
+  if (!state.phases.conversions) throw new Error("Complete conversions before governance");
+  const accounts = loadAccounts();
+  const daoAbi = artifactAbi("RobynDaoToken");
+  const governorAbi = artifactAbi("RobynTestnetGovernor");
+  const project = privateKeyToAccount(projectPrivateKey(manifest));
+  const memberAmount = 20_000_000n * 10n ** 18n;
+  state.governance ??= { proposals: {} };
+
+  for (let index = 0; index < 10; index += 1) {
+    await contractTransaction(state, `rdao-transfer-${index}`, project, manifest.contracts.daoToken, daoAbi, "transfer", [accounts[index].address, memberAmount]);
+  }
+  for (let index = 0; index < 10; index += 1) {
+    const account = privateKeyToAccount(accounts[index].privateKey);
+    await contractTransaction(state, `rdao-delegate-${index}`, account, manifest.contracts.daoToken, daoAbi, "delegate", [account.address]);
+  }
+  await advanceOrWait(2, "RDAO checkpoint");
+
+  const proposalThreshold = await publicClient.readContract({ address: manifest.contracts.governor, abi: governorAbi, functionName: "proposalThreshold" });
+  const actionData = encodeFunctionData({ abi: governorAbi, functionName: "setProposalThreshold", args: [proposalThreshold] });
+  const targets = [manifest.contracts.governor];
+  const values = [0n];
+  const calldatas = [actionData];
+  const definitions = [
+    { key: "successful", actorIndex: 0, description: `Sherwood assurance successful ${campaignId}` },
+    { key: "defeated", actorIndex: 1, description: `Sherwood assurance defeated ${campaignId}` },
+    { key: "cancelled", actorIndex: 2, description: `Sherwood assurance guardian cancellation ${campaignId}` },
+  ];
+  for (const definition of definitions) {
+    if (state.governance.proposals[definition.key]) continue;
+    const account = privateKeyToAccount(accounts[definition.actorIndex].privateKey);
+    const transaction = await contractTransaction(state, `governance-propose-${definition.key}`, account, manifest.contracts.governor, governorAbi, "propose", [targets, values, calldatas, definition.description]);
+    const receipt = await publicClient.getTransactionReceipt({ hash: transaction.hash });
+    state.governance.proposals[definition.key] = {
+      id: decodeProposalId(receipt, governorAbi).toString(),
+      proposer: account.address,
+      description: definition.description,
+      descriptionHash: keccak256(stringToHex(definition.description)),
+      targets,
+      values: values.map(String),
+      calldatas,
+    };
+    saveState(state);
+  }
+
+  const cancelled = state.governance.proposals.cancelled;
+  const cancelledAccount = privateKeyToAccount(accounts[2].privateKey);
+  await contractTransaction(state, "governance-cancel", cancelledAccount, manifest.contracts.governor, governorAbi, "cancel", [targets, values, calldatas, cancelled.descriptionHash]);
+
+  const ineligible = privateKeyToAccount(accounts[99].privateKey);
+  await expectSimulationFailure(
+    state,
+    "governance-ineligible-proposal",
+    {
+      account: ineligible.address,
+      to: manifest.contracts.governor,
+      data: encodeFunctionData({ abi: governorAbi, functionName: "propose", args: [targets, values, calldatas, `Ineligible ${campaignId}`] }),
+    },
+    /revert|execution/i,
+  );
+
+  await advanceOrWait(601, "Governance voting delay");
+  const successfulId = BigInt(state.governance.proposals.successful.id);
+  const defeatedId = BigInt(state.governance.proposals.defeated.id);
+  for (let index = 0; index < 8; index += 1) {
+    const account = privateKeyToAccount(accounts[index].privateKey);
+    const support = index < 5 ? 1 : index < 7 ? 0 : 2;
+    await contractTransaction(state, `governance-vote-success-${index}`, account, manifest.contracts.governor, governorAbi, "castVote", [successfulId, support]);
+  }
+  for (let index = 0; index < 6; index += 1) {
+    const account = privateKeyToAccount(accounts[index].privateKey);
+    await contractTransaction(state, `governance-vote-defeated-${index}`, account, manifest.contracts.governor, governorAbi, "castVote", [defeatedId, 0]);
+  }
+  const duplicateAccount = privateKeyToAccount(accounts[0].privateKey);
+  await expectSimulationFailure(
+    state,
+    "governance-duplicate-vote",
+    {
+      account: duplicateAccount.address,
+      to: manifest.contracts.governor,
+      data: encodeFunctionData({ abi: governorAbi, functionName: "castVote", args: [successfulId, 1] }),
+    },
+    /revert|execution/i,
+  );
+
+  await advanceOrWait(1_801, "Governance voting period");
+  const queueAccount = privateKeyToAccount(accounts[3].privateKey);
+  const successful = state.governance.proposals.successful;
+  await contractTransaction(state, "governance-queue-successful", queueAccount, manifest.contracts.governor, governorAbi, "queue", [targets, values, calldatas, successful.descriptionHash]);
+  await advanceOrWait(601, "Governance timelock");
+  await contractTransaction(state, "governance-execute-successful", queueAccount, manifest.contracts.governor, governorAbi, "execute", [targets, values, calldatas, successful.descriptionHash]);
+
+  const states = {};
+  for (const [key, proposal] of Object.entries(state.governance.proposals)) {
+    states[key] = Number(await publicClient.readContract({ address: manifest.contracts.governor, abi: governorAbi, functionName: "state", args: [BigInt(proposal.id)] }));
+  }
+  if (states.successful !== 7 || states.defeated !== 3 || states.cancelled !== 2) {
+    throw new Error(`Unexpected terminal governance states ${json(states)}`);
+  }
+  state.governance.states = states;
+  state.phases.governance = new Date().toISOString();
+  saveState(state);
+  console.log(json(state.governance));
+}
+
+async function claims() {
+  const manifest = loadManifest();
+  const state = loadState();
+  if (!state.phases.governance || !state.phases.conversions) throw new Error("Complete governance and conversions before claims");
+  const accounts = loadAccounts();
+  const tokenAbi = artifactAbi("RobynLaunchToken");
+  const marketAbi = artifactAbi("RobynV4BondingCurveMarket");
+  const feeRouterAbi = artifactAbi("RobynNativeProtocolFeeRouterV3");
+  const daoAbi = artifactAbi("RobynDaoToken");
+  state.claims ??= { holder: [], creator: [], dao: [] };
+
+  for (let index = 0; index < 10; index += 1) {
+    const account = privateKeyToAccount(accounts[index].privateKey);
+    const launch = state.launches[3 + (index % 5)];
+    const value = 200_000_000_000n;
+    const [, quoted] = await publicClient.readContract({ address: launch.market, abi: marketAbi, functionName: "quoteBuy", args: [value], account: account.address });
+    await contractTransaction(state, `post-rdao-fee-buy-${index}`, account, launch.market, marketAbi, "buy", [(quoted * 98n) / 100n || 1n], value);
+  }
+
+  for (let actorIndex = 0; state.claims.holder.length < 20 && actorIndex < accounts.length; actorIndex += 1) {
+    const account = privateKeyToAccount(accounts[actorIndex].privateKey);
+    let selected = null;
+    for (const launch of state.launches) {
+      for (let legIndex = 0; legIndex < 3; legIndex += 1) {
+        const amount = await publicClient.readContract({ address: launch.token, abi: tokenAbi, functionName: "withdrawableRewardOf", args: [account.address, BigInt(legIndex)] });
+        if (amount > 0n) { selected = { launch, legIndex, amount }; break; }
+      }
+      if (selected) break;
+    }
+    if (!selected) continue;
+    const claimIndex = state.claims.holder.length;
+    await contractTransaction(state, `holder-claim-${claimIndex}`, account, selected.launch.token, tokenAbi, "claim", [BigInt(selected.legIndex)]);
+    state.claims.holder.push({ actorIndex, launchIndex: selected.launch.index, legIndex: selected.legIndex, amount: selected.amount.toString() });
+    saveState(state);
+  }
+  if (state.claims.holder.length !== 20) throw new Error("Could not produce 20 holder reward claims");
+
+  for (const launch of state.launches) {
+    const account = privateKeyToAccount(accounts[launch.index].privateKey);
+    const feeAccount = await publicClient.readContract({ address: manifest.contracts.protocolFeeRouter, abi: feeRouterAbi, functionName: "launchAccount", args: [launch.token] });
+    if (feeAccount.claimableCreatorNative === 0n) throw new Error(`Creator ${launch.index} has no claimable native rewards`);
+    await contractTransaction(state, `creator-claim-${launch.index}`, account, manifest.contracts.protocolFeeRouter, feeRouterAbi, "claimCreatorFees", [launch.token]);
+    if (!state.claims.creator.some((entry) => entry.launchIndex === launch.index)) state.claims.creator.push({ launchIndex: launch.index, creator: account.address, amount: feeAccount.claimableCreatorNative.toString() });
+    saveState(state);
+  }
+
+  const foreign = privateKeyToAccount(accounts[50].privateKey);
+  await expectSimulationFailure(
+    state,
+    "creator-foreign-claim",
+    { account: foreign.address, to: manifest.contracts.protocolFeeRouter, data: encodeFunctionData({ abi: feeRouterAbi, functionName: "claimCreatorFees", args: [state.launches[0].token] }) },
+    /revert|execution/i,
+  );
+
+  for (let index = 0; index < 10; index += 1) {
+    const account = privateKeyToAccount(accounts[index].privateKey);
+    const amount = await publicClient.readContract({ address: manifest.contracts.daoToken, abi: daoAbi, functionName: "claimableRewardOf", args: [account.address] });
+    if (amount === 0n) throw new Error(`RDAO member ${index} has no claimable rewards`);
+    await contractTransaction(state, `rdao-claim-${index}`, account, manifest.contracts.daoToken, daoAbi, "claimRewards");
+    if (!state.claims.dao.some((entry) => entry.actorIndex === index)) state.claims.dao.push({ actorIndex: index, amount: amount.toString() });
+    saveState(state);
+  }
+  state.phases.claims = new Date().toISOString();
+  saveState(state);
+  console.log(json(state.claims));
+}
+
+function productWriteCount(state) {
+  return state.transactions.filter((entry) => !entry.label.startsWith("fund-")).length;
+}
+
+async function fill() {
+  const state = loadState();
+  if (!state.phases.claims) throw new Error("Complete claims before fill");
+  const accounts = loadAccounts();
+  const tokenAbi = artifactAbi("RobynLaunchToken");
+  let index = 0;
+  while (productWriteCount(state) < 1_510) {
+    const launch = state.launches[index % state.launches.length];
+    let actorIndex = index % accounts.length;
+    let balance = 0n;
+    for (let attempts = 0; attempts < accounts.length; attempts += 1) {
+      balance = await publicClient.readContract({ address: launch.token, abi: tokenAbi, functionName: "balanceOf", args: [accounts[actorIndex].address] });
+      if (balance > 1n) break;
+      actorIndex = (actorIndex + 1) % accounts.length;
+    }
+    if (balance <= 1n) throw new Error("No token holder available for fill activity");
+    const account = privateKeyToAccount(accounts[actorIndex].privateKey);
+    await contractTransaction(state, `fill-transfer-${index}`, account, launch.token, tokenAbi, "transfer", [accounts[(actorIndex + 1) % accounts.length].address, 1n]);
+    index += 1;
+  }
+  state.fill = { productWrites: productWriteCount(state), additionalTransfers: index };
+  state.phases.filled = new Date().toISOString();
+  saveState(state);
+  console.log(json(state.fill));
+}
+
+async function sweep() {
+  const manifest = loadManifest();
+  const state = loadState();
+  if (!state.phases.filled) throw new Error("Complete fill before sweep");
+  const accounts = loadAccounts();
+  const tokenAbi = artifactAbi("RobynLaunchToken");
+  const daoAbi = artifactAbi("RobynDaoToken");
+  state.sweep ??= { tokenTransfers: 0, daoTransfers: 0, nativeTransfers: 0, dust: [] };
+  for (let actorIndex = 0; actorIndex < accounts.length; actorIndex += 1) {
+    const account = privateKeyToAccount(accounts[actorIndex].privateKey);
+    for (const launch of state.launches) {
+      const balance = await publicClient.readContract({ address: launch.token, abi: tokenAbi, functionName: "balanceOf", args: [account.address] });
+      if (balance > 0n) {
+        await contractTransaction(state, `sweep-token-${actorIndex}-${launch.index}`, account, launch.token, tokenAbi, "transfer", [manifest.deployer, balance]);
+        state.sweep.tokenTransfers += 1;
+      }
+    }
+    const daoBalance = await publicClient.readContract({ address: manifest.contracts.daoToken, abi: daoAbi, functionName: "balanceOf", args: [account.address] });
+    if (daoBalance > 0n) {
+      await contractTransaction(state, `sweep-rdao-${actorIndex}`, account, manifest.contracts.daoToken, daoAbi, "transfer", [manifest.deployer, daoBalance]);
+      state.sweep.daoTransfers += 1;
+    }
+    saveState(state);
+  }
+  const gasPrice = await publicClient.getGasPrice();
+  for (let actorIndex = 0; actorIndex < accounts.length; actorIndex += 1) {
+    const account = privateKeyToAccount(accounts[actorIndex].privateKey);
+    const balance = await publicClient.getBalance({ address: account.address });
+    const reserve = 21_000n * gasPrice * 2n;
+    if (balance > reserve) {
+      await recordTransaction(state, `sweep-native-${actorIndex}`, walletClient(account), { account, to: manifest.deployer, value: balance - reserve });
+      state.sweep.nativeTransfers += 1;
+    } else if (balance > 0n) {
+      state.sweep.dust.push({ actorIndex, amount: balance.toString() });
+    }
+    saveState(state);
+  }
+  const projectBalance = await publicClient.getBalance({ address: manifest.deployer });
+  if (projectBalance < REQUIRED_RESERVE_WEI) throw new Error("Project reserve was not preserved after sweep");
+  state.sweep.projectBalanceWei = projectBalance.toString();
+  state.phases.swept = new Date().toISOString();
+  saveState(state);
+  console.log(json(state.sweep));
+}
+
+async function all() {
+  const phases = loadState().phases;
+  if (!phases.preflight) await preflight();
+  if (!loadState().phases.funded) await fund();
+  if (!loadState().phases.launched) await launches();
+  if (!loadState().phases.trading) await trading();
+  if (!loadState().phases.conversions) await conversions();
+  if (!loadState().phases.governance) await governance();
+  if (!loadState().phases.claims) await claims();
+  if (!loadState().phases.filled) await fill();
+  if (!loadState().phases.swept) await sweep();
+  await status();
+}
+
 async function status() {
   const manifest = loadManifest();
   const state = loadState();
@@ -715,6 +1299,7 @@ async function status() {
       releaseSha: state.releaseSha,
       phases: state.phases,
       successfulTransactions: state.transactions.length,
+      productWrites: productWriteCount(state),
       requiredSuccessfulWrites: REQUIRED_SUCCESSFUL_WRITES,
       projectBalanceWei,
       actorBalanceWei,
@@ -725,9 +1310,9 @@ async function status() {
   );
 }
 
-if (!["init", "preflight", "fund", "launches", "status"].includes(command)) {
+if (!["init", "preflight", "fund", "launches", "trading", "conversions", "governance", "claims", "fill", "sweep", "all", "status"].includes(command)) {
   throw new Error(
-    "Usage: testnet-assurance-campaign.mjs <init|preflight|fund|launches|status> --campaign ID",
+    "Usage: testnet-assurance-campaign.mjs <init|preflight|fund|launches|trading|conversions|governance|claims|fill|sweep|all|status> --campaign ID",
   );
 }
-await { init, preflight, fund, launches, status }[command]();
+await { init, preflight, fund, launches, trading, conversions, governance, claims, fill, sweep, all, status }[command]();

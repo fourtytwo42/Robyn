@@ -4,6 +4,17 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Campaign execution-engine checkpoint (2026-07-24): the schema-v8 one-shot
+  runner now implements resumable trading, three exact graduations, five
+  distinct bonding states, bidirectional direct-v4 swaps, locked-position fee
+  harvesting, all 24 basket conversions, shortened governance, holder/creator/
+  RDAO claims, the 1,510-product-write floor, residual sweeping, and ordered
+  `all` execution. Submitted hashes are durably journaled before receipt waits.
+  Funding projection now includes every planned payable action rather than
+  only graduation value. Seven campaign unit tests plus repository format,
+  lint, strict typecheck, syntax, and diff checks pass. A fresh exact-commit
+  chain-46630 rehearsal is the next gate; no live transaction was broadcast.
+
 - Schema-v8 reproducibility and campaign-foundation checkpoint (2026-07-24):
   exact pushed commit `9803bb129d84815dee74f7acdc4d9fc8ca21eb1f`
   reproduced from two clean Git archives with separate fresh pnpm stores.

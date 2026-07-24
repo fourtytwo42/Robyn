@@ -10,6 +10,7 @@ import {
   applyHeadroom,
   launchBasketPlan,
   minimumActionCount,
+  plannedTransactionValueWei,
   projectCampaignCost,
   REQUIRED_RESERVE_WEI,
 } from "../lib/campaign-plan.mjs";
@@ -108,4 +109,19 @@ test("cost projection includes Nitro L1 data, 25 percent headroom, and hard rese
 
 test("fixed action inventory exceeds the 1,500-write gate before optional retries", () => {
   assert.ok(minimumActionCount() >= 1_500);
+});
+
+test("campaign value projection includes every planned payable user action", () => {
+  let expected = 0n;
+  for (let index = 0; index < 900; index += 1) {
+    const launchIndex = index % 8;
+    expected +=
+      launchIndex < 3
+        ? 13_000_000_000_000n
+        : BigInt(launchIndex - 2) * 400_000_000_000n;
+  }
+  expected += 3n * 250_000_000_000n;
+  expected += 10n * 200_000_000_000n;
+  assert.equal(plannedTransactionValueWei(), expected);
+  assert.ok(expected > 3n * 1_400_000_000_000_000n);
 });
