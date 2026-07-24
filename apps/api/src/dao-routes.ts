@@ -86,7 +86,6 @@ const stateNames = [
   "Executed",
 ] as const;
 const activityLogLimit = 100;
-const activityBlockWindow = 250n;
 
 function accountFromQuery(query: { account?: string }) {
   return query.account && isAddress(query.account)
@@ -589,32 +588,21 @@ export function registerDaoRoutes(
       deployment.contracts.nativeFeeConverter,
     ];
     const deploymentBlock = BigInt(deployment.deploymentBlock);
-    let toBlock = await rpcClient.getBlockNumber();
-    const logs = [];
-    while (toBlock >= deploymentBlock && logs.length < activityLogLimit) {
-      const candidateFromBlock = toBlock - (activityBlockWindow - 1n);
-      const fromBlock =
-        candidateFromBlock > deploymentBlock
-          ? candidateFromBlock
-          : deploymentBlock;
-      const blockLogs = await rpcClient.getLogs({
-        address: addresses,
-        fromBlock,
-        toBlock,
-      });
-      logs.push(
-        ...blockLogs.slice(-(activityLogLimit - logs.length)).reverse(),
-      );
-      if (fromBlock === deploymentBlock) break;
-      toBlock = fromBlock - 1n;
-    }
+    const logs = await rpcClient.getLogs({
+      address: addresses,
+      fromBlock: deploymentBlock,
+      toBlock: "latest",
+    });
     return {
-      data: logs.map((log) => ({
-        address: log.address,
-        blockNumber: log.blockNumber?.toString() ?? null,
-        transactionHash: log.transactionHash,
-        topic: log.topics[0] ?? null,
-      })),
+      data: logs
+        .slice(-activityLogLimit)
+        .reverse()
+        .map((log) => ({
+          address: log.address,
+          blockNumber: log.blockNumber?.toString() ?? null,
+          transactionHash: log.transactionHash,
+          topic: log.topics[0] ?? null,
+        })),
     };
   });
 }

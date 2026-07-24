@@ -2,6 +2,7 @@
 
 import { DaoView } from "./dao-view";
 import type { Deployment } from "@/lib/deployment";
+import { resolveDataApiUrl } from "@/lib/data-api-url";
 import { useRobynTestnetWallet } from "./robyn-testnet-wallet";
 
 export function NetworkDaoView({
@@ -13,11 +14,7 @@ export function NetworkDaoView({
 }) {
   const { account, publicClient, walletClient, connect } =
     useRobynTestnetWallet();
-  const dataApiUrl =
-    process.env.NEXT_PUBLIC_DATA_API_URL ??
-    "http://" +
-      (typeof window === "undefined" ? "127.0.0.1" : window.location.hostname) +
-      ":3111";
+  const dataApiUrl = resolveDataApiUrl(process.env.NEXT_PUBLIC_DATA_API_URL);
   return (
     <DaoView
       deployment={deployment}

@@ -6,6 +6,7 @@ import { formatEther, type Address } from "viem";
 import { useCallback, useEffect, useState } from "react";
 import type { LaunchList, LaunchRecord } from "@/lib/data-api";
 import { useRobynTestnetWallet } from "./robyn-testnet-wallet";
+import { resolveDataApiUrl } from "@/lib/data-api-url";
 
 const tokenAbi = [
   {
@@ -149,7 +150,7 @@ export function NetworkPortfolioView() {
     }
     const account = wallet;
     setStatus("Loading held tokens and reward state…");
-    const dataApiUrl = process.env.NEXT_PUBLIC_DATA_API_URL ?? "/api";
+    const dataApiUrl = resolveDataApiUrl(process.env.NEXT_PUBLIC_DATA_API_URL);
     const response = await fetch(dataApiUrl + "/launches?limit=100", {
       cache: "no-store",
     });

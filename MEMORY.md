@@ -4,6 +4,14 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- DAO availability repair (2026-07-24): the public DAO page initially failed
+  because an explicitly empty `NEXT_PUBLIC_DATA_API_URL` bypassed the intended
+  `/api` fallback, while `/dao/activity` scanned backward in 250-block RPC
+  windows and timed out when governance activity was old. Testnet DAO and
+  connected Portfolio clients now normalize absent, blank, and trailing-slash
+  API configuration; DAO Activity performs one address-filtered query from the
+  deployment block through `latest` and returns the newest 100 logs. Focused
+  web/API regression tests cover both defects.
 - Current task (2026-07-24): transition the public testnet candidate to
   `sherwoodforest.trade`, rebrand the application as Sherwood Forest with a
   green visual system and new mark/favicon, and complete the live v4 cutover.
@@ -1369,6 +1377,12 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-24: DAO availability regression tests passed: web format, lint,
+  strict types and 17 tests; API strict types and 46 tests. The live
+  chain-46630 `/api/dao/activity` request fell from more than 20 seconds and a
+  timeout to HTTP 200 with 17 indexed protocol/governance logs after one
+  address-filtered RPC range query.
 
 - 2026-07-24: Sherwood Forest custom-domain acceptance passed on
   `https://sherwoodforest.trade`. Root, Markets, the canonical v4 token,
