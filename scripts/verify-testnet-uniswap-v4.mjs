@@ -41,6 +41,19 @@ check(
   manifest.venue === "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
   "venue disclosure label is exact",
 );
+check(
+  manifest.pinnedPackages?.v4Core?.version === "1.0.2",
+  "v4-core package version is pinned",
+);
+check(
+  manifest.pinnedPackages?.v4Periphery?.version === "1.0.3",
+  "v4-periphery package version is pinned",
+);
+check(
+  manifest.pinnedPackages?.v4Periphery?.integrity ===
+    "sha512-JxLL0Djv9XcMvI2PatEnWrCrxuEaYNVhHxstndBOP+aJfh1XLg5ec8SDZ0xyoVfg2ElJTvuKpBgnu90bNValsg==",
+  "v4-periphery package integrity is frozen",
+);
 
 for (const name of hashContracts) {
   const entry = manifest.contracts[name];

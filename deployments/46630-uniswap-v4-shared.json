@@ -9,6 +9,18 @@
     "lastCheckedAt": "2026-07-24T00:00:00Z"
   },
   "disclosure": "Shared chain-46630 contracts are not listed as an official Uniswap deployment. Robyn independently freezes and verifies them and aborts if provenance changes.",
+  "pinnedPackages": {
+    "v4Core": {
+      "name": "@uniswap/v4-core",
+      "version": "1.0.2",
+      "integrity": "sha512-X15Tm2wWd+USAzEExMbo+g9naA6QN6mPgWm0MzDwRNlOfaNlepfUpSyt9RSrUfEODspwbyWbcLg6t5nwc/e7lg=="
+    },
+    "v4Periphery": {
+      "name": "@uniswap/v4-periphery",
+      "version": "1.0.3",
+      "integrity": "sha512-JxLL0Djv9XcMvI2PatEnWrCrxuEaYNVhHxstndBOP+aJfh1XLg5ec8SDZ0xyoVfg2ElJTvuKpBgnu90bNValsg=="
+    }
+  },
   "contracts": {
     "poolManager": {
       "address": "0x8366a39cc670b4001a1121b8f6a443a643e40951",

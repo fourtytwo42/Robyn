@@ -35,6 +35,16 @@ Durable project context lives here. Update this file whenever information should
   intentionally blocked on Robyn StateView deployment, bounded live swap
   evidence, and final release readiness. A tamper regression proves a changed
   runtime hash fails closed.
+- StateView deployment checkpoint (2026-07-24): the estimate-first script
+  `scripts/deploy-testnet-v4-state-view.sh` uses the pinned official
+  `@uniswap/v4-periphery` 1.0.3 artifact and binds it to the shared PoolManager.
+  The live chain-46630 estimate is 877,322 gas; its 25%-headroom execution plus
+  conservative L1-data allowance requires 12,130,867,259,840 wei versus the
+  reviewed deployer's observed 6,920,854,708,782,403 wei. No transaction was
+  broadcast. Broadcast additionally requires a clean exact `origin/main`,
+  encrypted project keystore, explicit chain-46630 confirmation, and post-send
+  runtime/wiring verification. Candidate evidence is written outside Git at
+  `/home/hendo420/robyn-evidence/46630-v4-state-view-candidate.json`.
 - Faucet-stock checkpoint (2026-07-24): the encrypted deployer holds 5 tokens
   each of exact faucet contracts TSLA `0xC9f9...Bd4E`, AMD `0x7117...778d`,
   AMZN `0x5884...9E02`, NFLX `0x3b82...8C93`, and PLTR `0x1FBE...98d0`.
