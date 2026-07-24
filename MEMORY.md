@@ -35,7 +35,9 @@ Durable project context lives here. Update this file whenever information should
   base-fee only with both `--rehearsal` and a loopback RPC; every live or remote
   invocation rejects the override and must read the onchain estimator. This
   preserves live fail-closed pricing while allowing deterministic fork
-  rehearsal. No public-testnet state changed.
+  rehearsal. The next attempt proved that 100 simultaneous native-balance
+  requests can saturate a fork/public RPC, so preflight and status now use
+  bounded concurrency of four. No public-testnet state changed.
 - Schema-v8 internal-audit checkpoint (2026-07-24): manual review found and
   fixed a release-blocking economic gap in permissionless basket conversion.
   All 24 basket routes now freeze a deployment reference tick, fail closed

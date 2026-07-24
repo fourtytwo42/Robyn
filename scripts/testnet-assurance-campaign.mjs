@@ -108,6 +108,21 @@ function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
+async function mapWithConcurrency(values, concurrency, worker) {
+  const results = new Array(values.length);
+  let cursor = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, values.length) }, async () => {
+      while (cursor < values.length) {
+        const index = cursor;
+        cursor += 1;
+        results[index] = await worker(values[index], index);
+      }
+    }),
+  );
+  return results;
+}
+
 function requireProtectedFile(path, label) {
   const details = statSync(path);
   if (!details.isFile() || (details.mode & 0o077) !== 0) {
@@ -347,10 +362,8 @@ async function preflight() {
     address: projectAddress,
   });
   const actorBalanceWei = (
-    await Promise.all(
-      state.actors.map(({ address }) =>
-        publicClient.getBalance({ address }),
-      ),
+    await mapWithConcurrency(state.actors, 4, ({ address }) =>
+      publicClient.getBalance({ address }),
     )
   ).reduce((total, value) => total + value, 0n);
   const combinedBalanceWei = projectBalanceWei + actorBalanceWei;
@@ -445,14 +458,16 @@ async function fund() {
 async function status() {
   const manifest = loadManifest();
   const state = loadState();
-  const balances = await Promise.all(
-    state.actors.map(async ({ index, address }) => ({
+  const balances = await mapWithConcurrency(
+    state.actors,
+    4,
+    async ({ index, address }) => ({
       index,
       address,
       balanceWei: (
         await publicClient.getBalance({ address })
       ).toString(),
-    })),
+    }),
   );
   const actorBalanceWei = balances.reduce(
     (total, actor) => total + BigInt(actor.balanceWei),
