@@ -841,8 +841,8 @@ export function NetworkLaunchpadConsole({
             Create a token holders want to earn with.
           </h2>
           <p>
-            Choose its immutable testnet-mock reward basket, seed a market, then
-            let trading activity fund rewards holders can claim.
+            Choose its immutable testnet reward basket, seed a market, then let
+            trading activity fund rewards holders can claim.
           </p>
         </div>
         <span className="live-chip">

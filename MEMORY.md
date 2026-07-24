@@ -124,6 +124,22 @@ Durable project context lives here. Update this file whenever information should
   make the three-leg console query nonexistent legs. Repository format, lint,
   strict types, application tests, 87 Foundry tests, optimized builds and
   `git diff --check` pass. No live v4 testnet transaction was sent.
+- V4 exact-stack and browser checkpoint (2026-07-24): exact pushed commit
+  `d6f9cc855675ae37e1d1b189a4f4336cca5c524f` passed a fresh chain-46630
+  fork deployment, 446-check independent pre-smoke verifier, all 24
+  bidirectional asset-route swaps, bonding/graduation/trading, basket
+  conversions and claims. The 113-transaction gas package is checksummed under
+  `/tmp/robyn-v4-d6f9cc8-rehearsal/`. An isolated PostgreSQL schema, Redis DB,
+  indexer, API and keeper rebuilt the launch, reported keeper health `ok`, and
+  leaked no queue keys into Redis DB 0. Browser acceptance then found the
+  configured data API origin was absent from testnet `connect-src`, which made
+  the Create basket editor fail with “The testnet asset catalog is
+  unavailable.” `apps/web/next.config.ts` now includes the configured data API
+  origin, and the stale “testnet-mock reward basket” copy is generalized.
+  Re-run browser acceptance after rebuilding this correction. The temporary
+  Quick Tunnel is intentionally not in the Reown allowlist, so its
+  WalletConnect origin warning is not a product-code regression. No live v4
+  testnet transaction was sent.
 - Faucet-stock checkpoint (2026-07-24): the encrypted deployer holds 5 tokens
   each of exact faucet contracts TSLA `0xC9f9...Bd4E`, AMD `0x7117...778d`,
   AMZN `0x5884...9E02`, NFLX `0x3b82...8C93`, and PLTR `0x1FBE...98d0`.

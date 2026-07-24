@@ -15,6 +15,10 @@ const publicRpcUrl =
   process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
   "https://rpc.testnet.chain.robinhood.com";
 const rpcOrigin = new URL(publicRpcUrl, "http://localhost").origin;
+const dataApiUrl = process.env.NEXT_PUBLIC_DATA_API_URL;
+const dataApiOrigin = dataApiUrl
+  ? new URL(dataApiUrl, "http://localhost").origin
+  : null;
 
 const reproducibleBuildId = process.env.ROBYN_BUILD_ID;
 const nextConfig: NextConfig = {
@@ -39,6 +43,9 @@ const nextConfig: NextConfig = {
             value: [
               "connect-src 'self'",
               rpcOrigin,
+              ...(dataApiOrigin && dataApiOrigin !== rpcOrigin
+                ? [dataApiOrigin]
+                : []),
               "https://relay.walletconnect.com",
               "wss://relay.walletconnect.com",
               "https://api.web3modal.org",
