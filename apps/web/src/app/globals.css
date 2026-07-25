@@ -4762,3 +4762,60 @@ main > .notice {
     min-width: 0;
   }
 }
+
+/* Unlinked operator health dashboard */
+.admin-health-shell {
+  padding-bottom: 4rem;
+}
+
+.admin-health-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-health-toolbar p {
+  margin: 0.6rem 0 0;
+  color: var(--muted);
+}
+
+.admin-health-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-health-grid .health-card {
+  align-content: start;
+}
+
+.admin-health-grid .health-card dl {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.health-degraded {
+  border-color: rgba(255, 116, 100, 0.5);
+  color: #ff9f91;
+  background: rgba(255, 116, 100, 0.08);
+}
+
+.admin-health-note {
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 760px) {
+  .admin-health-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-health-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-health-grid .health-card dl {
+    grid-template-columns: 1fr;
+  }
+}

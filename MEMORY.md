@@ -4,6 +4,7 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- The homepage operational strip and testnet disclaimer footer are removed. A deliberately unlinked read-only operator dashboard now lives at `/admin/health`; it auto-refreshes every 15 seconds and exposes only non-sensitive web release, RPC chain/head/latency, ingester/projector lag/cycles/retries, keeper/artifact heartbeat, and indexed launch/log health.
 - Portfolio access is now wallet-gated in the header. The protected browser-UAT path is a read-only, session-only opt-in bound to the public deployment deployer address; it never supplies a signer or enables writes. `/portfolio` remains the connected wallet's unified profile/dashboard, while `/users/[address]` reuses the holdings, creator profile, created-token, and fee views as a public read-only user page. Creator names and addresses link to that route.
 - The schema-v8 endurance service is intentionally stopped for the incremental
   indexer release. Its durable state, samples, reviews, and transaction journal
@@ -2596,6 +2597,15 @@ When sources conflict, use this order:
 - Result: Connected users retain the unified `/portfolio` dashboard. Other users can inspect public profile, holdings, created tokens, and public reward/fee state through `/users/[address]`, but cannot edit or claim.
 - Verification: Exact release promotion passed 490 checks. In-app-browser UAT passed normal disconnected nav hiding, the session-only read-only UAT entry, public creator/holdings rendering, creator links, disabled private controls, zero console errors, and zero horizontal overflow at desktop, tablet, and 390 by 844 mobile.
 - Follow-up: Promote the final documentation commit and resume the preserved endurance journal without replay.
+
+### 2026-07-25 - Unlinked operator health dashboard
+
+- Context: Operational component status and the testnet disclaimer cluttered the public homepage; the user wanted those removed and a separate unlinked health view for administration.
+- Decision: Remove the homepage system strip and bottom testnet notice. Add public read-only `/admin/health` plus `/api/admin-health`; do not link either in site navigation and do not expose credentials, privileged RPC methods, wallet actions, Prometheus internals, or operator controls.
+- Files: `apps/web/src/app/page.tsx`, `apps/web/src/app/admin/health/page.tsx`, `apps/web/src/app/api/admin-health/route.ts`, `apps/web/src/components/admin-health-dashboard.tsx`, `apps/web/src/lib/admin-health.ts`, and dashboard styles/tests.
+- Commands/tests: Web Vitest 28/28, strict typecheck, ESLint, Prettier, and diff checks pass before release build.
+- Result: The dashboard refreshes every 15 seconds and reports release identity, RPC chain/head/latency, ingestion and projection blocks/lags/cycles, RPC retry/degradation state, keeper/artifact heartbeats, and indexed launch/log counts.
+- Follow-up: Build, promote, run in-app-browser acceptance on homepage and `/admin/health`, then resume the preserved endurance journal without replay.
 
 ## Open Follow-ups
 

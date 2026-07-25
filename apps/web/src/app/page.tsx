@@ -1,11 +1,6 @@
 import type { Deployment } from "@/lib/deployment";
 import { NetworkConsole } from "@robyn/network-console";
 import { SiteHeader } from "@/components/site-header";
-import {
-  getDataPlaneHealth,
-  getGatewayHealth,
-  getHealthStatus,
-} from "@/lib/health";
 import deployment from "@robyn/deployment";
 import {
   type BasketArtSymbol,
@@ -29,12 +24,7 @@ function compactBase(value: string) {
 }
 
 export default async function Home() {
-  const [gateway, dataPlane, launches] = await Promise.all([
-    getGatewayHealth(),
-    getDataPlaneHealth(),
-    getLaunches(),
-  ]);
-  const health = getHealthStatus();
+  const launches = await getLaunches();
   const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
   const marketShowcase = launches.data.slice(0, 4);
   const featuredMarket = marketShowcase[0];
@@ -168,41 +158,9 @@ export default async function Home() {
         ))}
       </section>
 
-      <section className="system-strip" aria-label="System status">
-        <div>
-          <span className="status-dot" />
-          Web <strong>{health.status}</strong>
-        </div>
-        <div data-testid="rpc-status">
-          <span className="status-dot" />
-          RPC <strong>{gateway.status}</strong>
-        </div>
-        <div>
-          Chain <strong>{gateway.chainId}</strong>
-        </div>
-        <div data-testid="indexer-status">
-          Indexer{" "}
-          <strong>
-            {dataPlane.status} · block {dataPlane.asOfBlock ?? "unavailable"}
-          </strong>
-        </div>
-        <div data-testid="keeper-status">
-          Keeper <strong>{dataPlane.keeperStatus}</strong>
-        </div>
-        <div data-testid="artifact-status">
-          Artifacts <strong>{dataPlane.artifactStatus}</strong>
-        </div>
-      </section>
-
       {!isTestnet ? (
         <NetworkConsole deployment={deployment as Deployment} />
       ) : null}
-
-      <section className="notice" aria-label="Development disclaimer">
-        {isTestnet
-          ? "Robinhood Chain Testnet only. Faucet-issued test stocks and Robyn testnet mocks have no real-world value, backing, or redemption rights."
-          : "Development network only. Every asset is a mock with no real-world value. This environment proves the full protocol workflow before testnet deployment."}
-      </section>
     </main>
   );
 }
