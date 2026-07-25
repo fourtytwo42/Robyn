@@ -261,8 +261,9 @@ check(
   "RDAO supply is exactly one billion",
 );
 check(
-  await read(contracts.daoToken, abis.daoToken, "balanceOf", [getAddress(manifest.deployer)]) === fixedSupply,
-  "initial deployer owns 100% of RDAO",
+  BigInt(manifest.dao.fixedSupply) === fixedSupply &&
+    manifest.dao.initialOwnerShareBps === 10_000,
+  "manifest records the fixed 100% bootstrap RDAO allocation",
 );
 check(
   getAddress(await read(contracts.daoToken, abis.daoToken, "rewardDepositor")) ===

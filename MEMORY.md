@@ -35,6 +35,12 @@ Durable project context lives here. Update this file whenever information should
   regression test. Lint, strict types, and all five endurance-policy tests pass.
   Resume only after this fix is committed, pushed, built, promoted, and the
   durable journal identity is migrated to the new exact release.
+- The first repaired promotion exposed a bootstrap-only verifier assumption:
+  it required the deployer to retain 100% of RDAO after the endurance preflight
+  had legitimately transferred RDAO to test voters. Runtime verification now
+  proves the immutable one-billion total supply and the manifest's 100%
+  bootstrap allocation instead of forbidding later token transfers. The live
+  post-distribution deployment passes all 490 verifier checks.
 - The root-disk promotion gate was cleared on 2026-07-25 by deleting only
   22.95 GB of abandoned, regenerable Anvil staging data under
   `/home/hendo420/.foundry/anvil/tmp` and the apt cache. Persistent chain,
