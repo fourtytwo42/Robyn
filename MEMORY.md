@@ -2472,6 +2472,16 @@ When sources conflict, use this order:
 
 ## Completed Work
 
+### 2026-07-25 - RDAO-gated governance access
+
+- Context: The public header and direct DAO routes exposed governance surfaces to disconnected and nonmember visitors.
+- Decision: Hide DAO navigation unless the connected wallet has a positive canonical RDAO `balanceOf`; direct DAO and proposal routes fail closed behind the same onchain membership check.
+- Files: `apps/web/src/components/dao-access.tsx`, network-selected DAO access modules, `site-header.tsx`, DAO routes, and `dao-access-policy.ts`.
+- Commands/tests: 23 web unit tests, strict typecheck, lint, optimized devnet build, protected testnet bundle scan, full immutable release gates, 490-check promotion verifier, and Codex in-app-browser desktop/mobile acceptance.
+- Result: Disconnected wallets see no DAO navigation or member controls. Membership-check failures also remain closed. Feature implementation commit: `64f587784d2b4b4cb621b1152d765e84c5113ddd`.
+- Follow-up: Continue the existing checksummed eight-hour endurance journal without replay.
+
+
 - 2026-07-21: Aligned the homepage token showcase with the Markets information model while preserving its larger visual treatment and unique curated token art. Rich mobile cards switch to one column below 680px for legible metrics and artwork.
 
 - 2026-07-21: Anchored every discovery-card `View market` action to the bottom of its stretched grid card, preserving a consistent gap without forcing lifecycle placeholders or artificial basket rows.
