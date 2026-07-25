@@ -194,17 +194,10 @@ export default async function Home() {
         </div>
       </section>
 
-      {isTestnet ? (
-        <>
-          <NetworkConsole deployment={deployment as Deployment} />
-          <NetworkLaunchpadConsole deployment={deployment as Deployment} />
-        </>
-      ) : (
-        <>
-          <NetworkLaunchpadConsole deployment={deployment as Deployment} />
-          <NetworkConsole deployment={deployment as Deployment} />
-        </>
-      )}
+      <NetworkLaunchpadConsole deployment={deployment as Deployment} />
+      {!isTestnet ? (
+        <NetworkConsole deployment={deployment as Deployment} />
+      ) : null}
 
       <section className="notice" aria-label="Development disclaimer">
         {isTestnet

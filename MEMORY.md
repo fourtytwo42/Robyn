@@ -2472,6 +2472,14 @@ When sources conflict, use this order:
 
 ## Completed Work
 
+### 2026-07-25 - Removed public testnet smoke console
+
+- Context: The homepage still exposed an old genesis-token smoke console that duplicated the header wallet control and canonical token, Portfolio, and DAO workflows.
+- Decision: Keep the console available only in controlled devnet; remove it from the Robinhood Testnet homepage.
+- Files: `apps/web/src/app/page.tsx`.
+- Result: Public users use the global wallet control and normal launchpad surfaces instead of hardcoded buy, convert, claim, and sell test actions.
+- Follow-up: Continue the existing checksummed endurance journal without replay after exact promotion.
+
 ### 2026-07-25 - RDAO-gated governance access
 
 - Context: The public header and direct DAO routes exposed governance surfaces to disconnected and nonmember visitors.
