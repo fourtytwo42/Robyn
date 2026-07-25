@@ -218,7 +218,7 @@ while IFS=$'\t' read -r symbol asset pool_id; do
       "$pool_id" --rpc-url "$rpc_url" --json
   )"
   reference_tick="$(jq -r '.[1]' <<<"$slot0")"
-  route="(10000,200,$zero,1,1000000000000,$reference_tick,$maximum_reference_tick_deviation,true,$verification_class,true)"
+  route="(10000,200,$zero,1,10000000000,$reference_tick,$maximum_reference_tick_deviation,true,$verification_class,true)"
   send_transaction "$asset_router" \
     'configureRoute(address,(uint24,int24,address,uint128,uint128,int24,uint24,bool,bytes32,bool))' \
     "$asset" "$route" >/dev/null

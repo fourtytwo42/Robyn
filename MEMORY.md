@@ -4,6 +4,33 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Schema-v8 discovery campaign completed and superseded (2026-07-24): exact
+  commit `44c91b1dcd2964606b5baf84cc8526ac4aa88606` completed the full live
+  chain-46630 campaign with 2,156 confirmed transactions and 2,056 product
+  writes across 100 wallets, eight launches, three graduations, all 24 basket
+  routes, governance, claims, and residual sweeps. It remains an inactive
+  candidate; schema v7 is still public. The run exposed and reproduced four
+  release-blocking engineering defects: testnet simulations used a plain
+  address instead of the local signing account, observation-stamped conversion
+  job IDs amplified BullMQ failures, harvest races were not treated as consumed
+  no-ops, and native sweeps used a static rather than live fixed-point gas
+  reserve. Source fixes pass formatting, lint, strict types, the full application
+  and 123-contract suite, security audit, and optimized build. Pre-migration
+  queue evidence and the 997 superseded legacy job audits are preserved under
+  the candidate state root. A fresh exact-SHA rehearsal and deployment remain
+  required.
+
+- Shared faucet-route pressure correction (2026-07-24): the campaign's first
+  three launches both graduated and used the shallow shared faucet-stock pools,
+  which moved AMD, AMZN, NFLX, and PLTR beyond the frozen 198-tick reference
+  guard. Bounded verifier swaps restored all five routes and checksummed
+  receipts are preserved under the candidate state root. The final campaign
+  plan now places all five faucet-stock routes only in the final two
+  non-graduated launches, while the first six launches use the 19 controlled
+  routes and all 24 assets remain covered exactly once. Fresh deployments cap
+  faucet-route conversion input at `10000000000 wei`; the current immutable
+  deployment retains its old cap and must not be promoted or restarted as the
+  final keeper candidate.
 - Shared-v4 live route verification completed (2026-07-24): exact release
   `baab23518e7cfa317a99e24d6b346071b9cc06cc` passed a fresh 490-check
   chain-46630 deployment rehearsal, the complete 100-wallet campaign with

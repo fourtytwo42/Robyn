@@ -4,6 +4,7 @@ import {
   conversionJobId,
   failureAuditState,
   harvestJobId,
+  isLegacyConversionJobId,
   isLegacyStreamJobId,
   isLegExecutable,
   isReusableStreamJobKind,
@@ -47,8 +48,17 @@ describe("keeper eligibility", () => {
   });
 
   it("builds a stable BullMQ-safe idempotency key", () => {
-    expect(conversionJobId("0xABCDEF", 2n, 100n, 500n)).toBe(
-      "convert-abcdef-2-100-500",
+    expect(conversionJobId("0xABCDEF", 2n)).toBe("convert-abcdef-2");
+  });
+
+  it("recognizes only legacy observation-stamped conversion ids", () => {
+    const address = "1234567890123456789012345678901234567890";
+    const legacy = `convert-${address}-2-100-500`;
+    expect(isLegacyConversionJobId("convert", legacy)).toBe(true);
+    expect(isLegacyConversionJobId(undefined, legacy)).toBe(true);
+    expect(isLegacyConversionJobId("protocol-native", legacy)).toBe(false);
+    expect(isLegacyConversionJobId("convert", `convert-${address}-2`)).toBe(
+      false,
     );
   });
 

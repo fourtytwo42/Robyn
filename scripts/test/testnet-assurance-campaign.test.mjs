@@ -122,12 +122,40 @@ test("eight baskets cover every route exactly once", () => {
     ),
     assetRoutes: Array.from({ length: 24 }, (_, index) => ({
       address: `0x${String(index + 101).padStart(40, "0")}`,
+      verification:
+        index < 5 ? "robinhood-testnet-faucet-stock" : "robyn-testnet-mock",
     })),
   };
   const baskets = launchBasketPlan(manifest);
   assert.equal(baskets.length, 8);
   assert.equal(baskets.filter((basket) => basket.shouldGraduate).length, 3);
   assert.equal(new Set(baskets.flatMap((basket) => basket.assets)).size, 24);
+  assert.deepEqual(
+    baskets.map((basket) => basket.assets),
+    [
+      ...Array.from({ length: 6 }, (_, index) =>
+        manifest.assetRoutes
+          .slice(index * 3 + 5, index * 3 + 8)
+          .map((route) => route.address),
+      ),
+      manifest.assetRoutes.slice(0, 3).map((route) => route.address),
+      [
+        ...manifest.assetRoutes.slice(3, 5).map((route) => route.address),
+        manifest.assetRoutes[23].address,
+      ],
+    ],
+  );
+  assert.ok(
+    baskets
+      .slice(0, 3)
+      .every((basket) =>
+        basket.assets.every((address) =>
+          manifest.assetRoutes
+            .slice(5)
+            .some((route) => route.address === address),
+        ),
+      ),
+  );
 });
 
 test("cost projection includes Nitro L1 data, 25 percent headroom, and hard reserve", () => {
@@ -148,8 +176,9 @@ test("cost projection includes Nitro L1 data, 25 percent headroom, and hard rese
   assert.equal(cost.totalRequiredWei, 1_707n + REQUIRED_RESERVE_WEI);
 });
 
-test("native sweep reserve uses the frozen execution and L1 prices with headroom", () => {
-  assert.equal(nativeSweepReserveWei(10n, 2n), 267_620n);
+test("native sweep reserve uses the live gas estimate with headroom", () => {
+  assert.equal(nativeSweepReserveWei(10n, 21_000n), 262_500n);
+  assert.equal(nativeSweepReserveWei(10n, 28_239n), 352_990n);
   assert.throws(() => nativeSweepReserveWei(-1n, 0n), /cannot be negative/);
 });
 

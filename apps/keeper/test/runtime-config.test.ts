@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { databaseText, redisConnectionOptions } from "../src/runtime-config.js";
+import {
+  databaseText,
+  redisConnectionOptions,
+  transactionAccount,
+} from "../src/runtime-config.js";
 
 describe("keeper runtime configuration", () => {
   it("honors Redis database, authentication, and TLS isolation", () => {
@@ -32,5 +36,14 @@ describe("keeper runtime configuration", () => {
       "rpc reverted:\\0selector",
     );
     expect(databaseText(null)).toBeNull();
+  });
+
+  it("uses the local signing account on testnet and the unlocked address on devnet", () => {
+    const local = { address: "0xsigner" };
+    expect(transactionAccount(true, local, "0xaddress")).toBe(local);
+    expect(transactionAccount(false, undefined, "0xaddress")).toBe("0xaddress");
+    expect(() => transactionAccount(true, undefined, "0xaddress")).toThrow(
+      "signing account",
+    );
   });
 });

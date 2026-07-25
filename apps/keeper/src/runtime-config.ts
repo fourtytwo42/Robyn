@@ -1,3 +1,16 @@
+export function transactionAccount<TAccount, TAddress>(
+  isTestnet: boolean,
+  localAccount: TAccount | undefined,
+  address: TAddress,
+): TAccount | TAddress {
+  if (isTestnet) {
+    if (!localAccount)
+      throw new Error("Testnet transaction signing account is unavailable");
+    return localAccount;
+  }
+  return address;
+}
+
 export function databaseText(value: string | null) {
   return value?.replaceAll("\0", "\\0") ?? null;
 }

@@ -83,11 +83,32 @@ export function launchBasketPlan(manifest) {
   if (new Set(addresses.map((address) => address.toLowerCase())).size !== 24) {
     throw new Error("Campaign route catalog contains duplicate addresses");
   }
+  const faucetRoutes = manifest.assetRoutes.filter(
+    (route) => route.verification === "robinhood-testnet-faucet-stock",
+  );
+  const controlledRoutes = manifest.assetRoutes.filter(
+    (route) => route.verification !== "robinhood-testnet-faucet-stock",
+  );
+  if (faucetRoutes.length !== 5 || controlledRoutes.length !== 19) {
+    throw new Error(
+      "Campaign requires five faucet-stock routes and nineteen controlled routes",
+    );
+  }
+  // Keep the five shallow shared faucet-stock routes in the final two,
+  // non-graduated launches. The first six baskets therefore use controlled
+  // liquidity, while every route remains covered exactly once.
+  const orderedRoutes = [
+    ...controlledRoutes.slice(0, 18),
+    ...faucetRoutes,
+    controlledRoutes[18],
+  ];
   return Array.from({ length: REQUIRED_LAUNCH_COUNT }, (_, index) => ({
     index,
     name: `Sherwood Automated Test ${index + 1}`,
     symbol: `SAT${index + 1}`,
-    assets: addresses.slice(index * 3, index * 3 + 3),
+    assets: orderedRoutes
+      .slice(index * 3, index * 3 + 3)
+      .map((route) => route.address),
     weights: [3334, 3333, 3333],
     shouldGraduate: index < REQUIRED_GRADUATED_COUNT,
   }));
@@ -208,11 +229,11 @@ export function applyHeadroom(value, headroomBps = REQUIRED_HEADROOM_BPS) {
   return value + (value * headroomBps + 9_999n) / 10_000n;
 }
 
-export function nativeSweepReserveWei(gasPriceWei, l1BaseFeeWei) {
-  if (gasPriceWei < 0n || l1BaseFeeWei < 0n) {
+export function nativeSweepReserveWei(gasPriceWei, estimatedGasUnits) {
+  if (gasPriceWei < 0n || estimatedGasUnits < 0n) {
     throw new Error("Sweep fee inputs cannot be negative");
   }
-  return applyHeadroom(21_000n * gasPriceWei + 128n * 16n * l1BaseFeeWei);
+  return applyHeadroom(estimatedGasUnits) * gasPriceWei;
 }
 
 export function projectCampaignCost({

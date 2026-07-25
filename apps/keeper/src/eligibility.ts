@@ -14,19 +14,20 @@ export function isLegExecutable(state: LegState): boolean {
   );
 }
 
-export function conversionJobId(
-  vault: string,
-  legIndex: bigint,
-  pendingSince: bigint,
-  pendingBase: bigint,
-): string {
+export function conversionJobId(vault: string, legIndex: bigint): string {
   return [
     "convert",
     vault.toLowerCase().replace(/^0x/, ""),
     legIndex.toString(),
-    pendingSince.toString(),
-    pendingBase.toString(),
   ].join("-");
+}
+
+export function isLegacyConversionJobId(
+  kind: string | undefined,
+  id: string,
+): boolean {
+  if (kind !== undefined && kind !== "convert") return false;
+  return /^convert-[0-9a-f]{40}-[0-9]+-[0-9]+-[0-9]+$/i.test(id);
 }
 
 function normalizedAddress(address: string): string {

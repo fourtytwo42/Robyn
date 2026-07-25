@@ -17,6 +17,7 @@ import {
   conversionJobId,
   failureAuditState,
   harvestJobId,
+  isLegacyConversionJobId,
   isLegacyStreamJobId,
   isLegExecutable,
   isReusableStreamJobKind,
@@ -24,7 +25,11 @@ import {
   protocolNativeJobId,
   shouldSupersedeProtocolFailure,
 } from "./eligibility.js";
-import { databaseText, redisConnectionOptions } from "./runtime-config.js";
+import {
+  databaseText,
+  redisConnectionOptions,
+  transactionAccount,
+} from "./runtime-config.js";
 
 type Manifest = {
   chainId: number;
@@ -137,6 +142,7 @@ const operator = isTestnet
   ? operatorAccount?.address
   : (await walletClient.getAddresses())[0];
 if (!operator) throw new Error("Keeper operator account is unavailable");
+const writeAccount = transactionAccount(isTestnet, operatorAccount, operator);
 if ((await publicClient.getChainId()) !== manifest.chainId) {
   throw new Error("Keeper RPC chain mismatch");
 }
@@ -685,6 +691,61 @@ async function reconcileLegacyStreamJobs() {
   }
 }
 
+async function reconcileLegacyConversionJobs() {
+  const active = await queue.getJobs(["active"], 0, -1);
+  const activeLegacy = active.filter((job) =>
+    isLegacyConversionJobId(job.data.kind, job.id ?? ""),
+  );
+  if (activeLegacy.length > 0) {
+    process.stdout.write(
+      JSON.stringify({
+        level: "info",
+        event: "active_legacy_conversion_jobs_deferred",
+        count: activeLegacy.length,
+      }) + "\n",
+    );
+  }
+  const legacyJobs = (
+    await queue.getJobs(
+      ["wait", "delayed", "failed", "paused", "prioritized"],
+      0,
+      -1,
+    )
+  ).filter((job) => isLegacyConversionJobId(job.data.kind, job.id ?? ""));
+  for (const job of legacyJobs) {
+    const key = job.data.idempotencyKey;
+    const attempts = job.attemptsMade;
+    const payload = job.data;
+    if (payload.kind !== "convert") {
+      throw new Error(`Unexpected legacy conversion job kind for ${key}`);
+    }
+    const replacementJobId = conversionJobId(
+      payload.vault,
+      BigInt(payload.legIndex),
+    );
+    await job.remove();
+    await audit(
+      key,
+      "superseded",
+      attempts,
+      payload,
+      "Legacy observation-stamped conversion job removed during stable-leg reconciliation",
+      {
+        replacementJobId,
+      },
+    );
+  }
+  if (legacyJobs.length > 0) {
+    process.stdout.write(
+      JSON.stringify({
+        level: "info",
+        event: "legacy_conversion_jobs_reconciled",
+        count: legacyJobs.length,
+      }) + "\n",
+    );
+  }
+}
+
 async function readLeg(vault: Address, legIndex: bigint) {
   if (isNativeV4) {
     const [minimum, delay, leg, block] = await Promise.all([
@@ -779,12 +840,7 @@ async function scan() {
         })
       )
         continue;
-      const key = conversionJobId(
-        launch.vault,
-        index,
-        current.leg.pendingSince,
-        current.leg.pendingBase,
-      );
+      const key = conversionJobId(launch.vault, index);
       const payload: ConvertJob = {
         kind: "convert",
         idempotencyKey: key,
@@ -801,6 +857,9 @@ async function scan() {
           jobId: key,
           priority: 4,
         });
+      } else if (await existing.isFailed()) {
+        await audit(key, "queued", existing.attemptsMade, payload);
+        await existing.retry();
       }
     }
   }
@@ -821,7 +880,7 @@ async function safeMinimum(
     abi: nativeConverterAbi,
     functionName: "minimumSafeOutput",
     args: [tokenIn, tokenOut, fee, amount],
-    account: operator,
+    account: writeAccount,
   });
   return simulation.result;
 }
@@ -840,7 +899,7 @@ async function v4LaunchFeePlan(
       abi: v4AssetRouterAbi,
       functionName: "quoteAssetToNative",
       args: [token, input],
-      account: operator,
+      account: writeAccount,
     })
   ).result[0];
   const maximumNative = await publicClient.readContract({
@@ -859,7 +918,7 @@ async function v4LaunchFeePlan(
         abi: v4AssetRouterAbi,
         functionName: "quoteAssetToNative",
         args: [token, input],
-        account: operator,
+        account: writeAccount,
       })
     ).result[0];
   }
@@ -908,7 +967,7 @@ async function enqueueV4LaunchFeeConversion(launch: {
       abi: v4PositionLockerAbi,
       functionName: "convertCollectedToken",
       args: [plan.input, plan.minimumNative, plan.deadline],
-      account: operator,
+      account: writeAccount,
     });
   } catch {
     // Unsafe oracle, impact, liquidity, or dust state remains queued onchain.
@@ -1054,7 +1113,7 @@ async function enqueueHarvest(launch: {
       functionName: "initialized",
     });
     if (!initialized) return;
-    const [nativeBalance, tokenBalance, simulation] = await Promise.all([
+    const [nativeBalance, tokenBalance] = await Promise.all([
       publicClient.getBalance({ address: locker }),
       publicClient.readContract({
         address: launch.token,
@@ -1062,17 +1121,47 @@ async function enqueueHarvest(launch: {
         functionName: "balanceOf",
         args: [locker],
       }),
-      publicClient.simulateContract({
+    ]);
+    let simulation;
+    try {
+      simulation = await publicClient.simulateContract({
         address: locker,
         abi: v4PositionLockerAbi,
         functionName: "collectFees",
         args: [0n, 0n],
-        account: operator,
-      }),
-    ]);
+        account: writeAccount,
+      });
+    } catch (error) {
+      if (nativeBalance === 0n && tokenBalance === 0n) {
+        const key = harvestJobId(locker);
+        const staleJob = await queue.getJob(key);
+        if (staleJob && (await staleJob.isFailed())) {
+          const payload = staleJob.data;
+          const attempts = staleJob.attemptsMade;
+          await staleJob.remove();
+          await audit(
+            key,
+            "superseded",
+            attempts,
+            payload,
+            "Harvest was consumed by a concurrent collector before execution",
+          );
+        }
+        return;
+      }
+      process.stdout.write(
+        JSON.stringify({
+          level: "info",
+          event: "v4_harvest_collection_already_consumed",
+          locker,
+          message: error instanceof Error ? error.message : String(error),
+        }) + "\n",
+      );
+    }
     if (
       nativeBalance === 0n &&
       tokenBalance === 0n &&
+      simulation &&
       simulation.result[0] === 0n &&
       simulation.result[1] === 0n
     ) {
@@ -1090,7 +1179,7 @@ async function enqueueHarvest(launch: {
         address: locker,
         abi: positionLockerAbi,
         functionName: "harvest",
-        account: operator,
+        account: writeAccount,
       });
       if (simulation.result[0] === 0n && simulation.result[1] === 0n) return;
     } catch (error) {
@@ -1117,6 +1206,9 @@ async function enqueueHarvest(launch: {
       priority: 3,
       removeOnComplete: false,
     });
+  } else if (await existing.isFailed()) {
+    await audit(key, "queued", existing.attemptsMade, payload);
+    await existing.retry();
   }
 }
 
@@ -1155,39 +1247,60 @@ async function processConversion(
       abi: nativeVaultAbi,
       functionName: "assetRouter",
     });
-    const route = await publicClient.readContract({
-      address: assetRouter,
-      abi: v4AssetRouterAbi,
-      functionName: "route",
-      args: [current.leg.asset],
-    });
-    const conversionInput =
+    const [route] = await Promise.all([
+      publicClient.readContract({
+        address: assetRouter,
+        abi: v4AssetRouterAbi,
+        functionName: "route",
+        args: [current.leg.asset],
+      }),
+    ]);
+    let conversionInput =
       current.leg.pendingBase > route.maximumNativeInput
         ? route.maximumNativeInput
         : current.leg.pendingBase;
     if (conversionInput === 0n) {
       throw new Error("Native conversion route has a zero input limit");
     }
-    const quote = await publicClient.simulateContract({
-      address: assetRouter,
-      abi: v4AssetRouterAbi,
-      functionName: "quoteNativeToAsset",
-      args: [current.leg.asset, conversionInput],
-      account: operator,
-    });
-    const expected = quote.result[0];
-    const minimumOutput = (expected * 9_950n) / 10_000n;
-    if (expected === 0n || minimumOutput === 0n) {
-      throw new Error("Native conversion route is unavailable");
-    }
     const deadline = current.timestamp + 300n;
-    const simulation = await publicClient.simulateContract({
-      address: job.data.vault,
-      abi: nativeVaultAbi,
-      functionName: "convertLeg",
-      args: [legIndex, conversionInput, minimumOutput, deadline],
-      account: operator,
-    });
+    const simulateBatch = async (input: bigint) => {
+      const quote = await publicClient.simulateContract({
+        address: assetRouter,
+        abi: v4AssetRouterAbi,
+        functionName: "quoteNativeToAsset",
+        args: [current.leg.asset, input],
+        account: writeAccount,
+      });
+      const expected = quote.result[0];
+      const minimumOutput = (expected * 9_950n) / 10_000n;
+      if (expected === 0n || minimumOutput === 0n) {
+        throw new Error("Native conversion route is unavailable");
+      }
+      return publicClient.simulateContract({
+        address: job.data.vault,
+        abi: nativeVaultAbi,
+        functionName: "convertLeg",
+        args: [legIndex, input, minimumOutput, deadline],
+        account: writeAccount,
+      });
+    };
+    let simulation;
+    let lastPlanningError;
+    for (let attempt = 0; attempt < 16; attempt += 1) {
+      try {
+        simulation = await simulateBatch(conversionInput);
+        break;
+      } catch (error) {
+        lastPlanningError = error;
+        if (conversionInput <= 1n || attempt === 15) break;
+        conversionInput /= 2n;
+      }
+    }
+    if (!simulation) {
+      throw lastPlanningError instanceof Error
+        ? lastPlanningError
+        : new Error("No safe native conversion batch is available");
+    }
     const transactionHash = await walletClient.writeContract(
       simulation.request,
     );
@@ -1243,7 +1356,7 @@ async function processConversion(
     abi: vaultAbi,
     functionName: "convertLeg",
     args: [legIndex, current.leg.pendingBase, minimumOutput, deadline],
-    account: operator,
+    account: writeAccount,
   });
   const transactionHash = await walletClient.writeContract(simulation.request);
   const receipt = await publicClient.waitForTransactionReceipt({
@@ -1270,15 +1383,42 @@ async function processHarvest(
     job.data,
   );
   if (isNativeV4) {
-    const collection = await publicClient.simulateContract({
-      address: job.data.locker,
-      abi: v4PositionLockerAbi,
-      functionName: "collectFees",
-      args: [0n, 0n],
-      account: operator,
-    });
     let transactionHash = ("0x" + "0".repeat(64)) as Hash;
-    if (collection.result[0] > 0n || collection.result[1] > 0n) {
+    const [nativeBefore, tokenBefore] = await Promise.all([
+      publicClient.getBalance({ address: job.data.locker }),
+      publicClient.readContract({
+        address: job.data.token,
+        abi: erc20BalanceAbi,
+        functionName: "balanceOf",
+        args: [job.data.locker],
+      }),
+    ]);
+    let collection;
+    try {
+      collection = await publicClient.simulateContract({
+        address: job.data.locker,
+        abi: v4PositionLockerAbi,
+        functionName: "collectFees",
+        args: [0n, 0n],
+        account: writeAccount,
+      });
+    } catch (error) {
+      if (nativeBefore === 0n && tokenBefore === 0n) {
+        return { operation: "harvest", transactionHash, inputAmount: "0" };
+      }
+      process.stdout.write(
+        JSON.stringify({
+          level: "info",
+          event: "v4_harvest_collection_already_consumed",
+          locker: job.data.locker,
+          message: error instanceof Error ? error.message : String(error),
+        }) + "\n",
+      );
+    }
+    if (
+      collection &&
+      (collection.result[0] > 0n || collection.result[1] > 0n)
+    ) {
       transactionHash = await walletClient.writeContract(collection.request);
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: transactionHash,
@@ -1297,7 +1437,7 @@ async function processHarvest(
         abi: v4PositionLockerAbi,
         functionName: "routeCollectedNative",
         args: [nativeBalance],
-        account: operator,
+        account: writeAccount,
       });
       transactionHash = await walletClient.writeContract(routing.request);
       const receipt = await publicClient.waitForTransactionReceipt({
@@ -1312,7 +1452,7 @@ async function processHarvest(
       operation: "harvest",
       transactionHash,
       inputAmount: nativeBalance.toString(),
-      launchTokenFees: collection.result[1].toString(),
+      launchTokenFees: (collection?.result[1] ?? tokenBefore).toString(),
     };
   }
   let simulation;
@@ -1321,7 +1461,7 @@ async function processHarvest(
       address: job.data.locker,
       abi: positionLockerAbi,
       functionName: "harvest",
-      account: operator,
+      account: writeAccount,
     });
   } catch (error) {
     if (!isEmptyHarvest(error)) throw error;
@@ -1384,7 +1524,7 @@ async function processProtocolConversion(
       abi: v4PositionLockerAbi,
       functionName: "convertCollectedToken",
       args: [plan.input, plan.minimumNative, plan.deadline],
-      account: operator,
+      account: writeAccount,
     });
     const transactionHash = await walletClient.writeContract(
       simulation.request,
@@ -1427,7 +1567,7 @@ async function processProtocolConversion(
       abi: positionLockerAbi,
       functionName: "convertLaunchFees",
       args: [pending, minimum, deadline],
-      account: operator,
+      account: writeAccount,
     });
     const transactionHash = await walletClient.writeContract(
       simulation.request,
@@ -1467,7 +1607,7 @@ async function processProtocolConversion(
     abi: protocolFeeRouterAbi,
     functionName: "convertPendingToNative",
     args: [job.data.token, input, minimum, deadline],
-    account: operator,
+    account: writeAccount,
   });
   const transactionHash = await walletClient.writeContract(simulation.request);
   const receipt = await publicClient.waitForTransactionReceipt({
@@ -1517,7 +1657,11 @@ async function finalizeCompletedJob(
     null,
     result,
   );
-  if (isReusableStreamJobKind(job.data.kind)) {
+  if (
+    isReusableStreamJobKind(job.data.kind) ||
+    job.data.kind === "convert" ||
+    job.data.kind === undefined
+  ) {
     await job.remove();
   }
 }
@@ -1576,6 +1720,7 @@ process.on("SIGINT", () => {
   stopping = true;
 });
 await reconcileLegacyStreamJobs();
+await reconcileLegacyConversionJobs();
 await runScan();
 while (!stopping) {
   await new Promise((resolve) => setTimeout(resolve, scanMs));

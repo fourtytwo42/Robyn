@@ -15,6 +15,7 @@ import {
   createPublicClient,
   createWalletClient,
   decodeEventLog,
+  decodeFunctionData,
   defineChain,
   encodeFunctionData,
   formatEther,
@@ -1032,7 +1033,43 @@ async function conversions() {
   for (const launch of state.launches) {
     for (let legIndex = 0; legIndex < 3; legIndex += 1) {
       const label = `basket-convert-${launch.index}-${legIndex}`;
-      if (state.transactions.some((entry) => entry.label === label)) continue;
+      if (state.conversions.legs.some((entry) => entry.launchIndex === launch.index && entry.legIndex === legIndex)) continue;
+      const existingTransaction = state.transactions.find((entry) => entry.label === label);
+      if (existingTransaction) {
+        const blockNumber = BigInt(existingTransaction.blockNumber);
+        const transaction = await publicClient.getTransaction({ hash: existingTransaction.hash });
+        const decoded = decodeFunctionData({ abi: vaultAbi, data: transaction.input });
+        if (decoded.functionName !== "convertLeg" || !decoded.args || decoded.args.length < 3) {
+          throw new Error(`Cannot reconstruct confirmed basket conversion ${label}`);
+        }
+        const confirmedBefore = await publicClient.readContract({
+          address: launch.vault,
+          abi: vaultAbi,
+          functionName: "leg",
+          args: [BigInt(legIndex)],
+          blockNumber: blockNumber - 1n,
+        });
+        const confirmedAfter = await publicClient.readContract({
+          address: launch.vault,
+          abi: vaultAbi,
+          functionName: "leg",
+          args: [BigInt(legIndex)],
+          blockNumber,
+        });
+        if (confirmedAfter.pendingNative >= confirmedBefore.pendingNative || confirmedAfter.rewardsDeposited <= confirmedBefore.rewardsDeposited) {
+          throw new Error(`Confirmed basket conversion did not advance ${label}`);
+        }
+        state.conversions.legs.push({
+          launchIndex: launch.index,
+          legIndex,
+          asset: confirmedBefore.asset,
+          nativeInput: BigInt(decoded.args[1]).toString(),
+          minimumOutput: BigInt(decoded.args[2]).toString(),
+          rewardDelta: (confirmedAfter.rewardsDeposited - confirmedBefore.rewardsDeposited).toString(),
+        });
+        saveState(state);
+        continue;
+      }
       const before = await publicClient.readContract({ address: launch.vault, abi: vaultAbi, functionName: "leg", args: [BigInt(legIndex)] });
       if (before.pendingNative === 0n) throw new Error(`No pending basket fees for ${label}`);
       const status = await publicClient.readContract({ address: manifest.contracts.assetRouter, abi: assetRouterAbi, functionName: "routeStatus", args: [before.asset] });
@@ -1092,18 +1129,32 @@ async function conversions() {
           /revert|execution/i,
         );
       }
-      await contractTransaction(state, label, account, launch.vault, vaultAbi, "convertLeg", [BigInt(legIndex), amount, minimumOutput, deadline]);
-      const after = await publicClient.readContract({ address: launch.vault, abi: vaultAbi, functionName: "leg", args: [BigInt(legIndex)] });
-      if (after.pendingNative >= before.pendingNative || after.rewardsDeposited <= before.rewardsDeposited) {
+      const confirmed = await contractTransaction(state, label, account, launch.vault, vaultAbi, "convertLeg", [BigInt(legIndex), amount, minimumOutput, deadline]);
+      const confirmedBlock = BigInt(confirmed.blockNumber);
+      const confirmedBefore = await publicClient.readContract({
+        address: launch.vault,
+        abi: vaultAbi,
+        functionName: "leg",
+        args: [BigInt(legIndex)],
+        blockNumber: confirmedBlock - 1n,
+      });
+      const after = await publicClient.readContract({
+        address: launch.vault,
+        abi: vaultAbi,
+        functionName: "leg",
+        args: [BigInt(legIndex)],
+        blockNumber: confirmedBlock,
+      });
+      if (after.pendingNative >= confirmedBefore.pendingNative || after.rewardsDeposited <= confirmedBefore.rewardsDeposited) {
         throw new Error(`Basket conversion did not advance ${label}`);
       }
       state.conversions.legs.push({
         launchIndex: launch.index,
         legIndex,
-        asset: before.asset,
+        asset: confirmedBefore.asset,
         nativeInput: amount.toString(),
-        minimumOutput: ((quoted * 99n) / 100n).toString(),
-        rewardDelta: (after.rewardsDeposited - before.rewardsDeposited).toString(),
+        minimumOutput: minimumOutput.toString(),
+        rewardDelta: (after.rewardsDeposited - confirmedBefore.rewardsDeposited).toString(),
       });
       saveState(state);
     }
@@ -1355,23 +1406,73 @@ async function sweep() {
     saveState(state);
   }
   const gasPrice = BigInt(state.preflight.gasPriceWei);
-  const l1BaseFee = BigInt(state.preflight.l1BaseFeeWei);
-  const nativeSweepReserve = nativeSweepReserveWei(gasPrice, l1BaseFee);
+  state.sweep.nativeReserveWeiByActor ??= [];
   for (let actorIndex = 0; actorIndex < accounts.length; actorIndex += 1) {
     const account = privateKeyToAccount(accounts[actorIndex].privateKey);
     const balance = await publicClient.getBalance({ address: account.address });
+    if (balance === 0n) continue;
+    let estimatedGas = await publicClient.estimateGas({
+      account,
+      to: manifest.deployer,
+      value: 1n,
+      gasPrice,
+    });
+    let nativeSweepReserve = nativeSweepReserveWei(gasPrice, estimatedGas);
+    let reserveStabilized = false;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const candidateValue =
+        balance > nativeSweepReserve ? balance - nativeSweepReserve : 1n;
+      estimatedGas = await publicClient.estimateGas({
+        account,
+        to: manifest.deployer,
+        value: candidateValue,
+        gasPrice,
+      });
+      const requiredReserve = nativeSweepReserveWei(gasPrice, estimatedGas);
+      if (requiredReserve <= nativeSweepReserve) {
+        reserveStabilized = true;
+        break;
+      }
+      nativeSweepReserve = requiredReserve;
+    }
+    if (!reserveStabilized) {
+      throw new Error(
+        `Native sweep reserve did not stabilize for actor ${actorIndex}`,
+      );
+    }
+    state.sweep.nativeReserveWeiByActor[actorIndex] =
+      nativeSweepReserve.toString();
+    let confirmationBlock;
     if (balance > nativeSweepReserve) {
-      await recordTransaction(state, `sweep-native-${actorIndex}`, walletClient(account), { account, to: manifest.deployer, value: balance - nativeSweepReserve });
+      const confirmed = await recordTransaction(state, `sweep-native-${actorIndex}`, walletClient(account), { account, to: manifest.deployer, value: balance - nativeSweepReserve });
+      confirmationBlock = BigInt(confirmed.blockNumber);
       state.sweep.nativeTransfers += 1;
-    } else if (balance > 0n) {
-      state.sweep.dust.push({ actorIndex, amount: balance.toString() });
+    }
+    const remainingBalance = await publicClient.getBalance({
+      address: account.address,
+      ...(confirmationBlock === undefined
+        ? {}
+        : { blockNumber: confirmationBlock }),
+    });
+    const existingDust = state.sweep.dust.find(
+      (entry) => entry.actorIndex === actorIndex,
+    );
+    if (existingDust) {
+      existingDust.amount = remainingBalance.toString();
+    } else if (remainingBalance > 0n) {
+      state.sweep.dust.push({
+        actorIndex,
+        amount: remainingBalance.toString(),
+      });
     }
     saveState(state);
   }
+  const uniqueNativeReserves = [...new Set(state.sweep.nativeReserveWeiByActor)];
   const projectBalance = await publicClient.getBalance({ address: manifest.deployer });
   if (projectBalance < REQUIRED_RESERVE_WEI) throw new Error("Project reserve was not preserved after sweep");
   state.sweep.projectBalanceWei = projectBalance.toString();
-  state.sweep.nativeReserveWeiPerActor = nativeSweepReserve.toString();
+  state.sweep.nativeReserveWeiPerActor =
+    uniqueNativeReserves.length === 1 ? uniqueNativeReserves[0] : null;
   state.phases.swept = new Date().toISOString();
   saveState(state);
   console.log(json(state.sweep));
