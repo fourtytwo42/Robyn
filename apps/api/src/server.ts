@@ -743,13 +743,75 @@ app.addHook("onSend", async (_request, reply, payload) => {
 });
 
 async function freshness() {
-  const rows = await sql.unsafe<{ last_block: string; updated_at: string }[]>(
-    "SELECT last_block::text,updated_at::text FROM indexer_checkpoints WHERE service='chain-indexer' AND chain_id=$1",
-    [chainId],
+  const [checkpoints, heartbeats] = await Promise.all([
+    sql.unsafe<{ service: string; last_block: string; updated_at: string }[]>(
+      "SELECT service,last_block::text,updated_at::text FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector') AND chain_id=$1",
+      [chainId],
+    ),
+    sql.unsafe<
+      {
+        service: string;
+        status: string;
+        metadata: Record<string, unknown>;
+        fresh: boolean;
+      }[]
+    >(
+      "SELECT service,status,metadata,(updated_at > now() - interval '30 seconds') fresh FROM service_heartbeats WHERE service IN ('chain-ingester','launch-projector')",
+    ),
+  ]);
+  const ingestion = checkpoints.find(
+    (checkpoint) => checkpoint.service === "chain-indexer",
   );
+  const projection = checkpoints.find(
+    (checkpoint) => checkpoint.service === "launch-projector",
+  );
+  const ingestionHeartbeat = heartbeats.find(
+    (heartbeat) => heartbeat.service === "chain-ingester",
+  );
+  const projectionHeartbeat = heartbeats.find(
+    (heartbeat) => heartbeat.service === "launch-projector",
+  );
+  const observedHead = String(
+    ingestionHeartbeat?.metadata.head ??
+      ingestionHeartbeat?.metadata.checkpoint ??
+      ingestion?.last_block ??
+      "0",
+  );
+  const ingestionBlock = BigInt(ingestion?.last_block ?? "0");
+  const projectionBlock = BigInt(projection?.last_block ?? "0");
+  const headBlock = BigInt(observedHead);
+  const lastDegradations = [
+    ingestionHeartbeat?.metadata.lastRpcDegradationAt,
+    projectionHeartbeat?.metadata.lastRpcDegradationAt,
+  ]
+    .filter((value): value is string => typeof value === "string")
+    .sort();
   return {
-    asOfBlock: rows[0]?.last_block ?? null,
-    indexedAt: rows[0]?.updated_at ?? null,
+    asOfBlock: ingestion?.last_block ?? null,
+    indexedAt: ingestion?.updated_at ?? null,
+    projectionAsOfBlock: projection?.last_block ?? null,
+    ingestionLagBlocks: (headBlock > ingestionBlock
+      ? headBlock - ingestionBlock
+      : 0n
+    ).toString(),
+    projectionLagBlocks: (ingestionBlock > projectionBlock
+      ? ingestionBlock - projectionBlock
+      : 0n
+    ).toString(),
+    ingestionCycleMs: Number(ingestionHeartbeat?.metadata.cycleMs ?? 0),
+    projectionCycleMs: Number(projectionHeartbeat?.metadata.cycleMs ?? 0),
+    rpcRetryCount:
+      Number(ingestionHeartbeat?.metadata.rpcRetryCount ?? 0) +
+      Number(projectionHeartbeat?.metadata.rpcRetryCount ?? 0),
+    lastRpcDegradationAt: lastDegradations.at(-1) ?? null,
+    ingestionStatus:
+      ingestionHeartbeat?.status === "ok" && ingestionHeartbeat.fresh
+        ? "ok"
+        : "degraded",
+    projectionStatus:
+      projectionHeartbeat?.status === "ok" && projectionHeartbeat.fresh
+        ? "ok"
+        : "degraded",
   };
 }
 
@@ -788,6 +850,9 @@ app.get("/health", async (_request, reply) => {
   const healthy =
     database[0]?.ok === 1 &&
     state.asOfBlock !== null &&
+    state.projectionAsOfBlock !== null &&
+    state.ingestionStatus === "ok" &&
+    state.projectionStatus === "ok" &&
     keeper.keeperStatus === "ok" &&
     artifact.artifactStatus === "ok";
   return reply.code(healthy ? 200 : 503).send({

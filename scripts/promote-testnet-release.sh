@@ -23,7 +23,7 @@ as_operator() { runuser -u "$operator" -- env PM2_HOME="$pm2_home" "$@"; }
 start_stack() {
   local selected="$1"
   local pm2="$selected/node_modules/.bin/pm2"
-  for name in robyn-web-testnet robyn-api-testnet robyn-indexer-testnet robyn-keeper-testnet robyn-artifacts-testnet; do
+  for name in robyn-web-testnet robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet robyn-artifacts-testnet; do
     as_operator "$pm2" delete "$name" >/dev/null 2>&1 || true
   done
   set -a

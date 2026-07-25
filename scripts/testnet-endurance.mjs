@@ -1167,8 +1167,30 @@ async function sample() {
       failures.push("indexed launch count moved backward");
     }
     state.lastLaunchCount = launchCount;
-    const lag = Number(rpcBlock) - Number(status.asOfBlock);
-    if (lag < 0 || lag > 100) failures.push(`index lag is ${lag} blocks`);
+    const ingestionLag = Number(rpcBlock) - Number(status.asOfBlock);
+    const projectionLag = Number(status.projectionLagBlocks);
+    if (ingestionLag < 0 || ingestionLag > 100) {
+      failures.push(`ingestion lag is ${ingestionLag} blocks`);
+    }
+    if (!Number.isFinite(projectionLag) || projectionLag > 100) {
+      failures.push(`projection lag is ${projectionLag} blocks`);
+    }
+    if (
+      status.ingestionStatus !== "ok" ||
+      status.projectionStatus !== "ok"
+    ) {
+      failures.push("indexer pipeline status is degraded");
+    }
+    state.ingestionLagSamples = [
+      ...(state.ingestionLagSamples ?? []),
+      ingestionLag,
+    ].slice(-20);
+    const ingestionLagP95 = percentile(state.ingestionLagSamples, 0.95);
+    if (state.ingestionLagSamples.length >= 20 && ingestionLagP95 > 50) {
+      failures.push(
+        `ingestion lag p95 ${ingestionLagP95} blocks exceeds threshold`,
+      );
+    }
     if (status.keeperStatus !== "ok") failures.push("keeper status is not ok");
     if (status.artifactStatus !== "ok") {
       failures.push("artifact status is not ok");
@@ -1248,6 +1270,17 @@ async function sample() {
     ).toString(),
     availableDiskPercent: disk.availablePercent,
     endpointP95Ms: p95,
+    ingestionLagBlocks:
+      status?.asOfBlock && rpcBlock !== undefined
+        ? Number(rpcBlock) - Number(status.asOfBlock)
+        : null,
+    projectionLagBlocks:
+      status?.projectionLagBlocks === undefined
+        ? null
+        : Number(status.projectionLagBlocks),
+    ingestionLagP95Blocks: state.ingestionLagSamples?.length
+      ? percentile(state.ingestionLagSamples, 0.95)
+      : null,
     transactionCount: state.transactions.length,
     writeCycleCount: state.writeCycleCount,
     enduranceLaunchCount: state.enduranceLaunches.length,

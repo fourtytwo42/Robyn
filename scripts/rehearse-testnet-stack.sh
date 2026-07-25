@@ -13,8 +13,8 @@ fi
 database="robyn_testnet_rehearsal"
 rpc_url="http://127.0.0.1:18545"
 pm2="$repo_root/node_modules/.bin/pm2"
-app_selector="robyn-web-testnet,robyn-api-testnet,robyn-indexer-testnet,robyn-keeper-testnet,robyn-artifacts-testnet"
-app_names=(robyn-web-testnet robyn-api-testnet robyn-indexer-testnet robyn-keeper-testnet robyn-artifacts-testnet)
+app_selector="robyn-web-testnet,robyn-api-testnet,robyn-indexer-testnet,robyn-projector-testnet,robyn-keeper-testnet,robyn-artifacts-testnet"
+app_names=(robyn-web-testnet robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet robyn-artifacts-testnet)
 anvil --host 127.0.0.1 --port 18545 --chain-id 46630 --config-out "$work/anvil.json" --silent >"$work/anvil.log" 2>&1 &
 anvil_pid=$!
 cleanup() {

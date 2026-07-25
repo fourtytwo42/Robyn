@@ -7,6 +7,17 @@ import {
   type Address,
 } from "viem";
 import { createDatabase } from "@robyn/db";
+import {
+  boundedRangeEnd,
+  checkpointDisposition,
+  completeProjectionBatch,
+  failureBackoffMs,
+  ingestionCycleResult,
+  projectionRequiresReset,
+  projectionWindow,
+  requiredBlockNumbers,
+  uniqueLaunchIds,
+} from "./pipeline.js";
 
 type Manifest = {
   schemaVersion?: number;
@@ -31,14 +42,18 @@ const manifest = JSON.parse(
 const rpcUrl = process.env.ROBYN_OPERATOR_RPC_URL ?? "http://127.0.0.1:8545";
 const client = createPublicClient({
   transport: http(rpcUrl, {
-    batch: { batchSize: 20, wait: 20 },
     retryCount: Number(process.env.ROBYN_RPC_RETRY_COUNT ?? "5"),
     retryDelay: Number(process.env.ROBYN_RPC_RETRY_DELAY_MS ?? "500"),
     timeout: Number(process.env.ROBYN_RPC_TIMEOUT_MS ?? "15000"),
   }),
 });
 const { sql } = createDatabase();
-const pollMs = Number(process.env.INDEXER_POLL_MS ?? "3000");
+const role = process.env.ROBYN_INDEXER_ROLE ?? "combined";
+if (!["ingester", "projector", "combined"].includes(role)) {
+  throw new Error(`Unsupported indexer role: ${role}`);
+}
+const pollMs = Number(process.env.INDEXER_POLL_MS ?? "1000");
+const projectorPollMs = Number(process.env.PROJECTOR_POLL_MS ?? "1000");
 const blockRange = BigInt(process.env.INDEXER_BLOCK_RANGE ?? "250");
 const blockReadConcurrency = Number(
   process.env.INDEXER_BLOCK_READ_CONCURRENCY ?? "6",
@@ -47,7 +62,6 @@ const maximumConsecutiveFailures = Number(
   process.env.INDEXER_MAXIMUM_CONSECUTIVE_FAILURES ?? "24",
 );
 let stopping = false;
-let consecutiveFailures = 0;
 
 const indexedAddresses = [
   ...new Set(
@@ -194,7 +208,10 @@ const nativeV4FeeRouterStateAbi = [
   },
 ] as const;
 
-async function loadAtomicLaunches(asOfBlock: bigint) {
+async function loadAtomicLaunchesFromDatabase(
+  fromBlock: bigint,
+  asOfBlock: bigint,
+) {
   const coordinator = manifest.contracts.atomicLaunchCoordinator;
   if (!coordinator)
     return new Map<
@@ -203,26 +220,40 @@ async function loadAtomicLaunches(asOfBlock: bigint) {
     >();
   const v4 = manifest.liquidityVenue === "uniswap-v4";
   const event = v4 ? atomicV4LaunchEvent : atomicLaunchEvent;
-  const logs = await client.getLogs({
-    address: coordinator,
-    event,
-    fromBlock: BigInt(manifest.deploymentBlock),
-    toBlock: asOfBlock,
-  });
+  const logs = await sql.unsafe<
+    {
+      block_number: string;
+      data: `0x${string}`;
+      topics: `0x${string}`[];
+    }[]
+  >(
+    "SELECT block_number::text,data,topics FROM raw_logs WHERE chain_id=$1 AND address=$2 AND block_number BETWEEN $3 AND $4 ORDER BY block_number,transaction_index,log_index",
+    [
+      manifest.chainId,
+      coordinator.toLowerCase(),
+      fromBlock.toString(),
+      asOfBlock.toString(),
+    ],
+  );
   const launches = new Map<
     string,
     { blockNumber: bigint; args: Record<string, unknown> }
   >();
   for (const log of logs) {
-    const decoded = decodeEventLog({
-      abi: [event],
-      data: log.data,
-      topics: log.topics,
-    });
+    let decoded;
+    try {
+      decoded = decodeEventLog({
+        abi: [event],
+        data: log.data,
+        topics: log.topics as [`0x${string}`, ...`0x${string}`[]],
+      });
+    } catch {
+      continue;
+    }
     const eventArgs = decoded.args as unknown as Record<string, unknown>;
     const receipt = eventArgs.receipt as Record<string, unknown> | undefined;
     launches.set(String(eventArgs.launchId), {
-      blockNumber: log.blockNumber,
+      blockNumber: BigInt(log.block_number),
       args: receipt ? { ...eventArgs, ...receipt } : eventArgs,
     });
   }
@@ -290,161 +321,162 @@ const vaultAbi = [
   },
 ] as const;
 
-async function rebuildLaunches(asOfBlock: bigint) {
-  const atomicLaunches = await loadAtomicLaunches(asOfBlock);
-  const count = await client.readContract({
+type AtomicLaunchProjection = {
+  blockNumber: bigint;
+  args: Record<string, unknown>;
+};
+
+async function projectLaunch(
+  id: bigint,
+  atomic: AtomicLaunchProjection | undefined,
+) {
+  const token = await client.readContract({
     address: manifest.contracts.factory,
     abi: factoryAbi,
-    functionName: "launchCount",
+    functionName: "launchTokenById",
+    args: [id],
   });
-  for (let id = 1n; id <= count; id++) {
-    const token = await client.readContract({
+  const [vault, creator, market, name, symbol] = await Promise.all([
+    client.readContract({
       address: manifest.contracts.factory,
       abi: factoryAbi,
-      functionName: "launchTokenById",
-      args: [id],
-    });
-    const [vault, creator, market, name, symbol] = await Promise.all([
+      functionName: "vaultByToken",
+      args: [token],
+    }),
+    client.readContract({
+      address: manifest.contracts.factory,
+      abi: factoryAbi,
+      functionName: "creatorByToken",
+      args: [token],
+    }),
+    resolveMarket(token),
+    client.readContract({
+      address: token,
+      abi: tokenAbi,
+      functionName: "name",
+    }),
+    client.readContract({
+      address: token,
+      abi: tokenAbi,
+      functionName: "symbol",
+    }),
+  ]);
+  if (manifest.contracts.atomicLaunchCoordinator) {
+    if (!atomic) throw new Error(`Coordinator event missing for launch ${id}`);
+    const eventToken = String(atomic.args.token).toLowerCase();
+    const eventVault = String(atomic.args.vault).toLowerCase();
+    const eventMarket = String(atomic.args.market).toLowerCase();
+    const eventCreator = String(atomic.args.creator).toLowerCase();
+    if (
+      eventToken !== token.toLowerCase() ||
+      eventVault !== vault.toLowerCase() ||
+      eventMarket !== market.toLowerCase() ||
+      eventCreator !== creator.toLowerCase()
+    )
+      throw new Error(`Factory mappings differ for launch ${id}`);
+    const [seeded, exclusionsSealed] = await Promise.all([
       client.readContract({
-        address: manifest.contracts.factory,
-        abi: factoryAbi,
-        functionName: "vaultByToken",
-        args: [token],
+        address: market,
+        abi: marketStateAbi,
+        functionName: "seeded",
       }),
-      client.readContract({
-        address: manifest.contracts.factory,
-        abi: factoryAbi,
-        functionName: "creatorByToken",
-        args: [token],
-      }),
-      resolveMarket(token),
       client.readContract({
         address: token,
-        abi: tokenAbi,
-        functionName: "name",
-      }),
-      client.readContract({
-        address: token,
-        abi: tokenAbi,
-        functionName: "symbol",
+        abi: tokenStateAbi,
+        functionName: "exclusionsSealed",
       }),
     ]);
-    const atomic = atomicLaunches.get(id.toString());
-    if (manifest.contracts.atomicLaunchCoordinator) {
-      if (!atomic) continue;
-      const eventToken = String(atomic.args.token).toLowerCase();
-      const eventVault = String(atomic.args.vault).toLowerCase();
-      const eventMarket = String(atomic.args.market).toLowerCase();
-      const eventCreator = String(atomic.args.creator).toLowerCase();
-      if (
-        eventToken !== token.toLowerCase() ||
-        eventVault !== vault.toLowerCase() ||
-        eventMarket !== market.toLowerCase() ||
-        eventCreator !== creator.toLowerCase()
-      )
-        continue;
-      const [seeded, exclusionsSealed] = await Promise.all([
-        client.readContract({
-          address: market,
-          abi: marketStateAbi,
-          functionName: "seeded",
-        }),
-        client.readContract({
-          address: token,
-          abi: tokenStateAbi,
-          functionName: "exclusionsSealed",
-        }),
-      ]);
-      if (!seeded || !exclusionsSealed) continue;
-      if (manifest.contracts.protocolFeeRouter) {
-        const feeAccount = await client.readContract({
-          address: manifest.contracts.protocolFeeRouter,
-          abi:
-            manifest.liquidityVenue === "uniswap-v4"
-              ? nativeV4FeeRouterStateAbi
-              : feeRouterStateAbi,
-          functionName: "launchAccount",
-          args: [token],
-        });
-        if (
-          !feeAccount.registered ||
-          feeAccount.creator.toLowerCase() !== creator.toLowerCase() ||
-          feeAccount.vault.toLowerCase() !== vault.toLowerCase() ||
-          feeAccount.market.toLowerCase() !== market.toLowerCase() ||
-          feeAccount.locker.toLowerCase() !==
-            String(atomic.args.locker).toLowerCase()
-        )
-          continue;
-      }
+    if (!seeded || !exclusionsSealed) {
+      throw new Error(`Launch ${id} is not sealed and seeded`);
     }
-    const countLegs = await client.readContract({
+    if (manifest.contracts.protocolFeeRouter) {
+      const feeAccount = await client.readContract({
+        address: manifest.contracts.protocolFeeRouter,
+        abi:
+          manifest.liquidityVenue === "uniswap-v4"
+            ? nativeV4FeeRouterStateAbi
+            : feeRouterStateAbi,
+        functionName: "launchAccount",
+        args: [token],
+      });
+      if (
+        !feeAccount.registered ||
+        feeAccount.creator.toLowerCase() !== creator.toLowerCase() ||
+        feeAccount.vault.toLowerCase() !== vault.toLowerCase() ||
+        feeAccount.market.toLowerCase() !== market.toLowerCase() ||
+        feeAccount.locker.toLowerCase() !==
+          String(atomic.args.locker).toLowerCase()
+      )
+        throw new Error(`Fee-router mappings differ for launch ${id}`);
+    }
+  }
+  const countLegs = await client.readContract({
+    address: vault,
+    abi: vaultAbi,
+    functionName: "legCount",
+  });
+  const assets: string[] = [],
+    weights: number[] = [];
+  for (let i = 0n; i < countLegs; i++) {
+    const leg = await client.readContract({
       address: vault,
       abi: vaultAbi,
-      functionName: "legCount",
+      functionName: "leg",
+      args: [i],
     });
-    const assets: string[] = [],
-      weights: number[] = [];
-    for (let i = 0n; i < countLegs; i++) {
-      const leg = await client.readContract({
-        address: vault,
-        abi: vaultAbi,
-        functionName: "leg",
-        args: [i],
-      });
-      assets.push(leg.asset.toLowerCase());
-      weights.push(leg.weightBps);
-    }
-    const found = await sql.unsafe<{ block_number: string }[]>(
-      "SELECT block_number::text FROM raw_logs WHERE chain_id=$1 AND address=$2 AND lower(topics->>3) LIKE $3 ORDER BY block_number LIMIT 1",
-      [
-        manifest.chainId,
-        manifest.contracts.factory.toLowerCase(),
-        "%" + token.slice(2).toLowerCase(),
-      ],
-    );
-    const created =
-      atomic?.blockNumber ??
-      (found[0]
-        ? BigInt(found[0].block_number)
-        : BigInt(manifest.deploymentBlock));
-    const [campaign] = await sql.unsafe<
-      {
-        campaign_id: string;
-        campaign_release_sha: string;
-        automated_test_launch: boolean;
-      }[]
-    >(
-      "SELECT campaign_id,campaign_release_sha,automated_test_launch FROM launch_metadata_bindings WHERE chain_id=$1 AND token=$2 AND verification_status='robyn-sanitized' AND automated_test_launch=true",
-      [manifest.chainId, token.toLowerCase()],
-    );
-    await sql.unsafe(
-      "INSERT INTO launches (chain_id,launch_id,token,vault,market,creator,name,symbol,assets,weights_bps,created_block,updated_block,formula_version,campaign_id,campaign_release_sha,automated_test_launch) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12,$13,$14,$15,$16) ON CONFLICT (chain_id,token) DO UPDATE SET market=EXCLUDED.market,name=EXCLUDED.name,symbol=EXCLUDED.symbol,assets=EXCLUDED.assets,weights_bps=EXCLUDED.weights_bps,created_block=EXCLUDED.created_block,updated_block=EXCLUDED.updated_block,formula_version=EXCLUDED.formula_version,campaign_id=EXCLUDED.campaign_id,campaign_release_sha=EXCLUDED.campaign_release_sha,automated_test_launch=EXCLUDED.automated_test_launch",
-      [
-        manifest.chainId,
-        id.toString(),
-        token.toLowerCase(),
-        vault.toLowerCase(),
-        market.toLowerCase(),
-        creator.toLowerCase(),
-        name,
-        symbol,
-        JSON.stringify(assets),
-        JSON.stringify(weights),
-        created.toString(),
-        asOfBlock.toString(),
-        atomic && manifest.contracts.protocolFeeRouter
-          ? manifest.liquidityVenue === "uniswap-v4"
-            ? "native-v4-dao-atomic"
-            : "native-v3-dao-atomic"
-          : atomic
-            ? "native-v2-atomic"
-            : "native-v1",
-        campaign?.campaign_id ?? null,
-        campaign?.campaign_release_sha ?? null,
-        campaign?.automated_test_launch ?? false,
-      ],
-    );
+    assets.push(leg.asset.toLowerCase());
+    weights.push(leg.weightBps);
   }
+  const found = await sql.unsafe<{ block_number: string }[]>(
+    "SELECT block_number::text FROM raw_logs WHERE chain_id=$1 AND address=$2 AND lower(topics->>3) LIKE $3 ORDER BY block_number LIMIT 1",
+    [
+      manifest.chainId,
+      manifest.contracts.factory.toLowerCase(),
+      "%" + token.slice(2).toLowerCase(),
+    ],
+  );
+  const created =
+    atomic?.blockNumber ??
+    (found[0]
+      ? BigInt(found[0].block_number)
+      : BigInt(manifest.deploymentBlock));
+  const [campaign] = await sql.unsafe<
+    {
+      campaign_id: string;
+      campaign_release_sha: string;
+      automated_test_launch: boolean;
+    }[]
+  >(
+    "SELECT campaign_id,campaign_release_sha,automated_test_launch FROM launch_metadata_bindings WHERE chain_id=$1 AND token=$2 AND verification_status='robyn-sanitized' AND automated_test_launch=true",
+    [manifest.chainId, token.toLowerCase()],
+  );
+  await sql.unsafe(
+    "INSERT INTO launches (chain_id,launch_id,token,vault,market,creator,name,symbol,assets,weights_bps,created_block,updated_block,formula_version,campaign_id,campaign_release_sha,automated_test_launch) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12,$13,$14,$15,$16) ON CONFLICT (chain_id,token) DO UPDATE SET market=EXCLUDED.market,name=EXCLUDED.name,symbol=EXCLUDED.symbol,assets=EXCLUDED.assets,weights_bps=EXCLUDED.weights_bps,created_block=EXCLUDED.created_block,updated_block=EXCLUDED.updated_block,formula_version=EXCLUDED.formula_version,campaign_id=EXCLUDED.campaign_id,campaign_release_sha=EXCLUDED.campaign_release_sha,automated_test_launch=EXCLUDED.automated_test_launch",
+    [
+      manifest.chainId,
+      id.toString(),
+      token.toLowerCase(),
+      vault.toLowerCase(),
+      market.toLowerCase(),
+      creator.toLowerCase(),
+      name,
+      symbol,
+      JSON.stringify(assets),
+      JSON.stringify(weights),
+      created.toString(),
+      created.toString(),
+      atomic && manifest.contracts.protocolFeeRouter
+        ? manifest.liquidityVenue === "uniswap-v4"
+          ? "native-v4-dao-atomic"
+          : "native-v3-dao-atomic"
+        : atomic
+          ? "native-v2-atomic"
+          : "native-v1",
+      campaign?.campaign_id ?? null,
+      campaign?.campaign_release_sha ?? null,
+      campaign?.automated_test_launch ?? false,
+    ],
+  );
 }
 
 async function resetCanonical() {
@@ -461,13 +493,17 @@ async function resetCanonical() {
       manifest.chainId,
     ]);
     await tx.unsafe(
-      "DELETE FROM indexer_checkpoints WHERE service='chain-indexer' AND chain_id=$1",
+      "DELETE FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector') AND chain_id=$1",
       [manifest.chainId],
+    );
+    await tx.unsafe(
+      "DELETE FROM service_heartbeats WHERE service IN ('chain-ingester','launch-projector')",
     );
   });
 }
 
 async function syncOnce() {
+  const began = performance.now();
   if ((await client.getChainId()) !== manifest.chainId)
     throw new Error("Indexer chain mismatch");
   const head = await client.getBlockNumber();
@@ -479,28 +515,46 @@ async function syncOnce() {
   if (rows[0]) {
     const last = BigInt(rows[0].last_block);
     if (last > head) {
-      await resetCanonical();
+      throw new Error(`Public RPC head ${head} is behind checkpoint ${last}`);
     } else {
       const prior = await client.getBlock({ blockNumber: last });
-      if (prior.hash?.toLowerCase() === rows[0].last_hash.toLowerCase())
-        start = last + 1n;
-      else await resetCanonical();
+      if (!prior.hash)
+        throw new Error(`Checkpoint block ${last} is unavailable`);
+      const disposition = checkpointDisposition(
+        last,
+        head,
+        rows[0].last_hash,
+        prior.hash,
+      );
+      if (disposition === "continue") start = last + 1n;
+      else {
+        await resetCanonical();
+        start = BigInt(manifest.deploymentBlock);
+      }
     }
   }
+  let logCount = 0;
+  let rangeCount = 0;
   for (let rangeStart = start; rangeStart <= head; rangeStart += blockRange) {
-    const rangeEnd =
-      rangeStart + blockRange - 1n > head ? head : rangeStart + blockRange - 1n;
+    const rangeEnd = boundedRangeEnd(rangeStart, head, blockRange);
     const logs = await client.getLogs({
       address: indexedAddresses,
       fromBlock: rangeStart,
       toBlock: rangeEnd,
     });
-    const requiredBlocks = new Set(logs.map((log) => log.blockNumber));
-    if (rangeEnd === head) requiredBlocks.add(head);
-    const blocks = await loadBlocks([...requiredBlocks]);
+    const blocks = await loadBlocks(
+      requiredBlockNumbers(
+        logs.map((log) => log.blockNumber),
+        rangeEnd,
+      ),
+    );
     const blocksByNumber = new Map(
       blocks.map((block) => [block.number, block]),
     );
+    const checkpointBlock = blocksByNumber.get(rangeEnd);
+    if (!checkpointBlock?.hash) {
+      throw new Error(`Range-end block ${rangeEnd} is unavailable`);
+    }
     await sql.begin(async (tx) => {
       for (const block of blocks) {
         if (!block.hash) throw new Error("Block hash unavailable");
@@ -541,19 +595,210 @@ async function syncOnce() {
           ],
         );
       }
+      await tx.unsafe(
+        "INSERT INTO indexer_checkpoints (service,chain_id,last_block,last_hash) VALUES ('chain-indexer',$1,$2,$3) ON CONFLICT (service,chain_id) DO UPDATE SET last_block=EXCLUDED.last_block,last_hash=EXCLUDED.last_hash,updated_at=now()",
+        [
+          manifest.chainId,
+          rangeEnd.toString(),
+          checkpointBlock.hash.toLowerCase(),
+        ],
+      );
     });
+    logCount += logs.length;
+    rangeCount += 1;
   }
-  const block = await client.getBlock({ blockNumber: head });
-  if (!block.hash) throw new Error("Head hash unavailable");
-  await rebuildLaunches(head);
-  await sql.unsafe(
-    "INSERT INTO indexer_checkpoints (service,chain_id,last_block,last_hash) VALUES ('chain-indexer',$1,$2,$3) ON CONFLICT (service,chain_id) DO UPDATE SET last_block=EXCLUDED.last_block,last_hash=EXCLUDED.last_hash,updated_at=now()",
-    [manifest.chainId, head.toString(), block.hash.toLowerCase()],
-  );
+  const checkpoint =
+    start > head ? (rows[0]?.last_block ?? null) : head.toString();
+  const cycleMs = Math.round((performance.now() - began) * 100) / 100;
   process.stdout.write(
-    JSON.stringify({ level: "info", event: "sync", head: head.toString() }) +
-      "\n",
+    JSON.stringify({
+      level: "info",
+      event: "sync",
+      head: head.toString(),
+      checkpoint,
+      rangeCount,
+      logCount,
+      cycleMs,
+    }) + "\n",
   );
+  return ingestionCycleResult(head, checkpoint, rangeCount, logCount, cycleMs);
+}
+
+async function reconcileMetadataBindings() {
+  await sql.unsafe(
+    "UPDATE launches l SET campaign_id=b.campaign_id,campaign_release_sha=b.campaign_release_sha,automated_test_launch=b.automated_test_launch FROM launch_metadata_bindings b WHERE l.chain_id=$1 AND b.chain_id=l.chain_id AND b.token=l.token AND b.verification_status='robyn-sanitized' AND (l.campaign_id IS DISTINCT FROM b.campaign_id OR l.campaign_release_sha IS DISTINCT FROM b.campaign_release_sha OR l.automated_test_launch IS DISTINCT FROM b.automated_test_launch)",
+    [manifest.chainId],
+  );
+}
+
+async function projectOnce() {
+  const began = performance.now();
+  const checkpoints = await sql.unsafe<
+    { service: string; last_block: string; last_hash: string }[]
+  >(
+    "SELECT service,last_block::text,last_hash FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector') AND chain_id=$1",
+    [manifest.chainId],
+  );
+  const ingested = checkpoints.find(
+    (checkpoint) => checkpoint.service === "chain-indexer",
+  );
+  if (!ingested) throw new Error("Canonical ingestion checkpoint is missing");
+  let projected = checkpoints.find(
+    (checkpoint) => checkpoint.service === "launch-projector",
+  );
+  if (
+    projectionRequiresReset(
+      projected ? BigInt(projected.last_block) : undefined,
+      BigInt(ingested.last_block),
+    )
+  ) {
+    await sql.begin(async (tx) => {
+      await tx.unsafe("DELETE FROM launches WHERE chain_id=$1", [
+        manifest.chainId,
+      ]);
+      await tx.unsafe(
+        "DELETE FROM indexer_checkpoints WHERE service='launch-projector' AND chain_id=$1",
+        [manifest.chainId],
+      );
+    });
+    projected = undefined;
+  }
+  const window = projectionWindow(
+    BigInt(manifest.deploymentBlock),
+    projected ? BigInt(projected.last_block) : undefined,
+    BigInt(ingested.last_block),
+  );
+  let projectedLaunches = 0;
+  if (window) {
+    let ids: bigint[];
+    let atomicLaunches: Map<string, AtomicLaunchProjection> | undefined;
+    if (manifest.contracts.atomicLaunchCoordinator) {
+      atomicLaunches = await loadAtomicLaunchesFromDatabase(
+        window.fromBlock,
+        window.toBlock,
+      );
+      ids = uniqueLaunchIds([...atomicLaunches.keys()].map((id) => BigInt(id)));
+    } else {
+      const count = await client.readContract({
+        address: manifest.contracts.factory,
+        abi: factoryAbi,
+        functionName: "launchCount",
+      });
+      const existing = await sql.unsafe<{ last_id: string | null }[]>(
+        "SELECT max(launch_id)::text last_id FROM launches WHERE chain_id=$1",
+        [manifest.chainId],
+      );
+      const first = BigInt(existing[0]?.last_id ?? "0") + 1n;
+      ids = [];
+      for (let id = first; id <= count; id += 1n) ids.push(id);
+    }
+    projectedLaunches = await completeProjectionBatch(
+      ids,
+      async (id) => projectLaunch(id, atomicLaunches?.get(id.toString())),
+      reconcileMetadataBindings,
+      async () => {
+        await sql.begin(async (tx) => {
+          const advanced = await tx.unsafe<{ service: string }[]>(
+            "INSERT INTO indexer_checkpoints (service,chain_id,last_block,last_hash) SELECT 'launch-projector',$1,$2,$3 WHERE EXISTS (SELECT 1 FROM indexer_checkpoints WHERE service='chain-indexer' AND chain_id=$1 AND last_block=$2 AND last_hash=$3) ON CONFLICT (service,chain_id) DO UPDATE SET last_block=EXCLUDED.last_block,last_hash=EXCLUDED.last_hash,updated_at=now() RETURNING service",
+            [manifest.chainId, ingested.last_block, ingested.last_hash],
+          );
+          if (!advanced[0]) {
+            await tx.unsafe("DELETE FROM launches WHERE chain_id=$1", [
+              manifest.chainId,
+            ]);
+            await tx.unsafe(
+              "DELETE FROM indexer_checkpoints WHERE service='launch-projector' AND chain_id=$1",
+              [manifest.chainId],
+            );
+            throw new Error(
+              "Canonical ingestion checkpoint changed during projection",
+            );
+          }
+        });
+      },
+    );
+  } else {
+    await reconcileMetadataBindings();
+  }
+  const cycleMs = Math.round((performance.now() - began) * 100) / 100;
+  process.stdout.write(
+    JSON.stringify({
+      level: "info",
+      event: "projection",
+      checkpoint: ingested.last_block,
+      projectedLaunches,
+      cycleMs,
+    }) + "\n",
+  );
+  return {
+    checkpoint: ingested.last_block,
+    projectedLaunches,
+    cycleMs,
+  };
+}
+
+async function recordHeartbeat(
+  service: "chain-ingester" | "launch-projector",
+  status: "ok" | "degraded",
+  metadata: Record<string, unknown>,
+) {
+  await sql.unsafe(
+    "INSERT INTO service_heartbeats (service,status,metadata) VALUES ($1,$2,$3::jsonb) ON CONFLICT (service) DO UPDATE SET status=EXCLUDED.status,metadata=EXCLUDED.metadata,updated_at=now()",
+    [service, status, JSON.stringify(metadata)],
+  );
+}
+
+const sleep = (duration: number) =>
+  new Promise((resolve) => setTimeout(resolve, duration));
+
+async function runPipeline(
+  service: "chain-ingester" | "launch-projector",
+  intervalMs: number,
+  execute: () => Promise<Record<string, unknown>>,
+) {
+  let failures = 0;
+  let rpcRetryCount = 0;
+  let lastRpcDegradationAt: string | null = null;
+  while (!stopping) {
+    try {
+      const result = await execute();
+      failures = 0;
+      await recordHeartbeat(service, "ok", {
+        ...result,
+        rpcRetryCount,
+        lastRpcDegradationAt,
+      });
+    } catch (error) {
+      failures += 1;
+      rpcRetryCount += 1;
+      lastRpcDegradationAt = new Date().toISOString();
+      const message = error instanceof Error ? error.message : String(error);
+      await recordHeartbeat(service, "degraded", {
+        consecutiveFailures: failures,
+        rpcRetryCount,
+        lastRpcDegradationAt,
+        error: message.slice(0, 1_000),
+      }).catch(() => undefined);
+      process.stderr.write(
+        JSON.stringify({
+          level: "error",
+          event: `${service}_failed`,
+          consecutiveFailures: failures,
+          message,
+        }) + "\n",
+      );
+      if (failures >= maximumConsecutiveFailures) {
+        throw new Error(`${service} remained unhealthy for ${failures} polls`);
+      }
+    }
+    if (!stopping) {
+      await sleep(
+        failures === 0
+          ? intervalMs
+          : failureBackoffMs(intervalMs, failures - 1),
+      );
+    }
+  }
 }
 
 process.on("SIGTERM", () => {
@@ -562,26 +807,15 @@ process.on("SIGTERM", () => {
 process.on("SIGINT", () => {
   stopping = true;
 });
-while (!stopping) {
-  try {
-    await syncOnce();
-    consecutiveFailures = 0;
-  } catch (error) {
-    consecutiveFailures += 1;
-    process.stderr.write(
-      JSON.stringify({
-        level: "error",
-        event: "sync_failed",
-        consecutiveFailures,
-        message: error instanceof Error ? error.message : String(error),
-      }) + "\n",
-    );
-    if (consecutiveFailures >= maximumConsecutiveFailures) {
-      throw new Error(
-        `Indexer public RPC remained unhealthy for ${consecutiveFailures} polls`,
-      );
-    }
-  }
-  if (!stopping) await new Promise((resolve) => setTimeout(resolve, pollMs));
+
+const pipelines: Promise<void>[] = [];
+if (role === "ingester" || role === "combined") {
+  pipelines.push(runPipeline("chain-ingester", pollMs, async () => syncOnce()));
 }
+if (role === "projector" || role === "combined") {
+  pipelines.push(
+    runPipeline("launch-projector", projectorPollMs, async () => projectOnce()),
+  );
+}
+await Promise.all(pipelines);
 await sql.end();

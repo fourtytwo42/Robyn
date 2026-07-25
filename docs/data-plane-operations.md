@@ -1,7 +1,7 @@
 # Native data-plane operations
 
-Status: PostgreSQL, Redis, MinIO, reorg-aware indexing, read API, bounded conversion keeper and content-addressed artifact service implemented
-Last verified: 2026-07-21
+Status: PostgreSQL, Redis, MinIO, incremental reorg-aware indexing, read API, bounded conversion keeper and content-addressed artifact service implemented
+Last verified: 2026-07-25
 
 ## Native services
 
@@ -52,9 +52,13 @@ pg_dump -s robyn
 
 ## Live indexer and API
 
-The robyn-indexer and robyn-api processes run under PM2 and are saved for systemd resurrection. The indexer stores every canonical devnet block/log from the deployment boundary, verifies its durable checkpoint hash before advancing, resets derived state on disagreement and rebuilds launch projections from the public factory registries.
+The API, canonical ingester, and launch projector run under PM2 and are saved for systemd resurrection. On testnet, `robyn-indexer-testnet` only ingests bounded 200-block ranges. Each range transaction atomically stores required block metadata, canonical logs, and the verified range-end checkpoint hash. It uses sequential public-RPC requests with bounded retries and does not advance when any block, log, or database write fails.
 
-The read-only API listens on port 3100 and exposes /health, /status, /launches, /launches/{token}, /launches/{token}/activity and /assets. Every chain-derived response includes asOfBlock and indexedAt freshness. Pagination and request limits are bounded.
+`robyn-projector-testnet` independently consumes coordinator events already committed to `raw_logs`. It validates and inserts only newly observed launches, then advances its separate `launch-projector` checkpoint. Immutable token, vault, basket, creator, and receipt fields are not reread on every poll. Campaign and immutable-IPFS bindings reconcile with database-only updates. A validation failure leaves the projector checkpoint unchanged so the event is retried safely.
+
+Both services verify the canonical checkpoint hash and deterministically clear chain-derived blocks, logs, launches, and both checkpoints on a reorg. Existing metadata bindings remain available for deterministic reconciliation after replay. Devnet retains the same two pipelines in a combined process for compatibility.
+
+The read-only API listens on port 3100 and exposes /health, /status, /launches, /launches/{token}, /launches/{token}/activity and /assets. Every chain-derived response includes `asOfBlock` and `indexedAt` freshness. Status additionally reports `projectionAsOfBlock`, ingestion/projection lag and cycle times, public-RPC retry count, and the last degradation timestamp. Pagination and request limits are bounded.
 
 `GET /launches` accepts the following optional discovery parameters:
 

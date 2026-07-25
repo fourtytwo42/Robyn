@@ -73,6 +73,14 @@ for process in robyn-web robyn-rpc-gateway robyn-api robyn-indexer robyn-keeper 
   metric "robyn_pm2_process_up{chain_id=\"31337\",component=\"${process}\",launch=\"all\",asset=\"all\"}" "${up}"
   metric "robyn_pm2_process_restarts{chain_id=\"31337\",component=\"${process}\"}" "${restarts}"
 done
+for process in robyn-web-testnet robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet robyn-artifacts-testnet; do
+  status="$(jq -r --arg name "${process}" '.[] | select(.name==$name) | .pm2_env.status' <<<"${pm2_json}" 2>/dev/null | head -1)"
+  restarts="$(jq -r --arg name "${process}" '.[] | select(.name==$name) | .pm2_env.restart_time' <<<"${pm2_json}" 2>/dev/null | head -1)"
+  [[ "${status}" == "online" ]] && up=1 || up=0
+  [[ "${restarts}" =~ ^[0-9]+$ ]] || restarts=0
+  metric "robyn_pm2_process_up{chain_id=\"46630\",component=\"${process}\",launch=\"all\",asset=\"all\"}" "${up}"
+  metric "robyn_pm2_process_restarts{chain_id=\"46630\",component=\"${process}\"}" "${restarts}"
+done
 
 web_json="$(curl -fsS --max-time 3 http://127.0.0.1:3000/api/health 2>/dev/null || printf '{}')"
 gateway_json="$(curl -fsS --max-time 3 http://127.0.0.1:8546/health 2>/dev/null || printf '{}')"
@@ -105,6 +113,32 @@ printf '# HELP robyn_indexer_lag_blocks Difference between raw RPC head and inde
 metric "robyn_indexer_lag_blocks{chain_id=\"31337\",component=\"indexer\",launch=\"all\",asset=\"all\"}" "${lag}"
 printf '# HELP robyn_rpc_divergence_blocks Difference between operator and restricted user RPC heads.\n# TYPE robyn_rpc_divergence_blocks gauge\n' >>"${tmp}"
 metric "robyn_rpc_divergence_blocks{chain_id=\"31337\",component=\"rpc\",launch=\"all\",asset=\"all\"}" "${divergence}"
+
+testnet_status_json="$(curl -fsS --max-time 3 http://127.0.0.1:3111/status 2>/dev/null || printf '{}')"
+testnet_ingestion_lag="$(json_get "${testnet_status_json}" '.ingestionLagBlocks')"; [[ "${testnet_ingestion_lag}" =~ ^[0-9]+$ ]] || testnet_ingestion_lag=0
+testnet_projection_lag="$(json_get "${testnet_status_json}" '.projectionLagBlocks')"; [[ "${testnet_projection_lag}" =~ ^[0-9]+$ ]] || testnet_projection_lag=0
+testnet_ingestion_cycle="$(json_get "${testnet_status_json}" '.ingestionCycleMs')"; [[ "${testnet_ingestion_cycle}" =~ ^[0-9]+([.][0-9]+)?$ ]] || testnet_ingestion_cycle=0
+testnet_projection_cycle="$(json_get "${testnet_status_json}" '.projectionCycleMs')"; [[ "${testnet_projection_cycle}" =~ ^[0-9]+([.][0-9]+)?$ ]] || testnet_projection_cycle=0
+testnet_rpc_retries="$(json_get "${testnet_status_json}" '.rpcRetryCount')"; [[ "${testnet_rpc_retries}" =~ ^[0-9]+$ ]] || testnet_rpc_retries=0
+testnet_ingestion_checkpoint="$(json_get "${testnet_status_json}" '.asOfBlock')"; [[ "${testnet_ingestion_checkpoint}" =~ ^[0-9]+$ ]] || testnet_ingestion_checkpoint=0
+testnet_projection_checkpoint="$(json_get "${testnet_status_json}" '.projectionAsOfBlock')"; [[ "${testnet_projection_checkpoint}" =~ ^[0-9]+$ ]] || testnet_projection_checkpoint=0
+[[ "$(json_get "${testnet_status_json}" '.ingestionStatus')" == "ok" ]] && testnet_ingestion_up=1 || testnet_ingestion_up=0
+[[ "$(json_get "${testnet_status_json}" '.projectionStatus')" == "ok" ]] && testnet_projection_up=1 || testnet_projection_up=0
+printf '# HELP robyn_testnet_ingestion_lag_blocks Difference between the observed Robinhood Testnet head and canonical ingestion checkpoint.\n# TYPE robyn_testnet_ingestion_lag_blocks gauge\n' >>"${tmp}"
+metric "robyn_testnet_ingestion_lag_blocks{chain_id=\"46630\",component=\"indexer\"}" "${testnet_ingestion_lag}"
+printf '# HELP robyn_testnet_projection_lag_blocks Difference between canonical ingestion and launch projection checkpoints.\n# TYPE robyn_testnet_projection_lag_blocks gauge\n' >>"${tmp}"
+metric "robyn_testnet_projection_lag_blocks{chain_id=\"46630\",component=\"projector\"}" "${testnet_projection_lag}"
+printf '# HELP robyn_testnet_checkpoint_block Last durable pipeline checkpoint.\n# TYPE robyn_testnet_checkpoint_block gauge\n' >>"${tmp}"
+metric "robyn_testnet_checkpoint_block{chain_id=\"46630\",component=\"indexer\"}" "${testnet_ingestion_checkpoint}"
+metric "robyn_testnet_checkpoint_block{chain_id=\"46630\",component=\"projector\"}" "${testnet_projection_checkpoint}"
+printf '# HELP robyn_testnet_pipeline_up Whether the API observes a fresh healthy pipeline heartbeat.\n# TYPE robyn_testnet_pipeline_up gauge\n' >>"${tmp}"
+metric "robyn_testnet_pipeline_up{chain_id=\"46630\",component=\"indexer\"}" "${testnet_ingestion_up}"
+metric "robyn_testnet_pipeline_up{chain_id=\"46630\",component=\"projector\"}" "${testnet_projection_up}"
+printf '# HELP robyn_testnet_indexer_cycle_milliseconds Last completed pipeline cycle duration.\n# TYPE robyn_testnet_indexer_cycle_milliseconds gauge\n' >>"${tmp}"
+metric "robyn_testnet_indexer_cycle_milliseconds{chain_id=\"46630\",component=\"indexer\"}" "${testnet_ingestion_cycle}"
+metric "robyn_testnet_indexer_cycle_milliseconds{chain_id=\"46630\",component=\"projector\"}" "${testnet_projection_cycle}"
+printf '# HELP robyn_testnet_rpc_retry_count Cumulative degraded public-RPC pipeline cycles.\n# TYPE robyn_testnet_rpc_retry_count counter\n' >>"${tmp}"
+metric "robyn_testnet_rpc_retry_count{chain_id=\"46630\",component=\"indexer\"}" "${testnet_rpc_retries}"
 
 printf '# HELP robyn_queue_jobs Current BullMQ job counts by state.\n# TYPE robyn_queue_jobs gauge\n' >>"${tmp}"
 for state in wait active delayed failed completed; do

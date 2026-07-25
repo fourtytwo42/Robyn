@@ -27,7 +27,7 @@ Actual public-testnet broadcast is a separate authorized operation. It requires 
 | `scripts/verify-testnet-deployment.sh` | Bytecode, binding, basket, marker and configuration verification |
 | `scripts/rehearse-testnet.sh` | Full claim, buy, three-leg convert, claim and sell journey |
 | `scripts/build-testnet-candidate.sh` | Protected Next.js build and forbidden-marker scan |
-| `scripts/rehearse-testnet-stack.sh` | Five-service isolated database/queue/indexer/keeper/web rehearsal |
+| `scripts/rehearse-testnet-stack.sh` | Six-service isolated database/queue/ingester/projector/keeper/web rehearsal |
 | `infrastructure/pm2/ecosystem.testnet.config.cjs` | Separate testnet process names, ports, database, Redis DB and queue |
 
 ## Local chain-46630 rehearsal

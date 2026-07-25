@@ -150,9 +150,9 @@ const ui = (await walk(
 
 const workers = [
   {
-    id: "native-v4-index-rebuild",
+    id: "native-v4-incremental-ingestion-and-projection",
     source: "apps/indexer/src/server.ts",
-    markers: ["AtomicV4LaunchCreated", "indexer_checkpoints"],
+    markers: ["chain-indexer", "launch-projector", "projectLaunch"],
   },
   {
     id: "native-v4-keeper",

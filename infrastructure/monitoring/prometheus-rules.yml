@@ -33,6 +33,99 @@ groups:
           summary: "Robyn indexer is more than five blocks behind"
           description: 'Lag is {{ $value }} blocks. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
+      - alert: RobynTestnetIngestionLag
+        expr: robyn_testnet_ingestion_lag_blocks > 100
+        for: 2m
+        labels:
+          {
+            severity: critical,
+            chain_id: "46630",
+            component: indexer,
+            launch: all,
+            asset: all,
+            runbook: indexer-lag,
+          }
+        annotations:
+          summary: "Sherwood Forest canonical ingestion is behind"
+          description: "Robinhood Testnet ingestion lag is {{ $value }} blocks."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
+      - alert: RobynTestnetProjectionLag
+        expr: robyn_testnet_projection_lag_blocks > 100
+        for: 2m
+        labels:
+          {
+            severity: critical,
+            chain_id: "46630",
+            component: projector,
+            launch: all,
+            asset: all,
+            runbook: indexer-lag,
+          }
+        annotations:
+          summary: "Sherwood Forest launch projection is behind"
+          description: "Robinhood Testnet projection lag is {{ $value }} blocks."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
+      - alert: RobynTestnetPipelineDown
+        expr: robyn_testnet_pipeline_up == 0
+        for: 1m
+        labels:
+          {
+            severity: critical,
+            chain_id: "46630",
+            launch: all,
+            asset: all,
+            runbook: indexer-lag,
+          }
+        annotations:
+          summary: "Sherwood Forest {{ $labels.component }} pipeline is unhealthy"
+          description: "The {{ $labels.component }} heartbeat is missing, stale, or degraded."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
+      - alert: RobynTestnetCheckpointStalled
+        expr: changes(robyn_testnet_checkpoint_block[2m]) == 0 and (robyn_testnet_ingestion_lag_blocks > 8 or robyn_testnet_projection_lag_blocks > 8)
+        for: 1m
+        labels:
+          {
+            severity: critical,
+            chain_id: "46630",
+            launch: all,
+            asset: all,
+            runbook: indexer-lag,
+          }
+        annotations:
+          summary: "Sherwood Forest {{ $labels.component }} checkpoint is stalled"
+          description: "The durable checkpoint has not advanced while its pipeline is behind."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
+      - alert: RobynTestnetPipelineCycleSlow
+        expr: robyn_testnet_indexer_cycle_milliseconds > 15000
+        for: 2m
+        labels:
+          {
+            severity: warning,
+            chain_id: "46630",
+            launch: all,
+            asset: all,
+            runbook: indexer-lag,
+          }
+        annotations:
+          summary: "Sherwood Forest {{ $labels.component }} cycle is slow"
+          description: "The last pipeline cycle required {{ $value }} milliseconds."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
+      - alert: RobynTestnetRpcRetries
+        expr: increase(robyn_testnet_rpc_retry_count[2m]) > 0
+        for: 1m
+        labels:
+          {
+            severity: warning,
+            chain_id: "46630",
+            component: indexer,
+            launch: all,
+            asset: all,
+            runbook: indexer-lag,
+          }
+        annotations:
+          summary: "Sherwood Forest public RPC required retries"
+          description: "{{ $value }} degraded pipeline cycles were recorded in two minutes."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
       - alert: RobynRpcDivergence
         expr: robyn_rpc_divergence_blocks > 2 or robyn_assurance_drill{alert="RobynRpcDivergence"} == 1
         for: 1m

@@ -10,10 +10,20 @@ Every alert is scoped to chain, component, launch and asset labels and links to 
 5. Escalate if recovery needs data deletion or state changes unexpectedly.
 
 ## Indexer lag
-1. Compare raw RPC head, restricted RPC head and API `asOfBlock`.
-2. Confirm the stored checkpoint hash still matches the canonical block.
-3. Stop publication if a reorg or hash mismatch is unresolved.
-4. Rebuild derived state only from the documented deployment boundary.
+1. Compare the public RPC head with API `asOfBlock`, `projectionAsOfBlock`,
+   `ingestionLagBlocks`, and `projectionLagBlocks`.
+2. Inspect `robyn-indexer-testnet` and `robyn-projector-testnet` separately.
+   The ingester owns `chain-indexer`; the projector owns `launch-projector`.
+3. Confirm the stored ingestion checkpoint hash still matches the canonical
+   block. Never move either checkpoint forward manually.
+4. If ingestion is healthy but projection is behind, inspect the first
+   unprojected coordinator event and its factory/market validation failure.
+   Correct the cause and let the unchanged projector checkpoint retry it.
+5. Stop publication if a reorg or hash mismatch is unresolved. A deterministic
+   reset clears chain-derived logs, blocks, launches, and both checkpoints from
+   the deployment boundary while retaining offchain metadata bindings.
+6. Do not restart or replay a journaled financial transaction to repair an
+   indexing problem.
 
 ## RPC divergence
 1. Compare `eth_chainId`, `eth_blockNumber` and known deployment bytecode through both endpoints.

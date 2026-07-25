@@ -20,7 +20,7 @@
       "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0},
       "id": 2,
       "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}},
-      "targets": [{"expr": "robyn_indexer_lag_blocks", "legendFormat": "index lag", "refId": "A"}, {"expr": "robyn_rpc_divergence_blocks", "legendFormat": "RPC divergence", "refId": "B"}],
+      "targets": [{"expr": "robyn_indexer_lag_blocks", "legendFormat": "devnet index lag", "refId": "A"}, {"expr": "robyn_rpc_divergence_blocks", "legendFormat": "RPC divergence", "refId": "B"}, {"expr": "robyn_testnet_ingestion_lag_blocks", "legendFormat": "testnet ingestion lag", "refId": "C"}, {"expr": "robyn_testnet_projection_lag_blocks", "legendFormat": "testnet projection lag", "refId": "D"}],
       "title": "Chain freshness",
       "type": "stat"
     },
@@ -49,7 +49,7 @@
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
       "id": 5,
       "options": {"legend": {"displayMode": "table", "placement": "bottom"}},
-      "targets": [{"expr": "robyn_indexer_lag_blocks", "legendFormat": "index lag", "refId": "A"}, {"expr": "robyn_rpc_divergence_blocks", "legendFormat": "RPC divergence", "refId": "B"}],
+      "targets": [{"expr": "robyn_indexer_lag_blocks", "legendFormat": "devnet index lag", "refId": "A"}, {"expr": "robyn_rpc_divergence_blocks", "legendFormat": "RPC divergence", "refId": "B"}, {"expr": "robyn_testnet_ingestion_lag_blocks", "legendFormat": "testnet ingestion lag", "refId": "C"}, {"expr": "robyn_testnet_projection_lag_blocks", "legendFormat": "testnet projection lag", "refId": "D"}, {"expr": "robyn_testnet_indexer_cycle_milliseconds", "legendFormat": "{{component}} cycle ms", "refId": "E"}],
       "title": "Chain lag over time",
       "type": "timeseries"
     },

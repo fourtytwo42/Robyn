@@ -4,6 +4,42 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- The schema-v8 endurance service is intentionally stopped for the incremental
+  indexer release. Its durable state, samples, reviews, and transaction journal
+  are checksummed under
+  `/var/lib/robyn/testnet-endurance/schema8-c203d00-endurance-20260725/preserved-indexer-refactor-20260725T183451Z`.
+  Preservation state: `9002.981` healthy seconds, 1,110 samples, 16 write
+  cycles, eight reviews, 110 confirmed transactions, two endurance launches,
+  and no workload failure. Resume this same journal after exact promotion;
+  never replay a confirmed transaction.
+- The current indexer working tree replaces the monolithic testnet poll with a
+  200-block canonical ingester and a separate event-driven launch projector.
+  `robyn-indexer-testnet` atomically commits required block metadata, canonical
+  logs, and the verified range-end `chain-indexer` checkpoint.
+  `robyn-projector-testnet` consumes coordinator events from `raw_logs`,
+  validates only new launches, reconciles metadata in PostgreSQL, and advances
+  `launch-projector` only after the full batch succeeds. API status, PM2,
+  monitoring, release verification, and endurance policy now track both
+  pipelines and separate ingestion/projection lag.
+- An isolated database rebuilt from deployment block `93182752` to the live
+  Robinhood public-testnet head in about 490 seconds, reconstructed all 11
+  launches, and reproduced immutable launch and campaign-binding digests.
+  It recovered four historical fee logs that the old indexer had omitted; the
+  official public RPC transaction receipts independently contain all four, and
+  the new database had zero logs absent from the old database. Overlapping
+  canonical block hashes have zero differences. Evidence is under
+  `/var/lib/robyn/testnet-indexer-shadow/schema8-incremental-20260725`.
+- Shadow validation caught and fixed a bigint heartbeat serialization defect
+  before promotion. The regression is covered by the indexer policy suite.
+  Eleven focused pipeline tests now cover bounded ranges, required range-end
+  metadata, stale-head/reorg decisions, independent checkpoint recovery,
+  projector-ahead reset/replay, projector failure without checkpoint
+  advancement, delayed metadata ordering, idempotent launch events, bounded
+  retry backoff, JSON-safe heartbeats, and the p95 lag policy. Final
+  exact-source scale samples with 11, 100, and 1,000 existing launches measured
+  projector p95 cycle times of 1.62 ms, 1.68 ms, and 1.53 ms.
+  The final exact-source 30-minute public-RPC shadow window began at
+  `2026-07-25T19:12:47Z`; complete it before promotion.
 - The repaired endurance run reached `8402.8` healthy seconds, 99 confirmed
   transactions, and two endurance launches before its second graduation paused
   safely on 2026-07-25. No buy was submitted: the actor held enough for the

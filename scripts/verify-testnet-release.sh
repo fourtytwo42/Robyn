@@ -12,9 +12,11 @@ jq -e '.schemaVersion == 8 and .chainId == 46630' "$manifest" >/dev/null
 
 pm2_json="$(PM2_HOME=/home/hendo420/.pm2 "$release_real/node_modules/.bin/pm2" jlist)"
 testnet="$(jq '[.[]|select(.name|endswith("-testnet"))]' <<<"$pm2_json")"
-[[ "$(jq length <<<"$testnet")" -eq 5 ]]
-[[ "$(jq '[.[]|select(.pm2_env.status=="online")]|length' <<<"$testnet")" -eq 5 ]]
+[[ "$(jq length <<<"$testnet")" -eq 6 ]]
+[[ "$(jq '[.[]|select(.pm2_env.status=="online")]|length' <<<"$testnet")" -eq 6 ]]
 [[ "$(jq --arg root "$release_real" '[.[]|select((.name=="robyn-web-testnet" and .pm2_env.pm_cwd!=($root+"/apps/web")) or (.name!="robyn-web-testnet" and .pm2_env.pm_cwd!=$root))]|length' <<<"$testnet")" -eq 0 ]]
+[[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_INDEXER_ROLE' <<<"$testnet")" == "ingester" ]]
+[[ "$(jq -r '.[]|select(.name=="robyn-projector-testnet")|.pm2_env.env.ROBYN_INDEXER_ROLE' <<<"$testnet")" == "projector" ]]
 
 curl -fsS http://127.0.0.1:3012/api/health >/dev/null
 status="$(curl -fsS http://127.0.0.1:3111/status)"
@@ -24,6 +26,15 @@ public_status="$(curl -fsS https://sherwoodforest.trade/api/status)"
 [[ "$(jq -r .launchCount <<<"$status")" -ge 9 ]]
 [[ "$(jq -r .launchCount <<<"$public_status")" -ge 9 ]]
 [[ "$(jq -r .chainId <<<"$public_status")" -eq 46630 ]]
+for observed in "$status" "$public_status"; do
+  [[ "$(jq -r .ingestionStatus <<<"$observed")" == "ok" ]]
+  [[ "$(jq -r .projectionStatus <<<"$observed")" == "ok" ]]
+  [[ "$(jq -r .projectionAsOfBlock <<<"$observed")" =~ ^[0-9]+$ ]]
+  [[ "$(jq -r .ingestionLagBlocks <<<"$observed")" -le 100 ]]
+  [[ "$(jq -r .projectionLagBlocks <<<"$observed")" -le 100 ]]
+  jq -e '.ingestionCycleMs >= 0 and .projectionCycleMs >= 0 and .rpcRetryCount >= 0' \
+    <<<"$observed" >/dev/null
+done
 ROBYN_TESTNET_RPC_URL=https://rpc.testnet.chain.robinhood.com \
   node scripts/verify-testnet-v4-deployment.mjs "$manifest" \
   > /tmp/robyn-testnet-deployment-verify.json
