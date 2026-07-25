@@ -7,6 +7,7 @@ function required(name) {
 }
 
 const releaseRoot = required("ROBYN_TESTNET_RELEASE_ROOT");
+const releaseSha = path.basename(releaseRoot);
 const manifest = required("ROBYN_TESTNET_MANIFEST");
 const rpcUrl =
   process.env.ROBYN_TESTNET_RPC_URL ||
@@ -57,6 +58,12 @@ module.exports = {
         ROBYN_ARTIFACT_SERVICE_URL: "http://127.0.0.1:3210",
         ROBYN_OPERATOR_RPC_URL: rpcUrl,
         ROBYN_MANIFEST: manifest,
+        ROBYN_RELEASE_SHA: releaseSha,
+        ROBYN_ENDURANCE_STATUS_FILE:
+          process.env.ROBYN_ENDURANCE_STATUS_FILE ||
+          "/var/lib/robyn/testnet-endurance/active/state.json",
+        ROBYN_CAMPAIGN_OPERATOR_TOKEN_FILE:
+          process.env.ROBYN_CAMPAIGN_OPERATOR_TOKEN_FILE || "",
         ROBYN_TESTNET_RELEASE_ROOT: releaseRoot,
         ROBYN_TESTNET_API_ENV_FILE:
           process.env.ROBYN_TESTNET_API_ENV_FILE ||
@@ -82,6 +89,12 @@ module.exports = {
         ROBYN_OPERATOR_RPC_URL: rpcUrl,
         ROBYN_MANIFEST: manifest,
         INDEXER_POLL_MS: "5000",
+        INDEXER_BLOCK_RANGE: "200",
+        INDEXER_BLOCK_READ_CONCURRENCY: "3",
+        INDEXER_MAXIMUM_CONSECUTIVE_FAILURES: "24",
+        ROBYN_RPC_RETRY_COUNT: "5",
+        ROBYN_RPC_RETRY_DELAY_MS: "500",
+        ROBYN_RPC_TIMEOUT_MS: "15000",
         PGHOST: "/var/run/postgresql",
         PGDATABASE: database,
         PGUSER: "hendo420",
@@ -104,6 +117,9 @@ module.exports = {
         ROBYN_QUEUE_NAME: "robyn-conversions-testnet",
         REDIS_URL: "redis://127.0.0.1:6379/1",
         KEEPER_SCAN_MS: "5000",
+        ROBYN_RPC_RETRY_COUNT: "5",
+        ROBYN_RPC_RETRY_DELAY_MS: "500",
+        ROBYN_RPC_TIMEOUT_MS: "15000",
         PGHOST: "/var/run/postgresql",
         PGDATABASE: database,
         PGUSER: "hendo420",

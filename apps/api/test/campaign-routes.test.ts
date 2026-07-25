@@ -1,3 +1,6 @@
+import { mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import Fastify from "fastify";
 import { describe, expect, it } from "vitest";
 import { registerCampaignRoutes } from "../src/campaign-routes.js";
@@ -48,6 +51,46 @@ describe("campaign operator route", () => {
       chainId: 46630,
       launchCount: 8,
       verifiedBindingCount: 8,
+    });
+    await app.close();
+  });
+
+  it("protects and returns the append-only endurance status projection", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "robyn-endurance-"));
+    const statusFile = join(directory, "state.json");
+    await writeFile(
+      statusFile,
+      JSON.stringify({
+        runId: "schema8-endurance",
+        releaseSha: "b".repeat(40),
+        healthySeconds: 1200,
+        paused: false,
+      }),
+    );
+    const app = Fastify();
+    registerCampaignRoutes(app, {
+      sql: database() as never,
+      chainId: 46630,
+      operatorToken: token,
+      releaseSha: "c".repeat(40),
+      enduranceStatusFile: statusFile,
+    });
+    const hidden = await app.inject({
+      method: "GET",
+      url: "/operator/endurance",
+    });
+    expect(hidden.statusCode).toBe(404);
+    const visible = await app.inject({
+      method: "GET",
+      url: "/operator/endurance",
+      headers: { "x-robyn-operator-token": token },
+    });
+    expect(visible.statusCode).toBe(200);
+    expect(visible.json().data).toMatchObject({
+      runId: "schema8-endurance",
+      healthySeconds: 1200,
+      chainId: 46630,
+      apiReleaseSha: "c".repeat(40),
     });
     await app.close();
   });

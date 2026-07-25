@@ -115,7 +115,12 @@ const selectedChain = defineChain({
 });
 const publicClient = createPublicClient({
   chain: selectedChain,
-  transport: http(rpcUrl),
+  transport: http(rpcUrl, {
+    batch: { batchSize: 20, wait: 20 },
+    retryCount: Number(process.env.ROBYN_RPC_RETRY_COUNT ?? "5"),
+    retryDelay: Number(process.env.ROBYN_RPC_RETRY_DELAY_MS ?? "500"),
+    timeout: Number(process.env.ROBYN_RPC_TIMEOUT_MS ?? "15000"),
+  }),
 });
 let operatorAccount;
 if (isTestnet) {
@@ -137,7 +142,9 @@ if (isTestnet) {
 const walletClient = createWalletClient({
   account: operatorAccount,
   chain: selectedChain,
-  transport: http(rpcUrl),
+  // Writes are never transport-retried. The keeper journals and reconciles a
+  // submitted hash before deciding whether another transaction is necessary.
+  transport: http(rpcUrl, { retryCount: 0, timeout: 15_000 }),
 });
 const operator = isTestnet
   ? operatorAccount?.address

@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { createDatabase } from "@robyn/db";
 
@@ -19,8 +20,32 @@ export function registerCampaignRoutes(
     chainId: number;
     operatorToken?: string;
     releaseSha: string;
+    enduranceStatusFile?: string;
   },
 ) {
+  app.get("/operator/endurance", async (request, reply) => {
+    if (!options.operatorToken || !authorized(request, options.operatorToken))
+      return reply.code(404).send({ error: "not_found" });
+    if (!options.enduranceStatusFile)
+      return reply.code(404).send({ error: "not_found" });
+    try {
+      const status = JSON.parse(
+        await readFile(options.enduranceStatusFile, "utf8"),
+      ) as Record<string, unknown>;
+      return {
+        data: {
+          ...status,
+          chainId: options.chainId,
+          apiReleaseSha: options.releaseSha,
+        },
+      };
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT")
+        return reply.code(404).send({ error: "not_found" });
+      request.log.error({ error }, "endurance status read failed");
+      return reply.code(503).send({ error: "endurance_status_unavailable" });
+    }
+  });
   app.get<{ Params: { campaignId: string } }>(
     "/operator/campaigns/:campaignId",
     async (request, reply) => {

@@ -1461,6 +1461,9 @@ registerCampaignRoutes(app, {
     ? { operatorToken: process.env.ROBYN_CAMPAIGN_OPERATOR_TOKEN }
     : {}),
   releaseSha: process.env.ROBYN_RELEASE_SHA ?? "unknown",
+  ...(process.env.ROBYN_ENDURANCE_STATUS_FILE
+    ? { enduranceStatusFile: process.env.ROBYN_ENDURANCE_STATUS_FILE }
+    : {}),
 });
 registerDaoRoutes(app, rpcClient, deployment);
 

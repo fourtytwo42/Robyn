@@ -14,6 +14,15 @@ elif [[ "${ROBYN_TESTNET_REQUIRE_REMOTE_PIN:-true}" == "true" ]]; then
   echo "Protected testnet API environment is not readable: $environment_file" >&2
   exit 1
 fi
+campaign_token_file="${ROBYN_CAMPAIGN_OPERATOR_TOKEN_FILE:-}"
+if [[ -n "$campaign_token_file" ]]; then
+  [[ -r "$campaign_token_file" ]] || {
+    echo "Campaign operator token file is not readable" >&2
+    exit 1
+  }
+  ROBYN_CAMPAIGN_OPERATOR_TOKEN="$(<"$campaign_token_file")"
+  export ROBYN_CAMPAIGN_OPERATOR_TOKEN
+fi
 if [[ "${ROBYN_TESTNET_REQUIRE_REMOTE_PIN:-true}" == "true" ]]; then
   [[ -n "${ROBYN_REMOTE_PIN_URL:-}" && -n "${ROBYN_REMOTE_PIN_TOKEN:-}" ]] || {
     echo "Protected testnet API requires remote IPFS pinning credentials" >&2

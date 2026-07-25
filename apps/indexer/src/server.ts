@@ -28,10 +28,14 @@ const manifest = JSON.parse(
     "utf8",
   ),
 ) as Manifest;
+const rpcUrl = process.env.ROBYN_OPERATOR_RPC_URL ?? "http://127.0.0.1:8545";
 const client = createPublicClient({
-  transport: http(
-    process.env.ROBYN_OPERATOR_RPC_URL ?? "http://127.0.0.1:8545",
-  ),
+  transport: http(rpcUrl, {
+    batch: { batchSize: 20, wait: 20 },
+    retryCount: Number(process.env.ROBYN_RPC_RETRY_COUNT ?? "5"),
+    retryDelay: Number(process.env.ROBYN_RPC_RETRY_DELAY_MS ?? "500"),
+    timeout: Number(process.env.ROBYN_RPC_TIMEOUT_MS ?? "15000"),
+  }),
 });
 const { sql } = createDatabase();
 const pollMs = Number(process.env.INDEXER_POLL_MS ?? "3000");
@@ -39,7 +43,11 @@ const blockRange = BigInt(process.env.INDEXER_BLOCK_RANGE ?? "250");
 const blockReadConcurrency = Number(
   process.env.INDEXER_BLOCK_READ_CONCURRENCY ?? "6",
 );
+const maximumConsecutiveFailures = Number(
+  process.env.INDEXER_MAXIMUM_CONSECUTIVE_FAILURES ?? "24",
+);
 let stopping = false;
+let consecutiveFailures = 0;
 
 const indexedAddresses = [
   ...new Set(
@@ -557,14 +565,22 @@ process.on("SIGINT", () => {
 while (!stopping) {
   try {
     await syncOnce();
+    consecutiveFailures = 0;
   } catch (error) {
+    consecutiveFailures += 1;
     process.stderr.write(
       JSON.stringify({
         level: "error",
         event: "sync_failed",
+        consecutiveFailures,
         message: error instanceof Error ? error.message : String(error),
       }) + "\n",
     );
+    if (consecutiveFailures >= maximumConsecutiveFailures) {
+      throw new Error(
+        `Indexer public RPC remained unhealthy for ${consecutiveFailures} polls`,
+      );
+    }
   }
   if (!stopping) await new Promise((resolve) => setTimeout(resolve, pollMs));
 }

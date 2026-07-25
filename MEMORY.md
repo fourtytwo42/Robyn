@@ -4,6 +4,32 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Schema-v8 promotion and public-testnet endurance are in progress
+  (2026-07-25). The verified inactive deployment is campaign
+  `schema8-abe90dc`: manifest SHA-256
+  `a9da6d57e29637e48e80295d44ef6fb83d1eb5cec3cf17b60280826223506bef`,
+  deployment block `93182752`, nine indexed launches, 2,156 completed campaign
+  transactions, and zero verifier failures. The public site remains on schema
+  v7 until the new exact immutable application release is built and atomically
+  promoted. The predecessor manifest is archived in
+  `deployments/archive/46630-v4-schema7-166e201/deployment.json`.
+- The testnet release uses Robinhood's official public RPC for application,
+  indexer, keeper, verifier, campaign, and endurance traffic. The private node
+  at `192.168.50.117` is not a release dependency. Index and receipt reads use
+  bounded ranges plus bounded retry/backoff; signed transactions are never
+  transport-rebroadcast.
+- The user waived new backup creation, isolated restore, and restore drills for
+  this release. Acceptance requires Codex in-app-browser coverage and eight
+  accumulated healthy public-testnet hours. Failures pause the clock; repaired
+  segments resume from durable transaction journals. This must be reported as
+  segmented endurance, never as an uninterrupted soak. No recurring Codex
+  automation or enabled timer is permitted.
+- The root-disk promotion gate was cleared on 2026-07-25 by deleting only
+  22.95 GB of abandoned, regenerable Anvil staging data under
+  `/home/hendo420/.foundry/anvil/tmp` and the apt cache. Persistent chain,
+  database, IPFS/MinIO, manifests, immutable releases, campaign evidence, and
+  release history were preserved. Root headroom increased from 8.3 GiB/14% to
+  about 31 GiB/52%.
 - Route-pressure and keeper recovery passed (2026-07-24): exact pushed commit
   `6bf210a84cd843ff8f6ee9a5dc373e3e56e64ec6` passed a fresh chain-46630 fork
   deployment with 490 verifier checks and zero failures. Its resumable campaign
@@ -2314,9 +2340,9 @@ When sources conflict, use this order:
 - Complete independent browser-persona UAT when subagent runtimes expose the
   Codex in-app browser, or obtain an explicit product-owner waiver. Root-agent
   serialized UAT is complete but is not independent.
-- Complete the one explicitly started uninterrupted eight-hour soak. Short
-  harness regressions are not soak completion and must never be described as
-  such.
+- Complete the explicitly started schema-v8 public-testnet endurance run. It
+  requires eight accumulated healthy hours with failed/remediation intervals
+  excluded and separately evidenced; it is not an uninterrupted soak.
 - Configure and test a human alert receiver before unattended public-testnet or real-value operation; local Prometheus/Grafana alert state alone is insufficient.
 - Obtain independent protocol/security review before real-value operation. Stateful invariants and malicious callbacks are now implemented, but the internal engineering review is not independent.
 - Ask Vladdy whether the team will provide a repository/license and whether a native multi-asset mode is planned; current deployed contracts do not expose a safe weighted-basket seam.

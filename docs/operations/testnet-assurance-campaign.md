@@ -88,3 +88,42 @@ three graduation thresholds. It prices 2,600 transactions and assigns each
 actor a dedicated sweep-gas budget for up to eight launch-token transfers, one
 RDAO transfer, and one native transfer. Every phase remains a release gate and
 must pass an exact-release isolated rehearsal before live use is authorized.
+
+## Schema-v8 promotion endurance
+
+The schema-v8 public release has a separate one-shot endurance runner. It uses
+the same encrypted 100-wallet campaign root without writing private keys to Git,
+logs, status responses, or evidence.
+
+```bash
+cd /home/hendo420/Robyn
+sudo scripts/install-testnet-endurance.sh schema8-endurance-YYYYMMDD
+sudo systemctl start robyn-testnet-endurance.service
+systemctl status robyn-testnet-endurance.service --no-pager
+```
+
+The unit is static and is never enabled. The runner:
+
+- signs locally and sends only through Robinhood's public chain-46630 RPC;
+- samples application, RPC, index, queue, accounting, disk, memory, IPFS, and
+  alert health every 30 seconds;
+- performs operator-grade verifier reviews every 20 minutes;
+- journals transaction hashes before receipt polling so recovery never
+  rebroadcasts a known transaction;
+- runs bounded writes every ten minutes and launches four campaign-labeled
+  immutable-IPFS tokens near healthy hours 0, 2, 4, and 6;
+- pauses the healthy clock during a failed sample or remediation and resumes
+  from the durable state file; and
+- seals append-only evidence and SHA-256 checksums after eight accumulated
+  healthy hours.
+
+The protected status view is `GET /api/operator/endurance` with the existing
+operator bearer token. It returns run identity and health state, never wallet
+keys or credentials.
+
+Evidence lives under `/var/lib/robyn/testnet-endurance/<run-id>/`. A segmented
+run is not described as uninterrupted. Each release SHA and failed/remediated
+segment remains explicit in the evidence.
+
+This release deliberately waives new backup creation, isolated restore, and
+restore drills. That waiver must remain visible in final acceptance evidence.

@@ -109,3 +109,32 @@ Before identifying a release as a candidate:
 - push the release manifest/evidence and candidate tag.
 
 TLS remains mandatory before access leaves the trusted LAN. Human alert delivery and independent protocol/security review remain separate release gates.
+
+## Robinhood Testnet immutable release
+
+The public testnet uses a parallel immutable root and never changes the local
+devnet release:
+
+```bash
+cd /home/hendo420/Robyn
+scripts/build-testnet-release.sh
+sudo scripts/promote-testnet-release.sh <release-id>
+/opt/robyn/testnet-current/scripts/verify-testnet-release.sh
+```
+
+The builder accepts only a clean exact pushed commit, runs the complete release
+gates, builds the protected chain-46630 bundle from a Git archive, scans it for
+devnet markers and records checksums under
+`/opt/robyn/testnet-releases/<release-id>`.
+
+Promotion atomically selects `/opt/robyn/testnet-current`, restarts only the
+five `*-testnet` PM2 processes, verifies schema v8 and at least nine canonical
+launches through both local and public routes, and reruns the deployment
+verifier against Robinhood's official public RPC. A failed application
+cutover restores the prior application symlink and process set; it never
+pretends to roll back onchain state.
+
+The deployment manifest's `gitCommit` is the commit whose contract bytecode was
+deployed. `testnet-release-manifest.json.gitSha` is the later application
+release that serves and indexes that immutable deployment. Both identities are
+required and intentionally distinct.

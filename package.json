@@ -10,6 +10,7 @@
     "build": "turbo run build",
     "campaign:testnet": "node scripts/testnet-assurance-campaign.mjs",
     "dev": "turbo run dev",
+    "endurance:testnet": "node scripts/testnet-endurance.mjs",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "lint": "turbo run lint",
@@ -18,6 +19,7 @@
     "test:campaign": "node --test scripts/test/testnet-assurance-campaign.test.mjs",
     "test:contracts": "PATH=$HOME/.foundry/bin:$PATH forge test --root packages/contracts -vv",
     "test:deployment-nonce": "bash scripts/test/testnet-deployment-nonce.test.sh",
+    "test:endurance": "node --test scripts/test/testnet-endurance-policy.test.mjs",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {

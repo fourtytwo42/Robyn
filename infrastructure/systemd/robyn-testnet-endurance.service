@@ -1,0 +1,38 @@
+[Unit]
+Description=Sherwood Forest one-shot Robinhood Testnet endurance gate
+Requires=pm2-hendo420.service nginx.service prometheus.service cloudflared.service
+After=pm2-hendo420.service nginx.service prometheus.service cloudflared.service
+
+[Service]
+Type=simple
+User=hendo420
+Group=hendo420
+WorkingDirectory=/opt/robyn/testnet-current
+EnvironmentFile=/home/hendo420/.config/robyn/testnet/release.env
+EnvironmentFile=/etc/robyn/testnet-endurance.env
+ExecStart=/opt/node-v24.18.0-linux-x64/bin/node /opt/robyn/testnet-current/scripts/testnet-endurance.mjs
+Restart=no
+NoNewPrivileges=true
+CapabilityBoundingSet=
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/robyn/testnet-endurance
+ProtectClock=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectProc=invisible
+RemoveIPC=true
+RestrictNamespaces=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictRealtime=true
+LockPersonality=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+UMask=0077
