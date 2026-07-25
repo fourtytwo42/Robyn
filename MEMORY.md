@@ -16,9 +16,15 @@ Durable project context lives here. Update this file whenever information should
   underfunded actor, derives a dynamic maximum-fee reserve with two bounded 25%
   safety margins, and incorporates the funding target into the idempotent
   funding label so the earlier confirmed top-up cannot suppress the correction.
-  The focused ten-test policy suite,
-  syntax checks, lint, strict typechecking, and diff checks pass. Commit, exact
-  build/promotion, and durable-journal resume remain in progress.
+  The focused ten-test policy suite, syntax checks, lint, strict typechecking,
+  and diff checks pass. Exact release `d3e104c` was pushed, built, promoted,
+  and passed all 490 verifier checks. The old top-up remained journaled, a new
+  target-specific top-up and the missing graduation confirmed without replay,
+  the next mixed write cycle completed, and the runner resumed at `8432.808`
+  accumulated healthy seconds with 105 confirmed transactions, no workload
+  failure, and no firing alerts. Cleaning only superseded immutable release
+  artifacts while retaining current `d3e104c` and previous `e4be1aa` increased
+  root headroom from 10.8 GB to 28 GB.
 - The schema-v8 endurance runner was stopped on 2026-07-25 after the first
   endurance launch failed to graduate. It accumulated only 1,200.414 healthy
   seconds and 45 confirmed transactions. The raw journal, samples, reviews,
