@@ -45,6 +45,8 @@ import {
   ENDURANCE_WRITE_INTERVAL_SECONDS,
   isRetryablePublicRpcError,
   percentile,
+  reconcileReleaseIdentity,
+  rewardClaimIndexes,
 } from "./testnet-endurance-policy.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
@@ -239,13 +241,13 @@ const project = projectAccount();
 let state;
 try {
   state = JSON.parse(readFileSync(statePath, "utf8"));
-  if (
-    state.runId !== runId ||
-    state.releaseSha !== releaseManifest.gitSha ||
-    state.deploymentManifestSha256 !== sha256File(manifestPath)
-  ) {
-    throw new Error("Existing endurance state identity does not match");
-  }
+  state = reconcileReleaseIdentity(state, {
+    runId,
+    releaseSha: releaseManifest.gitSha,
+    deploymentManifestSha256: sha256File(manifestPath),
+    migratedAt: new Date().toISOString(),
+  });
+  atomicWrite(statePath, state);
 } catch (error) {
   if (error.code !== "ENOENT") throw error;
   state = {
@@ -698,18 +700,12 @@ async function claimEligible(account, launch, cycle) {
       functionName: "rewardAssetCount",
     }),
   );
-  for (let index = 0; index < rewardCount; index += 1) {
-    const asset = await publicClient.readContract({
-      address: launch.token,
-      abi: tokenAbi,
-      functionName: "rewardAsset",
-      args: [BigInt(index)],
-    });
+  for (const index of rewardClaimIndexes(rewardCount)) {
     holderClaimable += await publicClient.readContract({
       address: launch.token,
       abi: tokenAbi,
       functionName: "withdrawableRewardOf",
-      args: [account.address, asset],
+      args: [account.address, index],
     });
   }
   if (holderClaimable > 0n) {

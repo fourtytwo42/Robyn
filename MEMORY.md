@@ -26,6 +26,15 @@ Durable project context lives here. Update this file whenever information should
   segments resume from durable transaction journals. This must be reported as
   segmented endurance, never as an uninterrupted soak. No recurring Codex
   automation or enabled timer is permitted.
+- The first endurance start on exact release `c203d00` completed funding
+  preflight and 37 confirmed setup transactions, then failed before counting
+  any healthy runtime because the runner passed a reward-asset address to
+  `withdrawableRewardOf(address,uint256)` instead of the canonical asset index.
+  The one-shot service was stopped and the evidence segment preserved. The
+  runner now derives validated bigint reward indexes and has a focused
+  regression test. Lint, strict types, and all five endurance-policy tests pass.
+  Resume only after this fix is committed, pushed, built, promoted, and the
+  durable journal identity is migrated to the new exact release.
 - The root-disk promotion gate was cleared on 2026-07-25 by deleting only
   22.95 GB of abandoned, regenerable Anvil staging data under
   `/home/hendo420/.foundry/anvil/tmp` and the apt cache. Persistent chain,

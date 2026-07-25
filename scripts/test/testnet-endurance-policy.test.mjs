@@ -7,6 +7,8 @@ import {
   dueLaunchCount,
   isRetryablePublicRpcError,
   percentile,
+  reconcileReleaseIdentity,
+  rewardClaimIndexes,
 } from "../testnet-endurance-policy.mjs";
 
 test("healthy duration excludes failed samples", () => {
@@ -61,4 +63,48 @@ test("RPC retry classification and p95 are bounded", () => {
     false,
   );
   assert.equal(percentile([10, 20, 30, 40, 50], 0.95), 50);
+});
+
+test("holder rewards are queried by canonical asset index", () => {
+  assert.deepEqual(rewardClaimIndexes(3), [0n, 1n, 2n]);
+  assert.throws(() => rewardClaimIndexes(-1), /non-negative safe integer/);
+});
+
+test("same-deployment release repair resumes the durable journal", () => {
+  const state = {
+    runId: "run-1",
+    releaseSha: "old",
+    deploymentManifestSha256: "manifest",
+    healthySeconds: 0,
+    transactions: [{ hash: "0x1" }],
+    paused: false,
+  };
+  const repaired = reconcileReleaseIdentity(state, {
+    runId: "run-1",
+    releaseSha: "new",
+    deploymentManifestSha256: "manifest",
+    migratedAt: "2026-07-25T00:00:00Z",
+  });
+  assert.equal(repaired.releaseSha, "new");
+  assert.equal(repaired.paused, true);
+  assert.equal(repaired.transactions.length, 1);
+  assert.deepEqual(repaired.releaseTransitions, [
+    {
+      fromReleaseSha: "old",
+      toReleaseSha: "new",
+      migratedAt: "2026-07-25T00:00:00Z",
+      healthySeconds: 0,
+      transactionCount: 1,
+    },
+  ]);
+  assert.throws(
+    () =>
+      reconcileReleaseIdentity(state, {
+        runId: "other",
+        releaseSha: "new",
+        deploymentManifestSha256: "manifest",
+        migratedAt: "2026-07-25T00:00:00Z",
+      }),
+    /identity does not match/,
+  );
 });

@@ -20,6 +20,38 @@ export function dueLaunchCount(healthySeconds) {
   return ENDURANCE_LAUNCH_THRESHOLDS_SECONDS.filter((threshold) => healthySeconds >= threshold).length;
 }
 
+export function rewardClaimIndexes(rewardCount) {
+  if (!Number.isSafeInteger(rewardCount) || rewardCount < 0) {
+    throw new Error("rewardCount must be a non-negative safe integer");
+  }
+  return Array.from({ length: rewardCount }, (_, index) => BigInt(index));
+}
+
+export function reconcileReleaseIdentity(state, expected) {
+  if (
+    state.runId !== expected.runId ||
+    state.deploymentManifestSha256 !== expected.deploymentManifestSha256
+  ) {
+    throw new Error("Existing endurance state identity does not match");
+  }
+  if (state.releaseSha === expected.releaseSha) return state;
+  return {
+    ...state,
+    releaseSha: expected.releaseSha,
+    paused: true,
+    releaseTransitions: [
+      ...(state.releaseTransitions ?? []),
+      {
+        fromReleaseSha: state.releaseSha,
+        toReleaseSha: expected.releaseSha,
+        migratedAt: expected.migratedAt,
+        healthySeconds: state.healthySeconds,
+        transactionCount: state.transactions.length,
+      },
+    ],
+  };
+}
+
 export function diskHeadroomPass(availableBytes, totalBytes) {
   if (availableBytes < 0n || totalBytes <= 0n || availableBytes > totalBytes) throw new Error("Disk values are invalid");
   const percent = Number((availableBytes * 10_000n) / totalBytes) / 100;
