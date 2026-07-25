@@ -53,6 +53,18 @@ export function reconcileReleaseIdentity(state, expected) {
   };
 }
 
+export function processContinuityFailures(baseline, currentProcesses) {
+  return baseline.flatMap((prior) => {
+    const current = currentProcesses.find((entry) => entry.name === prior.name);
+    return !current ||
+      current.status !== "online" ||
+      current.restarts !== prior.restarts ||
+      current.cwd !== prior.cwd
+      ? [`PM2 continuity failed for ${prior.name}`]
+      : [];
+  });
+}
+
 export function diskHeadroomPass(availableBytes, totalBytes) {
   if (availableBytes < 0n || totalBytes <= 0n || availableBytes > totalBytes) throw new Error("Disk values are invalid");
   const percent = Number((availableBytes * 10_000n) / totalBytes) / 100;

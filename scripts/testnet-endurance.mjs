@@ -45,6 +45,7 @@ import {
   ENDURANCE_WRITE_INTERVAL_SECONDS,
   isRetryablePublicRpcError,
   percentile,
+  processContinuityFailures,
   reconcileReleaseIdentity,
   rewardClaimIndexes,
 } from "./testnet-endurance-policy.mjs";
@@ -1064,17 +1065,7 @@ async function sample() {
     if (!baseline) {
       state.baselineProcesses = processes;
     } else {
-      for (const prior of baseline) {
-        const current = processes.find((entry) => entry.name === prior.name);
-        if (
-          !current ||
-          current.status !== "online" ||
-          current.restarts !== prior.restarts ||
-          current.cwd !== releaseRoot
-        ) {
-          failures.push(`PM2 continuity failed for ${prior.name}`);
-        }
-      }
+      failures.push(...processContinuityFailures(baseline, processes));
     }
     if (status.chainId !== 46630) failures.push("API chain mismatch");
     const launchCount = Number(status.launchCount);

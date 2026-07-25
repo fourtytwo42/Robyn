@@ -47,6 +47,12 @@ Durable project context lives here. Update this file whenever information should
   failures. Same-deployment release reconciliation now clears only the PM2
   baseline so the next passing sample records the new exact release, while
   keeping transaction, failure, launch, and healthy-time journals intact.
+- The first sample on release `1a41ed0` completed the previously failing write
+  cycle and advanced the durable journal, then falsely reported web continuity
+  failure because the runner compared every PM2 cwd to the release root even
+  though Next correctly runs from `apps/web`. Continuity now compares each
+  process to its own captured baseline cwd, status, and restart count. A focused
+  regression covers both the web subdirectory and a real restart mismatch.
 - The root-disk promotion gate was cleared on 2026-07-25 by deleting only
   22.95 GB of abandoned, regenerable Anvil staging data under
   `/home/hendo420/.foundry/anvil/tmp` and the apt cache. Persistent chain,

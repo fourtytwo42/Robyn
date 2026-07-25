@@ -7,6 +7,7 @@ import {
   dueLaunchCount,
   isRetryablePublicRpcError,
   percentile,
+  processContinuityFailures,
   reconcileReleaseIdentity,
   rewardClaimIndexes,
 } from "../testnet-endurance-policy.mjs";
@@ -108,5 +109,30 @@ test("same-deployment release repair resumes the durable journal", () => {
         migratedAt: "2026-07-25T00:00:00Z",
       }),
     /identity does not match/,
+  );
+});
+
+test("PM2 continuity preserves each process-specific working directory", () => {
+  const baseline = [
+    {
+      name: "robyn-web-testnet",
+      status: "online",
+      restarts: 0,
+      cwd: "/release/apps/web",
+    },
+    {
+      name: "robyn-api-testnet",
+      status: "online",
+      restarts: 0,
+      cwd: "/release",
+    },
+  ];
+  assert.deepEqual(processContinuityFailures(baseline, baseline), []);
+  assert.deepEqual(
+    processContinuityFailures(baseline, [
+      baseline[0],
+      { ...baseline[1], restarts: 1 },
+    ]),
+    ["PM2 continuity failed for robyn-api-testnet"],
   );
 });
