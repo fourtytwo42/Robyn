@@ -12,6 +12,7 @@ import {
   reconcileReleaseIdentity,
   rewardClaimIndexes,
   terminalCurveBuyValue,
+  transactionFundingTarget,
 } from "../testnet-endurance-policy.mjs";
 
 test("healthy duration excludes failed samples", () => {
@@ -90,6 +91,26 @@ test("terminal curve buy exhausts the remaining inventory", () => {
         virtualNativeReserve: 100n,
         realCurveTokenReserve: 100n,
         feeBps: 100n,
+      }),
+    /invalid/,
+  );
+});
+
+test("transaction funding includes dynamic EIP-1559 fee headroom", () => {
+  assert.equal(
+    transactionFundingTarget({
+      valueWei: 1_000n,
+      estimatedGas: 100n,
+      maxFeePerGas: 12n,
+    }),
+    2_875n,
+  );
+  assert.throws(
+    () =>
+      transactionFundingTarget({
+        valueWei: 0n,
+        estimatedGas: 0n,
+        maxFeePerGas: 12n,
       }),
     /invalid/,
   );

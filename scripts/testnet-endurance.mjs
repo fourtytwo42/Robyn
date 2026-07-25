@@ -50,6 +50,7 @@ import {
   reconcileReleaseIdentity,
   rewardClaimIndexes,
   terminalCurveBuyValue,
+  transactionFundingTarget,
 } from "./testnet-endurance-policy.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
@@ -701,12 +702,50 @@ async function maybeGraduate() {
         virtualNativeReserve,
         feeBps: BigInt(feeBps),
       });
-      const gasReserve = 20_000_000_000_000n;
+      const [, output] = await publicClient.readContract({
+        address: launch.market,
+        abi: marketAbi,
+        functionName: "quoteBuy",
+        args: [value],
+        account: account.address,
+      });
+      const buyRequest = {
+        to: launch.market,
+        data: encodeFunctionData({
+          abi: marketAbi,
+          functionName: "buy",
+          args: [(output * 98n) / 100n || 1n],
+        }),
+        value,
+      };
+      const estimatedGas = await rpcRetry(
+        `estimate graduation ${index}`,
+        () =>
+          publicClient.estimateGas({
+            ...buyRequest,
+            account: account.address,
+          }),
+      );
+      const estimatedFees = await rpcRetry(
+        `estimate graduation fees ${index}`,
+        () => publicClient.estimateFeesPerGas(),
+      );
+      const maxFeePerGas =
+        estimatedFees.maxFeePerGas ??
+        estimatedFees.gasPrice ??
+        (await rpcRetry("read public gas price", () =>
+          publicClient.getGasPrice(),
+        ));
+      const fundingTarget = transactionFundingTarget({
+        valueWei: value,
+        estimatedGas,
+        maxFeePerGas,
+      });
       const buyerBalance = await publicClient.getBalance({
         address: account.address,
       });
-      if (buyerBalance < value + gasReserve) {
-        const funding = value + gasReserve - buyerBalance;
+      if (buyerBalance < fundingTarget) {
+        const funding = fundingTarget - buyerBalance;
         const projectBalance = await publicClient.getBalance({
           address: project.address,
         });
@@ -716,7 +755,7 @@ async function maybeGraduate() {
           );
         }
         await recordTransaction(
-          `endurance-graduate-fund-${index}-${realCurveTokenReserve}`,
+          `endurance-graduate-fund-${index}-${realCurveTokenReserve}-${fundingTarget}`,
           project,
           {
             to: account.address,
@@ -724,21 +763,10 @@ async function maybeGraduate() {
           },
         );
       }
-      const [, output] = await publicClient.readContract({
-        address: launch.market,
-        abi: marketAbi,
-        functionName: "quoteBuy",
-        args: [value],
-        account: account.address,
-      });
-      await contractTransaction(
+      await recordTransaction(
         `endurance-graduate-${index}-${realCurveTokenReserve}`,
         account,
-        launch.market,
-        marketAbi,
-        "buy",
-        [(output * 98n) / 100n || 1n],
-        value,
+        buyRequest,
       );
       const after = await publicClient.readContract({
         address: launch.market,

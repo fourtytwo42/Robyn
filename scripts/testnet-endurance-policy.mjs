@@ -31,6 +31,24 @@ function ceilDiv(value, divisor) {
   return (value + divisor - 1n) / divisor;
 }
 
+export function transactionFundingTarget({
+  valueWei,
+  estimatedGas,
+  maxFeePerGas,
+}) {
+  if (valueWei < 0n || estimatedGas <= 0n || maxFeePerGas <= 0n) {
+    throw new Error("Transaction funding values are invalid");
+  }
+  const bps = 10_000n;
+  const headroomBps = 2_500n;
+  const gasLimit =
+    estimatedGas + ceilDiv(estimatedGas * headroomBps, bps);
+  const feeReserve = gasLimit * maxFeePerGas;
+  const bufferedFeeReserve =
+    feeReserve + ceilDiv(feeReserve * headroomBps, bps);
+  return valueWei + bufferedFeeReserve;
+}
+
 export function terminalCurveBuyValue({
   virtualTokenReserve,
   virtualNativeReserve,

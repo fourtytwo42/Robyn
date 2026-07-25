@@ -4,6 +4,19 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- The repaired endurance run reached `8402.8` healthy seconds, 99 confirmed
+  transactions, and two endurance launches before its second graduation paused
+  safely on 2026-07-25. No buy was submitted: the actor held enough for the
+  terminal curve value plus the runner's hardcoded `20000000000000 wei` gas
+  reserve, but not the RPC's current EIP-1559 maximum-fee reservation. Evidence
+  is preserved under
+  `/var/lib/robyn/testnet-endurance/schema8-c203d00-endurance-20260725/preserved-failure-20260725T173849Z`.
+  The source repair estimates the exact buy transaction, derives a dynamic
+  maximum-fee reserve with two bounded 25% safety margins, and incorporates the
+  funding target into the idempotent funding label so the earlier confirmed
+  top-up cannot suppress the correction. The focused ten-test policy suite,
+  syntax checks, lint, strict typechecking, and diff checks pass. Commit, exact
+  build/promotion, and durable-journal resume remain in progress.
 - The schema-v8 endurance runner was stopped on 2026-07-25 after the first
   endurance launch failed to graduate. It accumulated only 1,200.414 healthy
   seconds and 45 confirmed transactions. The raw journal, samples, reviews,
