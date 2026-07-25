@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   blockLag,
   boundedRangeEnd,
+  capturedProjectionBlockMatches,
   checkpointDisposition,
   completeProjectionBatch,
   failureBackoffMs,
@@ -58,6 +59,30 @@ test("a projector checkpoint ahead of ingestion resets for deterministic replay"
     fromBlock: 10n,
     toBlock: 20n,
   });
+});
+
+test("projection may advance to a captured canonical block while ingestion continues", () => {
+  const captured = {
+    number: "100",
+    hash: "0xAaA",
+    canonical: true,
+  };
+  assert.equal(capturedProjectionBlockMatches(100n, "0xaaa", captured), true);
+  assert.equal(
+    capturedProjectionBlockMatches(100n, "0xaaa", {
+      ...captured,
+      hash: "0xbbb",
+    }),
+    false,
+  );
+  assert.equal(
+    capturedProjectionBlockMatches(100n, "0xaaa", {
+      ...captured,
+      canonical: false,
+    }),
+    false,
+  );
+  assert.equal(capturedProjectionBlockMatches(100n, "0xaaa", undefined), false);
 });
 
 test("failed launch validation leaves the projector checkpoint unchanged", async () => {

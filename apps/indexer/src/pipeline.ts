@@ -51,6 +51,20 @@ export function projectionRequiresReset(
   return projectedBlock !== undefined && projectedBlock > ingestedBlock;
 }
 
+export function capturedProjectionBlockMatches(
+  expectedBlock: bigint,
+  expectedHash: string,
+  canonicalBlock:
+    { number: string | bigint; hash: string; canonical: boolean } | undefined,
+) {
+  return (
+    canonicalBlock !== undefined &&
+    BigInt(canonicalBlock.number) === expectedBlock &&
+    canonicalBlock.hash.toLowerCase() === expectedHash.toLowerCase() &&
+    canonicalBlock.canonical
+  );
+}
+
 export function blockLag(head: bigint, checkpoint: bigint) {
   if (checkpoint > head) return 0n;
   return head - checkpoint;

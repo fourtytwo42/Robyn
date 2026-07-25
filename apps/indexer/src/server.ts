@@ -9,6 +9,7 @@ import {
 import { createDatabase } from "@robyn/db";
 import {
   boundedRangeEnd,
+  capturedProjectionBlockMatches,
   checkpointDisposition,
   completeProjectionBatch,
   failureBackoffMs,
@@ -697,12 +698,30 @@ async function projectOnce() {
       async (id) => projectLaunch(id, atomicLaunches?.get(id.toString())),
       reconcileMetadataBindings,
       async () => {
-        await sql.begin(async (tx) => {
-          const advanced = await tx.unsafe<{ service: string }[]>(
-            "INSERT INTO indexer_checkpoints (service,chain_id,last_block,last_hash) SELECT 'launch-projector',$1,$2,$3 WHERE EXISTS (SELECT 1 FROM indexer_checkpoints WHERE service='chain-indexer' AND chain_id=$1 AND last_block=$2 AND last_hash=$3) ON CONFLICT (service,chain_id) DO UPDATE SET last_block=EXCLUDED.last_block,last_hash=EXCLUDED.last_hash,updated_at=now() RETURNING service",
+        const advanced = await sql.begin(async (tx) => {
+          const captured = await tx.unsafe<
+            { number: string; hash: string; canonical: boolean }[]
+          >(
+            "SELECT number::text,hash,canonical FROM chain_blocks WHERE chain_id=$1 AND number=$2 AND lower(hash)=lower($3) AND canonical=true FOR SHARE",
             [manifest.chainId, ingested.last_block, ingested.last_hash],
           );
-          if (!advanced[0]) {
+          if (
+            !capturedProjectionBlockMatches(
+              BigInt(ingested.last_block),
+              ingested.last_hash,
+              captured[0],
+            )
+          ) {
+            return false;
+          }
+          await tx.unsafe(
+            "INSERT INTO indexer_checkpoints (service,chain_id,last_block,last_hash) VALUES ('launch-projector',$1,$2,$3) ON CONFLICT (service,chain_id) DO UPDATE SET last_block=EXCLUDED.last_block,last_hash=EXCLUDED.last_hash,updated_at=now()",
+            [manifest.chainId, ingested.last_block, ingested.last_hash],
+          );
+          return true;
+        });
+        if (!advanced) {
+          await sql.begin(async (tx) => {
             await tx.unsafe("DELETE FROM launches WHERE chain_id=$1", [
               manifest.chainId,
             ]);
@@ -710,11 +729,11 @@ async function projectOnce() {
               "DELETE FROM indexer_checkpoints WHERE service='launch-projector' AND chain_id=$1",
               [manifest.chainId],
             );
-            throw new Error(
-              "Canonical ingestion checkpoint changed during projection",
-            );
-          }
-        });
+          });
+          throw new Error(
+            "Captured canonical projection block changed during projection",
+          );
+        }
       },
     );
   } else {

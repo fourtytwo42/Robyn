@@ -56,6 +56,18 @@ Durable project context lives here. Update this file whenever information should
   semantics, operations, dependency graph, licenses, CycloneDX SBOM, and the
   second served artifact all matched. Evidence is under
   `/var/backups/robyn/reproducibility/indexer-05b6a60-20260725`.
+- The first `652c630` promotion failed closed before acceptance because the
+  projector required the ingester's global checkpoint to remain unchanged
+  during its initial 11-launch replay. The public chain advanced during that
+  replay, so the projector could starve even though its captured range remained
+  canonical. The repaired checkpoint guard locks and verifies the captured
+  canonical range-end block instead; later ingestion progress is allowed, while
+  a missing or changed captured block still clears projection state and fails
+  closed. Twelve focused tests pass. A concurrent shadow startup projected all
+  11 launches in 9.8 seconds while ingestion advanced, then kept both
+  checkpoints synchronized with zero errors. The incomplete candidate was
+  rolled back to accepted release `3cc4812` while the corrected release is
+  rebuilt.
 - The repaired endurance run reached `8402.8` healthy seconds, 99 confirmed
   transactions, and two endurance launches before its second graduation paused
   safely on 2026-07-25. No buy was submitted: the actor held enough for the
