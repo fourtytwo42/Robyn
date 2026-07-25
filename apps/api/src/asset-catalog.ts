@@ -256,9 +256,17 @@ export class AssetCatalogService {
 
   async list(query = "", category?: string) {
     const needle = query.trim().toLowerCase();
-    const assets = await Promise.all(
-      (this.manifest?.assets ?? []).map((asset) => this.resolve(asset.address)),
-    );
+    const assets: Array<CatalogAsset | null> = [];
+    const manifestAssets = this.manifest?.assets ?? [];
+    for (let offset = 0; offset < manifestAssets.length; offset += 4) {
+      assets.push(
+        ...(await Promise.all(
+          manifestAssets
+            .slice(offset, offset + 4)
+            .map((asset) => this.resolve(asset.address)),
+        )),
+      );
+    }
     return assets.filter(
       (asset): asset is CatalogAsset =>
         asset !== null &&
@@ -284,13 +292,28 @@ export class AssetCatalogService {
     const code = await this.rpcClient.getCode({ address });
     if (!code || code === "0x") return null;
     const known = this.byAddress.get(address.toLowerCase());
-    const [name, symbol, decimals, totalSupply] = await Promise.all([
-      this.readText(address, "name", known?.name ?? "Unnamed token"),
-      this.readText(
+    if (known) {
+      return {
+        chainId: this.chainId,
         address,
-        "symbol",
-        known?.mockSymbol ?? known?.symbol ?? "TOKEN",
-      ),
+        symbol: cleanText(known.mockSymbol ?? known.symbol, "TOKEN"),
+        name: cleanText(known.name, "Unnamed token"),
+        decimals: known.decimals,
+        totalSupply: "0",
+        category: known.category,
+        logoUrl: known.logoUrl ?? null,
+        verification: known.verification,
+        mockOnly: known.mockOnly,
+        disclosure: known.mockOnly ? (this.manifest?.disclosure ?? null) : null,
+        mainnetAddress: known.mainnetAddress ?? null,
+        referencePriceUsd: known.referencePriceUsd ?? null,
+        referencePriceAt: this.manifest?.snapshotAt ?? null,
+        route: await this.readRoute(address, known.route),
+      };
+    }
+    const [name, symbol, decimals, totalSupply] = await Promise.all([
+      this.readText(address, "name", "Unnamed token"),
+      this.readText(address, "symbol", "TOKEN"),
       this.rpcClient
         .readContract({
           address,
@@ -317,14 +340,14 @@ export class AssetCatalogService {
       name: cleanText(name, "Unnamed token"),
       decimals,
       totalSupply: totalSupply.toString(),
-      category: known?.category ?? "custom",
-      logoUrl: known?.logoUrl ?? null,
-      verification: known?.verification ?? "unverified-erc20",
-      mockOnly: known?.mockOnly ?? false,
-      disclosure: known?.mockOnly ? (this.manifest?.disclosure ?? null) : null,
-      mainnetAddress: known?.mainnetAddress ?? null,
-      referencePriceUsd: known?.referencePriceUsd ?? null,
-      referencePriceAt: known ? (this.manifest?.snapshotAt ?? null) : null,
+      category: "custom",
+      logoUrl: null,
+      verification: "unverified-erc20",
+      mockOnly: false,
+      disclosure: null,
+      mainnetAddress: null,
+      referencePriceUsd: null,
+      referencePriceAt: null,
       route,
     };
   }
@@ -376,7 +399,10 @@ export class AssetCatalogService {
     }
   }
 
-  private async readRoute(outputToken: Address): Promise<AssetRoute> {
+  private async readRoute(
+    outputToken: Address,
+    fallback?: ManifestAsset["route"],
+  ): Promise<AssetRoute> {
     if (!this.routeRegistry) {
       return {
         kind: "none",
@@ -404,13 +430,16 @@ export class AssetCatalogService {
           reason: status.ready ? null : reasonText(status.reason),
         };
       } catch {
+        const ready = fallback?.ready === true;
         return {
-          kind: "none",
-          ready: false,
-          venue: null,
+          kind: fallback?.kind ?? "uniswap-v4",
+          ready,
+          venue: ready ? this.routeRegistry : null,
           poolFee: null,
           liquidity: null,
-          reason: "route-read-failed",
+          reason: ready
+            ? "Live route check temporarily unavailable; launch simulation revalidates"
+            : "route-read-failed",
         };
       }
     }
@@ -430,13 +459,16 @@ export class AssetCatalogService {
         reason: status.ready ? null : reasonText(status.reason),
       };
     } catch {
+      const ready = fallback?.ready === true;
       return {
-        kind: "none",
-        ready: false,
-        venue: null,
+        kind: fallback?.kind ?? "none",
+        ready,
+        venue: ready ? this.routeRegistry : null,
         poolFee: null,
         liquidity: null,
-        reason: "route-read-failed",
+        reason: ready
+          ? "Live route check temporarily unavailable; launch simulation revalidates"
+          : "route-read-failed",
       };
     }
   }

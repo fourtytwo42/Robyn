@@ -91,7 +91,9 @@ describe("AssetCatalogService", () => {
     expect(first).toMatchObject({
       address: asset,
       verification: "robyn-testnet-mock",
-      decimals: 6,
+      name: "Robyn Testnet Mock NVIDIA",
+      symbol: "tmNVDA",
+      decimals: 18,
       route: { kind: "fixed-testnet", ready: true },
     });
     expect(second).toEqual(first);
@@ -230,6 +232,7 @@ describe("AssetCatalogService", () => {
   });
 
   it("rejects unsafe decimal metadata", async () => {
+    const unknown = "0x0000000000000000000000000000000000000004" as Address;
     const client = {
       getCode: async () => "0x01",
       readContract: async ({ functionName }: { functionName: string }) => {
@@ -247,6 +250,39 @@ describe("AssetCatalogService", () => {
       registry,
       manifest(),
     );
-    await expect(service.resolve(asset)).resolves.toBeNull();
+    await expect(service.resolve(unknown)).resolves.toBeNull();
+  });
+
+  it("uses the verified manifest route while a curated live route read is unavailable", async () => {
+    const currentManifest = manifest();
+    currentManifest.assets[0]!.route = {
+      kind: "uniswap-v4",
+      ready: true,
+    };
+    const client = {
+      getCode: async () => "0x01",
+      readContract: async () => {
+        throw new Error("public RPC temporarily unavailable");
+      },
+    } as unknown as PublicClient;
+    const service = new AssetCatalogService(
+      client,
+      46630,
+      native,
+      registry,
+      currentManifest,
+    );
+
+    await expect(service.resolve(asset)).resolves.toMatchObject({
+      name: "Robyn Testnet Mock NVIDIA",
+      symbol: "tmNVDA",
+      route: {
+        kind: "uniswap-v4",
+        ready: true,
+        venue: registry,
+        reason:
+          "Live route check temporarily unavailable; launch simulation revalidates",
+      },
+    });
   });
 });

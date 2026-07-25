@@ -61,6 +61,18 @@ Durable project context lives here. Update this file whenever information should
   strict types, application/service tests, Anvil smoke, and all 123 Foundry
   tests pass. This RPC-pressure fix requires commit/push, exact rebuild,
   promotion, and fresh public browser acceptance before endurance.
+- The first bounded-latency release `4dc400fe` removed Cloudflare's 128-second
+  wait but exposed that the public RPC does not reliably support viem HTTP
+  JSON-RPC batching: curated asset reads returned incomplete batch responses,
+  and the catalog cached all 24 routes as unavailable. The current working tree
+  removes transport batching, reads immutable curated metadata from the
+  deployment manifest, limits live route probes to four concurrent calls,
+  retains full onchain introspection for manual addresses, and uses a verified
+  manifest route only while a live curated route check is transiently
+  unavailable. Atomic launch simulation and execution still revalidate every
+  route onchain. API typecheck and all 52 API tests pass, including the
+  transient-route regression. This requires a new exact release before
+  acceptance resumes.
 - The first immutable testnet application build at `201dc19` failed closed
   before promotion because the root Turbo build did not forward the network
   environment into Next.js and the bundle scanner found devnet session-key
