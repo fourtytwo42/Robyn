@@ -131,7 +131,8 @@ cp "$security_json" "$staging/release-evidence/static-security-audit.json"
   sha256sum -c testnet-release-files.sha256 >/dev/null
 )
 
-chmod -R a-w "$staging"
+find "$staging" -mindepth 1 -exec chmod a-w {} +
 mv "$staging" "$target"
 staging=""
+chmod a-w "$target"
 printf 'release=%s\ngitSha=%s\n' "$target" "$git_sha"

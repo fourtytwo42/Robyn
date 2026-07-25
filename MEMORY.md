@@ -36,6 +36,12 @@ Durable project context lives here. Update this file whenever information should
   modules. The release builder now compiles non-web services separately and
   invokes the web package directly with explicit testnet variables. Schema v7
   remained public throughout; the corrected builder must pass before cutover.
+- The corrected protected bundle passed, then immutable artifact finalization
+  exposed that removing write permission from the staging directory itself
+  prevented its rename on this VM. The builder now removes write access from
+  every descendant, atomically renames the staging root, and removes write
+  access from the final root only after the rename. Schema v7 again remained
+  live and no partial release directory was retained.
 - Route-pressure and keeper recovery passed (2026-07-24): exact pushed commit
   `6bf210a84cd843ff8f6ee9a5dc373e3e56e64ec6` passed a fresh chain-46630 fork
   deployment with 490 verifier checks and zero failures. Its resumable campaign
