@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
 import type { Address, Hex } from "viem";
 import { TokenArt } from "@/components/launchpad-visuals";
+import { LAUNCH_TOKEN_EVENT } from "@/components/launch-token-trigger";
 import {
   BasketAssetPicker,
   type BasketAsset,
@@ -577,6 +578,16 @@ export function GuidedLaunchWizard(props: WizardProps) {
     Boolean(description) ||
     Boolean(artworkMediaId) ||
     Boolean(artworkPreview);
+
+  useEffect(() => {
+    const openLaunchWizard = () => {
+      setRendered(true);
+      setOpen(true);
+    };
+    window.addEventListener(LAUNCH_TOKEN_EVENT, openLaunchWizard);
+    return () =>
+      window.removeEventListener(LAUNCH_TOKEN_EVENT, openLaunchWizard);
+  }, []);
 
   useEffect(() => {
     if (!open) return;

@@ -12,6 +12,7 @@ import {
   type WalletClient,
 } from "viem";
 import { TokenCardArt } from "@/components/launchpad-visuals";
+import { LaunchTokenTrigger } from "@/components/launch-token-trigger";
 import type { LaunchList, LaunchRecord } from "@/lib/data-api";
 import type { CreatorRewardState } from "./creator-rewards-panel";
 
@@ -178,9 +179,9 @@ export function CreatorPortfolio({
             Wallet ownership is verified. External social accounts are not.
           </small>
         </div>
-        <Link className="button" href="/create">
+        <LaunchTokenTrigger className="button">
           Edit creator profile
-        </Link>
+        </LaunchTokenTrigger>
       </div>
 
       <div className="creator-summary" aria-label="Creator earnings totals">

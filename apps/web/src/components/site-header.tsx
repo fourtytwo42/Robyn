@@ -3,6 +3,7 @@ import Link from "next/link";
 import deployment from "@robyn/deployment";
 import { NetworkDaoNavigation } from "@robyn/network-dao-access";
 import { MarketTape } from "@/components/market-tape";
+import { LaunchTokenTrigger } from "@/components/launch-token-trigger";
 import { NetworkWalletControl } from "@robyn/network-wallet-control";
 
 export function SiteHeader() {
@@ -26,7 +27,6 @@ export function SiteHeader() {
           <Link href="/discover">Markets</Link>
           <Link href="/portfolio">Portfolio</Link>
           <NetworkDaoNavigation deployment={deployment} />
-          <Link href="/create">Create</Link>
         </nav>
         <div className="header-actions">
           <span className="network-pill" data-testid="network-status">
@@ -44,9 +44,9 @@ export function SiteHeader() {
             </a>
           ) : null}
           <NetworkWalletControl />
-          <Link className="button primary header-launch-button" href="/create">
+          <LaunchTokenTrigger className="button primary header-launch-button">
             Launch a token
-          </Link>
+          </LaunchTokenTrigger>
         </div>
       </header>
       <MarketTape />

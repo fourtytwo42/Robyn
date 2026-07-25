@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import type { Deployment } from "@/lib/deployment";
 import { NetworkWalletProvider } from "@robyn/network-wallet-provider";
+import { NetworkLaunchpadConsole } from "@robyn/network-launchpad";
+import deployment from "@robyn/deployment";
 
 import "./globals.css";
 
@@ -27,7 +30,14 @@ export default function RootLayout({
         <a className="skip-link" href="#main">
           Skip to main content
         </a>
-        <NetworkWalletProvider>{children}</NetworkWalletProvider>
+        <NetworkWalletProvider>
+          {children}
+          <NetworkLaunchpadConsole
+            deployment={deployment as Deployment}
+            showRegistry={false}
+            modalOnly
+          />
+        </NetworkWalletProvider>
       </body>
     </html>
   );

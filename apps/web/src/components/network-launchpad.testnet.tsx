@@ -837,7 +837,6 @@ export function NetworkLaunchpadConsole({
   return (
     <section
       className={modalOnly ? undefined : "console launchpad-console"}
-      aria-label={modalOnly ? "Launch token" : undefined}
       aria-labelledby={modalOnly ? undefined : "launchpad-title"}
     >
       {modalOnly ? null : (

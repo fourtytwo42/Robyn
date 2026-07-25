@@ -32,6 +32,15 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  async redirects() {
+    return [
+      {
+        source: "/create",
+        destination: "/",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     if (networkMode !== "testnet") return [];
     return [

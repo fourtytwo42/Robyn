@@ -2472,6 +2472,26 @@ When sources conflict, use this order:
 
 ## Completed Work
 
+### 2026-07-25 - Launch Wizard Became Global
+
+- Context: The homepage still repeated the complete "Create a token holders want
+  to earn with" launchpad section, and launch actions navigated to a dedicated
+  `/create` route before opening the wizard.
+- Decision: Mount one modal-only launchpad inside the root wallet provider and
+  open it through a shared browser event. Header, homepage, and creator-profile
+  launch actions now open the wizard over the current route without navigation.
+- Files: `apps/web/src/app/layout.tsx`, `apps/web/src/app/page.tsx`,
+  `apps/web/src/components/launch-token-trigger.tsx`, `site-header.tsx`,
+  `guided-launch-wizard.tsx`, creator portfolio, both network launchpads, and
+  `apps/web/next.config.ts`.
+- Commands/tests: Prettier, web Vitest (23 tests), strict TypeScript, ESLint,
+  and `git diff --check` pass before exact release build and browser acceptance.
+- Result: The repeated homepage launch section and Create navigation item are
+  removed. `/create` has no page and redirects to `/` for old bookmarks.
+- Follow-up: Verify the modal opens without URL changes on home, Markets,
+  Portfolio, and a token page after exact promotion, then resume endurance from
+  the preserved transaction journal without replay.
+
 ### 2026-07-25 - Create Route Is Modal Only
 
 - Context: The dedicated `/create` route repeated launchpad marketing, launch

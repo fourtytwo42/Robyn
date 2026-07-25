@@ -1,6 +1,5 @@
 import type { Deployment } from "@/lib/deployment";
 import { NetworkConsole } from "@robyn/network-console";
-import { NetworkLaunchpadConsole } from "@robyn/network-launchpad";
 import { SiteHeader } from "@/components/site-header";
 import {
   getDataPlaneHealth,
@@ -14,6 +13,7 @@ import {
   TokenArt,
 } from "@/components/launchpad-visuals";
 import { MarketCard } from "@/components/market-card";
+import { LaunchTokenTrigger } from "@/components/launch-token-trigger";
 import { getLaunches } from "@/lib/data-api";
 import Link from "next/link";
 import { formatEther } from "viem";
@@ -65,9 +65,9 @@ export default async function Home() {
             its activity creates.
           </p>
           <div className="hero-actions">
-            <Link className="button primary" href="/create">
+            <LaunchTokenTrigger className="button primary">
               Launch a token
-            </Link>
+            </LaunchTokenTrigger>
             <Link className="button ghost" href="/discover">
               Explore markets
             </Link>
@@ -194,7 +194,6 @@ export default async function Home() {
         </div>
       </section>
 
-      <NetworkLaunchpadConsole deployment={deployment as Deployment} />
       {!isTestnet ? (
         <NetworkConsole deployment={deployment as Deployment} />
       ) : null}
