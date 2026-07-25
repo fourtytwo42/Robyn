@@ -39,6 +39,7 @@ export function reconcileReleaseIdentity(state, expected) {
     ...state,
     releaseSha: expected.releaseSha,
     paused: true,
+    baselineProcesses: undefined,
     releaseTransitions: [
       ...(state.releaseTransitions ?? []),
       {

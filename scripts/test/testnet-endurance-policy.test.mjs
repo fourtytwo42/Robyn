@@ -78,6 +78,7 @@ test("same-deployment release repair resumes the durable journal", () => {
     healthySeconds: 0,
     transactions: [{ hash: "0x1" }],
     paused: false,
+    baselineProcesses: [{ name: "old-release-process" }],
   };
   const repaired = reconcileReleaseIdentity(state, {
     runId: "run-1",
@@ -88,6 +89,7 @@ test("same-deployment release repair resumes the durable journal", () => {
   assert.equal(repaired.releaseSha, "new");
   assert.equal(repaired.paused, true);
   assert.equal(repaired.transactions.length, 1);
+  assert.equal(repaired.baselineProcesses, undefined);
   assert.deepEqual(repaired.releaseTransitions, [
     {
       fromReleaseSha: "old",

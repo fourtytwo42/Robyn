@@ -41,6 +41,12 @@ Durable project context lives here. Update this file whenever information should
   proves the immutable one-billion total supply and the manifest's 100%
   bootstrap allocation instead of forbidding later token transfers. The live
   post-distribution deployment passes all 490 verifier checks.
+- The first same-deployment endurance resume correctly preserved all 37
+  confirmed transactions but also retained the previous release's PM2 process
+  baseline, so deliberate promotion PIDs/cwds were reported as continuity
+  failures. Same-deployment release reconciliation now clears only the PM2
+  baseline so the next passing sample records the new exact release, while
+  keeping transaction, failure, launch, and healthy-time journals intact.
 - The root-disk promotion gate was cleared on 2026-07-25 by deleting only
   22.95 GB of abandoned, regenerable Anvil staging data under
   `/home/hendo420/.foundry/anvil/tmp` and the apt cache. Persistent chain,
