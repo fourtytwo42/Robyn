@@ -18,6 +18,29 @@ testnet="$(jq '[.[]|select(.name|endswith("-testnet"))]' <<<"$pm2_json")"
 [[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_INDEXER_ROLE' <<<"$testnet")" == "ingester" ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-projector-testnet")|.pm2_env.env.ROBYN_INDEXER_ROLE' <<<"$testnet")" == "projector" ]]
 
+database="$(
+  jq -r \
+    '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.PGDATABASE' \
+    <<<"$testnet"
+)"
+active_database_indexers=()
+for process_environment in /proc/[0-9]*/environ; do
+  process_id="${process_environment#/proc/}"
+  process_id="${process_id%/environ}"
+  command_line="/proc/$process_id/cmdline"
+  [[ -r "$process_environment" && -r "$command_line" ]] || continue
+  grep -azq 'apps/indexer/dist/server.js' "$command_line" || continue
+  grep -azqx "PGDATABASE=$database" "$process_environment" || continue
+  role="$(
+    tr '\0' '\n' <"$process_environment" |
+      sed -n 's/^ROBYN_INDEXER_ROLE=//p'
+  )"
+  active_database_indexers+=("$process_id:${role:-combined}")
+done
+[[ "${#active_database_indexers[@]}" -eq 2 ]]
+[[ "$(printf '%s\n' "${active_database_indexers[@]}" | grep -c ':ingester$')" -eq 1 ]]
+[[ "$(printf '%s\n' "${active_database_indexers[@]}" | grep -c ':projector$')" -eq 1 ]]
+
 curl -fsS http://127.0.0.1:3012/api/health >/dev/null
 status="$(curl -fsS http://127.0.0.1:3111/status)"
 curl -fsS http://127.0.0.1:3210/health >/dev/null
@@ -44,8 +67,13 @@ jq -n \
   --arg verifiedAt "$(date -u +%FT%TZ)" \
   --arg releasePath "$release_real" \
   --arg gitSha "$git_sha" \
+  --arg database "$database" \
+  --argjson activeDatabaseIndexers "$(
+    printf '%s\n' "${active_database_indexers[@]}" |
+      jq -Rsc 'split("\n")|map(select(length>0))'
+  )" \
   --argjson status "$status" \
   --argjson publicStatus "$public_status" \
   --argjson verifierChecks "$(jq '.checks|length' /tmp/robyn-testnet-deployment-verify.json)" \
-  '{verifiedAt:$verifiedAt,releasePath:$releasePath,gitSha:$gitSha,status:$status,publicStatus:$publicStatus,verifierChecks:$verifierChecks}'
+  '{verifiedAt:$verifiedAt,releasePath:$releasePath,gitSha:$gitSha,database:$database,activeDatabaseIndexers:$activeDatabaseIndexers,status:$status,publicStatus:$publicStatus,verifierChecks:$verifierChecks}'
 rm -f /tmp/robyn-testnet-deployment-verify.json

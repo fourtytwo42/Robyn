@@ -68,6 +68,17 @@ Durable project context lives here. Update this file whenever information should
   checkpoints synchronized with zero errors. The incomplete candidate was
   rolled back to accepted release `3cc4812` while the corrected release is
   rebuilt.
+- Corrected release `56be9c5` passed reproducibility, protected release gates,
+  its 490-check promoter, and the first live projector replay. Post-promotion
+  observation then found a legacy transient user-systemd unit,
+  `robyn-schema8-abe90dc-indexer.service`, still running the old combined
+  indexer against the active database in parallel with PM2. It repeatedly reset
+  canonical state while the new processes repaired it. The obsolete unit and
+  PID were stopped; it had no install target and is now absent. The sole active
+  testnet writers are the PM2 ingester and projector, both checkpoints
+  stabilized at the same head with all 11 launches and zero lag. Future
+  promotion checks must enumerate all processes with
+  `PGDATABASE=robyn_testnet_schema8_abe90dc`, not PM2 alone.
 - The repaired endurance run reached `8402.8` healthy seconds, 99 confirmed
   transactions, and two endurance launches before its second graduation paused
   safely on 2026-07-25. No buy was submitted: the actor held enough for the
