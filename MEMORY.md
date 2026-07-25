@@ -31,21 +31,31 @@ Durable project context lives here. Update this file whenever information should
   `/var/lib/robyn/testnet-indexer-shadow/schema8-incremental-20260725`.
 - Shadow validation caught and fixed a bigint heartbeat serialization defect
   before promotion. The regression is covered by the indexer policy suite.
-  Eleven focused pipeline tests now cover bounded ranges, required range-end
+  Eleven focused pipeline tests cover bounded ranges, required range-end
   metadata, stale-head/reorg decisions, independent checkpoint recovery,
   projector-ahead reset/replay, projector failure without checkpoint
   advancement, delayed metadata ordering, idempotent launch events, bounded
-  retry backoff, JSON-safe heartbeats, and the p95 lag policy. Final
-  exact-source scale samples with 11, 100, and 1,000 existing launches measured
-  projector p95 cycle times of 1.62 ms, 1.68 ms, and 1.53 ms.
-  The final exact-source 30-minute public-RPC shadow window began at
-  `2026-07-25T19:12:47Z`; complete it before promotion.
+  retry backoff, JSON-safe heartbeats, and the p95 lag policy. Exact-source
+  scale samples with 11, 100, and 1,000 existing launches measured projector
+  p95 cycle times of 1.62 ms, 1.68 ms, and 1.53 ms.
+- The final exact-source public-RPC shadow ran from
+  `2026-07-25T19:12:47Z` through `19:43:51Z` and passed. Its 53 samples had
+  ingestion p95/max lag of 43/49 blocks, projection p95/max lag of 32/41
+  blocks, zero unhealthy samples, monotonic checkpoints, zero duplicate logs,
+  and zero ingester or projector error events. Transient public-RPC retries
+  recovered while both checkpoints remained correct. Four receipt-verified
+  historical fee logs omitted by the old indexer were backfilled into the
+  active database; it still has zero duplicate transaction/log identities.
+  Checksummed evidence is under
+  `/var/lib/robyn/testnet-indexer-shadow/schema8-incremental-20260725`.
 - The first two-clean-archive reproducibility run for `38896f8` found a genuine
   application-bundle mismatch: Webpack swapped two compact numeric server
-  module IDs between otherwise equivalent builds. Contracts, operations,
-  dependencies, licenses, and SBOM comparisons were unaffected. The web build
-  now uses stable named module identities in `apps/web/next.config.ts`; rerun
-  the complete two-archive comparison before promotion.
+  module IDs between otherwise equivalent builds. The web build now uses
+  stable named module identities in `apps/web/next.config.ts`. The complete
+  rerun for `05b6a60` passed two clean archives: application bundles, contract
+  semantics, operations, dependency graph, licenses, CycloneDX SBOM, and the
+  second served artifact all matched. Evidence is under
+  `/var/backups/robyn/reproducibility/indexer-05b6a60-20260725`.
 - The repaired endurance run reached `8402.8` healthy seconds, 99 confirmed
   transactions, and two endurance launches before its second graduation paused
   safely on 2026-07-25. No buy was submitted: the actor held enough for the
