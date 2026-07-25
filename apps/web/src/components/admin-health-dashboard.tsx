@@ -8,7 +8,10 @@ function value(value: string | number | null) {
 }
 
 function time(value: string | null) {
-  return value ? new Date(value).toLocaleString() : "Never";
+  if (!value) return "Never";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "Unavailable";
+  return `${parsed.toISOString().replace("T", " ").replace("Z", "")} UTC`;
 }
 
 export function AdminHealthDashboard({
@@ -114,7 +117,7 @@ export function AdminHealthDashboard({
           <span className={`health-badge health-${snapshot.overall}`}>
             <span className="status-dot" /> Overall {snapshot.overall}
           </span>
-          <p>Updated {new Date(snapshot.generatedAt).toLocaleString()}</p>
+          <p>Updated {time(snapshot.generatedAt)}</p>
         </div>
         <button
           className="button"
