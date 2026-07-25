@@ -27,6 +27,46 @@ export function rewardClaimIndexes(rewardCount) {
   return Array.from({ length: rewardCount }, (_, index) => BigInt(index));
 }
 
+function ceilDiv(value, divisor) {
+  return (value + divisor - 1n) / divisor;
+}
+
+export function terminalCurveBuyValue({
+  virtualTokenReserve,
+  virtualNativeReserve,
+  realCurveTokenReserve,
+  feeBps,
+}) {
+  const bps = 10_000n;
+  if (
+    virtualTokenReserve <= 0n ||
+    virtualNativeReserve <= 0n ||
+    realCurveTokenReserve <= 0n ||
+    realCurveTokenReserve >= virtualTokenReserve ||
+    feeBps <= 0n ||
+    feeBps >= bps
+  ) {
+    throw new Error("Terminal curve state is invalid");
+  }
+  const terminalVirtualTokenReserve =
+    virtualTokenReserve - realCurveTokenReserve;
+  const invariant = virtualNativeReserve * virtualTokenReserve;
+  const terminalVirtualNativeReserve = ceilDiv(
+    invariant,
+    terminalVirtualTokenReserve,
+  );
+  const requiredNet =
+    terminalVirtualNativeReserve - virtualNativeReserve;
+  return ceilDiv(requiredNet * bps, bps - feeBps);
+}
+
+export function enduranceSamplePassed(
+  infrastructurePassed,
+  workloadFailure,
+) {
+  return infrastructurePassed && !workloadFailure;
+}
+
 export function reconcileReleaseIdentity(state, expected) {
   if (
     state.runId !== expected.runId ||

@@ -36,6 +36,7 @@ import {
   diskHeadroomPass,
   dueCount,
   dueLaunchCount,
+  enduranceSamplePassed,
   ENDURANCE_DURATION_SECONDS,
   ENDURANCE_MAXIMUM_API_P95_MS,
   ENDURANCE_MINIMUM_MEMORY_BYTES,
@@ -48,6 +49,7 @@ import {
   processContinuityFailures,
   reconcileReleaseIdentity,
   rewardClaimIndexes,
+  terminalCurveBuyValue,
 } from "./testnet-endurance-policy.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
@@ -127,7 +129,6 @@ const chain = defineChain({
 const publicClient = createPublicClient({
   chain,
   transport: http(rpcUrl, {
-    batch: { batchSize: 20, wait: 20 },
     retryCount: 5,
     retryDelay: 500,
     timeout: 15_000,
@@ -666,29 +667,91 @@ async function maybeGraduate() {
     });
     if (graduated) continue;
     const account = accounts[96 + index];
-    const value = 500_000_000_000_000n;
-    const [, output] = await publicClient.readContract({
-      address: launch.market,
-      abi: marketAbi,
-      functionName: "quoteBuy",
-      args: [value],
-      account: account.address,
-    });
-    await contractTransaction(
-      `endurance-graduate-${index}`,
-      account,
-      launch.market,
-      marketAbi,
-      "buy",
-      [(output * 98n) / 100n || 1n],
-      value,
-    );
-    const after = await publicClient.readContract({
-      address: launch.market,
-      abi: marketAbi,
-      functionName: "graduated",
-    });
-    if (!after) throw new Error(`Endurance launch ${index} did not graduate`);
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const [
+        realCurveTokenReserve,
+        virtualTokenReserve,
+        virtualNativeReserve,
+        feeBps,
+      ] = await Promise.all([
+        publicClient.readContract({
+          address: launch.market,
+          abi: marketAbi,
+          functionName: "realCurveTokenReserve",
+        }),
+        publicClient.readContract({
+          address: launch.market,
+          abi: marketAbi,
+          functionName: "virtualTokenReserve",
+        }),
+        publicClient.readContract({
+          address: launch.market,
+          abi: marketAbi,
+          functionName: "virtualNativeReserve",
+        }),
+        publicClient.readContract({
+          address: launch.market,
+          abi: marketAbi,
+          functionName: "feeBps",
+        }),
+      ]);
+      const value = terminalCurveBuyValue({
+        realCurveTokenReserve,
+        virtualTokenReserve,
+        virtualNativeReserve,
+        feeBps: BigInt(feeBps),
+      });
+      const gasReserve = 20_000_000_000_000n;
+      const buyerBalance = await publicClient.getBalance({
+        address: account.address,
+      });
+      if (buyerBalance < value + gasReserve) {
+        const funding = value + gasReserve - buyerBalance;
+        const projectBalance = await publicClient.getBalance({
+          address: project.address,
+        });
+        if (projectBalance < funding + ENDURANCE_RESERVE_WEI) {
+          throw new Error(
+            `Endurance graduation ${index} would breach the reserve`,
+          );
+        }
+        await recordTransaction(
+          `endurance-graduate-fund-${index}-${realCurveTokenReserve}`,
+          project,
+          {
+            to: account.address,
+            value: funding,
+          },
+        );
+      }
+      const [, output] = await publicClient.readContract({
+        address: launch.market,
+        abi: marketAbi,
+        functionName: "quoteBuy",
+        args: [value],
+        account: account.address,
+      });
+      await contractTransaction(
+        `endurance-graduate-${index}-${realCurveTokenReserve}`,
+        account,
+        launch.market,
+        marketAbi,
+        "buy",
+        [(output * 98n) / 100n || 1n],
+        value,
+      );
+      const after = await publicClient.readContract({
+        address: launch.market,
+        abi: marketAbi,
+        functionName: "graduated",
+      });
+      if (after) break;
+      if (attempt === 4) {
+        throw new Error(
+          `Endurance launch ${index} did not graduate after bounded top-ups`,
+        );
+      }
+    }
   }
 }
 
@@ -1099,7 +1162,16 @@ async function sample() {
   if (p95 > ENDURANCE_MAXIMUM_API_P95_MS) {
     failures.push(`endpoint p95 ${p95.toFixed(1)}ms exceeds threshold`);
   }
-  const passed = failures.length === 0;
+  const infrastructurePassed = failures.length === 0;
+  const passed = enduranceSamplePassed(
+    infrastructurePassed,
+    state.workloadFailure,
+  );
+  if (state.workloadFailure) {
+    failures.push(
+      `unresolved workload failure: ${state.workloadFailure.message}`,
+    );
+  }
   const previousPassed = state.lastSamplePassed;
   if (
     passed &&
@@ -1134,6 +1206,7 @@ async function sample() {
   const sampleEntry = {
     sampledAt: new Date(sampledAtMs).toISOString(),
     passed,
+    infrastructurePassed,
     failures,
     healthySeconds: state.healthySeconds,
     sampleCount: state.sampleCount,
@@ -1208,34 +1281,57 @@ process.on("SIGINT", () => {
   stopping = true;
 });
 
-while (
-  !stopping &&
-  !state.completed &&
-  state.healthySeconds < durationSeconds
-) {
+function pauseForWorkloadFailure(error) {
+  const failure = {
+    sampledAt: new Date().toISOString(),
+    message: error instanceof Error ? error.message : String(error),
+    releaseSha: releaseManifest.gitSha,
+  };
+  if (!state.paused) {
+    state.paused = true;
+    const segment = state.segments.at(-1);
+    if (segment && !segment.finishedAt) {
+      segment.finishedAt = failure.sampledAt;
+      segment.healthySeconds = state.healthySeconds;
+    }
+  }
+  state.lastSamplePassed = false;
+  state.workloadFailure = failure;
+  state.failures.push({
+    sampledAt: failure.sampledAt,
+    failures: [failure.message],
+    phase: "workload",
+    releaseSha: releaseManifest.gitSha,
+  });
+  state.failures = state.failures.slice(-200);
+  saveState();
+}
+
+while (!stopping && !state.completed) {
   const began = Date.now();
   const sampleEntry = await sample();
-  if (sampleEntry.passed) {
+  if (sampleEntry.infrastructurePassed) {
     try {
       await runDueWork();
+      if (state.workloadFailure) {
+        state.workloadFailure = undefined;
+        saveState();
+      }
     } catch (error) {
-      state.lastSamplePassed = false;
-      state.paused = true;
-      state.failures.push({
-        sampledAt: new Date().toISOString(),
-        failures: [error instanceof Error ? error.message : String(error)],
-        phase: "workload",
-        releaseSha: releaseManifest.gitSha,
-      });
-      saveState();
+      pauseForWorkloadFailure(error);
     }
+  }
+  if (
+    state.healthySeconds >= durationSeconds &&
+    state.lastSamplePassed &&
+    !state.workloadFailure &&
+    !state.paused
+  ) {
+    await runReview(state.reviewCount);
+    finalize();
+    break;
   }
   const remaining = sampleIntervalSeconds * 1000 - (Date.now() - began);
   if (remaining > 0 && !stopping) await sleep(remaining);
-}
-
-if (state.healthySeconds >= durationSeconds) {
-  await runReview(state.reviewCount);
-  finalize();
 }
 process.stdout.write(`${json(state)}\n`);

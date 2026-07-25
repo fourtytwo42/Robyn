@@ -5,11 +5,13 @@ import {
   diskHeadroomPass,
   dueCount,
   dueLaunchCount,
+  enduranceSamplePassed,
   isRetryablePublicRpcError,
   percentile,
   processContinuityFailures,
   reconcileReleaseIdentity,
   rewardClaimIndexes,
+  terminalCurveBuyValue,
 } from "../testnet-endurance-policy.mjs";
 
 test("healthy duration excludes failed samples", () => {
@@ -69,6 +71,37 @@ test("RPC retry classification and p95 are bounded", () => {
 test("holder rewards are queried by canonical asset index", () => {
   assert.deepEqual(rewardClaimIndexes(3), [0n, 1n, 2n]);
   assert.throws(() => rewardClaimIndexes(-1), /non-negative safe integer/);
+});
+
+test("terminal curve buy exhausts the remaining inventory", () => {
+  assert.equal(
+    terminalCurveBuyValue({
+      virtualTokenReserve: 552_763_819_095_477_386_934_673_367n,
+      virtualNativeReserve: 995_000_000_000_000n,
+      realCurveTokenReserve: 252_763_819_095_477_386_934_673_367n,
+      feeBps: 100n,
+    }),
+    846_801_346_801_348n,
+  );
+  assert.throws(
+    () =>
+      terminalCurveBuyValue({
+        virtualTokenReserve: 100n,
+        virtualNativeReserve: 100n,
+        realCurveTokenReserve: 100n,
+        feeBps: 100n,
+      }),
+    /invalid/,
+  );
+});
+
+test("unresolved workload failures keep passing infrastructure paused", () => {
+  assert.equal(enduranceSamplePassed(true, undefined), true);
+  assert.equal(
+    enduranceSamplePassed(true, { message: "graduation incomplete" }),
+    false,
+  );
+  assert.equal(enduranceSamplePassed(false, undefined), false);
 });
 
 test("same-deployment release repair resumes the durable journal", () => {

@@ -4,6 +4,23 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- The schema-v8 endurance runner was stopped on 2026-07-25 after the first
+  endurance launch failed to graduate. It accumulated only 1,200.414 healthy
+  seconds and 45 confirmed transactions. The raw journal, samples, reviews,
+  and checksums are preserved under
+  `/var/lib/robyn/testnet-endurance/schema8-c203d00-endurance-20260725/preserved-failure-20260725T143608Z`.
+  Root cause: the runner hardcoded a `0.0005 ETH` graduation buy, while the
+  live remaining curve required exactly `0.000846801346801348 ETH`; the
+  confirmed insufficient buy's fixed journal label then made every retry a
+  no-op. Passing infrastructure samples also reopened the clock while the
+  workload failure remained unresolved, producing 517 false segment records.
+  The source repair calculates terminal input from live reserves, funds the
+  graduation actor without breaching the `0.0015 ETH` reserve, uses
+  reserve-specific idempotent labels, keeps workload failures paused until a
+  successful retry, prevents finalization while paused, and removes unreliable
+  public-RPC batching. Focused policy tests, formatting, lint, strict
+  typechecking, and syntax checks pass. Commit, exact build/promotion, repaired
+  journal migration, and live resume verification remain in progress.
 - Schema-v8 promotion and public-testnet endurance are in progress
   (2026-07-25). The verified active deployment is campaign
   `schema8-abe90dc`: manifest SHA-256
