@@ -24,10 +24,22 @@ export function NetworkPortfolioNavigation({
       setRequestedUatAddress(
         window.sessionStorage.getItem(PORTFOLIO_UAT_STORAGE_KEY),
       );
+    const query = new URLSearchParams(window.location.search);
+    const requested = query.get("uatWallet");
+    if (
+      requested &&
+      deployment.deployer &&
+      requested.toLowerCase() === deployment.deployer.toLowerCase()
+    ) {
+      window.sessionStorage.setItem(PORTFOLIO_UAT_STORAGE_KEY, requested);
+      query.delete("uatWallet");
+      const cleaned = `${window.location.pathname}${query.size ? `?${query}` : ""}${window.location.hash}`;
+      window.history.replaceState(window.history.state, "", cleaned);
+    }
     read();
     window.addEventListener(PORTFOLIO_UAT_EVENT, read);
     return () => window.removeEventListener(PORTFOLIO_UAT_EVENT, read);
-  }, []);
+  }, [deployment.deployer]);
 
   const access = resolvePortfolioAccess(
     account,
