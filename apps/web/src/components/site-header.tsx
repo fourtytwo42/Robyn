@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import deployment from "@robyn/deployment";
+import { NetworkDaoNavigation } from "@robyn/network-dao-access";
 import { MarketTape } from "@/components/market-tape";
 import { NetworkWalletControl } from "@robyn/network-wallet-control";
 
@@ -23,7 +25,7 @@ export function SiteHeader() {
         <nav className="site-nav" aria-label="Primary navigation">
           <Link href="/discover">Markets</Link>
           <Link href="/portfolio">Portfolio</Link>
-          <Link href="/dao">DAO</Link>
+          <NetworkDaoNavigation deployment={deployment} />
           <Link href="/create">Create</Link>
         </nav>
         <div className="header-actions">

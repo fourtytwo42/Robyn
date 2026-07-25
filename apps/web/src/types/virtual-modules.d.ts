@@ -44,6 +44,18 @@ declare module "@robyn/network-dao" {
   }): JSX.Element;
 }
 
+declare module "@robyn/network-dao-access" {
+  import type { ReactNode } from "react";
+  import type { Deployment } from "@/lib/deployment";
+  export function NetworkDaoNavigation(props: {
+    deployment: Deployment;
+  }): JSX.Element | null;
+  export function NetworkDaoAccessGate(props: {
+    deployment: Deployment;
+    children: ReactNode;
+  }): JSX.Element;
+}
+
 declare module "@robyn/network-token-trade" {
   import type { Address } from "viem";
   import type { Deployment } from "@/lib/deployment";
