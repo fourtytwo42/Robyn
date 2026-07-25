@@ -2606,6 +2606,7 @@ When sources conflict, use this order:
 - Commands/tests: Web Vitest 28/28, strict typecheck, ESLint, Prettier, and diff checks pass before release build.
 - Result: The dashboard refreshes every 15 seconds and reports release identity, RPC chain/head/latency, ingestion and projection blocks/lags/cycles, RPC retry/degradation state, keeper/artifact heartbeats, and indexed launch/log counts.
 - Verification correction: The first promotion exposed that public `/api/*` is reserved for the backend API. The refresh feed moved under `/admin/health/status`; the 404 candidate was not accepted.
+- Verification correction: The next candidate exposed that the web PM2 process did not receive `ROBYN_RELEASE_SHA`; explicit release identity wiring was added so the operator page can prove the served commit.
 - Follow-up: Build, promote, run in-app-browser acceptance on homepage and `/admin/health`, then resume the preserved endurance journal without replay.
 
 ## Open Follow-ups

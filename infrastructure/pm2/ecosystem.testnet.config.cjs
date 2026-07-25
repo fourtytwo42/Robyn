@@ -31,6 +31,7 @@ module.exports = {
         ROBYN_NETWORK_MODE: "testnet",
         CHAIN_ID: "46630",
         HOSTNAME: "127.0.0.1",
+        ROBYN_RELEASE_SHA: releaseSha,
         RPC_GATEWAY_HEALTH_URL: rpcUrl,
         DATA_API_STATUS_URL: "http://127.0.0.1:3111/status",
         DATA_API_URL: "http://127.0.0.1:3111",
