@@ -40,6 +40,12 @@ Durable project context lives here. Update this file whenever information should
   projector p95 cycle times of 1.62 ms, 1.68 ms, and 1.53 ms.
   The final exact-source 30-minute public-RPC shadow window began at
   `2026-07-25T19:12:47Z`; complete it before promotion.
+- The first two-clean-archive reproducibility run for `38896f8` found a genuine
+  application-bundle mismatch: Webpack swapped two compact numeric server
+  module IDs between otherwise equivalent builds. Contracts, operations,
+  dependencies, licenses, and SBOM comparisons were unaffected. The web build
+  now uses stable named module identities in `apps/web/next.config.ts`; rerun
+  the complete two-archive comparison before promotion.
 - The repaired endurance run reached `8402.8` healthy seconds, 99 confirmed
   transactions, and two endurance launches before its second graduation paused
   safely on 2026-07-25. No buy was submitted: the actor held enough for the

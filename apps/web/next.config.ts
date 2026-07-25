@@ -60,6 +60,11 @@ const nextConfig: NextConfig = {
     ];
   },
   webpack(config) {
+    // Webpack's compact deterministic module IDs resolve rare hash collisions
+    // in discovery order, which made otherwise identical clean archives swap
+    // two numeric server-module IDs. Named IDs derive from stable module
+    // identities and keep exact release bundles byte-for-byte reproducible.
+    config.optimization.moduleIds = "named";
     if (networkMode === "testnet") {
       // Optional React Native persistence and pretty-print logging are not
       // browser capabilities. Their callers provide web-safe fallbacks.
