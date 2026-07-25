@@ -2594,7 +2594,8 @@ When sources conflict, use this order:
 - Files: `apps/web/src/components/network-portfolio-access.*.tsx`, `apps/web/src/lib/portfolio-access-policy.ts`, `apps/web/src/app/users/[address]/page.tsx`, portfolio/creator components, header and creator links.
 - Commands/tests: web Vitest 26/26, strict typecheck, ESLint, Prettier, and `git diff --check` passed before release build.
 - Result: Connected users retain the unified `/portfolio` dashboard. Other users can inspect public profile, holdings, created tokens, and public reward/fee state through `/users/[address]`, but cannot edit or claim.
-- Follow-up: Build, promote, and complete in-app-browser UAT; preserve and resume the endurance journal without replay.
+- Verification: Exact release promotion passed 490 checks. In-app-browser UAT passed normal disconnected nav hiding, the session-only read-only UAT entry, public creator/holdings rendering, creator links, disabled private controls, zero console errors, and zero horizontal overflow at desktop, tablet, and 390 by 844 mobile.
+- Follow-up: Promote the final documentation commit and resume the preserved endurance journal without replay.
 
 ## Open Follow-ups
 
