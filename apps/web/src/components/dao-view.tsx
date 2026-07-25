@@ -741,12 +741,13 @@ export function DaoView({
           <article className="panel dao-wide">
             <h2>Controlled by executed votes</h2>
             <p>
-              Treasury assets can only move through the Governor and its{" "}
+              Treasury assets can only move through the Governor and a timelock
+              with a{" "}
               {governanceDuration(
                 overview.governance.executionDelaySeconds,
               ).toLowerCase()}{" "}
-              timelock. The guardian can pause conversions and cancel malicious
-              queued proposals, but cannot withdraw funds.
+              execution delay. The guardian can pause conversions and cancel
+              malicious queued proposals, but cannot withdraw funds.
             </p>
             <p className="address-line">
               Timelock <code>{overview.contracts.timelock}</code>
