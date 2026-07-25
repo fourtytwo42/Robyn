@@ -15,6 +15,7 @@ import { createDatabase } from "@robyn/db";
 import {
   boundedProtocolInput,
   conversionJobId,
+  isFailedJobRetryDue,
   failureAuditState,
   harvestJobId,
   isLegacyConversionJobId,
@@ -857,7 +858,14 @@ async function scan() {
           jobId: key,
           priority: 4,
         });
-      } else if (await existing.isFailed()) {
+      } else if (
+        (await existing.isFailed()) &&
+        isFailedJobRetryDue(
+          existing.attemptsMade,
+          existing.finishedOn,
+          Date.now(),
+        )
+      ) {
         await audit(key, "queued", existing.attemptsMade, payload);
         await existing.retry();
       }
@@ -1206,7 +1214,10 @@ async function enqueueHarvest(launch: {
       priority: 3,
       removeOnComplete: false,
     });
-  } else if (await existing.isFailed()) {
+  } else if (
+    (await existing.isFailed()) &&
+    isFailedJobRetryDue(existing.attemptsMade, existing.finishedOn, Date.now())
+  ) {
     await audit(key, "queued", existing.attemptsMade, payload);
     await existing.retry();
   }

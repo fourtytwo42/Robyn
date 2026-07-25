@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   boundedProtocolInput,
   conversionJobId,
+  failedJobRetryDelayMs,
+  isFailedJobRetryDue,
   failureAuditState,
   harvestJobId,
   isLegacyConversionJobId,
@@ -62,6 +64,15 @@ describe("keeper eligibility", () => {
     );
   });
 
+  it("backs failed-job retries off exponentially with a one-hour cap", () => {
+    expect(failedJobRetryDelayMs(1)).toBe(30_000);
+    expect(failedJobRetryDelayMs(2)).toBe(60_000);
+    expect(failedJobRetryDelayMs(20)).toBe(3_600_000);
+    expect(isFailedJobRetryDue(2, 1_000, 60_999)).toBe(false);
+    expect(isFailedJobRetryDue(2, 1_000, 61_000)).toBe(true);
+    expect(isFailedJobRetryDue(1, undefined, 1_000_000)).toBe(false);
+    expect(() => failedJobRetryDelayMs(-1)).toThrow("retry policy");
+  });
   it("uses one reusable job id for each financial stream", () => {
     expect(protocolNativeJobId("0xABCDEF")).toBe("protocol-native-0xabcdef");
     expect(protocolLaunchJobId("0xABCDEF")).toBe("protocol-launch-0xabcdef");

@@ -1162,6 +1162,29 @@ async function conversions() {
   if (state.conversions.legs.length !== 24 || new Set(state.conversions.legs.map((entry) => entry.asset.toLowerCase())).size !== 24) {
     throw new Error("Conversions did not exercise all 24 unique basket assets");
   }
+  const routeReadiness = [];
+  for (const route of manifest.assetRoutes) {
+    const status = await publicClient.readContract({
+      address: manifest.contracts.assetRouter,
+      abi: assetRouterAbi,
+      functionName: "routeStatus",
+      args: [route.address],
+    });
+    routeReadiness.push({
+      asset: route.address,
+      ready: status.ready,
+      spotTick: status.spotTick.toString(),
+      referenceTick: status.referenceTick.toString(),
+      reason: status.reason,
+    });
+  }
+  const unavailableRoutes = routeReadiness.filter((route) => !route.ready);
+  if (unavailableRoutes.length > 0) {
+    throw new Error(
+      `Campaign conversions disabled ${unavailableRoutes.length} basket routes`,
+    );
+  }
+  state.conversions.routeReadiness = routeReadiness;
   state.phases.conversions = new Date().toISOString();
   saveState(state);
   console.log(json(state.conversions));

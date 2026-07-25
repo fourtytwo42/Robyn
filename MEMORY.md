@@ -4,6 +4,19 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Exact `c35704f` rehearsal keeper finding (2026-07-24): a fresh 490-check
+  deployment and complete 2,156-transaction campaign passed on the isolated
+  chain-46630 fork with the corrected basket ordering. The post-campaign keeper
+  then proved that repeated one-way purchases can move controlled mock pools
+  outside the original 198-tick reference guard, while failed stable jobs were
+  retried every scan and reached more than 200 attempts. The isolated keeper was
+  stopped and its job-audit evidence checksummed. The pending correction widens
+  only controlled test-route reference tolerance to 5,000 ticks, retains the
+  1% per-transaction protected-route impact limit, raises the mock batch ceiling
+  to `1000000000000 wei` for efficient adaptive batches, fixes reused official
+  routes at `10000000000 wei`, asserts all routes remain ready after campaign
+  conversions, and exponentially backs failed jobs off to a one-hour cap. A
+  fresh exact-SHA rehearsal must prove route readiness and bounded queue drain.
 - Schema-v8 discovery campaign completed and superseded (2026-07-24): exact
   commit `44c91b1dcd2964606b5baf84cc8526ac4aa88606` completed the full live
   chain-46630 campaign with 2,156 confirmed transactions and 2,056 product

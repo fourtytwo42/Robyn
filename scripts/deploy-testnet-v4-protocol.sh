@@ -211,6 +211,7 @@ fi
 
 verification_class="$(cast keccak 'ROBINHOOD_TESTNET_FAUCET_STOCK')"
 maximum_reference_tick_deviation=198
+mock_reference_tick_deviation=5000
 if [[ -z "$reuse_routes_manifest" ]]; then
 while IFS=$'\t' read -r symbol asset pool_id; do
   slot0="$(
@@ -243,7 +244,7 @@ fi
 mock_native_seed="100000000000000"
 mock_token_seed_max="100000000000000"
 mock_liquidity="50000000000000"
-mock_maximum_native_input="10000000000"
+mock_maximum_native_input="1000000000000"
 if [[ -z "$reuse_routes_manifest" ]]; then
 while IFS=$'\t' read -r symbol asset verification; do
   if [[ "$verification" == "robyn-controlled-testnet-dex" ]]; then
@@ -266,7 +267,7 @@ while IFS=$'\t' read -r symbol asset verification; do
     send_transaction --value "$mock_native_seed" "$test_asset_liquidity_locker" \
       'seed(address,uint128,uint256)' "$asset" "$mock_liquidity" "$mock_token_seed_max"
   )"
-  route="(10000,200,$zero,1,$mock_maximum_native_input,0,$maximum_reference_tick_deviation,true,$route_verification_class,true)"
+  route="(10000,200,$zero,1,$mock_maximum_native_input,0,$mock_reference_tick_deviation,true,$route_verification_class,true)"
   send_transaction "$asset_router" \
     'configureRoute(address,(uint24,int24,address,uint128,uint128,int24,uint24,bool,bytes32,bool))' \
     "$asset" "$route" >/dev/null
@@ -281,7 +282,7 @@ while IFS=$'\t' read -r symbol asset verification; do
   }
   jq -nc \
     --arg symbol "$symbol" \
-    --argjson maximumReferenceTickDeviation "$maximum_reference_tick_deviation" \
+    --argjson maximumReferenceTickDeviation "$mock_reference_tick_deviation" \
     '{
       symbol:$symbol,
       referenceTick:0,
@@ -326,15 +327,18 @@ else
     case "$verification" in
       robinhood-testnet-faucet-stock)
         route_verification_class="$(cast keccak 'ROBINHOOD_TESTNET_FAUCET_STOCK')"
-        maximum_native_input="1000000000000"
+        maximum_native_input="10000000000"
+        route_reference_tick_deviation="$maximum_reference_tick_deviation"
         ;;
       robyn-controlled-testnet-dex)
         route_verification_class="$(cast keccak 'ROBYN_CONTROLLED_TESTNET_WETH')"
         maximum_native_input="$mock_maximum_native_input"
+        route_reference_tick_deviation="$mock_reference_tick_deviation"
         ;;
       robyn-testnet-mock)
         route_verification_class="$(cast keccak 'ROBYN_TESTNET_MOCK_V4_ROUTE')"
         maximum_native_input="$mock_maximum_native_input"
+        route_reference_tick_deviation="$mock_reference_tick_deviation"
         ;;
       *)
         echo "Unsupported reused route verification class for $symbol: $verification" >&2
@@ -346,7 +350,7 @@ else
         "$pool_id" --rpc-url "$rpc_url" --json
     )"
     reference_tick="$(jq -r '.[1]' <<<"$slot0")"
-    route="(10000,200,$zero,1,$maximum_native_input,$reference_tick,$maximum_reference_tick_deviation,true,$route_verification_class,true)"
+    route="(10000,200,$zero,1,$maximum_native_input,$reference_tick,$route_reference_tick_deviation,true,$route_verification_class,true)"
     send_transaction "$asset_router" \
       'configureRoute(address,(uint24,int24,address,uint128,uint128,int24,uint24,bool,bytes32,bool))' \
       "$asset" "$route" >/dev/null
@@ -363,7 +367,7 @@ else
     jq -nc \
       --arg symbol "$symbol" \
       --argjson referenceTick "$reference_tick" \
-      --argjson maximumReferenceTickDeviation "$maximum_reference_tick_deviation" \
+      --argjson maximumReferenceTickDeviation "$route_reference_tick_deviation" \
       '{
         symbol:$symbol,
         referenceTick:$referenceTick,

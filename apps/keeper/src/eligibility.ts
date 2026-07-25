@@ -29,6 +29,31 @@ export function isLegacyConversionJobId(
   if (kind !== undefined && kind !== "convert") return false;
   return /^convert-[0-9a-f]{40}-[0-9]+-[0-9]+-[0-9]+$/i.test(id);
 }
+export function failedJobRetryDelayMs(
+  attemptsMade: number,
+  baseDelayMs = 30_000,
+  maximumDelayMs = 3_600_000,
+): number {
+  if (attemptsMade < 0 || baseDelayMs <= 0 || maximumDelayMs < baseDelayMs) {
+    throw new Error("Failed-job retry policy is invalid");
+  }
+  const exponent = Math.min(Math.max(attemptsMade - 1, 0), 20);
+  return Math.min(baseDelayMs * 2 ** exponent, maximumDelayMs);
+}
+
+export function isFailedJobRetryDue(
+  attemptsMade: number,
+  finishedOn: number | undefined,
+  now: number,
+  baseDelayMs = 30_000,
+  maximumDelayMs = 3_600_000,
+): boolean {
+  if (finishedOn === undefined) return false;
+  return (
+    now - finishedOn >=
+    failedJobRetryDelayMs(attemptsMade, baseDelayMs, maximumDelayMs)
+  );
+}
 
 function normalizedAddress(address: string): string {
   return address.toLowerCase();
