@@ -4,6 +4,7 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Portfolio access is now wallet-gated in the header. The protected browser-UAT path is a read-only, session-only opt-in bound to the public deployment deployer address; it never supplies a signer or enables writes. `/portfolio` remains the connected wallet's unified profile/dashboard, while `/users/[address]` reuses the holdings, creator profile, created-token, and fee views as a public read-only user page. Creator names and addresses link to that route.
 - The schema-v8 endurance service is intentionally stopped for the incremental
   indexer release. Its durable state, samples, reviews, and transaction journal
   are checksummed under
@@ -2585,6 +2586,15 @@ When sources conflict, use this order:
 - Commands/tests: web format/lint/typecheck/test/build; in-app-browser forced race after waiting beyond the keeper scan interval; signed buy, convert, three-asset claim and sell.
 - Result: Passed with status explaining raced legs were already converted, pending zero, claim enabled, nonzero mNVDA/mSPY/mETH rewards, completed sell and zero browser warnings/errors.
 - Follow-up: cut a new exact immutable release; c9807e1 is not the final candidate.
+
+### 2026-07-25 - Wallet-gated Portfolio and public user profiles
+
+- Context: Portfolio should appear only for a connected wallet, while browser acceptance still needs a safe way to inspect a populated portfolio without an extension wallet.
+- Decision: Gate the Portfolio nav on real wagmi/devnet wallet state. Permit one session-only read-only UAT identity matching the configured public deployment address, linking to `/users/[address]`; it is not a connection and has no signer.
+- Files: `apps/web/src/components/network-portfolio-access.*.tsx`, `apps/web/src/lib/portfolio-access-policy.ts`, `apps/web/src/app/users/[address]/page.tsx`, portfolio/creator components, header and creator links.
+- Commands/tests: web Vitest 26/26, strict typecheck, ESLint, Prettier, and `git diff --check` passed before release build.
+- Result: Connected users retain the unified `/portfolio` dashboard. Other users can inspect public profile, holdings, created tokens, and public reward/fee state through `/users/[address]`, but cannot edit or claim.
+- Follow-up: Build, promote, and complete in-app-browser UAT; preserve and resume the endurance journal without replay.
 
 ## Open Follow-ups
 

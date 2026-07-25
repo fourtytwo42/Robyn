@@ -6,6 +6,7 @@ export type Deployment = {
   deploymentBlock?: number;
   environment?: string;
   gitCommit: string;
+  deployer?: Address;
   liquidityVenue?: "uniswap-v4" | "uniswap-v3";
   venueProvenance?: string;
   contracts: {

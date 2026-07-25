@@ -6,6 +6,7 @@ import {
   createWalletClient,
   defineChain,
   http,
+  type Address,
   type Hex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -18,7 +19,13 @@ const chain = defineChain({
   rpcUrls: { default: { http: ["/rpc"] } },
 });
 
-export function NetworkCreatorPortfolio() {
+export function NetworkCreatorPortfolio({
+  account: requestedAccount,
+  readOnly = false,
+}: {
+  account?: Address;
+  readOnly?: boolean;
+} = {}) {
   const [key, setKey] = useState<Hex>();
   useEffect(() => {
     const read = () => {
@@ -44,11 +51,17 @@ export function NetworkCreatorPortfolio() {
         : undefined,
     [account],
   );
+  const targetAccount = requestedAccount ?? account?.address;
+  const canManage =
+    !readOnly &&
+    Boolean(account) &&
+    account?.address.toLowerCase() === targetAccount?.toLowerCase();
   return (
     <CreatorPortfolio
-      account={account?.address}
+      account={targetAccount}
       publicClient={publicClient}
-      walletClient={walletClient}
+      walletClient={canManage ? walletClient : undefined}
+      readOnly={!canManage}
     />
   );
 }

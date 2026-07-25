@@ -133,12 +133,20 @@ function amount(value: bigint) {
   });
 }
 
-export function NetworkPortfolioView() {
+export function NetworkPortfolioView({
+  account: requestedAccount,
+  readOnly = false,
+}: {
+  account?: Address;
+  readOnly?: boolean;
+} = {}) {
   const {
-    account: wallet,
+    account: connectedWallet,
     publicClient: client,
     connect,
   } = useRobynTestnetWallet();
+  const wallet = requestedAccount ?? connectedWallet;
+  const publicView = readOnly || Boolean(requestedAccount);
   const [positions, setPositions] = useState<Position[]>();
   const [indexedBlock, setIndexedBlock] = useState<string | null>(null);
   const [status, setStatus] = useState("Reading the connected testnet wallet.");
@@ -249,8 +257,12 @@ export function NetworkPortfolioView() {
           ),
       ),
     );
-    setStatus("Portfolio reconciled from live contract state.");
-  }, [client, wallet]);
+    setStatus(
+      publicView
+        ? "Public portfolio reconciled from live contract state."
+        : "Portfolio reconciled from live contract state.",
+    );
+  }, [client, publicView, wallet]);
 
   useEffect(() => {
     void refresh().catch(() => {
@@ -283,7 +295,9 @@ export function NetworkPortfolioView() {
     <>
       <section className="wallet-bar">
         <div>
-          <p>Connected testnet wallet</p>
+          <p>
+            {publicView ? "Public testnet wallet" : "Connected testnet wallet"}
+          </p>
           <code>{wallet}</code>
         </div>
         <button className="button" onClick={() => void refresh()}>
@@ -307,7 +321,7 @@ export function NetworkPortfolioView() {
               <TokenCardArt
                 symbol={position.launch.symbol}
                 name={position.launch.name}
-                badge="Your position"
+                badge={publicView ? "Public position" : "Your position"}
                 launchNumber={position.launch.launch_id}
               />
               <dl className="portfolio-summary">

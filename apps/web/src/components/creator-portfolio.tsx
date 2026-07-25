@@ -47,10 +47,12 @@ export function CreatorPortfolio({
   account,
   publicClient,
   walletClient,
+  readOnly = false,
 }: {
   account?: Address;
   publicClient: PublicClient;
   walletClient?: WalletClient;
+  readOnly?: boolean;
 }) {
   const [launches, setLaunches] = useState<CreatorLaunch[]>();
   const [profile, setProfile] = useState<Profile>();
@@ -122,7 +124,8 @@ export function CreatorPortfolio({
     [launches],
   );
 
-  if (!account || !walletClient) return null;
+  if (!account) return null;
+  const canManage = Boolean(walletClient) && !readOnly;
 
   async function transact(
     functionName:
@@ -179,9 +182,11 @@ export function CreatorPortfolio({
             Wallet ownership is verified. External social accounts are not.
           </small>
         </div>
-        <LaunchTokenTrigger className="button">
-          Edit creator profile
-        </LaunchTokenTrigger>
+        {canManage ? (
+          <LaunchTokenTrigger className="button">
+            Edit creator profile
+          </LaunchTokenTrigger>
+        ) : null}
       </div>
 
       <div className="creator-summary" aria-label="Creator earnings totals">
@@ -211,15 +216,17 @@ export function CreatorPortfolio({
             {(launches?.length ?? 0) === 1 ? "" : "es"}
           </h2>
         </div>
-        <button
-          className="button primary"
-          disabled={working || claimableTokens.length === 0}
-          onClick={() =>
-            void transact("claimCreatorFeesBatch", [claimableTokens])
-          }
-        >
-          {working ? "Processing…" : "Claim all"}
-        </button>
+        {canManage ? (
+          <button
+            className="button primary"
+            disabled={working || claimableTokens.length === 0}
+            onClick={() =>
+              void transact("claimCreatorFeesBatch", [claimableTokens])
+            }
+          >
+            {working ? "Processing…" : "Claim all"}
+          </button>
+        ) : null}
       </div>
 
       {launches === undefined ? (
@@ -256,15 +263,19 @@ export function CreatorPortfolio({
                 </div>
               </dl>
               <div className="action-row">
-                <button
-                  className="button primary"
-                  disabled={working || BigInt(rewards.claimableNative) === 0n}
-                  onClick={() =>
-                    void transact("claimCreatorFees", [launch.token as Address])
-                  }
-                >
-                  Claim token
-                </button>
+                {canManage ? (
+                  <button
+                    className="button primary"
+                    disabled={working || BigInt(rewards.claimableNative) === 0n}
+                    onClick={() =>
+                      void transact("claimCreatorFees", [
+                        launch.token as Address,
+                      ])
+                    }
+                  >
+                    Claim token
+                  </button>
+                ) : null}
                 <Link className="button" href={`/launches/${launch.token}`}>
                   View token
                 </Link>
@@ -274,47 +285,51 @@ export function CreatorPortfolio({
         </div>
       )}
 
-      <details className="advanced-token-details">
-        <summary>
-          <span>
-            <b>Advanced claim recipient</b>
-            <small>Send all currently claimable token fees elsewhere</small>
-          </span>
-          <span>Open</span>
-        </summary>
-        <div className="advanced-claim-control">
-          <label className="field">
-            <span>Recipient address</span>
-            <input
-              value={recipient}
-              onChange={(event) => setRecipient(event.target.value)}
-              placeholder="0x…"
-            />
-          </label>
-          <button
-            className="button"
-            disabled={
-              working || !isAddress(recipient) || claimableTokens.length === 0
-            }
-            onClick={() =>
-              void transact("claimCreatorFeesBatchTo", [
-                claimableTokens,
-                recipient as Address,
-              ])
-            }
-          >
-            Claim all to address
-          </button>
-        </div>
-      </details>
+      {canManage ? (
+        <details className="advanced-token-details">
+          <summary>
+            <span>
+              <b>Advanced claim recipient</b>
+              <small>Send all currently claimable token fees elsewhere</small>
+            </span>
+            <span>Open</span>
+          </summary>
+          <div className="advanced-claim-control">
+            <label className="field">
+              <span>Recipient address</span>
+              <input
+                value={recipient}
+                onChange={(event) => setRecipient(event.target.value)}
+                placeholder="0x…"
+              />
+            </label>
+            <button
+              className="button"
+              disabled={
+                working || !isAddress(recipient) || claimableTokens.length === 0
+              }
+              onClick={() =>
+                void transact("claimCreatorFeesBatchTo", [
+                  claimableTokens,
+                  recipient as Address,
+                ])
+              }
+            >
+              Claim all to address
+            </button>
+          </div>
+        </details>
+      ) : null}
       {status ? (
         <p className="transaction-status" role="status">
           {status}
         </p>
       ) : null}
       <p className="freshness">
-        Personal controls are shown only to the connected canonical creator. Fee
-        balances and claim events remain public blockchain data.
+        {canManage
+          ? "Personal controls are shown only to the connected canonical creator."
+          : "Read-only view. Connect this canonical creator wallet to manage its profile or claim fees."}{" "}
+        Fee balances and claim events remain public blockchain data.
       </p>
     </section>
   );

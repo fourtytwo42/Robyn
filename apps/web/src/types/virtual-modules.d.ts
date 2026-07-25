@@ -22,11 +22,26 @@ declare module "@robyn/network-launchpad" {
 }
 
 declare module "@robyn/network-portfolio" {
-  export function NetworkPortfolioView(): JSX.Element;
+  import type { Address } from "viem";
+  export function NetworkPortfolioView(props: {
+    account?: Address;
+    readOnly?: boolean;
+  }): JSX.Element;
+}
+
+declare module "@robyn/network-portfolio-access" {
+  import type { Deployment } from "@/lib/deployment";
+  export function NetworkPortfolioNavigation(props: {
+    deployment: Deployment;
+  }): JSX.Element | null;
 }
 
 declare module "@robyn/network-creator-portfolio" {
-  export function NetworkCreatorPortfolio(): JSX.Element | null;
+  import type { Address } from "viem";
+  export function NetworkCreatorPortfolio(props: {
+    account?: Address;
+    readOnly?: boolean;
+  }): JSX.Element | null;
 }
 
 declare module "@robyn/network-creator-rewards" {

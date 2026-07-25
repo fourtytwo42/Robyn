@@ -126,7 +126,13 @@ const devnetChain = defineChain({
   rpcUrls: { default: { http: ["/rpc"] } },
 });
 
-export function PortfolioView() {
+export function PortfolioView({
+  account: requestedAccount,
+  readOnly = false,
+}: {
+  account?: Address;
+  readOnly?: boolean;
+} = {}) {
   const [wallet, setWallet] = useState<Address>();
   const [positions, setPositions] = useState<Position[]>();
   const [indexedBlock, setIndexedBlock] = useState<string | null>(null);
@@ -143,16 +149,26 @@ export function PortfolioView() {
   );
 
   const refresh = useCallback(async () => {
-    const stored = window.sessionStorage.getItem("robyn-devnet-session-key");
-    if (!stored?.startsWith("0x")) {
+    const stored = requestedAccount
+      ? undefined
+      : window.sessionStorage.getItem("robyn-devnet-session-key");
+    const account = requestedAccount
+      ? { address: requestedAccount }
+      : stored?.startsWith("0x")
+        ? privateKeyToAccount(stored as Hex)
+        : undefined;
+    if (!account) {
       setWallet(undefined);
       setPositions([]);
       setStatus("No session wallet exists in this browser tab.");
       return;
     }
-    const account = privateKeyToAccount(stored as Hex);
     setWallet(account.address);
-    setStatus("Loading held tokens and reward state…");
+    setStatus(
+      readOnly
+        ? "Loading this wallet's public onchain portfolio…"
+        : "Loading held tokens and reward state…",
+    );
     const response = await fetch("/api/launches?limit=100", {
       cache: "no-store",
     });
@@ -238,11 +254,19 @@ export function PortfolioView() {
           ),
       ),
     );
-    setStatus("Portfolio reconciled from live contract state.");
-  }, [client]);
+    setStatus(
+      readOnly
+        ? "Public portfolio reconciled from live contract state."
+        : "Portfolio reconciled from live contract state.",
+    );
+  }, [client, readOnly, requestedAccount]);
 
   const claimRewards = useCallback(
     async (position: Position) => {
+      if (readOnly || requestedAccount) {
+        setStatus("Connect this wallet to claim its rewards.");
+        return;
+      }
       const stored = window.sessionStorage.getItem("robyn-devnet-session-key");
       if (!stored?.startsWith("0x")) {
         setStatus("The session wallet is no longer available.");
@@ -280,7 +304,7 @@ export function PortfolioView() {
         setClaimingToken(undefined);
       }
     },
-    [client, refresh, rpcUrl],
+    [client, readOnly, refresh, requestedAccount, rpcUrl],
   );
 
   useEffect(() => {
@@ -316,7 +340,7 @@ export function PortfolioView() {
     <>
       <section className="wallet-bar">
         <div>
-          <p>Session wallet</p>
+          <p>{readOnly ? "Public wallet" : "Session wallet"}</p>
           <code>{wallet}</code>
         </div>
         <button className="button" onClick={() => void refresh()}>
@@ -379,18 +403,20 @@ export function PortfolioView() {
               >
                 Inspect allocation evidence
               </Link>
-              <button
-                className="button primary"
-                disabled={
-                  claimingToken !== undefined ||
-                  !position.rewards.some((reward) => reward.claimable > 0n)
-                }
-                onClick={() => void claimRewards(position)}
-              >
-                {claimingToken === position.launch.token
-                  ? "Claiming…"
-                  : `Claim ${position.launch.symbol} rewards`}
-              </button>
+              {!readOnly ? (
+                <button
+                  className="button primary"
+                  disabled={
+                    claimingToken !== undefined ||
+                    !position.rewards.some((reward) => reward.claimable > 0n)
+                  }
+                  onClick={() => void claimRewards(position)}
+                >
+                  {claimingToken === position.launch.token
+                    ? "Claiming…"
+                    : `Claim ${position.launch.symbol} rewards`}
+                </button>
+              ) : null}
             </article>
           ))}
         </section>

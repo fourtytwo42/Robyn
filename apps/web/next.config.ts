@@ -93,6 +93,10 @@ const nextConfig: NextConfig = {
       webRoot,
       `src/components/network-portfolio.${suffix}.tsx`,
     );
+    config.resolve.alias["@robyn/network-portfolio-access"] = path.resolve(
+      webRoot,
+      `src/components/network-portfolio-access.${suffix}.tsx`,
+    );
     config.resolve.alias["@robyn/network-creator-portfolio"] = path.resolve(
       webRoot,
       `src/components/network-creator-portfolio.${suffix}.tsx`,

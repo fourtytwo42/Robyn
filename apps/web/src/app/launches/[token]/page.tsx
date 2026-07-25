@@ -148,10 +148,10 @@ export default async function LaunchDetail({
             </h1>
             <div className="identity-links">
               <code>{short(launch.token)}</code>
-              <span>
+              <Link className="text-link" href={`/users/${launch.creator}`}>
                 Created by{" "}
                 {launch.metadata?.display_name ?? short(launch.creator)}
-              </span>
+              </Link>
               <span>Block {launch.created_block}</span>
             </div>
             <div

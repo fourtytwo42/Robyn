@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 type WatchItem = { chainId: number; token: string };
 const watchlistKey = "robyn-watchlist:v1";
@@ -179,7 +180,9 @@ export function TokenActions({
                 />
               ) : null}
               <span>
-                <b>{creatorProfile.displayName}</b>
+                <Link className="text-link" href={`/users/${creator}`}>
+                  <b>{creatorProfile.displayName}</b>
+                </Link>
                 <small>
                   Wallet-owned profile · social links not externally verified
                 </small>
@@ -202,7 +205,9 @@ export function TokenActions({
             </div>
           ) : null}
           <strong>Factory-recorded creator</strong>
-          <code>{creator}</code>
+          <Link className="text-link" href={`/users/${creator}`}>
+            <code>{creator}</code>
+          </Link>
           <span>
             Recorded at launch block {createdBlock}. This proves the launch
             wallet, not a legal or social identity.
