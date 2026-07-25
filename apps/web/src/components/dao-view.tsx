@@ -16,6 +16,7 @@ import {
   type WalletClient,
 } from "viem";
 import type { Deployment } from "@/lib/deployment";
+import { governanceDuration } from "@/lib/display-format";
 
 const daoTokenAbi = parseAbi([
   "function claimRewards() returns (uint256)",
@@ -66,6 +67,7 @@ type DaoOverview = {
   governance: {
     votingDelaySeconds: string;
     votingPeriodSeconds: string;
+    executionDelaySeconds: string;
     proposalThreshold: string;
     currentQuorum: string;
   };
@@ -408,12 +410,26 @@ export function DaoView({
                   <dd>{tokenAmount(overview.governance.currentQuorum)} RDAO</dd>
                 </div>
                 <div>
+                  <dt>Proposal delay</dt>
+                  <dd>
+                    {governanceDuration(overview.governance.votingDelaySeconds)}
+                  </dd>
+                </div>
+                <div>
                   <dt>Voting period</dt>
-                  <dd>3 days</dd>
+                  <dd>
+                    {governanceDuration(
+                      overview.governance.votingPeriodSeconds,
+                    )}
+                  </dd>
                 </div>
                 <div>
                   <dt>Execution delay</dt>
-                  <dd>2 days</dd>
+                  <dd>
+                    {governanceDuration(
+                      overview.governance.executionDelaySeconds,
+                    )}
+                  </dd>
                 </div>
               </dl>
             </article>
@@ -725,7 +741,10 @@ export function DaoView({
           <article className="panel dao-wide">
             <h2>Controlled by executed votes</h2>
             <p>
-              Treasury assets can only move through the Governor and two-day
+              Treasury assets can only move through the Governor and its{" "}
+              {governanceDuration(
+                overview.governance.executionDelaySeconds,
+              ).toLowerCase()}{" "}
               timelock. The guardian can pause conversions and cancel malicious
               queued proposals, but cannot withdraw funds.
             </p>

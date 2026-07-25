@@ -47,6 +47,7 @@ const governorAbi = parseAbi([
   "function proposalVotes(uint256) view returns (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes)",
   "function hasVoted(uint256,address) view returns (bool)",
 ]);
+const timelockAbi = parseAbi(["function getMinDelay() view returns (uint256)"]);
 const proposalCreatedEvent = parseAbiItem(
   "event ProposalCreated(uint256 proposalId, address proposer, address[] targets, uint256[] values, string[] signatures, bytes[] calldatas, uint256 voteStart, uint256 voteEnd, string description)",
 );
@@ -279,6 +280,7 @@ export function registerDaoRoutes(
       treasuryBalance,
       votingDelay,
       votingPeriod,
+      executionDelay,
       proposalThreshold,
       currentQuorum,
       accountValues,
@@ -334,6 +336,11 @@ export function registerDaoRoutes(
         address: governor,
         abi: governorAbi,
         functionName: "votingPeriod",
+      }),
+      rpcClient.readContract({
+        address: timelock,
+        abi: timelockAbi,
+        functionName: "getMinDelay",
       }),
       rpcClient.readContract({
         address: governor,
@@ -436,6 +443,7 @@ export function registerDaoRoutes(
         governance: {
           votingDelaySeconds: votingDelay.toString(),
           votingPeriodSeconds: votingPeriod.toString(),
+          executionDelaySeconds: executionDelay.toString(),
           proposalThreshold: proposalThreshold.toString(),
           currentQuorum: currentQuorum.toString(),
         },

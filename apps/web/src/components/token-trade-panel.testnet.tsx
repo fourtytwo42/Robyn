@@ -43,6 +43,26 @@ const legacyMarketAbi = [
 const nativeMarketAbi = [
   {
     type: "function",
+    name: "quoteBuy",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "uint256" }],
+    outputs: [
+      { type: "uint256", name: "feeAmount" },
+      { type: "uint256", name: "tokenOutput" },
+    ],
+  },
+  {
+    type: "function",
+    name: "quoteSell",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "uint256" }],
+    outputs: [
+      { type: "uint256", name: "feeAmount" },
+      { type: "uint256", name: "nativeOutput" },
+    ],
+  },
+  {
+    type: "function",
     name: "buy",
     stateMutability: "payable",
     inputs: [{ type: "uint256" }],
@@ -62,6 +82,10 @@ function compact(value: bigint) {
     maximumFractionDigits: 2,
   });
 }
+
+type AuthoritativeQuote =
+  | { state: "idle" | "loading" | "unavailable"; amount: null }
+  | { state: "ready"; amount: bigint };
 
 export function NetworkTokenTradePanel({
   deployment,
@@ -93,18 +117,70 @@ export function NetworkTokenTradePanel({
   const [baseBalance, setBaseBalance] = useState(0n);
   const [tokenBalance, setTokenBalance] = useState(0n);
   const [busy, setBusy] = useState(false);
+  const [authoritativeQuote, setAuthoritativeQuote] =
+    useState<AuthoritativeQuote>({
+      state: isNativeV4 ? "loading" : "idle",
+      amount: null,
+    });
   const [status, setStatus] = useState(
     "Connect an injected testnet wallet to trade.",
   );
   const parsed = Number(input);
   const price = Number(formatEther(BigInt(basePerToken)));
   const afterFee = 1 - feeBps / 10_000;
-  const output =
+  const indicativeOutput =
     Number.isFinite(parsed) && parsed > 0
       ? side === "buy"
         ? (parsed * afterFee) / price
         : parsed * price * afterFee
       : 0;
+
+  useEffect(() => {
+    if (!isNativeV4) return;
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setAuthoritativeQuote({ state: "idle", amount: null });
+      return;
+    }
+
+    let cancelled = false;
+    setAuthoritativeQuote({ state: "loading", amount: null });
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const amount = parseEther(input);
+          const simulation =
+            side === "buy"
+              ? await publicClient.simulateContract({
+                  address: market,
+                  abi: nativeMarketAbi,
+                  functionName: "quoteBuy",
+                  args: [amount],
+                })
+              : await publicClient.simulateContract({
+                  address: market,
+                  abi: nativeMarketAbi,
+                  functionName: "quoteSell",
+                  args: [amount],
+                });
+          if (!cancelled) {
+            setAuthoritativeQuote({
+              state: "ready",
+              amount: simulation.result[1],
+            });
+          }
+        } catch {
+          if (!cancelled) {
+            setAuthoritativeQuote({ state: "unavailable", amount: null });
+          }
+        }
+      })();
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [input, isNativeV4, market, parsed, publicClient, side]);
 
   async function refresh(address: Address) {
     if (!publicClient) return;
@@ -303,15 +379,30 @@ export function NetworkTokenTradePanel({
             key={value}
             onClick={() => setInput(String(value))}
           >
-            {value.toLocaleString()}
+            {side === "buy" && isNativeV4
+              ? String(value)
+              : value.toLocaleString()}
           </button>
         ))}
       </div>
       <div className="trade-receive">
         <span>You receive approximately</span>
-        <strong>
-          {output.toLocaleString(undefined, { maximumFractionDigits: 2 })}{" "}
-          {side === "buy" ? symbol : isNativeV4 ? "ETH" : "mUSD"}
+        <strong aria-live="polite">
+          {isNativeV4
+            ? authoritativeQuote.state === "ready"
+              ? `${Number(
+                  formatEther(authoritativeQuote.amount),
+                ).toLocaleString(undefined, {
+                  maximumFractionDigits: side === "buy" ? 2 : 8,
+                })} ${side === "buy" ? symbol : "ETH"}`
+              : authoritativeQuote.state === "loading"
+                ? "Quoting onchain…"
+                : authoritativeQuote.state === "unavailable"
+                  ? "Quote unavailable"
+                  : "—"
+            : `${indicativeOutput.toLocaleString(undefined, {
+                maximumFractionDigits: 2,
+              })} ${side === "buy" ? symbol : "mUSD"}`}
         </strong>
         <small>
           {isNativeV4

@@ -23,7 +23,7 @@ export default function Portfolio() {
       </section>
       <section className="notice" aria-label="Portfolio disclosure">
         {isTestnet
-          ? "Values are token amounts from Robinhood Chain Testnet mocks with no real-world value. No fiat estimate, promised return or redemption claim is shown."
+          ? "Values are token amounts from Robinhood Chain Testnet assets with no real-world value or production backing. No fiat estimate, promised return or redemption claim is shown."
           : "Values are token amounts from the controlled development chain. No fiat estimate, promised return or redemption claim is shown."}
       </section>
     </main>

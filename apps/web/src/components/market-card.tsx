@@ -1,17 +1,9 @@
 import Link from "next/link";
-import { formatEther } from "viem";
 import deployment from "@robyn/deployment";
 import type { LaunchRecord } from "@/lib/data-api";
 import { rewardAssetMetadata } from "@/lib/reward-assets";
 import { TokenCardArt } from "@/components/launchpad-visuals";
-
-function marketAmount(value: string, symbol: string) {
-  const amount = Number(formatEther(BigInt(value)));
-  return `${amount.toLocaleString(undefined, {
-    notation: amount >= 1_000 ? "compact" : "standard",
-    maximumFractionDigits: amount >= 1_000 ? 2 : 1,
-  })} ${symbol}`;
-}
+import { marketAmount } from "@/lib/display-format";
 
 function phaseLabel(phase: "legacy_fixed" | "bonding" | "graduated") {
   if (phase === "bonding") return "Bonding";

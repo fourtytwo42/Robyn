@@ -5,13 +5,15 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - Schema-v8 promotion and public-testnet endurance are in progress
-  (2026-07-25). The verified inactive deployment is campaign
+  (2026-07-25). The verified active deployment is campaign
   `schema8-abe90dc`: manifest SHA-256
   `a9da6d57e29637e48e80295d44ef6fb83d1eb5cec3cf17b60280826223506bef`,
   deployment block `93182752`, nine indexed launches, 2,156 completed campaign
-  transactions, and zero verifier failures. The public site remains on schema
-  v7 until the new exact immutable application release is built and atomically
-  promoted. The predecessor manifest is archived in
+  transactions, and zero verifier failures. `sherwoodforest.trade` was
+  atomically promoted to the first immutable schema-v8 application release at
+  pushed commit `197ebed48523b05e9c6d5be1d03adad068b42a42`; the promoter passed
+  490 verification checks, and the public status reports chain `46630` and nine
+  launches. The predecessor manifest is archived in
   `deployments/archive/46630-v4-schema7-166e201/deployment.json`.
 - The testnet release uses Robinhood's official public RPC for application,
   indexer, keeper, verifier, campaign, and endurance traffic. The private node
@@ -30,6 +32,19 @@ Durable project context lives here. Update this file whenever information should
   database, IPFS/MinIO, manifests, immutable releases, campaign evidence, and
   release history were preserved. Root headroom increased from 8.3 GiB/14% to
   about 31 GiB/52%.
+- Initial in-app-browser acceptance on schema v8 found release-blocking display
+  defects before endurance: bytes32 v4 route reasons rendered as binary text,
+  DAO timing text remained hardcoded to production values, native-v4 trade
+  previews used a false linear estimate, small ETH values rounded to zero, and
+  testnet disclosures described all assets as mocks. The working-tree fixes
+  map route hashes to safe explanations, read Governor and Timelock timing
+  directly from contracts, use `quoteBuy`/`quoteSell` via `eth_call`, preserve
+  small-value precision, and distinguish general testnet assets from mocks.
+  The complete format, lint, strict-type, service, Anvil smoke, 123-contract
+  Foundry, 512-wallet/25,000-action simulation, nonce, dependency, secret, and
+  security gates pass; API has 50 passing tests and web has 21 passing tests.
+  These fixes still require commit/push, immutable rebuild/promotion, and final
+  browser acceptance before endurance starts.
 - The first immutable testnet application build at `201dc19` failed closed
   before promotion because the root Turbo build did not forward the network
   environment into Next.js and the bundle scanner found devnet session-key

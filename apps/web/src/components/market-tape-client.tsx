@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { formatEther } from "viem";
+import { marketAmount } from "@/lib/display-format";
 
 type TapeMarket = {
   token: string;
@@ -11,14 +11,6 @@ type TapeMarket = {
   baseSymbol: string;
   change24hBps: number | null;
 };
-
-function compactBase(value: string) {
-  const amount = Number(formatEther(BigInt(value)));
-  return amount.toLocaleString("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 2,
-  });
-}
 
 function MarketLink({
   market,
@@ -35,9 +27,7 @@ function MarketLink({
       aria-hidden={duplicate || undefined}
     >
       <strong>${market.symbol}</strong>
-      <span>
-        {compactBase(market.marketCapBase)} {market.baseSymbol}
-      </span>
+      <span>{marketAmount(market.marketCapBase, market.baseSymbol)}</span>
       <small
         aria-label={
           change === null

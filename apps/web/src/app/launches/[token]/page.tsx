@@ -200,7 +200,7 @@ export default async function LaunchDetail({
               {changeLabel(market.change24hBps)} 24h
             </span>
             <span className="risk-badge">
-              {isTestnet ? "Testnet mocks" : "Controlled devnet"}
+              {isTestnet ? "Testnet assets" : "Controlled devnet"}
             </span>
           </div>
         </header>
@@ -587,8 +587,11 @@ export default async function LaunchDetail({
 
         <section className="notice" aria-label="Reward disclosure">
           This launch token is not redeemable for the basket. Market values and
-          rewards shown here come from mock assets and canonical activity on a
-          development network; they have no real-world value.
+          rewards shown here come from test assets and canonical activity on{" "}
+          {deployment.chainId === 46630
+            ? "Robinhood Testnet"
+            : "a controlled development network"}
+          ; they have no real-world value or production backing.
         </section>
       </section>
     </main>

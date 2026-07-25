@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Address, PublicClient } from "viem";
+import { keccak256, stringToHex, type Address, type PublicClient } from "viem";
 import {
   AssetCatalogService,
   type AssetCatalogManifest,
@@ -183,6 +183,49 @@ describe("AssetCatalogService", () => {
       mockOnly: false,
       logoUrl: null,
       route: { ready: false, reason: "no-route" },
+    });
+  });
+
+  it("renders v4 route hashes as safe actionable text", async () => {
+    const unknown = "0x0000000000000000000000000000000000000004" as Address;
+    const client = {
+      getCode: async () => "0x01",
+      readContract: async ({ functionName }: { functionName: string }) => {
+        if (functionName === "name") return "Launch token";
+        if (functionName === "symbol") return "LAUNCH";
+        if (functionName === "decimals") return 18;
+        if (functionName === "totalSupply") return 1n;
+        if (functionName === "routeStatus") {
+          return {
+            poolId: `0x${"0".repeat(64)}`,
+            liquidity: 0n,
+            minimumLiquidity: 1n,
+            maximumNativeInput: 0n,
+            spotTick: 0,
+            referenceTick: 0,
+            maximumReferenceTickDeviation: 0,
+            enforceReferencePrice: false,
+            verificationClass: `0x${"0".repeat(64)}`,
+            fee: 0,
+            tickSpacing: 0,
+            hooks: native,
+            ready: false,
+            reason: keccak256(stringToHex("ROUTE_NOT_CONFIGURED")),
+          };
+        }
+        throw new Error(`unexpected ${functionName}`);
+      },
+    } as unknown as PublicClient;
+    const service = new AssetCatalogService(
+      client,
+      46630,
+      native,
+      registry,
+      manifest(),
+    );
+
+    await expect(service.resolve(unknown)).resolves.toMatchObject({
+      route: { ready: false, reason: "No funded conversion route" },
     });
   });
 

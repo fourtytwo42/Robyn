@@ -3,6 +3,8 @@ import {
   getAddress,
   hexToBytes,
   isAddress,
+  keccak256,
+  stringToHex,
   type Address,
   type PublicClient,
 } from "viem";
@@ -200,8 +202,31 @@ function bytes32Text(value: `0x${string}`, fallback: string) {
 
 function reasonText(value: `0x${string}`) {
   if (/^0x0+$/.test(value)) return null;
-  return bytes32Text(value, "route-unavailable");
+  const known = routeReasonLabels.get(value.toLowerCase());
+  if (known) return known;
+  try {
+    const decoded = bytesToString(hexToBytes(value), { size: 32 }).trim();
+    return /^[\x20-\x7e]{1,64}$/.test(decoded) ? decoded : "route-unavailable";
+  } catch {
+    return "route-unavailable";
+  }
 }
+
+const routeReasonLabels = new Map(
+  [
+    ["ROUTE_NOT_CONFIGURED", "No funded conversion route"],
+    ["ROUTE_DISABLED", "Conversion route is disabled"],
+    ["POOL_UNINITIALIZED", "Conversion pool is not initialized"],
+    ["INSUFFICIENT_LIQUIDITY", "Conversion pool has insufficient liquidity"],
+    [
+      "REFERENCE_PRICE_DEVIATION",
+      "Conversion price is outside the safety bound",
+    ],
+  ].map(([reason, label]) => [
+    keccak256(stringToHex(reason!)).toLowerCase(),
+    label!,
+  ]),
+);
 
 function routeKind(value: number): AssetRoute["kind"] {
   return value === 1 ? "fixed-testnet" : value === 2 ? "uniswap-v3" : "none";
