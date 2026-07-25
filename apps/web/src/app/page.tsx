@@ -10,6 +10,7 @@ import {
 import { MarketCard } from "@/components/market-card";
 import { LaunchTokenTrigger } from "@/components/launch-token-trigger";
 import { getLaunches } from "@/lib/data-api";
+import { rankActiveMarkets } from "@/lib/market-ranking";
 import Link from "next/link";
 import { formatEther } from "viem";
 
@@ -26,7 +27,7 @@ function compactBase(value: string) {
 export default async function Home() {
   const launches = await getLaunches();
   const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
-  const marketShowcase = launches.data.slice(0, 4);
+  const marketShowcase = rankActiveMarkets(launches.data).slice(0, 4);
   const featuredMarket = marketShowcase[0];
   const rewardAssetCount = new Set(
     launches.data.flatMap((launch) =>
@@ -113,9 +114,9 @@ export default async function Home() {
       <section className="market-radar" aria-labelledby="market-radar-heading">
         <div className="section-heading launchpad-heading">
           <div>
-            <p className="eyebrow">Live &amp; rising</p>
+            <p className="eyebrow">Most active</p>
             <h2 id="market-radar-heading">
-              Choose the rewards you want to earn.
+              Markets leading by cap, volume, and traders.
             </h2>
           </div>
           <Link className="text-link" href="/discover">

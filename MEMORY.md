@@ -4,6 +4,7 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Homepage featured markets are no longer newest-first. `rankActiveMarkets` uses an ordinal weighted activity score across 24-hour volume (35%), market cap (30%), unique 24-hour traders (20%), and 24-hour trade count (15%), with deterministic tie-breaks and unindexed markets last. Homepage cards now show both 24-hour traders and trades.
 - The homepage operational strip and testnet disclaimer footer are removed. A deliberately unlinked read-only operator dashboard now lives at `/admin/health`; it auto-refreshes every 15 seconds and exposes only non-sensitive web release, RPC chain/head/latency, ingester/projector lag/cycles/retries, keeper/artifact heartbeat, and indexed launch/log health.
 - Portfolio access is now wallet-gated in the header. The protected browser-UAT path is a read-only, session-only opt-in bound to the public deployment deployer address; it never supplies a signer or enables writes. `/portfolio` remains the connected wallet's unified profile/dashboard, while `/users/[address]` reuses the holdings, creator profile, created-token, and fee views as a public read-only user page. Creator names and addresses link to that route.
 - The schema-v8 endurance service is intentionally stopped for the incremental
@@ -2609,6 +2610,15 @@ When sources conflict, use this order:
 - Verification correction: The next candidate exposed that the web PM2 process did not receive `ROBYN_RELEASE_SHA`; explicit release identity wiring was added so the operator page can prove the served commit.
 - Browser correction: Server-local `toLocaleString()` output caused a React hydration mismatch in the browser. Dashboard timestamps now render as deterministic UTC; the mismatched candidate was not accepted.
 - Follow-up: Build, promote, run in-app-browser acceptance on homepage and `/admin/health`, then resume the preserved endurance journal without replay.
+
+### 2026-07-25 - Homepage active-market ranking
+
+- Context: The user wants the main page to feature tokens with real action, high market caps, substantial volume, and many traders instead of arbitrary/newest launches.
+- Decision: Rank all indexed markets through a deterministic weighted ordinal score: 35% 24-hour volume, 30% current market cap, 20% unique 24-hour traders, and 15% 24-hour trade count. Keep unindexed markets last and use volume, cap, then newest launch as tie-breakers.
+- Files: `apps/web/src/lib/market-ranking.ts`, its unit tests, homepage selection/copy, `MarketCard`, and compact four-column market stats.
+- Commands/tests: Web Vitest 30/30, strict typecheck, ESLint, Prettier, and diff checks pass before release build.
+- Result: The homepage hero and first four cards derive from the same transparent multi-signal activity ranking, and cards display market cap, 24-hour volume, unique traders, and trade count.
+- Follow-up: Build/promote the exact release, run in-app-browser desktop/mobile acceptance, and resume the preserved endurance journal without replay.
 
 ## Open Follow-ups
 

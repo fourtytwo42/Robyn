@@ -97,8 +97,12 @@ export function MarketCard({
                 </dd>
               </div>
               <div>
-                <dt>Holders</dt>
-                <dd>{metrics.holderCount.toLocaleString()}</dd>
+                <dt>24h traders</dt>
+                <dd>{metrics.uniqueTraders24h.toLocaleString()}</dd>
+              </div>
+              <div>
+                <dt>24h trades</dt>
+                <dd>{metrics.tradeCount24h.toLocaleString()}</dd>
               </div>
             </dl>
             {metrics.marketPhase !== "legacy_fixed" ? (
