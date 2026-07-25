@@ -10,13 +10,18 @@ Durable project context lives here. Update this file whenever information should
   then proved that repeated one-way purchases can move controlled mock pools
   outside the original 198-tick reference guard, while failed stable jobs were
   retried every scan and reached more than 200 attempts. The isolated keeper was
-  stopped and its job-audit evidence checksummed. The pending correction widens
-  only controlled test-route reference tolerance to 5,000 ticks, retains the
-  1% per-transaction protected-route impact limit, raises the mock batch ceiling
-  to `1000000000000 wei` for efficient adaptive batches, fixes reused official
-  routes at `10000000000 wei`, asserts all routes remain ready after campaign
-  conversions, and exponentially backs failed jobs off to a one-hour cap. A
-  fresh exact-SHA rehearsal must prove route readiness and bounded queue drain.
+  stopped and its job-audit evidence checksummed. Exact `ac65402` proved the
+  exponential retry correction bounded failures at three attempts, but a
+  5,000-tick mock reference still blocked legitimate cumulative conversion.
+  The implemented correction disables the fixed release-snapshot reference only for
+  Robyn-controlled synthetic assets, which have no real market price, while
+  retaining the 1% per-transaction protected-route impact limit. Faucet-stock
+  routes keep the strict 198-tick reference guard and `10000000000 wei` cap;
+  mock batches use a `1000000000000 wei` ceiling with adaptive halving. Campaign
+  conversions assert that all 24 routes remain ready. Formatting, lint, strict
+  types, all application and 123 Foundry tests, the security audit, and optimized
+  build pass. A fresh exact-SHA rehearsal must prove route readiness and bounded
+  queue drain before public deployment.
 - Schema-v8 discovery campaign completed and superseded (2026-07-24): exact
   commit `44c91b1dcd2964606b5baf84cc8526ac4aa88606` completed the full live
   chain-46630 campaign with 2,156 confirmed transactions and 2,056 product

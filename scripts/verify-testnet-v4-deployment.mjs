@@ -135,7 +135,15 @@ for (const route of assetRoutes) {
     `${route.symbol} route hook matches manifest`,
   );
   check(status.poolId === route.poolId, `${route.symbol} pool ID matches frozen provenance`);
-  check(status.enforceReferencePrice, `${route.symbol} enforces its frozen reference price`);
+  const expectedReferenceEnforcement =
+    route.verification === "robinhood-testnet-faucet-stock";
+  check(
+    route.enforceReferencePrice === expectedReferenceEnforcement &&
+      status.enforceReferencePrice === expectedReferenceEnforcement,
+    expectedReferenceEnforcement
+      ? `${route.symbol} enforces its frozen faucet-stock reference price`
+      : `${route.symbol} disables fixed reference pricing for its controlled synthetic route`,
+  );
   check(
     status.referenceTick === route.referenceTick,
     `${route.symbol} reference tick matches the manifest`,
