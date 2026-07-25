@@ -2472,6 +2472,24 @@ When sources conflict, use this order:
 
 ## Completed Work
 
+### 2026-07-25 - Create Route Is Modal Only
+
+- Context: The dedicated `/create` route repeated launchpad marketing, launch
+  counts, guided-step explanation, a fallback Start launch panel, transaction
+  status, and a network disclaimer behind the guided launch dialog.
+- Decision: Keep the reusable homepage launchpad presentation unchanged, but
+  render `/create` in `modalOnly` mode so the header Launch a token action opens
+  the guided dialog directly and closing it reveals no duplicate launch section.
+- Files: `apps/web/src/app/create/page.tsx`,
+  `apps/web/src/components/guided-launch-wizard.tsx`, both network launchpad
+  implementations, and the virtual module declaration.
+- Commands/tests: web Vitest (23 tests), strict TypeScript, ESLint, Prettier,
+  and `git diff --check` pass before immutable release build and browser UAT.
+- Result: The requested background content is absent from `/create`; the guided
+  launch modal and homepage launchpad remain available.
+- Follow-up: Promote the exact pushed release, verify the public route through
+  the Codex in-app browser, and resume the preserved endurance journal.
+
 ### 2026-07-25 - Removed public testnet smoke console
 
 - Context: The homepage still exposed an old genesis-token smoke console that duplicated the header wallet control and canonical token, Portfolio, and DAO workflows.

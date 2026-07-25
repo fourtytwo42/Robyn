@@ -32,6 +32,7 @@ type WizardProps = {
   launchedToken?: Address;
   onStartAnother?: () => void;
   openByDefault?: boolean;
+  showExplainer?: boolean;
 };
 
 type Session = { address: Address; chainId: number };
@@ -537,6 +538,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
     launchedToken,
     onStartAnother,
     openByDefault = false,
+    showExplainer = true,
     assetSymbols = ["mNVDA", "mSPY", "mETH"],
     basketAssets,
     setBasketAssets,
@@ -620,31 +622,33 @@ export function GuidedLaunchWizard(props: WizardProps) {
 
   return (
     <>
-      <section
-        className="launch-explainer"
-        aria-labelledby="launch-explainer-title"
-      >
-        <div>
-          <p className="eyebrow">Three guided steps</p>
-          <h2 id="launch-explainer-title">
-            Build the token holders want to earn with.
-          </h2>
-          <p>
-            Your saved draft stays in this browser while you review token
-            identity, immutable basket weights, and the final onchain launch.
-          </p>
-        </div>
-        <button
-          className="button primary"
-          type="button"
-          onClick={() => {
-            setRendered(true);
-            setOpen(true);
-          }}
+      {showExplainer ? (
+        <section
+          className="launch-explainer"
+          aria-labelledby="launch-explainer-title"
         >
-          Start launch
-        </button>
-      </section>
+          <div>
+            <p className="eyebrow">Three guided steps</p>
+            <h2 id="launch-explainer-title">
+              Build the token holders want to earn with.
+            </h2>
+            <p>
+              Your saved draft stays in this browser while you review token
+              identity, immutable basket weights, and the final onchain launch.
+            </p>
+          </div>
+          <button
+            className="button primary"
+            type="button"
+            onClick={() => {
+              setRendered(true);
+              setOpen(true);
+            }}
+          >
+            Start launch
+          </button>
+        </section>
+      ) : null}
       {rendered ? (
         <div
           className="launch-modal-backdrop"

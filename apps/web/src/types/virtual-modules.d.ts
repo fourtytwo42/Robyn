@@ -17,6 +17,7 @@ declare module "@robyn/network-launchpad" {
     deployment: Deployment;
     openByDefault?: boolean;
     showRegistry?: boolean;
+    modalOnly?: boolean;
   }): JSX.Element;
 }
 

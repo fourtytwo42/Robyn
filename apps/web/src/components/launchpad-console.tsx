@@ -317,10 +317,12 @@ export function LaunchpadConsole({
   deployment,
   openByDefault,
   showRegistry = true,
+  modalOnly = false,
 }: {
   deployment: Deployment;
   openByDefault?: boolean;
   showRegistry?: boolean;
+  modalOnly?: boolean;
 }) {
   const [privateKey, setPrivateKey] = useState<Hex>();
   const [launches, setLaunches] = useState<Launch[]>([]);
@@ -752,26 +754,29 @@ export function LaunchpadConsole({
 
   return (
     <section
-      className="console launchpad-console"
-      aria-labelledby="launchpad-title"
+      className={modalOnly ? undefined : "console launchpad-console"}
+      aria-label={modalOnly ? "Launch token" : undefined}
+      aria-labelledby={modalOnly ? undefined : "launchpad-title"}
     >
-      <div className="console-heading">
-        <div>
-          <p className="eyebrow">Permissionless launchpad</p>
-          <h2 id="launchpad-title">
-            Create a token holders want to earn with.
-          </h2>
-          <p>
-            Choose its immutable mock-asset reward basket, launch on a bonding
-            curve, then let trading activity fund rewards holders can claim.
-            Completed curves graduate automatically into locked liquidity.
-          </p>
+      {modalOnly ? null : (
+        <div className="console-heading">
+          <div>
+            <p className="eyebrow">Permissionless launchpad</p>
+            <h2 id="launchpad-title">
+              Create a token holders want to earn with.
+            </h2>
+            <p>
+              Choose its immutable mock-asset reward basket, launch on a bonding
+              curve, then let trading activity fund rewards holders can claim.
+              Completed curves graduate automatically into locked liquidity.
+            </p>
+          </div>
+          <span className="live-chip">
+            {launches.length} live launch{launches.length === 1 ? "" : "es"}
+          </span>
         </div>
-        <span className="live-chip">
-          {launches.length} live launch{launches.length === 1 ? "" : "es"}
-        </span>
-      </div>
-      <div className="launch-layout">
+      )}
+      <div className={modalOnly ? undefined : "launch-layout"}>
         <GuidedLaunchWizard
           account={account?.address}
           busy={busy}
@@ -801,8 +806,9 @@ export function LaunchpadConsole({
             setStatus("Configure the next token and its immutable basket.");
           }}
           openByDefault={openByDefault}
+          showExplainer={!modalOnly}
         />
-        {showRegistry ? (
+        {showRegistry && !modalOnly ? (
           <div className="launch-list" aria-label="Launch registry">
             {launches.map((launch) => (
               <article key={launch.token}>
@@ -853,14 +859,16 @@ export function LaunchpadConsole({
           </div>
         ) : null}
       </div>
-      <p
-        className="transaction-status"
-        role="status"
-        aria-live="polite"
-        data-testid="launch-status"
-      >
-        {status}
-      </p>
+      {modalOnly ? null : (
+        <p
+          className="transaction-status"
+          role="status"
+          aria-live="polite"
+          data-testid="launch-status"
+        >
+          {status}
+        </p>
+      )}
     </section>
   );
 }

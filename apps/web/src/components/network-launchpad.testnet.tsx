@@ -375,10 +375,12 @@ export function NetworkLaunchpadConsole({
   deployment,
   openByDefault,
   showRegistry = true,
+  modalOnly = false,
 }: {
   deployment: Deployment;
   openByDefault?: boolean;
   showRegistry?: boolean;
+  modalOnly?: boolean;
 }) {
   const {
     account,
@@ -834,25 +836,28 @@ export function NetworkLaunchpadConsole({
 
   return (
     <section
-      className="console launchpad-console"
-      aria-labelledby="launchpad-title"
+      className={modalOnly ? undefined : "console launchpad-console"}
+      aria-label={modalOnly ? "Launch token" : undefined}
+      aria-labelledby={modalOnly ? undefined : "launchpad-title"}
     >
-      <div className="console-heading">
-        <div>
-          <p className="eyebrow">Permissionless launchpad</p>
-          <h2 id="launchpad-title">
-            Create a token holders want to earn with.
-          </h2>
-          <p>
-            Choose its immutable testnet reward basket, seed a market, then let
-            trading activity fund rewards holders can claim.
-          </p>
+      {modalOnly ? null : (
+        <div className="console-heading">
+          <div>
+            <p className="eyebrow">Permissionless launchpad</p>
+            <h2 id="launchpad-title">
+              Create a token holders want to earn with.
+            </h2>
+            <p>
+              Choose its immutable testnet reward basket, seed a market, then
+              let trading activity fund rewards holders can claim.
+            </p>
+          </div>
+          <span className="live-chip">
+            {launches.length} live launch{launches.length === 1 ? "" : "es"}
+          </span>
         </div>
-        <span className="live-chip">
-          {launches.length} live launch{launches.length === 1 ? "" : "es"}
-        </span>
-      </div>
-      <div className="launch-layout">
+      )}
+      <div className={modalOnly ? undefined : "launch-layout"}>
         <GuidedLaunchWizard
           account={account}
           busy={busy}
@@ -910,8 +915,9 @@ export function NetworkLaunchpadConsole({
             setStatus("Configure the next token and its immutable basket.");
           }}
           openByDefault={openByDefault}
+          showExplainer={!modalOnly}
         />
-        {showRegistry ? (
+        {showRegistry && !modalOnly ? (
           <div className="launch-list" aria-label="Launch registry">
             {launches.map((launch) => (
               <article key={launch.token}>
@@ -962,14 +968,16 @@ export function NetworkLaunchpadConsole({
           </div>
         ) : null}
       </div>
-      <p
-        className="transaction-status"
-        role="status"
-        aria-live="polite"
-        data-testid="launch-status"
-      >
-        {status}
-      </p>
+      {modalOnly ? null : (
+        <p
+          className="transaction-status"
+          role="status"
+          aria-live="polite"
+          data-testid="launch-status"
+        >
+          {status}
+        </p>
+      )}
     </section>
   );
 }
