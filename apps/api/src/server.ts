@@ -65,6 +65,15 @@ const ipfsApiUrl = process.env.ROBYN_IPFS_API_URL ?? "http://127.0.0.1:5001";
 const rpcClient = createPublicClient({
   transport: http(
     process.env.ROBYN_OPERATOR_RPC_URL ?? "http://127.0.0.1:8545",
+    {
+      batch: {
+        batchSize: 20,
+        wait: 20,
+      },
+      retryCount: Number(process.env.ROBYN_RPC_RETRY_COUNT ?? "7"),
+      retryDelay: Number(process.env.ROBYN_RPC_RETRY_DELAY_MS ?? "1000"),
+      timeout: Number(process.env.ROBYN_RPC_TIMEOUT_MS ?? "15000"),
+    },
   ),
 });
 const zeroAddress = "0x0000000000000000000000000000000000000000";

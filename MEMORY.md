@@ -10,8 +10,8 @@ Durable project context lives here. Update this file whenever information should
   `a9da6d57e29637e48e80295d44ef6fb83d1eb5cec3cf17b60280826223506bef`,
   deployment block `93182752`, nine indexed launches, 2,156 completed campaign
   transactions, and zero verifier failures. `sherwoodforest.trade` was
-  atomically promoted to the first immutable schema-v8 application release at
-  pushed commit `197ebed48523b05e9c6d5be1d03adad068b42a42`; the promoter passed
+  atomically promoted to schema-v8 application release
+  `f299a05892811f62dbdc05e1cdfad82c80d36c00`; the promoter passed
   490 verification checks, and the public status reports chain `46630` and nine
   launches. The predecessor manifest is archived in
   `deployments/archive/46630-v4-schema7-166e201/deployment.json`.
@@ -32,19 +32,22 @@ Durable project context lives here. Update this file whenever information should
   database, IPFS/MinIO, manifests, immutable releases, campaign evidence, and
   release history were preserved. Root headroom increased from 8.3 GiB/14% to
   about 31 GiB/52%.
-- Initial in-app-browser acceptance on schema v8 found release-blocking display
-  defects before endurance: bytes32 v4 route reasons rendered as binary text,
-  DAO timing text remained hardcoded to production values, native-v4 trade
-  previews used a false linear estimate, small ETH values rounded to zero, and
-  testnet disclosures described all assets as mocks. The working-tree fixes
-  map route hashes to safe explanations, read Governor and Timelock timing
-  directly from contracts, use `quoteBuy`/`quoteSell` via `eth_call`, preserve
-  small-value precision, and distinguish general testnet assets from mocks.
-  The complete format, lint, strict-type, service, Anvil smoke, 123-contract
-  Foundry, 512-wallet/25,000-action simulation, nonce, dependency, secret, and
-  security gates pass; API has 50 passing tests and web has 21 passing tests.
-  These fixes still require commit/push, immutable rebuild/promotion, and final
-  browser acceptance before endurance starts.
+- Initial in-app-browser acceptance on schema v8 found and corrected
+  release-blocking display defects: bytes32 v4 route reasons rendered as binary
+  text, DAO timing text remained hardcoded to production values, native-v4
+  trade previews used a false linear estimate, small ETH values rounded to zero,
+  and testnet disclosures described all assets as mocks. Release `f299a058`
+  contains those fixes. Final route acceptance then found two additional
+  blockers: repeated DAO list/detail scans could exhaust the public RPC and
+  return a 429-backed 500, and three unavailable Robinhood CDN logos rendered
+  as broken images in Create. The current working tree adds bounded viem
+  retry/backoff plus a 15-second single-flight proposal cache and replaces
+  failed catalog artwork with the local symbol identicon. Full format, lint,
+  strict-type, application/service, Anvil smoke, all 123 Foundry tests,
+  512-wallet/25,000-action simulation, nonce, dependency, secret, and security
+  gates pass; API has 51 passing tests and web has 21 passing tests. These final
+  fixes still require commit/push, exact immutable rebuild/promotion, and
+  in-app-browser re-acceptance before endurance starts.
 - The first immutable testnet application build at `201dc19` failed closed
   before promotion because the root Turbo build did not forward the network
   environment into Next.js and the bundle scanner found devnet session-key

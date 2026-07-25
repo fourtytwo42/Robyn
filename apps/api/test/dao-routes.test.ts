@@ -71,3 +71,67 @@ describe("DAO activity", () => {
     ]);
   });
 });
+
+describe("DAO proposals", () => {
+  it("shares one cached event scan between the list and detail routes", async () => {
+    const proposalId = 42n;
+    const getLogs = vi.fn().mockImplementation(({ event }) =>
+      Promise.resolve(
+        event.name === "ProposalCreated"
+          ? [
+              {
+                address: addresses.governor,
+                args: {
+                  proposalId,
+                  proposer: addresses.guardian,
+                  targets: [addresses.timelock],
+                  values: [0n],
+                  signatures: [""],
+                  calldatas: ["0x" as Hex],
+                  voteStart: 1000n,
+                  voteEnd: 2000n,
+                  description: "# Cached proposal",
+                },
+                transactionHash: ("0x" + "33".repeat(32)) as Hex,
+              },
+            ]
+          : [],
+      ),
+    );
+    const readContract = vi.fn().mockImplementation(({ functionName }) => {
+      if (functionName === "state") return Promise.resolve(4);
+      if (functionName === "proposalVotes")
+        return Promise.resolve([1n, 2n, 3n]);
+      throw new Error(`unexpected read ${functionName}`);
+    });
+    const app = Fastify();
+    openApps.push(app);
+    registerDaoRoutes(
+      app,
+      { getLogs, readContract } as unknown as PublicClient,
+      {
+        deploymentBlock: 100,
+        contracts: addresses,
+      },
+    );
+
+    const list = await app.inject({
+      method: "GET",
+      url: "/dao/proposals",
+    });
+    const detail = await app.inject({
+      method: "GET",
+      url: `/dao/proposals/${proposalId}`,
+    });
+
+    expect(list.statusCode).toBe(200);
+    expect(detail.statusCode).toBe(200);
+    expect(detail.json().data).toEqual(
+      expect.objectContaining({
+        id: proposalId.toString(),
+        title: "Cached proposal",
+      }),
+    );
+    expect(getLogs).toHaveBeenCalledTimes(5);
+  });
+});

@@ -54,11 +54,19 @@ function verificationLabel(asset: BasketAsset) {
 }
 
 function AssetLogo({ asset }: { asset: BasketAsset }) {
-  if (asset.logoUrl) {
+  const [failed, setFailed] = useState(false);
+  if (asset.logoUrl && !failed) {
     return (
       // Curated URLs are supplied by the server catalog; arbitrary contracts cannot set this value.
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={asset.logoUrl} alt="" width={42} height={42} loading="lazy" />
+      <img
+        src={asset.logoUrl}
+        alt=""
+        width={42}
+        height={42}
+        loading="lazy"
+        onError={() => setFailed(true)}
+      />
     );
   }
   return (

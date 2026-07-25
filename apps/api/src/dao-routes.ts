@@ -7,6 +7,7 @@ import {
   type Address,
   type PublicClient,
 } from "viem";
+import { SingleFlightTtlCache } from "./single-flight-cache.js";
 
 type DaoDeployment = {
   deploymentBlock: number;
@@ -216,6 +217,14 @@ export function registerDaoRoutes(
   rpcClient: PublicClient,
   deployment: DaoDeployment,
 ) {
+  const proposalCache = new SingleFlightTtlCache<
+    Awaited<ReturnType<typeof proposals>>
+  >(15_000, 64);
+  const loadProposals = (account?: Address) =>
+    proposalCache.get(account?.toLowerCase() ?? "public", () =>
+      proposals(rpcClient, deployment, account),
+    );
+
   app.get<{ Querystring: { account?: string } }>("/dao", async (request) => {
     const account = accountFromQuery(request.query);
     const {
@@ -513,11 +522,7 @@ export function registerDaoRoutes(
   app.get<{ Querystring: { account?: string } }>(
     "/dao/proposals",
     async (request) => ({
-      data: await proposals(
-        rpcClient,
-        deployment,
-        accountFromQuery(request.query),
-      ),
+      data: await loadProposals(accountFromQuery(request.query)),
     }),
   );
   app.get<{ Params: { id: string }; Querystring: { account?: string } }>(
@@ -525,9 +530,9 @@ export function registerDaoRoutes(
     async (request, reply) => {
       if (!/^\d+$/.test(request.params.id))
         return reply.code(400).send({ error: "invalid_proposal_id" });
-      const data = (
-        await proposals(rpcClient, deployment, accountFromQuery(request.query))
-      ).find((item) => item.id === request.params.id);
+      const data = (await loadProposals(accountFromQuery(request.query))).find(
+        (item) => item.id === request.params.id,
+      );
       if (!data) return reply.code(404).send({ error: "proposal_not_found" });
       return { data };
     },
