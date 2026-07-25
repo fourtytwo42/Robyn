@@ -219,7 +219,7 @@ export function registerDaoRoutes(
 ) {
   const proposalCache = new SingleFlightTtlCache<
     Awaited<ReturnType<typeof proposals>>
-  >(15_000, 64);
+  >(300_000, 64);
   const loadProposals = (account?: Address) =>
     proposalCache.get(account?.toLowerCase() ?? "public", () =>
       proposals(rpcClient, deployment, account),

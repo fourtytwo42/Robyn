@@ -70,9 +70,9 @@ const rpcClient = createPublicClient({
         batchSize: 20,
         wait: 20,
       },
-      retryCount: Number(process.env.ROBYN_RPC_RETRY_COUNT ?? "7"),
-      retryDelay: Number(process.env.ROBYN_RPC_RETRY_DELAY_MS ?? "1000"),
-      timeout: Number(process.env.ROBYN_RPC_TIMEOUT_MS ?? "15000"),
+      retryCount: Number(process.env.ROBYN_RPC_RETRY_COUNT ?? "2"),
+      retryDelay: Number(process.env.ROBYN_RPC_RETRY_DELAY_MS ?? "500"),
+      timeout: Number(process.env.ROBYN_RPC_TIMEOUT_MS ?? "5000"),
     },
   ),
 });
@@ -727,7 +727,7 @@ async function discoveryMetrics(rows: LaunchRow[]) {
 
 const discoveryMetricsCache = new SingleFlightTtlCache<
   Map<string, ReturnType<typeof deriveLaunchAnalytics>>
->(3_000, 4);
+>(300_000, 4);
 
 function cachedDiscoveryMetrics(rows: LaunchRow[]) {
   const key = rows

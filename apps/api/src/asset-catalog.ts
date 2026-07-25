@@ -235,7 +235,7 @@ function routeKind(value: number): AssetRoute["kind"] {
 export class AssetCatalogService {
   private readonly byAddress: Map<string, ManifestAsset>;
   private readonly assetCache = new SingleFlightTtlCache<CatalogAsset | null>(
-    20_000,
+    600_000,
     256,
   );
 

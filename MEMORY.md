@@ -48,6 +48,19 @@ Durable project context lives here. Update this file whenever information should
   gates pass; API has 51 passing tests and web has 21 passing tests. These final
   fixes still require commit/push, exact immutable rebuild/promotion, and
   in-app-browser re-acceptance before endurance starts.
+- Exact release `498f7fbdcbf641581a492f6b0d15f0466ee184ca` was built,
+  promoted, and passed 490 deployment checks on 2026-07-25. Public browser
+  acceptance then reproduced Cloudflare 504 responses because the API's seven
+  RPC retries, 15-second request timeout, three-second discovery cache, and
+  twenty-second asset cache caused optional public-RPC enrichment to occupy a
+  request for about 128 seconds during rate limiting. The current working tree
+  bounds API reads to two retries, a 500 ms retry delay, and a five-second
+  transport timeout; discovery and DAO projections cache for five minutes and
+  the 24-asset catalog caches for ten minutes. Optional discovery metrics still
+  fail open to indexed data rather than blocking the page. Full format, lint,
+  strict types, application/service tests, Anvil smoke, and all 123 Foundry
+  tests pass. This RPC-pressure fix requires commit/push, exact rebuild,
+  promotion, and fresh public browser acceptance before endurance.
 - The first immutable testnet application build at `201dc19` failed closed
   before promotion because the root Turbo build did not forward the network
   environment into Next.js and the bundle scanner found devnet session-key
