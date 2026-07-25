@@ -30,6 +30,12 @@ Durable project context lives here. Update this file whenever information should
   database, IPFS/MinIO, manifests, immutable releases, campaign evidence, and
   release history were preserved. Root headroom increased from 8.3 GiB/14% to
   about 31 GiB/52%.
+- The first immutable testnet application build at `201dc19` failed closed
+  before promotion because the root Turbo build did not forward the network
+  environment into Next.js and the bundle scanner found devnet session-key
+  modules. The release builder now compiles non-web services separately and
+  invokes the web package directly with explicit testnet variables. Schema v7
+  remained public throughout; the corrected builder must pass before cutover.
 - Route-pressure and keeper recovery passed (2026-07-24): exact pushed commit
   `6bf210a84cd843ff8f6ee9a5dc373e3e56e64ec6` passed a fresh chain-46630 fork
   deployment with 490 verifier checks and zero failures. Its resumable campaign

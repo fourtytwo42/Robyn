@@ -63,6 +63,16 @@ cp "$security_json" "$staging/release-evidence/static-security-audit.json"
   NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(
     node scripts/prepare-next-build-inputs.mjs "$staging" "$next_secrets"
   )"
+  # Turbo's strict environment boundary intentionally omits deployment and
+  # public-wallet variables. Build non-web services through pnpm recursion,
+  # then build the web package directly so Next resolves only testnet aliases.
+  pnpm --filter @robyn/api \
+    --filter @robyn/artifacts \
+    --filter @robyn/db \
+    --filter @robyn/indexer \
+    --filter @robyn/keeper \
+    --filter @robyn/rpc-gateway \
+    --recursive run build
   ROBYN_NETWORK_MODE=testnet \
   NEXT_PUBLIC_ROBYN_NETWORK_MODE=testnet \
   ROBYN_DEPLOYMENT_PATH="$staging/deployments/46630-v4.json" \
@@ -70,7 +80,7 @@ cp "$security_json" "$staging/release-evidence/static-security-audit.json"
   NEXT_PUBLIC_DATA_API_URL="" \
   NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID="$NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID" \
   NEXT_PUBLIC_APP_URL="$NEXT_PUBLIC_APP_URL" \
-    pnpm build
+    pnpm --filter @robyn/web build
   rm -rf apps/web/.next/cache
 
   for marker in DEVNET_ONLY robyn-devnet-session-key generatePrivateKey '"/api/faucet"'; do
