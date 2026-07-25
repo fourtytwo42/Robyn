@@ -23,7 +23,9 @@ export function AdminHealthDashboard({
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      const response = await fetch("/api/admin-health", { cache: "no-store" });
+      const response = await fetch("/admin/health/status", {
+        cache: "no-store",
+      });
       const next = (await response.json()) as AdminHealthSnapshot;
       setSnapshot(next);
       setError(response.ok ? "" : "One or more components are degraded.");

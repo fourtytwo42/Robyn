@@ -2601,10 +2601,11 @@ When sources conflict, use this order:
 ### 2026-07-25 - Unlinked operator health dashboard
 
 - Context: Operational component status and the testnet disclaimer cluttered the public homepage; the user wanted those removed and a separate unlinked health view for administration.
-- Decision: Remove the homepage system strip and bottom testnet notice. Add public read-only `/admin/health` plus `/api/admin-health`; do not link either in site navigation and do not expose credentials, privileged RPC methods, wallet actions, Prometheus internals, or operator controls.
-- Files: `apps/web/src/app/page.tsx`, `apps/web/src/app/admin/health/page.tsx`, `apps/web/src/app/api/admin-health/route.ts`, `apps/web/src/components/admin-health-dashboard.tsx`, `apps/web/src/lib/admin-health.ts`, and dashboard styles/tests.
+- Decision: Remove the homepage system strip and bottom testnet notice. Add public read-only `/admin/health` plus its refresh feed at `/admin/health/status`; do not link either in site navigation and do not expose credentials, privileged RPC methods, wallet actions, Prometheus internals, or operator controls.
+- Files: `apps/web/src/app/page.tsx`, `apps/web/src/app/admin/health/page.tsx`, `apps/web/src/app/admin/health/status/route.ts`, `apps/web/src/components/admin-health-dashboard.tsx`, `apps/web/src/lib/admin-health.ts`, and dashboard styles/tests.
 - Commands/tests: Web Vitest 28/28, strict typecheck, ESLint, Prettier, and diff checks pass before release build.
 - Result: The dashboard refreshes every 15 seconds and reports release identity, RPC chain/head/latency, ingestion and projection blocks/lags/cycles, RPC retry/degradation state, keeper/artifact heartbeats, and indexed launch/log counts.
+- Verification correction: The first promotion exposed that public `/api/*` is reserved for the backend API. The refresh feed moved under `/admin/health/status`; the 404 candidate was not accepted.
 - Follow-up: Build, promote, run in-app-browser acceptance on homepage and `/admin/health`, then resume the preserved endurance journal without replay.
 
 ## Open Follow-ups
