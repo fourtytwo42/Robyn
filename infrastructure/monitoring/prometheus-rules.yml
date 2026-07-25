@@ -277,3 +277,63 @@ groups:
           summary: Prepared Robyn token metadata remains unbound
           description: At least one prepared metadata document remained unbound for more than 24 hours.
           runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/ipfs-token-metadata.md
+
+  - name: robinhood-rpc-node
+    interval: 15s
+    rules:
+      - alert: RobinhoodRpcHostDown
+        expr: up{job="robinhood-rpc-host"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          chain_id: "46630"
+          component: robinhood-rpc-host
+          launch: all
+          asset: all
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Robinhood RPC node host metrics are unavailable
+          description: The private chain-46630 node host cannot be scraped from the Robyn VM.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
+      - alert: RobinhoodNitroDown
+        expr: up{job="robinhood-testnet-nitro"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          chain_id: "46630"
+          component: robinhood-testnet-nitro
+          launch: all
+          asset: all
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Robinhood Testnet Nitro metrics are unavailable
+          description: The private Nitro node is down, bootstrapping, or unreachable from the Robyn VM.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
+      - alert: RobinhoodRpcDiskHeadroomLow
+        expr: node_filesystem_avail_bytes{job="robinhood-rpc-host",mountpoint="/",fstype!=""} / node_filesystem_size_bytes{job="robinhood-rpc-host",mountpoint="/",fstype!=""} < 0.25
+        for: 5m
+        labels:
+          severity: critical
+          chain_id: "46630"
+          component: robinhood-rpc-disk
+          launch: all
+          asset: all
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Robinhood RPC node has less than 25 percent disk free
+          description: Stop adding services and expand or replace storage before the node reaches its safety floor.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
+      - alert: RobinhoodRpcMemoryHeadroomLow
+        expr: node_memory_MemAvailable_bytes{job="robinhood-rpc-host"} / node_memory_MemTotal_bytes{job="robinhood-rpc-host"} < 0.10
+        for: 5m
+        labels:
+          severity: critical
+          chain_id: "46630"
+          component: robinhood-rpc-memory
+          launch: all
+          asset: all
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Robinhood RPC node has less than 10 percent memory available
+          description: Nitro is operating below the minimum memory safety floor.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md

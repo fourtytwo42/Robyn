@@ -1,0 +1,24 @@
+
+[Unit]
+Description=Robinhood Chain Testnet Nitro full node
+Documentation=https://docs.robinhood.com/chain/run-a-full-node/
+Wants=network-online.target docker.service chrony.service
+After=network-online.target docker.service chrony.service robinhood-testnet-snapshot.service
+Requires=docker.service robinhood-testnet-snapshot.service
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/robinhood/testnet/node.env
+ExecStartPre=/usr/bin/test -f /etc/robinhood/testnet/snapshot.ready
+ExecStartPre=-/usr/bin/docker rm -f robinhood-testnet-node
+ExecStart=/usr/bin/docker run --rm --name robinhood-testnet-node --network host --memory=28g --memory-swap=32g --pids-limit=4096 --env GOMEMLIMIT=24GiB --env GOGC=200 --volume /srv/robinhood/testnet/data:/home/user/.arbitrum --volume /etc/robinhood/testnet:/home/user/config:ro offchainlabs/nitro-node@sha256:ebc985e3b105980734630744981e1542001c22d74cba57509fe0d5ed8bb84c14 --chain.info-files=/home/user/config/chain-info.json --parent-chain.connection.url=${L1_EXECUTION_URL} --parent-chain.blob-client.beacon-url=${L1_BEACON_URL} --node.feed.input.url=${ROBINHOOD_FEED_URL} --execution.forwarding-target=${ROBINHOOD_SEQUENCER_URL} --node.staker.enable=false --node.resource-mgmt.mem-free-limit=4GB --http.addr=127.0.0.1 --http.port=18547 --http.api=net,web3,eth --http.vhosts=localhost --metrics --metrics-server.addr=127.0.0.1 --metrics-server.port=16070
+ExecStop=/usr/bin/docker stop --timeout 300 robinhood-testnet-node
+Restart=on-failure
+RestartSec=15s
+TimeoutStartSec=infinity
+TimeoutStopSec=330s
+LimitNOFILE=1048576
+OOMScoreAdjust=-500
+
+[Install]
+WantedBy=multi-user.target

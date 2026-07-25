@@ -2362,3 +2362,12 @@ When sources conflict, use this order:
 ## Archive
 
 - No archived entries yet.
+
+### 2026-07-25 - Dedicated LAN Robinhood RPC node bootstrap
+
+- Context: The user explicitly authorized separate LAN host `192.168.50.117` for chain data, superseding the earlier single-VM preference for this capacity-bound service.
+- Decision: Use the supported pinned Nitro Docker image only on the node host; Robyn application services remain native on `192.168.50.250`. Keep RPC and metrics LAN-only and allowlisted exclusively to the Robyn VM. Prioritize testnet and leave mainnet disabled until storage and memory expand.
+- Configuration: Ubuntu 24.04, 16 vCPUs, about 30 GiB usable RAM, 8 GiB swap, and a 500 GB virtual NVMe disk. LVM/root was expanded from 100 GiB to a 498 GiB LV and 490 GiB filesystem. Nitro image digest is `sha256:ebc985e3b105980734630744981e1542001c22d74cba57509fe0d5ed8bb84c14`.
+- Current state: The checksum-gated systemd snapshot job is downloading the official 2026-07-15 testnet pruned snapshot (`180589076480` bytes, SHA-256 `9234e53eedd3c7a1e12b122f7ba747576d6c2685c9d0b9fdd625c20ab3c73077`). Nitro waits for successful verification and extraction. Private RPC is `192.168.50.117:8547`; no Cloudflare or public route exists.
+- Capacity: This host can start one pruned node. It cannot safely run testnet plus mainnet simultaneously, and the roughly 2.87 TiB testnet archive cannot fit. Add at least 2 TB NVMe and preferably 64 GB RAM before enabling mainnet.
+- Follow-up: Do not cut backend consumers over until `eth_syncing=false`, independent head and historical-log probes pass, Prometheus is clean, and reboot recovery is verified. See `docs/robinhood-rpc-node.md`.

@@ -1,0 +1,19 @@
+
+[Unit]
+Description=Prepare checksum-verified Robinhood Testnet Nitro snapshot
+Documentation=https://snapshot-explorer.arbitrum.io/api/snapshots
+Wants=network-online.target
+After=network-online.target
+Before=robinhood-testnet-node.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/prepare-robinhood-testnet-snapshot
+RemainAfterExit=yes
+TimeoutStartSec=infinity
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+
+[Install]
+WantedBy=multi-user.target
