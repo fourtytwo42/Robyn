@@ -11,7 +11,7 @@ Durable project context lives here. Update this file whenever information should
   deployment block `93182752`, nine indexed launches, 2,156 completed campaign
   transactions, and zero verifier failures. `sherwoodforest.trade` was
   atomically promoted to schema-v8 application release
-  `f299a05892811f62dbdc05e1cdfad82c80d36c00`; the promoter passed
+  `9e44819a2ae5940db3cdcc2d6e40c60f028fa938`; the promoter passed
   490 verification checks, and the public status reports chain `46630` and nine
   launches. The predecessor manifest is archived in
   `deployments/archive/46630-v4-schema7-166e201/deployment.json`.
@@ -32,7 +32,7 @@ Durable project context lives here. Update this file whenever information should
   database, IPFS/MinIO, manifests, immutable releases, campaign evidence, and
   release history were preserved. Root headroom increased from 8.3 GiB/14% to
   about 31 GiB/52%.
-- Initial in-app-browser acceptance on schema v8 found and corrected
+- In-app-browser acceptance on schema v8 found and corrected
   release-blocking display defects: bytes32 v4 route reasons rendered as binary
   text, DAO timing text remained hardcoded to production values, native-v4
   trade previews used a false linear estimate, small ETH values rounded to zero,
@@ -40,14 +40,19 @@ Durable project context lives here. Update this file whenever information should
   contains those fixes. Final route acceptance then found two additional
   blockers: repeated DAO list/detail scans could exhaust the public RPC and
   return a 429-backed 500, and three unavailable Robinhood CDN logos rendered
-  as broken images in Create. The current working tree adds bounded viem
-  retry/backoff plus a 15-second single-flight proposal cache and replaces
-  failed catalog artwork with the local symbol identicon. Full format, lint,
-  strict-type, application/service, Anvil smoke, all 123 Foundry tests,
-  512-wallet/25,000-action simulation, nonce, dependency, secret, and security
-  gates pass; API has 51 passing tests and web has 21 passing tests. These final
-  fixes still require commit/push, exact immutable rebuild/promotion, and
-  in-app-browser re-acceptance before endurance starts.
+  as broken images in Create. Releases `498f7fb`, `4dc400f`, and final candidate
+  `9e44819` add bounded viem retry/backoff, five-minute discovery/DAO caches, a
+  ten-minute asset cache, single-flight DAO projections, local identicon
+  artwork fallback, sequential public-RPC transport, manifest-backed curated
+  metadata, bounded live-route probes, and transient-read fallback to verified
+  manifest routes. Atomic launch simulation and execution still revalidate
+  every route onchain. The exact builder reran the complete release gate and
+  the promoter passed 490 checks. Final Codex in-app-browser acceptance passed
+  at 1440x900, 834x1112, and 390x844 with no overflow, broken images, new
+  console warnings/errors, or Cloudflare failure pages. Search,
+  near-graduation sorting, chart modes, watchlist persistence, all 24 picker
+  assets, the multi-wallet modal, keyboard focus, DAO views, and proposal detail
+  all passed.
 - Exact release `498f7fbdcbf641581a492f6b0d15f0466ee184ca` was built,
   promoted, and passed 490 deployment checks on 2026-07-25. Public browser
   acceptance then reproduced Cloudflare 504 responses because the API's seven
@@ -71,8 +76,8 @@ Durable project context lives here. Update this file whenever information should
   manifest route only while a live curated route check is transiently
   unavailable. Atomic launch simulation and execution still revalidate every
   route onchain. API typecheck and all 52 API tests pass, including the
-  transient-route regression. This requires a new exact release before
-  acceptance resumes.
+  transient-route regression. Exact release `9e44819` is now built, promoted,
+  independently verified, and browser accepted.
 - The first immutable testnet application build at `201dc19` failed closed
   before promotion because the root Turbo build did not forward the network
   environment into Next.js and the bundle scanner found devnet session-key
