@@ -107,9 +107,28 @@ done < <(jq -r '.assetRoutes[] | [.symbol,.address] | @tsv' "$manifest")
   echo "Genesis market was already graduated; use a fresh rehearsal" >&2
   exit 1
 }
-graduation_tx="$(send "$market" 'buy(uint256)' 1 --value 3000000000000000 --gas-limit 12000000)"
+maximum_curve_purchase="$(
+  cast call "$market" 'maximumCurvePurchase()(uint256)' --rpc-url "$rpc_url" | quote_first
+)"
+graduation_transactions='[]'
+graduation_tx=''
+for _ in {1..32}; do
+  if [[ "$(cast call "$market" 'graduated()(bool)' --rpc-url "$rpc_url")" == "true" ]]; then
+    break
+  fi
+  graduation_tx="$(
+    send "$market" 'buy(uint256)' 1 --value "$maximum_curve_purchase" --gas-limit 12000000
+  )"
+  graduation_transactions="$(
+    jq -c --arg transaction "$graduation_tx" '. + [$transaction]' <<<"$graduation_transactions"
+  )"
+done
+[[ -n "$graduation_tx" ]] || {
+  echo "No bounded bonding buy was required or executed" >&2
+  exit 1
+}
 [[ "$(cast call "$market" 'graduated()(bool)' --rpc-url "$rpc_url")" == "true" ]] || {
-  echo "Bonding buy did not graduate the market" >&2
+  echo "Bounded bonding buys did not graduate the market" >&2
   exit 1
 }
 [[ "$(cast call "$market" 'graduationProgressBps()(uint256)' --rpc-url "$rpc_url" | quote_first)" == "10000" ]] || {
@@ -127,22 +146,36 @@ post_buy_in=10000000000
 post_quote="$(cast call "$market" 'quoteBuy(uint256)(uint256,uint256)' \
   "$post_buy_in" --rpc-url "$rpc_url" | awk 'NR == 2 { print $1 }')"
 post_minimum="$(minimum_99 "$post_quote")"
-post_buy_tx="$(send "$market" 'buy(uint256)' "$post_minimum" --value "$post_buy_in")"
+post_buy_tx="$(
+  send "$market" 'buy(uint256)' "$post_minimum" --value "$post_buy_in" --gas-limit 2000000
+)"
 
 sell_amount=100000000000000000000
 approval_tx="$(send "$token" 'approve(address,uint256)' "$market" "$sell_amount")"
 sell_quote="$(cast call "$market" 'quoteSell(uint256)(uint256,uint256)' \
   "$sell_amount" --from "$account" --rpc-url "$rpc_url" | awk 'NR == 2 { print $1 }')"
 sell_minimum="$(minimum_99 "$sell_quote")"
-post_sell_tx="$(send "$market" 'sell(uint256,uint256)' "$sell_amount" "$sell_minimum")"
+post_sell_tx="$(
+  send "$market" 'sell(uint256,uint256)' "$sell_amount" "$sell_minimum" --gas-limit 2000000
+)"
 
 conversion_results='[]'
 for index in 0 1 2; do
   asset="$(cast call "$token" 'rewardAsset(uint256)(address)' "$index" --rpc-url "$rpc_url")"
   pending="$(cast call "$vault" 'leg(uint256)((address,uint16,uint256,uint256,uint256,uint256))' \
     "$index" --rpc-url "$rpc_url" | tr -d '()' | cut -d, -f3 | awk '{print $1}')"
-  amount=1000000000000
-  [[ "$pending" -ge "$amount" ]] || { echo "Basket leg $index lacks bounded pending native" >&2; exit 1; }
+  route_status="$(cast call "$router" \
+    'routeStatus(address)((bytes32,uint128,uint128,uint128,int24,int24,uint24,bool,bytes32,uint24,int24,address,bool,bytes32))' \
+    "$asset" --rpc-url "$rpc_url")"
+  maximum_native_input="$(
+    printf '%s\n' "$route_status" | tr -d '()' | cut -d, -f4 | awk '{ print $1 }'
+  )"
+  amount="$(
+    node -e \
+      'const pending=BigInt(process.argv[1]); const maximum=BigInt(process.argv[2]); console.log((pending < maximum ? pending : maximum).toString())' \
+      "$pending" "$maximum_native_input"
+  )"
+  [[ "$amount" -gt 0 ]] || { echo "Basket leg $index has no convertible pending native" >&2; exit 1; }
   output="$(cast call "$router" 'quoteNativeToAsset(address,uint128)(uint256,uint256)' \
     "$asset" "$amount" --rpc-url "$rpc_url" | quote_first)"
   minimum="$(minimum_99 "$output")"
@@ -161,8 +194,8 @@ for index in 0 1 2; do
 done
 
 creator_claimable="$(cast call "$fee_router" \
-  'launchAccount(address)((address,address,address,address,uint256,uint256,uint256,uint256,uint256,bool))' \
-  "$token" --rpc-url "$rpc_url" | tr -d '()' | cut -d, -f7 | awk '{print $1}')"
+  'launchAccount(address)((address,address,address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,bool))' \
+  "$token" --rpc-url "$rpc_url" --json | jq -er '.[0][12]')"
 [[ "$creator_claimable" -gt 0 ]] || { echo "Creator reward was not accrued" >&2; exit 1; }
 creator_claim_tx="$(send "$fee_router" 'claimCreatorFees(address)' "$token")"
 dao_claimable="$(cast call "$dao_token" 'claimableRewardOf(address)(uint256)' \
@@ -188,6 +221,7 @@ jq -n \
   --arg manifestSha256 "$(sha256sum "$manifest" | awk '{print $1}')" \
   --argjson routeResults "$route_results" \
   --arg graduation "$graduation_tx" \
+  --argjson graduationTransactions "$graduation_transactions" \
   --arg postBuy "$post_buy_tx" \
   --arg approval "$approval_tx" \
   --arg postSell "$post_sell_tx" \
@@ -200,7 +234,8 @@ jq -n \
   '{
     status:$status,gitCommit:$gitCommit,chainId:$chainId,account:$account,
     manifestSha256:$manifestSha256,routeResults:$routeResults,
-    market:{graduationTransaction:$graduation,postGraduationBuy:$postBuy,
+    market:{graduationTransaction:$graduation,graduationTransactions:$graduationTransactions,
+      postGraduationBuy:$postBuy,
       postGraduationApproval:$approval,postGraduationSell:$postSell,
       positionTokenId:$positionTokenId},
     basketConversions:$conversions,

@@ -32,8 +32,33 @@ Durable project context lives here. Update this file whenever information should
   not parse. It was fixed before commit, and the root test pipeline now runs
   `node --check` across every `scripts/**/*.mjs` file so deployment and
   operations scripts cannot carry an unnoticed syntax error.
+- Last verified 2026-07-26: a clean chain-46630 fork deployment and lifecycle
+  rehearsal passes from the exact project deployer while reusing the sealed
+  24-route testnet liquidity manifest. It passes 497 independent deployment
+  checks, all 24 bidirectional route probes, six purchase-cap-bounded bonding
+  buys through graduation, post-graduation buy and sell, all three basket
+  conversions and holder claims, token-specific creator claim,
+  governance-holder reward claim, and fee-router solvency.
+- Last verified 2026-07-26: the clean rehearsal found and fixed three
+  deployment/smoke harness defects before public deployment. The deployment
+  script encoded the curve tuple with the fee and maximum-purchase fields
+  reversed. The smoke script assumed graduation could occur in one buy and
+  hardcoded a basket conversion larger than each route cap. It now performs
+  bounded graduation buys, uses explicit gas headroom for stateful hook swaps,
+  caps conversions by `routeStatus.maximumNativeInput`, and decodes the full
+  schema-v9 fee-account tuple when checking creator rewards.
 ## Active Handoff
 
+- Mainnet-readiness checkpoint `8e4bd85c74f595f17d98b88a5b8e009745f9208a`
+  is pushed on `codex/schema9-guaranteed-fee`. The contract audit, 256-run
+  invariants, 512-wallet economic campaign, no-broadcast Robinhood mainnet fork
+  lifecycle, and clean chain-46630 deployment rehearsal are passing. The
+  currently public chain-46630 deployment predates the immutable
+  `maximumCurvePurchase` fix, so it is not the final candidate. Next required
+  step is to commit the corrected deployment/smoke harnesses, perform the fresh
+  public schema-v9 deployment after gas/reserve preflight, then run the fixed
+  100-wallet campaign and remaining browser, wallet, recovery, backup, and
+  eight-hour gates.
 - Last verified 2026-07-26: the creator-profile avatar and token-artwork upload
   badges no longer render a font-dependent plus glyph. Both now use the same
   geometrically centered CSS cross, keeping the plus centered in its circle
