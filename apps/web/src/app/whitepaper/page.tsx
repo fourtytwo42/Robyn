@@ -103,8 +103,9 @@ export default function WhitepaperPage() {
             <p>
               The Robin Hood story is our organizing metaphor: open access,
               strength through a band of participants, and market value routed
-              back toward the community creating it. The contracts—not a
-              character, company promise, or hidden operator—define the terms.
+              back toward the community creating it. The contracts, rather than
+              a character, company promise, or hidden operator, define the
+              terms.
             </p>
           </div>
           <div className="compact-grid">
