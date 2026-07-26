@@ -5,7 +5,7 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - Exact public homepage release
-  `86503364a4a3ea7396fd0b1e663e0ce8becb9daa` is live at
+  `ab5d7825bf504605826c5dcaf18104426080e230` is live at
   `https://testnet.sherwoodforest.trade`. The homepage no longer renders the
   canopy vector or the `Permissionless roots` network tagline. Its former
   lifetime and decorative counters are replaced by exact indexed 24-hour
@@ -31,6 +31,14 @@ Durable project context lives here. Update this file whenever information should
   release `6a97a61`. Builders and promoters now reject incomplete Next runtime
   manifests before cutover. The rebuilt artifact passed all 490 promotion
   checks.
+- The live Sherwood brand mark is an ImageGen-produced forest crest with a
+  thick oak-arrow, three gold reward coins, and a Robin Hood feather. The
+  transparent master is packaged as `sherwood-crest.png` and
+  `sherwood-crest.webp`; matching 512px app, 180px Apple, and multi-size ICO
+  assets live under `apps/web/src/app`. The versioned crest filename and `v=2`
+  favicon metadata prevent stale browsers and Next image optimization caches
+  from retaining the previous mark. Live in-app-browser verification loaded the
+  512px crest, found no old mark reference, and found no horizontal overflow.
 - Public presentation no longer exposes internal schema, analytics-formula, or
   Uniswap generation labels. The web build now has explicit `devnet`,
   `testnet`, and `mainnet` profiles. Chain ID, RPC, explorer, hostname, faucet,
