@@ -4,6 +4,12 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Last verified 2026-07-26: the creator-profile avatar and token-artwork upload
+  badges no longer render a font-dependent plus glyph. Both now use the same
+  geometrically centered CSS cross, keeping the plus centered in its circle
+  across fonts, browsers, and responsive sizes. Web tests, lint, and strict
+  typecheck pass.
+
 - Last verified 2026-07-26: the compact launch-wizard source now starts every
   testnet basket empty, makes the square artwork tile itself the file chooser,
   removes the separate artwork chooser and `Use artwork` action, and prepares

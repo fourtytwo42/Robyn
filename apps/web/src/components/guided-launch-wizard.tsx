@@ -258,9 +258,7 @@ const CreatorSetup = forwardRef<CreatorSetupHandle, CreatorSetupProps>(
             ) : (
               <TokenArt symbol="NEW" alt="Sherwood Forest fallback artwork" />
             )}
-            <span className="artwork-upload-plus" aria-hidden="true">
-              +
-            </span>
+            <span className="artwork-upload-plus" aria-hidden="true" />
           </label>
           <div className="artwork-controls">
             {file ? (

@@ -5411,9 +5411,32 @@ main > .notice {
   color: #071023;
   background: var(--primary);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  font-size: 1.25rem;
-  font-weight: 900;
-  line-height: 1;
+}
+
+.artwork-upload-plus::before,
+.artwork-upload-plus::after,
+.profile-avatar-add-icon::before,
+.profile-avatar-add-icon::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.artwork-upload-plus::before,
+.profile-avatar-add-icon::before {
+  width: 12px;
+  height: 2px;
+}
+
+.artwork-upload-plus::after,
+.profile-avatar-add-icon::after {
+  width: 2px;
+  height: 12px;
 }
 
 .basket-card-actions button span {
@@ -5526,8 +5549,6 @@ main > .notice {
   color: #06130c;
   background: #b7f58c;
   box-shadow: 0 5px 16px rgba(0, 0, 0, 0.4);
-  font-size: 1.35rem;
-  line-height: 1;
 }
 
 .profile-avatar-helper {

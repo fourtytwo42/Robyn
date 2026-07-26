@@ -248,9 +248,7 @@ export function CreatorProfileEditor({
                   unoptimized
                 />
               ) : null}
-              <span className="profile-avatar-add-icon" aria-hidden="true">
-                +
-              </span>
+              <span className="profile-avatar-add-icon" aria-hidden="true" />
             </span>
             <span className="sr-only">Choose creator avatar image</span>
             <input
