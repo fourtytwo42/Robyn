@@ -5,7 +5,7 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - Exact public testnet release
-  `b1e05ead498eed798ac224cadcda7c620c63713d` is live at
+  `dbe03449463bab302d94f711535677399eb6fca4` is live at
   `https://testnet.sherwoodforest.trade`. Market-cap presentation now defaults
   to USD across the ticker, homepage, Markets cards, and token detail. The
   server fetches Coinbase's unauthenticated ETH-USD spot reference with a
@@ -39,6 +39,12 @@ Durable project context lives here. Update this file whenever information should
   `b1e05ea` passed 54 web tests, lint, typecheck, the immutable builder, all 490
   promotion checks, and live desktop/mobile browser acceptance with no
   horizontal overflow.
+  The continuously moving market ticker now shows each launch's sanitized
+  artwork or fallback image, symbol, labeled USD market cap, and indexed 24-hour
+  percentage. It remains 40px tall, gapless, and reduced-motion aware. Release
+  `dbe0344` passed 54 web tests, lint, typecheck, the immutable builder, all 490
+  promotion checks, and live desktop/mobile browser acceptance with 26px
+  artwork, continuous animation, and no horizontal page overflow.
 - Exact public homepage release
   `ab5d7825bf504605826c5dcaf18104426080e230` is live at
   `https://testnet.sherwoodforest.trade`. The homepage no longer renders the
