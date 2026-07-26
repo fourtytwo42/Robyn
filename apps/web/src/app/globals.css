@@ -3729,6 +3729,99 @@ main > .notice {
   background: rgba(157, 170, 194, 0.13);
 }
 
+/* Sherwood Forest identity: restrained canopy line art and rooted growth cues. */
+.product-hero,
+.page-hero {
+  position: relative;
+  isolation: isolate;
+}
+
+.product-hero > :not(.forest-canopy),
+.page-hero > :not(.forest-canopy) {
+  position: relative;
+  z-index: 1;
+}
+
+.forest-canopy {
+  position: absolute;
+  z-index: 0;
+  right: -7vw;
+  bottom: -1rem;
+  width: min(72vw, 880px);
+  height: 250px;
+  pointer-events: none;
+  opacity: 0.78;
+  filter: drop-shadow(0 0 28px rgba(97, 194, 112, 0.12));
+}
+
+.forest-canopy.compact {
+  right: -4rem;
+  bottom: -2rem;
+  width: min(64vw, 650px);
+  height: 190px;
+  opacity: 0.52;
+}
+
+.forest-canopy-hill {
+  fill: url("#forest-canopy-fill");
+}
+
+.forest-canopy-ground {
+  fill: none;
+  stroke: url("#forest-canopy-line");
+  stroke-width: 2;
+}
+
+.forest-canopy-tree {
+  fill: rgba(87, 174, 99, 0.06);
+  stroke: rgba(177, 239, 136, 0.48);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.hero-copy .eyebrow,
+.reward-path-copy .eyebrow,
+.discovery-hero .eyebrow {
+  color: #aeea83;
+}
+
+.reward-path {
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 8% 120%,
+      rgba(70, 146, 80, 0.22),
+      transparent 42%
+    ),
+    linear-gradient(110deg, rgba(10, 37, 27, 0.78), rgba(7, 17, 24, 0.9));
+}
+
+.reward-path-steps li {
+  border-color: rgba(137, 205, 115, 0.18);
+  background: linear-gradient(
+    155deg,
+    rgba(18, 47, 34, 0.78),
+    rgba(5, 14, 18, 0.82)
+  );
+}
+
+@media (max-width: 760px) {
+  .forest-canopy {
+    right: -14rem;
+    bottom: -0.5rem;
+    width: 720px;
+    opacity: 0.38;
+  }
+
+  .forest-canopy.compact {
+    right: -12rem;
+    bottom: -3rem;
+    width: 620px;
+    opacity: 0.32;
+  }
+}
+
 .basket-weight-bar i {
   display: block;
   min-width: 2px;

@@ -675,13 +675,13 @@ export function GuidedLaunchWizard(props: WizardProps) {
           >
             <header className="launch-modal-header">
               <div>
-                <p className="eyebrow">Create on Sherwood Forest</p>
+                <p className="eyebrow">Plant in Sherwood Forest</p>
                 <h2 id={titleId}>
                   {step === 1
-                    ? "Token and artwork"
+                    ? "Seed and artwork"
                     : step === 2
-                      ? "Reward basket"
-                      : "Review and launch"}
+                      ? "Reward roots"
+                      : "Review and plant"}
                 </h2>
               </div>
               <button
@@ -694,7 +694,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
               </button>
             </header>
             <nav className="wizard-steps" aria-label="Launch progress">
-              {["Token and artwork", "Reward basket", "Review and launch"].map(
+              {["Seed and artwork", "Reward roots", "Review and plant"].map(
                 (label, index) => (
                   <button
                     key={label}
@@ -881,15 +881,15 @@ export function GuidedLaunchWizard(props: WizardProps) {
                     onClick={() => void onLaunch(artworkMediaId, description)}
                   >
                     {launchedToken
-                      ? "Launch complete"
+                      ? "Token planted"
                       : busy
-                        ? "Launching…"
-                        : "Launch token and market"}
+                        ? "Planting…"
+                        : "Plant token and market"}
                   </button>
                   {launchedToken ? (
                     <div className="wizard-wallet-required">
                       <a className="button" href={`/launches/${launchedToken}`}>
-                        View launched market
+                        View growing market
                       </a>
                       {onStartAnother ? (
                         <button
@@ -897,7 +897,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
                           type="button"
                           onClick={onStartAnother}
                         >
-                          Start another launch
+                          Plant another token
                         </button>
                       ) : null}
                     </div>

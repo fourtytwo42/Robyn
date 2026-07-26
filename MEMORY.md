@@ -5,6 +5,13 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - Schema-v9 guaranteed post-graduation fee work is active on branch `codex/schema9-guaranteed-fee` from exact `841fccd342ce823c5f3905e282f7551469b36bb6`. The schema-v8 endurance run was stopped and preserved as incomplete/superseded at `/var/lib/robyn/testnet-endurance/schema8-c203d00-endurance-20260725/preserved-schema9-fee-hook-20260726T001254Z` after 16942.713 healthy seconds. The fresh v4 hook uses permission bits `0x1044`, retains the oracle, and charges an immutable 1% custom-accounting fee on every graduated-pool swap in addition to the 1% LP fee. The fee router tracks bonding, hook, and locked-LP sources separately under the unchanged 50/25/20/5 allocation. Targeted v4 contracts pass 16 tests; keeper typecheck/lint and 18 tests pass; API/indexer/web types pass. Public schema v8 remains live and untouched until schema-v9 gates pass.
+- Sherwood Forest's product voice and visual system intentionally use a
+  restrained `plant → grow → harvest` metaphor. The homepage, Markets hero,
+  Portfolio hero, and guided creation modal use forest language while retaining
+  explicit token, market, basket, and claim terminology. A code-native canopy
+  illustration and rooted green surfaces provide the forest identity without
+  obscuring financial information. The homepage featured basket description is
+  derived from the actual featured launch rather than hardcoded assets.
 - Markets no longer exposes basket-size filtering. Discovery supports canonical
   `1h`, `6h`, `24h`, `7d`, and all-time windows; cards, volume sorting, and
   Trending tie-breaks use the selected window's timestamped trade metrics.

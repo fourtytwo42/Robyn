@@ -10,11 +10,11 @@ export default function Portfolio() {
       <SiteHeader />
       <section className="page-shell">
         <header className="page-hero">
-          <p className="eyebrow">Wallet-specific state</p>
-          <h1>Your Sherwood Forest portfolio and creator profile.</h1>
+          <p className="eyebrow">Your grove</p>
+          <h1>Everything you hold and grow, in one place.</h1>
           <p className="lede">
-            Track held community tokens and basket rewards, then manage every
-            token you created and its independent ETH fees from one wallet
+            Track the tokens and basket rewards you hold, then tend every token
+            you planted and harvest its independent creator fees from one wallet
             dashboard.
           </p>
         </header>
