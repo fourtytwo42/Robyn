@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import Image from "next/image";
 import type { Address, Hex } from "viem";
 import { TokenArt } from "@/components/launchpad-visuals";
@@ -90,127 +98,137 @@ async function centeredSquareWebp(file: File, zoom: number) {
   }
 }
 
-function CreatorSetup({
-  account,
-  signMessage,
-  mediaId,
-  setMediaId,
-  onPreviewChange,
-}: {
+type CreatorSetupHandle = {
+  prepareArtwork: () => Promise<string | undefined>;
+};
+
+type CreatorSetupProps = {
   account?: Address;
   signMessage: (message: string) => Promise<Hex>;
   mediaId?: string;
   setMediaId: (value: string | undefined) => void;
   onPreviewChange: (value: string | undefined) => void;
-}) {
-  const [session, setSession] = useState<Session>();
-  const [file, setFile] = useState<File>();
-  const [preview, setPreview] = useState<string>();
-  const [zoom, setZoom] = useState(1);
-  const [message, setMessage] = useState(
-    "Artwork is optional. Choose an image or use the Sherwood Forest fallback.",
-  );
-  const [working, setWorking] = useState(false);
+};
 
-  useEffect(() => {
-    void fetch("/api/auth/session", { credentials: "same-origin" })
-      .then((response) => responseData<Session | null>(response))
-      .then((value) => setSession(value ?? undefined))
-      .catch(() => setSession(undefined));
-  }, []);
-
-  useEffect(() => {
-    if (!file) {
-      setPreview(undefined);
-      onPreviewChange(undefined);
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    onPreviewChange(url);
-    return () => {
-      onPreviewChange(undefined);
-      URL.revokeObjectURL(url);
-    };
-  }, [file, onPreviewChange]);
-
-  const authenticate = useCallback(async () => {
-    if (!account) throw new Error("Connect a wallet first.");
-    const nonce = await responseData<{ message: string }>(
-      await fetch("/api/auth/nonce", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ address: account }),
-      }),
+const CreatorSetup = forwardRef<CreatorSetupHandle, CreatorSetupProps>(
+  function CreatorSetup(
+    { account, signMessage, mediaId, setMediaId, onPreviewChange },
+    ref,
+  ) {
+    const [session, setSession] = useState<Session>();
+    const [file, setFile] = useState<File>();
+    const [preview, setPreview] = useState<string>();
+    const [zoom, setZoom] = useState(1);
+    const [message, setMessage] = useState(
+      "Artwork is optional. Choose an image or use the Sherwood Forest fallback.",
     );
-    const signature = await signMessage(nonce.message);
-    const verified = await responseData<Session>(
-      await fetch("/api/auth/verify", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ message: nonce.message, signature }),
-      }),
-    );
-    setSession(verified);
-    return verified;
-  }, [account, signMessage]);
+    const [working, setWorking] = useState(false);
+    const preparedRef = useRef<
+      | {
+          file: File;
+          zoom: number;
+          mediaId: string;
+        }
+      | undefined
+    >(undefined);
 
-  async function upload() {
-    if (!file) return setMessage("Choose a JPEG, PNG, or static WebP first.");
-    setWorking(true);
-    try {
-      if (!session || session.address.toLowerCase() !== account?.toLowerCase())
-        await authenticate();
-      setMessage("Preparing square artwork…");
-      const blob = await centeredSquareWebp(file, zoom);
-      const uploaded = await responseData<{ media_id: string }>(
-        await fetch("/api/media?purpose=token", {
+    useEffect(() => {
+      void fetch("/api/auth/session", { credentials: "same-origin" })
+        .then((response) => responseData<Session | null>(response))
+        .then((value) => setSession(value ?? undefined))
+        .catch(() => setSession(undefined));
+    }, []);
+
+    useEffect(() => {
+      if (!file) {
+        setPreview(undefined);
+        onPreviewChange(undefined);
+        return;
+      }
+      const url = URL.createObjectURL(file);
+      setPreview(url);
+      onPreviewChange(url);
+      return () => {
+        onPreviewChange(undefined);
+        URL.revokeObjectURL(url);
+      };
+    }, [file, onPreviewChange]);
+
+    const authenticate = useCallback(async () => {
+      if (!account) throw new Error("Connect a wallet first.");
+      const nonce = await responseData<{ message: string }>(
+        await fetch("/api/auth/nonce", {
           method: "POST",
           credentials: "same-origin",
-          headers: { "content-type": "image/webp" },
-          body: blob,
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ address: account }),
         }),
       );
-      setMediaId(uploaded.media_id);
-      setMessage("Artwork is ready and will be pinned when you launch.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Upload failed.");
-    } finally {
-      setWorking(false);
-    }
-  }
+      const signature = await signMessage(nonce.message);
+      const verified = await responseData<Session>(
+        await fetch("/api/auth/verify", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ message: nonce.message, signature }),
+        }),
+      );
+      setSession(verified);
+      return verified;
+    }, [account, signMessage]);
 
-  return (
-    <section className="creator-setup" aria-labelledby="creator-setup-title">
-      <div className="creator-setup-heading">
-        <div>
-          <strong id="creator-setup-title">Token artwork</strong>
-          <span>Optional, square images work best</span>
+    const prepareArtwork = useCallback(async () => {
+      if (!file) return mediaId;
+      const prepared = preparedRef.current;
+      if (prepared?.file === file && prepared.zoom === zoom) {
+        return prepared.mediaId;
+      }
+      setWorking(true);
+      try {
+        if (
+          !session ||
+          session.address.toLowerCase() !== account?.toLowerCase()
+        )
+          await authenticate();
+        setMessage("Preparing square artwork…");
+        const blob = await centeredSquareWebp(file, zoom);
+        const uploaded = await responseData<{ media_id: string }>(
+          await fetch("/api/media?purpose=token", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "content-type": "image/webp" },
+            body: blob,
+          }),
+        );
+        setMediaId(uploaded.media_id);
+        preparedRef.current = { file, zoom, mediaId: uploaded.media_id };
+        setMessage("Artwork is ready and will be pinned when you launch.");
+        return uploaded.media_id;
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : "Upload failed.");
+        throw error;
+      } finally {
+        setWorking(false);
+      }
+    }, [account, authenticate, file, mediaId, session, setMediaId, zoom]);
+
+    useImperativeHandle(ref, () => ({ prepareArtwork }), [prepareArtwork]);
+
+    return (
+      <section className="creator-setup" aria-labelledby="creator-setup-title">
+        <div className="creator-setup-heading">
+          <div>
+            <strong id="creator-setup-title">Token artwork</strong>
+            <span>Optional, square images work best</span>
+          </div>
         </div>
-      </div>
-      <div className="artwork-crop-row">
-        <div
-          className="artwork-crop-frame"
-          aria-label="Square artwork crop preview"
-        >
-          {preview ? (
-            <Image
-              src={preview}
-              alt="Selected token artwork crop"
-              fill
-              unoptimized
-              style={{ transform: `scale(${zoom})` }}
-            />
-          ) : (
-            <TokenArt symbol="NEW" alt="Sherwood Forest fallback artwork" />
-          )}
-        </div>
-        <div className="artwork-controls">
-          <label className="artwork-file-label">
-            Choose artwork
+        <div className="artwork-crop-row">
+          <label
+            className="artwork-crop-frame artwork-upload-tile"
+            aria-label="Choose token artwork"
+          >
             <input
+              className="sr-only"
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={(event) => {
@@ -221,38 +239,61 @@ function CreatorSetup({
                 }
                 setFile(selected);
                 setMediaId(undefined);
+                preparedRef.current = undefined;
+                if (selected) {
+                  setMessage(
+                    "Artwork selected. It will be prepared when you plant the token.",
+                  );
+                }
               }}
             />
-          </label>
-          {file ? (
-            <label>
-              Crop zoom {zoom.toFixed(1)}×
-              <input
-                type="range"
-                min="1"
-                max="3"
-                step="0.1"
-                value={zoom}
-                onChange={(event) => setZoom(Number(event.target.value))}
+            {preview ? (
+              <Image
+                src={preview}
+                alt="Selected token artwork crop"
+                fill
+                unoptimized
+                style={{ transform: `scale(${zoom})` }}
               />
-            </label>
-          ) : null}
-          <button
-            className="button compact"
-            type="button"
-            onClick={() => void upload()}
-            disabled={!account || !file || working}
-          >
-            {working ? "Preparing…" : mediaId ? "Artwork ready" : "Use artwork"}
-          </button>
+            ) : (
+              <TokenArt symbol="NEW" alt="Sherwood Forest fallback artwork" />
+            )}
+            <span className="artwork-upload-plus" aria-hidden="true">
+              +
+            </span>
+          </label>
+          <div className="artwork-controls">
+            {file ? (
+              <label>
+                Crop zoom {zoom.toFixed(1)}×
+                <input
+                  type="range"
+                  min="1"
+                  max="3"
+                  step="0.1"
+                  value={zoom}
+                  onChange={(event) => {
+                    setZoom(Number(event.target.value));
+                    setMediaId(undefined);
+                    preparedRef.current = undefined;
+                  }}
+                />
+              </label>
+            ) : (
+              <p className="form-hint">
+                Click the artwork tile to choose a JPEG, PNG, or static WebP.
+              </p>
+            )}
+            {working ? <p className="form-hint">Preparing artwork…</p> : null}
+          </div>
         </div>
-      </div>
-      <p className="form-hint" role="status" aria-live="polite">
-        {message}
-      </p>
-    </section>
-  );
-}
+        <p className="form-hint" role="status" aria-live="polite">
+          {message}
+        </p>
+      </section>
+    );
+  },
+);
 
 export function GuidedLaunchWizard(props: WizardProps) {
   const {
@@ -290,6 +331,8 @@ export function GuidedLaunchWizard(props: WizardProps) {
   const [xUrl, setXUrl] = useState("");
   const [initialPurchaseNative, setInitialPurchaseNative] = useState("0");
   const [artworkPreview, setArtworkPreview] = useState<string>();
+  const [preparingArtwork, setPreparingArtwork] = useState(false);
+  const artworkSetupRef = useRef<CreatorSetupHandle>(null);
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const total = weights.reduce((sum, value) => sum + value, 0);
@@ -309,8 +352,8 @@ export function GuidedLaunchWizard(props: WizardProps) {
   const dirty =
     name !== "My Community" ||
     symbol !== "MYCO" ||
-    weights.join(",") !== "40,40,20" ||
-    Boolean(basketAssets && basketAssets.length !== 3) ||
+    weights.join(",") !== (basketAssets ? "" : "40,40,20") ||
+    Boolean(basketAssets?.length) ||
     Boolean(description) ||
     Boolean(website) ||
     Boolean(xUrl) ||
@@ -368,6 +411,25 @@ export function GuidedLaunchWizard(props: WizardProps) {
   const requestClose = () => {
     if (dirty) setConfirmDiscard(true);
     else setOpen(false);
+  };
+
+  const plantToken = async () => {
+    setPreparingArtwork(true);
+    try {
+      const preparedMediaId =
+        (await artworkSetupRef.current?.prepareArtwork()) ?? artworkMediaId;
+      await onLaunch({
+        ...(preparedMediaId ? { artworkMediaId: preparedMediaId } : {}),
+        description,
+        website,
+        xUrl,
+        initialPurchaseNative,
+      });
+    } catch {
+      // CreatorSetup displays the actionable artwork or authentication error.
+    } finally {
+      setPreparingArtwork(false);
+    }
   };
 
   return (
@@ -500,7 +562,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
                       value={description}
                       onChange={(event) => setDescription(event.target.value)}
                       maxLength={280}
-                      rows={3}
+                      rows={2}
                       placeholder="What makes this reward basket worth following?"
                     />
                     <small>{description.length}/280</small>
@@ -526,6 +588,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
                     </label>
                   </div>
                   <CreatorSetup
+                    ref={artworkSetupRef}
                     key={draftVersion}
                     account={account}
                     signMessage={signMessage}
@@ -633,7 +696,9 @@ export function GuidedLaunchWizard(props: WizardProps) {
                     <strong>
                       {artworkMediaId
                         ? "Sanitized custom artwork"
-                        : "Sherwood Forest fallback artwork"}
+                        : artworkPreview
+                          ? "Custom artwork selected"
+                          : "Sherwood Forest fallback artwork"}
                     </strong>
                   </div>
                   {atomicInitialPurchase ? (
@@ -664,24 +729,17 @@ export function GuidedLaunchWizard(props: WizardProps) {
                     type="button"
                     disabled={
                       busy ||
+                      preparingArtwork ||
                       Boolean(launchedToken) ||
                       !account ||
                       !validToken ||
                       !validBasket
                     }
-                    onClick={() =>
-                      void onLaunch({
-                        ...(artworkMediaId ? { artworkMediaId } : {}),
-                        description,
-                        website,
-                        xUrl,
-                        initialPurchaseNative,
-                      })
-                    }
+                    onClick={() => void plantToken()}
                   >
                     {launchedToken
                       ? "Token planted"
-                      : busy
+                      : busy || preparingArtwork
                         ? "Planting…"
                         : "Plant token and market"}
                   </button>
@@ -826,7 +884,12 @@ export function GuidedLaunchWizard(props: WizardProps) {
                     onClick={() => {
                       setName("My Community");
                       setSymbol("MYCO");
-                      setWeights([40, 40, 20]);
+                      if (basketAssets && setBasketAssets) {
+                        setBasketAssets([], []);
+                        setWeights([]);
+                      } else {
+                        setWeights([40, 40, 20]);
+                      }
                       setArtworkMediaId(undefined);
                       setDescription("");
                       setWebsite("");

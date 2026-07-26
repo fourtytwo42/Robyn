@@ -4,6 +4,14 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Last verified 2026-07-26: the compact launch-wizard source now starts every
+  testnet basket empty, makes the square artwork tile itself the file chooser,
+  removes the separate artwork chooser and `Use artwork` action, and prepares
+  selected artwork automatically during the final atomic launch action. Step
+  one is shorter through reduced gaps, padding, input height, artwork size, and
+  a two-row description. Web format, lint, strict typecheck, and all 57 tests
+  pass. Exact release build, public promotion, and browser acceptance remain
+  pending.
 - Last verified 2026-07-26: the creator profile avatar tile is now the upload
   control, with a visible plus badge and keyboard focus treatment. The separate
   file chooser row and `Use avatar` button are removed. Selecting an image
@@ -1361,6 +1369,21 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-26 - Compact opt-in launch setup
+
+- Context: new token drafts preselected three reward assets and the artwork
+  flow required separate chooser and apply controls, making the first wizard
+  step unnecessarily tall.
+- Decision: start testnet baskets at zero selected assets, let the routed asset
+  picker establish weights as creators add assets, use the artwork tile as the
+  accessible file input, and prepare optional artwork automatically during the
+  final launch action.
+- Files: `guided-launch-wizard.tsx`, `network-launchpad.testnet.tsx`, compact
+  wizard styles, and `guided-launch-wizard.test.ts`.
+- Commands/tests: Prettier, ESLint, strict web typecheck, and all 57 web tests.
+- Result: source validation passes; exact immutable build, promotion, and
+  in-app-browser acceptance remain pending.
 
 ### 2026-07-26 - Creation, profile, atomic purchase, and live wallet acceptance
 

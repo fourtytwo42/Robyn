@@ -391,7 +391,7 @@ export function NetworkLaunchpadConsole({
   const [launches, setLaunches] = useState<Launch[]>([]);
   const [name, setName] = useState("My Community");
   const [symbol, setSymbol] = useState("MYCO");
-  const [weights, setWeights] = useState([40, 40, 20]);
+  const [weights, setWeights] = useState<number[]>([]);
   const [basketAssets, setBasketAssets] = useState<BasketAsset[]>([]);
   const [status, setStatus] = useState(
     `Connect and fund a wallet on ${publicEnvironment.networkLabel}, then launch.`,
@@ -475,29 +475,6 @@ export function NetworkLaunchpadConsole({
   useEffect(() => {
     void refresh().catch(() => setStatus("Unable to load launch registry."));
   }, [refresh]);
-
-  useEffect(() => {
-    void fetch("/api/assets")
-      .then(async (response) => {
-        if (!response.ok) throw new Error("The asset catalog is unavailable.");
-        return (await response.json()) as { data: BasketAsset[] };
-      })
-      .then((body) => {
-        const defaults = ["TSLA", "AMD", "AMZN"]
-          .map((symbol) => body.data.find((asset) => asset.symbol === symbol))
-          .filter((asset): asset is BasketAsset => Boolean(asset));
-        if (defaults.length !== 3)
-          throw new Error("The default reward routes are not ready.");
-        setBasketAssets(defaults);
-      })
-      .catch((error) =>
-        setStatus(
-          error instanceof Error
-            ? error.message
-            : "The asset catalog is unavailable.",
-        ),
-      );
-  }, []);
 
   const submit = useCallback(
     async (
@@ -980,8 +957,8 @@ export function NetworkLaunchpadConsole({
             setLaunchedToken(undefined);
             setName("My Community");
             setSymbol("MYCO");
-            setWeights([40, 40, 20]);
-            setBasketAssets((assets) => assets.slice(0, 3));
+            setWeights([]);
+            setBasketAssets([]);
             setStatus("Configure the next token and its immutable basket.");
           }}
           openByDefault={openByDefault}
