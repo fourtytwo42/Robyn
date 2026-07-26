@@ -6,7 +6,6 @@ import { useState } from "react";
 type Filters = {
   q: string;
   asset: string;
-  basketSize: string;
   sort: string;
   window: string;
   phase: string;
@@ -23,7 +22,6 @@ export function DiscoveryControls({
   const active = [
     filters.q ? `Search: ${filters.q}` : null,
     filters.asset ? "Basket asset" : null,
-    filters.basketSize ? `${filters.basketSize} assets` : null,
     filters.sort !== "trending"
       ? `Sort: ${filters.sort.replaceAll("_", " ")}`
       : null,
@@ -54,15 +52,6 @@ export function DiscoveryControls({
         </button>
         <div className="filter-advanced" id="market-filter-options">
           <label>
-            Basket size
-            <select name="basketSize" defaultValue={filters.basketSize}>
-              <option value="">Any size</option>
-              <option value="1">One asset</option>
-              <option value="2">Two assets</option>
-              <option value="3">Three assets</option>
-            </select>
-          </label>
-          <label>
             Basket asset
             <select name="asset" defaultValue={filters.asset}>
               <option value="">Any asset</option>
@@ -87,6 +76,8 @@ export function DiscoveryControls({
           <label>
             Window
             <select name="window" defaultValue={filters.window}>
+              <option value="1h">1 hour</option>
+              <option value="6h">6 hours</option>
               <option value="24h">24 hours</option>
               <option value="7d">7 days</option>
               <option value="all">All time</option>

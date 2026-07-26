@@ -5,6 +5,11 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - Schema-v9 guaranteed post-graduation fee work is active on branch `codex/schema9-guaranteed-fee` from exact `841fccd342ce823c5f3905e282f7551469b36bb6`. The schema-v8 endurance run was stopped and preserved as incomplete/superseded at `/var/lib/robyn/testnet-endurance/schema8-c203d00-endurance-20260725/preserved-schema9-fee-hook-20260726T001254Z` after 16942.713 healthy seconds. The fresh v4 hook uses permission bits `0x1044`, retains the oracle, and charges an immutable 1% custom-accounting fee on every graduated-pool swap in addition to the 1% LP fee. The fee router tracks bonding, hook, and locked-LP sources separately under the unchanged 50/25/20/5 allocation. Targeted v4 contracts pass 16 tests; keeper typecheck/lint and 18 tests pass; API/indexer/web types pass. Public schema v8 remains live and untouched until schema-v9 gates pass.
+- Markets no longer exposes basket-size filtering. Discovery supports canonical
+  `1h`, `6h`, `24h`, `7d`, and all-time windows; cards, volume sorting, and
+  Trending tie-breaks use the selected window's timestamped trade metrics.
+  The API continues accepting the legacy `basketSize` parameter for backward
+  compatibility, but the public Markets interface no longer sends it.
 - Portfolio positions are wallet-specific. A launch appears in the holdings
   grid only when the viewed wallet currently holds its launch token or has a
   currently claimable basket reward. Global vault pending conversion and

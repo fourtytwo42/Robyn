@@ -14,14 +14,62 @@ function phaseLabel(phase: "legacy_fixed" | "bonding" | "graduated") {
 export function MarketCard({
   launch,
   isTestnet,
+  window = "24h",
   priority = false,
 }: {
   launch: LaunchRecord;
   isTestnet: boolean;
+  window?: string;
   priority?: boolean;
 }) {
   const metrics = launch.metrics;
   const phase = metrics ? phaseLabel(metrics.marketPhase) : "Live market";
+  const windowLabel =
+    window === "all" ? "All-time" : window === "7d" ? "7d" : window;
+  const windowVolume = metrics
+    ? window === "1h"
+      ? metrics.volume1hBase
+      : window === "6h"
+        ? metrics.volume6hBase
+        : window === "7d"
+          ? metrics.volume7dBase
+          : window === "all"
+            ? metrics.totalVolumeBase
+            : metrics.volume24hBase
+    : "0";
+  const windowTraders = metrics
+    ? window === "1h"
+      ? metrics.uniqueTraders1h
+      : window === "6h"
+        ? metrics.uniqueTraders6h
+        : window === "7d"
+          ? metrics.uniqueTraders7d
+          : window === "all"
+            ? metrics.uniqueTraderCount
+            : metrics.uniqueTraders24h
+    : 0;
+  const windowTrades = metrics
+    ? window === "1h"
+      ? metrics.tradeCount1h
+      : window === "6h"
+        ? metrics.tradeCount6h
+        : window === "7d"
+          ? metrics.tradeCount7d
+          : window === "all"
+            ? metrics.tradeCount
+            : metrics.tradeCount24h
+    : 0;
+  const windowChange = metrics
+    ? window === "1h"
+      ? metrics.change1hBps
+      : window === "6h"
+        ? metrics.change6hBps
+        : window === "7d"
+          ? metrics.change7dBps
+          : window === "all"
+            ? metrics.priceChangeBps
+            : metrics.change24hBps
+    : null;
 
   return (
     <Link className="market-card" href={`/launches/${launch.token}`}>
@@ -91,18 +139,16 @@ export function MarketCard({
                 </dd>
               </div>
               <div>
-                <dt>24h volume</dt>
-                <dd>
-                  {marketAmount(metrics.volume24hBase, metrics.baseSymbol)}
-                </dd>
+                <dt>{windowLabel} volume</dt>
+                <dd>{marketAmount(windowVolume, metrics.baseSymbol)}</dd>
               </div>
               <div>
-                <dt>24h traders</dt>
-                <dd>{metrics.uniqueTraders24h.toLocaleString()}</dd>
+                <dt>{windowLabel} traders</dt>
+                <dd>{windowTraders.toLocaleString()}</dd>
               </div>
               <div>
-                <dt>24h trades</dt>
-                <dd>{metrics.tradeCount24h.toLocaleString()}</dd>
+                <dt>{windowLabel} trades</dt>
+                <dd>{windowTrades.toLocaleString()}</dd>
               </div>
             </dl>
             {metrics.marketPhase !== "legacy_fixed" ? (
@@ -135,20 +181,20 @@ export function MarketCard({
           {metrics ? (
             <b
               className={
-                metrics.change24hBps === null
+                windowChange === null
                   ? "market-change flat"
-                  : metrics.change24hBps > 0
+                  : windowChange > 0
                     ? "market-change up"
-                    : metrics.change24hBps < 0
+                    : windowChange < 0
                       ? "market-change down"
                       : "market-change flat"
               }
             >
-              {metrics.change24hBps === null
-                ? "— 24h"
-                : `${metrics.change24hBps > 0 ? "+" : ""}${(
-                    metrics.change24hBps / 100
-                  ).toFixed(2)}% 24h`}
+              {windowChange === null
+                ? `— ${windowLabel}`
+                : `${windowChange > 0 ? "+" : ""}${(windowChange / 100).toFixed(
+                    2,
+                  )}% ${windowLabel}`}
             </b>
           ) : null}
           <span>View market →</span>

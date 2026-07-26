@@ -545,6 +545,8 @@ export function deriveLaunchAnalytics({
       uniqueTraders: windowTraders.size,
     };
   };
+  const metrics1h = windowMetrics(60 * 60 * 1000);
+  const metrics6h = windowMetrics(6 * 60 * 60 * 1000);
   const metrics24h = windowMetrics(24 * 60 * 60 * 1000);
   const metrics7d = windowMetrics(7 * 24 * 60 * 60 * 1000);
 
@@ -583,6 +585,8 @@ export function deriveLaunchAnalytics({
     feeBps,
     priceBasePerToken: basePerToken.toString(),
     priceChangeBps,
+    change1hBps: metrics1h.changeBps,
+    change6hBps: metrics6h.changeBps,
     change24hBps: metrics24h.changeBps,
     change7dBps: metrics7d.changeBps,
     marketCapBase: marketCapBase.toString(),
@@ -590,12 +594,20 @@ export function deriveLaunchAnalytics({
     totalVolumeBase: totalVolume.toString(),
     buyVolumeBase: buyVolume.toString(),
     sellVolumeBase: sellVolume.toString(),
+    volume1hBase: metrics1h.volumeBase,
+    volume6hBase: metrics6h.volumeBase,
     volume24hBase: metrics24h.volumeBase,
     volume7dBase: metrics7d.volumeBase,
     buyVolume24hBase: metrics24h.buyVolumeBase,
     sellVolume24hBase: metrics24h.sellVolumeBase,
+    tradeCount1h: metrics1h.tradeCount,
+    tradeCount6h: metrics6h.tradeCount,
     tradeCount24h: metrics24h.tradeCount,
+    tradeCount7d: metrics7d.tradeCount,
+    uniqueTraders1h: metrics1h.uniqueTraders,
+    uniqueTraders6h: metrics6h.uniqueTraders,
     uniqueTraders24h: metrics24h.uniqueTraders,
+    uniqueTraders7d: metrics7d.uniqueTraders,
     totalFeesBase: totalFees.toString(),
     tradeCount: trades.length,
     uniqueTraderCount: traders.size,
