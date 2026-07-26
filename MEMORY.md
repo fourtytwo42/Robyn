@@ -5,7 +5,7 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - Exact public testnet release
-  `dc48fe232f90141a252923995459d5d3713d6121` is live at
+  `b1e05ead498eed798ac224cadcda7c620c63713d` is live at
   `https://testnet.sherwoodforest.trade`. Market-cap presentation now defaults
   to USD across the ticker, homepage, Markets cards, and token detail. The
   server fetches Coinbase's unauthenticated ETH-USD spot reference with a
@@ -29,6 +29,15 @@ Durable project context lives here. Update this file whenever information should
   immutable metadata CID, IPFS address, or verification label. Release
   `dc48fe2` passed the immutable builder, all 490 promotion checks, and live
   in-app-browser verification with artwork present, no IPFS copy, and no
+  horizontal overflow.
+  The compact basket percentage chips now reveal asset previews on pointer
+  hover, keyboard focus, and tap. Preview data is derived from the same
+  current-chain catalog and immutable basket address as the detailed holder
+  reward cards: trusted artwork or identicon, symbol, name, weight, category,
+  verification class, description, and explorer-linked address. Mobile uses a
+  fixed bottom card so every preview remains inside the viewport. Release
+  `b1e05ea` passed 54 web tests, lint, typecheck, the immutable builder, all 490
+  promotion checks, and live desktop/mobile browser acceptance with no
   horizontal overflow.
 - Exact public homepage release
   `ab5d7825bf504605826c5dcaf18104426080e230` is live at
