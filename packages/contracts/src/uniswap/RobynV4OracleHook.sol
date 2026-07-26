@@ -200,9 +200,7 @@ contract RobynV4OracleHook is ReentrancyGuard {
         bool exactInput = params.amountSpecified < 0;
         int128 unspecifiedDelta = _unspecifiedDelta(params, delta);
         if (exactInput ? unspecifiedDelta <= 0 : unspecifiedDelta >= 0) revert InvalidAmount();
-        uint256 transferred = exactInput
-            ? uint256(uint128(unspecifiedDelta))
-            : uint256(uint128(-unspecifiedDelta));
+        uint256 transferred = _absoluteDelta(unspecifiedDelta);
         if (transferred == 0) revert InvalidAmount();
         uint256 fee = exactInput ? _ceilDiv(transferred * PROTOCOL_FEE_BPS, BPS) : _ceilDiv(transferred, 99);
         if (fee == 0 || fee > uint256(uint128(type(int128).max))) revert InvalidAmount();
@@ -363,6 +361,11 @@ contract RobynV4OracleHook is ReentrancyGuard {
     {
         bool specifiedIsCurrency0 = params.zeroForOne == (params.amountSpecified < 0);
         return specifiedIsCurrency0 ? key.currency1 : key.currency0;
+    }
+
+    function _absoluteDelta(int128 value) private pure returns (uint256) {
+        int256 widened = int256(value);
+        return value >= 0 ? uint256(widened) : uint256(-widened);
     }
 
     function _ceilDiv(uint256 numerator, uint256 denominator) private pure returns (uint256) {
