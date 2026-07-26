@@ -337,9 +337,6 @@ export function PortfolioView({
           <p>{readOnly ? "Public wallet" : "Session wallet"}</p>
           <code>{wallet}</code>
         </div>
-        <button className="button" onClick={() => void refresh()}>
-          Refresh onchain state
-        </button>
       </section>
       <p className="transaction-status" role="status">
         {status}

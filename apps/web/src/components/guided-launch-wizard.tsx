@@ -20,16 +20,21 @@ type WizardProps = {
   weights: number[];
   setWeights: (value: number[]) => void;
   status: string;
-  walletHint: string;
   walletActionLabel: string;
   onWalletAction: () => void | Promise<void>;
   assetSymbols?: [string, string, string];
   basketAssets?: BasketAsset[];
   setBasketAssets?: (assets: BasketAsset[], weights: number[]) => void;
-  faucetUrl?: string;
   marketSummary?: string;
+  atomicInitialPurchase?: boolean;
   signMessage: (message: string) => Promise<Hex>;
-  onLaunch: (artworkMediaId?: string, description?: string) => Promise<void>;
+  onLaunch: (draft: {
+    artworkMediaId?: string;
+    description: string;
+    website: string;
+    xUrl: string;
+    initialPurchaseNative: string;
+  }) => Promise<void>;
   launchedToken?: Address;
   onStartAnother?: () => void;
   openByDefault?: boolean;
@@ -37,16 +42,6 @@ type WizardProps = {
 };
 
 type Session = { address: Address; chainId: number };
-type PublicProfile = {
-  display_name: string;
-  bio: string;
-  website: string | null;
-  x_url: string | null;
-  telegram_url: string | null;
-  discord_url: string | null;
-  avatar_media_id: string | null;
-};
-
 async function responseData<T>(response: Response): Promise<T> {
   const rawBody = await response.text();
   let body: { data?: T; error?: string } = {};
@@ -113,22 +108,9 @@ function CreatorSetup({
   const [preview, setPreview] = useState<string>();
   const [zoom, setZoom] = useState(1);
   const [message, setMessage] = useState(
-    "Prove wallet control to upload immutable token artwork.",
+    "Artwork is optional. Choose an image or use the Sherwood Forest fallback.",
   );
   const [working, setWorking] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [avatarFile, setAvatarFile] = useState<File>();
-  const [avatarPreview, setAvatarPreview] = useState<string>();
-  const [avatarZoom, setAvatarZoom] = useState(1);
-  const [profile, setProfile] = useState({
-    displayName: "",
-    bio: "",
-    website: "",
-    xUrl: "",
-    telegramUrl: "",
-    discordUrl: "",
-    avatarMediaId: "",
-  });
 
   useEffect(() => {
     void fetch("/api/auth/session", { credentials: "same-origin" })
@@ -136,24 +118,6 @@ function CreatorSetup({
       .then((value) => setSession(value ?? undefined))
       .catch(() => setSession(undefined));
   }, []);
-
-  useEffect(() => {
-    if (!account) return;
-    void fetch(`/api/profiles/${account}`)
-      .then((response) => responseData<PublicProfile>(response))
-      .then((value) =>
-        setProfile({
-          displayName: value.display_name,
-          bio: value.bio,
-          website: value.website ?? "",
-          xUrl: value.x_url ?? "",
-          telegramUrl: value.telegram_url ?? "",
-          discordUrl: value.discord_url ?? "",
-          avatarMediaId: value.avatar_media_id ?? "",
-        }),
-      )
-      .catch(() => undefined);
-  }, [account]);
 
   useEffect(() => {
     if (!file) {
@@ -169,16 +133,6 @@ function CreatorSetup({
       URL.revokeObjectURL(url);
     };
   }, [file, onPreviewChange]);
-
-  useEffect(() => {
-    if (!avatarFile) {
-      setAvatarPreview(undefined);
-      return;
-    }
-    const url = URL.createObjectURL(avatarFile);
-    setAvatarPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [avatarFile]);
 
   const authenticate = useCallback(async () => {
     if (!account) throw new Error("Connect a wallet first.");
@@ -203,25 +157,13 @@ function CreatorSetup({
     return verified;
   }, [account, signMessage]);
 
-  async function proveWallet() {
-    setWorking(true);
-    try {
-      await authenticate();
-      setMessage("Wallet control proven for this one-hour creator session.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Sign-in failed.");
-    } finally {
-      setWorking(false);
-    }
-  }
-
   async function upload() {
     if (!file) return setMessage("Choose a JPEG, PNG, or static WebP first.");
     setWorking(true);
     try {
       if (!session || session.address.toLowerCase() !== account?.toLowerCase())
         await authenticate();
-      setMessage("Cropping and sanitizing artwork…");
+      setMessage("Preparing square artwork…");
       const blob = await centeredSquareWebp(file, zoom);
       const uploaded = await responseData<{ media_id: string }>(
         await fetch("/api/media?purpose=token", {
@@ -232,66 +174,9 @@ function CreatorSetup({
         }),
       );
       setMediaId(uploaded.media_id);
-      setMessage("Sanitized artwork is ready and will bind after launch.");
+      setMessage("Artwork is ready and will be pinned when you launch.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Upload failed.");
-    } finally {
-      setWorking(false);
-    }
-  }
-
-  async function saveProfile() {
-    setWorking(true);
-    try {
-      if (!session || session.address.toLowerCase() !== account?.toLowerCase())
-        await authenticate();
-      await responseData(
-        await fetch("/api/profile", {
-          method: "PUT",
-          credentials: "same-origin",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(profile),
-        }),
-      );
-      setMessage(
-        "Creator profile saved. Social links are not externally verified.",
-      );
-      setProfileOpen(false);
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Profile save failed.",
-      );
-    } finally {
-      setWorking(false);
-    }
-  }
-
-  async function uploadAvatar() {
-    if (!avatarFile) return setMessage("Choose a profile avatar first.");
-    setWorking(true);
-    try {
-      if (!session || session.address.toLowerCase() !== account?.toLowerCase())
-        await authenticate();
-      const blob = await centeredSquareWebp(avatarFile, avatarZoom);
-      const uploaded = await responseData<{ media_id: string }>(
-        await fetch("/api/media?purpose=avatar", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "content-type": "image/webp" },
-          body: blob,
-        }),
-      );
-      setProfile((value) => ({
-        ...value,
-        avatarMediaId: uploaded.media_id,
-      }));
-      setMessage(
-        "Sanitized profile avatar is ready. Save the profile to publish it.",
-      );
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Avatar upload failed.",
-      );
     } finally {
       setWorking(false);
     }
@@ -301,19 +186,9 @@ function CreatorSetup({
     <section className="creator-setup" aria-labelledby="creator-setup-title">
       <div className="creator-setup-heading">
         <div>
-          <strong id="creator-setup-title">Token artwork and creator</strong>
-          <span>
-            {session ? "Wallet control proven" : "Optional until launch"}
-          </span>
+          <strong id="creator-setup-title">Token artwork</strong>
+          <span>Optional, square images work best</span>
         </div>
-        <button
-          className="button ghost compact"
-          type="button"
-          onClick={() => void proveWallet()}
-          disabled={!account || working}
-        >
-          {session ? "Re-authenticate" : "Prove wallet"}
-        </button>
       </div>
       <div className="artwork-crop-row">
         <div
@@ -333,8 +208,8 @@ function CreatorSetup({
           )}
         </div>
         <div className="artwork-controls">
-          <label>
-            Artwork
+          <label className="artwork-file-label">
+            Choose artwork
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
@@ -349,170 +224,29 @@ function CreatorSetup({
               }}
             />
           </label>
-          <label>
-            Crop zoom {zoom.toFixed(1)}×
-            <input
-              type="range"
-              min="1"
-              max="3"
-              step="0.1"
-              value={zoom}
-              onChange={(event) => setZoom(Number(event.target.value))}
-              disabled={!file}
-            />
-          </label>
+          {file ? (
+            <label>
+              Crop zoom {zoom.toFixed(1)}×
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="0.1"
+                value={zoom}
+                onChange={(event) => setZoom(Number(event.target.value))}
+              />
+            </label>
+          ) : null}
           <button
-            className="button"
+            className="button compact"
             type="button"
             onClick={() => void upload()}
             disabled={!account || !file || working}
           >
-            {mediaId ? "Artwork ready" : "Sanitize artwork"}
+            {working ? "Preparing…" : mediaId ? "Artwork ready" : "Use artwork"}
           </button>
         </div>
       </div>
-      <button
-        className="text-button"
-        type="button"
-        onClick={() => setProfileOpen((value) => !value)}
-        aria-expanded={profileOpen}
-      >
-        {profileOpen ? "Hide creator profile" : "Edit creator profile"}
-      </button>
-      {profileOpen ? (
-        <div className="creator-profile-fields">
-          <div className="profile-avatar-editor">
-            <div className="profile-avatar-preview">
-              {avatarPreview ? (
-                <Image
-                  src={avatarPreview}
-                  alt="Profile avatar crop"
-                  fill
-                  unoptimized
-                  style={{ transform: `scale(${avatarZoom})` }}
-                />
-              ) : profile.avatarMediaId ? (
-                <Image
-                  src={`/api/media/${profile.avatarMediaId}`}
-                  alt="Current profile avatar"
-                  fill
-                  unoptimized
-                />
-              ) : (
-                <span aria-hidden="true">+</span>
-              )}
-            </div>
-            <div>
-              <label>
-                Profile avatar
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(event) => setAvatarFile(event.target.files?.[0])}
-                />
-              </label>
-              <label>
-                Avatar zoom {avatarZoom.toFixed(1)}×
-                <input
-                  type="range"
-                  min="1"
-                  max="3"
-                  step="0.1"
-                  value={avatarZoom}
-                  onChange={(event) =>
-                    setAvatarZoom(Number(event.target.value))
-                  }
-                  disabled={!avatarFile}
-                />
-              </label>
-              <button
-                className="button ghost compact"
-                type="button"
-                onClick={() => void uploadAvatar()}
-                disabled={!avatarFile || working}
-              >
-                Sanitize avatar
-              </button>
-            </div>
-          </div>
-          <label>
-            Display name
-            <input
-              maxLength={48}
-              value={profile.displayName}
-              onChange={(event) =>
-                setProfile({ ...profile, displayName: event.target.value })
-              }
-            />
-          </label>
-          <label>
-            Bio
-            <textarea
-              maxLength={280}
-              value={profile.bio}
-              onChange={(event) =>
-                setProfile({ ...profile, bio: event.target.value })
-              }
-            />
-          </label>
-          <label>
-            Website
-            <input
-              type="url"
-              placeholder="https://"
-              value={profile.website}
-              onChange={(event) =>
-                setProfile({ ...profile, website: event.target.value })
-              }
-            />
-          </label>
-          <label>
-            X profile
-            <input
-              type="url"
-              placeholder="https://x.com/…"
-              value={profile.xUrl}
-              onChange={(event) =>
-                setProfile({ ...profile, xUrl: event.target.value })
-              }
-            />
-          </label>
-          <label>
-            Telegram
-            <input
-              type="url"
-              placeholder="https://t.me/…"
-              value={profile.telegramUrl}
-              onChange={(event) =>
-                setProfile({ ...profile, telegramUrl: event.target.value })
-              }
-            />
-          </label>
-          <label>
-            Discord
-            <input
-              type="url"
-              placeholder="https://discord.gg/…"
-              value={profile.discordUrl}
-              onChange={(event) =>
-                setProfile({ ...profile, discordUrl: event.target.value })
-              }
-            />
-          </label>
-          <button
-            className="button"
-            type="button"
-            onClick={() => void saveProfile()}
-            disabled={!account || working || !profile.displayName.trim()}
-          >
-            Save profile
-          </button>
-          <p className="form-hint">
-            This proves wallet control only. External identity and social
-            accounts are not verified.
-          </p>
-        </div>
-      ) : null}
       <p className="form-hint" role="status" aria-live="polite">
         {message}
       </p>
@@ -531,7 +265,6 @@ export function GuidedLaunchWizard(props: WizardProps) {
     weights,
     setWeights,
     status,
-    walletHint,
     walletActionLabel,
     onWalletAction,
     signMessage,
@@ -543,8 +276,8 @@ export function GuidedLaunchWizard(props: WizardProps) {
     assetSymbols = ["mNVDA", "mSPY", "mETH"],
     basketAssets,
     setBasketAssets,
-    faucetUrl,
     marketSummary = "Bonding curve → locked liquidity",
+    atomicInitialPurchase = false,
   } = props;
   const [open, setOpen] = useState(openByDefault);
   const [rendered, setRendered] = useState(openByDefault);
@@ -553,6 +286,9 @@ export function GuidedLaunchWizard(props: WizardProps) {
   const [draftVersion, setDraftVersion] = useState(0);
   const [artworkMediaId, setArtworkMediaId] = useState<string>();
   const [description, setDescription] = useState("");
+  const [website, setWebsite] = useState("");
+  const [xUrl, setXUrl] = useState("");
+  const [initialPurchaseNative, setInitialPurchaseNative] = useState("0");
   const [artworkPreview, setArtworkPreview] = useState<string>();
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -576,6 +312,9 @@ export function GuidedLaunchWizard(props: WizardProps) {
     weights.join(",") !== "40,40,20" ||
     Boolean(basketAssets && basketAssets.length !== 3) ||
     Boolean(description) ||
+    Boolean(website) ||
+    Boolean(xUrl) ||
+    initialPurchaseNative !== "0" ||
     Boolean(artworkMediaId) ||
     Boolean(artworkPreview);
 
@@ -721,22 +460,14 @@ export function GuidedLaunchWizard(props: WizardProps) {
                           : "Not connected"}
                       </strong>
                     </div>
-                    <button
-                      className="button"
-                      type="button"
-                      onClick={() => void onWalletAction()}
-                    >
-                      {walletActionLabel}
-                    </button>
-                    {faucetUrl ? (
-                      <a
-                        className="button ghost compact"
-                        href={faucetUrl}
-                        target="_blank"
-                        rel="noreferrer"
+                    {walletActionLabel ? (
+                      <button
+                        className="button"
+                        type="button"
+                        onClick={() => void onWalletAction()}
                       >
-                        Get test ETH
-                      </a>
+                        {walletActionLabel}
+                      </button>
                     ) : null}
                   </div>
                   <label>
@@ -774,6 +505,26 @@ export function GuidedLaunchWizard(props: WizardProps) {
                     />
                     <small>{description.length}/280</small>
                   </label>
+                  <div className="wizard-social-fields">
+                    <label>
+                      Website <span className="muted">(optional)</span>
+                      <input
+                        type="url"
+                        value={website}
+                        onChange={(event) => setWebsite(event.target.value)}
+                        placeholder="https://yourproject.example"
+                      />
+                    </label>
+                    <label>
+                      X / Twitter <span className="muted">(optional)</span>
+                      <input
+                        type="url"
+                        value={xUrl}
+                        onChange={(event) => setXUrl(event.target.value)}
+                        placeholder="https://x.com/yourproject"
+                      />
+                    </label>
+                  </div>
                   <CreatorSetup
                     key={draftVersion}
                     account={account}
@@ -830,6 +581,28 @@ export function GuidedLaunchWizard(props: WizardProps) {
                   >
                     Total {total}%
                   </p>
+                  {atomicInitialPurchase ? (
+                    <label className="initial-purchase-field">
+                      Initial purchase <span className="muted">(optional)</span>
+                      <span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.0001"
+                          inputMode="decimal"
+                          value={initialPurchaseNative}
+                          onChange={(event) =>
+                            setInitialPurchaseNative(event.target.value)
+                          }
+                        />
+                        <b>ETH</b>
+                      </span>
+                      <small>
+                        This buy executes inside the launch transaction before
+                        anyone else can trade.
+                      </small>
+                    </label>
+                  ) : null}
                 </div>
                 <div className="launch-review" hidden={step !== 3}>
                   <div>
@@ -863,6 +636,24 @@ export function GuidedLaunchWizard(props: WizardProps) {
                         : "Sherwood Forest fallback artwork"}
                     </strong>
                   </div>
+                  {atomicInitialPurchase ? (
+                    <div>
+                      <span>Creator purchase</span>
+                      <strong>
+                        {initialPurchaseNative || "0"} ETH, atomic
+                      </strong>
+                    </div>
+                  ) : null}
+                  {website || xUrl ? (
+                    <div>
+                      <span>Project links</span>
+                      <strong>
+                        {[website ? "Website" : "", xUrl ? "X" : ""]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </strong>
+                    </div>
+                  ) : null}
                   <p className="form-hint">
                     Basket weights and token artwork cannot be changed after the
                     canonical creator binds them. Mock assets have no real-world
@@ -878,7 +669,15 @@ export function GuidedLaunchWizard(props: WizardProps) {
                       !validToken ||
                       !validBasket
                     }
-                    onClick={() => void onLaunch(artworkMediaId, description)}
+                    onClick={() =>
+                      void onLaunch({
+                        ...(artworkMediaId ? { artworkMediaId } : {}),
+                        description,
+                        website,
+                        xUrl,
+                        initialPurchaseNative,
+                      })
+                    }
                   >
                     {launchedToken
                       ? "Token planted"
@@ -895,7 +694,17 @@ export function GuidedLaunchWizard(props: WizardProps) {
                         <button
                           className="button ghost"
                           type="button"
-                          onClick={onStartAnother}
+                          onClick={() => {
+                            onStartAnother();
+                            setArtworkMediaId(undefined);
+                            setDescription("");
+                            setWebsite("");
+                            setXUrl("");
+                            setInitialPurchaseNative("0");
+                            setArtworkPreview(undefined);
+                            setDraftVersion((value) => value + 1);
+                            setStep(1);
+                          }}
                         >
                           Plant another token
                         </button>
@@ -904,7 +713,9 @@ export function GuidedLaunchWizard(props: WizardProps) {
                   ) : null}
                   {!account ? (
                     <div className="wizard-wallet-required">
-                      <p className="form-hint">{walletHint}</p>
+                      <p className="form-hint">
+                        Connect a wallet to plant this token.
+                      </p>
                       <button
                         className="button"
                         type="button"
@@ -1018,6 +829,9 @@ export function GuidedLaunchWizard(props: WizardProps) {
                       setWeights([40, 40, 20]);
                       setArtworkMediaId(undefined);
                       setDescription("");
+                      setWebsite("");
+                      setXUrl("");
+                      setInitialPurchaseNative("0");
                       setArtworkPreview(undefined);
                       setDraftVersion((value) => value + 1);
                       setStep(1);

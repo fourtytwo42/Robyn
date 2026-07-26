@@ -419,9 +419,11 @@ async function launchMetadataMap(tokens: string[]) {
       telegram_url: string | null;
       discord_url: string | null;
       avatar_media_id: string | null;
+      project_website: string | null;
+      project_x_url: string | null;
     }>
   >(
-    "SELECT b.token,b.media_id,b.metadata_cid,b.metadata_uri,b.verification_status,m.status media_status,m.canonical_png_cid,m.optimized_webp_cid,p.display_name,p.bio,p.website,p.x_url,p.telegram_url,p.discord_url,p.avatar_media_id FROM launch_metadata_bindings b JOIN media_assets m ON m.media_id=b.media_id LEFT JOIN creator_profiles p ON p.chain_id=b.chain_id AND p.address=b.creator_address WHERE b.chain_id=$1 AND b.token=ANY($2::text[])",
+    "SELECT b.token,b.media_id,b.metadata_cid,b.metadata_uri,b.verification_status,b.project_website,b.project_x_url,m.status media_status,m.canonical_png_cid,m.optimized_webp_cid,p.display_name,p.bio,p.website,p.x_url,p.telegram_url,p.discord_url,p.avatar_media_id FROM launch_metadata_bindings b JOIN media_assets m ON m.media_id=b.media_id LEFT JOIN creator_profiles p ON p.chain_id=b.chain_id AND p.address=b.creator_address WHERE b.chain_id=$1 AND b.token=ANY($2::text[])",
     [chainId, tokens],
   );
   return new Map(rows.map((row) => [row.token.toLowerCase(), row]));
@@ -1662,6 +1664,9 @@ await registerCreatorRoutes(app, {
   ...(process.env.ROBYN_CAMPAIGN_OPERATOR_TOKEN
     ? { campaignOperatorToken: process.env.ROBYN_CAMPAIGN_OPERATOR_TOKEN }
     : {}),
+  fallbackArtworkPath:
+    process.env.ROBYN_FALLBACK_ARTWORK_PATH ??
+    `${process.cwd()}/apps/web/public/assets/launchpad/token-fallback.webp`,
 });
 registerCampaignRoutes(app, {
   sql,

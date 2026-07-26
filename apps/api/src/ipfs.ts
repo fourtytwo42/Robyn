@@ -16,6 +16,8 @@ export function canonicalTokenMetadata(input: {
   pngCid: string;
   webpCid: string;
   hasAlpha: boolean;
+  website?: string;
+  xUrl?: string;
   testCampaign?: {
     campaignId: string;
     releaseSha: string;
@@ -31,6 +33,32 @@ export function canonicalTokenMetadata(input: {
       !/^[0-9a-f]{40}$/.test(input.testCampaign.releaseSha))
   )
     throw new Error("invalid_test_campaign");
+  const optionalHttpsUrl = (
+    value: string | undefined,
+    allowedHosts?: string[],
+  ) => {
+    const trimmed = value?.trim() ?? "";
+    if (!trimmed) return undefined;
+    let parsed: URL;
+    try {
+      parsed = new URL(trimmed);
+    } catch {
+      throw new Error("invalid_project_link");
+    }
+    if (parsed.protocol !== "https:" || parsed.username || parsed.password)
+      throw new Error("invalid_project_link");
+    if (allowedHosts && !allowedHosts.includes(parsed.hostname.toLowerCase()))
+      throw new Error("invalid_project_link");
+    parsed.hash = "";
+    return parsed.toString().replace(/\/$/, "");
+  };
+  const website = optionalHttpsUrl(input.website);
+  const xUrl = optionalHttpsUrl(input.xUrl, [
+    "x.com",
+    "www.x.com",
+    "twitter.com",
+    "www.twitter.com",
+  ]);
   const image = `ipfs://${input.pngCid}`;
   const metadata = {
     interop: { erc1046: true },
@@ -38,6 +66,15 @@ export function canonicalTokenMetadata(input: {
     symbol: input.symbol.trim(),
     decimals: 18,
     ...(description ? { description } : {}),
+    ...(website ? { external_url: website } : {}),
+    ...(website || xUrl
+      ? {
+          links: {
+            ...(website ? { website } : {}),
+            ...(xUrl ? { x: xUrl } : {}),
+          },
+        }
+      : {}),
     image,
     images: [`ipfs://${input.webpCid}`],
     ...(input.hasAlpha ? { icons: [image] } : {}),

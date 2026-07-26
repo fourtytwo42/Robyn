@@ -267,7 +267,7 @@ export function BasketAssetPicker({
           onClick={() => setOpen(true)}
           disabled={selected.length >= 3}
         >
-          Add asset
+          <span aria-hidden="true">＋</span> Choose asset
         </button>
       </div>
       <div className="basket-selected-list">
@@ -307,23 +307,26 @@ export function BasketAssetPicker({
                 aria-label={`Move ${asset.symbol} up`}
                 onClick={() => move(index, -1)}
                 disabled={index === 0}
+                title="Move up"
               >
-                Up
+                <span aria-hidden="true">↑</span>
               </button>
               <button
                 type="button"
                 aria-label={`Move ${asset.symbol} down`}
                 onClick={() => move(index, 1)}
                 disabled={index === selected.length - 1}
+                title="Move down"
               >
-                Down
+                <span aria-hidden="true">↓</span>
               </button>
               <button
                 type="button"
                 aria-label={`Remove ${asset.symbol}`}
                 onClick={() => remove(index)}
+                title="Remove"
               >
-                Remove
+                <span aria-hidden="true">×</span>
               </button>
             </div>
           </article>
@@ -373,7 +376,10 @@ export function BasketAssetPicker({
             <header>
               <div>
                 <p className="eyebrow">{publicEnvironment.networkLabel}</p>
-                <h3>Choose a reward asset</h3>
+                <h3>Select an asset</h3>
+                <p className="form-hint">
+                  Search the routed catalog or inspect any token address.
+                </p>
               </div>
               <button
                 className="icon-button"
@@ -381,7 +387,7 @@ export function BasketAssetPicker({
                 aria-label="Close asset picker"
                 onClick={() => setOpen(false)}
               >
-                Close
+                <span aria-hidden="true">×</span>
               </button>
             </header>
             <div className="asset-picker-search">
@@ -402,7 +408,7 @@ export function BasketAssetPicker({
                 ["stock", "Stocks"],
                 ["etf-commodity", "ETFs & commodities"],
                 ["crypto", "Crypto"],
-                ["custom", "Custom address"],
+                ["custom", "Paste address"],
               ].map(([value, label]) => (
                 <button
                   key={value}
@@ -433,7 +439,7 @@ export function BasketAssetPicker({
                   onClick={() => void resolveCustom()}
                   disabled={loading || !customAddress.trim()}
                 >
-                  Inspect token
+                  Find token
                 </button>
                 {customAsset ? (
                   <AssetRow

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatEther, type Address } from "viem";
@@ -149,9 +150,23 @@ export default async function LaunchDetail({
             </h1>
             <div className="identity-links">
               <code>{short(launch.token)}</code>
-              <Link className="text-link" href={`/users/${launch.creator}`}>
-                Created by{" "}
-                {launch.metadata?.display_name ?? short(launch.creator)}
+              <Link
+                className="creator-identity-link"
+                href={`/users/${launch.creator}`}
+              >
+                {launch.metadata?.avatar_media_id ? (
+                  <Image
+                    src={`/api/media/${launch.metadata.avatar_media_id}`}
+                    width={24}
+                    height={24}
+                    alt=""
+                    unoptimized
+                  />
+                ) : null}
+                <span>
+                  Created by{" "}
+                  {launch.metadata?.display_name ?? short(launch.creator)}
+                </span>
               </Link>
               <span>Block {launch.created_block}</span>
             </div>
@@ -198,6 +213,15 @@ export default async function LaunchDetail({
           {...(launch.metadata?.media_status === "active" &&
           launch.metadata.media_id
             ? { mediaId: launch.metadata.media_id }
+            : {})}
+          {...(launch.metadata?.project_website ||
+          launch.metadata?.project_x_url
+            ? {
+                projectLinks: {
+                  website: launch.metadata.project_website,
+                  xUrl: launch.metadata.project_x_url,
+                },
+              }
             : {})}
           {...(launch.metadata?.display_name
             ? {

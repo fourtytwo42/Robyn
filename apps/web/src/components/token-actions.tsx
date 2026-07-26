@@ -32,6 +32,7 @@ export function TokenActions({
   creator,
   createdBlock,
   creatorProfile,
+  projectLinks,
   mediaId,
 }: {
   chainId: number;
@@ -47,6 +48,10 @@ export function TokenActions({
     telegramUrl: string | null;
     discordUrl: string | null;
     avatarMediaId: string | null;
+  };
+  projectLinks?: {
+    website: string | null;
+    xUrl: string | null;
   };
   mediaId?: string;
 }) {
@@ -155,6 +160,16 @@ export function TokenActions({
         >
           Creator proof
         </button>
+        {projectLinks?.website ? (
+          <a href={projectLinks.website} target="_blank" rel="noreferrer">
+            Website
+          </a>
+        ) : null}
+        {projectLinks?.xUrl ? (
+          <a href={projectLinks.xUrl} target="_blank" rel="noreferrer">
+            X / Twitter
+          </a>
+        ) : null}
         <a href="#recent-trades">Recent activity</a>
         {mediaId ? (
           <button
