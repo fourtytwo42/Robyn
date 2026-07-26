@@ -4,6 +4,22 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Last verified 2026-07-26: schema-v9 is live at
+  `https://testnet.sherwoodforest.trade` from exact release
+  `6385004380c63ea5445d7668f286d2e000882d1f`. The schema-v9 deployment began at
+  block `93591157`; all 494 deployment checks pass. The creation/profile release
+  is live: optional artwork, hidden internal wallet-proof/sanitization steps,
+  DEX-style routed-asset picker with custom-address inspection, icon-only basket
+  controls, immutable website/X links, atomic creator initial purchase,
+  dedicated creator profile editor, exact sell-balance fill, and no manual
+  onchain-refresh buttons. A real `0.00005 ETH` atomic launch created Atomic
+  Grove (`GROVE`) at `0x32CE5096C51D011fEd47465f3649b93A65708AF7`;
+  creator profile/media/link binding, indexed buy, sell, and token-specific
+  creator claim passed. All six testnet PM2 processes have zero restarts, both
+  index pipelines are caught up, no Prometheus alert is firing, and the live
+  release verifier remains green. In-app-browser desktop and 390x844 acceptance
+  found no console warnings/errors or horizontal overflow; the mobile launch
+  dialog fits in 808px without internal scrolling.
 - Fresh schema-v9 contracts were deployed to Robinhood Testnet from exact commit `3b0f9075b9703b2820adf062b31d8e602515a054` at block `93591157`. The canonical coordinator is `0xfd435c4ED809e9F38AaF2B793d55f8Cd46b0E7ac`, fee-and-oracle hook is `0xd25eD28717DFbdBfEB5B5B39B695F226FeFfd044`, fee router is `0x7EeD773eb5b09d6CB4d44319E6996a145aA7B3c8`, and genesis token is `0xD87008596Ac0Df205E487D0Ef1d18A520Fd8fA5E`. All 494 independent deployment checks passed. Fresh measured deployment cost with 25% headroom was 0.000759102 ETH; actual post-deployment wallet balance was 0.004957005 ETH. Schema-v8 deployment `abe90dc` is archived. The schema-v9 database migration, event rebuild, exact web/API release promotion, and browser acceptance remain pending; `testnet.sherwoodforest.trade` still serves the schema-v8 release until those pass.
 - Token creation UX and atomic creator purchase work is implemented on this schema-v9 branch but not yet live. The launch modal no longer exposes separate wallet-proof, artwork-sanitization, wallet-refresh, or faucet controls. Artwork is optional, reward assets use the catalog/custom-address picker with icon controls, creators may add immutable website/X links, and the payable coordinator can atomically launch plus buy for the creator. Portfolio now has a dedicated profile editor with avatar/name/bio/links, token pages use creator identity and project links, sell balance fills the exact sell amount, and manual onchain-refresh buttons are removed. Migration `0009_token_launch_links.sql` is additive. The source checkpoint passed 132 Foundry tests, all repository tests, lint, format, typecheck, clean devnet build, and protected testnet build. Fresh schema-v9 deployment, migration/reindex, and browser acceptance remain required before promotion.
 - King of the Forest is implemented on `codex/testnet-subdomain-nav` as a rebuildable, one-time discovery achievement. The manifest policy activates at testnet block `93576793`, requires 5,000 bps bonding progress plus 10 distinct lifetime traders, and only awards on fresh post-activation activity. The newest canonical award reigns; former winners retain their badge and history. Schema migration `0008_king_of_forest.sql`, projector/API/status work, homepage spotlight, Markets history, token progress, card badges, admin health, tests, and documentation are complete in the working tree. An isolated schema-v8 database rebuilt through block `93579188`, reconstructed 69 distinct trader rows across five launches, populated pool IDs for all 15 launches, produced the expected zero retroactive awards, and idled in 1.3 to 2.2 ms cycles. Promotion and live browser acceptance remain pending.
@@ -1336,6 +1352,27 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-26 - Creation, profile, atomic purchase, and live wallet acceptance
+
+- Context: creators needed a compact launch flow with automatic authentication,
+  routed custom assets, an atomic initial buy, public links, and a real profile.
+- Decision: keep SIWE and media sanitization automatic behind user actions,
+  make artwork optional, commit website/X into immutable launch metadata, and
+  execute the creator's optional purchase inside the coordinator transaction.
+- Files: guided launch wizard, asset picker, network launchpad, creator profile
+  editor/portfolio, trade panel, metadata APIs/migration 0009, launch token page,
+  coordinator, bonding market, contract tests, and live acceptance evidence.
+- Commands/tests: 141 Foundry tests; full format, lint, strict types, API/web
+  tests; clean devnet and protected testnet builds; chain-46630 rehearsal; 494
+  deployment checks; real public atomic launch, sell, creator claim; in-app
+  browser desktop and 390x844 checks.
+- Result: exact release `6385004` is live and healthy with two canonical
+  schema-v9 launches. Atomic Grove proves fallback artwork, immutable links,
+  creator avatar/name, atomic purchase, indexed trading, and isolated per-token
+  creator fee claiming on public testnet.
+- Follow-up: remote IPFS replication, independent audit/penetration testing,
+  and real Robinhood Wallet acceptance remain separate future gates.
+
 ### 2026-07-24 - Automated campaign identity is immutable and indexed
 
 - Context: public assurance launches must remain visible while being
@@ -2258,6 +2295,21 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-26: exact public release
+  `6385004380c63ea5445d7668f286d2e000882d1f` passed all 494 deployment checks
+  after a real payable atomic creation transaction. Atomic Grove received
+  `99,090,081.892629663330300272 GROVE` in the launch receipt path. Follow-up
+  approval and sale transaction `0x8fb15111076dc3c78459c61efc36235a5b483b979c825991e973dc51e558d8e5`
+  sold half the remaining creator balance; claim transaction
+  `0x192f57f7d40c50455e8856bdd4a00dfe075281f53682fce366eb20b3cb14cb3c`
+  reduced token-specific claimable creator ETH to zero with lifetime accrued
+  equal to lifetime claimed. Public APIs report two launches, zero ingestion
+  and projection lag after reconciliation, healthy keeper/artifacts, zero PM2
+  restarts, and no firing alerts. In-app-browser acceptance confirmed the
+  shortened artwork surface, routed catalog, custom-address tab, icon controls,
+  atomic initial purchase copy, website/X links, hydrated creator name/profile,
+  responsive 390x844 dialog, and zero browser warnings/errors.
+
 - 2026-07-26: ETH-native/USD-display release
   `82e1dc4e3f7d2280217593c21bf250537907feeb` passed formatting, lint, all
   package typechecks and tests, Anvil smoke, 123 Foundry tests, protected
@@ -2805,15 +2857,9 @@ When sources conflict, use this order:
 
 - Configure a vendor-neutral IPFS Pinning Service endpoint/token in the
   protected testnet API environment.
-- Supply and review the actual RDAO member wallet/percentage allocation
-  manifest totaling exactly 100%.
-- Before Robinhood Testnet, independently review the implemented production graduation adapter, immutable LP locker, atomic coordinator and fee router; recheck for an official chain-46630 Uniswap deployment. If none exists, deploy and freeze the separately verified Robyn-controlled test-only DEX manifest before protocol broadcast.
 - Complete independent browser-persona UAT when subagent runtimes expose the
   Codex in-app browser, or obtain an explicit product-owner waiver. Root-agent
   serialized UAT is complete but is not independent.
-- Complete the explicitly started schema-v8 public-testnet endurance run. It
-  requires eight accumulated healthy hours with failed/remediation intervals
-  excluded and separately evidenced; it is not an uninterrupted soak.
 - Configure and test a human alert receiver before unattended public-testnet or real-value operation; local Prometheus/Grafana alert state alone is insufficient.
 - Obtain independent protocol/security review before real-value operation. Stateful invariants and malicious callbacks are now implemented, but the internal engineering review is not independent.
 - Ask Vladdy whether the team will provide a repository/license and whether a native multi-asset mode is planned; current deployed contracts do not expose a safe weighted-basket seam.

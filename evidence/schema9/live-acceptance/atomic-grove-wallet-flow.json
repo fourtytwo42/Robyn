@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "testedAt": "2026-07-26T08:52:46Z",
+  "releaseSha": "6385004380c63ea5445d7668f286d2e000882d1f",
+  "chainId": 46630,
+  "passed": true,
+  "token": "0x32CE5096C51D011fEd47465f3649b93A65708AF7",
+  "market": "0x0e6b1ee128ae4e57041a38fab69d3c37c7a5a529",
+  "creator": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",
+  "transactions": {
+    "approval": "0xb55a3c900ba159de028f34f116b1ea67518cd141f01b634a555fdd1e4fe59cc2",
+    "sell": "0x8fb15111076dc3c78459c61efc36235a5b483b979c825991e973dc51e558d8e5",
+    "creatorClaim": "0x192f57f7d40c50455e8856bdd4a00dfe075281f53682fce366eb20b3cb14cb3c"
+  },
+  "amounts": {
+    "balanceBefore": 99090080942735041196570808,
+    "sold": 49545040471367520598285404,
+    "balanceAfter": 49545040471367520598285404,
+    "quotedFee": 259173413064,
+    "quotedNativeOutput": 25658167893407,
+    "creatorClaimableBefore": 125000001303,
+    "creatorClaimableAfterSell": 189793354569,
+    "cumulativeCreatorNative": 189793354569,
+    "claimedCreatorNative": 189793354569
+  }
+}
