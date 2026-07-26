@@ -15,6 +15,16 @@ campaign_token_file="${ROBYN_CAMPAIGN_OPERATOR_TOKEN_FILE:-/home/hendo420/.local
 operator_key=/home/hendo420/.config/robyn/testnet/operator.key
 [[ -d "$target" && -r "$release_env" && -r "$campaign_token_file" ]]
 (cd "$target" && sha256sum -c testnet-release-manifest.json.sha256 >/dev/null && sha256sum -c testnet-release-files.sha256 >/dev/null)
+for required_runtime_file in \
+  apps/web/.next/BUILD_ID \
+  apps/web/.next/prerender-manifest.json \
+  apps/web/.next/required-server-files.json \
+  apps/web/.next/routes-manifest.json; do
+  [[ -s "$target/$required_runtime_file" ]] || {
+    echo "refusing incomplete testnet release: $required_runtime_file" >&2
+    exit 1
+  }
+done
 install -d -o root -g root -m 0755 /var/www/sherwoodforest-coming-soon
 install -o root -g root -m 0644 \
   "$target/infrastructure/coming-soon/index.html" \
