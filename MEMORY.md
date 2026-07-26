@@ -3011,6 +3011,14 @@ When sources conflict, use this order:
 - Commands/tests: Shell syntax, Prettier, 12 endurance-policy tests, 15 campaign tests, and diff checks pass.
 - Follow-up: Commit and push these corrections, rerun exact-candidate reproducibility, then run the corrected eight-hour workload only after the fresh public schema-v9 deployment and campaign pass.
 
+### 2026-07-26 - Deployment verifier missing-address guard
+
+- Context: Running the schema-v9 verifier against the archived predecessor manifest crashed by issuing `eth_getCode` with a null Universal Router address.
+- Decision: Validate every required schema-v9 contract address before any RPC call and return structured failed-check evidence when an address is absent.
+- Result: A deterministic regression test proves malformed manifests fail with explicit missing-contract labels, no stderr crash, and no RPC request. The archived uncapped deployment remains intentionally ineligible for promotion; it cannot satisfy the new `maximumCurvePurchase` read.
+- Files: `scripts/verify-testnet-v4-deployment.mjs`, `scripts/test/testnet-v4-deployment-verifier.test.mjs`, and root test wiring.
+- Follow-up: A fresh schema-v9 deployment manifest must contain the Universal Router and immutable curve cap and pass the complete verifier before cutover.
+
 ## Open Follow-ups
 
 - Configure a vendor-neutral IPFS Pinning Service endpoint/token in the

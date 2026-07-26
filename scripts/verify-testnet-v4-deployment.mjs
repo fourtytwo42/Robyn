@@ -34,6 +34,40 @@ const contracts = Object.fromEntries(
     )
     .map(([key, value]) => [key, getAddress(value)]),
 );
+const requiredContracts = [
+  "assetRouter",
+  "atomicLaunchCoordinator",
+  "daoToken",
+  "governor",
+  "launchDeployer",
+  "launchFactory",
+  "marketFactory",
+  "oracleHook",
+  "poolManager",
+  "protocolFeeRouter",
+  "stateView",
+  "testAssetLiquidityLocker",
+  "timelock",
+  "universalRouter",
+];
+for (const key of requiredContracts) {
+  check(Boolean(contracts[key]), `manifest contains ${key}`);
+}
+if (failures.length > 0) {
+  console.log(
+    JSON.stringify(
+      {
+        manifest: manifestPath,
+        checkedAt: new Date().toISOString(),
+        checks,
+        failures,
+      },
+      null,
+      2,
+    ),
+  );
+  process.exit(1);
+}
 check(await client.getChainId() === 46630, "RPC chain ID is 46630");
 check(manifest.chainId === 46630, "manifest chain ID is 46630");
 check(manifest.liquidityVenue === "uniswap-v4", "manifest selects Uniswap v4");
