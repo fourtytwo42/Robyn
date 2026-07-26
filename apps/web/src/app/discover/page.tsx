@@ -5,6 +5,7 @@ import { MarketCard } from "@/components/market-card";
 import { DiscoveryControls } from "@/components/discovery-controls";
 import { rewardAssetMetadata } from "@/lib/reward-assets";
 import deployment from "@robyn/deployment";
+import { ForestCanopy } from "@/components/forest-canopy";
 
 export const dynamic = "force-dynamic";
 
@@ -75,12 +76,13 @@ export default async function Discover({
       <SiteHeader />
       <section className="page-shell discovery-page">
         <header className="page-hero discovery-hero">
-          <p className="eyebrow">Reward market board</p>
-          <h1>Find the token basket you want to hold.</h1>
+          <ForestCanopy compact />
+          <p className="eyebrow">Explore the forest</p>
+          <h1>Find a token worth growing with.</h1>
           <p className="lede">
-            Browse every live market without a wallet. Compare market cap,
-            activity, holder count, and the immutable assets each community can
-            earn.
+            Roam every live market without a wallet. Compare market cap,
+            activity, traders, and the immutable reward roots each community is
+            growing.
           </p>
         </header>
 

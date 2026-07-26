@@ -4,6 +4,13 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Sherwood Forest's product voice and visual system intentionally use a
+  restrained `plant → grow → harvest` metaphor. The homepage, Markets hero,
+  Portfolio hero, and guided creation modal use forest language while retaining
+  explicit token, market, basket, and claim terminology. A code-native canopy
+  illustration and rooted green surfaces provide the forest identity without
+  obscuring financial information. The homepage featured basket description is
+  derived from the actual featured launch rather than hardcoded assets.
 - Markets no longer exposes basket-size filtering. Discovery supports canonical
   `1h`, `6h`, `24h`, `7d`, and all-time windows; cards, volume sorting, and
   Trending tie-breaks use the selected window's timestamped trade metrics.

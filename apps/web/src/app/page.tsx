@@ -7,6 +7,8 @@ import { MarketCard } from "@/components/market-card";
 import { LaunchTokenTrigger } from "@/components/launch-token-trigger";
 import { getLaunches } from "@/lib/data-api";
 import { rankActiveMarkets } from "@/lib/market-ranking";
+import { rewardAssetMetadata } from "@/lib/reward-assets";
+import { ForestCanopy } from "@/components/forest-canopy";
 import Link from "next/link";
 import { formatEther } from "viem";
 
@@ -34,6 +36,19 @@ export default async function Home() {
     (total, launch) => total + BigInt(launch.metrics?.totalVolumeBase ?? "0"),
     0n,
   );
+  const featuredBasket = featuredMarket
+    ? featuredMarket.assets
+        .map((asset, index) => {
+          const metadata = rewardAssetMetadata(
+            asset,
+            deployment.contracts.rewardAssets,
+            isTestnet,
+            deployment.assetCatalog?.assets,
+          );
+          return `${metadata.symbol} ${(featuredMarket.weights_bps[index] ?? 0) / 100}%`;
+        })
+        .join(" · ")
+    : "Choose up to three basket assets.";
 
   return (
     <main id="main">
@@ -42,24 +57,25 @@ export default async function Home() {
       <SiteHeader />
 
       <section className="product-hero" aria-labelledby="hero-heading">
+        <ForestCanopy />
         <div className="hero-copy">
-          <p className="eyebrow">Fair launches · built-in reward baskets</p>
-          <h1 id="hero-heading">Every token launches with rewards.</h1>
+          <p className="eyebrow">Plant tokens · grow reward baskets</p>
+          <h1 id="hero-heading">Grow a token worth holding.</h1>
           <p className="lede">
-            Every Sherwood Forest token has its own immutable mix of{" "}
-            {isTestnet ? "testnet mock" : "mock"} stock and crypto rewards.
-            Discover a community, trade its market, then claim the basket assets
-            its activity creates.
+            Every token planted in Sherwood Forest takes root with its own
+            immutable mix of {isTestnet ? "testnet mock" : "mock"} stock and
+            crypto rewards. Find a community, help its market grow, then harvest
+            the basket assets its activity creates.
           </p>
           <div className="hero-actions">
             <LaunchTokenTrigger className="button primary">
-              Launch a token
+              Plant a token
             </LaunchTokenTrigger>
             <Link className="button ghost" href="/discover">
-              Explore markets
+              Roam the markets
             </Link>
             <span className="hero-network-copy">
-              Permissionless launch architecture ·{" "}
+              Permissionless roots · verifiable growth ·{" "}
               {isTestnet ? "Robinhood Chain Testnet" : "controlled local chain"}
             </span>
           </div>
@@ -78,19 +94,19 @@ export default async function Home() {
             priority
           />
           <div className="hero-token-overlay">
-            <span className="hot-chip">Live reward basket</span>
+            <span className="hot-chip">Growing now</span>
             <div>
               <strong>{featuredMarket?.name ?? "Sherwood Genesis"}</strong>
               <span>{featuredMarket?.symbol ?? "TREE"}</span>
             </div>
-            <p>Holders earn 40% TSLA / 40% AMD / 20% AMZN.</p>
+            <p>Reward roots: {featuredBasket}</p>
           </div>
         </aside>
       </section>
 
       <section className="launchpad-stats" aria-label="Launchpad activity">
         <article>
-          <span>Live markets</span>
+          <span>Tokens growing</span>
           <strong>{launches.data.length}</strong>
         </article>
         <article>
@@ -98,11 +114,11 @@ export default async function Home() {
           <strong>{rewardAssetCount}</strong>
         </article>
         <article>
-          <span>Indexed volume</span>
+          <span>Forest volume</span>
           <strong>{compactBase(totalVolume.toString())} ETH</strong>
         </article>
         <article>
-          <span>Basket rules</span>
+          <span>Reward roots</span>
           <strong>Immutable</strong>
         </article>
       </section>
@@ -110,7 +126,7 @@ export default async function Home() {
       <section className="market-radar" aria-labelledby="market-radar-heading">
         <div className="section-heading launchpad-heading">
           <div>
-            <p className="eyebrow">Most active</p>
+            <p className="eyebrow">Growing now</p>
             <h2 id="market-radar-heading">Top tokens</h2>
           </div>
           <Link className="text-link" href="/discover">
@@ -131,33 +147,33 @@ export default async function Home() {
 
       <section className="reward-path" aria-labelledby="reward-path-heading">
         <div className="reward-path-copy">
-          <p className="eyebrow">How rewards work</p>
-          <h2 id="reward-path-heading">Follow a market. Earn its basket.</h2>
+          <p className="eyebrow">From seed to harvest</p>
+          <h2 id="reward-path-heading">Plant. Trade. Harvest.</h2>
           <p>
-            Each token publishes its exact reward assets and weights, so you
-            know what its activity can earn before you participate.
+            Every token shows its reward roots up front. You always know what
+            the market can grow before you step into the grove.
           </p>
         </div>
         <ol className="reward-path-steps">
           <li>
             <span>01</span>
             <div>
-              <strong>Choose a token</strong>
-              <p>Review its immutable basket on the token page.</p>
+              <strong>Pick your grove</strong>
+              <p>Choose a token by its immutable reward basket.</p>
             </div>
           </li>
           <li>
             <span>02</span>
             <div>
-              <strong>Trade the market</strong>
-              <p>A share of protocol fees is converted into basket assets.</p>
+              <strong>Help it grow</strong>
+              <p>Market activity turns protocol fees into basket assets.</p>
             </div>
           </li>
           <li>
             <span>03</span>
             <div>
-              <strong>Claim rewards</strong>
-              <p>Eligible rewards accrue onchain for holders to claim.</p>
+              <strong>Harvest rewards</strong>
+              <p>Eligible rewards grow onchain until holders claim them.</p>
             </div>
           </li>
         </ol>
