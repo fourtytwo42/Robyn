@@ -115,9 +115,7 @@ export default async function Home() {
         <div className="section-heading launchpad-heading">
           <div>
             <p className="eyebrow">Most active</p>
-            <h2 id="market-radar-heading">
-              Markets leading by cap, volume, and traders.
-            </h2>
+            <h2 id="market-radar-heading">Top tokens</h2>
           </div>
           <Link className="text-link" href="/discover">
             View all markets →
