@@ -6,7 +6,7 @@ if [[ "${EUID}" -eq 0 ]]; then
   exit 1
 fi
 
-repo="/home/hendo420/Robyn"
+repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 evidence_root="${REPRO_EVIDENCE_ROOT:-/var/backups/robyn/reproducibility}"
 run_id="${REPRO_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
 output="${evidence_root}/${run_id}"
