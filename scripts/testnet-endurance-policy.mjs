@@ -1,4 +1,11 @@
 export const ENDURANCE_DURATION_SECONDS = 8 * 60 * 60;
+const APPROVED_TESTNET_RPC_URLS = new Set([
+  "https://rpc.testnet.chain.robinhood.com",
+  "http://192.168.50.117:8547",
+]);
+
+export const isApprovedTestnetRpcUrl = (url) => APPROVED_TESTNET_RPC_URLS.has(url);
+
 export const ENDURANCE_SAMPLE_INTERVAL_SECONDS = 30;
 export const ENDURANCE_WRITE_INTERVAL_SECONDS = 10 * 60;
 export const ENDURANCE_REVIEW_INTERVAL_SECONDS = 20 * 60;

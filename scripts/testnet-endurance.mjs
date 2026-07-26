@@ -51,6 +51,7 @@ import {
   ENDURANCE_SAMPLE_INTERVAL_SECONDS,
   ENDURANCE_WRITE_INTERVAL_SECONDS,
   isRetryablePublicRpcError,
+  isApprovedTestnetRpcUrl,
   percentile,
   processContinuityFailures,
   reconcileReleaseIdentity,
@@ -82,8 +83,8 @@ const manifest = assertSchema9Manifest(
 const rpcUrl =
   process.env.ROBYN_TESTNET_RPC_URL ??
   "https://rpc.testnet.chain.robinhood.com";
-if (rpcUrl !== "https://rpc.testnet.chain.robinhood.com") {
-  throw new Error("Endurance requires Robinhood's official public testnet RPC");
+if (!isApprovedTestnetRpcUrl(rpcUrl)) {
+  throw new Error("Endurance RPC is not an approved Robinhood Testnet endpoint");
 }
 const publicBase =
   process.env.ROBYN_ENDURANCE_PUBLIC_BASE ?? "https://testnet.sherwoodforest.trade";
@@ -579,6 +580,49 @@ async function createEnduranceLaunch(index) {
   await waitForLaunchAndBind(created.token, metadata);
 }
 
+async function fundingPreflight() {
+  const targetByIndex = new Map();
+  for (let index = 0; index < 20; index += 1) {
+    targetByIndex.set(index, 100_000_000_000_000n);
+  }
+  for (let index = 40; index < 44; index += 1) {
+    targetByIndex.set(index, 500_000_000_000_000n);
+  }
+  targetByIndex.set(96, 700_000_000_000_000n);
+  targetByIndex.set(97, 700_000_000_000_000n);
+  const balances = await Promise.all(
+    [...targetByIndex.keys()].map((index) =>
+      publicClient.getBalance({ address: accounts[index].address }),
+    ),
+  );
+  const shortfalls = [...targetByIndex.entries()].map(
+    ([index, target], offset) => ({
+      index,
+      amount: balances[offset] >= target ? 0n : target - balances[offset],
+    }),
+  );
+  const actorFundingWei = shortfalls.reduce(
+    (total, entry) => total + entry.amount,
+    0n,
+  );
+  const workloadValueWei = 2_500_000_000_000_000n;
+  const projectBalanceWei = await publicClient.getBalance({
+    address: project.address,
+  });
+  const requiredWei =
+    actorFundingWei + workloadValueWei + ENDURANCE_RESERVE_WEI;
+  return {
+    projectAddress: project.address,
+    projectBalanceWei,
+    actorFundingWei,
+    workloadValueWei,
+    reserveWei: ENDURANCE_RESERVE_WEI,
+    requiredWei,
+    surplusWei: projectBalanceWei - requiredWei,
+    sufficient: projectBalanceWei >= requiredWei,
+    shortfalls: shortfalls.filter(({ amount }) => amount > 0n),
+  };
+}
 async function ensureFunding() {
   if (state.funding?.completedAt) return;
   const targetByIndex = new Map();
@@ -1556,6 +1600,10 @@ function finalize() {
 
 if ((await publicClient.getChainId()) !== 46630) {
   throw new Error("Endurance RPC chain ID is not 46630");
+}
+if (process.env.ROBYN_ENDURANCE_PREFLIGHT_ONLY === "1") {
+  process.stdout.write(`${json(await fundingPreflight())}\n`);
+  process.exit(0);
 }
 await ensureFunding();
 let stopping = false;

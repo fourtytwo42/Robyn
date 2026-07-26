@@ -95,13 +95,16 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- Fresh capped schema-v9 deployment `e435b78`, public campaign, accounting
-  reconciliation, empty-database index rebuild, and initial exact application
-  promotion are passing. The current working tree fixes the omitted top-level
-  King of the Forest policy and adds verifier coverage. Next: run repository
-  gates, commit/push/build/promote the corrected exact release, verify the King
-  projection, then complete browser, real-wallet, recovery, backup, and
-  uninterrupted eight-hour endurance gates.
+- Fresh capped schema-v9 deployment `e435b78`, the 100-wallet public campaign,
+  exact accounting reconciliation, empty-database rebuild, King projection,
+  and release `19053b1` browser acceptance are passing. Server-side testnet
+  traffic uses the synchronized LAN RPC at `192.168.50.117:8547`. The endurance
+  runner now accepts only the official or approved LAN RPC and targets the
+  schema-v9 campaign. Its live funding preflight found `0.007255454777915471
+  ETH` available and a `0.002142263852084529 ETH` shortfall after the required
+  workload and `0.0015 ETH` reserve. Next: finish recovery/backup evidence,
+  obtain at least `0.0023 ETH` more faucet funding, then run the uninterrupted
+  eight-hour gate.
 - Last verified 2026-07-26: the creator-profile avatar and token-artwork upload
   badges no longer render a font-dependent plus glyph. Both now use the same
   geometrically centered CSS cross, keeping the plus centered in its circle
@@ -1477,6 +1480,23 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-26 - Schema-v9 promotion, browser acceptance, and endurance preflight
+
+- Context: the capped schema-v9 public campaign completed and the final release
+  needed an independent index rebuild, exact promotion, browser acceptance, and
+  a funded eight-hour endurance gate.
+- Decision: use the synchronized LAN RPC for server-side testnet workloads while
+  retaining the official RPC as an explicitly approved fallback. Keep the hard
+  `0.0015 ETH` reserve and do not reduce endurance coverage to fit funding.
+- Files: `scripts/testnet-endurance.mjs`,
+  `scripts/testnet-endurance-policy.mjs`, installer and policy tests.
+- Commands/tests: empty-database chain rebuild, 515 deployment checks, desktop,
+  tablet and mobile in-app-browser acceptance, policy tests, and live encrypted
+  100-wallet funding preflight.
+- Result: release `19053b1` is live with nine launches, three King awards, zero
+  index lag at promotion, and clean browser routes. The LAN RPC matches the
+  public head. Funding is short by `0.002142263852084529 ETH`.
+- Follow-up: complete recovery and backup/restore, add at least `0.0023 ETH`,
 ### 2026-07-26 - Bonding purchase cap remediation
 
 - Context: the production curve configuration described a 0.5 ETH maximum

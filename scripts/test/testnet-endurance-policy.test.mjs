@@ -7,6 +7,7 @@ import {
   dueCount,
   dueLaunchCount,
   enduranceSamplePassed,
+  isApprovedTestnetRpcUrl,
   isRetryablePublicRpcError,
   percentile,
   processContinuityFailures,
@@ -69,6 +70,15 @@ test("RPC retry classification and p95 are bounded", () => {
     false,
   );
   assert.equal(percentile([10, 20, 30, 40, 50], 0.95), 50);
+});
+test("approved testnet RPC allowlist rejects arbitrary endpoints", () => {
+  assert.equal(
+    isApprovedTestnetRpcUrl("https://rpc.testnet.chain.robinhood.com"),
+    true,
+  );
+  assert.equal(isApprovedTestnetRpcUrl("http://192.168.50.117:8547"), true);
+  assert.equal(isApprovedTestnetRpcUrl("http://127.0.0.1:8545"), false);
+  assert.equal(isApprovedTestnetRpcUrl("https://attacker.invalid"), false);
 });
 
 test("holder rewards are queried by canonical asset index", () => {
