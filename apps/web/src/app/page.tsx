@@ -2,11 +2,7 @@ import type { Deployment } from "@/lib/deployment";
 import { NetworkConsole } from "@robyn/network-console";
 import { SiteHeader } from "@/components/site-header";
 import deployment from "@robyn/deployment";
-import {
-  type BasketArtSymbol,
-  BasketAssetArt,
-  TokenArt,
-} from "@/components/launchpad-visuals";
+import { TokenArt } from "@/components/launchpad-visuals";
 import { MarketCard } from "@/components/market-card";
 import { LaunchTokenTrigger } from "@/components/launch-token-trigger";
 import { getLaunches } from "@/lib/data-api";
@@ -133,28 +129,38 @@ export default async function Home() {
         </div>
       </section>
 
-      <section
-        className="basket-asset-rail"
-        aria-label="Available reward basket assets"
-      >
-        <div className="asset-rail-copy">
-          <p className="eyebrow">Inside the basket</p>
-          <h2>Recognizable rewards, earned by holding.</h2>
+      <section className="reward-path" aria-labelledby="reward-path-heading">
+        <div className="reward-path-copy">
+          <p className="eyebrow">How rewards work</p>
+          <h2 id="reward-path-heading">Follow a market. Earn its basket.</h2>
+          <p>
+            Each token publishes its exact reward assets and weights, so you
+            know what its activity can earn before you participate.
+          </p>
         </div>
-        {[
-          { symbol: "TSLA", name: "Testnet Tesla", weight: "40%" },
-          { symbol: "AMD", name: "Testnet AMD", weight: "40%" },
-          { symbol: "AMZN", name: "Testnet Amazon", weight: "20%" },
-        ].map((asset) => (
-          <article className="basket-asset-tile" key={asset.symbol}>
-            <BasketAssetArt symbol={asset.symbol as BasketArtSymbol} />
+        <ol className="reward-path-steps">
+          <li>
+            <span>01</span>
             <div>
-              <strong>{asset.symbol}</strong>
-              <span>{asset.name}</span>
+              <strong>Choose a token</strong>
+              <p>Review its immutable basket on the token page.</p>
             </div>
-            <b>{asset.weight}</b>
-          </article>
-        ))}
+          </li>
+          <li>
+            <span>02</span>
+            <div>
+              <strong>Trade the market</strong>
+              <p>A share of protocol fees is converted into basket assets.</p>
+            </div>
+          </li>
+          <li>
+            <span>03</span>
+            <div>
+              <strong>Claim rewards</strong>
+              <p>Eligible rewards accrue onchain for holders to claim.</p>
+            </div>
+          </li>
+        </ol>
       </section>
 
       {!isTestnet ? (
