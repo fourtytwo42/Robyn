@@ -71,6 +71,7 @@ export function DiscoveryControls({
               <option value="graduated">Graduated</option>
               <option value="volume">Volume</option>
               <option value="market_cap">Market cap</option>
+              <option value="king_of_forest">King of the Forest</option>
             </select>
           </label>
           <label>

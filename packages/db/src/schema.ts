@@ -78,11 +78,74 @@ export const launches = pgTable(
     automatedTestLaunch: boolean("automated_test_launch")
       .notNull()
       .default(false),
+    poolId: text("pool_id"),
   },
   (table) => [
     primaryKey({ columns: [table.chainId, table.token] }),
     uniqueIndex("launches_id_uq").on(table.chainId, table.launchId),
     index("launches_updated_idx").on(table.chainId, table.updatedBlock),
+  ],
+);
+
+export const launchTraders = pgTable(
+  "launch_traders",
+  {
+    chainId: integer("chain_id").notNull(),
+    token: text("token").notNull(),
+    trader: text("trader").notNull(),
+    firstSeenBlock: bigint("first_seen_block", { mode: "bigint" }).notNull(),
+    firstSeenTransactionHash: text("first_seen_transaction_hash").notNull(),
+    firstSeenLogIndex: integer("first_seen_log_index").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.chainId, table.token, table.trader] }),
+    index("launch_traders_token_idx").on(
+      table.chainId,
+      table.token,
+      table.firstSeenBlock,
+    ),
+  ],
+);
+
+export const kingOfForestProgress = pgTable(
+  "king_of_forest_progress",
+  {
+    chainId: integer("chain_id").notNull(),
+    token: text("token").notNull(),
+    progressBps: integer("progress_bps").notNull().default(0),
+    marketPhase: text("market_phase").notNull().default("bonding"),
+    updatedBlock: bigint("updated_block", { mode: "bigint" }).notNull(),
+    updatedTransactionHash: text("updated_transaction_hash").notNull(),
+    updatedLogIndex: integer("updated_log_index").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.chainId, table.token] })],
+);
+
+export const kingOfForestAwards = pgTable(
+  "king_of_forest_awards",
+  {
+    chainId: integer("chain_id").notNull(),
+    token: text("token").notNull(),
+    awardedBlock: bigint("awarded_block", { mode: "bigint" }).notNull(),
+    awardedBlockHash: text("awarded_block_hash").notNull(),
+    awardedTransactionHash: text("awarded_transaction_hash").notNull(),
+    awardedTransactionIndex: integer("awarded_transaction_index").notNull(),
+    awardedLogIndex: integer("awarded_log_index").notNull(),
+    awardedAt: timestamp("awarded_at", { withTimezone: true }).notNull(),
+    progressBps: integer("progress_bps").notNull(),
+    uniqueTraders: integer("unique_traders").notNull(),
+    marketPhase: text("market_phase").notNull(),
+    policyVersion: text("policy_version").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.chainId, table.token] }),
+    index("king_of_forest_awards_order_idx").on(
+      table.chainId,
+      table.awardedBlock,
+      table.awardedTransactionIndex,
+      table.awardedLogIndex,
+      table.token,
+    ),
   ],
 );
 

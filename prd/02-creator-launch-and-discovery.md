@@ -139,6 +139,7 @@ Do not rank by unadjusted raw volume alone. Wash activity can manufacture headli
 | DISC-004 | Filters MUST be shareable through URL state | SHOULD | Navigation test |
 | DISC-005 | Rankings MUST document their formula and resist simple self-trade inflation | MUST | Formula review and abuse test |
 | DISC-006 | Hidden/moderated content MUST remain discoverable by address unless displaying it is unlawful | SHOULD | Policy test |
+| DISC-007 | A launch MUST earn King of the Forest at most once when a post-activation trade leaves it at or above 50% bonding progress with at least 10 distinct lifetime traders | MUST | Projector replay, threshold, reorg and browser tests |
 
 ## Creator profile
 
@@ -156,3 +157,11 @@ Show launches by wallet, verified links where available, aggregate realized fees
 
 Every new creator launch uses one wallet confirmation and one reverting coordinator transaction. Supply is fixed by protocol policy; creators cannot select an arbitrary supply. The browser generates a fresh random salt immediately before simulation, decodes canonical identities from the transaction receipt, then waits for indexing and optionally binds sanitized artwork. An artwork/profile failure is reported as metadata failure after a successful launch, never as an onchain failure.
 
+
+## King of the Forest user stories
+
+- As a trader, I can see how close an eligible token is to the crown without confusing the achievement with a financial return.
+- As a market participant, I can identify the reigning King, former winners, the qualifying transaction, and the immutable award time.
+- As an anonymous visitor, I can browse the complete winner history without connecting a wallet.
+- As an operator, I can rebuild trader counts, progress, awards, and the reigning winner from canonical chain logs.
+- As a token creator, I cannot buy, transfer, or repeatedly earn the crown for the same token.

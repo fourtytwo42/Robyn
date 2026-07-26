@@ -17,6 +17,8 @@ export type AdminHealthSnapshot = {
     status: "ok" | "degraded";
     asOfBlock: string | null;
     projectionAsOfBlock: string | null;
+    kingProjectionAsOfBlock: string | null;
+    kingProjectionLagBlocks: string | null;
     ingestionLagBlocks: string | null;
     projectionLagBlocks: string | null;
     ingestionCycleMs: number | null;
@@ -27,7 +29,12 @@ export type AdminHealthSnapshot = {
   };
   keeper: { status: "ok" | "degraded"; updatedAt: string | null };
   artifacts: { status: "ok" | "degraded"; updatedAt: string | null };
-  data: { launchCount: string; rawLogCount: string };
+  data: {
+    launchCount: string;
+    rawLogCount: string;
+    kingOfForestAwardCount: string;
+    currentKingOfForest: string | null;
+  };
 };
 
 type StatusPayload = Record<string, unknown>;
@@ -121,6 +128,8 @@ export async function getAdminHealthSnapshot(
       status: ingestionOk && projectionOk ? "ok" : "degraded",
       asOfBlock: stringOrNull(data.asOfBlock),
       projectionAsOfBlock: stringOrNull(data.projectionAsOfBlock),
+      kingProjectionAsOfBlock: stringOrNull(data.kingProjectionAsOfBlock),
+      kingProjectionLagBlocks: stringOrNull(data.kingProjectionLagBlocks),
       ingestionLagBlocks: stringOrNull(data.ingestionLagBlocks),
       projectionLagBlocks: stringOrNull(data.projectionLagBlocks),
       ingestionCycleMs: numberOrNull(data.ingestionCycleMs),
@@ -140,6 +149,8 @@ export async function getAdminHealthSnapshot(
     data: {
       launchCount: stringOrNull(data.launchCount) ?? "0",
       rawLogCount: stringOrNull(data.rawLogCount) ?? "0",
+      kingOfForestAwardCount: stringOrNull(data.kingOfForestAwardCount) ?? "0",
+      currentKingOfForest: stringOrNull(data.currentKingOfForest),
     },
   };
 }

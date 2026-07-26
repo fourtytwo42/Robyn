@@ -17,7 +17,8 @@ export type DiscoverySort =
   | "near_graduation"
   | "graduated"
   | "volume"
-  | "market_cap";
+  | "market_cap"
+  | "king_of_forest";
 export type DiscoveryWindow = "1h" | "6h" | "24h" | "7d" | "all";
 export type DiscoveryPhase = "all" | "bonding" | "graduated";
 
@@ -67,6 +68,7 @@ export function decodeDiscoveryCursor(value: string | undefined) {
       "graduated",
       "volume",
       "market_cap",
+      "king_of_forest",
     ];
     const validWindow: DiscoveryWindow[] = ["1h", "6h", "24h", "7d", "all"];
     const validPhase: DiscoveryPhase[] = ["all", "bonding", "graduated"];
@@ -120,6 +122,7 @@ export function parseDiscoveryQuery(
     "graduated",
     "volume",
     "market_cap",
+    "king_of_forest",
   ];
   const windowValues: DiscoveryWindow[] = ["1h", "6h", "24h", "7d", "all"];
   const phaseValues: DiscoveryPhase[] = ["all", "bonding", "graduated"];

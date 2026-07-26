@@ -5166,3 +5166,223 @@ main > .notice {
     grid-template-columns: 1fr;
   }
 }
+
+/* King of the Forest */
+.king-spotlight {
+  width: min(1180px, calc(100% - 32px));
+  margin: 30px auto 8px;
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr) minmax(180px, 0.55fr) auto;
+  align-items: center;
+  gap: 22px;
+  padding: 22px;
+  border: 1px solid color-mix(in srgb, var(--reward) 46%, var(--line));
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at 12% 20%,
+      rgba(242, 184, 75, 0.18),
+      transparent 35%
+    ),
+    linear-gradient(135deg, rgba(25, 64, 45, 0.96), rgba(10, 28, 24, 0.98));
+  box-shadow: 0 22px 70px rgba(2, 12, 9, 0.36);
+}
+.king-art-wrap {
+  position: relative;
+  min-width: 0;
+}
+.king-token-art {
+  width: 132px;
+  height: 132px;
+  border-radius: 22px;
+  overflow: hidden;
+}
+.king-crown {
+  display: grid;
+  place-items: center;
+  color: var(--reward);
+  font-size: 2.4rem;
+  line-height: 1;
+  text-shadow: 0 3px 18px rgba(242, 184, 75, 0.4);
+}
+.king-art-wrap .king-crown {
+  position: absolute;
+  right: -8px;
+  top: -14px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #153b2a;
+  border: 1px solid rgba(242, 184, 75, 0.65);
+}
+.king-copy {
+  min-width: 0;
+}
+.king-copy h2 {
+  margin: 4px 0 8px;
+  font-size: clamp(1.55rem, 3vw, 2.35rem);
+}
+.king-copy h2 span {
+  color: var(--reward);
+}
+.king-copy p {
+  margin: 0;
+  color: var(--muted);
+  max-width: 58ch;
+}
+.king-basket {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 14px;
+}
+.king-basket span,
+.king-card-chip {
+  border: 1px solid rgba(242, 184, 75, 0.4);
+  background: rgba(242, 184, 75, 0.1);
+  color: #f8d889;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.king-card-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+}
+.king-card-chip.former {
+  color: var(--muted);
+  border-color: var(--line);
+  background: var(--surface-soft);
+}
+.king-stats {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.king-stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+.king-stats dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.king-stats dd {
+  margin: 0;
+  font-weight: 800;
+  text-align: right;
+}
+.king-unclaimed {
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+}
+.king-unclaimed h2 {
+  margin: 3px 0 6px;
+}
+.king-unclaimed p {
+  margin: 0;
+  color: var(--muted);
+}
+.king-progress-card {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1.1fr);
+  gap: 28px;
+  padding: 22px;
+  border: 1px solid rgba(242, 184, 75, 0.28);
+  border-radius: 20px;
+  background: linear-gradient(
+    135deg,
+    rgba(242, 184, 75, 0.07),
+    rgba(31, 84, 58, 0.09)
+  );
+}
+.king-progress-card.awarded {
+  border-color: rgba(242, 184, 75, 0.58);
+}
+.king-progress-card h2 {
+  margin: 5px 0 8px;
+}
+.king-progress-card p {
+  margin: 0;
+  color: var(--muted);
+}
+.king-progress-meters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.king-progress-meters > div {
+  display: grid;
+  gap: 7px;
+}
+.king-progress-meters > div > span,
+.king-progress-meters small {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.king-progress-meters strong {
+  font-size: 1.15rem;
+}
+
+@media (max-width: 900px) {
+  .king-spotlight {
+    grid-template-columns: 110px minmax(0, 1fr) auto;
+  }
+  .king-token-art {
+    width: 100px;
+    height: 100px;
+  }
+  .king-stats {
+    grid-column: 2 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .king-stats div {
+    display: grid;
+    gap: 3px;
+  }
+  .king-stats dd {
+    text-align: left;
+  }
+  .king-progress-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .king-spotlight,
+  .king-unclaimed {
+    grid-template-columns: 74px minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px;
+    border-radius: 18px;
+  }
+  .king-token-art {
+    width: 70px;
+    height: 70px;
+    border-radius: 15px;
+  }
+  .king-art-wrap .king-crown {
+    width: 34px;
+    height: 34px;
+    font-size: 1.6rem;
+    top: -10px;
+  }
+  .king-spotlight > .button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+  .king-stats {
+    grid-column: 1 / -1;
+    gap: 10px;
+  }
+  .king-copy h2 {
+    font-size: 1.35rem;
+  }
+  .king-progress-meters {
+    grid-template-columns: 1fr;
+  }
+}

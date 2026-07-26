@@ -8,6 +8,12 @@ export type Deployment = {
   gitCommit: string;
   deployer?: Address;
   liquidityVenue?: "uniswap-v4" | "uniswap-v3";
+  kingOfForestPolicy?: {
+    version: string;
+    activationBlock: number;
+    progressThresholdBps: number;
+    minimumUniqueTraders: number;
+  };
   venueProvenance?: string;
   contracts: {
     baseAsset: Address;

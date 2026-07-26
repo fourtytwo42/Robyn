@@ -3,6 +3,12 @@
   "environment": "robinhood-testnet",
   "chainId": 46630,
   "deploymentBlock": 93182752,
+  "kingOfForestPolicy": {
+    "version": "forest-v1",
+    "activationBlock": 93576793,
+    "progressThresholdBps": 5000,
+    "minimumUniqueTraders": 10
+  },
   "gitCommit": "abe90dc4fba7dac0a8ab605943ae2f603c03f04f",
   "deployer": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",
   "guardian": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",

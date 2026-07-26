@@ -14,7 +14,7 @@ All services run natively under systemd. No monitoring UI is exposed directly to
 
 ## Signals and alerts
 
-Signals cover systemd/PM2 health and restarts, web/API/gateway/keeper/artifact health, indexed last-good block and lag, RPC divergence, queue/audit states, backup age, disk, inode, memory, CPU and load. Rules cover component loss, index lag, RPC divergence, failed/dead-letter work, stale backups/metrics and disk/memory headroom.
+Signals cover systemd/PM2 health and restarts, web/API/gateway/keeper/artifact health, indexed last-good block and lag, King of the Forest projection checkpoint and award count, RPC divergence, queue/audit states, backup age, disk, inode, memory, CPU and load. Rules cover component loss, index lag, RPC divergence, failed/dead-letter work, stale backups/metrics and disk/memory headroom.
 
 Every alert declares chain `31337`, component, launch/asset scope and a runbook link. Dynamic descriptions query the last-good indexed block.
 

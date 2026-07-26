@@ -201,6 +201,25 @@ export default function WhitepaperPage() {
             </li>
           </ol>
 
+          <aside className="king-paper-callout">
+            <div aria-hidden="true" className="king-paper-crown">
+              ♛
+            </div>
+            <div>
+              <p className="trail-kicker">King of the Forest</p>
+              <h3>One crown, earned through real market growth</h3>
+              <p>
+                A token earns a permanent crown once it reaches half of its
+                bonding journey and records at least ten distinct lifetime
+                traders. Only fresh activity after the policy begins can award
+                the crown. The newest winner reigns on the homepage until
+                another token qualifies, while every former King keeps its badge
+                and place in the public history. The crown is a discovery
+                achievement, not a financial reward or governance right.
+              </p>
+            </div>
+          </aside>
+
           <div className="atomic-map" aria-label="Atomic launch architecture">
             <div>
               <span>Wallet</span>

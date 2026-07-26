@@ -4,7 +4,9 @@ import {
   decodeEventLog,
   http,
   parseAbiItem,
+  toEventSelector,
   type Address,
+  type Hex,
 } from "viem";
 import { createDatabase } from "@robyn/db";
 import {
@@ -19,12 +21,19 @@ import {
   requiredBlockNumbers,
   uniqueLaunchIds,
 } from "./pipeline.js";
+import {
+  qualifiesForKingOfForest,
+  shouldCountKingTrader,
+  validateKingOfForestPolicy,
+  type KingOfForestPolicy,
+} from "./king-of-forest.js";
 
 type Manifest = {
   schemaVersion?: number;
   chainId: number;
   liquidityVenue?: "uniswap-v4" | "uniswap-v3";
   deploymentBlock: number;
+  kingOfForestPolicy?: KingOfForestPolicy;
   contracts: {
     [key: string]: Address | Address[] | undefined;
     factory: Address;
@@ -136,6 +145,39 @@ const atomicLaunchEvent = parseAbiItem(
 const atomicV4LaunchEvent = parseAbiItem(
   "event AtomicV4LaunchCreated(uint256 indexed launchId,address indexed creator,address indexed token,(address vault,address market,address adapter,address poolManager,bytes32 poolId,address positionManager,address hook,address locker,uint24 poolFeePips,int24 tickSpacing,bytes32 configurationHash,bytes32 launchSaltHash,bytes32 metadataUriHash) receipt)",
 );
+const kingMarketEvents = [
+  parseAbiItem(
+    "event Bought(address indexed buyer,uint256 nativeInput,uint256 feeAmount,uint256 tokenOutput)",
+  ),
+  parseAbiItem(
+    "event Sold(address indexed seller,uint256 tokenInput,uint256 feeAmount,uint256 nativeOutput)",
+  ),
+  parseAbiItem(
+    "event CurveState(uint256 virtualTokenReserve,uint256 virtualNativeReserve,uint256 realCurveTokenReserve,uint256 progressBps)",
+  ),
+  parseAbiItem(
+    "event Graduated(bytes32 indexed poolId,address indexed locker,uint256 indexed positionTokenId,uint256 tokenLiquidity,uint256 nativeLiquidity,uint256 finalCurvePrice)",
+  ),
+] as const;
+const kingV4SwapEvent = parseAbiItem(
+  "event Swap(bytes32 indexed id,address indexed sender,int128 amount0,int128 amount1,uint160 sqrtPriceX96,uint128 liquidity,int24 tick,uint24 fee)",
+);
+const kingMarketPoolAbi = [
+  {
+    type: "function",
+    name: "poolId",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+] as const;
+const kingEventTopics = [
+  ...kingMarketEvents.map((event) => toEventSelector(event)),
+  toEventSelector(kingV4SwapEvent),
+];
+const kingPolicy = manifest.kingOfForestPolicy
+  ? validateKingOfForestPolicy(manifest.kingOfForestPolicy)
+  : null;
 
 async function currentIndexedAddresses() {
   const launches = await sql.unsafe<{ token: string; market: string }[]>(
@@ -504,7 +546,7 @@ async function projectLaunch(
     [manifest.chainId, token.toLowerCase()],
   );
   await sql.unsafe(
-    "INSERT INTO launches (chain_id,launch_id,token,vault,market,creator,name,symbol,assets,weights_bps,created_block,updated_block,formula_version,campaign_id,campaign_release_sha,automated_test_launch) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12,$13,$14,$15,$16) ON CONFLICT (chain_id,token) DO UPDATE SET market=EXCLUDED.market,name=EXCLUDED.name,symbol=EXCLUDED.symbol,assets=EXCLUDED.assets,weights_bps=EXCLUDED.weights_bps,created_block=EXCLUDED.created_block,updated_block=EXCLUDED.updated_block,formula_version=EXCLUDED.formula_version,campaign_id=EXCLUDED.campaign_id,campaign_release_sha=EXCLUDED.campaign_release_sha,automated_test_launch=EXCLUDED.automated_test_launch",
+    "INSERT INTO launches (chain_id,launch_id,token,vault,market,creator,name,symbol,assets,weights_bps,created_block,updated_block,formula_version,campaign_id,campaign_release_sha,automated_test_launch,pool_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12,$13,$14,$15,$16,$17) ON CONFLICT (chain_id,token) DO UPDATE SET market=EXCLUDED.market,name=EXCLUDED.name,symbol=EXCLUDED.symbol,assets=EXCLUDED.assets,weights_bps=EXCLUDED.weights_bps,created_block=EXCLUDED.created_block,updated_block=EXCLUDED.updated_block,formula_version=EXCLUDED.formula_version,campaign_id=EXCLUDED.campaign_id,campaign_release_sha=EXCLUDED.campaign_release_sha,automated_test_launch=EXCLUDED.automated_test_launch,pool_id=EXCLUDED.pool_id",
     [
       manifest.chainId,
       id.toString(),
@@ -528,12 +570,282 @@ async function projectLaunch(
       campaign?.campaign_id ?? null,
       campaign?.campaign_release_sha ?? null,
       campaign?.automated_test_launch ?? false,
+      atomic && typeof atomic.args.poolId === "string"
+        ? atomic.args.poolId.toLowerCase()
+        : null,
     ],
   );
 }
 
+type KingProjectionLog = {
+  token: string;
+  source: "market" | "pool";
+  block_number: string;
+  block_hash: string;
+  block_timestamp: string;
+  transaction_hash: Hex;
+  transaction_index: number;
+  log_index: number;
+  address: Address;
+  topics: Hex[];
+  data: Hex;
+};
+
+async function projectKingOfForest(asOfBlock: bigint) {
+  if (!kingPolicy) return { processedLogs: 0, awarded: 0 };
+  if (manifest.liquidityVenue === "uniswap-v4") {
+    const missingPools = await sql.unsafe<{ token: string; market: Address }[]>(
+      "SELECT token,market FROM launches WHERE chain_id=$1 AND pool_id IS NULL",
+      [manifest.chainId],
+    );
+    for (const launch of missingPools) {
+      const poolId = await client.readContract({
+        address: launch.market,
+        abi: kingMarketPoolAbi,
+        functionName: "poolId",
+      });
+      await sql.unsafe(
+        "UPDATE launches SET pool_id=$3 WHERE chain_id=$1 AND token=$2 AND pool_id IS NULL",
+        [manifest.chainId, launch.token.toLowerCase(), poolId.toLowerCase()],
+      );
+    }
+  }
+  const [checkpoint] = await sql.unsafe<
+    { last_block: string; last_hash: string }[]
+  >(
+    "SELECT last_block::text,last_hash FROM indexer_checkpoints WHERE service='king-of-forest-projector' AND chain_id=$1",
+    [manifest.chainId],
+  );
+  if (checkpoint && BigInt(checkpoint.last_block) > asOfBlock) {
+    await sql.begin(async (tx) => {
+      await tx.unsafe("DELETE FROM launch_traders WHERE chain_id=$1", [
+        manifest.chainId,
+      ]);
+      await tx.unsafe("DELETE FROM king_of_forest_progress WHERE chain_id=$1", [
+        manifest.chainId,
+      ]);
+      await tx.unsafe("DELETE FROM king_of_forest_awards WHERE chain_id=$1", [
+        manifest.chainId,
+      ]);
+      await tx.unsafe(
+        "DELETE FROM indexer_checkpoints WHERE service='king-of-forest-projector' AND chain_id=$1",
+        [manifest.chainId],
+      );
+    });
+  }
+  const [freshCheckpoint] = await sql.unsafe<{ last_block: string }[]>(
+    "SELECT last_block::text FROM indexer_checkpoints WHERE service='king-of-forest-projector' AND chain_id=$1",
+    [manifest.chainId],
+  );
+  const fromBlock = freshCheckpoint
+    ? BigInt(freshCheckpoint.last_block) + 1n
+    : BigInt(manifest.deploymentBlock);
+  if (fromBlock > asOfBlock) return { processedLogs: 0, awarded: 0 };
+  const logs = await sql.unsafe<KingProjectionLog[]>(
+    "WITH relevant AS (SELECT x.token,'market'::text source,l.block_number,l.block_hash,l.transaction_hash,l.transaction_index,l.log_index,l.address,l.topics,l.data FROM raw_logs l JOIN launches x ON x.chain_id=l.chain_id AND x.market=l.address WHERE l.chain_id=$1 AND l.block_number BETWEEN $2 AND $3 AND l.topics->>0=ANY($4::text[]) UNION ALL SELECT x.token,'pool'::text source,l.block_number,l.block_hash,l.transaction_hash,l.transaction_index,l.log_index,l.address,l.topics,l.data FROM raw_logs l JOIN launches x ON x.chain_id=l.chain_id AND x.pool_id IS NOT NULL AND lower(x.pool_id)=lower(l.topics->>1) WHERE l.chain_id=$1 AND l.address=$5 AND l.block_number BETWEEN $2 AND $3 AND l.topics->>0=$6) SELECT r.token,r.source,r.block_number::text,r.block_hash,b.timestamp::text block_timestamp,r.transaction_hash,r.transaction_index,r.log_index,r.address,r.topics,r.data FROM relevant r JOIN chain_blocks b ON b.chain_id=$1 AND b.number=r.block_number AND b.canonical=true ORDER BY r.block_number,r.transaction_index,r.log_index,r.token",
+    [
+      manifest.chainId,
+      fromBlock.toString(),
+      asOfBlock.toString(),
+      kingEventTopics.slice(0, 4),
+      (typeof manifest.contracts.poolManager === "string"
+        ? manifest.contracts.poolManager
+        : zeroAddress
+      ).toLowerCase(),
+      kingEventTopics[4]!,
+    ],
+  );
+  const groups = new Map<string, KingProjectionLog[]>();
+  for (const log of logs) {
+    const key = `${log.transaction_hash.toLowerCase()}:${log.token.toLowerCase()}`;
+    const group = groups.get(key) ?? [];
+    group.push(log);
+    groups.set(key, group);
+  }
+  const directSwapSenders = new Map<string, Address>();
+  for (const [key, group] of groups) {
+    const hasMarketTrade = group.some((log) => {
+      if (log.source !== "market") return false;
+      try {
+        const decoded = decodeEventLog({
+          abi: kingMarketEvents,
+          data: log.data,
+          topics: log.topics as [Hex, ...Hex[]],
+        });
+        return decoded.eventName === "Bought" || decoded.eventName === "Sold";
+      } catch {
+        return false;
+      }
+    });
+    if (hasMarketTrade || !group.some((log) => log.source === "pool")) continue;
+    const transaction = await client.getTransaction({
+      hash: group[0]!.transaction_hash,
+    });
+    directSwapSenders.set(key, transaction.from);
+  }
+  const systemAccounts = new Set(
+    Object.values(manifest.contracts)
+      .flatMap((value) => (Array.isArray(value) ? value : [value]))
+      .filter((value): value is Address => typeof value === "string")
+      .map((value) => value.toLowerCase()),
+  );
+  let awarded = 0;
+  await sql.begin(async (tx) => {
+    for (const [key, group] of groups) {
+      const token = group[0]!.token.toLowerCase();
+      const [progressRow] = await tx.unsafe<
+        { progress_bps: number; market_phase: "bonding" | "graduated" }[]
+      >(
+        "SELECT progress_bps,market_phase FROM king_of_forest_progress WHERE chain_id=$1 AND token=$2",
+        [manifest.chainId, token],
+      );
+      let progressBps = progressRow?.progress_bps ?? 0;
+      let marketPhase: "bonding" | "graduated" =
+        progressRow?.market_phase ?? "bonding";
+      let qualifyingTrade: KingProjectionLog | null = null;
+      const hasMarketTrade = group.some(
+        (log) =>
+          log.source === "market" &&
+          [kingEventTopics[0], kingEventTopics[1]].includes(log.topics[0]!),
+      );
+      for (const log of group) {
+        try {
+          if (log.source === "pool") {
+            if (hasMarketTrade) continue;
+            const decoded = decodeEventLog({
+              abi: [kingV4SwapEvent],
+              data: log.data,
+              topics: log.topics as [Hex, ...Hex[]],
+            });
+            if (decoded.eventName !== "Swap") continue;
+            const trader = directSwapSenders.get(key);
+            if (trader && shouldCountKingTrader(trader, systemAccounts)) {
+              await tx.unsafe(
+                "INSERT INTO launch_traders (chain_id,token,trader,first_seen_block,first_seen_transaction_hash,first_seen_log_index) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (chain_id,token,trader) DO NOTHING",
+                [
+                  manifest.chainId,
+                  token,
+                  trader.toLowerCase(),
+                  log.block_number,
+                  log.transaction_hash.toLowerCase(),
+                  log.log_index,
+                ],
+              );
+              qualifyingTrade = log;
+            }
+            continue;
+          }
+          const decoded = decodeEventLog({
+            abi: kingMarketEvents,
+            data: log.data,
+            topics: log.topics as [Hex, ...Hex[]],
+          });
+          if (decoded.eventName === "Bought" || decoded.eventName === "Sold") {
+            const args = decoded.args as { buyer?: Address; seller?: Address };
+            const trader = args.buyer ?? args.seller;
+            if (trader && shouldCountKingTrader(trader, systemAccounts)) {
+              await tx.unsafe(
+                "INSERT INTO launch_traders (chain_id,token,trader,first_seen_block,first_seen_transaction_hash,first_seen_log_index) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (chain_id,token,trader) DO NOTHING",
+                [
+                  manifest.chainId,
+                  token,
+                  trader.toLowerCase(),
+                  log.block_number,
+                  log.transaction_hash.toLowerCase(),
+                  log.log_index,
+                ],
+              );
+              qualifyingTrade = log;
+            }
+          } else if (decoded.eventName === "CurveState") {
+            progressBps = Math.min(10_000, Number(decoded.args.progressBps));
+          } else if (decoded.eventName === "Graduated") {
+            progressBps = 10_000;
+            marketPhase = "graduated";
+          }
+        } catch {
+          continue;
+        }
+      }
+      const last = group.at(-1)!;
+      await tx.unsafe(
+        "INSERT INTO king_of_forest_progress (chain_id,token,progress_bps,market_phase,updated_block,updated_transaction_hash,updated_log_index) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (chain_id,token) DO UPDATE SET progress_bps=EXCLUDED.progress_bps,market_phase=EXCLUDED.market_phase,updated_block=EXCLUDED.updated_block,updated_transaction_hash=EXCLUDED.updated_transaction_hash,updated_log_index=EXCLUDED.updated_log_index",
+        [
+          manifest.chainId,
+          token,
+          progressBps,
+          marketPhase,
+          last.block_number,
+          last.transaction_hash.toLowerCase(),
+          last.log_index,
+        ],
+      );
+      if (!qualifyingTrade) continue;
+      const [counts, existing] = await Promise.all([
+        tx.unsafe<{ count: string }[]>(
+          "SELECT count(*)::text count FROM launch_traders WHERE chain_id=$1 AND token=$2",
+          [manifest.chainId, token],
+        ),
+        tx.unsafe<{ token: string }[]>(
+          "SELECT token FROM king_of_forest_awards WHERE chain_id=$1 AND token=$2",
+          [manifest.chainId, token],
+        ),
+      ]);
+      const uniqueTraders = Number(counts[0]?.count ?? "0");
+      if (
+        !qualifiesForKingOfForest(kingPolicy, {
+          blockNumber: BigInt(qualifyingTrade.block_number),
+          progressBps,
+          uniqueTraders,
+          alreadyAwarded: Boolean(existing[0]),
+          hasQualifyingTrade: true,
+        })
+      )
+        continue;
+      const inserted = await tx.unsafe<{ token: string }[]>(
+        "INSERT INTO king_of_forest_awards (chain_id,token,awarded_block,awarded_block_hash,awarded_transaction_hash,awarded_transaction_index,awarded_log_index,awarded_at,progress_bps,unique_traders,market_phase,policy_version) VALUES ($1,$2,$3,$4,$5,$6,$7,to_timestamp($8::bigint),$9,$10,$11,$12) ON CONFLICT (chain_id,token) DO NOTHING RETURNING token",
+        [
+          manifest.chainId,
+          token,
+          qualifyingTrade.block_number,
+          qualifyingTrade.block_hash.toLowerCase(),
+          qualifyingTrade.transaction_hash.toLowerCase(),
+          qualifyingTrade.transaction_index,
+          qualifyingTrade.log_index,
+          qualifyingTrade.block_timestamp,
+          progressBps,
+          uniqueTraders,
+          marketPhase,
+          kingPolicy.version,
+        ],
+      );
+      awarded += inserted.length;
+    }
+    const [captured] = await tx.unsafe<{ hash: string }[]>(
+      "SELECT hash FROM chain_blocks WHERE chain_id=$1 AND number=$2 AND canonical=true",
+      [manifest.chainId, asOfBlock.toString()],
+    );
+    if (!captured)
+      throw new Error("King projection target block is not canonical");
+    await tx.unsafe(
+      "INSERT INTO indexer_checkpoints (service,chain_id,last_block,last_hash) VALUES ('king-of-forest-projector',$1,$2,$3) ON CONFLICT (service,chain_id) DO UPDATE SET last_block=EXCLUDED.last_block,last_hash=EXCLUDED.last_hash,updated_at=now()",
+      [manifest.chainId, asOfBlock.toString(), captured.hash.toLowerCase()],
+    );
+  });
+  return { processedLogs: logs.length, awarded };
+}
+
 async function resetCanonical() {
   await sql.begin(async (tx) => {
+    await tx.unsafe("DELETE FROM launch_traders WHERE chain_id=$1", [
+      manifest.chainId,
+    ]);
+    await tx.unsafe("DELETE FROM king_of_forest_progress WHERE chain_id=$1", [
+      manifest.chainId,
+    ]);
+    await tx.unsafe("DELETE FROM king_of_forest_awards WHERE chain_id=$1", [
+      manifest.chainId,
+    ]);
     await tx.unsafe(
       "DELETE FROM raw_logs WHERE chain_id=$1 AND block_number>=$2",
       [manifest.chainId, manifest.deploymentBlock],
@@ -546,7 +858,7 @@ async function resetCanonical() {
       manifest.chainId,
     ]);
     await tx.unsafe(
-      "DELETE FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector') AND chain_id=$1",
+      "DELETE FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector','king-of-forest-projector') AND chain_id=$1",
       [manifest.chainId],
     );
     await tx.unsafe(
@@ -734,11 +1046,20 @@ async function projectOnce() {
     )
   ) {
     await sql.begin(async (tx) => {
+      await tx.unsafe("DELETE FROM launch_traders WHERE chain_id=$1", [
+        manifest.chainId,
+      ]);
+      await tx.unsafe("DELETE FROM king_of_forest_progress WHERE chain_id=$1", [
+        manifest.chainId,
+      ]);
+      await tx.unsafe("DELETE FROM king_of_forest_awards WHERE chain_id=$1", [
+        manifest.chainId,
+      ]);
       await tx.unsafe("DELETE FROM launches WHERE chain_id=$1", [
         manifest.chainId,
       ]);
       await tx.unsafe(
-        "DELETE FROM indexer_checkpoints WHERE service='launch-projector' AND chain_id=$1",
+        "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector') AND chain_id=$1",
         [manifest.chainId],
       );
     });
@@ -750,6 +1071,7 @@ async function projectOnce() {
     BigInt(ingested.last_block),
   );
   let projectedLaunches = 0;
+  let kingProjection = { processedLogs: 0, awarded: 0 };
   if (window) {
     let ids: bigint[];
     let atomicLaunches: Map<string, AtomicLaunchProjection> | undefined;
@@ -776,7 +1098,10 @@ async function projectOnce() {
     projectedLaunches = await completeProjectionBatch(
       ids,
       async (id) => projectLaunch(id, atomicLaunches?.get(id.toString())),
-      reconcileMetadataBindings,
+      async () => {
+        await reconcileMetadataBindings();
+        kingProjection = await projectKingOfForest(BigInt(ingested.last_block));
+      },
       async () => {
         const advanced = await sql.begin(async (tx) => {
           const captured = await tx.unsafe<
@@ -802,11 +1127,22 @@ async function projectOnce() {
         });
         if (!advanced) {
           await sql.begin(async (tx) => {
+            await tx.unsafe(
+              "DELETE FROM king_of_forest_awards WHERE chain_id=$1",
+              [manifest.chainId],
+            );
+            await tx.unsafe(
+              "DELETE FROM king_of_forest_progress WHERE chain_id=$1",
+              [manifest.chainId],
+            );
+            await tx.unsafe("DELETE FROM launch_traders WHERE chain_id=$1", [
+              manifest.chainId,
+            ]);
             await tx.unsafe("DELETE FROM launches WHERE chain_id=$1", [
               manifest.chainId,
             ]);
             await tx.unsafe(
-              "DELETE FROM indexer_checkpoints WHERE service='launch-projector' AND chain_id=$1",
+              "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector') AND chain_id=$1",
               [manifest.chainId],
             );
           });
@@ -818,6 +1154,7 @@ async function projectOnce() {
     );
   } else {
     await reconcileMetadataBindings();
+    kingProjection = await projectKingOfForest(BigInt(ingested.last_block));
   }
   const cycleMs = Math.round((performance.now() - began) * 100) / 100;
   process.stdout.write(
@@ -826,6 +1163,8 @@ async function projectOnce() {
       event: "projection",
       checkpoint: ingested.last_block,
       projectedLaunches,
+      kingProcessedLogs: kingProjection.processedLogs,
+      kingAwards: kingProjection.awarded,
       cycleMs,
     }) + "\n",
   );
