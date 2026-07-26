@@ -18,6 +18,14 @@ Durable project context lives here. Update this file whenever information should
   existing exact actor funding calculation and actor-signed transaction. Node
   syntax and all 13 endurance-policy tests pass; live RPC estimate confirms
   the project account can estimate the failed terminal buy while the actor cannot.
+- Endurance promotion checkpoint 2026-07-26: the replacement run was stopped
+  at zero healthy seconds after metadata preparation returned
+  `campaign_operator_required`. Promotion had injected the archived schema-v8
+  operator-token file while the schema-v9 runner used its schema-v9 token.
+  `scripts/promote-testnet-release.sh` now defaults to the active
+  `schema9-e435b78` operator-token file. The failed zero-duration evidence is
+  preserved under `/var/lib/robyn/testnet-endurance/schema9-30505f9-8h/` and a
+  new immutable release plus full eight-hour run is required.
 
 - Last verified 2026-07-26: fresh capped schema-v9 contracts were deployed to
   Robinhood Testnet from exact commit
