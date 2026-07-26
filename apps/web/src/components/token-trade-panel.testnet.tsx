@@ -7,6 +7,7 @@ import type { Deployment } from "@/lib/deployment";
 import { ResponsiveTradePanel } from "@/components/responsive-trade-panel";
 import { useRobynTestnetWallet } from "./robyn-testnet-wallet";
 import { normalizeWalletError } from "@/lib/wallet-policy";
+import { publicEnvironment } from "@/lib/public-environment";
 
 const erc20Abi = [
   {
@@ -246,7 +247,7 @@ export function NetworkTokenTradePanel({
       amount: null,
     });
   const [status, setStatus] = useState(
-    "Connect an injected testnet wallet to trade.",
+    `Connect a wallet on ${publicEnvironment.networkLabel} to trade.`,
   );
   const parsed = Number(input);
   const price = Number(formatEther(BigInt(basePerToken)));
@@ -304,7 +305,7 @@ export function NetworkTokenTradePanel({
               setAuthoritativeQuote({
                 state: "unavailable",
                 amount: null,
-                message: `Maximum ${formatEther(maximumNativeInput)} ETH per testnet swap`,
+                message: `Maximum ${formatEther(maximumNativeInput)} ETH per swap`,
               });
             }
             return;
@@ -442,9 +443,7 @@ export function NetworkTokenTradePanel({
         maximumNativeInput !== null &&
         amount > maximumNativeInput
       ) {
-        setStatus(
-          `Maximum ${formatEther(maximumNativeInput)} ETH per testnet swap.`,
-        );
+        setStatus(`Maximum ${formatEther(maximumNativeInput)} ETH per swap.`);
         return;
       }
       if (isGraduatedV4 && !assetRouter) {
@@ -662,8 +661,10 @@ export function NetworkTokenTradePanel({
         </strong>
         <small>
           {isNativeV4
-            ? "Native ETH bonding and locked Uniswap v4 market"
-            : "Testnet mock market"}{" "}
+            ? "Native ETH bonding and locked Uniswap market"
+            : publicEnvironment.isMainnet
+              ? "Live market"
+              : "Test market"}{" "}
           · {(feeBps / 100).toFixed(2)}% fee
         </small>
       </div>
@@ -677,7 +678,7 @@ export function NetworkTokenTradePanel({
         {busy
           ? "Submitting…"
           : isWrongChain
-            ? "Switch to Robinhood Testnet"
+            ? `Switch to ${publicEnvironment.networkLabel}`
             : account
               ? `${side === "buy" ? "Buy" : "Sell"} ${symbol}`
               : "Connect wallet"}

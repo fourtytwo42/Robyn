@@ -11,6 +11,7 @@ import { rewardAssetMetadata } from "@/lib/reward-assets";
 import { ForestCanopy } from "@/components/forest-canopy";
 import Link from "next/link";
 import { formatEther } from "viem";
+import { publicEnvironment } from "@/lib/public-environment";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ function compactBase(value: string) {
 
 export default async function Home() {
   const launches = await getLaunches();
-  const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
+  const isTestnet = publicEnvironment.isTestnet;
   const marketShowcase = rankActiveMarkets(launches.data).slice(0, 4);
   const featuredMarket = marketShowcase[0];
   const rewardAssetCount = new Set(
@@ -63,9 +64,14 @@ export default async function Home() {
           <h1 id="hero-heading">Grow a token worth holding.</h1>
           <p className="lede">
             Every token planted in Sherwood Forest takes root with its own
-            immutable mix of {isTestnet ? "testnet mock" : "mock"} stock and
-            crypto rewards. Find a community, help its market grow, then harvest
-            the basket assets its activity creates.
+            immutable mix of{" "}
+            {publicEnvironment.isMainnet
+              ? "tokenized stock and crypto"
+              : isTestnet
+                ? "test stock and crypto"
+                : "mock stock and crypto"}{" "}
+            rewards. Find a community, help its market grow, then harvest the
+            basket assets its activity creates.
           </p>
           <div className="hero-actions">
             <LaunchTokenTrigger className="button primary">
@@ -76,7 +82,7 @@ export default async function Home() {
             </Link>
             <span className="hero-network-copy">
               Permissionless roots · verifiable growth ·{" "}
-              {isTestnet ? "Robinhood Chain Testnet" : "controlled local chain"}
+              {publicEnvironment.networkLabel}
             </span>
           </div>
         </div>
@@ -179,7 +185,7 @@ export default async function Home() {
         </ol>
       </section>
 
-      {!isTestnet ? (
+      {publicEnvironment.isDevnet ? (
         <NetworkConsole deployment={deployment as Deployment} />
       ) : null}
     </main>

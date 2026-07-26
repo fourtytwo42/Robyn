@@ -6,9 +6,9 @@ import { NetworkPortfolioNavigation } from "@robyn/network-portfolio-access";
 import { MarketTape } from "@/components/market-tape";
 import { LaunchTokenTrigger } from "@/components/launch-token-trigger";
 import { NetworkWalletControl } from "@robyn/network-wallet-control";
+import { publicEnvironment } from "@/lib/public-environment";
 
 export function SiteHeader() {
-  const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
   return (
     <>
       <header className="site-header">
@@ -30,9 +30,9 @@ export function SiteHeader() {
           <LaunchTokenTrigger className="site-nav-action">
             Create token
           </LaunchTokenTrigger>
-          {isTestnet ? (
+          {publicEnvironment.faucetUrl ? (
             <a
-              href="https://faucet.testnet.chain.robinhood.com"
+              href={publicEnvironment.faucetUrl}
               target="_blank"
               rel="noreferrer"
             >
@@ -45,7 +45,7 @@ export function SiteHeader() {
         <div className="header-actions">
           <span className="network-pill" data-testid="network-status">
             <span className="status-dot" aria-hidden="true" />
-            {isTestnet ? "Robinhood Testnet" : "Local devnet"}
+            {publicEnvironment.networkLabel}
           </span>
           <NetworkWalletControl />
         </div>

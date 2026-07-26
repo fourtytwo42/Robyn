@@ -12,6 +12,7 @@ import {
   BasketAssetArt,
   type BasketArtSymbol,
 } from "@/components/launchpad-visuals";
+import { publicEnvironment } from "@/lib/public-environment";
 
 const vaultAbi = [
   {
@@ -109,22 +110,17 @@ export function LaunchRewardState({
   const [legs, setLegs] = useState<LegState[]>();
   const [chainBlock, setChainBlock] = useState<bigint>();
   const [error, setError] = useState(false);
-  const isTestnet = process.env.NEXT_PUBLIC_ROBYN_NETWORK_MODE === "testnet";
-  const rpcUrl = isTestnet
-    ? (process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
-      "https://rpc.testnet.chain.robinhood.com")
-    : "/rpc";
+  const isTestnet = publicEnvironment.isTestnet;
+  const rpcUrl = publicEnvironment.rpcUrl;
   const client = useMemo(
     () =>
       createPublicClient({
         chain: defineChain({
-          id: isTestnet ? 46630 : 31337,
-          name: isTestnet
-            ? "Robinhood Chain Testnet"
-            : "Robyn Controlled Development Network",
-          nativeCurrency: isTestnet
-            ? { name: "Ether", symbol: "ETH", decimals: 18 }
-            : { name: "Dev Ether", symbol: "DEV", decimals: 18 },
+          id: publicEnvironment.chainId,
+          name: publicEnvironment.chainName,
+          nativeCurrency: publicEnvironment.isDevnet
+            ? { name: "Dev Ether", symbol: "DEV", decimals: 18 }
+            : { name: "Ether", symbol: "ETH", decimals: 18 },
           testnet: isTestnet,
           rpcUrls: { default: { http: [rpcUrl] } },
         }),

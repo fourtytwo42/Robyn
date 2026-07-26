@@ -1,6 +1,7 @@
 "use client";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { publicEnvironment } from "@/lib/public-environment";
 
 export function NetworkWalletControl() {
   return (
@@ -33,7 +34,7 @@ export function NetworkWalletControl() {
               type="button"
               onClick={openChainModal}
             >
-              Switch to Robinhood Testnet
+              Switch to {publicEnvironment.networkLabel}
             </button>
           );
         }
@@ -51,7 +52,7 @@ export function NetworkWalletControl() {
               <span className="wallet-identicon" aria-hidden="true" />
             )}
             <span>{account.displayName}</span>
-            <small>Robinhood Testnet</small>
+            <small>{publicEnvironment.networkLabel}</small>
           </button>
         );
       }}

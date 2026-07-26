@@ -1,4 +1,5 @@
 import { getAddress, type Address } from "viem";
+import { publicEnvironment } from "./public-environment";
 
 export const ROBINHOOD_TESTNET_CHAIN_ID = 46630;
 
@@ -14,9 +15,10 @@ export function normalizeWalletAddress(
 export function getWalletWriteState(
   address: string | undefined,
   chainId: number | undefined,
+  expectedChainId = ROBINHOOD_TESTNET_CHAIN_ID,
 ): WalletWriteState {
   if (!address) return "disconnected";
-  return chainId === ROBINHOOD_TESTNET_CHAIN_ID ? "ready" : "wrong-chain";
+  return chainId === expectedChainId ? "ready" : "wrong-chain";
 }
 
 export function shouldInvalidateWalletSession(
@@ -55,7 +57,7 @@ export function normalizeWalletError(error: unknown): string {
   if (
     /unsupported chain|chain not configured|unrecognized chain/i.test(message)
   ) {
-    return "This wallet does not currently support Robinhood Testnet.";
+    return `This wallet does not currently support ${publicEnvironment.chainName}.`;
   }
   if (/timeout|timed out|relay/i.test(message)) {
     return "The wallet connection timed out. Reopen the wallet and try again.";
@@ -64,7 +66,7 @@ export function normalizeWalletError(error: unknown): string {
     return "The wallet session disconnected. Connect again to continue.";
   }
   if (/rpc|network request|fetch failed/i.test(message)) {
-    return "The public Robinhood Testnet RPC is unavailable. Try again shortly.";
+    return `The public ${publicEnvironment.chainName} RPC is unavailable. Try again shortly.`;
   }
   return message || "The wallet request failed.";
 }

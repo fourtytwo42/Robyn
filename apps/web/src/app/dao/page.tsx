@@ -11,10 +11,10 @@ export default function DaoPage() {
       <NetworkDaoAccessGate deployment={deployment}>
         <section className="page-shell dao-page">
           <header className="page-hero dao-hero">
-            <p className="eyebrow">Sherwood Forest DAO · RDAO</p>
+            <p className="eyebrow">Sherwood Forest DAO</p>
             <h1>Earn protocol ETH. Govern what Sherwood Forest becomes.</h1>
             <p className="lede">
-              RDAO holders share 20% of every launch&apos;s fees and direct the
+              DAO members share 20% of every launch&apos;s fees and direct the
               timelocked treasury. Token-specific reward baskets and creator
               promises remain immutable.
             </p>

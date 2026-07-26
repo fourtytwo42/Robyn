@@ -6,6 +6,7 @@ import { DiscoveryControls } from "@/components/discovery-controls";
 import { rewardAssetMetadata } from "@/lib/reward-assets";
 import deployment from "@robyn/deployment";
 import { ForestCanopy } from "@/components/forest-canopy";
+import { publicEnvironment } from "@/lib/public-environment";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export default async function Discover({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const query = await searchParams;
-  const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
+  const isTestnet = publicEnvironment.isTestnet;
   const filters = {
     q: first(query.q).trim(),
     asset: first(query.asset),
@@ -107,7 +108,7 @@ export default async function Discover({
           </div>
           <p>
             <strong>{launches.data.length} listed</strong>
-            <span>{filters.window} indexed window · native-v1</span>
+            <span>{filters.window} activity window</span>
           </p>
         </div>
 
@@ -141,9 +142,11 @@ export default async function Discover({
         </p>
       </section>
       <section className="notice" aria-label="Network disclaimer">
-        {isTestnet
-          ? "Robinhood Chain Testnet only. Project-owned mock assets have no real-world value, and the community token is not redeemable for its reward basket."
-          : "Development network only. Mock assets have no financial value, and the community token is not redeemable for its reward basket."}
+        {publicEnvironment.isMainnet
+          ? "Tokens, reward assets, smart contracts and liquidity markets carry financial and technical risk. Community tokens are not redeemable for their reward baskets."
+          : isTestnet
+            ? "Robinhood Chain Testnet only. Project-owned mock assets have no real-world value, and the community token is not redeemable for its reward basket."
+            : "Development network only. Mock assets have no financial value, and the community token is not redeemable for its reward basket."}
       </section>
     </main>
   );

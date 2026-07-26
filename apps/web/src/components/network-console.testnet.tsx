@@ -479,8 +479,7 @@ export function NetworkConsole({ deployment }: { deployment: Deployment }) {
         let conversionAmount = pending;
         if (isNativeV4) {
           const assetRouter = deployment.contracts.assetRouter;
-          if (!assetRouter)
-            throw new Error("V4 asset router is not configured.");
+          if (!assetRouter) throw new Error("Asset router is not configured.");
           const route = await publicClient.readContract({
             address: assetRouter,
             abi: v4AssetRouterAbi,
@@ -609,7 +608,7 @@ export function NetworkConsole({ deployment }: { deployment: Deployment }) {
           <strong>{compact(state.base)}</strong>
         </div>
         <div>
-          <span>{isNativeV4 ? "tRV4" : "tROBYN"}</span>
+          <span>{isNativeV4 ? "Test token" : "tROBYN"}</span>
           <strong>{compact(state.token)}</strong>
         </div>
       </div>

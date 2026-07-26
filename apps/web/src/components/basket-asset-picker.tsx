@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Address } from "viem";
+import { publicEnvironment } from "@/lib/public-environment";
 import {
   compareBasketAssets,
   type BasketAssetVerification,
@@ -371,7 +372,7 @@ export function BasketAssetPicker({
           <div className="asset-picker-panel" ref={panelRef}>
             <header>
               <div>
-                <p className="eyebrow">Robinhood Testnet</p>
+                <p className="eyebrow">{publicEnvironment.networkLabel}</p>
                 <h3>Choose a reward asset</h3>
               </div>
               <button

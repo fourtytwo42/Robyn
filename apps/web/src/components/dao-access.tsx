@@ -84,22 +84,22 @@ export function DaoAccessGate({
   const content = {
     disconnected: {
       eyebrow: "Wallet-gated governance",
-      title: "Connect an RDAO wallet to enter.",
-      body: "DAO governance and member rewards are available only to connected wallets that hold RDAO.",
+      title: "Connect a DAO-member wallet to enter.",
+      body: "DAO governance and member rewards are available only to connected wallets that hold the governance token.",
     },
     checking: {
       eyebrow: "Checking membership",
-      title: "Verifying your RDAO balance…",
-      body: "Sherwood Forest is reading the connected wallet's balance from Robinhood Testnet.",
+      title: "Verifying your governance-token balance…",
+      body: "Sherwood Forest is reading the connected wallet's balance from the configured network.",
     },
     nonmember: {
-      eyebrow: "RDAO membership required",
-      title: "This wallet does not hold RDAO.",
-      body: "DAO navigation and member controls stay hidden until the connected wallet owns at least one unit of RDAO.",
+      eyebrow: "DAO membership required",
+      title: "This wallet does not hold the governance token.",
+      body: "DAO navigation and member controls stay hidden until the connected wallet owns at least one governance token.",
     },
     unavailable: {
       eyebrow: "Membership unavailable",
-      title: "RDAO ownership could not be verified.",
+      title: "DAO membership could not be verified.",
       body: "DAO access fails closed when the chain balance cannot be confirmed. Please retry after the RPC recovers.",
     },
     member: { eyebrow: "", title: "", body: "" },

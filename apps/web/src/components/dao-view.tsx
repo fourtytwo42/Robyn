@@ -331,16 +331,14 @@ export function DaoView({
         <>
           <div className="dao-metrics">
             <article className="metric-card">
-              <span>Your RDAO</span>
-              <strong>
-                {tokenAmount(overview.account?.balance ?? "0")} RDAO
-              </strong>
+              <span>Your governance tokens</span>
+              <strong>{tokenAmount(overview.account?.balance ?? "0")}</strong>
               <small>Transferable reward membership</small>
             </article>
             <article className="metric-card">
               <span>Voting power</span>
               <strong>
-                {tokenAmount(overview.account?.votingPower ?? "0")} RDAO
+                {tokenAmount(overview.account?.votingPower ?? "0")}
               </strong>
               <small>
                 {overview.account?.delegate === account
@@ -353,7 +351,7 @@ export function DaoView({
               <strong>
                 {tokenAmount(overview.account?.claimableRewards ?? "0", 6)} ETH
               </strong>
-              <small>RDAO member rewards</small>
+              <small>DAO member rewards</small>
             </article>
             <article className="metric-card">
               <span>Treasury</span>
@@ -383,7 +381,8 @@ export function DaoView({
                   <b>{percentage(overview.feePolicy.creatorBps)}</b> creator ETH
                 </li>
                 <li>
-                  <b>{percentage(overview.feePolicy.daoRewardsBps)}</b> RDAO ETH
+                  <b>{percentage(overview.feePolicy.daoRewardsBps)}</b> DAO
+                  member ETH
                 </li>
                 <li>
                   <b>{percentage(overview.feePolicy.treasuryBps)}</b> treasury
@@ -401,13 +400,11 @@ export function DaoView({
               <dl className="dao-definition-list">
                 <div>
                   <dt>Proposal threshold</dt>
-                  <dd>
-                    {tokenAmount(overview.governance.proposalThreshold)} RDAO
-                  </dd>
+                  <dd>{tokenAmount(overview.governance.proposalThreshold)}</dd>
                 </div>
                 <div>
                   <dt>Current quorum</dt>
-                  <dd>{tokenAmount(overview.governance.currentQuorum)} RDAO</dd>
+                  <dd>{tokenAmount(overview.governance.currentQuorum)}</dd>
                 </div>
                 <div>
                   <dt>Proposal delay</dt>
@@ -446,8 +443,8 @@ export function DaoView({
               claimable
             </h2>
             <p>
-              Rewards already accrued remain yours after transferring RDAO.
-              Future deposits follow the new holder.
+              Rewards already accrued remain yours after transferring governance
+              tokens. Future deposits follow the new holder.
             </p>
             <div className="action-row">
               <button
@@ -461,7 +458,7 @@ export function DaoView({
                   )
                 }
               >
-                Claim RDAO rewards
+                Claim DAO rewards
               </button>
             </div>
           </article>
@@ -804,7 +801,7 @@ export function DaoView({
           <div className="table-heading">
             <div>
               <p className="eyebrow">Onchain directory</p>
-              <h2>{members.length} RDAO holders</h2>
+              <h2>{members.length} governance-token holders</h2>
             </div>
           </div>
           <div className="dao-table" role="table">
@@ -817,7 +814,7 @@ export function DaoView({
             {members.map((member) => (
               <div className="dao-table-row" role="row" key={member.address}>
                 <code title={member.address}>{short(member.address)}</code>
-                <span>{tokenAmount(member.balance)} RDAO</span>
+                <span>{tokenAmount(member.balance)}</span>
                 <span>{tokenAmount(member.votingPower)}</span>
                 <code title={member.delegate}>{short(member.delegate)}</code>
               </div>

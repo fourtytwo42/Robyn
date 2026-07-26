@@ -4,13 +4,17 @@ import { fileURLToPath } from "node:url";
 
 const webRoot = path.dirname(fileURLToPath(import.meta.url));
 const networkMode = process.env.ROBYN_NETWORK_MODE ?? "devnet";
-if (networkMode !== "devnet" && networkMode !== "testnet") {
+if (
+  networkMode !== "devnet" &&
+  networkMode !== "testnet" &&
+  networkMode !== "mainnet"
+) {
   throw new Error(`Unsupported ROBYN_NETWORK_MODE: ${networkMode}`);
 }
 const deploymentPath =
   process.env.ROBYN_DEPLOYMENT_PATH ??
   path.resolve(webRoot, "../../deployments/31337.json");
-const suffix = networkMode === "testnet" ? "testnet" : "devnet";
+const suffix = networkMode === "devnet" ? "devnet" : "testnet";
 const publicRpcUrl =
   process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
   "https://rpc.testnet.chain.robinhood.com";
@@ -42,7 +46,7 @@ const nextConfig: NextConfig = {
     ];
   },
   async headers() {
-    if (networkMode !== "testnet") return [];
+    if (networkMode === "devnet") return [];
     return [
       {
         source: "/(.*)",
@@ -74,7 +78,7 @@ const nextConfig: NextConfig = {
     // two numeric server-module IDs. Named IDs derive from stable module
     // identities and keep exact release bundles byte-for-byte reproducible.
     config.optimization.moduleIds = "named";
-    if (networkMode === "testnet") {
+    if (networkMode !== "devnet") {
       // Optional React Native persistence and pretty-print logging are not
       // browser capabilities. Their callers provide web-safe fallbacks.
       config.resolve.alias["@react-native-async-storage/async-storage"] = false;
