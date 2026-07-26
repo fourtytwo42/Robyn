@@ -1,0 +1,2003 @@
+{
+  "manifest": "/tmp/robyn-46630-v4-schema9-public.json",
+  "checkedAt": "2026-07-26T08:24:01.165Z",
+  "checks": [
+    {
+      "label": "RPC chain ID is 46630",
+      "ok": true
+    },
+    {
+      "label": "manifest chain ID is 46630",
+      "ok": true
+    },
+    {
+      "label": "manifest selects Uniswap v4",
+      "ok": true
+    },
+    {
+      "label": "unlisted venue disclosure is exact",
+      "ok": true
+    },
+    {
+      "label": "deployment manifest schema is v9",
+      "ok": true
+    },
+    {
+      "label": "manifest selects the shortened testnet assurance governance profile",
+      "ok": true
+    },
+    {
+      "label": "stateView has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0x7d9c591e0956fd89d98feb4ffcfe8bf1f7a62bd485edd979fa21d104b49878a6"
+    },
+    {
+      "label": "stateView runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "timelock has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0x33fff3793fed774ff49c7210fd871fc8d00d8b70edf4ee134d7a10c438718850"
+    },
+    {
+      "label": "timelock runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "daoToken has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0x5ddb67fc9f695066559f118e0fa6f5857ec0bffc477360ba221d54343020e900"
+    },
+    {
+      "label": "daoToken runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "governor has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0xa971d1dcae089d280135e5e3e5cf945d2cc1add87b5eeb69092f9ac72b987baf"
+    },
+    {
+      "label": "governor runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "assetRouter has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0x6e9cd3dbdcad552b0e4d9a2fdd4fd64c6e97ea74e94f45ebf71250283e4a1c86"
+    },
+    {
+      "label": "assetRouter runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "testAssetLiquidityLocker has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0x90c11c09abcb3a91cf05022e000060f66d5cf84b966682a3a243b23d0a7fb216"
+    },
+    {
+      "label": "testAssetLiquidityLocker runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "launchDeployer has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0x233c69b9381bb2c1b9bf76fa0e06c637a8eaa63946aeae839e647ff472e5f199"
+    },
+    {
+      "label": "launchDeployer runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "launchFactory has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0x827bc912a78c6214773d35df4f43dee0f72811930fa0650eef4bd8f9a406fb8c"
+    },
+    {
+      "label": "launchFactory runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "protocolFeeRouter has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0x61b4ff2976ac5091042d1d57ad2ac0cf5bad4f1c84455a27cffd820623a11028"
+    },
+    {
+      "label": "protocolFeeRouter runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "oracleHook has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0x2c3e8cc9e10d1fa1e70617a43c6734a07bd29f71029fb0d9c438d76ad2c71b93"
+    },
+    {
+      "label": "oracleHook runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "adapterDeployer has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0x30bc5fe9e739909fe5817ebf563227c97d56567dcd576c08ec6bfd5b998c5098"
+    },
+    {
+      "label": "adapterDeployer runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "lockerDeployer has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0x2ff3a8d6e303442d1358000c32e2493719a0ad2159ade6391a8fd88204314d81"
+    },
+    {
+      "label": "lockerDeployer runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "marketDeployer has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0x209ba98e21dea9e12c663f389a71e17012b2bca1b59e938331910274b1c1de34"
+    },
+    {
+      "label": "marketDeployer runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "marketFactory has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0x6a3351d90ae0b75af1e5bc4eb223b1d0eb9bb427610f0ea001d06bc25376962b"
+    },
+    {
+      "label": "marketFactory runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "atomicLaunchCoordinator has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0xe6c73539dea0a3acc850685f93e4bcf12315e4da7f945e429bbdb20b0dbba18c"
+    },
+    {
+      "label": "atomicLaunchCoordinator runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "genesisToken has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0xf67977740a737cdd0f6f784f57755c870acad45193113a7a44ce54f44f8d7876"
+    },
+    {
+      "label": "genesisToken runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "genesisVault has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0x3529b05861d573964572689508155b24691d4a82eec15fa61b5fd65307689203"
+    },
+    {
+      "label": "genesisVault runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "genesisMarket has runtime code",
+      "ok": true,
+      "runtimeCodeHash": "0xc04a0b2846abd666eb3df5b4ebc11477c8379da59d7f9b54ef67949f0bdb8eb3"
+    },
+    {
+      "label": "genesisMarket runtime hash matches manifest",
+      "ok": true
+    },
+    {
+      "label": "stateView deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "stateView deployment transaction created the manifest address",
+      "ok": true
+    },
+    {
+      "label": "timelock deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "timelock deployment transaction created the manifest address",
+      "ok": true
+    },
+    {
+      "label": "daoToken deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "daoToken deployment transaction created the manifest address",
+      "ok": true
+    },
+    {
+      "label": "governor deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "governor deployment transaction created the manifest address",
+      "ok": true
+    },
+    {
+      "label": "assetRouter deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "assetRouter deployment transaction created the manifest address",
+      "ok": true
+    },
+    {
+      "label": "launchDeployer deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "launchDeployer deployment transaction created the manifest address",
+      "ok": true
+    },
+    {
+      "label": "launchFactory deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "launchFactory deployment transaction created the manifest address",
+      "ok": true
+    },
+    {
+      "label": "protocolFeeRouter deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "protocolFeeRouter deployment transaction created the manifest address",
+      "ok": true
+    },
+    {
+      "label": "oracleHook deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "adapterDeployer deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "adapterDeployer deployment transaction created the manifest address",
+      "ok": true
+    },
+    {
+      "label": "lockerDeployer deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "lockerDeployer deployment transaction created the manifest address",
+      "ok": true
+    },
+    {
+      "label": "marketDeployer deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "marketDeployer deployment transaction created the manifest address",
+      "ok": true
+    },
+    {
+      "label": "marketFactory deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "marketFactory deployment transaction created the manifest address",
+      "ok": true
+    },
+    {
+      "label": "atomicLaunchCoordinator deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "atomicLaunchCoordinator deployment transaction created the manifest address",
+      "ok": true
+    },
+    {
+      "label": "genesis deployment transaction succeeded",
+      "ok": true
+    },
+    {
+      "label": "all configuration transactions are frozen",
+      "ok": true
+    },
+    {
+      "label": "configuration transactions contain no duplicates",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 1 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 2 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 3 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 4 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 5 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 6 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 7 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 8 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 9 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 10 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 11 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 12 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 13 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 14 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 15 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 16 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 17 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 18 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 19 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 20 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 21 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 22 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 23 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 24 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 25 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 26 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 27 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 28 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 29 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 30 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 31 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 32 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 33 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 34 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 35 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 36 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 37 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 38 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 39 succeeded",
+      "ok": true
+    },
+    {
+      "label": "configuration transaction 40 succeeded",
+      "ok": true
+    },
+    {
+      "label": "genesis transaction is frozen consistently",
+      "ok": true
+    },
+    {
+      "label": "all 24 catalog routes are frozen",
+      "ok": true
+    },
+    {
+      "label": "five exact faucet-stock routes are frozen",
+      "ok": true
+    },
+    {
+      "label": "18 mock routes and WETH route are frozen",
+      "ok": true
+    },
+    {
+      "label": "route assets are unique by address",
+      "ok": true
+    },
+    {
+      "label": "TSLA route is ready",
+      "ok": true
+    },
+    {
+      "label": "TSLA route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "TSLA route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "TSLA route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "TSLA pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "TSLA enforces its frozen faucet-stock reference price",
+      "ok": true
+    },
+    {
+      "label": "TSLA reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "TSLA reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "TSLA freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "AMD route is ready",
+      "ok": true
+    },
+    {
+      "label": "AMD route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "AMD route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "AMD route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "AMD pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "AMD enforces its frozen faucet-stock reference price",
+      "ok": true
+    },
+    {
+      "label": "AMD reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "AMD reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "AMD freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "AMZN route is ready",
+      "ok": true
+    },
+    {
+      "label": "AMZN route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "AMZN route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "AMZN route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "AMZN pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "AMZN enforces its frozen faucet-stock reference price",
+      "ok": true
+    },
+    {
+      "label": "AMZN reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "AMZN reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "AMZN freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "NFLX route is ready",
+      "ok": true
+    },
+    {
+      "label": "NFLX route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "NFLX route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "NFLX route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "NFLX pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "NFLX enforces its frozen faucet-stock reference price",
+      "ok": true
+    },
+    {
+      "label": "NFLX reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "NFLX reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "NFLX freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "PLTR route is ready",
+      "ok": true
+    },
+    {
+      "label": "PLTR route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "PLTR route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "PLTR route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "PLTR pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "PLTR enforces its frozen faucet-stock reference price",
+      "ok": true
+    },
+    {
+      "label": "PLTR reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "PLTR reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "PLTR freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "AAPL route is ready",
+      "ok": true
+    },
+    {
+      "label": "AAPL route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "AAPL route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "AAPL route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "AAPL pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "AAPL disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "AAPL reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "AAPL reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "AAPL freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "COIN route is ready",
+      "ok": true
+    },
+    {
+      "label": "COIN route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "COIN route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "COIN route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "COIN pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "COIN disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "COIN reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "COIN reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "COIN freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "COST route is ready",
+      "ok": true
+    },
+    {
+      "label": "COST route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "COST route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "COST route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "COST pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "COST disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "COST reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "COST reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "COST freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "GOOGL route is ready",
+      "ok": true
+    },
+    {
+      "label": "GOOGL route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "GOOGL route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "GOOGL route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "GOOGL pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "GOOGL disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "GOOGL reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "GOOGL reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "GOOGL freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "META route is ready",
+      "ok": true
+    },
+    {
+      "label": "META route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "META route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "META route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "META pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "META disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "META reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "META reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "META freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "MSFT route is ready",
+      "ok": true
+    },
+    {
+      "label": "MSFT route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "MSFT route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "MSFT route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "MSFT pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "MSFT disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "MSFT reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "MSFT reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "MSFT freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "MSTR route is ready",
+      "ok": true
+    },
+    {
+      "label": "MSTR route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "MSTR route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "MSTR route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "MSTR pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "MSTR disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "MSTR reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "MSTR reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "MSTR freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "NVDA route is ready",
+      "ok": true
+    },
+    {
+      "label": "NVDA route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "NVDA route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "NVDA route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "NVDA pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "NVDA disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "NVDA reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "NVDA reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "NVDA freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "RDDT route is ready",
+      "ok": true
+    },
+    {
+      "label": "RDDT route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "RDDT route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "RDDT route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "RDDT pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "RDDT disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "RDDT reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "RDDT reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "RDDT freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "RIVN route is ready",
+      "ok": true
+    },
+    {
+      "label": "RIVN route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "RIVN route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "RIVN route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "RIVN pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "RIVN disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "RIVN reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "RIVN reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "RIVN freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "SOFI route is ready",
+      "ok": true
+    },
+    {
+      "label": "SOFI route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "SOFI route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "SOFI route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "SOFI pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "SOFI disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "SOFI reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "SOFI reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "SOFI freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "QQQ route is ready",
+      "ok": true
+    },
+    {
+      "label": "QQQ route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "QQQ route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "QQQ route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "QQQ pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "QQQ disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "QQQ reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "QQQ reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "QQQ freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "SGOV route is ready",
+      "ok": true
+    },
+    {
+      "label": "SGOV route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "SGOV route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "SGOV route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "SGOV pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "SGOV disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "SGOV reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "SGOV reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "SGOV freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "SLV route is ready",
+      "ok": true
+    },
+    {
+      "label": "SLV route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "SLV route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "SLV route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "SLV pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "SLV disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "SLV reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "SLV reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "SLV freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "SOXX route is ready",
+      "ok": true
+    },
+    {
+      "label": "SOXX route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "SOXX route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "SOXX route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "SOXX pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "SOXX disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "SOXX reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "SOXX reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "SOXX freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "SPY route is ready",
+      "ok": true
+    },
+    {
+      "label": "SPY route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "SPY route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "SPY route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "SPY pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "SPY disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "SPY reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "SPY reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "SPY freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "USO route is ready",
+      "ok": true
+    },
+    {
+      "label": "USO route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "USO route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "USO route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "USO pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "USO disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "USO reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "USO reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "USO freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "XLK route is ready",
+      "ok": true
+    },
+    {
+      "label": "XLK route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "XLK route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "XLK route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "XLK pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "XLK disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "XLK reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "XLK reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "XLK freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "WETH route is ready",
+      "ok": true
+    },
+    {
+      "label": "WETH route uses the 1% fee tier",
+      "ok": true
+    },
+    {
+      "label": "WETH route uses tick spacing 200",
+      "ok": true
+    },
+    {
+      "label": "WETH route hook matches manifest",
+      "ok": true
+    },
+    {
+      "label": "WETH pool ID matches frozen provenance",
+      "ok": true
+    },
+    {
+      "label": "WETH disables fixed reference pricing for its controlled synthetic route",
+      "ok": true
+    },
+    {
+      "label": "WETH reference tick matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "WETH reference deviation matches the manifest",
+      "ok": true
+    },
+    {
+      "label": "WETH freezes the 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "asset router enforces a 1% protected-route slippage ceiling",
+      "ok": true
+    },
+    {
+      "label": "test-asset liquidity locker configuration is sealed",
+      "ok": true
+    },
+    {
+      "label": "AAPL names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "AAPL locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "AAPL has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "AAPL locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "AAPL locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "COIN names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "COIN locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "COIN has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "COIN locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "COIN locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "COST names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "COST locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "COST has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "COST locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "COST locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "GOOGL names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "GOOGL locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "GOOGL has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "GOOGL locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "GOOGL locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "META names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "META locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "META has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "META locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "META locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "MSFT names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "MSFT locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "MSFT has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "MSFT locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "MSFT locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "MSTR names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "MSTR locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "MSTR has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "MSTR locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "MSTR locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "NVDA names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "NVDA locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "NVDA has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "NVDA locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "NVDA locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "RDDT names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "RDDT locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "RDDT has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "RDDT locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "RDDT locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "RIVN names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "RIVN locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "RIVN has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "RIVN locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "RIVN locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "SOFI names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "SOFI locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "SOFI has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "SOFI locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "SOFI locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "QQQ names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "QQQ locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "QQQ has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "QQQ locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "QQQ locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "SGOV names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "SGOV locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "SGOV has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "SGOV locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "SGOV locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "SLV names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "SLV locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "SLV has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "SLV locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "SLV locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "SOXX names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "SOXX locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "SOXX has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "SOXX locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "SOXX locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "SPY names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "SPY locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "SPY has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "SPY locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "SPY locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "USO names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "USO locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "USO has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "USO locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "USO locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "XLK names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "XLK locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "XLK has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "XLK locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "XLK locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "WETH names the immutable test-asset liquidity locker",
+      "ok": true
+    },
+    {
+      "label": "WETH locked position asset matches",
+      "ok": true
+    },
+    {
+      "label": "WETH has nonzero permanently locked liquidity",
+      "ok": true
+    },
+    {
+      "label": "WETH locked native principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "WETH locked token principal is nonzero",
+      "ok": true
+    },
+    {
+      "label": "asset catalog contains 24 entries",
+      "ok": true
+    },
+    {
+      "label": "asset catalog distinguishes the five faucet stocks",
+      "ok": true
+    },
+    {
+      "label": "asset catalog distinguishes 18 Robyn mocks",
+      "ok": true
+    },
+    {
+      "label": "asset catalog distinguishes the Robyn-controlled WETH route",
+      "ok": true
+    },
+    {
+      "label": "StateView references the shared PoolManager",
+      "ok": true
+    },
+    {
+      "label": "launch deployer controller is the launch factory",
+      "ok": true
+    },
+    {
+      "label": "launch factory coordinator is bound",
+      "ok": true
+    },
+    {
+      "label": "market factory coordinator is bound",
+      "ok": true
+    },
+    {
+      "label": "fee router coordinator is bound",
+      "ok": true
+    },
+    {
+      "label": "asset-router launch registrar is the market factory",
+      "ok": true
+    },
+    {
+      "label": "oracle-hook registrar is the market factory",
+      "ok": true
+    },
+    {
+      "label": "fee-and-oracle hook references the canonical fee router",
+      "ok": true
+    },
+    {
+      "label": "fee-and-oracle hook charges an immutable one percent protocol fee",
+      "ok": true
+    },
+    {
+      "label": "oracle-hook deployment domain matches manifest",
+      "ok": true
+    },
+    {
+      "label": "adapterDeployer controller is the market factory",
+      "ok": true
+    },
+    {
+      "label": "lockerDeployer controller is the market factory",
+      "ok": true
+    },
+    {
+      "label": "marketDeployer controller is the market factory",
+      "ok": true
+    },
+    {
+      "label": "oracle-hook address exposes only required permission bits",
+      "ok": true
+    },
+    {
+      "label": "RDAO supply is exactly one billion",
+      "ok": true
+    },
+    {
+      "label": "manifest records the fixed 100% bootstrap RDAO allocation",
+      "ok": true
+    },
+    {
+      "label": "RDAO reward depositor is the protocol fee router",
+      "ok": true
+    },
+    {
+      "label": "timelock is excluded from RDAO rewards",
+      "ok": true
+    },
+    {
+      "label": "protocolFeeRouter is excluded from RDAO rewards",
+      "ok": true
+    },
+    {
+      "label": "governor is excluded from RDAO rewards",
+      "ok": true
+    },
+    {
+      "label": "atomicLaunchCoordinator is excluded from RDAO rewards",
+      "ok": true
+    },
+    {
+      "label": "marketFactory is excluded from RDAO rewards",
+      "ok": true
+    },
+    {
+      "label": "launchFactory is excluded from RDAO rewards",
+      "ok": true
+    },
+    {
+      "label": "launchDeployer is excluded from RDAO rewards",
+      "ok": true
+    },
+    {
+      "label": "assetRouter is excluded from RDAO rewards",
+      "ok": true
+    },
+    {
+      "label": "oracleHook is excluded from RDAO rewards",
+      "ok": true
+    },
+    {
+      "label": "adapterDeployer is excluded from RDAO rewards",
+      "ok": true
+    },
+    {
+      "label": "lockerDeployer is excluded from RDAO rewards",
+      "ok": true
+    },
+    {
+      "label": "marketDeployer is excluded from RDAO rewards",
+      "ok": true
+    },
+    {
+      "label": "testAssetLiquidityLocker is excluded from RDAO rewards",
+      "ok": true
+    },
+    {
+      "label": "testnet Governor voting delay is 10 minutes",
+      "ok": true
+    },
+    {
+      "label": "testnet Governor voting period is 30 minutes",
+      "ok": true
+    },
+    {
+      "label": "testnet Governor proposal threshold is one percent",
+      "ok": true
+    },
+    {
+      "label": "testnet Timelock delay is 10 minutes",
+      "ok": true
+    },
+    {
+      "label": "manifest governance timing matches live contracts",
+      "ok": true
+    },
+    {
+      "label": "Governor is the timelock proposer",
+      "ok": true
+    },
+    {
+      "label": "guardian is the timelock canceller",
+      "ok": true
+    },
+    {
+      "label": "timelock execution is permissionless",
+      "ok": true
+    },
+    {
+      "label": "deployer renounced timelock administration",
+      "ok": true
+    },
+    {
+      "label": "genesis freezes its three basket assets",
+      "ok": true
+    },
+    {
+      "label": "genesis freezes a 100 percent basket allocation",
+      "ok": true
+    },
+    {
+      "label": "receipt-derived token matches launch factory",
+      "ok": true
+    },
+    {
+      "label": "canonical creator matches the receipt",
+      "ok": true
+    },
+    {
+      "label": "genesis basket leg 1 address matches",
+      "ok": true
+    },
+    {
+      "label": "genesis basket leg 1 weight matches",
+      "ok": true
+    },
+    {
+      "label": "genesis basket leg 2 address matches",
+      "ok": true
+    },
+    {
+      "label": "genesis basket leg 2 weight matches",
+      "ok": true
+    },
+    {
+      "label": "genesis basket leg 3 address matches",
+      "ok": true
+    },
+    {
+      "label": "genesis basket leg 3 weight matches",
+      "ok": true
+    },
+    {
+      "label": "receipt-derived market matches market factory",
+      "ok": true
+    },
+    {
+      "label": "receipt-derived adapter matches market factory",
+      "ok": true
+    },
+    {
+      "label": "receipt-derived pool ID matches market factory",
+      "ok": true
+    },
+    {
+      "label": "genesis bonding market is seeded",
+      "ok": true
+    },
+    {
+      "label": "genesis begins on the bonding curve",
+      "ok": true
+    },
+    {
+      "label": "adapter is bound to the receipt-derived immutable locker",
+      "ok": true
+    },
+    {
+      "label": "genesis pool is registered in the oracle hook",
+      "ok": true
+    },
+    {
+      "label": "genesis fee account binds the canonical fee-and-oracle hook",
+      "ok": true
+    },
+    {
+      "label": "manifest freezes one percent LP plus one percent Sherwood fees",
+      "ok": true
+    },
+    {
+      "label": "genesis v4 pool is initialized",
+      "ok": true,
+      "sqrtPriceX96": "32049370053557356139951831179335179",
+      "tick": 258222
+    },
+    {
+      "label": "genesis token exposes immutable ERC-1046 metadata",
+      "ok": true
+    }
+  ],
+  "failures": []
+}
