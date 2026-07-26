@@ -4,6 +4,13 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- `/whitepaper` is the public Sherwood Compact: a detailed, visually led
+  explanation of atomic launch, bonding, graduation, immutable baskets,
+  50/25/20/5 fee routing, holder/creator/RDAO claims, RDAO governance,
+  ERC-1046/IPFS identity, security boundaries, environment-specific economics,
+  and current testnet/mainnet status. The original generated hero uses the
+  public-domain Robin Hood and Merry Men archetype without copying any film or
+  franchise design. `Whitepaper` is a primary navigation item.
 - The accepted Robinhood mainnet bonding policy is 6 ETH net collateral,
   800 million tokens sold on the curve, 200 million tokens reserved for locked
   liquidity, a 0.5 ETH maximum individual curve buy, and a 27.5 ETH terminal
