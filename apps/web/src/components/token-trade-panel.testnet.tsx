@@ -654,7 +654,7 @@ export function NetworkTokenTradePanel({
                 ? "Quoting onchain…"
                 : authoritativeQuote.state === "unavailable"
                   ? authoritativeQuote.message
-                  : "—"
+                  : "Unavailable"
             : `${indicativeOutput.toLocaleString(undefined, {
                 maximumFractionDigits: 2,
               })} ${side === "buy" ? symbol : "mUSD"}`}

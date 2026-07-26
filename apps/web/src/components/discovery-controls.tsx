@@ -57,7 +57,7 @@ export function DiscoveryControls({
               <option value="">Any asset</option>
               {assets.map((asset) => (
                 <option value={asset.value} key={asset.value}>
-                  {asset.symbol} — {asset.name}
+                  {asset.symbol} · {asset.name}
                 </option>
               ))}
             </select>

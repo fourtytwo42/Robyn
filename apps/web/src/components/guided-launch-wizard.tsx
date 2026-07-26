@@ -835,7 +835,7 @@ export function GuidedLaunchWizard(props: WizardProps) {
                   <div>
                     <span>Token</span>
                     <strong>
-                      {name || "Untitled"} · ${symbol || "—"}
+                      {name || "Untitled"} · ${symbol || "Ticker pending"}
                     </strong>
                   </div>
                   <div>

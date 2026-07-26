@@ -191,7 +191,7 @@ export function MarketCard({
               }
             >
               {windowChange === null
-                ? `— ${windowLabel}`
+                ? `No data ${windowLabel}`
                 : `${windowChange > 0 ? "+" : ""}${(windowChange / 100).toFixed(
                     2,
                   )}% ${windowLabel}`}

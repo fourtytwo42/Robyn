@@ -47,7 +47,7 @@ function MarketLink({
         }
       >
         {change === null
-          ? "— 24h"
+          ? "No data 24h"
           : `${change > 0 ? "+" : ""}${(change / 100).toFixed(2)}%`}
       </small>
     </Link>
