@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { LaunchList, LaunchRecord } from "@/lib/data-api";
 import { useRobynTestnetWallet } from "./robyn-testnet-wallet";
 import { resolveDataApiUrl } from "@/lib/data-api-url";
+import { isActivePortfolioPosition } from "@/lib/portfolio-position-policy";
 
 const tokenAbi = [
   {
@@ -248,14 +249,7 @@ export function NetworkPortfolioView({
       }),
     );
     setPositions(
-      next.filter(
-        (position) =>
-          position.balance > 0n ||
-          position.pendingBase > 0n ||
-          position.rewards.some(
-            (reward) => reward.claimable > 0n || reward.claimed > 0n,
-          ),
-      ),
+      next.filter((position) => isActivePortfolioPosition(position)),
     );
     setStatus(
       publicView
@@ -311,8 +305,8 @@ export function NetworkPortfolioView({
         <p className="empty-state">Loading portfolio…</p>
       ) : positions.length === 0 ? (
         <p className="empty-state">
-          This wallet has no held launch tokens, claimable rewards, pending
-          launch fees or claimed history.
+          This wallet has no held launch tokens or currently claimable basket
+          rewards. Tokens created by this wallet appear in Created tokens above.
         </p>
       ) : (
         <section className="portfolio-grid" aria-label="Cross-launch portfolio">
