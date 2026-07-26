@@ -295,9 +295,6 @@ export function NetworkPortfolioView({
           <p>{publicView ? "Public wallet" : "Connected wallet"}</p>
           <code>{wallet}</code>
         </div>
-        <button className="button" onClick={() => void refresh()}>
-          Refresh onchain state
-        </button>
       </section>
       <p className="transaction-status" role="status">
         {status}

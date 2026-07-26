@@ -11,10 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Deployment } from "@/lib/deployment";
 import { TokenCardArt } from "@/components/launchpad-visuals";
 import { GuidedLaunchWizard } from "@/components/guided-launch-wizard";
-import {
-  ROBINHOOD_TESTNET_FAUCET_URL,
-  useRobynTestnetWallet,
-} from "./robyn-testnet-wallet";
+import { useRobynTestnetWallet } from "./robyn-testnet-wallet";
 import { normalizeWalletError } from "@/lib/wallet-policy";
 import type { BasketAsset } from "@/components/basket-asset-picker";
 import { publicEnvironment } from "@/lib/public-environment";
@@ -24,7 +21,7 @@ const atomicLaunchCoordinatorAbi = [
   {
     type: "function",
     name: "createLaunch",
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     inputs: [
       {
         name: "request",
@@ -546,7 +543,20 @@ export function NetworkLaunchpadConsole({
     throw new Error("Launch succeeded, but artwork indexing timed out.");
   }
 
-  async function createLaunch(artworkMediaId?: string, description?: string) {
+  async function createLaunch(draft: {
+    artworkMediaId?: string;
+    description: string;
+    website: string;
+    xUrl: string;
+    initialPurchaseNative: string;
+  }) {
+    const {
+      artworkMediaId,
+      description,
+      website,
+      xUrl,
+      initialPurchaseNative,
+    } = draft;
     if (!account || !walletClient)
       return setStatus("Connect and fund a wallet first.");
     if (!name.trim() || !/^[A-Z0-9]{2,8}$/.test(symbol.trim().toUpperCase()))
@@ -571,20 +581,63 @@ export function NetworkLaunchpadConsole({
       const coordinator = deployment.contracts.atomicLaunchCoordinator;
       if (!coordinator)
         throw new Error("Atomic launch coordinator is not configured.");
-      if (!artworkMediaId)
-        throw new Error(
-          "Add token artwork so immutable IPFS metadata can be prepared.",
-        );
-      setStatus("Pinning sanitized artwork and preparing ERC-1046 metadata...");
+      setStatus("Preparing immutable token metadata...");
+      const sessionResponse = await fetch("/api/auth/session", {
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const sessionBody = (await sessionResponse.json()) as {
+        data?: { address: Address } | null;
+      };
+      if (
+        !sessionBody.data ||
+        sessionBody.data.address.toLowerCase() !== account.toLowerCase()
+      ) {
+        setStatus("Confirm metadata ownership in your wallet...");
+        const nonceResponse = await fetch("/api/auth/nonce", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ address: account }),
+        });
+        const nonceBody = (await nonceResponse.json()) as {
+          data?: { message: string };
+          error?: string;
+        };
+        if (!nonceResponse.ok || !nonceBody.data)
+          throw new Error(nonceBody.error ?? "metadata_auth_failed");
+        const signature = await walletClient.signMessage({
+          account,
+          message: nonceBody.data.message,
+        });
+        const verifyResponse = await fetch("/api/auth/verify", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            message: nonceBody.data.message,
+            signature,
+          }),
+        });
+        if (!verifyResponse.ok) {
+          const verifyBody = (await verifyResponse.json()) as {
+            error?: string;
+          };
+          throw new Error(verifyBody.error ?? "metadata_auth_failed");
+        }
+      }
+      setStatus("Pinning artwork and preparing ERC-1046 metadata...");
       const preparedResponse = await fetch("/api/launch-metadata/prepare", {
         method: "POST",
         credentials: "same-origin",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          mediaId: artworkMediaId,
+          ...(artworkMediaId ? { mediaId: artworkMediaId } : {}),
           name: name.trim(),
           symbol: symbol.trim().toUpperCase(),
-          description: description?.trim() ?? "",
+          description: description.trim(),
+          website: website.trim(),
+          xUrl: xUrl.trim(),
         }),
       });
       const preparedBody = (await preparedResponse.json()) as {
@@ -598,7 +651,7 @@ export function NetworkLaunchpadConsole({
       if (!preparedResponse.ok || !preparedBody.data)
         throw new Error(preparedBody.error ?? "metadata_preparation_failed");
       if (
-        !["pinned", "disabled", "unavailable"].includes(
+        !["pinned", "disabled", "unavailable", "queued"].includes(
           preparedBody.data.remote_pin_status,
         )
       )
@@ -613,31 +666,52 @@ export function NetworkLaunchpadConsole({
         metadataUri: preparedBody.data.metadata_uri,
         userSalt: randomLaunchSalt(),
       } as const;
-      setStatus("Simulating the complete atomic launch...");
+      let initialPurchaseValue = 0n;
+      try {
+        initialPurchaseValue = parseEther(initialPurchaseNative.trim() || "0");
+      } catch {
+        throw new Error("Enter a valid initial ETH purchase amount.");
+      }
+      if (initialPurchaseValue < 0n)
+        throw new Error("Initial purchase cannot be negative.");
+      setStatus(
+        "Simulating the complete atomic launch and creator purchase...",
+      );
       const simulation = await publicClient.simulateContract({
         address: coordinator,
         abi: atomicLaunchCoordinatorAbi,
         functionName: "createLaunch",
         args: [request],
         account,
+        value: initialPurchaseValue,
       });
       setStatus("Confirm one transaction in your wallet...");
-      const receipt = await submit(simulation.request);
+      const hash = await walletClient.writeContract(simulation.request);
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status !== "success")
+        throw new Error("Transaction reverted.");
       setStatus("Confirming launch identity from its transaction receipt...");
-      const launchLog = receipt.logs.find(
-        (log) => log.address.toLowerCase() === coordinator.toLowerCase(),
-      );
-      if (!launchLog) throw new Error("Atomic launch event was not emitted.");
-      const decoded = decodeEventLog({
-        abi: atomicLaunchCoordinatorAbi,
-        data: launchLog.data,
-        topics: launchLog.topics,
-      });
-      if (
-        decoded.eventName !== "AtomicLaunchCreated" &&
-        decoded.eventName !== "AtomicV4LaunchCreated"
-      )
-        throw new Error("Atomic launch event was not recognized.");
+      const decoded = receipt.logs
+        .filter(
+          (log) => log.address.toLowerCase() === coordinator.toLowerCase(),
+        )
+        .map((log) => {
+          try {
+            return decodeEventLog({
+              abi: atomicLaunchCoordinatorAbi,
+              data: log.data,
+              topics: log.topics,
+            });
+          } catch {
+            return undefined;
+          }
+        })
+        .find(
+          (event) =>
+            event?.eventName === "AtomicLaunchCreated" ||
+            event?.eventName === "AtomicV4LaunchCreated",
+        );
+      if (!decoded) throw new Error("Atomic launch event was not emitted.");
       const token = decoded.args.token;
       setLaunchedToken(token);
       setStatus("Waiting for the canonical launch to be indexed...");
@@ -869,17 +943,8 @@ export function NetworkLaunchpadConsole({
           weights={weights}
           setWeights={setWeights}
           status={status}
-          walletHint={
-            isWrongChain
-              ? `Switch the connected wallet to ${publicEnvironment.networkLabel}.`
-              : "Connect a supported self-custody wallet."
-          }
           walletActionLabel={
-            isWrongChain
-              ? "Switch network"
-              : account
-                ? "Refresh wallet"
-                : "Connect wallet"
+            isWrongChain ? "Switch network" : account ? "" : "Connect wallet"
           }
           onWalletAction={async () => {
             try {
@@ -890,12 +955,12 @@ export function NetworkLaunchpadConsole({
               setStatus(normalizeWalletError(error));
             }
           }}
-          faucetUrl={ROBINHOOD_TESTNET_FAUCET_URL}
           basketAssets={basketAssets}
           setBasketAssets={(assets, nextWeights) => {
             setBasketAssets(assets);
             setWeights(nextWeights);
           }}
+          atomicInitialPurchase
           marketSummary={
             publicEnvironment.isMainnet
               ? "Seeded live market"

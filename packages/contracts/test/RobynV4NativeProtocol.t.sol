@@ -195,6 +195,37 @@ contract RobynV4NativeProtocolTest is Test {
         assertFalse(assetRouter.routeStatus(address(token)).ready);
     }
 
+    function testAtomicLaunchCanIncludeCreatorPurchase() public {
+        uint256 purchase = 0.1 ether;
+        (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch{ value: purchase }(_request(bytes32(uint256(101))));
+
+        uint256 creatorTokens = token.balanceOf(address(this));
+        assertGt(creatorTokens, 0);
+        assertEq(token.balanceOf(address(market)), 1_000_000_000 ether - creatorTokens);
+        assertEq(token.balanceOf(address(coordinator)), 0);
+        assertEq(address(coordinator).balance, 0);
+        assertEq(feeRouter.launchAccount(address(token)).cumulativeNativeFees, 0.001 ether);
+        assertTrue(token.exclusionsSealed());
+        assertFalse(market.graduated());
+    }
+
+    function testOnlyCoordinatorCanUseLaunchPurchasePath() public {
+        (,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(bytes32(uint256(102))));
+        vm.deal(address(0x1234), 1 ether);
+        vm.prank(address(0x1234));
+        vm.expectRevert(RobynV4BondingCurveMarket.Unauthorized.selector);
+        market.buyFor{ value: 0.1 ether }(address(0x1234), 1);
+    }
+
+    function testOversizedInitialPurchaseRollsBackLaunch() public {
+        uint256 countBefore = launchFactory.launchCount();
+        vm.expectRevert(RobynV4LaunchCoordinatorV5.InvalidConfiguration.selector);
+        coordinator.createLaunch{ value: 1.4 ether }(_request(bytes32(uint256(103))));
+        assertEq(launchFactory.launchCount(), countBefore);
+    }
+
     function testOracleHookRejectsZeroInitializer() public {
         vm.expectRevert(RobynV4OracleHook.InvalidConfiguration.selector);
         new RobynV4OracleHook(poolManager, feeRouter, address(0), keccak256("invalid-initializer"));

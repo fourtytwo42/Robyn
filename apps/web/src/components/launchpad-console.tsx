@@ -542,7 +542,14 @@ export function LaunchpadConsole({
     throw new Error("Launch succeeded, but artwork indexing timed out.");
   }
 
-  async function createLaunch(artworkMediaId?: string, description?: string) {
+  async function createLaunch(draft: {
+    artworkMediaId?: string;
+    description: string;
+    website: string;
+    xUrl: string;
+    initialPurchaseNative: string;
+  }) {
+    const { artworkMediaId, description } = draft;
     if (!account || !walletClient)
       return setStatus("Create and fund a session wallet first.");
     if (!name.trim() || !/^[A-Z0-9]{2,8}$/.test(symbol.trim().toUpperCase()))
@@ -786,7 +793,6 @@ export function LaunchpadConsole({
           weights={weights}
           setWeights={setWeights}
           status={status}
-          walletHint="Create a browser-session wallet, then fund it with controlled devnet assets."
           walletActionLabel={
             account ? "Fund session wallet" : "Create session wallet"
           }

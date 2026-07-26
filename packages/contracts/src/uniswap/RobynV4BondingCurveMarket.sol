@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {RobynLaunchToken} from "../RobynLaunchToken.sol";
-import {RobynNativeBasketVaultV2} from "./RobynNativeBasketVaultV2.sol";
-import {RobynNativeProtocolFeeRouterV3} from "./RobynNativeProtocolFeeRouterV3.sol";
-import {RobynV4GraduationAdapter} from "./RobynV4GraduationAdapter.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { RobynLaunchToken } from "../RobynLaunchToken.sol";
+import { RobynNativeBasketVaultV2 } from "./RobynNativeBasketVaultV2.sol";
+import { RobynNativeProtocolFeeRouterV3 } from "./RobynNativeProtocolFeeRouterV3.sol";
+import { RobynV4GraduationAdapter } from "./RobynV4GraduationAdapter.sol";
 
 /// @notice Native-ETH bonding curve that atomically graduates into locked v4 liquidity.
 contract RobynV4BondingCurveMarket is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint16 public constant BPS = 10_000;
-    string public constant CONTRACT_VERSION = "1.0.0";
+    string public constant CONTRACT_VERSION = "1.1.0";
 
     struct CurveConfig {
         uint256 curveTokenAllocation;
@@ -56,10 +56,15 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
     bool public graduated;
 
     event LiquiditySeeded(address indexed provider, uint256 tokenAmount);
-    event Bought(address indexed buyer, uint256 nativeInput, uint256 feeAmount, uint256 tokenOutput);
+    event Bought(
+        address indexed buyer, uint256 nativeInput, uint256 feeAmount, uint256 tokenOutput
+    );
     event Sold(address indexed seller, uint256 tokenInput, uint256 feeAmount, uint256 nativeOutput);
     event CurveState(
-        uint256 virtualTokenReserve, uint256 virtualNativeReserve, uint256 realCurveTokenReserve, uint256 progressBps
+        uint256 virtualTokenReserve,
+        uint256 virtualNativeReserve,
+        uint256 realCurveTokenReserve,
+        uint256 progressBps
     );
     event Graduated(
         bytes32 indexed poolId,
@@ -81,9 +86,9 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         RobynV4GraduationAdapter graduationAdapter_
     ) {
         if (
-            address(launchToken_) == address(0) || address(feeVault_) == address(0) || creator_ == address(0)
-                || seedAuthority_ == address(0) || curve_.curveTokenAllocation == 0
-                || curve_.graduationTokenAllocation == 0
+            address(launchToken_) == address(0) || address(feeVault_) == address(0)
+                || creator_ == address(0) || seedAuthority_ == address(0)
+                || curve_.curveTokenAllocation == 0 || curve_.graduationTokenAllocation == 0
                 || curve_.initialVirtualTokenReserve <= curve_.curveTokenAllocation
                 || curve_.initialVirtualNativeReserve == 0 || curve_.graduationThresholdNative == 0
                 || curve_.curveFeeBps == 0 || curve_.curveFeeBps > 1_000
@@ -109,7 +114,8 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
     }
 
     function bindFeeRouter(RobynNativeProtocolFeeRouterV3 feeRouter_) external {
-        if (msg.sender != seedAuthority && msg.sender != graduationAdapter.marketBindingAuthority()) {
+        if (msg.sender != seedAuthority && msg.sender != graduationAdapter.marketBindingAuthority())
+        {
             revert Unauthorized();
         }
         if (address(feeRouter) != address(0)) revert FeeRouterAlreadyBound();
@@ -123,7 +129,9 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
     function seed(uint256 tokenAmount) external nonReentrant {
         if (msg.sender != seedAuthority) revert Unauthorized();
         if (seeded) revert AlreadySeeded();
-        if (tokenAmount != curveTokenAllocation + graduationTokenAllocation) revert InvalidAmount();
+        if (tokenAmount != curveTokenAllocation + graduationTokenAllocation) {
+            revert InvalidAmount();
+        }
         IERC20(address(launchToken)).safeTransferFrom(msg.sender, address(this), tokenAmount);
         virtualTokenReserve = initialVirtualTokenReserve;
         virtualNativeReserve = initialVirtualNativeReserve;
@@ -148,8 +156,9 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
 
     function nativeRaised() public view returns (uint256) {
         if (graduated) return graduationThresholdNative;
-        return
-            virtualNativeReserve > initialVirtualNativeReserve ? virtualNativeReserve - initialVirtualNativeReserve : 0;
+        return virtualNativeReserve > initialVirtualNativeReserve
+            ? virtualNativeReserve - initialVirtualNativeReserve
+            : 0;
     }
 
     function graduationProgressBps() public view returns (uint256) {
@@ -164,31 +173,63 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         if (nativeInput == 0) revert InvalidAmount();
         feeAmount = Math.mulDiv(nativeInput, feeBps, BPS);
         uint256 netInput = nativeInput - feeAmount;
-        uint256 newTokenReserve =
-            Math.ceilDiv(virtualNativeReserve * virtualTokenReserve, virtualNativeReserve + netInput);
+        uint256 newTokenReserve = Math.ceilDiv(
+            virtualNativeReserve * virtualTokenReserve, virtualNativeReserve + netInput
+        );
         tokenOutput = virtualTokenReserve - newTokenReserve;
         if (tokenOutput > realCurveTokenReserve) tokenOutput = realCurveTokenReserve;
     }
 
-    function quoteSell(uint256 tokenInput) public returns (uint256 feeAmount, uint256 nativeOutput) {
+    function quoteSell(uint256 tokenInput)
+        public
+        returns (uint256 feeAmount, uint256 nativeOutput)
+    {
         if (!seeded) revert NotSeeded();
         if (graduated) return graduationAdapter.quoteSell(uint128(tokenInput));
         if (tokenInput == 0 || realCurveTokenReserve + tokenInput > curveTokenAllocation) {
             revert CurveInventoryExceeded();
         }
-        uint256 newNativeReserve =
-            Math.ceilDiv(virtualNativeReserve * virtualTokenReserve, virtualTokenReserve + tokenInput);
+        uint256 newNativeReserve = Math.ceilDiv(
+            virtualNativeReserve * virtualTokenReserve, virtualTokenReserve + tokenInput
+        );
         uint256 grossOutput = virtualNativeReserve - newNativeReserve;
         feeAmount = Math.mulDiv(grossOutput, feeBps, BPS);
         nativeOutput = grossOutput - feeAmount;
     }
 
-    // All external value paths execute under this non-reentrant entry point;
-    // state and fee liabilities are committed before refunds or graduation.
+    // All external value paths execute under non-reentrant entry points.
+    // State and fee liabilities are committed before refunds or graduation.
     // slither-disable-next-line reentrancy-eth
-    function buy(uint256 minimumTokenOutput) external payable nonReentrant returns (uint256 tokenOutput) {
+    function buy(uint256 minimumTokenOutput)
+        external
+        payable
+        nonReentrant
+        returns (uint256 tokenOutput)
+    {
         if (!seeded) revert NotSeeded();
         if (graduated) return _buyGraduated(minimumTokenOutput);
+        return _buyBonding(msg.sender, payable(msg.sender), minimumTokenOutput);
+    }
+
+    /// @notice One-use launch-time purchase path for the atomic coordinator.
+    function buyFor(address recipient, uint256 minimumTokenOutput)
+        external
+        payable
+        nonReentrant
+        returns (uint256 tokenOutput)
+    {
+        if (msg.sender != seedAuthority || recipient == address(0)) {
+            revert Unauthorized();
+        }
+        if (!seeded || graduated) revert InvalidConfiguration();
+        return _buyBonding(recipient, payable(msg.sender), minimumTokenOutput);
+    }
+
+    function _buyBonding(
+        address recipient,
+        address payable refundRecipient,
+        uint256 minimumTokenOutput
+    ) private returns (uint256 tokenOutput) {
         if (msg.value == 0) revert InvalidAmount();
 
         uint256 nativeInput = msg.value;
@@ -202,7 +243,8 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         if (tokenOutput >= realCurveTokenReserve) {
             tokenOutput = realCurveTokenReserve;
             uint256 terminalVirtualToken = virtualTokenReserve - tokenOutput;
-            uint256 requiredNet = Math.ceilDiv(invariant, terminalVirtualToken) - virtualNativeReserve;
+            uint256 requiredNet =
+                Math.ceilDiv(invariant, terminalVirtualToken) - virtualNativeReserve;
             usedInput = Math.ceilDiv(requiredNet * BPS, BPS - feeBps);
             feeAmount = usedInput - requiredNet;
             netInput = requiredNet;
@@ -216,10 +258,15 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         virtualTokenReserve -= tokenOutput;
         realCurveTokenReserve -= tokenOutput;
         _recordFee(feeAmount);
-        IERC20(address(launchToken)).safeTransfer(msg.sender, tokenOutput);
-        if (usedInput < nativeInput) _sendNative(payable(msg.sender), nativeInput - usedInput);
-        emit Bought(msg.sender, usedInput, feeAmount, tokenOutput);
-        emit CurveState(virtualTokenReserve, virtualNativeReserve, realCurveTokenReserve, graduationProgressBps());
+        IERC20(address(launchToken)).safeTransfer(recipient, tokenOutput);
+        if (usedInput < nativeInput) _sendNative(refundRecipient, nativeInput - usedInput);
+        emit Bought(recipient, usedInput, feeAmount, tokenOutput);
+        emit CurveState(
+            virtualTokenReserve,
+            virtualNativeReserve,
+            realCurveTokenReserve,
+            graduationProgressBps()
+        );
         if (realCurveTokenReserve == 0) _graduate();
     }
 
@@ -243,7 +290,12 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         _recordFee(feeAmount);
         _sendNative(payable(msg.sender), nativeOutput);
         emit Sold(msg.sender, tokenInput, feeAmount, nativeOutput);
-        emit CurveState(virtualTokenReserve, virtualNativeReserve, realCurveTokenReserve, graduationProgressBps());
+        emit CurveState(
+            virtualTokenReserve,
+            virtualNativeReserve,
+            realCurveTokenReserve,
+            graduationProgressBps()
+        );
     }
 
     // Called only from nonReentrant buy; native value goes exclusively to the
@@ -256,41 +308,51 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         IERC20(address(launchToken)).forceApprove(address(graduationAdapter), tokenLiquidity);
         graduated = true;
         (uint256 tokenId,, uint256 tokenUsed, uint256 nativeUsed) =
-            graduationAdapter.graduate{value: nativeLiquidity}(tokenLiquidity);
+            graduationAdapter.graduate{ value: nativeLiquidity }(tokenLiquidity);
         IERC20(address(launchToken)).forceApprove(address(graduationAdapter), 0);
         uint256 graduationSurplus = address(this).balance;
         if (graduationSurplus != 0) {
-            feeRouter.routeNativeFees{value: graduationSurplus}(launchToken);
+            feeRouter.routeNativeFees{ value: graduationSurplus }(launchToken);
             emit GraduationSurplusRouted(graduationSurplus);
         }
         emit Graduated(
-            graduationAdapter.poolId(), address(graduationAdapter.locker()), tokenId, tokenUsed, nativeUsed, finalPrice
+            graduationAdapter.poolId(),
+            address(graduationAdapter.locker()),
+            tokenId,
+            tokenUsed,
+            nativeUsed,
+            finalPrice
         );
     }
 
     function _buyGraduated(uint256 minimumTokenOutput) private returns (uint256 tokenOutput) {
         (uint256 nominalFee,) = graduationAdapter.quoteBuy(uint128(msg.value));
-        tokenOutput = graduationAdapter.buyFor{value: msg.value}(msg.sender, minimumTokenOutput);
+        tokenOutput = graduationAdapter.buyFor{ value: msg.value }(msg.sender, minimumTokenOutput);
         emit Bought(msg.sender, msg.value, nominalFee, tokenOutput);
     }
 
-    function _sellGraduated(uint256 tokenInput, uint256 minimumNativeOutput) private returns (uint256 nativeOutput) {
+    function _sellGraduated(uint256 tokenInput, uint256 minimumNativeOutput)
+        private
+        returns (uint256 nativeOutput)
+    {
         if (tokenInput == 0 || tokenInput > type(uint128).max) revert InvalidAmount();
         IERC20(address(launchToken)).safeTransferFrom(msg.sender, address(this), tokenInput);
         IERC20(address(launchToken)).forceApprove(address(graduationAdapter), tokenInput);
         (uint256 nominalFee,) = graduationAdapter.quoteSell(uint128(tokenInput));
-        nativeOutput = graduationAdapter.sellFor(payable(msg.sender), uint128(tokenInput), minimumNativeOutput);
+        nativeOutput = graduationAdapter.sellFor(
+            payable(msg.sender), uint128(tokenInput), minimumNativeOutput
+        );
         IERC20(address(launchToken)).forceApprove(address(graduationAdapter), 0);
         emit Sold(msg.sender, tokenInput, nominalFee, nativeOutput);
     }
 
     function _recordFee(uint256 feeAmount) private {
         if (feeAmount == 0 || address(feeRouter) == address(0)) revert InvalidConfiguration();
-        feeRouter.routeNativeFees{value: feeAmount}(launchToken);
+        feeRouter.routeNativeFees{ value: feeAmount }(launchToken);
     }
 
     function _sendNative(address payable recipient, uint256 amount) private {
-        (bool sent,) = recipient.call{value: amount}("");
+        (bool sent,) = recipient.call{ value: amount }("");
         if (!sent) revert NativeTransferFailed();
     }
 }

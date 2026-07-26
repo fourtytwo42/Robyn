@@ -297,6 +297,8 @@ export const launchMetadataBindings = pgTable(
     automatedTestLaunch: boolean("automated_test_launch")
       .notNull()
       .default(false),
+    projectWebsite: text("project_website"),
+    projectXUrl: text("project_x_url"),
     boundAt: timestamp("bound_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -355,6 +357,8 @@ export const preparedTokenMetadata = pgTable(
     automatedTestLaunch: boolean("automated_test_launch")
       .notNull()
       .default(false),
+    projectWebsite: text("project_website"),
+    projectXUrl: text("project_x_url"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

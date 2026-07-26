@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -12,7 +13,7 @@ import {
   type WalletClient,
 } from "viem";
 import { TokenCardArt } from "@/components/launchpad-visuals";
-import { LaunchTokenTrigger } from "@/components/launch-token-trigger";
+import { CreatorProfileEditor } from "@/components/creator-profile-editor";
 import type { LaunchList, LaunchRecord } from "@/lib/data-api";
 import type { CreatorRewardState } from "./creator-rewards-panel";
 
@@ -60,6 +61,7 @@ export function CreatorPortfolio({
   const [recipient, setRecipient] = useState("");
   const [status, setStatus] = useState("");
   const [working, setWorking] = useState(false);
+  const [profileEditorOpen, setProfileEditorOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!account) {
@@ -172,6 +174,16 @@ export function CreatorPortfolio({
       aria-labelledby="creator-portfolio-heading"
     >
       <div className="creator-profile-card">
+        {profile?.avatar_media_id ? (
+          <Image
+            className="creator-profile-card-avatar"
+            src={`/api/media/${profile.avatar_media_id}`}
+            width={72}
+            height={72}
+            alt=""
+            unoptimized
+          />
+        ) : null}
         <div>
           <p className="eyebrow">Wallet-owned creator profile</p>
           <h2>{profile?.display_name ?? "Unnamed creator"}</h2>
@@ -183,9 +195,13 @@ export function CreatorPortfolio({
           </small>
         </div>
         {canManage ? (
-          <LaunchTokenTrigger className="button">
+          <button
+            className="button"
+            type="button"
+            onClick={() => setProfileEditorOpen(true)}
+          >
             Edit creator profile
-          </LaunchTokenTrigger>
+          </button>
         ) : null}
       </div>
 
@@ -331,6 +347,14 @@ export function CreatorPortfolio({
           : "Read-only view. Connect this canonical creator wallet to manage its profile or claim fees."}{" "}
         Fee balances and claim events remain public blockchain data.
       </p>
+      {profileEditorOpen && canManage && walletClient ? (
+        <CreatorProfileEditor
+          account={account}
+          walletClient={walletClient}
+          onClose={() => setProfileEditorOpen(false)}
+          onSaved={refresh}
+        />
+      ) : null}
     </section>
   );
 }

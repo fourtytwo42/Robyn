@@ -40,6 +40,8 @@ export type LaunchRecord = {
     telegram_url: string | null;
     discord_url: string | null;
     avatar_media_id: string | null;
+    project_website: string | null;
+    project_x_url: string | null;
     metadata_cid: string | null;
     metadata_uri: string | null;
     verification_status: "robyn-sanitized" | "external" | "legacy";

@@ -39,6 +39,45 @@ describe("IPFS token metadata", () => {
     });
   });
 
+  it("commits canonical project links to immutable metadata", () => {
+    const metadata = JSON.parse(
+      canonicalTokenMetadata({
+        name: "Sherwood",
+        symbol: "WOOD",
+        pngCid,
+        webpCid,
+        hasAlpha: false,
+        website: "https://sherwoodforest.trade/project/",
+        xUrl: "https://x.com/sherwoodforest/",
+      }).toString(),
+    );
+    expect(metadata.external_url).toBe("https://sherwoodforest.trade/project");
+    expect(metadata.links).toEqual({
+      website: "https://sherwoodforest.trade/project",
+      x: "https://x.com/sherwoodforest",
+    });
+    expect(() =>
+      canonicalTokenMetadata({
+        name: "Bad",
+        symbol: "BAD",
+        pngCid,
+        webpCid,
+        hasAlpha: false,
+        website: "http://unsafe.example",
+      }),
+    ).toThrow("invalid_project_link");
+    expect(() =>
+      canonicalTokenMetadata({
+        name: "Bad",
+        symbol: "BAD",
+        pngCid,
+        webpCid,
+        hasAlpha: false,
+        xUrl: "https://example.com/not-x",
+      }),
+    ).toThrow("invalid_project_link");
+  });
+
   it("validates URI shape and description bounds", () => {
     expect(assertIpfsUri(`ipfs://${pngCid}`)).toBe(pngCid);
     expect(() => assertIpfsUri("https://gateway.example/ipfs/x")).toThrow(

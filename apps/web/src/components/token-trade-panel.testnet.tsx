@@ -600,7 +600,18 @@ export function NetworkTokenTradePanel({
       <label className="trade-amount">
         <span>
           You {side === "buy" ? "pay" : "sell"}
-          <b>Balance {compact(side === "buy" ? baseBalance : tokenBalance)}</b>
+          {side === "sell" ? (
+            <button
+              className="trade-balance-button"
+              type="button"
+              title="Use full token balance"
+              onClick={() => setInput(formatEther(tokenBalance))}
+            >
+              Balance {compact(tokenBalance)}
+            </button>
+          ) : (
+            <b>Balance {compact(baseBalance)}</b>
+          )}
         </span>
         <div>
           <input

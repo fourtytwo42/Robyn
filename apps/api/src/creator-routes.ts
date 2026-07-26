@@ -1,4 +1,5 @@
 import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { Redis } from "ioredis";
 import type { Address, Hex, PublicClient } from "viem";
@@ -140,6 +141,7 @@ export async function registerCreatorRoutes(
     remotePinUrl?: string;
     remotePinToken?: string;
     campaignOperatorToken?: string;
+    fallbackArtworkPath?: string;
   },
 ) {
   const {
@@ -153,6 +155,7 @@ export async function registerCreatorRoutes(
     remotePinUrl,
     remotePinToken,
     campaignOperatorToken,
+    fallbackArtworkPath = `${process.cwd()}/apps/web/public/assets/launchpad/token-fallback.webp`,
   } = options;
 
   async function storeArtifact(bytes: Buffer, contentType: string) {
@@ -491,10 +494,13 @@ export async function registerCreatorRoutes(
         });
       }
       if (
-        typeof body.mediaId !== "string" ||
+        (body.mediaId !== undefined && typeof body.mediaId !== "string") ||
         typeof body.name !== "string" ||
         typeof body.symbol !== "string" ||
-        (body.description !== undefined && typeof body.description !== "string")
+        (body.description !== undefined &&
+          typeof body.description !== "string") ||
+        (body.website !== undefined && typeof body.website !== "string") ||
+        (body.xUrl !== undefined && typeof body.xUrl !== "string")
       )
         return reply.code(400).send({ error: "invalid_metadata_request" });
       const hasCampaignFields =
@@ -515,6 +521,56 @@ export async function registerCreatorRoutes(
           : undefined;
       if (hasCampaignFields && !campaign)
         return reply.code(400).send({ error: "invalid_test_campaign" });
+      let mediaId = typeof body.mediaId === "string" ? body.mediaId : undefined;
+      if (!mediaId) {
+        let sanitized;
+        try {
+          sanitized = await sanitizeCreatorImage(
+            await readFile(fallbackArtworkPath),
+            "image/webp",
+          );
+        } catch {
+          return reply
+            .code(503)
+            .send({ error: "fallback_artwork_unavailable" });
+        }
+        const [webpSha256, pngSha256] = await Promise.all([
+          storeArtifact(sanitized.webp, "image/webp"),
+          storeArtifact(sanitized.png, "image/png"),
+        ]);
+        const [webpCid, pngCid] = await Promise.all([
+          addAndPinIpfs(sanitized.webp, "token.webp", ipfsApiUrl),
+          addAndPinIpfs(sanitized.png, "token.png", ipfsApiUrl),
+        ]);
+        await Promise.all([
+          recordPin({
+            cid: webpCid,
+            objectKind: "token-webp",
+            artifactSha256: webpSha256,
+            name: `robyn-${chainId}-fallback-webp`,
+          }),
+          recordPin({
+            cid: pngCid,
+            objectKind: "token-png",
+            artifactSha256: pngSha256,
+            name: `robyn-${chainId}-fallback-png`,
+          }),
+        ]);
+        mediaId = randomUUID();
+        await sql.unsafe(
+          "INSERT INTO media_assets(media_id,chain_id,owner_address,artifact_sha256,canonical_png_sha256,canonical_png_cid,optimized_webp_cid,has_alpha,purpose,status,width,height) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'token','active',1024,1024)",
+          [
+            mediaId,
+            chainId,
+            session.address,
+            webpSha256,
+            pngSha256,
+            pngCid,
+            webpCid,
+            sanitized.hasAlpha,
+          ],
+        );
+      }
       const media = await sql.unsafe<
         {
           media_id: string;
@@ -524,7 +580,7 @@ export async function registerCreatorRoutes(
         }[]
       >(
         "SELECT media_id,canonical_png_cid,optimized_webp_cid,has_alpha FROM media_assets WHERE media_id=$1 AND chain_id=$2 AND owner_address=$3 AND purpose='token' AND status='active'",
-        [body.mediaId, chainId, session.address],
+        [mediaId, chainId, session.address],
       );
       if (!media[0]?.canonical_png_cid || !media[0].optimized_webp_cid)
         return reply.code(400).send({ error: "ipfs_token_media_required" });
@@ -539,6 +595,10 @@ export async function registerCreatorRoutes(
           pngCid: media[0].canonical_png_cid,
           webpCid: media[0].optimized_webp_cid,
           hasAlpha: media[0].has_alpha,
+          ...(typeof body.website === "string"
+            ? { website: body.website }
+            : {}),
+          ...(typeof body.xUrl === "string" ? { xUrl: body.xUrl } : {}),
           ...(campaign ? { testCampaign: campaign } : {}),
         });
       } catch (error) {
@@ -561,15 +621,19 @@ export async function registerCreatorRoutes(
         artifactSha256,
         name: `robyn-${chainId}-${body.symbol}-metadata`,
       });
+      const parsedMetadata = JSON.parse(metadataBytes.toString()) as {
+        external_url?: string;
+        links?: { x?: string };
+      };
       const preparationId = randomUUID();
       const metadataUri = `ipfs://${metadataCid}`;
       const rows = await sql.unsafe(
-        "INSERT INTO prepared_token_metadata(preparation_id,chain_id,owner_address,media_id,name,symbol,description,metadata_artifact_sha256,metadata_cid,metadata_uri,status,campaign_id,campaign_release_sha,automated_test_launch) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'ready',$11,$12,$13) RETURNING preparation_id,media_id,name,symbol,description,metadata_cid,metadata_uri,status,campaign_id,campaign_release_sha,automated_test_launch,created_at::text,expires_at::text",
+        "INSERT INTO prepared_token_metadata(preparation_id,chain_id,owner_address,media_id,name,symbol,description,metadata_artifact_sha256,metadata_cid,metadata_uri,status,campaign_id,campaign_release_sha,automated_test_launch,project_website,project_x_url) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'ready',$11,$12,$13,$14,$15) RETURNING preparation_id,media_id,name,symbol,description,metadata_cid,metadata_uri,status,campaign_id,campaign_release_sha,automated_test_launch,project_website,project_x_url,created_at::text,expires_at::text",
         [
           preparationId,
           chainId,
           session.address,
-          body.mediaId,
+          mediaId,
           body.name.trim(),
           body.symbol.trim(),
           typeof body.description === "string" ? body.description.trim() : "",
@@ -579,6 +643,8 @@ export async function registerCreatorRoutes(
           campaign?.campaignId ?? null,
           campaign?.releaseSha ?? null,
           Boolean(campaign),
+          parsedMetadata.external_url ?? null,
+          parsedMetadata.links?.x ?? null,
         ],
       );
       return reply.code(201).send({
@@ -597,7 +663,7 @@ export async function registerCreatorRoutes(
       if (!/^[0-9a-f-]{36}$/.test(request.params.preparationId))
         return reply.code(400).send({ error: "invalid_preparation_id" });
       const rows = await sql.unsafe(
-        "SELECT p.preparation_id,p.media_id,p.name,p.symbol,p.description,p.metadata_cid,p.metadata_uri,p.status,p.bound_token,p.campaign_id,p.campaign_release_sha,p.automated_test_launch,p.created_at::text,p.expires_at::text,i.local_status,i.remote_status,i.last_error FROM prepared_token_metadata p JOIN ipfs_pins i ON i.cid=p.metadata_cid WHERE p.preparation_id=$1 AND p.chain_id=$2",
+        "SELECT p.preparation_id,p.media_id,p.name,p.symbol,p.description,p.metadata_cid,p.metadata_uri,p.status,p.bound_token,p.campaign_id,p.campaign_release_sha,p.automated_test_launch,p.project_website,p.project_x_url,p.created_at::text,p.expires_at::text,i.local_status,i.remote_status,i.last_error FROM prepared_token_metadata p JOIN ipfs_pins i ON i.cid=p.metadata_cid WHERE p.preparation_id=$1 AND p.chain_id=$2",
         [request.params.preparationId, chainId],
       );
       if (!rows[0])
@@ -680,9 +746,11 @@ export async function registerCreatorRoutes(
                 campaign_id: string | null;
                 campaign_release_sha: string | null;
                 automated_test_launch: boolean;
+                project_website: string | null;
+                project_x_url: string | null;
               }[]
             >(
-              "SELECT preparation_id,media_id,metadata_cid,metadata_uri,status,campaign_id,campaign_release_sha,automated_test_launch FROM prepared_token_metadata WHERE preparation_id=$1 AND chain_id=$2 AND owner_address=$3 AND status='ready' AND expires_at>now()",
+              "SELECT preparation_id,media_id,metadata_cid,metadata_uri,status,campaign_id,campaign_release_sha,automated_test_launch,project_website,project_x_url FROM prepared_token_metadata WHERE preparation_id=$1 AND chain_id=$2 AND owner_address=$3 AND status='ready' AND expires_at>now()",
               [body.preparationId, chainId, session.address],
             )
           : [];
@@ -708,7 +776,7 @@ export async function registerCreatorRoutes(
       }
       const inserted = await sql.begin(async (transaction) => {
         const rows = await transaction.unsafe(
-          "INSERT INTO launch_metadata_bindings(chain_id,token,creator_address,media_id,preparation_id,metadata_cid,metadata_uri,verification_status,campaign_id,campaign_release_sha,automated_test_launch) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(chain_id,token) DO NOTHING RETURNING chain_id,token,creator_address,media_id,preparation_id,metadata_cid,metadata_uri,verification_status,campaign_id,campaign_release_sha,automated_test_launch,bound_at::text",
+          "INSERT INTO launch_metadata_bindings(chain_id,token,creator_address,media_id,preparation_id,metadata_cid,metadata_uri,verification_status,campaign_id,campaign_release_sha,automated_test_launch,project_website,project_x_url) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) ON CONFLICT(chain_id,token) DO NOTHING RETURNING chain_id,token,creator_address,media_id,preparation_id,metadata_cid,metadata_uri,verification_status,campaign_id,campaign_release_sha,automated_test_launch,project_website,project_x_url,bound_at::text",
           [
             chainId,
             token,
@@ -721,6 +789,8 @@ export async function registerCreatorRoutes(
             preparation[0]?.campaign_id ?? null,
             preparation[0]?.campaign_release_sha ?? null,
             preparation[0]?.automated_test_launch ?? false,
+            preparation[0]?.project_website ?? null,
+            preparation[0]?.project_x_url ?? null,
           ],
         );
         if (rows[0] && preparation[0]) {
@@ -743,7 +813,7 @@ export async function registerCreatorRoutes(
       if (!/^0x[0-9a-fA-F]{40}$/.test(request.params.token))
         return reply.code(400).send({ error: "invalid_token" });
       const rows = await sql.unsafe(
-        "SELECT b.chain_id,b.token,b.creator_address,b.media_id,b.preparation_id,b.metadata_cid,b.metadata_uri,b.verification_status,b.campaign_id,b.campaign_release_sha,b.automated_test_launch,b.bound_at::text,m.status,m.canonical_png_cid,m.optimized_webp_cid,p.display_name,p.bio,p.website,p.x_url,p.telegram_url,p.discord_url,p.avatar_media_id,ip.local_status,ip.remote_status FROM launch_metadata_bindings b JOIN media_assets m ON m.media_id=b.media_id LEFT JOIN creator_profiles p ON p.chain_id=b.chain_id AND p.address=b.creator_address LEFT JOIN ipfs_pins ip ON ip.cid=b.metadata_cid WHERE b.chain_id=$1 AND b.token=$2",
+        "SELECT b.chain_id,b.token,b.creator_address,b.media_id,b.preparation_id,b.metadata_cid,b.metadata_uri,b.verification_status,b.campaign_id,b.campaign_release_sha,b.automated_test_launch,b.project_website,b.project_x_url,b.bound_at::text,m.status,m.canonical_png_cid,m.optimized_webp_cid,p.display_name,p.bio,p.website,p.x_url,p.telegram_url,p.discord_url,p.avatar_media_id,ip.local_status,ip.remote_status FROM launch_metadata_bindings b JOIN media_assets m ON m.media_id=b.media_id LEFT JOIN creator_profiles p ON p.chain_id=b.chain_id AND p.address=b.creator_address LEFT JOIN ipfs_pins ip ON ip.cid=b.metadata_cid WHERE b.chain_id=$1 AND b.token=$2",
         [chainId, request.params.token.toLowerCase()],
       );
       if (!rows[0])

@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {RobynLaunchToken} from "../RobynLaunchToken.sol";
-import {RobynNativeBasketVaultV2} from "./RobynNativeBasketVaultV2.sol";
-import {RobynNativeLaunchFactoryV4} from "./RobynNativeLaunchFactoryV4.sol";
-import {RobynNativeProtocolFeeRouterV3} from "./RobynNativeProtocolFeeRouterV3.sol";
-import {RobynV4BondingCurveMarket} from "./RobynV4BondingCurveMarket.sol";
-import {RobynV4GraduationAdapter} from "./RobynV4GraduationAdapter.sol";
-import {RobynV4MarketFactory} from "./RobynV4MarketFactory.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { RobynLaunchToken } from "../RobynLaunchToken.sol";
+import { RobynNativeBasketVaultV2 } from "./RobynNativeBasketVaultV2.sol";
+import { RobynNativeLaunchFactoryV4 } from "./RobynNativeLaunchFactoryV4.sol";
+import { RobynNativeProtocolFeeRouterV3 } from "./RobynNativeProtocolFeeRouterV3.sol";
+import { RobynV4BondingCurveMarket } from "./RobynV4BondingCurveMarket.sol";
+import { RobynV4GraduationAdapter } from "./RobynV4GraduationAdapter.sol";
+import { RobynV4MarketFactory } from "./RobynV4MarketFactory.sol";
 
 /// @notice One-transaction native-ETH launch coordinator for Robyn v4 markets.
 contract RobynV4LaunchCoordinatorV5 is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    string public constant CONTRACT_VERSION = "5.0.0";
+    string public constant CONTRACT_VERSION = "5.1.0";
 
     error InvalidConfiguration();
     error AtomicLaunchInvariant();
@@ -56,7 +56,13 @@ contract RobynV4LaunchCoordinatorV5 is ReentrancyGuard {
     uint256 public immutable initialSupply;
 
     event AtomicV4LaunchCreated(
-        uint256 indexed launchId, address indexed creator, address indexed token, LaunchReceipt receipt
+        uint256 indexed launchId,
+        address indexed creator,
+        address indexed token,
+        LaunchReceipt receipt
+    );
+    event AtomicInitialPurchase(
+        address indexed token, address indexed creator, uint256 nativeInput, uint256 tokenOutput
     );
 
     constructor(
@@ -80,8 +86,13 @@ contract RobynV4LaunchCoordinatorV5 is ReentrancyGuard {
 
     function createLaunch(RobynNativeLaunchFactoryV4.LaunchRequest calldata request)
         external
+        payable
         nonReentrant
-        returns (RobynLaunchToken token, RobynNativeBasketVaultV2 vault, RobynV4BondingCurveMarket market)
+        returns (
+            RobynLaunchToken token,
+            RobynNativeBasketVaultV2 vault,
+            RobynV4BondingCurveMarket market
+        )
     {
         launchFactory.requireBasketRoutes(request.assets);
         LaunchArtifacts memory artifacts;
@@ -113,12 +124,25 @@ contract RobynV4LaunchCoordinatorV5 is ReentrancyGuard {
 
         address[] memory exclusions = _exclusions(artifacts);
         launchFactory.sealLaunchExclusionsFor(artifacts.token, exclusions);
-        _assertLaunch(artifacts, launchAsset, exclusions);
+        uint256 initialPurchaseTokenOutput;
+        if (msg.value != 0) {
+            if (msg.value >= artifacts.market.graduationThresholdNative()) {
+                revert InvalidConfiguration();
+            }
+            initialPurchaseTokenOutput = artifacts.market.buyFor{ value: msg.value }(msg.sender, 1);
+            emit AtomicInitialPurchase(
+                address(artifacts.token), msg.sender, msg.value, initialPurchaseTokenOutput
+            );
+        }
+        _assertLaunch(artifacts, launchAsset, exclusions, initialPurchaseTokenOutput);
         _emitLaunch(artifacts);
         return (artifacts.token, artifacts.vault, artifacts.market);
     }
 
-    function predictLaunchAddresses(address creator, RobynNativeLaunchFactoryV4.LaunchRequest calldata request)
+    function predictLaunchAddresses(
+        address creator,
+        RobynNativeLaunchFactoryV4.LaunchRequest calldata request
+    )
         external
         view
         returns (address predictedToken, address predictedVault, bytes32 launchSaltHash)
@@ -126,7 +150,11 @@ contract RobynV4LaunchCoordinatorV5 is ReentrancyGuard {
         return launchFactory.predictLaunchAddresses(creator, address(this), initialSupply, request);
     }
 
-    function _exclusions(LaunchArtifacts memory artifacts) private view returns (address[] memory exclusions) {
+    function _exclusions(LaunchArtifacts memory artifacts)
+        private
+        view
+        returns (address[] memory exclusions)
+    {
         exclusions = new address[](9);
         exclusions[0] = address(artifacts.market);
         exclusions[1] = address(artifacts.adapter);
@@ -139,17 +167,24 @@ contract RobynV4LaunchCoordinatorV5 is ReentrancyGuard {
         exclusions[8] = address(marketFactory.positionManager());
     }
 
-    function _assertLaunch(LaunchArtifacts memory artifacts, IERC20 launchAsset, address[] memory exclusions)
-        private
-        view
-    {
+    function _assertLaunch(
+        LaunchArtifacts memory artifacts,
+        IERC20 launchAsset,
+        address[] memory exclusions,
+        uint256 initialPurchaseTokenOutput
+    ) private view {
         if (
             launchAsset.balanceOf(address(this)) != 0
                 || launchAsset.allowance(address(this), address(artifacts.market)) != 0
-                || launchAsset.balanceOf(address(artifacts.market)) != initialSupply || !artifacts.market.seeded()
-                || artifacts.market.graduated() || !artifacts.token.exclusionsSealed()
-                || marketFactory.marketByToken(address(artifacts.token)) != address(artifacts.market)
-                || marketFactory.adapterByToken(address(artifacts.token)) != address(artifacts.adapter)
+                || launchAsset.balanceOf(address(artifacts.market))
+                    != initialSupply - initialPurchaseTokenOutput
+                || launchAsset.balanceOf(msg.sender) != initialPurchaseTokenOutput
+                || !artifacts.market.seeded() || artifacts.market.graduated()
+                || !artifacts.token.exclusionsSealed()
+                || marketFactory.marketByToken(address(artifacts.token))
+                    != address(artifacts.market)
+                || marketFactory.adapterByToken(address(artifacts.token))
+                    != address(artifacts.adapter)
                 || marketFactory.poolIdByToken(address(artifacts.token)) != artifacts.poolId
         ) revert AtomicLaunchInvariant();
         for (uint256 index; index < exclusions.length; ++index) {
@@ -173,6 +208,8 @@ contract RobynV4LaunchCoordinatorV5 is ReentrancyGuard {
             launchSaltHash: artifacts.launchSaltHash,
             metadataUriHash: artifacts.metadataUriHash
         });
-        emit AtomicV4LaunchCreated(artifacts.launchId, msg.sender, address(artifacts.token), receipt);
+        emit AtomicV4LaunchCreated(
+            artifacts.launchId, msg.sender, address(artifacts.token), receipt
+        );
     }
 }
