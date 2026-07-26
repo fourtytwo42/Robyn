@@ -44,7 +44,7 @@ done
 curl -fsS http://127.0.0.1:3012/api/health >/dev/null
 status="$(curl -fsS http://127.0.0.1:3111/status)"
 curl -fsS http://127.0.0.1:3210/health >/dev/null
-public_status="$(curl -fsS https://sherwoodforest.trade/api/status)"
+public_status="$(curl -fsS https://testnet.sherwoodforest.trade/api/status)"
 [[ "$(jq -r .chainId <<<"$status")" -eq 46630 ]]
 [[ "$(jq -r .launchCount <<<"$status")" -ge 9 ]]
 [[ "$(jq -r .launchCount <<<"$public_status")" -ge 9 ]]

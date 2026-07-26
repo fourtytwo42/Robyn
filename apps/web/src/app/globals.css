@@ -1978,15 +1978,23 @@ main > .notice {
   gap: 1rem;
 }
 
-.site-nav a {
+.site-nav a,
+.site-nav-action {
+  padding: 0;
+  border: 0;
   color: var(--muted);
+  background: transparent;
+  font: inherit;
   font-size: 0.78rem;
   font-weight: 700;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .site-nav a:hover,
-.site-nav a:focus-visible {
+.site-nav a:focus-visible,
+.site-nav-action:hover,
+.site-nav-action:focus-visible {
   color: var(--primary);
 }
 
@@ -3540,53 +3548,32 @@ main > .notice {
   gap: 0.65rem;
 }
 
-.header-launch-button {
-  min-height: 38px;
-  padding-inline: 1rem;
-  box-shadow: 0 8px 28px rgba(53, 208, 186, 0.16);
-}
-
 .market-tape {
   position: relative;
   z-index: 2;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: stretch;
+  display: block;
   min-height: 46px;
   border-bottom: 1px solid var(--line);
   background: rgba(6, 10, 21, 0.84);
   overflow: hidden;
 }
 
-.market-tape-runner {
+.market-tape-runner,
+.market-tape-group,
+.market-tape-probe {
   display: flex;
   width: max-content;
-  animation: market-tape-scroll 42s linear infinite;
 }
 
-.market-tape.tape-paused .market-tape-runner,
-.market-tape-track:focus-within .market-tape-runner,
-.market-tape-track:hover .market-tape-runner {
-  animation-play-state: paused;
+.market-tape-runner {
+  animation: market-tape-scroll var(--market-tape-duration, 42s) linear infinite;
+  will-change: transform;
 }
 
-.market-tape-pause {
-  min-width: 64px;
-  border: 0;
-  border-left: 1px solid var(--line);
-  background: rgba(10, 16, 30, 0.94);
-  color: var(--muted);
-  font:
-    750 0.65rem/1 "IBM Plex Mono",
-    ui-monospace,
-    monospace;
-  cursor: pointer;
-}
-
-.market-tape-pause:hover,
-.market-tape-pause:focus-visible {
-  color: var(--primary);
-  background: rgba(53, 208, 186, 0.08);
+.market-tape-probe {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 @keyframes market-tape-scroll {
@@ -3598,29 +3585,8 @@ main > .notice {
 @media (prefers-reduced-motion: reduce) {
   .market-tape-runner {
     animation: none;
+    transform: none;
   }
-}
-
-.market-tape-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0 1.1rem;
-  border-right: 1px solid var(--line);
-  color: var(--text);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.market-tape-label i {
-  width: 0.48rem;
-  height: 0.48rem;
-  border-radius: 50%;
-  background: var(--reward);
-  box-shadow: 0 0 14px rgba(242, 184, 75, 0.72);
 }
 
 .market-tape-track {
@@ -3952,21 +3918,9 @@ main > .notice {
   .discovery-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-
-  .header-launch-button {
-    display: none;
-  }
 }
 
 @media (max-width: 900px) {
-  .market-tape {
-    grid-template-columns: 1fr;
-  }
-
-  .market-tape-label {
-    display: none;
-  }
-
   .launchpad-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -4332,20 +4286,8 @@ main > .notice {
     white-space: nowrap;
   }
 
-  .market-tape {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .market-tape-label {
-    display: none;
-  }
-
   .market-tape-track a {
     min-width: 164px;
-  }
-
-  .market-tape-pause {
-    min-width: 54px;
   }
 
   .token-detail-hero {

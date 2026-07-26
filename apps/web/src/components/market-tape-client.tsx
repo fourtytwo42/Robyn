@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { marketAmount } from "@/lib/display-format";
+import {
+  marketTapeDurationSeconds,
+  marketTapeRepeatCount,
+} from "@/lib/market-tape";
 
 type TapeMarket = {
   token: string;
@@ -51,42 +55,75 @@ function MarketLink({
 }
 
 export function MarketTapeClient({ markets }: { markets: TapeMarket[] }) {
-  const [paused, setPaused] = useState(false);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const probeRef = useRef<HTMLDivElement>(null);
+  const [repeatCount, setRepeatCount] = useState(1);
+  const [durationSeconds, setDurationSeconds] = useState(24);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    const probe = probeRef.current;
+    if (!track || !probe || markets.length === 0) return;
+
+    const measure = () => {
+      const nextRepeatCount = marketTapeRepeatCount(
+        track.clientWidth,
+        probe.scrollWidth,
+      );
+      setRepeatCount(nextRepeatCount);
+      setDurationSeconds(
+        marketTapeDurationSeconds(probe.scrollWidth * nextRepeatCount),
+      );
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(track);
+    observer.observe(probe);
+    return () => observer.disconnect();
+  }, [markets]);
+
+  const animationStyle = {
+    "--market-tape-duration": `${durationSeconds}s`,
+  } as CSSProperties;
+
   return (
-    <aside
-      className={`market-tape ${paused ? "tape-paused" : ""}`}
-      aria-label="Indexed 24 hour reward market tape"
-    >
-      <span className="market-tape-label">
-        <i aria-hidden="true" />
-        24h reward markets
-      </span>
-      <div className="market-tape-track">
+    <aside className="market-tape" aria-label="Indexed 24 hour market tape">
+      <div className="market-tape-track" ref={trackRef}>
         {markets.length === 0 ? (
           <span className="market-tape-empty">Market data is loading.</span>
         ) : (
-          <div className="market-tape-runner">
-            {markets.map((market) => (
-              <MarketLink market={market} key={market.token} />
-            ))}
-            {markets.map((market) => (
-              <MarketLink
-                market={market}
-                duplicate
-                key={`duplicate-${market.token}`}
-              />
-            ))}
-          </div>
+          <>
+            <div
+              className="market-tape-probe"
+              ref={probeRef}
+              aria-hidden="true"
+            >
+              {markets.map((market) => (
+                <MarketLink
+                  market={market}
+                  duplicate
+                  key={`probe-${market.token}`}
+                />
+              ))}
+            </div>
+            <div className="market-tape-runner" style={animationStyle}>
+              {[0, 1].map((groupIndex) => (
+                <div className="market-tape-group" key={`group-${groupIndex}`}>
+                  {Array.from({ length: repeatCount }, (_, repeatIndex) =>
+                    markets.map((market) => (
+                      <MarketLink
+                        market={market}
+                        duplicate={groupIndex > 0 || repeatIndex > 0}
+                        key={`${groupIndex}-${repeatIndex}-${market.token}`}
+                      />
+                    )),
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
-      <button
-        className="market-tape-pause"
-        type="button"
-        onClick={() => setPaused((value) => !value)}
-        aria-pressed={paused}
-      >
-        {paused ? "Play" : "Pause"}
-      </button>
     </aside>
   );
 }

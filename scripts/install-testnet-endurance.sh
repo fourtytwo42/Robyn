@@ -18,7 +18,7 @@ ROBYN_ENDURANCE_OUTPUT_DIR=$output
 ROBYN_ENDURANCE_CAMPAIGN_STATE_DIR=$campaign_root/campaign
 ROBYN_ENDURANCE_CAMPAIGN_PASSPHRASE_FILE=$campaign_root/campaign-passphrase
 ROBYN_ENDURANCE_OPERATOR_TOKEN_FILE=$campaign_root/campaign-operator-token
-ROBYN_ENDURANCE_PUBLIC_BASE=https://sherwoodforest.trade
+ROBYN_ENDURANCE_PUBLIC_BASE=https://testnet.sherwoodforest.trade
 ROBYN_TESTNET_RPC_URL=https://rpc.testnet.chain.robinhood.com
 EOF
 install -o root -g root -m 0644 "$repo/infrastructure/systemd/robyn-testnet-endurance.service" /etc/systemd/system/robyn-testnet-endurance.service

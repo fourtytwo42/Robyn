@@ -35,7 +35,7 @@ start_stack() {
     ROBYN_TESTNET_MANIFEST="$selected/deployments/46630-v4.json" \
     ROBYN_TESTNET_DATABASE="$database" \
     ROBYN_OPERATOR_KEY_FILE="$operator_key" \
-    ROBYN_TESTNET_AUTH_ORIGINS="https://sherwoodforest.trade,https://www.sherwoodforest.trade" \
+    ROBYN_TESTNET_AUTH_ORIGINS="https://testnet.sherwoodforest.trade" \
     ROBYN_TESTNET_REQUIRE_REMOTE_PIN=false \
     ROBYN_CAMPAIGN_OPERATOR_TOKEN_FILE="$campaign_token_file" \
     "$pm2" start "$selected/infrastructure/pm2/ecosystem.testnet.config.cjs"
