@@ -3017,6 +3017,21 @@ main > .notice {
   text-decoration: underline;
 }
 
+@media (max-width: 620px) {
+  .basket-preview-card,
+  .basket-preview-anchor:last-child .basket-preview-card {
+    position: fixed;
+    z-index: 80;
+    top: auto;
+    right: 1rem;
+    bottom: 1rem;
+    left: 1rem;
+    width: auto;
+    max-height: calc(100dvh - 2rem);
+    overflow: auto;
+  }
+}
+
 .token-actions {
   position: relative;
   margin: -0.25rem 0 0.85rem;
