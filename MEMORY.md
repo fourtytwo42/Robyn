@@ -5,7 +5,7 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - Exact public testnet release
-  `82e1dc4e3f7d2280217593c21bf250537907feeb` is live at
+  `dc48fe232f90141a252923995459d5d3713d6121` is live at
   `https://testnet.sherwoodforest.trade`. Market-cap presentation now defaults
   to USD across the ticker, homepage, Markets cards, and token detail. The
   server fetches Coinbase's unauthenticated ETH-USD spot reference with a
@@ -25,6 +25,11 @@ Durable project context lives here. Update this file whenever information should
   Twelve superseded immutable web build directories were removed after path
   validation; current and previous rollback releases, databases, chain state,
   IPFS/MinIO data, campaign evidence, and deployment history were preserved.
+  Token pages now render the status-aware token artwork without exposing the
+  immutable metadata CID, IPFS address, or verification label. Release
+  `dc48fe2` passed the immutable builder, all 490 promotion checks, and live
+  in-app-browser verification with artwork present, no IPFS copy, and no
+  horizontal overflow.
 - Exact public homepage release
   `ab5d7825bf504605826c5dcaf18104426080e230` is live at
   `https://testnet.sherwoodforest.trade`. The homepage no longer renders the
