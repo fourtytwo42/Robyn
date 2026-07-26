@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { marketAmount } from "@/lib/display-format";
 import {
   marketTapeDurationSeconds,
   marketTapeRepeatCount,
@@ -11,8 +10,7 @@ import {
 type TapeMarket = {
   token: string;
   symbol: string;
-  marketCapBase: string;
-  baseSymbol: string;
+  marketCapLabel: string;
   change24hBps: number | null;
 };
 
@@ -31,7 +29,7 @@ function MarketLink({
       aria-hidden={duplicate || undefined}
     >
       <strong>${market.symbol}</strong>
-      <span>{marketAmount(market.marketCapBase, market.baseSymbol)}</span>
+      <span>{market.marketCapLabel}</span>
       <small
         aria-label={
           change === null

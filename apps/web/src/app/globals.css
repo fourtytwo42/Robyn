@@ -3063,6 +3063,25 @@ main > .notice {
   font-variant-numeric: tabular-nums;
 }
 
+.chart-market-cap {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.chart-market-cap b {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-controls {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
 .chart-tabs,
 .trade-tabs {
   display: grid;
@@ -3093,6 +3112,17 @@ main > .notice {
 .trade-tabs button.active {
   background: var(--primary);
   color: var(--on-brand);
+}
+
+.chart-tabs button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chart-currency-tabs button {
+  min-height: 30px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.64rem;
 }
 
 .chart-range-tabs {
@@ -3973,6 +4003,17 @@ main > .notice {
     monospace;
 }
 
+.token-hero-quote > strong.market-cap-hover-value {
+  border-bottom: 1px dashed rgba(53, 208, 186, 0.55);
+  cursor: default;
+}
+
+.token-hero-quote > strong.market-cap-hover-value:focus-visible {
+  border-radius: 0.25rem;
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
+
 .token-hero-quote > small {
   color: var(--primary);
   font:
@@ -3981,9 +4022,102 @@ main > .notice {
     monospace;
 }
 
+.token-hero-quote > small.usd-reference-note {
+  color: var(--muted);
+  font-size: 0.56rem;
+}
+
 .token-hero-quote .risk-badge {
   margin-top: 0.3rem;
   padding: 0.3rem 0.5rem;
+}
+
+.token-basket-assets {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.token-basket-assets article {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: rgba(5, 9, 20, 0.52);
+  padding: 0.8rem;
+}
+
+.token-basket-assets img,
+.token-basket-identicon {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border: 1px solid rgba(142, 158, 197, 0.2);
+  border-radius: 14px;
+  background: rgba(18, 26, 47, 0.88);
+  object-fit: contain;
+}
+
+.token-basket-identicon {
+  color: var(--primary);
+  font:
+    800 1rem/1 "IBM Plex Mono",
+    ui-monospace,
+    monospace;
+}
+
+.token-basket-identity {
+  min-width: 0;
+}
+
+.token-basket-identity > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: 0.55rem;
+}
+
+.token-basket-identity h3 {
+  min-width: 0;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.token-basket-identity strong {
+  color: var(--secondary);
+  font-size: 0.72rem;
+}
+
+.token-basket-identity b {
+  color: var(--reward);
+  font:
+    800 0.78rem/1 "IBM Plex Mono",
+    ui-monospace,
+    monospace;
+}
+
+.token-basket-identity p {
+  margin: 0.38rem 0 0.45rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.48;
+}
+
+.token-basket-identity a {
+  color: var(--primary);
+  font:
+    650 0.66rem/1 "IBM Plex Mono",
+    ui-monospace,
+    monospace;
+  text-decoration: none;
+}
+
+.token-basket-identity a:hover,
+.token-basket-identity a:focus-visible {
+  text-decoration: underline;
 }
 
 .create-preview-card {

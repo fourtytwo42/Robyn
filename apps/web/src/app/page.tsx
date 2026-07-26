@@ -12,6 +12,7 @@ import { rewardAssetMetadata } from "@/lib/reward-assets";
 import Link from "next/link";
 import { formatEther } from "viem";
 import { publicEnvironment } from "@/lib/public-environment";
+import { getEthUsdPrice } from "@/lib/eth-usd";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,10 @@ function compactBase(value: string) {
 }
 
 export default async function Home() {
-  const launches = await getLaunches();
+  const [launches, ethUsdPrice] = await Promise.all([
+    getLaunches(),
+    getEthUsdPrice(),
+  ]);
   const isTestnet = publicEnvironment.isTestnet;
   const marketShowcase = rankActiveMarkets(launches.data).slice(0, 4);
   const featuredMarket = marketShowcase[0];
@@ -136,6 +140,7 @@ export default async function Home() {
               launch={market}
               isTestnet={isTestnet}
               priority={market.token === featuredMarket?.token}
+              ethUsdPrice={ethUsdPrice}
               key={market.token}
             />
           ))}

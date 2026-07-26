@@ -4,19 +4,17 @@ import { formatEther, type Address } from "viem";
 import { NetworkTokenTradePanel } from "@robyn/network-token-trade";
 import { NetworkCreatorRewardsPanel } from "@robyn/network-creator-rewards";
 import deployment from "@robyn/deployment";
-import { LaunchRewardState } from "@/components/launch-reward-state";
 import { TokenMarketChart } from "@/components/token-market-chart";
+import { TokenMarketQuote } from "@/components/token-market-quote";
+import { TokenBasketAssets } from "@/components/token-basket-assets";
 import { SiteHeader } from "@/components/site-header";
-import {
-  getLaunch,
-  getLaunchActivity,
-  getLaunchAnalytics,
-} from "@/lib/data-api";
+import { getLaunch, getLaunchAnalytics } from "@/lib/data-api";
 import { TokenArt } from "@/components/launchpad-visuals";
 import type { Deployment } from "@/lib/deployment";
 import { rewardAssetMetadata } from "@/lib/reward-assets";
 import { TokenActions } from "@/components/token-actions";
 import { publicEnvironment } from "@/lib/public-environment";
+import { getEthUsdPrice } from "@/lib/eth-usd";
 
 export const dynamic = "force-dynamic";
 
@@ -51,17 +49,6 @@ function marketPhaseLabel(phase: "legacy_fixed" | "bonding" | "graduated") {
   return "Legacy fixed market";
 }
 
-function AddressRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt>{label}</dt>
-      <dd>
-        <code>{value}</code>
-      </dd>
-    </div>
-  );
-}
-
 export default async function LaunchDetail({
   params,
 }: {
@@ -71,13 +58,13 @@ export default async function LaunchDetail({
   const isTestnet = publicEnvironment.isTestnet;
   if (!/^0x[0-9a-fA-F]{40}$/.test(token)) notFound();
   let detail;
-  let activity;
   let analytics;
+  let ethUsdPrice;
   try {
-    [detail, activity, analytics] = await Promise.all([
+    [detail, analytics, ethUsdPrice] = await Promise.all([
       getLaunch(token),
-      getLaunchActivity(token),
       getLaunchAnalytics(token),
+      getEthUsdPrice(),
     ]);
   } catch {
     notFound();
@@ -183,12 +170,13 @@ export default async function LaunchDetail({
             ) : null}
           </div>
           <div className="token-hero-quote">
-            <span>Market cap</span>
-            <strong>{metric(market.marketCapBase, quoteSymbol)}</strong>
-            <small>
-              Price {priceMetric(market.priceBasePerToken, quoteSymbol)} /{" "}
-              {launch.symbol}
-            </small>
+            <TokenMarketQuote
+              marketCapBase={market.marketCapBase}
+              priceBasePerToken={market.priceBasePerToken}
+              baseSymbol={quoteSymbol}
+              tokenSymbol={launch.symbol}
+              ethUsdPrice={ethUsdPrice}
+            />
             <span
               className={`market-change ${
                 market.change24hBps === null || market.change24hBps === 0
@@ -324,7 +312,11 @@ export default async function LaunchDetail({
         ) : null}
 
         <div className="token-market-layout">
-          <TokenMarketChart analytics={market} symbol={launch.symbol} />
+          <TokenMarketChart
+            analytics={market}
+            symbol={launch.symbol}
+            ethUsdPrice={ethUsdPrice}
+          />
           <NetworkTokenTradePanel
             deployment={deployment as Deployment}
             token={launch.token as Address}
@@ -348,11 +340,9 @@ export default async function LaunchDetail({
               </div>
               <span className="live-chip">{launch.assets.length} assets</span>
             </div>
-            <LaunchRewardState
-              vault={launch.vault}
-              indexedBlock={detail.asOfBlock}
-              detailed
-              nativeV4={market.liquidityVenue === "uniswap-v4"}
+            <TokenBasketAssets
+              assets={basket}
+              explorerUrl={publicEnvironment.explorerUrl}
             />
           </section>
 
@@ -494,99 +484,6 @@ export default async function LaunchDetail({
             )}
           </section>
         </div>
-
-        <details className="advanced-token-details">
-          <summary>
-            <span>
-              <b>Contracts, provenance and raw activity</b>
-              <small>Advanced verification for this launch</small>
-            </span>
-            <span>Open details</span>
-          </summary>
-          <section
-            className="verification-card"
-            aria-labelledby="verification-heading"
-          >
-            <div>
-              <p className="card-label">Verify independently</p>
-              <h2 id="verification-heading">Canonical contracts</h2>
-            </div>
-            <dl className="address-list verification-list">
-              <AddressRow label="Launch token" value={launch.token} />
-              <AddressRow label="Reward vault" value={launch.vault} />
-              <AddressRow label="Market" value={launch.market} />
-              {market.graduatedPool ? (
-                <AddressRow
-                  label={
-                    market.liquidityVenue === "uniswap-v3"
-                      ? "Uniswap liquidity pool"
-                      : "Graduated liquidity pool"
-                  }
-                  value={market.graduatedPool}
-                />
-              ) : null}
-              {market.poolManager ? (
-                <AddressRow
-                  label="Uniswap pool manager"
-                  value={market.poolManager}
-                />
-              ) : null}
-              {market.poolId ? (
-                <AddressRow label="Uniswap pool ID" value={market.poolId} />
-              ) : null}
-              {market.hook ? (
-                <AddressRow label="Oracle-only hook" value={market.hook} />
-              ) : null}
-              {market.positionLocker ? (
-                <AddressRow
-                  label="Immutable position locker"
-                  value={market.positionLocker}
-                />
-              ) : null}
-              {market.positionTokenId ? (
-                <AddressRow
-                  label="Uniswap position NFT"
-                  value={`#${market.positionTokenId}`}
-                />
-              ) : null}
-              {market.poolFeePips !== null ? (
-                <AddressRow
-                  label="Uniswap pool fee"
-                  value={`${(market.poolFeePips / 10_000).toFixed(2)}%`}
-                />
-              ) : null}
-              <AddressRow label="Creator wallet" value={launch.creator} />
-              <AddressRow label="Created block" value={launch.created_block} />
-              <AddressRow
-                label="Indexed through"
-                value={detail.asOfBlock ?? "unavailable"}
-              />
-            </dl>
-          </section>
-          <section className="activity-card" aria-labelledby="activity-heading">
-            <div className="section-heading">
-              <div>
-                <p className="card-label">Protocol activity</p>
-                <h2 id="activity-heading">Canonical logs</h2>
-              </div>
-              <span className="live-chip">
-                {Math.min(activity.data.length, 20)} shown
-              </span>
-            </div>
-            <ol className="activity-list">
-              {activity.data.slice(0, 20).map((event) => (
-                <li key={event.transaction_hash + ":" + event.log_index}>
-                  <span>Block {event.block_number}</span>
-                  <code>{event.transaction_hash}</code>
-                  <small>
-                    Contract {event.address} · topic{" "}
-                    {event.topics[0] ?? "unavailable"}
-                  </small>
-                </li>
-              ))}
-            </ol>
-          </section>
-        </details>
 
         <section className="notice" aria-label="Reward disclosure">
           {publicEnvironment.isMainnet
