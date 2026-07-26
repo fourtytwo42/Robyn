@@ -19,6 +19,7 @@ const testnet = loadConfig("infrastructure/pm2/ecosystem.testnet.config.cjs", {
   ROBYN_TESTNET_MANIFEST: "/etc/robyn/testnet-validation.json",
   ROBYN_OPERATOR_KEY_FILE: "/etc/robyn/testnet-operator-key",
   ROBYN_TESTNET_AUTH_ORIGINS: "https://testnet.sherwoodforest.trade",
+  ROBYN_TESTNET_SERVER_RPC_URL: "http://192.0.2.10:8547",
 });
 
 const minimums = new Map([
@@ -85,6 +86,23 @@ for (const app of apps) {
 
 for (const name of minimums.keys()) {
   if (!names.has(name)) throw new Error(`reviewed PM2 app is missing: ${name}`);
+}
+
+const privateTestnetRpc = "http://192.0.2.10:8547";
+for (const name of [
+  "robyn-api-testnet",
+  "robyn-indexer-testnet",
+  "robyn-projector-testnet",
+  "robyn-keeper-testnet",
+]) {
+  const app = testnet.apps.find((candidate) => candidate.name === name);
+  if (app?.env?.ROBYN_OPERATOR_RPC_URL !== privateTestnetRpc) {
+    throw new Error(`${name} must use the server-only testnet RPC`);
+  }
+}
+const testnetWeb = testnet.apps.find((app) => app.name === "robyn-web-testnet");
+if (testnetWeb?.env?.RPC_GATEWAY_HEALTH_URL !== privateTestnetRpc) {
+  throw new Error("robyn-web-testnet health checks must use the server-only testnet RPC");
 }
 
 process.stdout.write(
