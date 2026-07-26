@@ -317,7 +317,7 @@ body.modal-open {
 
 .wizard-fields {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.5rem;
 }
 
 .wizard-token-fields {
@@ -5374,8 +5374,8 @@ main > .notice {
 }
 
 .creator-setup {
-  gap: 0.4rem;
-  padding: 0.6rem;
+  gap: 0.3rem;
+  padding: 0.5rem;
 }
 
 .artwork-crop-frame {
