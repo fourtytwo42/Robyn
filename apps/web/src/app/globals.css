@@ -4394,18 +4394,6 @@ main > .notice {
   }
 }
 
-.header-faucet-link {
-  color: #96fff0;
-  font-size: 0.74rem;
-  font-weight: 750;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.header-faucet-link:hover {
-  text-decoration: underline;
-}
-
 .basket-asset-builder {
   display: grid;
   gap: 0.85rem;
@@ -4636,10 +4624,6 @@ main > .notice {
 }
 
 @media (max-width: 820px) {
-  .header-faucet-link {
-    display: none;
-  }
-
   .asset-picker-overlay {
     align-items: flex-end;
     padding: 0;

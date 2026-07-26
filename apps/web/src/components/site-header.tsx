@@ -29,6 +29,15 @@ export function SiteHeader() {
           <LaunchTokenTrigger className="site-nav-action">
             Create token
           </LaunchTokenTrigger>
+          {isTestnet ? (
+            <a
+              href="https://faucet.testnet.chain.robinhood.com"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Faucet
+            </a>
+          ) : null}
           <NetworkPortfolioNavigation deployment={deployment} />
           <NetworkDaoNavigation deployment={deployment} />
         </nav>
@@ -37,16 +46,6 @@ export function SiteHeader() {
             <span className="status-dot" aria-hidden="true" />
             {isTestnet ? "Robinhood Testnet" : "Local devnet"}
           </span>
-          {isTestnet ? (
-            <a
-              className="header-faucet-link"
-              href="https://faucet.testnet.chain.robinhood.com"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Faucet
-            </a>
-          ) : null}
           <NetworkWalletControl />
         </div>
       </header>
