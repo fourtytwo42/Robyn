@@ -56,7 +56,7 @@ export function TokenBasketPreviewChips({
         const previewId = `basket-preview-${asset.address.slice(2)}`;
         const isOpen = openAddress === asset.address;
         return (
-          <span
+          <div
             className={`basket-preview-anchor${isOpen ? "is-open" : ""}`}
             key={asset.address}
             onBlur={(event) => {
@@ -113,7 +113,7 @@ export function TokenBasketPreviewChips({
                 </a>
               </div>
             </article>
-          </span>
+          </div>
         );
       })}
     </div>
