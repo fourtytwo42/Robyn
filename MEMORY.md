@@ -4,6 +4,27 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Exact public testnet release
+  `82e1dc4e3f7d2280217593c21bf250537907feeb` is live at
+  `https://testnet.sherwoodforest.trade`. Market-cap presentation now defaults
+  to USD across the ticker, homepage, Markets cards, and token detail. The
+  server fetches Coinbase's unauthenticated ETH-USD spot reference with a
+  60-second Next cache and fails closed to `USD unavailable`; contracts,
+  wallets, trading, fees, and accounting remain native ETH. Token-page market
+  cap changes to ETH on pointer hover or keyboard focus. Its chart defaults to
+  USD and switches price, volume, axes, tooltips, and market cap between USD
+  and ETH. Token basket cards now use the current-chain catalog and immutable
+  basket addresses to show trusted artwork, onchain or curated name/symbol,
+  exact weight, a verification-aware description, and a shortened explorer
+  link. Pending conversion, purchased/deposited, converted-native, contract
+  provenance, and raw-log panels were removed from token detail. All 52 web
+  tests, repository typechecks/tests, 123 Foundry tests, the immutable testnet
+  builder, and all 490 promotion checks passed. In-app-browser acceptance at
+  1440x900 and 390x844 proved the USD/ETH interactions, three asset images and
+  links, absent removed copy, zero overflow, and zero console warnings/errors.
+  Twelve superseded immutable web build directories were removed after path
+  validation; current and previous rollback releases, databases, chain state,
+  IPFS/MinIO data, campaign evidence, and deployment history were preserved.
 - Exact public homepage release
   `ab5d7825bf504605826c5dcaf18104426080e230` is live at
   `https://testnet.sherwoodforest.trade`. The homepage no longer renders the
@@ -2204,6 +2225,18 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-26: ETH-native/USD-display release
+  `82e1dc4e3f7d2280217593c21bf250537907feeb` passed formatting, lint, all
+  package typechecks and tests, Anvil smoke, 123 Foundry tests, protected
+  testnet bundle construction, and the 490-check promotion verifier. Coinbase
+  ETH-USD spot returned a valid unauthenticated reference from the VM.
+  In-app-browser desktop and mobile acceptance confirmed USD market caps on
+  ticker/cards/detail; focus and pointer hover changed token market cap to ETH;
+  the chart changed price and market cap between USD and ETH; the basket showed
+  three 64x64 undistorted images, three explorer-linked addresses, names,
+  symbols, weights, and descriptions; removed accounting/provenance sections
+  were absent; overflow and browser warning/error counts were zero.
 
 - 2026-07-24: schema-v8 route-safety and internal-audit checkpoint passed the
   120-test Foundry suite, the deterministic 512-wallet/32-launch/25,000-action
