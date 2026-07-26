@@ -2,6 +2,32 @@
 
 Durable project context lives here. Update this file whenever information should survive chat context compression or future agent handoff.
 
+- Last verified 2026-07-26: fresh capped schema-v9 contracts were deployed to
+  Robinhood Testnet from exact commit
+  `e435b78bf8be3d2d443ec2253d2a6ed4d5212874` at block `93726965`.
+  Independent verification passed all 513 checks. The deployment used
+  `maximumCurvePurchase=0.00025 ETH`, retained the additional 1% graduated-pool
+  hook fee, and consumed 56,641,011 gas across 54 transactions. The protected
+  manifest is
+  `/home/hendo420/.local/state/robyn-testnet-deployments/schema9-e435b78/46630-v4.json`.
+- Last verified 2026-07-26: public campaign
+  `schema9-e435b78-public` passed through the private LAN RPC at
+  `192.168.50.117:8547`. It used 100 encrypted campaign wallets, created eight
+  atomic launches covering all 24 reward assets, executed 2,181 successful
+  transactions and 2,081 product writes, graduated three launches, preserved
+  five distinct bonding states, completed direct v4 swaps, third-party
+  liquidity dilution, hook and locked-LP settlement, all claims, and
+  successful/defeated/cancelled governance. All receipts succeeded.
+- Last verified 2026-07-26: campaign reconciliation proves exact 50/25/20/5
+  conservation across 1,024 routed-fee events totaling
+  `382838524443669 wei`, fixed one-billion-token launch supplies, fixed RDAO
+  supply, solvent liabilities, immutable locked positions, zero remaining hook
+  queues, and all 24 conversion routes. Evidence is
+  `/home/hendo420/robyn-evidence/schema9-mainnet-readiness-d76244a/public-campaign-reconciliation.json`.
+  The live campaign exposed an orchestration-order gap: locked-token conversion
+  occurred after the prior hook settlement, leaving three small native queues.
+  Three permissionless follow-up settlements cleared them. The runner now
+  performs and tests a final post-harvest settlement.
 
 - Last verified 2026-07-26: schema-v9 mainnet-readiness review found a
   release-blocking configuration mismatch. `maximumNativeSwap` limited only
@@ -59,16 +85,15 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- Mainnet-readiness checkpoint `8e4bd85c74f595f17d98b88a5b8e009745f9208a`
-  is pushed on `codex/schema9-guaranteed-fee`. The contract audit, 256-run
-  invariants, 512-wallet economic campaign, no-broadcast Robinhood mainnet fork
-  lifecycle, and clean chain-46630 deployment rehearsal are passing. The
-  currently public chain-46630 deployment predates the immutable
-  `maximumCurvePurchase` fix, so it is not the final candidate. Next required
-  step is to commit the corrected deployment/smoke harnesses, perform the fresh
-  public schema-v9 deployment after gas/reserve preflight, then run the fixed
-  100-wallet campaign and remaining browser, wallet, recovery, backup, and
-  eight-hour gates.
+- Fresh capped schema-v9 deployment `e435b78` and public campaign
+  `schema9-e435b78-public` are passing. The campaign completed 2,181 successful
+  transactions with exact fee conservation and zero queued hook fees. The
+  working tree contains the post-harvest settlement regression fix and memory
+  update. Next: run focused and repository gates, commit and push, install the
+  fresh deployment manifest into a new exact application release, rebuild the
+  canonical index, promote and browser-test it, then complete real-wallet,
+  recovery, backup, and uninterrupted eight-hour endurance gates. The existing
+  public site remains on the predecessor deployment until promotion passes.
 - Last verified 2026-07-26: the creator-profile avatar and token-artwork upload
   badges no longer render a font-dependent plus glyph. Both now use the same
   geometrically centered CSS cross, keeping the plus centered in its circle

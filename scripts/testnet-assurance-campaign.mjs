@@ -1522,6 +1522,30 @@ async function conversions() {
       const [quoted] = await publicClient.readContract({ address: manifest.contracts.assetRouter, abi: assetRouterAbi, functionName: "quoteAssetToNative", args: [launch.token, amount] });
       await contractTransaction(state, `locker-convert-token-${launchIndex}`, account, launch.locker, lockerAbi, "convertCollectedToken", [amount, (quoted * 99n) / 100n || 1n, deadline]);
     }
+    const postHarvestPendingNative = await publicClient.readContract({
+      address: manifest.contracts.oracleHook,
+      abi: hookAbi,
+      functionName: "pendingNativeFees",
+      args: [launch.token],
+    });
+    if (postHarvestPendingNative > 0n) {
+      await contractTransaction(
+        state,
+        `hook-settle-native-post-harvest-${launchIndex}`,
+        account,
+        manifest.contracts.oracleHook,
+        hookAbi,
+        "settleNativeFees",
+        [launch.token, postHarvestPendingNative],
+      );
+    }
+    const hookSettlement = state.conversions.hookSettlements.find(
+      (entry) => entry.launchIndex === launchIndex,
+    );
+    if (hookSettlement) {
+      hookSettlement.postHarvestNativeSettled =
+        postHarvestPendingNative.toString();
+    }
     if (!state.conversions.harvests.some((entry) => entry.launchIndex === launchIndex)) {
       state.conversions.harvests.push({ launchIndex, nativeRouted: nativeBalance.toString(), launchTokenCollected: tokenBalance.toString() });
       saveState(state);

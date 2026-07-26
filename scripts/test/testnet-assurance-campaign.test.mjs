@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   decryptCampaignRoot,
@@ -263,4 +264,19 @@ test("weighted wallet funding preserves the total while funding creator gas skew
     () => weightedWalletFunding(1_000n, [{ index: 0, amountWei: 1_000n }]),
     /complete campaign budget/,
   );
+});
+
+test("locker conversion fees are settled after the final harvest swap", () => {
+  const source = readFileSync(
+    new URL("../testnet-assurance-campaign.mjs", import.meta.url),
+    "utf8",
+  );
+  const lockerConversion = source.indexOf(
+    "`locker-convert-token-${launchIndex}`",
+  );
+  const postHarvestSettlement = source.indexOf(
+    "`hook-settle-native-post-harvest-${launchIndex}`",
+  );
+  assert.ok(lockerConversion >= 0);
+  assert.ok(postHarvestSettlement > lockerConversion);
 });
