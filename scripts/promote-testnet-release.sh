@@ -15,6 +15,10 @@ campaign_token_file="${ROBYN_CAMPAIGN_OPERATOR_TOKEN_FILE:-/home/hendo420/.local
 operator_key=/home/hendo420/.config/robyn/testnet/operator.key
 [[ -d "$target" && -r "$release_env" && -r "$campaign_token_file" ]]
 (cd "$target" && sha256sum -c testnet-release-manifest.json.sha256 >/dev/null && sha256sum -c testnet-release-files.sha256 >/dev/null)
+install -d -o root -g root -m 0755 /var/www/sherwoodforest-coming-soon
+install -o root -g root -m 0644 \
+  "$target/infrastructure/coming-soon/index.html" \
+  /var/www/sherwoodforest-coming-soon/index.html
 
 old=""
 [[ -L "$current" ]] && old="$(readlink -f "$current")"
