@@ -6,10 +6,12 @@ import {
   marketTapeDurationSeconds,
   marketTapeRepeatCount,
 } from "@/lib/market-tape";
+import { TokenArt } from "@/components/launchpad-visuals";
 
 type TapeMarket = {
   token: string;
   symbol: string;
+  artworkSrc: string | null;
   marketCapLabel: string;
   change24hBps: number | null;
 };
@@ -28,8 +30,17 @@ function MarketLink({
       tabIndex={duplicate ? -1 : undefined}
       aria-hidden={duplicate || undefined}
     >
+      <TokenArt
+        symbol={market.symbol}
+        alt=""
+        className="market-tape-art"
+        {...(market.artworkSrc ? { artworkSrc: market.artworkSrc } : {})}
+      />
       <strong>${market.symbol}</strong>
-      <span>{market.marketCapLabel}</span>
+      <span>
+        <i>MCAP</i>
+        {market.marketCapLabel}
+      </span>
       <small
         aria-label={
           change === null

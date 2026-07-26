@@ -3758,8 +3758,8 @@ main > .notice {
   position: relative;
   z-index: 2;
   display: block;
-  height: 34px;
-  min-height: 34px;
+  height: 40px;
+  min-height: 40px;
   border-bottom: 1px solid var(--line);
   background: rgba(6, 10, 21, 0.84);
   overflow: hidden;
@@ -3805,14 +3805,24 @@ main > .notice {
 
 .market-tape-track a {
   display: grid;
-  grid-template-columns: auto auto auto;
-  gap: 0.1rem 0.55rem;
+  grid-template-columns: 26px auto auto auto;
+  gap: 0.1rem 0.45rem;
+  align-items: center;
   align-content: center;
-  min-width: 176px;
+  min-width: 222px;
   height: 100%;
-  padding: 0.2rem 0.9rem;
+  padding: 0.2rem 0.75rem;
   border-right: 1px solid rgba(157, 170, 194, 0.12);
   text-decoration: none;
+}
+
+.market-tape-art {
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(142, 158, 197, 0.2);
+  border-radius: 7px;
+  background: rgba(18, 26, 47, 0.88);
+  object-fit: cover;
 }
 
 .market-tape-track a:hover {
@@ -3828,11 +3838,21 @@ main > .notice {
 }
 
 .market-tape-track span {
+  display: flex;
+  gap: 0.28rem;
+  align-items: baseline;
   color: var(--text);
   font:
     700 0.68rem/1.2 "IBM Plex Mono",
     ui-monospace,
     monospace;
+}
+
+.market-tape-track span i {
+  color: var(--muted);
+  font-size: 0.47rem;
+  font-style: normal;
+  letter-spacing: 0.04em;
 }
 
 .market-tape-track small {
@@ -4345,7 +4365,7 @@ main > .notice {
   }
 
   .market-tape-track a {
-    min-width: 158px;
+    min-width: 205px;
   }
 
   .product-hero {
@@ -4688,7 +4708,7 @@ main > .notice {
   }
 
   .market-tape-track a {
-    min-width: 164px;
+    min-width: 210px;
   }
 
   .token-detail-hero {

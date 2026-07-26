@@ -15,6 +15,10 @@ export async function MarketTape() {
       .map((launch) => ({
         token: launch.token,
         symbol: launch.symbol,
+        artworkSrc:
+          launch.metadata?.media_status === "active" && launch.metadata.media_id
+            ? `/api/media/${launch.metadata.media_id}?cid=${launch.metadata.optimized_webp_cid ?? "active"}`
+            : null,
         marketCapLabel: marketCapAmount(
           launch.metrics!.marketCapBase,
           launch.metrics!.baseSymbol,
