@@ -1183,5 +1183,11 @@
       4000,
       2000
     ]
+  },
+  "kingOfForestPolicy": {
+    "version": "forest-v1",
+    "activationBlock": 93591157,
+    "progressThresholdBps": 5000,
+    "minimumUniqueTraders": 10
   }
 }

@@ -760,6 +760,12 @@ jq -n \
     assetCatalog: {
       schemaVersion: 2,
       snapshotAt: (now | todateiso8601),
+    kingOfForestPolicy: {
+      version: "forest-v1",
+      activationBlock: $deploymentBlock,
+      progressThresholdBps: 5000,
+      minimumUniqueTraders: 10
+    },
       disclosure: "Faucet assets and Robyn mock assets are test-only and are not production Stock Tokens, backed shares, or redeemable securities.",
       assets: $assetCatalog
     },
