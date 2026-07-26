@@ -41,6 +41,15 @@ const legacyMarketAbi = [
   },
 ] as const;
 const nativeMarketAbi = [
+  { type: "error", name: "InvalidAmount", inputs: [] },
+  {
+    type: "error",
+    name: "Slippage",
+    inputs: [
+      { type: "uint256", name: "minimum" },
+      { type: "uint256", name: "actual" },
+    ],
+  },
   {
     type: "function",
     name: "quoteBuy",
@@ -76,6 +85,97 @@ const nativeMarketAbi = [
     outputs: [{ type: "uint256" }],
   },
 ] as const;
+const v4AssetRouterAbi = [
+  { type: "error", name: "InvalidAmount", inputs: [] },
+  {
+    type: "error",
+    name: "RouteUnavailable",
+    inputs: [{ type: "address", name: "asset" }],
+  },
+  { type: "error", name: "DeadlineExpired", inputs: [] },
+  {
+    type: "error",
+    name: "WeakMinimumOutput",
+    inputs: [
+      { type: "uint256", name: "supplied" },
+      { type: "uint256", name: "required" },
+    ],
+  },
+  {
+    type: "function",
+    name: "route",
+    stateMutability: "view",
+    inputs: [{ type: "address", name: "asset" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { type: "uint24", name: "fee" },
+          { type: "int24", name: "tickSpacing" },
+          { type: "address", name: "hooks" },
+          { type: "uint128", name: "minimumLiquidity" },
+          { type: "uint128", name: "maximumNativeInput" },
+          { type: "int24", name: "referenceTick" },
+          { type: "uint24", name: "maximumReferenceTickDeviation" },
+          { type: "bool", name: "enforceReferencePrice" },
+          { type: "bytes32", name: "verificationClass" },
+          { type: "bool", name: "enabled" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "quoteNativeToAsset",
+    stateMutability: "nonpayable",
+    inputs: [
+      { type: "address", name: "asset" },
+      { type: "uint128", name: "amountIn" },
+    ],
+    outputs: [
+      { type: "uint256", name: "amountOut" },
+      { type: "uint256", name: "gasEstimate" },
+    ],
+  },
+  {
+    type: "function",
+    name: "quoteAssetToNative",
+    stateMutability: "nonpayable",
+    inputs: [
+      { type: "address", name: "asset" },
+      { type: "uint128", name: "amountIn" },
+    ],
+    outputs: [
+      { type: "uint256", name: "amountOut" },
+      { type: "uint256", name: "gasEstimate" },
+    ],
+  },
+  {
+    type: "function",
+    name: "swapExactNativeForAsset",
+    stateMutability: "payable",
+    inputs: [
+      { type: "address", name: "asset" },
+      { type: "uint256", name: "minimumOutput" },
+      { type: "address", name: "recipient" },
+      { type: "uint256", name: "deadline" },
+    ],
+    outputs: [{ type: "uint256", name: "amountOut" }],
+  },
+  {
+    type: "function",
+    name: "swapExactAssetForNative",
+    stateMutability: "nonpayable",
+    inputs: [
+      { type: "address", name: "asset" },
+      { type: "uint128", name: "amountIn" },
+      { type: "uint256", name: "minimumOutput" },
+      { type: "address", name: "recipient" },
+      { type: "uint256", name: "deadline" },
+    ],
+    outputs: [{ type: "uint256", name: "amountOut" }],
+  },
+] as const;
 
 function compact(value: bigint) {
   return Number(formatEther(value)).toLocaleString(undefined, {
@@ -84,8 +184,23 @@ function compact(value: bigint) {
 }
 
 type AuthoritativeQuote =
-  | { state: "idle" | "loading" | "unavailable"; amount: null }
+  | { state: "idle" | "loading"; amount: null }
+  | { state: "unavailable"; amount: null; message: string }
   | { state: "ready"; amount: bigint };
+
+function tradeErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : "Trade failed.";
+  if (message.includes("InvalidAmount") || message.includes("0x2c5211c6")) {
+    return "The pool cannot fill that amount. Try a smaller trade.";
+  }
+  if (message.includes("RouteUnavailable")) {
+    return "The graduated liquidity route is temporarily unavailable.";
+  }
+  if (message.includes("DeadlineExpired")) {
+    return "The quote expired before submission. Please try again.";
+  }
+  return message;
+}
 
 export function NetworkTokenTradePanel({
   deployment,
@@ -94,6 +209,7 @@ export function NetworkTokenTradePanel({
   symbol,
   feeBps,
   basePerToken,
+  marketPhase,
 }: {
   deployment: Deployment;
   token: Address;
@@ -101,11 +217,15 @@ export function NetworkTokenTradePanel({
   symbol: string;
   feeBps: number;
   basePerToken: string;
+  marketPhase: "legacy_fixed" | "bonding" | "graduated";
 }) {
   const router = useRouter();
   const isNativeV4 = deployment.liquidityVenue === "uniswap-v4";
+  const isGraduatedV4 = isNativeV4 && marketPhase === "graduated";
+  const assetRouter = deployment.contracts.assetRouter;
+  const nativeBuyDefault = isGraduatedV4 ? "0.0001" : "0.001";
   const [side, setSide] = useState<"buy" | "sell">("buy");
-  const [input, setInput] = useState(isNativeV4 ? "0.001" : "100");
+  const [input, setInput] = useState(isNativeV4 ? nativeBuyDefault : "100");
   const {
     account,
     publicClient,
@@ -116,6 +236,9 @@ export function NetworkTokenTradePanel({
   } = useRobynTestnetWallet();
   const [baseBalance, setBaseBalance] = useState(0n);
   const [tokenBalance, setTokenBalance] = useState(0n);
+  const [maximumNativeInput, setMaximumNativeInput] = useState<bigint | null>(
+    null,
+  );
   const [busy, setBusy] = useState(false);
   const [authoritativeQuote, setAuthoritativeQuote] =
     useState<AuthoritativeQuote>({
@@ -136,6 +259,30 @@ export function NetworkTokenTradePanel({
       : 0;
 
   useEffect(() => {
+    if (!isGraduatedV4 || !assetRouter) {
+      setMaximumNativeInput(null);
+      return;
+    }
+    let cancelled = false;
+    void publicClient
+      .readContract({
+        address: assetRouter,
+        abi: v4AssetRouterAbi,
+        functionName: "route",
+        args: [token],
+      })
+      .then((route) => {
+        if (!cancelled) setMaximumNativeInput(route.maximumNativeInput);
+      })
+      .catch(() => {
+        if (!cancelled) setMaximumNativeInput(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [assetRouter, isGraduatedV4, publicClient, token]);
+
+  useEffect(() => {
     if (!isNativeV4) return;
     if (!Number.isFinite(parsed) || parsed <= 0) {
       setAuthoritativeQuote({ state: "idle", amount: null });
@@ -148,29 +295,71 @@ export function NetworkTokenTradePanel({
       void (async () => {
         try {
           const amount = parseEther(input);
-          const simulation =
-            side === "buy"
-              ? await publicClient.simulateContract({
-                  address: market,
-                  abi: nativeMarketAbi,
-                  functionName: "quoteBuy",
-                  args: [amount],
-                })
-              : await publicClient.simulateContract({
-                  address: market,
-                  abi: nativeMarketAbi,
-                  functionName: "quoteSell",
-                  args: [amount],
-                });
+          if (
+            side === "buy" &&
+            maximumNativeInput !== null &&
+            amount > maximumNativeInput
+          ) {
+            if (!cancelled) {
+              setAuthoritativeQuote({
+                state: "unavailable",
+                amount: null,
+                message: `Maximum ${formatEther(maximumNativeInput)} ETH per testnet swap`,
+              });
+            }
+            return;
+          }
+          if (isGraduatedV4 && !assetRouter) {
+            throw new Error("Graduated swap router is not configured.");
+          }
+          const quotedOutput = isGraduatedV4
+            ? side === "buy"
+              ? (
+                  await publicClient.simulateContract({
+                    address: assetRouter!,
+                    abi: v4AssetRouterAbi,
+                    functionName: "quoteNativeToAsset",
+                    args: [token, amount],
+                  })
+                ).result[0]
+              : (
+                  await publicClient.simulateContract({
+                    address: assetRouter!,
+                    abi: v4AssetRouterAbi,
+                    functionName: "quoteAssetToNative",
+                    args: [token, amount],
+                  })
+                ).result[0]
+            : side === "buy"
+              ? (
+                  await publicClient.simulateContract({
+                    address: market,
+                    abi: nativeMarketAbi,
+                    functionName: "quoteBuy",
+                    args: [amount],
+                  })
+                ).result[1]
+              : (
+                  await publicClient.simulateContract({
+                    address: market,
+                    abi: nativeMarketAbi,
+                    functionName: "quoteSell",
+                    args: [amount],
+                  })
+                ).result[1];
           if (!cancelled) {
             setAuthoritativeQuote({
               state: "ready",
-              amount: simulation.result[1],
+              amount: quotedOutput,
             });
           }
         } catch {
           if (!cancelled) {
-            setAuthoritativeQuote({ state: "unavailable", amount: null });
+            setAuthoritativeQuote({
+              state: "unavailable",
+              amount: null,
+              message: "Quote unavailable",
+            });
           }
         }
       })();
@@ -180,7 +369,18 @@ export function NetworkTokenTradePanel({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [input, isNativeV4, market, parsed, publicClient, side]);
+  }, [
+    assetRouter,
+    input,
+    isGraduatedV4,
+    isNativeV4,
+    market,
+    maximumNativeInput,
+    parsed,
+    publicClient,
+    side,
+    token,
+  ]);
 
   async function refresh(address: Address) {
     if (!publicClient) return;
@@ -237,14 +437,28 @@ export function NetworkTokenTradePanel({
     setBusy(true);
     try {
       const amount = parseEther(input);
+      if (
+        side === "buy" &&
+        maximumNativeInput !== null &&
+        amount > maximumNativeInput
+      ) {
+        setStatus(
+          `Maximum ${formatEther(maximumNativeInput)} ETH per testnet swap.`,
+        );
+        return;
+      }
+      if (isGraduatedV4 && !assetRouter) {
+        throw new Error("Graduated swap router is not configured.");
+      }
       if (!isNativeV4 || side === "sell") {
         const asset = side === "buy" ? deployment.contracts.baseAsset : token;
+        const spender = isGraduatedV4 ? assetRouter! : market;
         setStatus(`Approving ${side === "buy" ? "mUSD" : symbol}…`);
         const approval = await walletClient.writeContract({
           address: asset,
           abi: erc20Abi,
           functionName: "approve",
-          args: [market, amount],
+          args: [spender, amount],
         });
         const approvalReceipt = await publicClient.waitForTransactionReceipt({
           hash: approval,
@@ -255,7 +469,45 @@ export function NetworkTokenTradePanel({
       }
       setStatus(`${side === "buy" ? "Buying" : "Selling"} ${symbol}…`);
       let hash;
-      if (isNativeV4 && side === "buy") {
+      if (isGraduatedV4) {
+        const quote =
+          side === "buy"
+            ? await publicClient.simulateContract({
+                address: assetRouter!,
+                abi: v4AssetRouterAbi,
+                functionName: "quoteNativeToAsset",
+                args: [token, amount],
+              })
+            : await publicClient.simulateContract({
+                address: assetRouter!,
+                abi: v4AssetRouterAbi,
+                functionName: "quoteAssetToNative",
+                args: [token, amount],
+              });
+        const minimumOutput = (quote.result[0] * 99n) / 100n;
+        if (minimumOutput === 0n) throw new Error("Quote output is too small.");
+        const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
+        if (side === "buy") {
+          const simulation = await publicClient.simulateContract({
+            account,
+            address: assetRouter!,
+            abi: v4AssetRouterAbi,
+            functionName: "swapExactNativeForAsset",
+            args: [token, minimumOutput, account, deadline],
+            value: amount,
+          });
+          hash = await walletClient.writeContract(simulation.request);
+        } else {
+          const simulation = await publicClient.simulateContract({
+            account,
+            address: assetRouter!,
+            abi: v4AssetRouterAbi,
+            functionName: "swapExactAssetForNative",
+            args: [token, amount, minimumOutput, account, deadline],
+          });
+          hash = await walletClient.writeContract(simulation.request);
+        }
+      } else if (isNativeV4 && side === "buy") {
         const simulation = await publicClient.simulateContract({
           account,
           address: market,
@@ -291,7 +543,7 @@ export function NetworkTokenTradePanel({
       setStatus(`${side === "buy" ? "Buy" : "Sell"} confirmed.`);
       router.refresh();
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Trade failed.");
+      setStatus(tradeErrorMessage(error));
     } finally {
       setBusy(false);
     }
@@ -305,7 +557,7 @@ export function NetworkTokenTradePanel({
         setSide(value);
         setInput(
           value === "buy" && isNativeV4
-            ? "0.001"
+            ? nativeBuyDefault
             : value === "buy"
               ? "100"
               : "10000",
@@ -314,7 +566,7 @@ export function NetworkTokenTradePanel({
       dirty={
         input !==
         (side === "buy" && isNativeV4
-          ? "0.001"
+          ? nativeBuyDefault
           : side === "buy"
             ? "100"
             : "10000")
@@ -332,7 +584,7 @@ export function NetworkTokenTradePanel({
               setSide(value);
               setInput(
                 value === "buy" && isNativeV4
-                  ? "0.001"
+                  ? nativeBuyDefault
                   : value === "buy"
                     ? "100"
                     : "10000",
@@ -370,18 +622,22 @@ export function NetworkTokenTradePanel({
       <div className="quick-amounts">
         {(side === "buy"
           ? isNativeV4
-            ? [0.0005, 0.001, 0.0025]
-            : [25, 100, 250]
-          : [10000, 100000, 500000]
+            ? isGraduatedV4
+              ? maximumNativeInput
+                ? [
+                    formatEther(maximumNativeInput / 5n),
+                    formatEther((maximumNativeInput * 2n) / 5n),
+                    formatEther((maximumNativeInput * 4n) / 5n),
+                  ]
+                : ["0.00005", "0.0001", "0.0002"]
+              : ["0.0005", "0.001", "0.0025"]
+            : ["25", "100", "250"]
+          : ["10000", "100000", "500000"]
         ).map((value) => (
-          <button
-            type="button"
-            key={value}
-            onClick={() => setInput(String(value))}
-          >
+          <button type="button" key={value} onClick={() => setInput(value)}>
             {side === "buy" && isNativeV4
-              ? String(value)
-              : value.toLocaleString()}
+              ? value
+              : Number(value).toLocaleString()}
           </button>
         ))}
       </div>
@@ -398,7 +654,7 @@ export function NetworkTokenTradePanel({
               : authoritativeQuote.state === "loading"
                 ? "Quoting onchain…"
                 : authoritativeQuote.state === "unavailable"
-                  ? "Quote unavailable"
+                  ? authoritativeQuote.message
                   : "—"
             : `${indicativeOutput.toLocaleString(undefined, {
                 maximumFractionDigits: 2,

@@ -4,6 +4,17 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- A live MetaMask SAT3 buy exposed that the testnet trade panel still quoted and
+  submitted graduated launches to their exhausted bonding market. Selector
+  `0x2c5211c6` is `InvalidAmount()`, and the former graduated quick amounts also
+  exceeded the route's intentional `0.00025 ETH` testnet cap. The repair routes
+  graduated v4 quotes, approvals, buys, and sells through the already-deployed
+  `RobynV4AssetRouter`, reads the cap onchain, uses cap-aware quick amounts,
+  applies a fresh 1% slippage floor and ten-minute deadline, and decodes common
+  router errors. Web strict typecheck, lint, and all 40 tests pass; an
+  `eth_call` from the affected wallet successfully simulated the exact
+  `0.0001 ETH` SAT3 router buy without changing chain state. Promotion and
+  browser acceptance are still pending.
 - Sherwood Forest's product voice and visual system intentionally use a
   restrained `plant → grow → harvest` metaphor. The homepage, Markets hero,
   Portfolio hero, and guided creation modal use forest language while retaining
