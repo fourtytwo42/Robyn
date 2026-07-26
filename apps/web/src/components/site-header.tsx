@@ -26,6 +26,9 @@ export function SiteHeader() {
         </Link>
         <nav className="site-nav" aria-label="Primary navigation">
           <Link href="/discover">Markets</Link>
+          <LaunchTokenTrigger className="site-nav-action">
+            Create token
+          </LaunchTokenTrigger>
           <NetworkPortfolioNavigation deployment={deployment} />
           <NetworkDaoNavigation deployment={deployment} />
         </nav>
@@ -41,13 +44,10 @@ export function SiteHeader() {
               target="_blank"
               rel="noreferrer"
             >
-              Get test ETH
+              Faucet
             </a>
           ) : null}
           <NetworkWalletControl />
-          <LaunchTokenTrigger className="button primary header-launch-button">
-            Launch a token
-          </LaunchTokenTrigger>
         </div>
       </header>
       <MarketTape />

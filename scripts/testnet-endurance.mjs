@@ -81,7 +81,7 @@ if (rpcUrl !== "https://rpc.testnet.chain.robinhood.com") {
   throw new Error("Endurance requires Robinhood's official public testnet RPC");
 }
 const publicBase =
-  process.env.ROBYN_ENDURANCE_PUBLIC_BASE ?? "https://sherwoodforest.trade";
+  process.env.ROBYN_ENDURANCE_PUBLIC_BASE ?? "https://testnet.sherwoodforest.trade";
 const apiBase = `${publicBase}/api`;
 const outputBase =
   process.env.ROBYN_ENDURANCE_OUTPUT_DIR ??
