@@ -1999,6 +1999,12 @@ async function sweep() {
 }
 
 async function all() {
+  try {
+    statSync(statePath);
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    await init();
+  }
   const phases = loadState().phases;
   if (!phases.preflight) await preflight();
   if (!loadState().phases.funded) await fund();
