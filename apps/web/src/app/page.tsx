@@ -6,9 +6,9 @@ import { TokenArt } from "@/components/launchpad-visuals";
 import { MarketCard } from "@/components/market-card";
 import { LaunchTokenTrigger } from "@/components/launch-token-trigger";
 import { getLaunches } from "@/lib/data-api";
+import { deriveHomepageMetrics } from "@/lib/homepage-metrics";
 import { rankActiveMarkets } from "@/lib/market-ranking";
 import { rewardAssetMetadata } from "@/lib/reward-assets";
-import { ForestCanopy } from "@/components/forest-canopy";
 import Link from "next/link";
 import { formatEther } from "viem";
 import { publicEnvironment } from "@/lib/public-environment";
@@ -28,15 +28,7 @@ export default async function Home() {
   const isTestnet = publicEnvironment.isTestnet;
   const marketShowcase = rankActiveMarkets(launches.data).slice(0, 4);
   const featuredMarket = marketShowcase[0];
-  const rewardAssetCount = new Set(
-    launches.data.flatMap((launch) =>
-      launch.assets.map((asset) => asset.toLowerCase()),
-    ),
-  ).size;
-  const totalVolume = launches.data.reduce(
-    (total, launch) => total + BigInt(launch.metrics?.totalVolumeBase ?? "0"),
-    0n,
-  );
+  const homepageMetrics = deriveHomepageMetrics(launches.data);
   const featuredBasket = featuredMarket
     ? featuredMarket.assets
         .map((asset, index) => {
@@ -58,7 +50,6 @@ export default async function Home() {
       <SiteHeader />
 
       <section className="product-hero" aria-labelledby="hero-heading">
-        <ForestCanopy />
         <div className="hero-copy">
           <p className="eyebrow">Plant tokens · grow reward baskets</p>
           <h1 id="hero-heading">Grow a token worth holding.</h1>
@@ -80,10 +71,6 @@ export default async function Home() {
             <Link className="button ghost" href="/discover">
               Roam the markets
             </Link>
-            <span className="hero-network-copy">
-              Permissionless roots · verifiable growth ·{" "}
-              {publicEnvironment.networkLabel}
-            </span>
           </div>
         </div>
         <aside
@@ -112,20 +99,24 @@ export default async function Home() {
 
       <section className="launchpad-stats" aria-label="Launchpad activity">
         <article>
-          <span>Tokens growing</span>
-          <strong>{launches.data.length}</strong>
+          <span>Active markets · 24h</span>
+          <strong>{homepageMetrics.activeMarkets24h}</strong>
         </article>
         <article>
-          <span>Reward assets</span>
-          <strong>{rewardAssetCount}</strong>
+          <span>Trades · 24h</span>
+          <strong>{homepageMetrics.trades24h.toLocaleString()}</strong>
         </article>
         <article>
-          <span>Forest volume</span>
-          <strong>{compactBase(totalVolume.toString())} ETH</strong>
+          <span>Volume · 24h</span>
+          <strong>{compactBase(homepageMetrics.volume24hBase)} ETH</strong>
         </article>
         <article>
-          <span>Reward roots</span>
-          <strong>Immutable</strong>
+          <span>Volume leader · 24h</span>
+          <strong>
+            {homepageMetrics.volumeLeader24h
+              ? `$${homepageMetrics.volumeLeader24h.symbol}`
+              : "No activity"}
+          </strong>
         </article>
       </section>
 
