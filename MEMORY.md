@@ -4,9 +4,16 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
-- Exact public web-copy release
-  `edc38c016e759e36dfef2853caef7be5b0d0025b` is live at
-  `https://testnet.sherwoodforest.trade`. Public pages no longer expose schema
+- Exact public homepage release
+  `86503364a4a3ea7396fd0b1e663e0ce8becb9daa` is live at
+  `https://testnet.sherwoodforest.trade`. The homepage no longer renders the
+  canopy vector or the `Permissionless roots` network tagline. Its former
+  lifetime and decorative counters are replaced by exact indexed 24-hour
+  active-market count, trade count, ETH volume, and volume leader. Small ETH
+  totals preserve six decimal places, preventing real activity from rendering
+  as zero. In-app-browser acceptance confirmed `0.000895 ETH`, no horizontal
+  overflow, and absence of the removed copy and canopy. Public pages no longer
+  expose schema
   generations, analytics-formula versions, Uniswap generation labels, or RDAO
   branding. All seven em dashes were removed from the whitepaper, discovery
   controls, launch wizard, market cards, ticker, and trade panel. The
@@ -57,10 +64,12 @@ Durable project context lives here. Update this file whenever information should
 - Sherwood Forest's product voice and visual system intentionally use a
   restrained `plant → grow → harvest` metaphor. The homepage, Markets hero,
   Portfolio hero, and guided creation modal use forest language while retaining
-  explicit token, market, basket, and claim terminology. A code-native canopy
-  illustration and rooted green surfaces provide the forest identity without
-  obscuring financial information. The homepage featured basket description is
-  derived from the actual featured launch rather than hardcoded assets.
+  explicit token, market, basket, and claim terminology. Rooted green surfaces
+  provide the forest identity without obscuring financial information. The
+  code-native canopy remains available for compact Markets presentation but is
+  intentionally absent from the homepage. The homepage featured basket
+  description is derived from the actual featured launch rather than hardcoded
+  assets.
 - Markets no longer exposes basket-size filtering. Discovery supports canonical
   `1h`, `6h`, `24h`, `7d`, and all-time windows; cards, volume sorting, and
   Trending tie-breaks use the selected window's timestamped trade metrics.
