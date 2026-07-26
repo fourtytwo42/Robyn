@@ -581,7 +581,7 @@
   margin: 0.3rem 0 0;
 }
 
-.rdao-seal {
+.governance-seal {
   display: grid;
   min-height: 300px;
   place-content: center;
@@ -595,18 +595,18 @@
   text-align: center;
 }
 
-.rdao-seal span,
-.rdao-seal strong,
-.rdao-seal small {
+.governance-seal span,
+.governance-seal strong,
+.governance-seal small {
   display: block;
 }
 
-.rdao-seal span {
+.governance-seal span {
   font-weight: 900;
   letter-spacing: 0.18em;
 }
 
-.rdao-seal strong {
+.governance-seal strong {
   margin: 0.4rem 0;
   font-family: var(--font-mono);
   font-size: clamp(1.5rem, 4vw, 2.5rem);
