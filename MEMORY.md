@@ -5,8 +5,8 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - Last verified 2026-07-26: schema-v9 is live at
-  `https://testnet.sherwoodforest.trade` from exact release
-  `6385004380c63ea5445d7668f286d2e000882d1f`. The schema-v9 deployment began at
+  `https://testnet.sherwoodforest.trade` from current exact `origin/main`. The
+  implementation checkpoint was `6385004`; the schema-v9 deployment began at
   block `93591157`; all 494 deployment checks pass. The creation/profile release
   is live: optional artwork, hidden internal wallet-proof/sanitization steps,
   DEX-style routed-asset picker with custom-address inspection, icon-only basket
