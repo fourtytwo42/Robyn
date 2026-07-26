@@ -5455,6 +5455,52 @@ main > .notice {
   font-weight: 700;
 }
 
+.profile-avatar-upload {
+  position: relative;
+  width: 112px;
+  cursor: pointer;
+}
+
+.profile-avatar-upload .profile-avatar-preview {
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.profile-avatar-upload:hover .profile-avatar-preview,
+.profile-avatar-upload:focus-within .profile-avatar-preview {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(183, 245, 140, 0.12);
+  transform: translateY(-1px);
+}
+
+.profile-avatar-add-icon {
+  position: absolute;
+  z-index: 2;
+  right: 6px;
+  bottom: 6px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 2px solid #07191c;
+  border-radius: 50%;
+  color: #06130c;
+  background: #b7f58c;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.4);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.profile-avatar-helper {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .creator-profile-card-avatar {
   flex: 0 0 auto;
   border: 1px solid rgba(81, 226, 207, 0.25);

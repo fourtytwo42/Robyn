@@ -4,6 +4,11 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Last verified 2026-07-26: the creator profile avatar tile is now the upload
+  control, with a visible plus badge and keyboard focus treatment. The separate
+  file chooser row and `Use avatar` button are removed. Selecting an image
+  exposes crop zoom, and `Save profile` now sanitizes, uploads, and applies the
+  selected avatar before saving the remaining profile fields.
 - Last verified 2026-07-26: the decorative pine-tree canopy SVG was removed
   from Discover and deleted from the shared web source together with its
   dedicated styles, policy helper, and obsolete unit test. Source-wide search

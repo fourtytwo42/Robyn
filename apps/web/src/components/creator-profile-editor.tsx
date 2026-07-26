@@ -156,42 +156,37 @@ export function CreatorProfileEditor({
   }
 
   async function uploadAvatar() {
-    if (!file) return;
-    setWorking(true);
-    setStatus("Preparing avatar...");
-    try {
-      await authenticate();
-      const blob = await centeredSquareWebp(file, zoom);
-      const uploaded = await responseData<{ media_id: string }>(
-        await fetch("/api/media?purpose=avatar", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "content-type": "image/webp" },
-          body: blob,
-        }),
-      );
-      setProfile((value) => ({ ...value, avatarMediaId: uploaded.media_id }));
-      setStatus("Avatar ready. Save your profile to publish it.");
-    } catch (error) {
-      setStatus(
-        error instanceof Error ? error.message : "Avatar upload failed.",
-      );
-    } finally {
-      setWorking(false);
-    }
+    if (!file) return profile.avatarMediaId;
+    const blob = await centeredSquareWebp(file, zoom);
+    const uploaded = await responseData<{ media_id: string }>(
+      await fetch("/api/media?purpose=avatar", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "image/webp" },
+        body: blob,
+      }),
+    );
+    return uploaded.media_id;
   }
 
   async function saveProfile() {
     setWorking(true);
-    setStatus("Saving creator profile...");
     try {
       await authenticate();
+      let profileToSave = profile;
+      if (file) {
+        setStatus("Preparing avatar...");
+        const avatarMediaId = await uploadAvatar();
+        profileToSave = { ...profile, avatarMediaId };
+        setProfile(profileToSave);
+      }
+      setStatus("Saving creator profile...");
       await responseData(
         await fetch("/api/profile", {
           method: "PUT",
           credentials: "same-origin",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify(profile),
+          body: JSON.stringify(profileToSave),
         }),
       );
       setStatus("Creator profile saved.");
@@ -235,35 +230,51 @@ export function CreatorProfileEditor({
           </button>
         </header>
         <div className="profile-editor-avatar">
-          <div className="profile-avatar-preview">
-            {preview ? (
-              <Image
-                src={preview}
-                alt="Avatar crop preview"
-                fill
-                unoptimized
-                style={{ transform: `scale(${zoom})` }}
-              />
-            ) : profile.avatarMediaId ? (
-              <Image
-                src={`/api/media/${profile.avatarMediaId}`}
-                alt="Current creator avatar"
-                fill
-                unoptimized
-              />
-            ) : (
-              <span aria-hidden="true">+</span>
-            )}
-          </div>
+          <label className="profile-avatar-upload">
+            <span className="profile-avatar-preview">
+              {preview ? (
+                <Image
+                  src={preview}
+                  alt="Avatar crop preview"
+                  fill
+                  unoptimized
+                  style={{ transform: `scale(${zoom})` }}
+                />
+              ) : profile.avatarMediaId ? (
+                <Image
+                  src={`/api/media/${profile.avatarMediaId}`}
+                  alt="Current creator avatar"
+                  fill
+                  unoptimized
+                />
+              ) : null}
+              <span className="profile-avatar-add-icon" aria-hidden="true">
+                +
+              </span>
+            </span>
+            <span className="sr-only">Choose creator avatar image</span>
+            <input
+              className="sr-only"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              disabled={working}
+              onChange={(event) => {
+                const nextFile = event.target.files?.[0];
+                setFile(nextFile);
+                if (nextFile) {
+                  setZoom(1);
+                  setStatus(
+                    "New avatar selected. Save your profile to publish it.",
+                  );
+                }
+              }}
+            />
+          </label>
           <div>
-            <label>
-              Avatar image
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(event) => setFile(event.target.files?.[0])}
-              />
-            </label>
+            <p className="profile-avatar-helper">
+              Click the plus to choose a new avatar. It will be applied when you
+              save your profile.
+            </p>
             {file ? (
               <label>
                 Crop zoom {zoom.toFixed(1)}×
@@ -277,14 +288,6 @@ export function CreatorProfileEditor({
                 />
               </label>
             ) : null}
-            <button
-              className="button compact"
-              type="button"
-              onClick={() => void uploadAvatar()}
-              disabled={!file || working}
-            >
-              Use avatar
-            </button>
           </div>
         </div>
         <div className="creator-profile-fields">
