@@ -31,12 +31,18 @@ import {
   decryptCampaignRoot,
   deriveCampaignAccounts,
 } from "./lib/campaign-wallets.mjs";
-import { applyHeadroom, assertSchema9Manifest } from "./lib/campaign-plan.mjs";
 import {
+  applyHeadroom,
+  assertSchema9Manifest,
+  V4_FEE_COLLECTION_MINIMUMS,
+} from "./lib/campaign-plan.mjs";
+import {
+  boundedTerminalCurveBuyValue,
   diskHeadroomPass,
   dueCount,
   dueLaunchCount,
   enduranceSamplePassed,
+  enduranceCoverageFailures,
   ENDURANCE_DURATION_SECONDS,
   ENDURANCE_MAXIMUM_API_P95_MS,
   ENDURANCE_MINIMUM_MEMORY_BYTES,
@@ -49,7 +55,6 @@ import {
   processContinuityFailures,
   reconcileReleaseIdentity,
   rewardClaimIndexes,
-  terminalCurveBuyValue,
   transactionFundingTarget,
 } from "./testnet-endurance-policy.mjs";
 
@@ -510,6 +515,9 @@ const tokenAbi = artifactAbi("RobynLaunchToken");
 const feeRouterAbi = artifactAbi("RobynNativeProtocolFeeRouterV3");
 const daoAbi = artifactAbi("RobynDaoToken");
 const governorAbi = artifactAbi("RobynTestnetGovernor");
+const assetRouterAbi = artifactAbi("RobynV4AssetRouter");
+const hookAbi = artifactAbi("RobynV4OracleHook");
+const lockerAbi = artifactAbi("RobynV4FeePositionLocker");
 
 async function createEnduranceLaunch(index) {
   if (state.enduranceLaunches.some((launch) => launch.index === index)) return;
@@ -668,12 +676,13 @@ async function maybeGraduate() {
     });
     if (graduated) continue;
     const account = accounts[96 + index];
-    for (let attempt = 0; attempt < 5; attempt += 1) {
+    for (let attempt = 0; attempt < 16; attempt += 1) {
       const [
         realCurveTokenReserve,
         virtualTokenReserve,
         virtualNativeReserve,
         feeBps,
+        maximumCurvePurchase,
       ] = await Promise.all([
         publicClient.readContract({
           address: launch.market,
@@ -695,12 +704,18 @@ async function maybeGraduate() {
           abi: marketAbi,
           functionName: "feeBps",
         }),
+        publicClient.readContract({
+          address: launch.market,
+          abi: marketAbi,
+          functionName: "maximumCurvePurchase",
+        }),
       ]);
-      const value = terminalCurveBuyValue({
+      const value = boundedTerminalCurveBuyValue({
         realCurveTokenReserve,
         virtualTokenReserve,
         virtualNativeReserve,
         feeBps: BigInt(feeBps),
+        maximumCurvePurchase,
       });
       const [, output] = await publicClient.readContract({
         address: launch.market,
@@ -723,7 +738,7 @@ async function maybeGraduate() {
         () =>
           publicClient.estimateGas({
             ...buyRequest,
-            account: project.address,
+            account: account.address,
           }),
       );
       const estimatedFees = await rpcRetry(
@@ -774,7 +789,7 @@ async function maybeGraduate() {
         functionName: "graduated",
       });
       if (after) break;
-      if (attempt === 4) {
+      if (attempt === 15) {
         throw new Error(
           `Endurance launch ${index} did not graduate after bounded top-ups`,
         );
@@ -848,11 +863,214 @@ async function claimEligible(account, launch, cycle) {
   }
 }
 
+async function maintainGraduatedFees(account, launch, cycle) {
+  if (cycle % 6 !== 0) return;
+  state.feeMaintenance ??= { completed: [], deferred: [] };
+  await contractTransaction(
+    `endurance-lp-harvest-${launch.token}-${cycle}`,
+    account,
+    launch.locker,
+    lockerAbi,
+    "collectFees",
+    V4_FEE_COLLECTION_MINIMUMS,
+  );
+
+  const pendingNative = await publicClient.readContract({
+    address: manifest.contracts.oracleHook,
+    abi: hookAbi,
+    functionName: "pendingNativeFees",
+    args: [launch.token],
+  });
+  if (pendingNative > 0n) {
+    await contractTransaction(
+      `endurance-hook-native-${launch.token}-${cycle}`,
+      account,
+      manifest.contracts.oracleHook,
+      hookAbi,
+      "settleNativeFees",
+      [launch.token, pendingNative],
+    );
+  }
+
+  const pendingToken = await publicClient.readContract({
+    address: manifest.contracts.oracleHook,
+    abi: hookAbi,
+    functionName: "pendingTokenFees",
+    args: [launch.token],
+  });
+  let convertedToken = 0n;
+  if (pendingToken > 0n) {
+    convertedToken =
+      pendingToken > (1n << 128n) - 1n ? (1n << 128n) - 1n : pendingToken;
+    const deadline = BigInt(Math.floor(Date.now() / 1_000) + 600);
+    let minimumOutput = 0n;
+    let ready = false;
+    for (let attempt = 0; attempt < 12 && convertedToken > 0n; attempt += 1) {
+      try {
+        const [quoted] = await publicClient.readContract({
+          address: manifest.contracts.assetRouter,
+          abi: assetRouterAbi,
+          functionName: "quoteAssetToNative",
+          args: [launch.token, convertedToken],
+        });
+        minimumOutput = (quoted * 99n) / 100n || 1n;
+        await publicClient.call({
+          account: account.address,
+          to: manifest.contracts.oracleHook,
+          data: encodeFunctionData({
+            abi: hookAbi,
+            functionName: "convertTokenFees",
+            args: [launch.token, convertedToken, minimumOutput, deadline],
+          }),
+        });
+        ready = true;
+        break;
+      } catch (error) {
+        convertedToken /= 2n;
+        if (attempt === 11 || convertedToken === 0n) {
+          state.feeMaintenance.deferred.push({
+            cycle,
+            token: launch.token,
+            reason: String(
+              error?.shortMessage ?? error?.message ?? error,
+            ).slice(0, 500),
+          });
+          state.feeMaintenance.deferred =
+            state.feeMaintenance.deferred.slice(-100);
+          saveState();
+        }
+      }
+    }
+    if (ready) {
+      await contractTransaction(
+        `endurance-hook-token-${launch.token}-${cycle}`,
+        account,
+        manifest.contracts.oracleHook,
+        hookAbi,
+        "convertTokenFees",
+        [launch.token, convertedToken, minimumOutput, deadline],
+      );
+    } else {
+      convertedToken = 0n;
+    }
+  }
+
+  const generatedNative = await publicClient.readContract({
+    address: manifest.contracts.oracleHook,
+    abi: hookAbi,
+    functionName: "pendingNativeFees",
+    args: [launch.token],
+  });
+  if (generatedNative > 0n) {
+    await contractTransaction(
+      `endurance-hook-native-followup-${launch.token}-${cycle}`,
+      account,
+      manifest.contracts.oracleHook,
+      hookAbi,
+      "settleNativeFees",
+      [launch.token, generatedNative],
+    );
+  }
+  state.feeMaintenance.completed.push({
+    cycle,
+    token: launch.token,
+    nativeSettled: pendingNative.toString(),
+    tokenConverted: convertedToken.toString(),
+    generatedNativeSettled: generatedNative.toString(),
+  });
+  saveState();
+}
+
+async function runGraduatedTrade(account, launch, cycle, value) {
+  const [quoted] = await publicClient.readContract({
+    address: manifest.contracts.assetRouter,
+    abi: assetRouterAbi,
+    functionName: "quoteNativeToAsset",
+    args: [launch.token, value],
+    account: account.address,
+  });
+  await contractTransaction(
+    `endurance-v4-buy-${cycle}`,
+    account,
+    manifest.contracts.assetRouter,
+    assetRouterAbi,
+    "swapExactNativeForAsset",
+    [
+      launch.token,
+      (quoted * 98n) / 100n || 1n,
+      account.address,
+      BigInt(Math.floor(Date.now() / 1_000) + 600),
+    ],
+    value,
+  );
+  const balance = await publicClient.readContract({
+    address: launch.token,
+    abi: tokenAbi,
+    functionName: "balanceOf",
+    args: [account.address],
+  });
+  if (cycle % 2 === 0 && balance > 100n) {
+    await contractTransaction(
+      `endurance-v4-transfer-${cycle}`,
+      account,
+      launch.token,
+      tokenAbi,
+      "transfer",
+      [accounts[(cycle + 1) % 20].address, balance / 100n],
+    );
+  }
+  if (cycle % 3 === 0 && balance > 1_000n) {
+    const amount = balance / 200n;
+    await contractTransaction(
+      `endurance-v4-approve-${cycle}`,
+      account,
+      launch.token,
+      tokenAbi,
+      "approve",
+      [manifest.contracts.assetRouter, amount],
+    );
+    const [nativeOutput] = await publicClient.readContract({
+      address: manifest.contracts.assetRouter,
+      abi: assetRouterAbi,
+      functionName: "quoteAssetToNative",
+      args: [launch.token, amount],
+      account: account.address,
+    });
+    await contractTransaction(
+      `endurance-v4-sell-${cycle}`,
+      account,
+      manifest.contracts.assetRouter,
+      assetRouterAbi,
+      "swapExactAssetForNative",
+      [
+        launch.token,
+        amount,
+        (nativeOutput * 98n) / 100n || 1n,
+        account.address,
+        BigInt(Math.floor(Date.now() / 1_000) + 600),
+      ],
+    );
+  }
+  await maintainGraduatedFees(account, launch, cycle);
+}
+
 async function runWriteCycle(cycle) {
   const launches = activeLaunches();
   const launch = launches[cycle % launches.length];
   const account = accounts[cycle % 20];
   const value = 10_000_000_000_000n;
+  const graduated = await publicClient.readContract({
+    address: launch.market,
+    abi: marketAbi,
+    functionName: "graduated",
+  });
+  if (graduated) {
+    await runGraduatedTrade(account, launch, cycle, value);
+    await claimEligible(account, launch, cycle);
+    state.writeCycleCount = cycle + 1;
+    saveState();
+    return;
+  }
   const [, output] = await publicClient.readContract({
     address: launch.market,
     abi: marketAbi,
@@ -1309,6 +1527,12 @@ async function runDueWork() {
 }
 
 function finalize() {
+  const coverageFailures = enduranceCoverageFailures(state);
+  if (coverageFailures.length > 0) {
+    throw new Error(
+      `Endurance lifecycle coverage is incomplete: ${coverageFailures.join("; ")}`,
+    );
+  }
   state.completed = true;
   state.completedAt = new Date().toISOString();
   state.segments.at(-1).finishedAt = state.completedAt;

@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   accumulatedHealthySeconds,
   diskHeadroomPass,
+  enduranceCoverageFailures,
   dueCount,
   dueLaunchCount,
   enduranceSamplePassed,
@@ -11,6 +12,7 @@ import {
   processContinuityFailures,
   reconcileReleaseIdentity,
   rewardClaimIndexes,
+  boundedTerminalCurveBuyValue,
   terminalCurveBuyValue,
   transactionFundingTarget,
 } from "../testnet-endurance-policy.mjs";
@@ -93,6 +95,66 @@ test("terminal curve buy exhausts the remaining inventory", () => {
         feeBps: 100n,
       }),
     /invalid/,
+  );
+});
+
+test("terminal curve buy is bounded by the immutable market cap", () => {
+  const state = {
+    virtualTokenReserve: 552_763_819_095_477_386_934_673_367n,
+    virtualNativeReserve: 995_000_000_000_000n,
+    realCurveTokenReserve: 252_763_819_095_477_386_934_673_367n,
+    feeBps: 100n,
+  };
+  assert.equal(
+    boundedTerminalCurveBuyValue({
+      ...state,
+      maximumCurvePurchase: 250_000_000_000_000n,
+    }),
+    250_000_000_000_000n,
+  );
+  assert.equal(
+    boundedTerminalCurveBuyValue({
+      ...state,
+      maximumCurvePurchase: 1_000_000_000_000_000n,
+    }),
+    terminalCurveBuyValue(state),
+  );
+  assert.throws(
+    () =>
+      boundedTerminalCurveBuyValue({
+        ...state,
+        maximumCurvePurchase: 0n,
+      }),
+    /must be positive/,
+  );
+});
+
+test("final endurance coverage requires every schema-v9 lifecycle action", () => {
+  const complete = {
+    enduranceLaunches: [{}, {}, {}, {}],
+    transactions: [
+      { label: "endurance-graduate-0-a" },
+      { label: "endurance-graduate-1-b" },
+      { label: "endurance-v4-buy-1" },
+      { label: "endurance-v4-sell-1" },
+      { label: "endurance-lp-harvest-token-1" },
+      { label: "endurance-hook-native-token-1" },
+      { label: "endurance-hook-token-token-1" },
+      { label: "endurance-holder-claim-1" },
+      { label: "endurance-creator-claim-token-1" },
+      { label: "endurance-rdao-claim-1" },
+      { label: "endurance-governance-execute" },
+    ],
+  };
+  assert.deepEqual(enduranceCoverageFailures(complete), []);
+  assert.match(
+    enduranceCoverageFailures({
+      ...complete,
+      transactions: complete.transactions.filter(
+        ({ label }) => !label.startsWith("endurance-hook-token-"),
+      ),
+    }).join(" "),
+    /launch-token hook-fee conversion/,
   );
 });
 

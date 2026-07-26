@@ -78,11 +78,48 @@ export function terminalCurveBuyValue({
   return ceilDiv(requiredNet * bps, bps - feeBps);
 }
 
+export function boundedTerminalCurveBuyValue(curveState) {
+  const { maximumCurvePurchase } = curveState;
+  if (typeof maximumCurvePurchase !== "bigint" || maximumCurvePurchase <= 0n) {
+    throw new Error("Maximum curve purchase must be positive");
+  }
+  const terminal = terminalCurveBuyValue(curveState);
+  return terminal < maximumCurvePurchase ? terminal : maximumCurvePurchase;
+}
+
 export function enduranceSamplePassed(
   infrastructurePassed,
   workloadFailure,
 ) {
   return infrastructurePassed && !workloadFailure;
+}
+
+export function enduranceCoverageFailures(state) {
+  const labels = (state.transactions ?? []).map(({ label }) => label);
+  const has = (prefix) => labels.some((label) => label.startsWith(prefix));
+  const failures = [];
+  if ((state.enduranceLaunches?.length ?? 0) < 4) {
+    failures.push("fewer than four endurance launches");
+  }
+  for (const index of [0, 1]) {
+    if (!has(`endurance-graduate-${index}-`)) {
+      failures.push(`endurance launch ${index} did not graduate`);
+    }
+  }
+  for (const [prefix, description] of [
+    ["endurance-v4-buy-", "post-graduation v4 buy"],
+    ["endurance-v4-sell-", "post-graduation v4 sell"],
+    ["endurance-lp-harvest-", "locked-position fee harvest"],
+    ["endurance-hook-native-", "native hook-fee settlement"],
+    ["endurance-hook-token-", "launch-token hook-fee conversion"],
+    ["endurance-holder-claim-", "holder reward claim"],
+    ["endurance-creator-claim-", "creator reward claim"],
+    ["endurance-rdao-claim-", "governance-holder reward claim"],
+    ["endurance-governance-execute", "governance execution"],
+  ]) {
+    if (!has(prefix)) failures.push(`missing ${description}`);
+  }
+  return failures;
 }
 
 export function reconcileReleaseIdentity(state, expected) {

@@ -3002,6 +3002,15 @@ When sources conflict, use this order:
 - Evidence: `/home/hendo420/robyn-evidence/schema9-mainnet-readiness-d76244a/rehearsal/campaign-all-5e9b7a3-resumed2.log` and `/tmp/schema9-campaign-5e9b7a3/state/`.
 - Follow-up: Seal checksums, run the fresh public-testnet funding/deployment preflight, deploy the capped schema-v9 candidate only if reserve and headroom gates pass, then complete public campaign, index/browser/recovery acceptance, and the uninterrupted eight-hour gate.
 
+### 2026-07-26 - Schema-v9 release tooling corrections
+
+- Context: Exact-candidate reproducibility and endurance review found release-tool assumptions that predated the schema-v9 worktree and capped bonding markets.
+- Reproducibility fix: `scripts/verify-reproducible-builds.sh` now resolves the repository containing the script instead of hardcoding `/home/hendo420/Robyn`. The hardcoded path had successfully compared the older presentation worktree and therefore was not valid schema-v9 evidence.
+- Endurance fixes: Graduation top-ups are bounded by each market's immutable `maximumCurvePurchase`; graduated launches trade through the v4 asset router instead of calling the closed bonding market; the workload periodically harvests locked LP fees, settles native hook fees, converts launch-token hook fees when safety checks permit, and settles conversion-generated native fees.
+- Final-gate policy: Endurance completion now fails closed unless it records four endurance launches, two graduations, post-graduation buys and sells, an LP harvest, both hook settlement paths, holder/creator/governance-holder claims, and governance execution.
+- Commands/tests: Shell syntax, Prettier, 12 endurance-policy tests, 15 campaign tests, and diff checks pass.
+- Follow-up: Commit and push these corrections, rerun exact-candidate reproducibility, then run the corrected eight-hour workload only after the fresh public schema-v9 deployment and campaign pass.
+
 ## Open Follow-ups
 
 - Configure a vendor-neutral IPFS Pinning Service endpoint/token in the
