@@ -197,8 +197,14 @@ const nativeV4FeeRouterStateAbi = [
           { name: "vault", type: "address" },
           { name: "market", type: "address" },
           { name: "locker", type: "address" },
+          { name: "hook", type: "address" },
           { name: "cumulativeNativeFees", type: "uint256" },
           { name: "cumulativeLaunchFeesConverted", type: "uint256" },
+          { name: "cumulativeBondingNativeFees", type: "uint256" },
+          { name: "cumulativeLockedLpNativeFees", type: "uint256" },
+          { name: "cumulativeHookNativeFees", type: "uint256" },
+          { name: "cumulativeLockedLaunchFeesConverted", type: "uint256" },
+          { name: "cumulativeHookLaunchFeesConverted", type: "uint256" },
           { name: "claimableCreatorNative", type: "uint256" },
           { name: "cumulativeCreatorNative", type: "uint256" },
           { name: "claimedCreatorNative", type: "uint256" },
@@ -406,7 +412,11 @@ async function projectLaunch(
         feeAccount.vault.toLowerCase() !== vault.toLowerCase() ||
         feeAccount.market.toLowerCase() !== market.toLowerCase() ||
         feeAccount.locker.toLowerCase() !==
-          String(atomic.args.locker).toLowerCase()
+          String(atomic.args.locker).toLowerCase() ||
+        (manifest.liquidityVenue === "uniswap-v4" &&
+          (!("hook" in feeAccount) ||
+            feeAccount.hook.toLowerCase() !==
+              String(manifest.contracts.oracleHook).toLowerCase()))
       )
         throw new Error(`Fee-router mappings differ for launch ${id}`);
     }

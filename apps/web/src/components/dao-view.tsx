@@ -62,6 +62,13 @@ type DaoOverview = {
     pendingTreasuryBase: string;
     cumulativeBaseFees: string;
     cumulativeLaunchFeesConverted: string;
+    cumulativeBondingNativeFees?: string;
+    cumulativeLockedLpNativeFees?: string;
+    cumulativeHookNativeFees?: string;
+    cumulativeLockedLaunchFeesConverted?: string;
+    cumulativeHookLaunchFeesConverted?: string;
+    pendingHookNative?: string;
+    pendingHookToken?: string;
     cumulativeNativeConverted: string;
   }>;
   governance: {
@@ -776,10 +783,26 @@ export function DaoView({
                   <span>
                     {tokenAmount(fees.cumulativeBaseFees, 5)}{" "}
                     {deployment.liquidityVenue === "uniswap-v4" ? "ETH" : ""}
+                    {deployment.liquidityVenue === "uniswap-v4" ? (
+                      <small>
+                        Bonding{" "}
+                        {tokenAmount(
+                          fees.cumulativeBondingNativeFees ?? "0",
+                          4,
+                        )}{" "}
+                        · Hook{" "}
+                        {tokenAmount(fees.cumulativeHookNativeFees ?? "0", 4)} ·
+                        Locked LP{" "}
+                        {tokenAmount(
+                          fees.cumulativeLockedLpNativeFees ?? "0",
+                          4,
+                        )}
+                      </small>
+                    ) : null}
                   </span>
                   <span>
                     {deployment.liquidityVenue === "uniswap-v4"
-                      ? "Not required"
+                      ? `${tokenAmount(fees.pendingHookNative ?? "0", 5)} ETH + ${tokenAmount(fees.pendingHookToken ?? "0", 4)} token`
                       : tokenAmount(
                           (
                             BigInt(fees.pendingCreatorBase) +

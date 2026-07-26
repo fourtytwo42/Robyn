@@ -23,6 +23,8 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint24 public constant POOL_FEE_PIPS = 10_000;
+    uint24 public constant PROTOCOL_FEE_PIPS = 10_000;
+    uint24 public constant TOTAL_NOMINAL_FEE_PIPS = POOL_FEE_PIPS + PROTOCOL_FEE_PIPS;
     int24 public constant TICK_SPACING = 200;
     uint16 public constant BPS = 10_000;
     string public constant CONTRACT_VERSION = "1.0.0";
@@ -205,13 +207,13 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
     function quoteBuy(uint128 nativeInput) external returns (uint256 nominalFee, uint256 tokenOutput) {
         if (!initialized) revert NotInitialized();
         (tokenOutput,) = assetRouter.quoteNativeToAsset(address(launchToken), nativeInput);
-        nominalFee = Math.mulDiv(nativeInput, POOL_FEE_PIPS, 1_000_000);
+        nominalFee = Math.mulDiv(nativeInput, TOTAL_NOMINAL_FEE_PIPS, 1_000_000);
     }
 
     function quoteSell(uint128 tokenInput) external returns (uint256 nominalFeeNative, uint256 nativeOutput) {
         if (!initialized) revert NotInitialized();
         (nativeOutput,) = assetRouter.quoteAssetToNative(address(launchToken), tokenInput);
-        uint256 tokenFee = Math.mulDiv(tokenInput, POOL_FEE_PIPS, 1_000_000);
+        uint256 tokenFee = Math.mulDiv(tokenInput, TOTAL_NOMINAL_FEE_PIPS, 1_000_000);
         nominalFeeNative = Math.mulDiv(tokenFee, spotNativePerTokenX18(), 1e18);
     }
 

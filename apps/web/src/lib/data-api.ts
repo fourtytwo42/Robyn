@@ -112,6 +112,8 @@ export type LaunchAnalytics = {
     poolFeePips: number | null;
     baseSymbol: string;
     feeBps: number;
+    protocolFeeBps: number;
+    lpFeeBps: number;
     priceBasePerToken: string;
     priceChangeBps: number;
     change24hBps: number | null;

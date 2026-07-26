@@ -249,6 +249,13 @@ export default async function LaunchDetail({
                 : `${buyShare.toFixed(0)}% / ${(100 - buyShare).toFixed(0)}%`,
             ],
             ["Lifecycle", marketPhaseLabel(market.marketPhase)],
+            [
+              "Trading fees",
+              market.marketPhase === "graduated" &&
+              market.liquidityVenue === "uniswap-v4"
+                ? "1% LP + 1% rewards"
+                : `${(market.protocolFeeBps / 100).toFixed(2)}% rewards`,
+            ],
             ["24h traders", market.uniqueTraders24h.toLocaleString()],
           ].map(([label, value]) => (
             <article key={label}>

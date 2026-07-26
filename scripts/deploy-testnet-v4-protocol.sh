@@ -405,10 +405,10 @@ fee_router="${addresses[feeRouter]}"
 
 hook_artifact="packages/contracts/out/RobynV4OracleHook.sol/RobynV4OracleHook.json"
 hook_bytecode="$(jq -er '.bytecode.object' "$hook_artifact")"
-hook_domain="$(cast keccak "sherwood-forest-v4-schema8:$(git rev-parse HEAD)")"
+hook_domain="$(cast keccak "sherwood-forest-v4-schema9:$(git rev-parse HEAD)")"
 hook_args="$(
-  cast abi-encode 'constructor(address,address,bytes32)' \
-    "$pool_manager" "$deployer" "$hook_domain"
+  cast abi-encode 'constructor(address,address,address,bytes32)' \
+    "$pool_manager" "$fee_router" "$deployer" "$hook_domain"
 )"
 hook_init_code="${hook_bytecode}${hook_args#0x}"
 hook_mining="$(node scripts/mine-v4-hook-salt.mjs "$create2_deployer" "$hook_init_code")"
@@ -696,7 +696,7 @@ archived_predecessor_sha="$(
   fi
 )"
 jq -n \
-  --argjson schemaVersion 8 \
+  --argjson schemaVersion 9 \
   --arg environment "$([[ "$rehearsal" == "true" ]] && echo robinhood-testnet-fork-rehearsal || echo robinhood-testnet)" \
   --argjson chainId 46630 \
   --argjson deploymentBlock "$deployment_block" \
@@ -803,8 +803,9 @@ jq -n \
       create2Deployer: "0x4e59b44847b379578588920cA78FbF26c0B4956C",
       salt: $hookSalt,
       deploymentDomain: $hookDomain,
-      permissionBits: "0x1040",
-      behavior: "observation-only"
+      permissionBits: "0x1044",
+      behavior: "immutable-1pct-fee-and-oracle",
+      protocolFeeBps: 100
     },
     dao: {
       tokenName: "Robyn DAO",
@@ -829,6 +830,8 @@ jq -n \
     market: {
       quoteCurrency: "native-ETH",
       poolFeePips: 10000,
+      protocolFeeBps: 100,
+      nominalPostGraduationFeeBps: 200,
       tickSpacing: 200,
       curveFeeBps: 100,
       curveTokenAllocation: $curveTokens,

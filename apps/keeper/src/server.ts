@@ -40,6 +40,7 @@ type Manifest = {
     baseAsset?: Address;
     wrappedNative?: Address;
     protocolFeeRouter?: Address;
+    oracleHook?: Address;
     nativeFeeConverter?: Address;
     assetRouter?: Address;
   };
@@ -453,6 +454,41 @@ const v4PositionLockerAbi = [
     outputs: [{ type: "uint256" }],
   },
 ] as const;
+const v4ProtocolHookAbi = [
+  {
+    type: "function",
+    name: "pendingNativeFees",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "pendingTokenFees",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "settleNativeFees",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "address" }, { type: "uint256" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "convertTokenFees",
+    stateMutability: "nonpayable",
+    inputs: [
+      { type: "address" },
+      { type: "uint128" },
+      { type: "uint256" },
+      { type: "uint256" },
+    ],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
 const nativeProtocolFeeRouterAbi = [
   {
     type: "function",
@@ -467,8 +503,14 @@ const nativeProtocolFeeRouterAbi = [
           { name: "vault", type: "address" },
           { name: "market", type: "address" },
           { name: "locker", type: "address" },
+          { name: "hook", type: "address" },
           { name: "cumulativeNativeFees", type: "uint256" },
           { name: "cumulativeLaunchFeesConverted", type: "uint256" },
+          { name: "cumulativeBondingNativeFees", type: "uint256" },
+          { name: "cumulativeLockedLpNativeFees", type: "uint256" },
+          { name: "cumulativeHookNativeFees", type: "uint256" },
+          { name: "cumulativeLockedLaunchFeesConverted", type: "uint256" },
+          { name: "cumulativeHookLaunchFeesConverted", type: "uint256" },
           { name: "claimableCreatorNative", type: "uint256" },
           { name: "cumulativeCreatorNative", type: "uint256" },
           { name: "claimedCreatorNative", type: "uint256" },
@@ -951,39 +993,67 @@ async function enqueueV4LaunchFeeConversion(launch: {
   market: Address;
 }) {
   const router = manifest.contracts.protocolFeeRouter;
-  if (!router) return;
+  const hook = manifest.contracts.oracleHook;
+  if (!router || !hook) return;
   const account = await publicClient.readContract({
     address: router,
     abi: nativeProtocolFeeRouterAbi,
     functionName: "launchAccount",
     args: [launch.token],
   });
-  if (!account.registered) return;
-  const pendingLaunch = await publicClient.readContract({
-    address: launch.token,
-    abi: erc20BalanceAbi,
-    functionName: "balanceOf",
-    args: [account.locker],
-  });
+  if (!account.registered || account.hook.toLowerCase() !== hook.toLowerCase())
+    return;
+  const [pendingLocked, pendingHook] = await Promise.all([
+    publicClient.readContract({
+      address: launch.token,
+      abi: erc20BalanceAbi,
+      functionName: "balanceOf",
+      args: [account.locker],
+    }),
+    publicClient.readContract({
+      address: hook,
+      abi: v4ProtocolHookAbi,
+      functionName: "pendingTokenFees",
+      args: [launch.token],
+    }),
+  ]);
+  const pendingLaunch = pendingLocked + pendingHook;
   await supersedeStaleProtocolDeadLetters(
     launch.token,
     "protocol-launch",
     pendingLaunch,
   );
-  if (pendingLaunch < minimumLaunchFees) return;
+  if (pendingLocked < minimumLaunchFees && pendingHook < minimumLaunchFees)
+    return;
   try {
-    const plan = await v4LaunchFeePlan(
-      launch.token,
-      account.locker,
-      pendingLaunch,
-    );
-    await publicClient.simulateContract({
-      address: account.locker,
-      abi: v4PositionLockerAbi,
-      functionName: "convertCollectedToken",
-      args: [plan.input, plan.minimumNative, plan.deadline],
-      account: writeAccount,
-    });
+    if (pendingLocked >= minimumLaunchFees) {
+      const plan = await v4LaunchFeePlan(
+        launch.token,
+        account.locker,
+        pendingLocked,
+      );
+      await publicClient.simulateContract({
+        address: account.locker,
+        abi: v4PositionLockerAbi,
+        functionName: "convertCollectedToken",
+        args: [plan.input, plan.minimumNative, plan.deadline],
+        account: writeAccount,
+      });
+    }
+    if (pendingHook >= minimumLaunchFees) {
+      const plan = await v4LaunchFeePlan(
+        launch.token,
+        account.locker,
+        pendingHook,
+      );
+      await publicClient.simulateContract({
+        address: hook,
+        abi: v4ProtocolHookAbi,
+        functionName: "convertTokenFees",
+        args: [launch.token, plan.input, plan.minimumNative, plan.deadline],
+        account: writeAccount,
+      });
+    }
   } catch {
     // Unsafe oracle, impact, liquidity, or dust state remains queued onchain.
     return;
@@ -1128,13 +1198,21 @@ async function enqueueHarvest(launch: {
       functionName: "initialized",
     });
     if (!initialized) return;
-    const [nativeBalance, tokenBalance] = await Promise.all([
+    const hook = manifest.contracts.oracleHook;
+    if (!hook) return;
+    const [nativeBalance, tokenBalance, hookNativeBalance] = await Promise.all([
       publicClient.getBalance({ address: locker }),
       publicClient.readContract({
         address: launch.token,
         abi: erc20BalanceAbi,
         functionName: "balanceOf",
         args: [locker],
+      }),
+      publicClient.readContract({
+        address: hook,
+        abi: v4ProtocolHookAbi,
+        functionName: "pendingNativeFees",
+        args: [launch.token],
       }),
     ]);
     let simulation;
@@ -1147,7 +1225,11 @@ async function enqueueHarvest(launch: {
         account: writeAccount,
       });
     } catch (error) {
-      if (nativeBalance === 0n && tokenBalance === 0n) {
+      if (
+        nativeBalance === 0n &&
+        tokenBalance === 0n &&
+        hookNativeBalance === 0n
+      ) {
         const key = harvestJobId(locker);
         const staleJob = await queue.getJob(key);
         if (staleJob && (await staleJob.isFailed())) {
@@ -1176,6 +1258,7 @@ async function enqueueHarvest(launch: {
     if (
       nativeBalance === 0n &&
       tokenBalance === 0n &&
+      hookNativeBalance === 0n &&
       simulation &&
       simulation.result[0] === 0n &&
       simulation.result[1] === 0n
@@ -1402,13 +1485,21 @@ async function processHarvest(
   );
   if (isNativeV4) {
     let transactionHash = ("0x" + "0".repeat(64)) as Hash;
-    const [nativeBefore, tokenBefore] = await Promise.all([
+    const hook = manifest.contracts.oracleHook;
+    if (!hook) throw new Error("V4 protocol hook is missing");
+    const [nativeBefore, tokenBefore, hookNativeBefore] = await Promise.all([
       publicClient.getBalance({ address: job.data.locker }),
       publicClient.readContract({
         address: job.data.token,
         abi: erc20BalanceAbi,
         functionName: "balanceOf",
         args: [job.data.locker],
+      }),
+      publicClient.readContract({
+        address: hook,
+        abi: v4ProtocolHookAbi,
+        functionName: "pendingNativeFees",
+        args: [job.data.token],
       }),
     ]);
     let collection;
@@ -1421,7 +1512,11 @@ async function processHarvest(
         account: writeAccount,
       });
     } catch (error) {
-      if (nativeBefore === 0n && tokenBefore === 0n) {
+      if (
+        nativeBefore === 0n &&
+        tokenBefore === 0n &&
+        hookNativeBefore === 0n
+      ) {
         return { operation: "harvest", transactionHash, inputAmount: "0" };
       }
       process.stdout.write(
@@ -1466,10 +1561,32 @@ async function processHarvest(
         throw new Error("Collected native fee routing reverted");
       }
     }
+    const hookNative = await publicClient.readContract({
+      address: hook,
+      abi: v4ProtocolHookAbi,
+      functionName: "pendingNativeFees",
+      args: [job.data.token],
+    });
+    if (hookNative > 0n) {
+      const settlement = await publicClient.simulateContract({
+        address: hook,
+        abi: v4ProtocolHookAbi,
+        functionName: "settleNativeFees",
+        args: [job.data.token, hookNative],
+        account: writeAccount,
+      });
+      transactionHash = await walletClient.writeContract(settlement.request);
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: transactionHash,
+        timeout: 30_000,
+      });
+      if (receipt.status !== "success")
+        throw new Error("V4 hook native-fee settlement reverted");
+    }
     return {
       operation: "harvest",
       transactionHash,
-      inputAmount: nativeBalance.toString(),
+      inputAmount: (nativeBalance + hookNative).toString(),
       launchTokenFees: (collection?.result[1] ?? tokenBefore).toString(),
     };
   }
@@ -1519,47 +1636,82 @@ async function processProtocolConversion(
     if (job.data.kind !== "protocol-launch") {
       throw new Error("Native v4 has no base-to-native protocol conversion");
     }
-    const pending = await publicClient.readContract({
-      address: job.data.token,
-      abi: erc20BalanceAbi,
-      functionName: "balanceOf",
-      args: [job.data.locker],
-    });
-    if (pending < minimumLaunchFees) {
+    const hook = manifest.contracts.oracleHook;
+    if (!hook) throw new Error("V4 protocol hook is missing");
+    const [pendingLocked, pendingHook] = await Promise.all([
+      publicClient.readContract({
+        address: job.data.token,
+        abi: erc20BalanceAbi,
+        functionName: "balanceOf",
+        args: [job.data.locker],
+      }),
+      publicClient.readContract({
+        address: hook,
+        abi: v4ProtocolHookAbi,
+        functionName: "pendingTokenFees",
+        args: [job.data.token],
+      }),
+    ]);
+    if (pendingLocked < minimumLaunchFees && pendingHook < minimumLaunchFees) {
       return {
         operation: "protocol-launch",
         transactionHash: ("0x" + "0".repeat(64)) as Hash,
         inputAmount: "0",
       };
     }
-    const plan = await v4LaunchFeePlan(
-      job.data.token,
-      job.data.locker,
-      pending,
-    );
-    const simulation = await publicClient.simulateContract({
-      address: job.data.locker,
-      abi: v4PositionLockerAbi,
-      functionName: "convertCollectedToken",
-      args: [plan.input, plan.minimumNative, plan.deadline],
-      account: writeAccount,
-    });
-    const transactionHash = await walletClient.writeContract(
-      simulation.request,
-    );
-    const receipt = await publicClient.waitForTransactionReceipt({
-      hash: transactionHash,
-      timeout: 30_000,
-    });
-    if (receipt.status !== "success") {
-      throw new Error("V4 launch-fee conversion reverted");
+    let transactionHash = ("0x" + "0".repeat(64)) as Hash;
+    let converted = 0n;
+    if (pendingLocked >= minimumLaunchFees) {
+      const plan = await v4LaunchFeePlan(
+        job.data.token,
+        job.data.locker,
+        pendingLocked,
+      );
+      const simulation = await publicClient.simulateContract({
+        address: job.data.locker,
+        abi: v4PositionLockerAbi,
+        functionName: "convertCollectedToken",
+        args: [plan.input, plan.minimumNative, plan.deadline],
+        account: writeAccount,
+      });
+      transactionHash = await walletClient.writeContract(simulation.request);
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: transactionHash,
+        timeout: 30_000,
+      });
+      if (receipt.status !== "success")
+        throw new Error("V4 locked launch-fee conversion reverted");
+      converted += plan.input;
+    }
+    if (pendingHook >= minimumLaunchFees) {
+      const plan = await v4LaunchFeePlan(
+        job.data.token,
+        job.data.locker,
+        pendingHook,
+      );
+      const simulation = await publicClient.simulateContract({
+        address: hook,
+        abi: v4ProtocolHookAbi,
+        functionName: "convertTokenFees",
+        args: [job.data.token, plan.input, plan.minimumNative, plan.deadline],
+        account: writeAccount,
+      });
+      transactionHash = await walletClient.writeContract(simulation.request);
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: transactionHash,
+        timeout: 30_000,
+      });
+      if (receipt.status !== "success")
+        throw new Error("V4 hook-fee conversion reverted");
+      converted += plan.input;
     }
     return {
       operation: "protocol-launch",
       transactionHash,
-      inputAmount: plan.input.toString(),
+      inputAmount: converted.toString(),
     };
   }
+
   const router = manifest.contracts.protocolFeeRouter;
   const base = manifest.contracts.baseAsset;
   const wrappedNative = manifest.contracts.wrappedNative;

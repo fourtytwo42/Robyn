@@ -38,7 +38,7 @@ check(
   manifest.venueProvenance === "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
   "unlisted venue disclosure is exact",
 );
-check(manifest.schemaVersion === 8, "deployment manifest schema is v8");
+check(manifest.schemaVersion === 9, "deployment manifest schema is v9");
 check(
   manifest.governanceProfile === "robinhood-testnet-short-assurance",
   "manifest selects the shortened testnet assurance governance profile",
@@ -240,6 +240,15 @@ check(
   "oracle-hook registrar is the market factory",
 );
 check(
+  getAddress(await read(contracts.oracleHook, abis.hook, "feeRouter")) ===
+    contracts.protocolFeeRouter,
+  "fee-and-oracle hook references the canonical fee router",
+);
+check(
+  (await read(contracts.oracleHook, abis.hook, "PROTOCOL_FEE_BPS")) === 100,
+  "fee-and-oracle hook charges an immutable one percent protocol fee",
+);
+check(
   (await read(contracts.oracleHook, abis.hook, "deploymentDomain")) ===
     manifest.oracleHook.deploymentDomain,
   "oracle-hook deployment domain matches manifest",
@@ -251,7 +260,7 @@ for (const key of ["adapterDeployer", "lockerDeployer", "marketDeployer"]) {
   );
 }
 check(
-  (BigInt(contracts.oracleHook) & 0x3fffn) === 0x1040n,
+  (BigInt(contracts.oracleHook) & 0x3fffn) === 0x1044n,
   "oracle-hook address exposes only required permission bits",
 );
 
@@ -404,6 +413,22 @@ check(
 check(
   await read(contracts.oracleHook, abis.hook, "registeredPool", [genesis.poolId]),
   "genesis pool is registered in the oracle hook",
+);
+const genesisFeeAccount = await read(
+  contracts.protocolFeeRouter,
+  abis.feeRouter,
+  "launchAccount",
+  [token],
+);
+check(
+  getAddress(genesisFeeAccount.hook) === contracts.oracleHook,
+  "genesis fee account binds the canonical fee-and-oracle hook",
+);
+check(
+  manifest.market?.protocolFeeBps === 100 &&
+    manifest.market?.poolFeePips === 10_000 &&
+    manifest.market?.nominalPostGraduationFeeBps === 200,
+  "manifest freezes one percent LP plus one percent Sherwood fees",
 );
 const slot0 = await read(contracts.stateView, abis.stateView, "getSlot0", [genesis.poolId]);
 check(slot0[0] > 0n, "genesis v4 pool is initialized", {

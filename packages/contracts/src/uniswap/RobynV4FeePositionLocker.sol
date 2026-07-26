@@ -264,7 +264,7 @@ contract RobynV4FeePositionLocker is IERC721Receiver, ReentrancyGuard {
 
     function _enforceSaleSafety(uint128 amount) private {
         bytes32 id = PoolId.unwrap(_poolKey.toId());
-        RobynV4OracleHook hook = RobynV4OracleHook(address(_poolKey.hooks));
+        RobynV4OracleHook hook = RobynV4OracleHook(payable(address(_poolKey.hooks)));
         RobynV4OracleHook.Observation memory latest = hook.latestObservation(id);
         uint256 latestAge = block.timestamp - uint256(latest.timestamp);
         if (latestAge > MAX_OBSERVATION_AGE) revert StaleObservation(latestAge);
@@ -284,6 +284,7 @@ contract RobynV4FeePositionLocker is IERC721Receiver, ReentrancyGuard {
         uint256 nativePerTokenX18 = Math.mulDiv(1e18, 1 << 96, ratioX96);
         uint256 idealNative = Math.mulDiv(amount, nativePerTokenX18, 1e18);
         uint256 feeAdjustedQuote = Math.mulDiv(quotedNative, FEE_DENOMINATOR, FEE_DENOMINATOR - _poolKey.fee);
+        feeAdjustedQuote = Math.mulDiv(feeAdjustedQuote, BPS, BPS - hook.PROTOCOL_FEE_BPS());
         if (idealNative == 0 || feeAdjustedQuote * BPS < idealNative * (BPS - MAX_PRICE_IMPACT_BPS)) {
             revert ExcessivePriceImpact(idealNative, quotedNative);
         }

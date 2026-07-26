@@ -52,7 +52,7 @@ while IFS= read -r check; do
   case "${check}" in
     incorrect-equality|reentrancy-no-eth|uninitialized-local|unused-return) ;;
     *)
-      echo "Untriaged medium Slither detector in active schema-v8 scope: ${check}" >&2
+      echo "Untriaged medium Slither detector in active schema-v9 scope: ${check}" >&2
       exit 1
       ;;
   esac

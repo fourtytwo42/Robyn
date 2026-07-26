@@ -99,7 +99,12 @@ contract RobynV4LaunchCoordinatorV5 is ReentrancyGuard {
         artifacts.locker = address(artifacts.adapter.locker());
 
         feeRouter.registerLaunch(
-            IERC20(address(artifacts.token)), msg.sender, artifacts.vault, address(artifacts.market), artifacts.locker
+            IERC20(address(artifacts.token)),
+            msg.sender,
+            artifacts.vault,
+            address(artifacts.market),
+            artifacts.locker,
+            address(marketFactory.oracleHook())
         );
         IERC20 launchAsset = IERC20(address(artifacts.token));
         launchAsset.forceApprove(address(artifacts.market), initialSupply);

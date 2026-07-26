@@ -16,15 +16,21 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
     uint16 public constant CREATOR_BPS = 2_500;
     uint16 public constant DAO_REWARD_BPS = 2_000;
     uint16 public constant TREASURY_BPS = 500;
-    string public constant CONTRACT_VERSION = "3.0.0";
+    string public constant CONTRACT_VERSION = "4.0.0";
 
     struct LaunchFeeAccount {
         address creator;
         RobynNativeBasketVaultV2 vault;
         address market;
         address locker;
+        address hook;
         uint256 cumulativeNativeFees;
         uint256 cumulativeLaunchFeesConverted;
+        uint256 cumulativeBondingNativeFees;
+        uint256 cumulativeLockedLpNativeFees;
+        uint256 cumulativeHookNativeFees;
+        uint256 cumulativeLockedLaunchFeesConverted;
+        uint256 cumulativeHookLaunchFeesConverted;
         uint256 claimableCreatorNative;
         uint256 cumulativeCreatorNative;
         uint256 claimedCreatorNative;
@@ -57,7 +63,12 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
 
     event CoordinatorBound(address indexed coordinator);
     event LaunchRegistered(
-        address indexed token, address indexed creator, address indexed vault, address market, address locker
+        address indexed token,
+        address indexed creator,
+        address indexed vault,
+        address market,
+        address locker,
+        address hook
     );
     event NativeFeesRouted(
         address indexed token,
@@ -121,12 +132,14 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
         address creator,
         RobynNativeBasketVaultV2 vault,
         address market,
-        address locker
+        address locker,
+        address hook
     ) external {
         if (msg.sender != coordinator) revert Unauthorized();
         if (
             address(token) == address(0) || creator == address(0) || address(vault) == address(0)
-                || market == address(0) || locker == address(0) || address(vault.launchToken()) != address(token)
+                || market == address(0) || locker == address(0) || hook == address(0) || hook.code.length == 0
+                || address(vault.launchToken()) != address(token)
         ) revert InvalidConfiguration();
         LaunchFeeAccount storage account = _launchAccounts[address(token)];
         if (account.registered) revert LaunchAlreadyRegistered();
@@ -134,8 +147,9 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
         account.vault = vault;
         account.market = market;
         account.locker = locker;
+        account.hook = hook;
         account.registered = true;
-        emit LaunchRegistered(address(token), creator, address(vault), market, locker);
+        emit LaunchRegistered(address(token), creator, address(vault), market, locker, hook);
     }
 
     function launchAccount(address token) external view returns (LaunchFeeAccount memory) {
@@ -153,7 +167,7 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
         returns (uint256 nativeOut)
     {
         LaunchFeeAccount storage account = _authorizedAccount(address(token));
-        if (msg.sender != account.locker) revert InvalidSource();
+        if (msg.sender != account.locker && msg.sender != account.hook) revert InvalidSource();
         if (paused) revert ConversionPaused();
         if (amount == 0 || minimumNativeOut == 0) revert InvalidConfiguration();
         token.safeTransferFrom(msg.sender, address(this), amount);
@@ -166,6 +180,11 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
         uint256 delta = address(this).balance - beforeBalance;
         if (nativeOut != delta || nativeOut < minimumNativeOut) revert InvalidConfiguration();
         account.cumulativeLaunchFeesConverted += amount;
+        if (msg.sender == account.hook) {
+            account.cumulativeHookLaunchFeesConverted += amount;
+        } else {
+            account.cumulativeLockedLaunchFeesConverted += amount;
+        }
         emit LaunchFeesConverted(address(token), amount, nativeOut);
         _allocateNative(address(token), account, msg.sender, nativeOut);
     }
@@ -236,7 +255,9 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
     function _authorizedAccount(address token) private view returns (LaunchFeeAccount storage account) {
         account = _launchAccounts[token];
         if (!account.registered) revert UnknownLaunch();
-        if (msg.sender != account.market && msg.sender != account.locker) revert InvalidSource();
+        if (msg.sender != account.market && msg.sender != account.locker && msg.sender != account.hook) {
+            revert InvalidSource();
+        }
     }
 
     function _allocateNative(address token, LaunchFeeAccount storage account, address source, uint256 amount) private {
@@ -248,6 +269,15 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
         account.claimableCreatorNative += creatorAmount;
         account.cumulativeCreatorNative += creatorAmount;
         account.cumulativeNativeFees += amount;
+        if (source == account.market) {
+            account.cumulativeBondingNativeFees += amount;
+        } else if (source == account.locker) {
+            account.cumulativeLockedLpNativeFees += amount;
+        } else if (source == account.hook) {
+            account.cumulativeHookNativeFees += amount;
+        } else {
+            revert InvalidSource();
+        }
         totalCreatorNativeLiability += creatorAmount;
         totalDaoNativeRewards += daoAmount;
         totalTreasuryNative += treasuryAmount;

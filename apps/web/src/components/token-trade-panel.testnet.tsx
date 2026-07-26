@@ -94,6 +94,7 @@ export function NetworkTokenTradePanel({
   symbol,
   feeBps,
   basePerToken,
+  marketPhase,
 }: {
   deployment: Deployment;
   token: Address;
@@ -101,6 +102,7 @@ export function NetworkTokenTradePanel({
   symbol: string;
   feeBps: number;
   basePerToken: string;
+  marketPhase: "legacy_fixed" | "bonding" | "graduated";
 }) {
   const router = useRouter();
   const isNativeV4 = deployment.liquidityVenue === "uniswap-v4";
@@ -408,7 +410,10 @@ export function NetworkTokenTradePanel({
           {isNativeV4
             ? "Native ETH bonding and locked Uniswap v4 market"
             : "Testnet mock market"}{" "}
-          · {(feeBps / 100).toFixed(2)}% fee
+          ·{" "}
+          {marketPhase === "graduated" && isNativeV4
+            ? "1.00% LP fee + 1.00% Sherwood reward fee"
+            : `${(feeBps / 100).toFixed(2)}% Sherwood reward fee`}
         </small>
       </div>
       <button

@@ -188,7 +188,7 @@ mkdirSync(outputDir, { recursive: true, mode: 0o700 });
 mkdirSync(reviewsDir, { recursive: true, mode: 0o700 });
 const campaignState = JSON.parse(readFileSync(campaignStatePath, "utf8"));
 if (campaignState.walletCount !== 100 || campaignState.launches?.length !== 8) {
-  throw new Error("Endurance requires the completed 100-wallet schema-v8 campaign");
+  throw new Error("Endurance requires the completed 100-wallet schema-v9 campaign");
 }
 const campaignPassphrase = protectedText(
   campaignPassphrasePath,
@@ -235,7 +235,7 @@ function projectAccount() {
     parseCastDecryptedPrivateKey(decrypted),
   );
   if (account.address.toLowerCase() !== manifest.deployer.toLowerCase()) {
-    throw new Error("Project keystore does not match schema-v8 deployer");
+    throw new Error("Project keystore does not match schema-v9 deployer");
   }
   return account;
 }

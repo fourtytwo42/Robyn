@@ -135,6 +135,8 @@ export function deriveLaunchAnalytics({
     positionLocker?: Address | null;
     positionTokenId?: bigint | null;
     poolFeePips?: number | null;
+    protocolFeeBps?: number;
+    lpFeeBps?: number;
   };
   snapshot?: {
     totalSupply: bigint;
@@ -575,6 +577,8 @@ export function deriveLaunchAnalytics({
     positionLocker: lifecycle?.positionLocker ?? null,
     positionTokenId: lifecycle?.positionTokenId?.toString() ?? null,
     poolFeePips: lifecycle?.poolFeePips ?? null,
+    protocolFeeBps: lifecycle?.protocolFeeBps ?? feeBps,
+    lpFeeBps: lifecycle?.lpFeeBps ?? 0,
     baseSymbol: lifecycle?.liquidityVenue === "uniswap-v4" ? "ETH" : "mUSD",
     feeBps,
     priceBasePerToken: basePerToken.toString(),

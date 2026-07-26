@@ -378,6 +378,8 @@ async function launchMetadataMap(tokens: string[]) {
 type MarketConfiguration = {
   basePerToken: bigint;
   feeBps: number;
+  protocolFeeBps: number;
+  lpFeeBps: number;
   marketPhase: "legacy_fixed" | "bonding" | "graduated";
   graduationProgressBps: number;
   graduationThresholdBase: bigint;
@@ -463,6 +465,8 @@ async function getMarketConfiguration(
     return {
       basePerToken: nativePerToken,
       feeBps: Number(feeBps),
+      protocolFeeBps: 100,
+      lpFeeBps: graduated ? 100 : 0,
       marketPhase: graduated ? "graduated" : "bonding",
       graduationProgressBps: Number(progress),
       graduationThresholdBase: threshold,
@@ -564,6 +568,8 @@ async function getMarketConfiguration(
     return {
       basePerToken,
       feeBps: Number(feeBps),
+      protocolFeeBps: Number(feeBps),
+      lpFeeBps: 0,
       marketPhase: graduated ? "graduated" : "bonding",
       graduationProgressBps: Number(progress),
       graduationThresholdBase: threshold,
@@ -582,6 +588,8 @@ async function getMarketConfiguration(
     return {
       basePerToken,
       feeBps: Number(feeBps),
+      protocolFeeBps: Number(feeBps),
+      lpFeeBps: 0,
       marketPhase: "legacy_fixed",
       graduationProgressBps: 10_000,
       graduationThresholdBase: 0n,

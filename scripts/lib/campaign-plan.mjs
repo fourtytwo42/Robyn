@@ -38,8 +38,8 @@ export function basketConversionActorIndex(launchIndex, legIndex) {
 }
 
 export function assertSchema8Manifest(manifest) {
-  if (manifest?.schemaVersion !== 8 || manifest?.chainId !== 46630) {
-    throw new Error("Campaign requires a schema-v8 chain-46630 manifest");
+  if (manifest?.schemaVersion !== 9 || manifest?.chainId !== 46630) {
+    throw new Error("Campaign requires a schema-v9 chain-46630 manifest");
   }
   if (
     manifest.governanceProfile !== "robinhood-testnet-short-assurance" ||

@@ -70,11 +70,18 @@ const transferEvent = parseAbiItem(
 const launchRegisteredEvent = parseAbiItem(
   "event LaunchRegistered(address indexed token, address indexed creator, address indexed vault, address market, address locker)",
 );
+const nativeLaunchRegisteredEvent = parseAbiItem(
+  "event LaunchRegistered(address indexed token, address indexed creator, address indexed vault, address market, address locker, address hook)",
+);
 const launchAccountAbi = parseAbi([
   "function launchAccount(address) view returns ((address creator,address vault,address market,address locker,uint256 pendingCreatorBase,uint256 pendingDaoRewardBase,uint256 pendingTreasuryBase,uint256 cumulativeBaseFees,uint256 cumulativeLaunchFeesConverted,uint256 cumulativeNativeConverted,uint256 claimableCreatorNative,uint256 cumulativeCreatorNative,uint256 claimedCreatorNative,bool registered))",
 ]);
 const nativeLaunchAccountAbi = parseAbi([
-  "function launchAccount(address) view returns ((address creator,address vault,address market,address locker,uint256 cumulativeNativeFees,uint256 cumulativeLaunchFeesConverted,uint256 claimableCreatorNative,uint256 cumulativeCreatorNative,uint256 claimedCreatorNative,bool registered))",
+  "function launchAccount(address) view returns ((address creator,address vault,address market,address locker,address hook,uint256 cumulativeNativeFees,uint256 cumulativeLaunchFeesConverted,uint256 cumulativeBondingNativeFees,uint256 cumulativeLockedLpNativeFees,uint256 cumulativeHookNativeFees,uint256 cumulativeLockedLaunchFeesConverted,uint256 cumulativeHookLaunchFeesConverted,uint256 claimableCreatorNative,uint256 cumulativeCreatorNative,uint256 claimedCreatorNative,bool registered))",
+]);
+const hookFeeStateAbi = parseAbi([
+  "function pendingNativeFees(address) view returns (uint256)",
+  "function pendingTokenFees(address) view returns (uint256)",
 ]);
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const stateNames = [
@@ -273,7 +280,10 @@ export function registerDaoRoutes(
       : Promise.resolve([0n, zeroAddress, 0n, 0n, 0n] as const);
     const registeredLogsPromise = rpcClient.getLogs({
       address: protocolFeeRouter,
-      event: launchRegisteredEvent,
+      event:
+        deployment.liquidityVenue === "uniswap-v4"
+          ? nativeLaunchRegisteredEvent
+          : launchRegisteredEvent,
       fromBlock: BigInt(deployment.deploymentBlock),
       strict: true,
     });
@@ -374,12 +384,29 @@ export function registerDaoRoutes(
             functionName: "launchAccount",
             args: [log.args.token],
           });
+          const [pendingHookNative, pendingHookToken] = await Promise.all([
+            rpcClient.readContract({
+              address: feeAccount.hook,
+              abi: hookFeeStateAbi,
+              functionName: "pendingNativeFees",
+              args: [log.args.token],
+            }),
+            rpcClient.readContract({
+              address: feeAccount.hook,
+              abi: hookFeeStateAbi,
+              functionName: "pendingTokenFees",
+              args: [log.args.token],
+            }),
+          ]);
           return {
             token: log.args.token,
             creator: feeAccount.creator,
             vault: feeAccount.vault,
             market: feeAccount.market,
             locker: feeAccount.locker,
+            hook: feeAccount.hook,
+            pendingHookNative: pendingHookNative.toString(),
+            pendingHookToken: pendingHookToken.toString(),
             pendingCreatorBase: "0",
             pendingDaoRewardBase: "0",
             pendingTreasuryBase: "0",
@@ -387,6 +414,16 @@ export function registerDaoRoutes(
             cumulativeNativeFees: feeAccount.cumulativeNativeFees.toString(),
             cumulativeLaunchFeesConverted:
               feeAccount.cumulativeLaunchFeesConverted.toString(),
+            cumulativeBondingNativeFees:
+              feeAccount.cumulativeBondingNativeFees.toString(),
+            cumulativeLockedLpNativeFees:
+              feeAccount.cumulativeLockedLpNativeFees.toString(),
+            cumulativeHookNativeFees:
+              feeAccount.cumulativeHookNativeFees.toString(),
+            cumulativeLockedLaunchFeesConverted:
+              feeAccount.cumulativeLockedLaunchFeesConverted.toString(),
+            cumulativeHookLaunchFeesConverted:
+              feeAccount.cumulativeHookLaunchFeesConverted.toString(),
             cumulativeNativeConverted:
               feeAccount.cumulativeNativeFees.toString(),
             claimableCreatorNative:
