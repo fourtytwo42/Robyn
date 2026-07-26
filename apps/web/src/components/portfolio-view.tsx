@@ -14,6 +14,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LaunchList, LaunchRecord } from "@/lib/data-api";
+import { isActivePortfolioPosition } from "@/lib/portfolio-position-policy";
 
 const tokenAbi = [
   {
@@ -245,14 +246,7 @@ export function PortfolioView({
       }),
     );
     setPositions(
-      next.filter(
-        (position) =>
-          position.balance > 0n ||
-          position.pendingBase > 0n ||
-          position.rewards.some(
-            (reward) => reward.claimable > 0n || reward.claimed > 0n,
-          ),
-      ),
+      next.filter((position) => isActivePortfolioPosition(position)),
     );
     setStatus(
       readOnly

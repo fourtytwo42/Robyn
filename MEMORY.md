@@ -4,6 +4,13 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Portfolio positions are wallet-specific. A launch appears in the holdings
+  grid only when the viewed wallet currently holds its launch token or has a
+  currently claimable basket reward. Global vault pending conversion and
+  already-claimed history are not wallet positions. Tokens canonically created
+  by the wallet remain visible in the separate Created tokens section. This
+  policy is shared by devnet and testnet views and has focused regression
+  coverage in `apps/web/src/lib/portfolio-position-policy.test.ts`.
 - Server-side Robinhood Testnet traffic is now routed through the synchronized
   private LAN RPC at `http://192.168.50.117:8547`. Browser wallet traffic
   intentionally remains on Robinhood's public HTTPS RPC because a browser
