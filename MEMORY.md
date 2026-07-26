@@ -11,10 +11,12 @@ Durable project context lives here. Update this file whenever information should
   graduated v4 quotes, approvals, buys, and sells through the already-deployed
   `RobynV4AssetRouter`, reads the cap onchain, uses cap-aware quick amounts,
   applies a fresh 1% slippage floor and ten-minute deadline, and decodes common
-  router errors. Web strict typecheck, lint, and all 40 tests pass; an
-  `eth_call` from the affected wallet successfully simulated the exact
-  `0.0001 ETH` SAT3 router buy without changing chain state. Promotion and
-  browser acceptance are still pending.
+  router errors. Implementation commit `f351a16` passed the full immutable
+  testnet build and all 490 promotion checks. An `eth_call` from the affected
+  wallet successfully simulated the exact `0.0001 ETH` SAT3 router buy without
+  changing chain state. Post-promotion in-app-browser acceptance with the
+  connected MetaMask wallet proved a live 14.73M SAT3 buy quote, the explicit
+  over-cap message, and a nonzero sell quote. Carry this repair into schema v9.
 - Sherwood Forest's product voice and visual system intentionally use a
   restrained `plant → grow → harvest` metaphor. The homepage, Markets hero,
   Portfolio hero, and guided creation modal use forest language while retaining
