@@ -3,6 +3,12 @@
   "environment": "robinhood-testnet",
   "chainId": 46630,
   "deploymentBlock": 93726965,
+  "kingOfForestPolicy": {
+    "version": "forest-v1",
+    "activationBlock": 93726965,
+    "progressThresholdBps": 5000,
+    "minimumUniqueTraders": 10
+  },
   "gitCommit": "e435b78bf8be3d2d443ec2253d2a6ed4d5212874",
   "deployer": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",
   "guardian": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",
@@ -400,12 +406,6 @@
   "assetCatalog": {
     "schemaVersion": 2,
     "snapshotAt": "2026-07-26T20:08:21Z",
-    "kingOfForestPolicy": {
-      "version": "forest-v1",
-      "activationBlock": 93726965,
-      "progressThresholdBps": 5000,
-      "minimumUniqueTraders": 10
-    },
     "disclosure": "Faucet assets and Robyn mock assets are test-only and are not production Stock Tokens, backed shares, or redeemable securities.",
     "assets": [
       {

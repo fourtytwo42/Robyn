@@ -29,6 +29,16 @@ Durable project context lives here. Update this file whenever information should
   Three permissionless follow-up settlements cleared them. The runner now
   performs and tests a final post-harvest settlement.
 
+- Last verified 2026-07-26: the fresh schema-v9 index was rebuilt from an empty
+  database through the synchronized LAN RPC and matched the campaign database's
+  immutable nine-launch projection hash. Release `d002ad3` was promoted with
+  zero ingestion and projection lag and 513 deployment checks. Post-promotion
+  review found that the deployment generator had mistakenly nested the King of
+  the Forest policy inside `assetCatalog`, leaving the achievement projector
+  inactive. Source and manifest are corrected, and the deployment verifier now
+  rejects missing or misplaced policy configuration. A corrected exact release
+  must replace `d002ad3` before browser acceptance and endurance begin.
+
 - Last verified 2026-07-26: schema-v9 mainnet-readiness review found a
   release-blocking configuration mismatch. `maximumNativeSwap` limited only
   graduated swaps while bonding `buy()` had no onchain per-transaction cap.
@@ -85,15 +95,13 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- Fresh capped schema-v9 deployment `e435b78` and public campaign
-  `schema9-e435b78-public` are passing. The campaign completed 2,181 successful
-  transactions with exact fee conservation and zero queued hook fees. The
-  working tree contains the post-harvest settlement regression fix and memory
-  update. Next: run focused and repository gates, commit and push, install the
-  fresh deployment manifest into a new exact application release, rebuild the
-  canonical index, promote and browser-test it, then complete real-wallet,
-  recovery, backup, and uninterrupted eight-hour endurance gates. The existing
-  public site remains on the predecessor deployment until promotion passes.
+- Fresh capped schema-v9 deployment `e435b78`, public campaign, accounting
+  reconciliation, empty-database index rebuild, and initial exact application
+  promotion are passing. The current working tree fixes the omitted top-level
+  King of the Forest policy and adds verifier coverage. Next: run repository
+  gates, commit/push/build/promote the corrected exact release, verify the King
+  projection, then complete browser, real-wallet, recovery, backup, and
+  uninterrupted eight-hour endurance gates.
 - Last verified 2026-07-26: the creator-profile avatar and token-artwork upload
   badges no longer render a font-dependent plus glyph. Both now use the same
   geometrically centered CSS cross, keeping the plus centered in its circle

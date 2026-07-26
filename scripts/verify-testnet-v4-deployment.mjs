@@ -77,6 +77,17 @@ check(
 );
 check(manifest.schemaVersion === 9, "deployment manifest schema is v9");
 check(
+  manifest.kingOfForestPolicy?.version === "forest-v1" &&
+    manifest.kingOfForestPolicy?.activationBlock === manifest.deploymentBlock &&
+    manifest.kingOfForestPolicy?.progressThresholdBps === 5_000 &&
+    manifest.kingOfForestPolicy?.minimumUniqueTraders === 10,
+  "King of the Forest policy is top-level and activation-bound",
+);
+check(
+  manifest.assetCatalog?.kingOfForestPolicy === undefined,
+  "asset catalog does not contain a misplaced King policy",
+);
+check(
   contracts.universalRouter ===
     getAddress(venueManifest.contracts.universalRouter.address),
   "Universal Router matches the frozen shared-v4 venue",
