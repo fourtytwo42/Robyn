@@ -56,6 +56,7 @@ module.exports = {
         CHAIN_ID: "46630",
         ROBYN_QUEUE_NAME: "robyn-conversions-testnet",
         ROBYN_AUTH_ORIGINS: authOrigins,
+        API_CORS_ORIGIN: authOrigins,
         ROBYN_ARTIFACT_SERVICE_URL: "http://127.0.0.1:3210",
         ROBYN_OPERATOR_RPC_URL: rpcUrl,
         ROBYN_MANIFEST: manifest,
