@@ -18,7 +18,7 @@ export type DiscoverySort =
   | "graduated"
   | "volume"
   | "market_cap";
-export type DiscoveryWindow = "24h" | "7d" | "all";
+export type DiscoveryWindow = "1h" | "6h" | "24h" | "7d" | "all";
 export type DiscoveryPhase = "all" | "bonding" | "graduated";
 
 export type ParsedDiscoveryQuery = {
@@ -68,7 +68,7 @@ export function decodeDiscoveryCursor(value: string | undefined) {
       "volume",
       "market_cap",
     ];
-    const validWindow: DiscoveryWindow[] = ["24h", "7d", "all"];
+    const validWindow: DiscoveryWindow[] = ["1h", "6h", "24h", "7d", "all"];
     const validPhase: DiscoveryPhase[] = ["all", "bonding", "graduated"];
     if (
       decoded.version !== 1 ||
@@ -121,7 +121,7 @@ export function parseDiscoveryQuery(
     "volume",
     "market_cap",
   ];
-  const windowValues: DiscoveryWindow[] = ["24h", "7d", "all"];
+  const windowValues: DiscoveryWindow[] = ["1h", "6h", "24h", "7d", "all"];
   const phaseValues: DiscoveryPhase[] = ["all", "bonding", "graduated"];
   const sort = sortValues.includes(input.sort as DiscoverySort)
     ? (input.sort as DiscoverySort)

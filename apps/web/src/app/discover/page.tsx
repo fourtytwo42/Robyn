@@ -35,7 +35,6 @@ export default async function Discover({
   const filters = {
     q: first(query.q).trim(),
     asset: first(query.asset),
-    basketSize: first(query.basketSize),
     sort: first(query.sort) || "trending",
     window: first(query.window) || "24h",
     phase: first(query.phase) || "all",
@@ -126,6 +125,7 @@ export default async function Discover({
               <MarketCard
                 launch={launch}
                 isTestnet={isTestnet}
+                window={filters.window}
                 priority={index < 4}
                 key={launch.token}
               />

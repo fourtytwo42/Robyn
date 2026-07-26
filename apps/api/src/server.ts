@@ -996,16 +996,27 @@ app.get<{
             marketCapBase: metric.marketCapBase,
             priceChangeBps,
             priceChangeSource: demoMarketChangesEnabled ? "demo" : "indexed",
+            change1hBps: metric.change1hBps,
+            change6hBps: metric.change6hBps,
             change24hBps: metric.change24hBps,
             change7dBps: metric.change7dBps,
             liquidityBase: metric.liquidityBase,
             totalVolumeBase: metric.totalVolumeBase,
+            volume1hBase: metric.volume1hBase,
+            volume6hBase: metric.volume6hBase,
             volume24hBase: metric.volume24hBase,
             volume7dBase: metric.volume7dBase,
             buyVolume24hBase: metric.buyVolume24hBase,
             sellVolume24hBase: metric.sellVolume24hBase,
+            tradeCount1h: metric.tradeCount1h,
+            tradeCount6h: metric.tradeCount6h,
             tradeCount24h: metric.tradeCount24h,
+            tradeCount7d: metric.tradeCount7d,
+            uniqueTraders1h: metric.uniqueTraders1h,
+            uniqueTraders6h: metric.uniqueTraders6h,
             uniqueTraders24h: metric.uniqueTraders24h,
+            uniqueTraders7d: metric.uniqueTraders7d,
+            uniqueTraderCount: metric.uniqueTraderCount,
             holderCount: metric.holderCount,
             tradeCount: metric.tradeCount,
             baseSymbol: metric.baseSymbol,
@@ -1035,6 +1046,8 @@ app.get<{
   });
   const amountForWindow = (row: (typeof visible)[number]) => {
     if (!row.metrics) return 0n;
+    if (window === "1h") return BigInt(row.metrics.volume1hBase);
+    if (window === "6h") return BigInt(row.metrics.volume6hBase);
     if (window === "24h") return BigInt(row.metrics.volume24hBase);
     if (window === "7d") return BigInt(row.metrics.volume7dBase);
     return BigInt(row.metrics.totalVolumeBase);
@@ -1057,22 +1070,28 @@ app.get<{
       if (marketCap !== 0) return marketCap;
     } else {
       const volume = compareBigInt(
-        sort === "trending"
-          ? BigInt(left.metrics?.volume24hBase ?? "0")
-          : amountForWindow(left),
-        sort === "trending"
-          ? BigInt(right.metrics?.volume24hBase ?? "0")
-          : amountForWindow(right),
+        amountForWindow(left),
+        amountForWindow(right),
       );
       if (volume !== 0) return volume;
       if (sort === "trending") {
-        const traders =
-          (right.metrics?.uniqueTraders24h ?? 0) -
-          (left.metrics?.uniqueTraders24h ?? 0);
+        const tradersForWindow = (row: (typeof visible)[number]) => {
+          if (window === "1h") return row.metrics?.uniqueTraders1h ?? 0;
+          if (window === "6h") return row.metrics?.uniqueTraders6h ?? 0;
+          if (window === "24h") return row.metrics?.uniqueTraders24h ?? 0;
+          if (window === "7d") return row.metrics?.uniqueTraders7d ?? 0;
+          return row.metrics?.uniqueTraderCount ?? 0;
+        };
+        const tradesForWindow = (row: (typeof visible)[number]) => {
+          if (window === "1h") return row.metrics?.tradeCount1h ?? 0;
+          if (window === "6h") return row.metrics?.tradeCount6h ?? 0;
+          if (window === "24h") return row.metrics?.tradeCount24h ?? 0;
+          if (window === "7d") return row.metrics?.tradeCount7d ?? 0;
+          return row.metrics?.tradeCount ?? 0;
+        };
+        const traders = tradersForWindow(right) - tradersForWindow(left);
         if (traders !== 0) return traders;
-        const trades =
-          (right.metrics?.tradeCount24h ?? 0) -
-          (left.metrics?.tradeCount24h ?? 0);
+        const trades = tradesForWindow(right) - tradesForWindow(left);
         if (trades !== 0) return trades;
       }
     }

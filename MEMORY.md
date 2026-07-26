@@ -4,6 +4,11 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Markets no longer exposes basket-size filtering. Discovery supports canonical
+  `1h`, `6h`, `24h`, `7d`, and all-time windows; cards, volume sorting, and
+  Trending tie-breaks use the selected window's timestamped trade metrics.
+  The API continues accepting the legacy `basketSize` parameter for backward
+  compatibility, but the public Markets interface no longer sends it.
 - Portfolio positions are wallet-specific. A launch appears in the holdings
   grid only when the viewed wallet currently holds its launch token or has a
   currently claimable basket reward. Global vault pending conversion and

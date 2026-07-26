@@ -98,6 +98,18 @@ describe("parseDiscoveryQuery", () => {
     ).toBe(false);
   });
 
+  it("accepts short canonical activity windows", () => {
+    expect(parseDiscoveryQuery({ window: "1h" }).window).toBe("1h");
+    expect(parseDiscoveryQuery({ window: "6h" }).window).toBe("6h");
+    const cursor = encodeDiscoveryCursor({
+      launchId: "43",
+      sort: "volume",
+      window: "1h",
+      phase: "all",
+    });
+    expect(decodeDiscoveryCursor(cursor)?.window).toBe("1h");
+  });
+
   it("rejects opaque cursors reused with a different market view", () => {
     const cursor = encodeDiscoveryCursor({
       launchId: "42",
