@@ -18,6 +18,7 @@ const testnet = loadConfig("infrastructure/pm2/ecosystem.testnet.config.cjs", {
   ROBYN_TESTNET_RELEASE_ROOT: "/opt/robyn/releases/validation",
   ROBYN_TESTNET_MANIFEST: "/etc/robyn/testnet-validation.json",
   ROBYN_OPERATOR_KEY_FILE: "/etc/robyn/testnet-operator-key",
+  ROBYN_TESTNET_AUTH_ORIGINS: "https://testnet.sherwoodforest.trade",
 });
 
 const minimums = new Map([
@@ -70,6 +71,15 @@ for (const app of apps) {
       app.env?.MALLOC_TRIM_THRESHOLD_ !== "65536")
   ) {
     throw new Error(`${app.name} must use the reviewed native allocator bounds`);
+  }
+  if (
+    app.name === "robyn-api-testnet" &&
+    (app.env?.ROBYN_AUTH_ORIGINS !== "https://testnet.sherwoodforest.trade" ||
+      app.env?.API_CORS_ORIGIN !== "https://testnet.sherwoodforest.trade")
+  ) {
+    throw new Error(
+      "robyn-api-testnet must restrict authentication and CORS to the testnet hostname",
+    );
   }
 }
 
