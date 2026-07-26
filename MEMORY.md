@@ -4,6 +4,16 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Public presentation no longer exposes internal schema, analytics-formula, or
+  Uniswap generation labels. The web build now has explicit `devnet`,
+  `testnet`, and `mainnet` profiles. Chain ID, RPC, explorer, hostname, faucet,
+  disclosures, metadata, and wallet-switch requests resolve from one validated
+  public environment. Testnet and future mainnet use isolated PM2 names, ports,
+  PostgreSQL databases, Redis databases, queues, manifests, secrets, release
+  roots, origins, and hostnames. `scripts/build-mainnet-candidate.sh` is
+  deliberately non-promoting and refuses chain, hostname, testnet-marker, or
+  mock-asset contamination. The apex holding page remains until a separately
+  authorized mainnet activation.
 - `/whitepaper` is the public Sherwood Compact: a detailed, visually led
   explanation of atomic launch, bonding, graduation, immutable baskets,
   50/25/20/5 fee routing, holder/creator/DAO-member claims, DAO governance,

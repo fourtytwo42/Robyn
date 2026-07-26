@@ -31,6 +31,12 @@ set -a
 # shellcheck disable=SC1090
 source "$release_env"
 set +a
+node scripts/validate-public-release-environment.mjs \
+  testnet \
+  deployments/46630-v4.json \
+  "$NEXT_PUBLIC_APP_URL" \
+  "$ROBYN_TESTNET_RPC_URL" \
+  "${NEXT_PUBLIC_ROBYN_EXPLORER_URL:-https://explorer.testnet.chain.robinhood.com}"
 export TZ=UTC LC_ALL=C SOURCE_DATE_EPOCH
 SOURCE_DATE_EPOCH="$(git show -s --format=%ct "$git_sha")"
 export ROBYN_BUILD_ID="$git_sha"
@@ -77,6 +83,7 @@ cp "$security_json" "$staging/release-evidence/static-security-audit.json"
   NEXT_PUBLIC_ROBYN_NETWORK_MODE=testnet \
   ROBYN_DEPLOYMENT_PATH="$staging/deployments/46630-v4.json" \
   NEXT_PUBLIC_ROBYN_RPC_URL="$ROBYN_TESTNET_RPC_URL" \
+  NEXT_PUBLIC_ROBYN_EXPLORER_URL="${NEXT_PUBLIC_ROBYN_EXPLORER_URL:-https://explorer.testnet.chain.robinhood.com}" \
   NEXT_PUBLIC_DATA_API_URL="" \
   NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID="$NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID" \
   NEXT_PUBLIC_APP_URL="$NEXT_PUBLIC_APP_URL" \

@@ -28,7 +28,7 @@ const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 if (!projectId || !appUrl) {
   throw new Error(
-    "Protected testnet builds require NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID and NEXT_PUBLIC_APP_URL.",
+    "Protected public-network builds require NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID and NEXT_PUBLIC_APP_URL.",
   );
 }
 

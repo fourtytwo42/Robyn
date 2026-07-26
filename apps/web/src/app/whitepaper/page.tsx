@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
+import { publicEnvironment } from "@/lib/public-environment";
 
 import "./whitepaper.css";
 
@@ -66,9 +67,9 @@ export default function WhitepaperPage() {
               community governs the forest through the DAO.
             </p>
             <div className="whitepaper-status">
-              <span>Robinhood Chain Testnet</span>
+              <span>{publicEnvironment.chainName}</span>
               <span>Native ETH markets</span>
-              <span>Uniswap v4 graduation</span>
+              <span>Uniswap graduation</span>
             </div>
           </div>
           <div className="whitepaper-hero-art" aria-hidden="true">
@@ -151,7 +152,7 @@ export default function WhitepaperPage() {
                 <p>
                   A single creator transaction deploys the fixed-supply token
                   and basket vault, creates its bonding market, initializes the
-                  future v4 pool, seeds the full inventory, seals reward
+                  future liquidity pool, seeds the full inventory, seals reward
                   exclusions, and emits the canonical launch identity. If any
                   step fails, all of it reverts.
                 </p>
@@ -179,7 +180,7 @@ export default function WhitepaperPage() {
                   When curve inventory is exhausted, the reserved tokens and
                   accumulated native ETH move into the pool initialized at
                   launch. Its position NFT and principal liquidity are locked;
-                  the interface continues routing trades through the open v4
+                  the interface continues routing trades through the open
                   market.
                 </p>
               </div>
@@ -216,7 +217,7 @@ export default function WhitepaperPage() {
             </div>
             <i aria-hidden="true">→</i>
             <div>
-              <span>Curve + v4 pool</span>
+              <span>Curve + liquidity pool</span>
               <strong>Continuous market</strong>
             </div>
           </div>
@@ -259,24 +260,32 @@ export default function WhitepaperPage() {
                 <dd>1% of each trade</dd>
               </div>
               <div>
-                <dt>Mainnet policy candidate</dt>
+                <dt>Production graduation target</dt>
                 <dd>6 ETH net graduation</dd>
               </div>
               <div>
-                <dt>Mainnet terminal FDV</dt>
+                <dt>Production terminal FDV</dt>
                 <dd>27.5 ETH</dd>
               </div>
             </dl>
           </div>
           <div className="status-note">
             <strong>Environment matters.</strong>
-            <p>
-              Testnet deliberately uses tiny values so the full lifecycle can be
-              exercised. The accepted chain-4663 candidate is 6 ETH net,
-              approximately 6.0606 ETH of gross buy demand before offsetting
-              sells, and a 0.5 ETH maximum individual curve buy. It is a
-              reviewed configuration decision—not a deployed mainnet claim.
-            </p>
+            {publicEnvironment.isMainnet ? (
+              <p>
+                Mainnet launches graduate at 6 ETH net, approximately 6.0606 ETH
+                of gross buy demand before offsetting sells, with a 0.5 ETH
+                maximum individual curve buy.
+              </p>
+            ) : (
+              <p>
+                This testing environment deliberately uses small values so the
+                full lifecycle can be exercised. The reviewed production policy
+                is 6 ETH net, approximately 6.0606 ETH of gross buy demand
+                before offsetting sells, and a 0.5 ETH maximum individual curve
+                buy. It is not active on this network.
+              </p>
+            )}
           </div>
         </section>
 
@@ -334,13 +343,14 @@ export default function WhitepaperPage() {
               <p className="trail-kicker">After graduation</p>
               <h3>1% Sherwood reward fee</h3>
               <p>
-                Schema v9’s v4 hook charges every Sherwood-pool swap regardless
-                of router or liquidity provider. It is additional to the pool’s
-                LP fee and cannot be diluted by third-party liquidity.
+                The pool-level reward hook charges every Sherwood-pool swap
+                regardless of router or liquidity provider. It is additional to
+                the pool’s LP fee and cannot be diluted by third-party
+                liquidity.
               </p>
-              <span className="development-badge">
-                Schema v9 · testnet validation in progress
-              </span>
+              {!publicEnvironment.isMainnet ? (
+                <span className="development-badge">Testing in progress</span>
+              ) : null}
             </article>
             <article>
               <p className="trail-kicker">Locked position</p>
@@ -438,7 +448,7 @@ export default function WhitepaperPage() {
                   <li>Treasury spending and contributor grants</li>
                   <li>Supported assets for future launches</li>
                   <li>Approved conversion venues and safety limits</li>
-                  <li>Enrollment of reviewed future factory versions</li>
+                  <li>Enrollment of reviewed future launch factories</li>
                 </ul>
               </article>
               <article>
@@ -454,7 +464,7 @@ export default function WhitepaperPage() {
           </div>
           <dl className="governance-parameters">
             <div>
-              <dt>Mainnet voting delay</dt>
+              <dt>Production voting delay</dt>
               <dd>1 day</dd>
             </div>
             <div>
@@ -474,12 +484,19 @@ export default function WhitepaperPage() {
               <dd>1%</dd>
             </div>
           </dl>
-          <p className="fine-print">
-            Testnet uses deliberately shortened governance timing for end-to-end
-            testing. The initial testnet governance-token supply is held by the
-            project wallet. Mainnet allocation and contributor vesting must be
-            published and reviewed before distribution.
-          </p>
+          {publicEnvironment.isMainnet ? (
+            <p className="fine-print">
+              Governance uses the published production timing and allocation
+              defined by the deployed contracts.
+            </p>
+          ) : (
+            <p className="fine-print">
+              This testing environment uses shortened governance timing for
+              end-to-end testing. Its governance-token supply is held by the
+              project wallet. Production allocation and contributor vesting must
+              be published and reviewed before distribution.
+            </p>
+          )}
         </section>
 
         <section className="paper-section metadata-section">
@@ -557,7 +574,7 @@ export default function WhitepaperPage() {
               </p>
             </article>
             <article>
-              <h3>Versioned evolution</h3>
+              <h3>Reviewed evolution</h3>
               <p>
                 Material changes require fresh contracts, manifests, testing,
                 and governance enrollment.
@@ -572,12 +589,21 @@ export default function WhitepaperPage() {
             <h2>Risks and current status</h2>
           </div>
           <div>
-            <p>
-              Sherwood Forest is currently a Robinhood Chain Testnet
-              application. Faucet stocks and Robyn mocks have no real-world
-              value, backing, redemption rights, or claim to official Stock
-              Token status. Local IPFS pinning has no remote redundancy yet.
-            </p>
+            {publicEnvironment.isMainnet ? (
+              <p>
+                Sherwood Forest operates on Robinhood Chain. Tokenized assets,
+                community tokens, smart contracts, conversion routes and
+                liquidity pools remain subject to issuer, market and technical
+                risk.
+              </p>
+            ) : (
+              <p>
+                Sherwood Forest is running in a testing environment. Faucet
+                stocks and project mocks have no real-world value, backing,
+                redemption rights, or claim to official Stock Token status.
+                Local IPFS pinning has no remote redundancy yet.
+              </p>
+            )}
             <p>
               Smart contracts, bonding curves, token prices, reward conversion,
               governance, wallets, RPC services, hooks, and liquidity markets
@@ -585,18 +611,24 @@ export default function WhitepaperPage() {
               guarantee profit, reward value, liquidity, basket availability, or
               successful graduation.
             </p>
-            <p>
-              Mainnet remains blocked on a separate deployment review,
-              production asset and venue verification, legal and tax review,
-              independent professional contract audit, external penetration
-              testing, recovery validation, and real-wallet acceptance.
-            </p>
+            {!publicEnvironment.isMainnet ? (
+              <p>
+                Production activation remains blocked on a separate deployment
+                review, production asset and venue verification, legal and tax
+                review, independent professional contract audit, external
+                penetration testing, recovery validation, and real-wallet
+                acceptance.
+              </p>
+            ) : null}
           </div>
         </section>
 
         <footer className="whitepaper-footer">
           <div>
-            <p className="eyebrow">Join the band on testnet</p>
+            <p className="eyebrow">
+              Join the band on{" "}
+              {publicEnvironment.isMainnet ? "Robinhood Chain" : "the testnet"}
+            </p>
             <h2>Explore the living protocol.</h2>
           </div>
           <div>

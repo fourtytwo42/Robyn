@@ -1,9 +1,9 @@
 import { NetworkPortfolioView } from "@robyn/network-portfolio";
 import { NetworkCreatorPortfolio } from "@robyn/network-creator-portfolio";
 import { SiteHeader } from "@/components/site-header";
+import { publicEnvironment } from "@/lib/public-environment";
 
 export default function Portfolio() {
-  const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
   return (
     <main id="main">
       <div className="ambient ambient-left" aria-hidden="true" />
@@ -22,9 +22,11 @@ export default function Portfolio() {
         <NetworkPortfolioView />
       </section>
       <section className="notice" aria-label="Portfolio disclosure">
-        {isTestnet
-          ? "Values are token amounts from Robinhood Chain Testnet assets with no real-world value or production backing. No fiat estimate, promised return or redemption claim is shown."
-          : "Values are token amounts from the controlled development chain. No fiat estimate, promised return or redemption claim is shown."}
+        {publicEnvironment.isMainnet
+          ? "Values are onchain token amounts, not promised returns or redemption claims. Prices, liquidity and reward values can change."
+          : publicEnvironment.isTestnet
+            ? "Values are token amounts from Robinhood Chain Testnet assets with no real-world value or production backing. No fiat estimate, promised return or redemption claim is shown."
+            : "Values are token amounts from the controlled development chain. No fiat estimate, promised return or redemption claim is shown."}
       </section>
     </main>
   );

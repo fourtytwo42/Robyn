@@ -16,6 +16,7 @@ import { TokenArt } from "@/components/launchpad-visuals";
 import type { Deployment } from "@/lib/deployment";
 import { rewardAssetMetadata } from "@/lib/reward-assets";
 import { TokenActions } from "@/components/token-actions";
+import { publicEnvironment } from "@/lib/public-environment";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +68,7 @@ export default async function LaunchDetail({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const isTestnet = process.env.ROBYN_NETWORK_MODE === "testnet";
+  const isTestnet = publicEnvironment.isTestnet;
   if (!/^0x[0-9a-fA-F]{40}$/.test(token)) notFound();
   let detail;
   let activity;
@@ -200,7 +201,11 @@ export default async function LaunchDetail({
               {changeLabel(market.change24hBps)} 24h
             </span>
             <span className="risk-badge">
-              {isTestnet ? "Testnet assets" : "Controlled devnet"}
+              {publicEnvironment.isMainnet
+                ? "Onchain assets"
+                : isTestnet
+                  ? "Testnet assets"
+                  : "Controlled devnet"}
             </span>
           </div>
         </header>
@@ -274,19 +279,15 @@ export default async function LaunchDetail({
               <p className="card-label">Launch lifecycle</p>
               <h2 id="graduation-heading">
                 {market.marketPhase === "graduated"
-                  ? market.liquidityVenue === "uniswap-v4"
-                    ? "Graduated to locked Uniswap v4 liquidity"
-                    : market.liquidityVenue === "uniswap-v3"
-                      ? "Graduated to locked Uniswap v3 liquidity"
-                      : "Graduated to locked liquidity"
+                  ? "Graduated to locked Uniswap liquidity"
                   : "Climbing the bonding curve"}
               </h2>
               <p>
                 {market.marketPhase === "graduated"
                   ? market.liquidityVenue === "uniswap-v4"
-                    ? "The curve sold out atomically. Native testnet ETH and reserved tokens now trade in a full-range Uniswap v4 position whose NFT and principal cannot be withdrawn. Fees continue funding the basket, creator, RDAO members, and treasury."
+                    ? `The curve sold out atomically. Native ${publicEnvironment.isMainnet ? "ETH" : "test ETH"} and reserved tokens now trade in a full-range Uniswap position whose NFT and principal cannot be withdrawn. Fees continue funding the basket, creator, DAO members, and treasury.`
                     : market.liquidityVenue === "uniswap-v3"
-                      ? "The curve sold out atomically. Its reserved tokens and quote liquidity now trade in a canonical Uniswap v3 position whose NFT cannot be withdrawn. Quote-side fees continue funding this token's reward basket."
+                      ? "The curve sold out atomically. Its reserved tokens and quote liquidity now trade in a locked Uniswap position whose NFT cannot be withdrawn. Quote-side fees continue funding this token's reward basket."
                       : "The curve sold out atomically. Its remaining token allocation and raised mUSD now trade in a permanently locked local pool."
                   : `Every buy moves the price along the curve. When the curve allocation sells out, the market automatically moves its reserved tokens and raised ${market.baseSymbol} into locked liquidity.`}
               </p>
@@ -518,7 +519,7 @@ export default async function LaunchDetail({
                 <AddressRow
                   label={
                     market.liquidityVenue === "uniswap-v3"
-                      ? "Uniswap v3 liquidity pool"
+                      ? "Uniswap liquidity pool"
                       : "Graduated liquidity pool"
                   }
                   value={market.graduatedPool}
@@ -526,12 +527,12 @@ export default async function LaunchDetail({
               ) : null}
               {market.poolManager ? (
                 <AddressRow
-                  label="Uniswap v4 PoolManager"
+                  label="Uniswap pool manager"
                   value={market.poolManager}
                 />
               ) : null}
               {market.poolId ? (
-                <AddressRow label="Uniswap v4 pool ID" value={market.poolId} />
+                <AddressRow label="Uniswap pool ID" value={market.poolId} />
               ) : null}
               {market.hook ? (
                 <AddressRow label="Oracle-only hook" value={market.hook} />
@@ -555,11 +556,6 @@ export default async function LaunchDetail({
                 />
               ) : null}
               <AddressRow label="Creator wallet" value={launch.creator} />
-              <AddressRow
-                label="Formula version"
-                value={launch.formula_version}
-              />
-              <AddressRow label="Analytics formula" value={market.formula} />
               <AddressRow label="Created block" value={launch.created_block} />
               <AddressRow
                 label="Indexed through"
@@ -593,12 +589,9 @@ export default async function LaunchDetail({
         </details>
 
         <section className="notice" aria-label="Reward disclosure">
-          This launch token is not redeemable for the basket. Market values and
-          rewards shown here come from test assets and canonical activity on{" "}
-          {deployment.chainId === 46630
-            ? "Robinhood Testnet"
-            : "a controlled development network"}
-          ; they have no real-world value or production backing.
+          {publicEnvironment.isMainnet
+            ? "This launch token is not redeemable for the basket. Market values, tokenized assets, rewards, smart contracts and liquidity carry financial and technical risk."
+            : `This launch token is not redeemable for the basket. Market values and rewards shown here come from test assets and canonical activity on ${publicEnvironment.networkLabel}; they have no real-world value or production backing.`}
         </section>
       </section>
     </main>

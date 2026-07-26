@@ -8,6 +8,7 @@ import type { LaunchList, LaunchRecord } from "@/lib/data-api";
 import { useRobynTestnetWallet } from "./robyn-testnet-wallet";
 import { resolveDataApiUrl } from "@/lib/data-api-url";
 import { isActivePortfolioPosition } from "@/lib/portfolio-position-policy";
+import { publicEnvironment } from "@/lib/public-environment";
 
 const tokenAbi = [
   {
@@ -150,11 +151,13 @@ export function NetworkPortfolioView({
   const publicView = readOnly || Boolean(requestedAccount);
   const [positions, setPositions] = useState<Position[]>();
   const [indexedBlock, setIndexedBlock] = useState<string | null>(null);
-  const [status, setStatus] = useState("Reading the connected testnet wallet.");
+  const [status, setStatus] = useState(
+    `Reading the connected wallet on ${publicEnvironment.networkLabel}.`,
+  );
   const refresh = useCallback(async () => {
     if (!wallet || !client) {
       setPositions([]);
-      setStatus("Connect a testnet wallet to view its portfolio.");
+      setStatus("Connect a wallet to view its portfolio.");
       return;
     }
     const account = wallet;
@@ -268,7 +271,7 @@ export function NetworkPortfolioView({
   if (!wallet) {
     return (
       <section className="empty-state portfolio-empty" aria-live="polite">
-        <h2>No connected testnet wallet</h2>
+        <h2>No connected wallet</h2>
         <p>
           Public discovery remains available. Connect any supported self-custody
           wallet to see its cross-launch positions.
@@ -289,9 +292,7 @@ export function NetworkPortfolioView({
     <>
       <section className="wallet-bar">
         <div>
-          <p>
-            {publicView ? "Public testnet wallet" : "Connected testnet wallet"}
-          </p>
+          <p>{publicView ? "Public wallet" : "Connected wallet"}</p>
           <code>{wallet}</code>
         </div>
         <button className="button" onClick={() => void refresh()}>

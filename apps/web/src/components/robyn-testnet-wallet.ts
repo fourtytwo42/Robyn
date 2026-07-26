@@ -21,35 +21,29 @@ import {
 import {
   getWalletWriteState,
   normalizeWalletError,
-  ROBINHOOD_TESTNET_CHAIN_ID,
   walletErrorCode,
 } from "@/lib/wallet-policy";
+import { publicEnvironment } from "@/lib/public-environment";
 
-export const ROBINHOOD_TESTNET_FAUCET_URL =
-  "https://faucet.testnet.chain.robinhood.com";
+export const ROBINHOOD_TESTNET_FAUCET_URL = publicEnvironment.faucetUrl;
 
 export const robinhoodTestnet = defineChain({
-  id: ROBINHOOD_TESTNET_CHAIN_ID,
-  name: "Robinhood Chain Testnet",
+  id: publicEnvironment.chainId,
+  name: publicEnvironment.chainName,
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: {
     default: {
-      http: [
-        process.env.NEXT_PUBLIC_ROBYN_RPC_URL ??
-          "https://rpc.testnet.chain.robinhood.com",
-      ],
+      http: [publicEnvironment.rpcUrl],
     },
   },
   blockExplorers: {
     default: {
-      name: "Robinhood Testnet Explorer",
-      url:
-        process.env.NEXT_PUBLIC_ROBYN_EXPLORER_URL ??
-        "https://explorer.testnet.chain.robinhood.com",
+      name: `${publicEnvironment.networkLabel} Explorer`,
+      url: publicEnvironment.explorerUrl,
     },
   },
   iconUrl: "/assets/brand/sherwood-mark.webp",
-  testnet: true,
+  testnet: publicEnvironment.isTestnet,
 });
 
 export const robynTestnetPublicClient = createPublicClient({
@@ -67,10 +61,10 @@ export function useRobynTestnetWallet() {
   const accountState = useAccount();
   const automaticSwitchAttempt = useRef<string | undefined>(undefined);
   const { data: walletClient } = useWalletClient({
-    chainId: ROBINHOOD_TESTNET_CHAIN_ID,
+    chainId: publicEnvironment.chainId,
   });
   const publicClient = usePublicClient({
-    chainId: ROBINHOOD_TESTNET_CHAIN_ID,
+    chainId: publicEnvironment.chainId,
   });
   const { openConnectModal } = useConnectModal();
   const { switchChainAsync } = useSwitchChain();
@@ -78,6 +72,7 @@ export function useRobynTestnetWallet() {
   const writeState = getWalletWriteState(
     accountState.address,
     accountState.chainId,
+    publicEnvironment.chainId,
   );
 
   const connect = useCallback(async () => {
@@ -87,7 +82,7 @@ export function useRobynTestnetWallet() {
 
   const switchToRobinhoodTestnet = useCallback(async () => {
     try {
-      await switchChainAsync({ chainId: ROBINHOOD_TESTNET_CHAIN_ID });
+      await switchChainAsync({ chainId: publicEnvironment.chainId });
     } catch (error) {
       const provider = await accountState.connector?.getProvider();
       const candidate = provider as
@@ -104,7 +99,7 @@ export function useRobynTestnetWallet() {
           method: "wallet_addEthereumChain",
           params: [
             {
-              chainId: `0x${ROBINHOOD_TESTNET_CHAIN_ID.toString(16)}`,
+              chainId: `0x${publicEnvironment.chainId.toString(16)}`,
               chainName: robinhoodTestnet.name,
               nativeCurrency: robinhoodTestnet.nativeCurrency,
               rpcUrls: [...robinhoodTestnet.rpcUrls.default.http],
@@ -112,7 +107,7 @@ export function useRobynTestnetWallet() {
             },
           ],
         });
-        await switchChainAsync({ chainId: ROBINHOOD_TESTNET_CHAIN_ID });
+        await switchChainAsync({ chainId: publicEnvironment.chainId });
         return;
       }
       throw new Error(normalizeWalletError(error), { cause: error });
@@ -128,7 +123,7 @@ export function useRobynTestnetWallet() {
       automaticSwitchAttempt.current = undefined;
       return;
     }
-    if (accountState.chainId === ROBINHOOD_TESTNET_CHAIN_ID) {
+    if (accountState.chainId === publicEnvironment.chainId) {
       automaticSwitchAttempt.current = undefined;
       return;
     }

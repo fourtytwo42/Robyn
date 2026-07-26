@@ -138,3 +138,47 @@ The deployment manifest's `gitCommit` is the commit whose contract bytecode was
 deployed. `testnet-release-manifest.json.gitSha` is the later application
 release that serves and indexes that immutable deployment. Both identities are
 required and intentionally distinct.
+
+## Testnet and mainnet isolation
+
+Network selection is a build-time deployment profile, never a user-facing
+switch inside one running application:
+
+| Resource | Testnet | Mainnet |
+| --- | --- | --- |
+| Build mode | `testnet` | `mainnet` |
+| Chain ID | `46630` | `4663` |
+| Public host | `testnet.sherwoodforest.trade` | `sherwoodforest.trade` |
+| Web origin | `127.0.0.1:3012` via Nginx `3081` | `127.0.0.1:3022` via a future isolated Nginx origin |
+| API | `127.0.0.1:3111` | `127.0.0.1:3121` |
+| Artifacts | `127.0.0.1:3210` | `127.0.0.1:3220` |
+| Redis | database `1` | database `2` |
+| PostgreSQL | `robyn_testnet_*` | `robyn_mainnet` |
+| PM2 suffix | `-testnet` | `-mainnet` |
+| Release root | `/opt/robyn/testnet-releases` | `/opt/robyn/mainnet-releases` |
+
+`NEXT_PUBLIC_ROBYN_NETWORK_MODE` controls public presentation, wallet switching,
+RPC and explorer targets, faucet visibility, disclosures and metadata.
+`ROBYN_NETWORK_MODE` selects the matching build aliases. The public-release
+validator refuses a chain, hostname or deployment-manifest mismatch and refuses
+mock-only or testnet-marked assets in a mainnet manifest.
+
+The mainnet builder is deliberately non-promoting:
+
+```bash
+scripts/build-mainnet-candidate.sh
+```
+
+It requires a clean pushed commit, `/home/hendo420/.config/robyn/mainnet/release.env`,
+a verified chain-4663 deployment manifest, production RPC/explorer settings and
+the mainnet WalletConnect origin. Building produces an immutable candidate but
+does not activate it. Mainnet activation remains a separate explicit operation
+after contracts, assets, legal review, security review, recovery and real-wallet
+acceptance pass.
+
+When mainnet is eventually authorized, load
+`infrastructure/pm2/ecosystem.mainnet.config.cjs`. It reuses the reviewed public
+service topology while replacing every process name, port, queue, Redis
+database, PostgreSQL database, manifest, RPC, secret file and origin. A testnet
+crash or experiment therefore cannot share application processes or state with
+mainnet. The apex holding page remains in place until that separate activation.

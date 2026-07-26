@@ -17,6 +17,7 @@ import {
 } from "./robyn-testnet-wallet";
 import { normalizeWalletError } from "@/lib/wallet-policy";
 import type { BasketAsset } from "@/components/basket-asset-picker";
+import { publicEnvironment } from "@/lib/public-environment";
 
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
 const atomicLaunchCoordinatorAbi = [
@@ -396,7 +397,7 @@ export function NetworkLaunchpadConsole({
   const [weights, setWeights] = useState([40, 40, 20]);
   const [basketAssets, setBasketAssets] = useState<BasketAsset[]>([]);
   const [status, setStatus] = useState(
-    "Connect and fund a testnet wallet, then launch.",
+    `Connect and fund a wallet on ${publicEnvironment.networkLabel}, then launch.`,
   );
   const [busy, setBusy] = useState(false);
   const [launchedToken, setLaunchedToken] = useState<Address>();
@@ -481,8 +482,7 @@ export function NetworkLaunchpadConsole({
   useEffect(() => {
     void fetch("/api/assets")
       .then(async (response) => {
-        if (!response.ok)
-          throw new Error("The testnet asset catalog is unavailable.");
+        if (!response.ok) throw new Error("The asset catalog is unavailable.");
         return (await response.json()) as { data: BasketAsset[] };
       })
       .then((body) => {
@@ -497,7 +497,7 @@ export function NetworkLaunchpadConsole({
         setStatus(
           error instanceof Error
             ? error.message
-            : "The testnet asset catalog is unavailable.",
+            : "The asset catalog is unavailable.",
         ),
       );
   }, []);
@@ -506,9 +506,11 @@ export function NetworkLaunchpadConsole({
     async (
       request: Parameters<NonNullable<typeof walletClient>["writeContract"]>[0],
     ) => {
-      if (!walletClient) throw new Error("Connect a testnet wallet first.");
+      if (!walletClient) throw new Error("Connect a wallet first.");
       if (isWrongChain)
-        throw new Error("Switch to Robinhood Testnet before launching.");
+        throw new Error(
+          `Switch to ${publicEnvironment.networkLabel} before launching.`,
+        );
       if (!publicClient) throw new Error("Public RPC client is unavailable.");
       const hash = await walletClient.writeContract(request);
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
@@ -546,7 +548,7 @@ export function NetworkLaunchpadConsole({
 
   async function createLaunch(artworkMediaId?: string, description?: string) {
     if (!account || !walletClient)
-      return setStatus("Connect and fund a testnet wallet first.");
+      return setStatus("Connect and fund a wallet first.");
     if (!name.trim() || !/^[A-Z0-9]{2,8}$/.test(symbol.trim().toUpperCase()))
       return setStatus("Enter a name and a 2-8 character symbol.");
     if (
@@ -601,7 +603,7 @@ export function NetworkLaunchpadConsole({
         )
       )
         throw new Error(
-          "Protected testnet launch requires verified redundant IPFS pinning.",
+          "Protected launch requires verified redundant IPFS pinning.",
         );
       const request = {
         name: name.trim(),
@@ -666,14 +668,14 @@ export function NetworkLaunchpadConsole({
     launch: Launch,
     kind: "buy" | "sell" | "convert" | "claim",
   ) {
-    if (!account) return setStatus("Connect and fund a testnet wallet first.");
+    if (!account) return setStatus("Connect and fund a wallet first.");
     if (launch.market === ZERO)
       return setStatus("This launch does not have a market yet.");
     setBusy(true);
     try {
       if (kind === "buy") {
         if (deployment.liquidityVenue === "uniswap-v4") {
-          setStatus("Buying with native testnet ETH...");
+          setStatus("Buying with native ETH...");
           if (!publicClient || !walletClient)
             throw new Error("Wallet RPC client is unavailable.");
           await publicClient.simulateContract({
@@ -766,7 +768,7 @@ export function NetworkLaunchpadConsole({
           if (deployment.liquidityVenue === "uniswap-v4") {
             const assetRouter = deployment.contracts.assetRouter;
             if (!assetRouter)
-              throw new Error("V4 asset router is not configured.");
+              throw new Error("Asset router is not configured.");
             const route = await publicClient.readContract({
               address: assetRouter,
               abi: v4AssetRouterAbi,
@@ -847,8 +849,8 @@ export function NetworkLaunchpadConsole({
               Create a token holders want to earn with.
             </h2>
             <p>
-              Choose its immutable testnet reward basket, seed a market, then
-              let trading activity fund rewards holders can claim.
+              Choose its immutable reward basket, seed a market, then let
+              trading activity fund rewards holders can claim.
             </p>
           </div>
           <span className="live-chip">
@@ -869,7 +871,7 @@ export function NetworkLaunchpadConsole({
           status={status}
           walletHint={
             isWrongChain
-              ? "Switch the connected wallet to Robinhood Testnet."
+              ? `Switch the connected wallet to ${publicEnvironment.networkLabel}.`
               : "Connect a supported self-custody wallet."
           }
           walletActionLabel={
@@ -894,10 +896,14 @@ export function NetworkLaunchpadConsole({
             setBasketAssets(assets);
             setWeights(nextWeights);
           }}
-          marketSummary="Seeded testnet mock market"
+          marketSummary={
+            publicEnvironment.isMainnet
+              ? "Seeded live market"
+              : "Seeded test market"
+          }
           signMessage={async (message) => {
             if (!walletClient || !account || isWrongChain)
-              throw new Error("Connect a testnet wallet first.");
+              throw new Error("Connect a wallet first.");
             return walletClient.signMessage({
               account,
               message,

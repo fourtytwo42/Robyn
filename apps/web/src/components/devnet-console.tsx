@@ -434,7 +434,7 @@ export function DevnetConsole({ deployment }: { deployment: Deployment }) {
         args: [account.address],
       });
       setStatus(
-        `Bought ${compact(tokenAfter - tokenBefore, 0)} ROBYN. Trading fees were routed across the holder basket, creator, RDAO, and treasury.`,
+        `Bought ${compact(tokenAfter - tokenBefore, 0)} ROBYN. Trading fees were routed across the holder basket, creator, DAO members, and treasury.`,
       );
     });
   }

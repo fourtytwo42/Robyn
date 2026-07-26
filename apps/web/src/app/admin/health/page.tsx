@@ -15,9 +15,9 @@ export default async function AdminHealthPage() {
           <p className="eyebrow">Unlinked operator view</p>
           <h1>Application health and chain status.</h1>
           <p className="lede">
-            Live, read-only diagnostics for the public release, Robinhood
-            Testnet RPC, canonical ingestion, launch projection, keeper, and
-            artifact services.
+            Live, read-only diagnostics for the public release, configured RPC,
+            canonical ingestion, launch projection, keeper, and artifact
+            services.
           </p>
         </header>
         <AdminHealthDashboard initial={snapshot} />
