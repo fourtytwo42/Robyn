@@ -782,7 +782,7 @@ async function maybeGraduate() {
         () =>
           publicClient.estimateGas({
             ...buyRequest,
-            account: account.address,
+            account: project.address,
           }),
       );
       const estimatedFees = await rpcRetry(

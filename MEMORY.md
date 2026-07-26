@@ -1,6 +1,23 @@
 # Project Memory
 
 Durable project context lives here. Update this file whenever information should survive chat context compression or future agent handoff.
+- Security audit checkpoint 2026-07-26: a fresh manual review of deployed
+  schema-v9 Solidity commit `e435b78` found a release-blocking pre-graduation
+  v4-pool access flaw. The market factory initializes and registers a launch
+  pool during atomic creation, while the hook does not gate swaps or liquidity
+  additions before graduation. An isolated Foundry proof confirms a third
+  party can add liquidity while the market is still bonding. Additional proven
+  liveness risk: moving all RDAO into an excluded balance makes fee-bearing
+  trades revert because synchronous DAO reward deposit has zero eligible
+  supply. Do not promote schema-v9 to mainnet. Full evidence is under
+  `/home/hendo420/robyn-evidence/schema9-mainnet-readiness-d76244a/security/manual-2026-07-26/`.
+- Endurance repair checkpoint 2026-07-26: the first schema-v9 eight-hour run
+  paused at 1,200.487 healthy seconds because `maybeGraduate()` attempted
+  `eth_estimateGas` from an underfunded campaign actor before calculating its
+  top-up. The estimate now uses the funded project account, followed by the
+  existing exact actor funding calculation and actor-signed transaction. Node
+  syntax and all 13 endurance-policy tests pass; live RPC estimate confirms
+  the project account can estimate the failed terminal buy while the actor cannot.
 
 - Last verified 2026-07-26: fresh capped schema-v9 contracts were deployed to
   Robinhood Testnet from exact commit
