@@ -2992,6 +2992,16 @@ When sources conflict, use this order:
 - Result: The homepage hero and first four cards derive from the same transparent multi-signal activity ranking, and cards display market cap, 24-hour volume, unique traders, and trade count.
 - Follow-up: Build/promote the exact release, run in-app-browser desktop/mobile acceptance, and resume the preserved endurance journal without replay.
 
+### 2026-07-26 - Exact schema-v9 100-wallet fork campaign passed
+
+- Context: The schema-v9 mainnet-readiness gate required the final campaign tooling to prove the additional hook fee, direct v4 trading, third-party liquidity dilution, settlement, claims, and governance before a fresh public-testnet deployment.
+- Decision: Rehearse the exact pushed commit on an isolated Robinhood Testnet chain-46630 Anvil fork. Public-testnet fee values may be supplied only through the runner's existing loopback-and-rehearsal-only overrides because Nitro's L1 fee precompile is not implemented by Anvil.
+- Release: `5e9b7a3fec4ead070abcbbc5c2133b0880607d3c`.
+- Result: The fresh deployment passed its verifier, then 100 deterministic actors completed eight atomic launches and 2,178 confirmed transactions, including 2,078 product writes. The run covered three graduations, all 24 basket routes, exact-input and exact-output Universal Router swaps in both directions, full-range and concentrated third-party liquidity, native and launch-token hook settlement, conversion-generated fee settlement, governance, holder claims, token-specific creator claims, DAO-holder claims, and residual sweeping.
+- Accounting evidence: The runner preserved the project reserve, left only recorded per-actor gas dust, and recorded hook settlement for all three graduated launches. The campaign exceeded the fixed 1,500-write requirement without replaying confirmed transactions.
+- Evidence: `/home/hendo420/robyn-evidence/schema9-mainnet-readiness-d76244a/rehearsal/campaign-all-5e9b7a3-resumed2.log` and `/tmp/schema9-campaign-5e9b7a3/state/`.
+- Follow-up: Seal checksums, run the fresh public-testnet funding/deployment preflight, deploy the capped schema-v9 candidate only if reserve and headroom gates pass, then complete public campaign, index/browser/recovery acceptance, and the uninterrupted eight-hour gate.
+
 ## Open Follow-ups
 
 - Configure a vendor-neutral IPFS Pinning Service endpoint/token in the
