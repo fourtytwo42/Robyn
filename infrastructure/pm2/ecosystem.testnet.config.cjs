@@ -10,6 +10,7 @@ const releaseRoot = required("ROBYN_TESTNET_RELEASE_ROOT");
 const releaseSha = path.basename(releaseRoot);
 const manifest = required("ROBYN_TESTNET_MANIFEST");
 const rpcUrl =
+  process.env.ROBYN_TESTNET_SERVER_RPC_URL ||
   process.env.ROBYN_TESTNET_RPC_URL ||
   "https://rpc.testnet.chain.robinhood.com";
 const operatorKeyFile = required("ROBYN_OPERATOR_KEY_FILE");

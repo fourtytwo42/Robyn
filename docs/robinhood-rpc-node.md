@@ -75,10 +75,15 @@ A node is usable only when `eth_chainId` is `0xb626`, `eth_syncing` is `false`, 
 Do not change the browser RPC. After full sync and verification, set the server-side testnet environment on `192.168.50.250`:
 
 ```text
-ROBYN_TESTNET_RPC_URL=http://192.168.50.117:8547
+ROBYN_TESTNET_SERVER_RPC_URL=http://192.168.50.117:8547
+ROBYN_TESTNET_RPC_URL=https://rpc.testnet.chain.robinhood.com
 ```
 
-This value flows into `ROBYN_OPERATOR_RPC_URL` for the API, indexer, and keeper through `infrastructure/pm2/ecosystem.testnet.config.cjs`. Retain an independent public/provider endpoint for divergence checks and automatic operator rollback. Restart only the testnet backend processes after validation, save PM2 state, and verify index continuity before declaring cutover complete.
+`ROBYN_TESTNET_SERVER_RPC_URL` flows into `ROBYN_OPERATOR_RPC_URL` for the API, canonical ingester, launch projector, keeper, and server-side health checks through `infrastructure/pm2/ecosystem.testnet.config.cjs`. `ROBYN_TESTNET_RPC_URL` remains the official public HTTPS endpoint compiled into the protected browser build so remote wallets never depend on an RFC1918 address.
+
+Retain the official public endpoint as an independent divergence check and rollback target. Promote the exact release after changing the protected environment, save PM2 state, and verify index continuity before declaring cutover complete.
+
+The release verifier fails unless the API, ingester, projector, and keeper use the same server RPC. It verifies the deployment through that endpoint and records the selected server URL in release evidence.
 
 ## Recovery and upgrades
 
