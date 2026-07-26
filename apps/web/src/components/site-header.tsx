@@ -15,7 +15,7 @@ export function SiteHeader() {
         <Link className="brand" href="/" aria-label="Sherwood Forest home">
           <span className="brand-mark" aria-hidden="true">
             <Image
-              src="/assets/brand/sherwood-mark.webp"
+              src="/assets/brand/sherwood-crest.webp"
               alt=""
               width={32}
               height={32}

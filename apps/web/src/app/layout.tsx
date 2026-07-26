@@ -13,8 +13,8 @@ export const metadata: Metadata = {
   description: `Launch and discover tokens with community-selected reward baskets on ${publicEnvironment.chainName}.`,
   metadataBase: new URL(publicEnvironment.appUrl),
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-icon.png",
+    icon: "/favicon.ico?v=2",
+    apple: "/apple-icon.png?v=2",
   },
 };
 
