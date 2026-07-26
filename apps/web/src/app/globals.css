@@ -3564,7 +3564,8 @@ main > .notice {
   position: relative;
   z-index: 2;
   display: block;
-  min-height: 46px;
+  height: 34px;
+  min-height: 34px;
   border-bottom: 1px solid var(--line);
   background: rgba(6, 10, 21, 0.84);
   overflow: hidden;
@@ -3575,9 +3576,11 @@ main > .notice {
 .market-tape-probe {
   display: flex;
   width: max-content;
+  height: 100%;
 }
 
 .market-tape-runner {
+  flex-shrink: 0;
   animation: market-tape-scroll var(--market-tape-duration, 42s) linear infinite;
   will-change: transform;
 }
@@ -3594,17 +3597,11 @@ main > .notice {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .market-tape-runner {
-    animation: none;
-    transform: none;
-  }
-}
-
 .market-tape-track {
   display: flex;
   min-width: 0;
-  overflow-x: auto;
+  height: 100%;
+  overflow: hidden;
   scrollbar-width: none;
 }
 
@@ -3618,7 +3615,8 @@ main > .notice {
   gap: 0.1rem 0.55rem;
   align-content: center;
   min-width: 176px;
-  padding: 0.45rem 0.9rem;
+  height: 100%;
+  padding: 0.2rem 0.9rem;
   border-right: 1px solid rgba(157, 170, 194, 0.12);
   text-decoration: none;
 }
