@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { rewardAssetMetadata } from "./reward-assets";
+import { assetVerificationLabel, rewardAssetMetadata } from "./reward-assets";
 
 const addresses = [
   "0x0000000000000000000000000000000000000001",
@@ -56,5 +56,21 @@ describe("rewardAssetMetadata", () => {
       description:
         "Tesla (TSLA) is a faucet-issued Robinhood Chain Testnet asset. It is for testing only and has no backing or redemption rights.",
     });
+  });
+});
+
+describe("assetVerificationLabel", () => {
+  it("uses clear labels for trusted testnet asset classes", () => {
+    expect(assetVerificationLabel("robinhood-testnet-faucet-stock")).toBe(
+      "Faucet stock",
+    );
+    expect(assetVerificationLabel("robyn-testnet-mock")).toBe("Testnet mock");
+    expect(assetVerificationLabel("robyn-controlled-testnet-dex")).toBe(
+      "Verified route asset",
+    );
+  });
+
+  it("fails closed for unknown verification classes", () => {
+    expect(assetVerificationLabel("unknown")).toBe("Unverified ERC-20");
   });
 });

@@ -6,7 +6,10 @@ import { NetworkCreatorRewardsPanel } from "@robyn/network-creator-rewards";
 import deployment from "@robyn/deployment";
 import { TokenMarketChart } from "@/components/token-market-chart";
 import { TokenMarketQuote } from "@/components/token-market-quote";
-import { TokenBasketAssets } from "@/components/token-basket-assets";
+import {
+  TokenBasketAssets,
+  TokenBasketPreviewChips,
+} from "@/components/token-basket-assets";
 import { SiteHeader } from "@/components/site-header";
 import { getLaunch, getLaunchAnalytics } from "@/lib/data-api";
 import { TokenArt } from "@/components/launchpad-visuals";
@@ -142,16 +145,10 @@ export default async function LaunchDetail({
               </Link>
               <span>Block {launch.created_block}</span>
             </div>
-            <div
-              className="decision-basket"
-              aria-label="Reward basket composition"
-            >
-              {basket.map((asset) => (
-                <span key={asset.address}>
-                  <b>{asset.symbol}</b> {(asset.weight / 100).toFixed(0)}%
-                </span>
-              ))}
-            </div>
+            <TokenBasketPreviewChips
+              assets={basket}
+              explorerUrl={publicEnvironment.explorerUrl}
+            />
           </div>
           <div className="token-hero-quote">
             <TokenMarketQuote

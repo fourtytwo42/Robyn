@@ -14,6 +14,25 @@ export type RewardAssetMetadata = {
   mockOnly: boolean;
 };
 
+export function assetVerificationLabel(verification: string) {
+  if (verification === "robinhood-testnet-faucet-stock") {
+    return "Faucet stock";
+  }
+  if (verification === "robyn-testnet-mock") {
+    return "Testnet mock";
+  }
+  if (verification === "official-robinhood-current-chain") {
+    return "Verified asset";
+  }
+  if (verification === "robyn-controlled-testnet-dex") {
+    return "Verified route asset";
+  }
+  if (verification === "robyn-token-list") {
+    return "Sherwood listed";
+  }
+  return "Unverified ERC-20";
+}
+
 function assetDescription(asset: {
   symbol: string;
   name: string;

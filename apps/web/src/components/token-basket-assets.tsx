@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { assetVerificationLabel } from "@/lib/reward-assets";
 
 type TokenBasketAsset = {
   address: string;
@@ -8,6 +9,8 @@ type TokenBasketAsset = {
   name: string;
   description: string;
   logoUrl: string | null;
+  category: string;
+  verification: string;
   weight: number;
 };
 
@@ -35,6 +38,85 @@ function BasketLogo({ asset }: { asset: TokenBasketAsset }) {
     <span className="token-basket-identicon" aria-hidden="true">
       {asset.symbol.slice(0, 2)}
     </span>
+  );
+}
+
+export function TokenBasketPreviewChips({
+  assets,
+  explorerUrl,
+}: {
+  assets: TokenBasketAsset[];
+  explorerUrl: string;
+}) {
+  const [openAddress, setOpenAddress] = useState<string | null>(null);
+
+  return (
+    <div className="decision-basket" aria-label="Reward basket composition">
+      {assets.map((asset) => {
+        const previewId = `basket-preview-${asset.address.slice(2)}`;
+        const isOpen = openAddress === asset.address;
+        return (
+          <span
+            className={`basket-preview-anchor${isOpen ? "is-open" : ""}`}
+            key={asset.address}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) {
+                setOpenAddress(null);
+              }
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setOpenAddress(null);
+                event.currentTarget.querySelector("button")?.focus();
+              }
+            }}
+          >
+            <button
+              type="button"
+              className="decision-basket-chip"
+              aria-expanded={isOpen}
+              aria-controls={previewId}
+              onClick={() => setOpenAddress(isOpen ? null : asset.address)}
+            >
+              <b>{asset.symbol}</b> {(asset.weight / 100).toFixed(0)}%
+            </button>
+            <article
+              className="basket-preview-card"
+              id={previewId}
+              aria-label={`${asset.name} basket asset details`}
+            >
+              <BasketLogo asset={asset} />
+              <div>
+                <div className="basket-preview-heading">
+                  <strong>{asset.symbol}</strong>
+                  <span>{assetVerificationLabel(asset.verification)}</span>
+                </div>
+                <h3>{asset.name}</h3>
+                <p>{asset.description}</p>
+                <dl>
+                  <div>
+                    <dt>Weight</dt>
+                    <dd>{(asset.weight / 100).toFixed(0)}%</dd>
+                  </div>
+                  <div>
+                    <dt>Category</dt>
+                    <dd>{asset.category.replaceAll("-", " ")}</dd>
+                  </div>
+                </dl>
+                <a
+                  href={`${explorerUrl}/address/${asset.address}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`View ${asset.name} contract ${asset.address}`}
+                >
+                  {short(asset.address)}
+                </a>
+              </div>
+            </article>
+          </span>
+        );
+      })}
+    </div>
   );
 }
 

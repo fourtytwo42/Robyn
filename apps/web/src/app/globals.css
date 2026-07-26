@@ -2855,17 +2855,166 @@ main > .notice {
   margin-top: 0.65rem;
 }
 
-.decision-basket span {
+.basket-preview-anchor {
+  position: relative;
+}
+
+.decision-basket-chip {
+  appearance: none;
   border: 1px solid rgba(242, 184, 75, 0.22);
   border-radius: 999px;
   background: rgba(242, 184, 75, 0.07);
   padding: 0.3rem 0.52rem;
   color: var(--muted);
   font-size: 0.64rem;
+  font-family: inherit;
+  cursor: help;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
 }
 
-.decision-basket b {
+.decision-basket-chip:hover,
+.decision-basket-chip:focus-visible,
+.basket-preview-anchor.is-open .decision-basket-chip {
+  border-color: rgba(242, 184, 75, 0.58);
+  background: rgba(242, 184, 75, 0.14);
+  color: var(--text);
+}
+
+.decision-basket-chip b {
   color: var(--reward);
+}
+
+.basket-preview-card {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.55rem);
+  left: 0;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 0.8rem;
+  width: min(340px, calc(100vw - 2rem));
+  padding: 0.8rem;
+  border: 1px solid rgba(242, 184, 75, 0.32);
+  border-radius: 0.9rem;
+  background: rgba(6, 12, 18, 0.98);
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.48);
+  color: var(--text);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-0.25rem);
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    visibility 150ms ease;
+}
+
+.basket-preview-anchor:last-child .basket-preview-card {
+  right: 0;
+  left: auto;
+}
+
+.basket-preview-anchor:hover .basket-preview-card,
+.basket-preview-anchor:focus-within .basket-preview-card,
+.basket-preview-anchor.is-open .basket-preview-card {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.basket-preview-card img,
+.basket-preview-card .token-basket-identicon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border: 1px solid rgba(142, 158, 197, 0.2);
+  border-radius: 13px;
+  background: rgba(18, 26, 47, 0.88);
+  object-fit: contain;
+}
+
+.basket-preview-card > div {
+  min-width: 0;
+}
+
+.basket-preview-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.basket-preview-heading strong {
+  color: var(--reward);
+  font:
+    800 0.72rem/1 "IBM Plex Mono",
+    ui-monospace,
+    monospace;
+}
+
+.basket-preview-heading span {
+  border: 1px solid rgba(53, 208, 186, 0.24);
+  border-radius: 999px;
+  padding: 0.2rem 0.38rem;
+  color: var(--secondary);
+  font-size: 0.54rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.basket-preview-card h3 {
+  margin: 0.4rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.2;
+}
+
+.basket-preview-card p {
+  margin: 0.38rem 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+.basket-preview-card dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.8rem;
+  margin: 0 0 0.5rem;
+}
+
+.basket-preview-card dl div {
+  display: flex;
+  gap: 0.28rem;
+  font-size: 0.61rem;
+}
+
+.basket-preview-card dt {
+  color: var(--muted);
+}
+
+.basket-preview-card dd {
+  margin: 0;
+  color: var(--text);
+  text-transform: capitalize;
+}
+
+.basket-preview-card a {
+  color: var(--primary);
+  font:
+    650 0.64rem/1 "IBM Plex Mono",
+    ui-monospace,
+    monospace;
+  text-decoration: none;
+}
+
+.basket-preview-card a:hover,
+.basket-preview-card a:focus-visible {
+  text-decoration: underline;
 }
 
 .token-actions {
