@@ -4,7 +4,7 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
-- King of the Forest is implemented on `codex/testnet-subdomain-nav` as a rebuildable, one-time discovery achievement. The manifest policy activates at testnet block `93576793`, requires 5,000 bps bonding progress plus 10 distinct lifetime traders, and only awards on fresh post-activation activity. The newest canonical award reigns; former winners retain their badge and history. Schema migration `0008_king_of_forest.sql`, projector/API/status work, homepage spotlight, Markets history, token progress, card badges, admin health, tests, and documentation are complete in the working tree. An isolated schema-v8 database rebuilt through block `93579188`, reconstructed 69 distinct trader rows across five launches, populated pool IDs for all 15 launches, produced the expected zero retroactive awards, and idled in 1.3 to 2.2 ms cycles. Promotion and live browser acceptance remain pending.
+- King of the Forest release `101bb38a543ad41f15520b1cfda458c6ecbec2b4` is live at `https://testnet.sherwoodforest.trade`. The manifest policy activates at testnet block `93576793`, requires 5,000 bps bonding progress plus 10 distinct lifetime traders, and only awards on fresh post-activation activity. The newest canonical award reigns; former winners retain their badge and history. Migration `0008_king_of_forest.sql`, projector/API/status work, homepage spotlight, Markets history, token progress, card badges, admin health, tests, and documentation are deployed. The release passed the immutable builder and all 490 promotion checks. At promotion, all six PM2 processes were online with zero restarts, all three projection lags were zero, no Prometheus alert was firing, and root disk had 21 GiB free. The initial state correctly has no winner because historical launches are not awarded retroactively. In-app-browser acceptance remains pending because the desktop browser runtime listed the IAB backend but returned no bindable session; do not substitute another browser and claim this gate. The same implementation is pushed on schema9 commit `db48086`.
 - Exact public testnet release
   `dbe03449463bab302d94f711535677399eb6fca4` is live at
   `https://testnet.sherwoodforest.trade`. Market-cap presentation now defaults
@@ -1322,6 +1322,14 @@ Durable project context lives here. Update this file whenever information should
 - Commands/tests: DB/indexer/API/web strict typechecks; 18 indexer tests; 54 API tests; 54 web tests; isolated PostgreSQL migration and full canonical projector rebuild.
 - Result: Rebuild through block 93579188 produced 69 unique-trader rows across five launches, pool IDs for all 15 launches, zero retroactive awards as required, and 1.3 to 2.2 ms idle projection cycles. Captured-block mismatch now clears launch and King projections/checkpoints together.
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
+
+### 2026-07-26 - King of the Forest promoted
+
+- Context: Promote the validated one-time discovery achievement without changing contracts or resetting chain state.
+- Decision: Apply additive migration 0008 to the active schema-v8 database, promote immutable release `101bb38a543ad41f15520b1cfda458c6ecbec2b4`, and retain the empty crown until a real post-activation transaction qualifies.
+- Commands/tests: Immutable testnet builder; 490 promotion checks; live `/status`, `/king-of-forest`, PM2, Prometheus, disk, and checkpoint verification.
+- Result: Six testnet processes online with zero restarts; ingestion, launch projection, and King projection at block 93582280 with zero lag; zero alerts; 21 GiB root-disk headroom. Eight superseded immutable release directories were removed after exact-path validation; current and rollback releases plus all state/evidence were preserved.
+- Follow-up: Complete desktop/mobile Codex in-app-browser acceptance when the listed IAB backend returns a bindable session. The browser runtime failure is tooling-side and is not counted as a passed UI gate.
 
 ## Current State
 
