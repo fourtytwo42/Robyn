@@ -136,6 +136,58 @@ const atomicLaunchEvent = parseAbiItem(
 const atomicV4LaunchEvent = parseAbiItem(
   "event AtomicV4LaunchCreated(uint256 indexed launchId,address indexed creator,address indexed token,(address vault,address market,address adapter,address poolManager,bytes32 poolId,address positionManager,address hook,address locker,uint24 poolFeePips,int24 tickSpacing,bytes32 configurationHash,bytes32 launchSaltHash,bytes32 metadataUriHash) receipt)",
 );
+
+async function currentIndexedAddresses() {
+  const launches = await sql.unsafe<{ token: string; market: string }[]>(
+    "SELECT token,market FROM launches WHERE chain_id=$1",
+    [manifest.chainId],
+  );
+  return [
+    ...new Set([
+      ...indexedAddresses,
+      ...launches.flatMap(({ token, market }) => [
+        token.toLowerCase() as Address,
+        market.toLowerCase() as Address,
+      ]),
+    ]),
+  ];
+}
+
+function newlyCreatedLaunchAddresses(
+  logs: Awaited<ReturnType<typeof client.getLogs>>,
+) {
+  const coordinator = manifest.contracts.atomicLaunchCoordinator?.toLowerCase();
+  if (!coordinator) return new Map<Address, bigint>();
+  const event =
+    manifest.liquidityVenue === "uniswap-v4"
+      ? atomicV4LaunchEvent
+      : atomicLaunchEvent;
+  const addresses = new Map<Address, bigint>();
+  for (const log of logs) {
+    if (log.address.toLowerCase() !== coordinator) continue;
+    if (log.blockNumber === null) continue;
+    try {
+      const decoded = decodeEventLog({
+        abi: [event],
+        data: log.data,
+        topics: log.topics,
+      });
+      const args = decoded.args as unknown as Record<string, unknown>;
+      const receipt = args.receipt as Record<string, unknown> | undefined;
+      for (const value of [args.token, receipt?.market ?? args.market]) {
+        if (typeof value !== "string") continue;
+        const address = value.toLowerCase() as Address;
+        const previous = addresses.get(address);
+        if (previous === undefined || log.blockNumber < previous) {
+          addresses.set(address, log.blockNumber);
+        }
+      }
+    } catch {
+      continue;
+    }
+  }
+  return addresses;
+}
 const marketStateAbi = [
   {
     type: "function",
@@ -538,11 +590,39 @@ async function syncOnce() {
   let rangeCount = 0;
   for (let rangeStart = start; rangeStart <= head; rangeStart += blockRange) {
     const rangeEnd = boundedRangeEnd(rangeStart, head, blockRange);
-    const logs = await client.getLogs({
-      address: indexedAddresses,
+    const knownAddresses = await currentIndexedAddresses();
+    const primaryLogs = await client.getLogs({
+      address: knownAddresses,
       fromBlock: rangeStart,
       toBlock: rangeEnd,
     });
+    const newAddresses = newlyCreatedLaunchAddresses(primaryLogs);
+    const supplementalAddresses = [...newAddresses.keys()].filter(
+      (address) => !knownAddresses.includes(address),
+    );
+    const supplementalLogs =
+      supplementalAddresses.length === 0
+        ? []
+        : await client.getLogs({
+            address: supplementalAddresses,
+            fromBlock: [...newAddresses.values()].reduce(
+              (minimum, block) => (block < minimum ? block : minimum),
+              rangeEnd,
+            ),
+            toBlock: rangeEnd,
+          });
+    const logs = [
+      ...new Map(
+        [...primaryLogs, ...supplementalLogs].map((log) => [
+          `${log.transactionHash}:${log.logIndex}`,
+          log,
+        ]),
+      ).values(),
+    ].sort(
+      (left, right) =>
+        Number(left.blockNumber - right.blockNumber) ||
+        Number((left.logIndex ?? 0) - (right.logIndex ?? 0)),
+    );
     const blocks = await loadBlocks(
       requiredBlockNumbers(
         logs.map((log) => log.blockNumber),
