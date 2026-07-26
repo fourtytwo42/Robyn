@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "environment": "robinhood-mainnet",
+  "chainId": 4663,
+  "quoteCurrency": "native-ETH",
+  "tokenDecimals": 18,
+  "totalTokenSupply": "1000000000000000000000000000",
+  "curveTokenAllocation": "800000000000000000000000000",
+  "graduationTokenAllocation": "200000000000000000000000000",
+  "initialVirtualTokenReserve": "1100000000000000000000000000",
+  "initialVirtualNativeReserve": "2250000000000000000",
+  "graduationThresholdNative": "6000000000000000000",
+  "curveFeeBps": 100,
+  "maximumNativeSwap": "500000000000000000",
+  "graduatedPoolLpFeePips": 10000,
+  "graduatedProtocolFeeBps": 100,
+  "terminalVirtualTokenReserve": "300000000000000000000000000",
+  "terminalVirtualNativeReserve": "8250000000000000000",
+  "terminalNativePerTokenX18": "27500000000",
+  "terminalFullyDilutedValueNative": "27500000000000000000",
+  "minimumGrossBuyDemand": "6060606060606060607",
+  "policy": "immutable-per-factory"
+}

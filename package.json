@@ -20,7 +20,8 @@
     "test:contracts": "PATH=$HOME/.foundry/bin:$PATH forge test --root packages/contracts -vv",
     "test:deployment-nonce": "bash scripts/test/testnet-deployment-nonce.test.sh",
     "test:endurance": "node --test scripts/test/testnet-endurance-policy.test.mjs",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "validate:mainnet-curve": "node scripts/validate-mainnet-curve.mjs"
   },
   "devDependencies": {
     "@openzeppelin/contracts": "5.4.0",

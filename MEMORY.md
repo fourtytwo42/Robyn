@@ -4,6 +4,14 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- The accepted Robinhood mainnet bonding policy is 6 ETH net collateral,
+  800 million tokens sold on the curve, 200 million tokens reserved for locked
+  liquidity, a 0.5 ETH maximum individual curve buy, and a 27.5 ETH terminal
+  FDV. The 1% bonding fee means at least 6.060606060606060607 ETH of gross buy
+  demand before offsetting sells. The immutable policy lives in
+  `config/protocol/robinhood-mainnet-curve.json` and is checked by
+  `pnpm validate:mainnet-curve`. This does not change chain-46630 testnet and
+  does not authorize mainnet deployment.
 - Schema-v9 guaranteed post-graduation fee work is active on branch `codex/schema9-guaranteed-fee` from exact `841fccd342ce823c5f3905e282f7551469b36bb6`. The schema-v8 endurance run was stopped and preserved as incomplete/superseded at `/var/lib/robyn/testnet-endurance/schema8-c203d00-endurance-20260725/preserved-schema9-fee-hook-20260726T001254Z` after 16942.713 healthy seconds. The fresh v4 hook uses permission bits `0x1044`, retains the oracle, and charges an immutable 1% custom-accounting fee on every graduated-pool swap in addition to the 1% LP fee. The fee router tracks bonding, hook, and locked-LP sources separately under the unchanged 50/25/20/5 allocation. Targeted v4 contracts pass 16 tests; keeper typecheck/lint and 18 tests pass; API/indexer/web types pass. Public schema v8 remains live and untouched until schema-v9 gates pass.
 - A live MetaMask SAT3 buy exposed that the testnet trade panel still quoted and
   submitted graduated launches to their exhausted bonding market. Selector

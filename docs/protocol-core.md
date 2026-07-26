@@ -34,6 +34,33 @@ The production native lifecycle is now fixed to automatic Uniswap v3 graduation:
 
 The deployed `DevnetLockedLiquidityPool` already proves the lifecycle and continuous-interface behavior on chain 31337, but it is not Uniswap. Robinhood testnet/mainnet manifests must fail closed until the exact canonical Uniswap factory, position manager, router/quoter, quote asset, fee tier and code hashes are verified and the adapter/locker implementation passes independent review.
 
+### Robinhood mainnet curve policy
+
+The accepted chain-4663 mainnet policy is recorded in
+`config/protocol/robinhood-mainnet-curve.json`. It does not change the small
+chain-46630 testnet curve and does not authorize a mainnet deployment.
+
+- Sell 800 million of the fixed one-billion-token supply on the curve.
+- Reserve 200 million tokens for permanently locked graduation liquidity.
+- Require exactly 6 ETH of net curve collateral to exhaust the inventory.
+- With the immutable 1% bonding fee, this requires at least
+  6.060606060606060607 ETH of gross buy demand before offsetting sells.
+- Seed graduation liquidity with the collected 6 ETH and the reserved tokens.
+- Cap an individual bonding buy at 0.5 ETH.
+- Open at a terminal fully diluted value of 27.5 ETH under the selected virtual
+  reserves. The UI may show a live USD estimate, but USD does not control the
+  onchain trigger.
+- Keep the 1% graduated-pool LP fee and additional 1% Sherwood protocol hook
+  fee defined by schema v9.
+- Make these terms immutable for launches created by the factory. A later
+  economic change requires governance enrollment of a new reviewed factory;
+  it cannot rewrite existing launches.
+
+`pnpm validate:mainnet-curve` recomputes the constant-product exhaustion point,
+gross demand, terminal price, terminal FDV, allocations, fee policy, and
+single-buy cap from the committed values. Mainnet deployment tooling must
+consume this validated policy rather than duplicating literal parameters.
+
 ## Contracts
 
 | Contract | Responsibility |
