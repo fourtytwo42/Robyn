@@ -1,7 +1,9 @@
+import { forestCanopyClassName } from "@/lib/forest-canopy-policy";
+
 export function ForestCanopy({ compact = false }: { compact?: boolean }) {
   return (
     <svg
-      className={`forest-canopy${compact ? "compact" : ""}`}
+      className={forestCanopyClassName(compact)}
       viewBox="0 0 960 260"
       preserveAspectRatio="xMidYMax slice"
       aria-hidden="true"
