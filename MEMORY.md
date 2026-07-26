@@ -6,7 +6,7 @@ Durable project context lives here. Update this file whenever information should
 
 - `/whitepaper` is the public Sherwood Compact: a detailed, visually led
   explanation of atomic launch, bonding, graduation, immutable baskets,
-  50/25/20/5 fee routing, holder/creator/RDAO claims, RDAO governance,
+  50/25/20/5 fee routing, holder/creator/DAO-member claims, DAO governance,
   ERC-1046/IPFS identity, security boundaries, environment-specific economics,
   and current testnet/mainnet status. The original generated hero uses the
   public-domain Robin Hood and Merry Men archetype without copying any film or

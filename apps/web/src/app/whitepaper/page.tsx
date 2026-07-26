@@ -16,7 +16,7 @@ const chapters = [
   ["02", "Token lifecycle", "lifecycle"],
   ["03", "Fee economy", "fees"],
   ["04", "Rewards", "rewards"],
-  ["05", "RDAO", "governance"],
+  ["05", "DAO", "governance"],
   ["06", "Trust model", "security"],
 ] as const;
 
@@ -35,8 +35,8 @@ const feeRows = [
   },
   {
     share: "20%",
-    label: "RDAO members",
-    copy: "Accrued in native ETH to eligible RDAO holders through transfer-aware accounting.",
+    label: "DAO members",
+    copy: "Accrued in native ETH to eligible governance-token holders through transfer-aware accounting.",
     className: "members",
   },
   {
@@ -63,7 +63,7 @@ export default function WhitepaperPage() {
               Sherwood Forest is a permissionless token launchpad where every
               token carries an immutable reward basket. Trading activity grows
               that basket, creators share in what they build, and the wider
-              community governs the forest through RDAO.
+              community governs the forest through the DAO.
             </p>
             <div className="whitepaper-status">
               <span>Robinhood Chain Testnet</span>
@@ -191,9 +191,9 @@ export default function WhitepaperPage() {
                 <h3>Fees become claimable assets</h3>
                 <p>
                   Keepers settle bounded work without custody. Basket assets,
-                  creator ETH, RDAO ETH, and treasury ETH accrue independently.
-                  Users pull what they have earned instead of depending on a
-                  push payment.
+                  creator ETH, DAO-member ETH, and treasury ETH accrue
+                  independently. Users pull what they have earned instead of
+                  depending on a push payment.
                 </p>
               </div>
             </li>
@@ -293,7 +293,7 @@ export default function WhitepaperPage() {
           <div
             className="fee-canopy"
             role="img"
-            aria-label="Fee distribution: 50 percent holder basket, 25 percent creator, 20 percent RDAO members, 5 percent treasury"
+            aria-label="Fee distribution: 50 percent holder basket, 25 percent creator, 20 percent DAO members, 5 percent treasury"
           >
             <div className="fee-bar">
               {feeRows.map((row) => (
@@ -406,7 +406,7 @@ export default function WhitepaperPage() {
             <p>
               Holders claim basket assets from a token page or Portfolio.
               Creators claim each token’s ETH separately from that token page or
-              claim several owned launches from Portfolio. RDAO members claim
+              claim several owned launches from Portfolio. DAO members claim
               their native ETH from the DAO workspace.
             </p>
           </div>
@@ -415,19 +415,19 @@ export default function WhitepaperPage() {
         <section id="governance" className="paper-section governance-section">
           <div className="paper-heading">
             <p className="eyebrow">05 · The council beneath the oak</p>
-            <h2>RDAO governance and rewards</h2>
+            <h2>DAO governance and rewards</h2>
             <p>
-              RDAO is a transferable, fixed-supply governance and reward token.
-              Token balance determines future native-reward weight; delegated
-              timestamp checkpoints determine voting power.
+              The DAO uses a transferable, fixed-supply governance and reward
+              token. Token balance determines future native-reward weight;
+              delegated timestamp checkpoints determine voting power.
             </p>
           </div>
           <div className="governance-layout">
             <div
-              className="rdao-seal"
-              aria-label="One billion fixed RDAO supply"
+              className="governance-seal"
+              aria-label="One billion fixed governance-token supply"
             >
-              <span>RDAO</span>
+              <span>DAO</span>
               <strong>1,000,000,000</strong>
               <small>fixed forever · no mint function</small>
             </div>
@@ -476,9 +476,9 @@ export default function WhitepaperPage() {
           </dl>
           <p className="fine-print">
             Testnet uses deliberately shortened governance timing for end-to-end
-            testing. Initial testnet RDAO is held by the project wallet. Mainnet
-            allocation and contributor vesting must be published and reviewed
-            before distribution.
+            testing. The initial testnet governance-token supply is held by the
+            project wallet. Mainnet allocation and contributor vesting must be
+            published and reviewed before distribution.
           </p>
         </section>
 
@@ -545,8 +545,8 @@ export default function WhitepaperPage() {
             <article>
               <h3>Solvent liabilities</h3>
               <p>
-                Creator, holder, RDAO, treasury, and vault balances reconcile
-                independently.
+                Creator, holder, DAO-member, treasury, and vault balances
+                reconcile independently.
               </p>
             </article>
             <article>
