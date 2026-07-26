@@ -5,7 +5,6 @@ import { MarketCard } from "@/components/market-card";
 import { DiscoveryControls } from "@/components/discovery-controls";
 import { rewardAssetMetadata } from "@/lib/reward-assets";
 import deployment from "@robyn/deployment";
-import { ForestCanopy } from "@/components/forest-canopy";
 import { publicEnvironment } from "@/lib/public-environment";
 import { getEthUsdPrice } from "@/lib/eth-usd";
 
@@ -80,7 +79,6 @@ export default async function Discover({
       <SiteHeader />
       <section className="page-shell discovery-page">
         <header className="page-hero discovery-hero">
-          <ForestCanopy compact />
           <p className="eyebrow">Explore the forest</p>
           <h1>Find a token worth growing with.</h1>
           <p className="lede">

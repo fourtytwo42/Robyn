@@ -4,6 +4,11 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Last verified 2026-07-26: the decorative pine-tree canopy SVG was removed
+  from Discover and deleted from the shared web source together with its
+  dedicated styles, policy helper, and obsolete unit test. Source-wide search
+  confirms no `ForestCanopy` or `forest-canopy` references remain. Web format,
+  lint, typecheck, and all 53 tests pass.
 - Last verified 2026-07-26: schema-v9 is live at
   `https://testnet.sherwoodforest.trade` from current exact `origin/main`. The
   implementation checkpoint was `6385004`; the schema-v9 deployment began at
