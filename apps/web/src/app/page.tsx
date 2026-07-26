@@ -19,7 +19,7 @@ function compactBase(value: string) {
   const amount = Number(formatEther(BigInt(value)));
   return amount.toLocaleString(undefined, {
     notation: amount >= 1_000 ? "compact" : "standard",
-    maximumFractionDigits: 2,
+    maximumFractionDigits: amount > 0 && amount < 1 ? 6 : 2,
   });
 }
 
