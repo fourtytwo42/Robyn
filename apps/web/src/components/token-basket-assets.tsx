@@ -57,7 +57,9 @@ export function TokenBasketPreviewChips({
         const isOpen = openAddress === asset.address;
         return (
           <div
-            className={`basket-preview-anchor${isOpen ? "is-open" : ""}`}
+            className={["basket-preview-anchor", isOpen ? "is-open" : ""]
+              .filter(Boolean)
+              .join(" ")}
             key={asset.address}
             onBlur={(event) => {
               if (!event.currentTarget.contains(event.relatedTarget)) {
