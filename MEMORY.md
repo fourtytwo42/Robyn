@@ -5,6 +5,24 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - Schema-v9 guaranteed post-graduation fee work is active on branch `codex/schema9-guaranteed-fee` from exact `841fccd342ce823c5f3905e282f7551469b36bb6`. The schema-v8 endurance run was stopped and preserved as incomplete/superseded at `/var/lib/robyn/testnet-endurance/schema8-c203d00-endurance-20260725/preserved-schema9-fee-hook-20260726T001254Z` after 16942.713 healthy seconds. The fresh v4 hook uses permission bits `0x1044`, retains the oracle, and charges an immutable 1% custom-accounting fee on every graduated-pool swap in addition to the 1% LP fee. The fee router tracks bonding, hook, and locked-LP sources separately under the unchanged 50/25/20/5 allocation. Targeted v4 contracts pass 16 tests; keeper typecheck/lint and 18 tests pass; API/indexer/web types pass. Public schema v8 remains live and untouched until schema-v9 gates pass.
+- Server-side Robinhood Testnet traffic is now routed through the synchronized
+  private LAN RPC at `http://192.168.50.117:8547`. Browser wallet traffic
+  intentionally remains on Robinhood's public HTTPS RPC because a browser
+  cannot safely or reliably reach the LAN-only origin. API, ingester,
+  projector, keeper, promotion verification, and operator scripts use
+  `ROBYN_TESTNET_SERVER_RPC_URL`; the protected browser bundle continues using
+  `ROBYN_TESTNET_RPC_URL`. Commit `80254d5` introduced and verified this
+  separation.
+- A live private-RPC smoke journey created canonical launch 15
+  (`0xac0cB4EFd08B20E02aF8BF103b2Bf88e6F44cf2B`), completed two buys,
+  one approval, one sell, all three basket conversions and holder claims, a
+  token-specific creator claim, and an RDAO reward claim. Raw evidence is
+  protected at
+  `/home/hendo420/.local/state/robyn-private-rpc-smoke/smoke-1785032598176.json`.
+  The ingester was repaired in `00674b7` to discover new token and market
+  addresses inside the same canonical range and backfill their logs. A
+  one-character Sold-topic allowlist typo found by the live journey was also
+  corrected; the API analytics suite covers buy/sell derivation.
 - The focused testnet-hostname/navigation release is live from `codex/testnet-subdomain-nav`. Cloudflare routes `testnet.sherwoodforest.trade` to loopback port `3081` and apex plus `www` to the isolated holding origin on `3082`. The holding page is copied from the verified release into `/var/www/sherwoodforest-coming-soon` because Nginx intentionally cannot traverse immutable release directories. The promoter refreshes that root-owned copy. The ticker has no label/pause behavior, dynamically repeats short market sets. The ticker remains compact and continuously animated even when the OS requests reduced motion; reduced-motion handling remains enabled elsewhere. `Create token` is a route-preserving navigation trigger and `Faucet` is a testnet-only primary navigation link.
 - The testnet API PM2 environment binds both `ROBYN_AUTH_ORIGINS` and `API_CORS_ORIGIN` to `https://testnet.sherwoodforest.trade`; the PM2 validator fails if either returns to an apex, preview, or wildcard origin. Authentication cookies remain host-only.
 - Exact public schema-v8 release `aa2fe0bae28a9db4b346b0bb8b7858927e9af6c5` passed all 490 deployment checks. Its presentation, domain, CORS, and homepage-copy changes are included on the schema-v9 branch.
@@ -135,11 +153,11 @@ Durable project context lives here. Update this file whenever information should
   490 verification checks, and the public status reports chain `46630` and nine
   launches. The predecessor manifest is archived in
   `deployments/archive/46630-v4-schema7-166e201/deployment.json`.
-- The testnet release uses Robinhood's official public RPC for application,
-  indexer, keeper, verifier, campaign, and endurance traffic. The private node
-  at `192.168.50.117` is not a release dependency. Index and receipt reads use
-  bounded ranges plus bounded retry/backoff; signed transactions are never
-  transport-rebroadcast.
+- The testnet browser uses Robinhood's official public HTTPS RPC for wallet
+  compatibility. Server-side application, indexer, keeper, verifier, campaign,
+  and endurance traffic uses the private LAN RPC at `192.168.50.117:8547`.
+  Index and receipt reads use bounded ranges plus bounded retry/backoff; signed
+  transactions are never transport-rebroadcast.
 - The user waived new backup creation, isolated restore, and restore drills for
   this release. Acceptance requires Codex in-app-browser coverage and eight
   accumulated healthy public-testnet hours. Failures pause the clock; repaired
