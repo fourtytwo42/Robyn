@@ -4,11 +4,18 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
-- Exact testnet presentation release
-  `ee513e5a8b22ceb85f505da3112785ef5b1ce5bd` is live at
+- Exact public web-copy release
+  `edc38c016e759e36dfef2853caef7be5b0d0025b` is live at
   `https://testnet.sherwoodforest.trade`. Public pages no longer expose schema
   generations, analytics-formula versions, Uniswap generation labels, or RDAO
-  branding. The shared web source now resolves an explicit build-time
+  branding. All seven em dashes were removed from the whitepaper, discovery
+  controls, launch wizard, market cards, ticker, and trade panel. The
+  source-wide `public-copy-style.test.ts` regression test rejects the character
+  anywhere in the web source, public assets, or apex holding page. Desktop and
+  390x844 in-app-browser acceptance found zero rendered em dashes, overflow,
+  warnings, or errors across Home, Markets, Whitepaper, Portfolio, DAO, token
+  detail, and the open launch modal. The shared web source resolves an explicit
+  build-time
   `devnet`, `testnet`, or `mainnet` profile; a mainnet render was browser-proven
   to contain no testnet wording or Faucet link. Mainnet remains inactive and
   isolated by hostname, ports, PM2 names, PostgreSQL database, Redis database,
@@ -16,8 +23,7 @@ Durable project context lives here. Update this file whenever information should
   omitted Next's `prerender-manifest.json`; promotion failed closed and restored
   release `6a97a61`. Builders and promoters now reject incomplete Next runtime
   manifests before cutover. The rebuilt artifact passed all 490 promotion
-  checks, and desktop/mobile in-app-browser acceptance has zero overflow or
-  console errors.
+  checks.
 - Public presentation no longer exposes internal schema, analytics-formula, or
   Uniswap generation labels. The web build now has explicit `devnet`,
   `testnet`, and `mainnet` profiles. Chain ID, RPC, explorer, hostname, faucet,
