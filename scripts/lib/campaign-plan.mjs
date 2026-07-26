@@ -2,7 +2,7 @@ export const REQUIRED_WALLET_COUNT = 100;
 export const REQUIRED_LAUNCH_COUNT = 8;
 export const REQUIRED_GRADUATED_COUNT = 3;
 export const REQUIRED_SUCCESSFUL_WRITES = 1_500;
-export const PRICED_TRANSACTION_COUNT = 2_600;
+export const PRICED_TRANSACTION_COUNT = 2_625;
 export const PLANNED_SWEEP_GAS_UNITS_PER_ACTOR = 1_600_000n;
 export const REQUIRED_RESERVE_WEI = 1_500_000_000_000_000n;
 export const REQUIRED_DISK_HEADROOM_BYTES = 5n * 1024n * 1024n * 1024n;
@@ -64,6 +64,11 @@ export function assertSchema9Manifest(manifest) {
     "launchFactory",
     "marketFactory",
     "protocolFeeRouter",
+    "oracleHook",
+    "assetRouter",
+    "quoter",
+    "universalRouter",
+    "permit2",
     "daoToken",
     "governor",
     "timelock",
@@ -121,6 +126,9 @@ export function minimumActionInventory() {
     tokenTransfers: 200,
     approvals: 150,
     sells: 150,
+    externalLiquidity: 6,
+    universalRouterSwaps: 4,
+    hookSettlements: 6,
     basketConversions: 24,
     holderClaims: 20,
     creatorClaims: 8,
@@ -143,6 +151,8 @@ export function plannedTransactionValueWei() {
     value += plannedBuyValueWei(index);
   }
   value += 3n * 250_000_000_000n;
+  value += 2n * 20_000_000_000n;
+  value += 100_000_000_000n + 250_000_000_000_000n;
   value += 10n * 200_000_000_000n;
   return value;
 }
@@ -160,6 +170,10 @@ export function plannedWalletValueWei(actorIndex) {
     value += plannedBuyValueWei(index);
   }
   if (actorIndex >= 90 && actorIndex <= 92) value += 250_000_000_000n;
+  if (actorIndex === 96 || actorIndex === 97) value += 20_000_000_000n;
+  if (actorIndex === 99) {
+    value += 100_000_000_000n + 250_000_000_000_000n;
+  }
   if (actorIndex < 10) value += 200_000_000_000n;
   return value;
 }
@@ -173,8 +187,8 @@ export function plannedBuyValueWei(index) {
     return BigInt(launchIndex - 2) * 400_000_000_000n;
   }
   return index === 896 + launchIndex
-    ? 300_000_000_000_000n
-    : 10_000_000_000_000n;
+    ? 250_000_000_000_000n
+    : 11_000_000_000_000n;
 }
 
 export function weightedWalletFunding(campaignBudgetWei, topups) {

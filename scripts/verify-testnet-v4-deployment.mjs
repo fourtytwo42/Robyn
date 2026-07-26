@@ -6,6 +6,9 @@ import { createPublicClient, getAddress, http, keccak256 } from "viem";
 const manifestPath = process.argv.find((argument) => argument.endsWith(".json")) ??
   "deployments/46630-v4.json";
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+const venueManifest = JSON.parse(
+  await readFile("deployments/46630-uniswap-v4-shared.json", "utf8"),
+);
 const rpcUrl = process.env.ROBYN_TESTNET_RPC_URL ?? "https://rpc.testnet.chain.robinhood.com";
 const client = createPublicClient({ transport: http(rpcUrl) });
 const checks = [];
@@ -39,6 +42,15 @@ check(
   "unlisted venue disclosure is exact",
 );
 check(manifest.schemaVersion === 9, "deployment manifest schema is v9");
+check(
+  contracts.universalRouter ===
+    getAddress(venueManifest.contracts.universalRouter.address),
+  "Universal Router matches the frozen shared-v4 venue",
+);
+check(
+  (await client.getCode({ address: contracts.universalRouter })) !== "0x",
+  "Universal Router has runtime code",
+);
 check(
   manifest.governanceProfile === "robinhood-testnet-short-assurance",
   "manifest selects the shortened testnet assurance governance profile",

@@ -114,6 +114,11 @@ test("eight baskets cover every route exactly once", () => {
         "launchFactory",
         "marketFactory",
         "protocolFeeRouter",
+        "oracleHook",
+        "assetRouter",
+        "quoter",
+        "universalRouter",
+        "permit2",
         "daoToken",
         "governor",
         "timelock",
@@ -228,11 +233,13 @@ test("campaign value projection includes every planned payable user action", () 
     expected += plannedBuyValueWei(index);
   }
   expected += 3n * 250_000_000_000n;
+  expected += 2n * 20_000_000_000n;
+  expected += 100_000_000_000n + 250_000_000_000_000n;
   expected += 10n * 200_000_000_000n;
   assert.equal(plannedTransactionValueWei(), expected);
   assert.ok(expected > 3n * 1_400_000_000_000_000n);
-  assert.equal(plannedBuyValueWei(896), 300_000_000_000_000n);
-  assert.equal(plannedBuyValueWei(888), 10_000_000_000_000n);
+  assert.equal(plannedBuyValueWei(896), 250_000_000_000_000n);
+  assert.equal(plannedBuyValueWei(888), 11_000_000_000_000n);
   const distributed = Array.from({ length: 100 }, (_, index) =>
     plannedWalletValueWei(index),
   ).reduce((total, value) => total + value, 0n);

@@ -144,6 +144,7 @@ runtime_code_hash() {
 pool_manager="$(jq -er '.contracts.poolManager.address' "$venue_manifest")"
 position_manager="$(jq -er '.contracts.positionManager.address' "$venue_manifest")"
 quoter="$(jq -er '.contracts.quoter.address' "$venue_manifest")"
+universal_router="$(jq -er '.contracts.universalRouter.address' "$venue_manifest")"
 permit2="$(jq -er '.contracts.permit2.address' "$venue_manifest")"
 
 state_view="$(jq -r '.contracts.stateView.address // empty' "$venue_manifest")"
@@ -710,6 +711,7 @@ jq -n \
   --arg poolManager "$pool_manager" \
   --arg positionManager "$position_manager" \
   --arg quoter "$quoter" \
+  --arg universalRouter "$universal_router" \
   --arg permit2 "$permit2" \
   --arg stateView "$state_view" \
   --arg timelock "$timelock" \
@@ -774,6 +776,7 @@ jq -n \
       poolManager: $poolManager,
       positionManager: $positionManager,
       quoter: $quoter,
+      universalRouter: $universalRouter,
       permit2: $permit2,
       stateView: $stateView,
       baseAsset: "0x0000000000000000000000000000000000000000",

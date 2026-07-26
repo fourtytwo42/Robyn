@@ -26,6 +26,11 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import {
+  alignedConcentratedTicks,
+  encodeV4MintPosition,
+} from "./lib/v4-position-manager.mjs";
+import { encodeUniversalV4SingleSwap } from "./lib/v4-universal-router.mjs";
+import {
   assertCampaignId,
   createCampaignRoot,
   decryptCampaignRoot,
@@ -140,6 +145,39 @@ function artifactAbi(contractName) {
     ),
   ).abi;
 }
+
+function dependencyArtifactAbi(...parts) {
+  return readJson(join(repoRoot, "node_modules", ...parts)).abi;
+}
+
+const universalRouterAbi = [
+  {
+    type: "function",
+    name: "execute",
+    stateMutability: "payable",
+    inputs: [
+      { name: "commands", type: "bytes" },
+      { name: "inputs", type: "bytes[]" },
+      { name: "deadline", type: "uint256" },
+    ],
+    outputs: [],
+  },
+];
+
+const permit2Abi = [
+  {
+    type: "function",
+    name: "approve",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "token", type: "address" },
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint160" },
+      { name: "expiration", type: "uint48" },
+    ],
+    outputs: [],
+  },
+];
 
 async function mapWithConcurrency(values, concurrency, worker) {
   const results = new Array(values.length);
@@ -814,6 +852,28 @@ async function trading() {
   const marketAbi = artifactAbi("RobynV4BondingCurveMarket");
   const tokenAbi = artifactAbi("RobynLaunchToken");
   const assetRouterAbi = artifactAbi("RobynV4AssetRouter");
+  const quoterAbi = dependencyArtifactAbi(
+    "@uniswap",
+    "v4-periphery",
+    "foundry-out",
+    "V4Quoter.sol",
+    "V4Quoter.json",
+  );
+  const positionManagerAbi = dependencyArtifactAbi(
+    "@uniswap",
+    "v4-periphery",
+    "foundry-out",
+    "PositionManager.sol",
+    "PositionManager.json",
+  );
+  const stateViewAbi = dependencyArtifactAbi(
+    "@uniswap",
+    "v4-periphery",
+    "foundry-out",
+    "StateView.sol",
+    "StateView.json",
+  );
+  const lockerAbi = artifactAbi("RobynV4FeePositionLocker");
   state.trading ??= { approvals: [] };
 
   for (let index = 0; index < 900; index += 1) {
@@ -922,6 +982,154 @@ async function trading() {
     throw new Error("Five bonding launches do not have distinct progress states");
   }
 
+  state.trading.externalLiquidity ??= [];
+  for (const [positionIndex, launchIndex] of graduated
+    .slice(0, 2)
+    .entries()) {
+    if (
+      state.trading.externalLiquidity.some(
+        (entry) => entry.launchIndex === launchIndex,
+      )
+    ) {
+      continue;
+    }
+    const launch = state.launches[launchIndex];
+    const account = privateKeyToAccount(
+      accounts[graduationActorIndex(launchIndex)].privateKey,
+    );
+    const poolKey = {
+      currency0: "0x0000000000000000000000000000000000000000",
+      currency1: launch.token,
+      fee: manifest.market.poolFeePips,
+      tickSpacing: manifest.market.tickSpacing,
+      hooks: manifest.contracts.oracleHook,
+    };
+    const lockedTokenId = await publicClient.readContract({
+      address: launch.locker,
+      abi: lockerAbi,
+      functionName: "positionTokenId",
+    });
+    const lockedLiquidity = await publicClient.readContract({
+      address: manifest.contracts.positionManager,
+      abi: positionManagerAbi,
+      functionName: "getPositionLiquidity",
+      args: [lockedTokenId],
+    });
+    const [, currentTick] = await publicClient.readContract({
+      address: manifest.contracts.stateView,
+      abi: stateViewAbi,
+      functionName: "getSlot0",
+      args: [launch.poolId],
+    });
+    const ticks =
+      positionIndex === 0
+        ? { tickLower: -887_200, tickUpper: 887_200 }
+        : alignedConcentratedTicks(
+            currentTick,
+            manifest.market.tickSpacing,
+          );
+    const tokenBalance = await publicClient.readContract({
+      address: launch.token,
+      abi: tokenAbi,
+      functionName: "balanceOf",
+      args: [account.address],
+    });
+    const amount0Max = 20_000_000_000n;
+    const amount1Max = tokenBalance / 4n;
+    let liquidity = lockedLiquidity / 100n;
+    if (liquidity === 0n || amount1Max === 0n) {
+      throw new Error(`No capacity for external liquidity ${launchIndex}`);
+    }
+    await contractTransaction(
+      state,
+      `external-liquidity-token-approve-${launchIndex}`,
+      account,
+      launch.token,
+      tokenAbi,
+      "approve",
+      [manifest.contracts.permit2, (1n << 256n) - 1n],
+    );
+    await contractTransaction(
+      state,
+      `external-liquidity-permit2-approve-${launchIndex}`,
+      account,
+      manifest.contracts.permit2,
+      permit2Abi,
+      "approve",
+      [
+        launch.token,
+        manifest.contracts.positionManager,
+        (1n << 160n) - 1n,
+        BigInt(Math.floor(Date.now() / 1000) + 86_400),
+      ],
+    );
+    let calldata;
+    for (let attempt = 0; attempt < 16; attempt += 1) {
+      calldata = encodeV4MintPosition({
+        poolKey,
+        ...ticks,
+        liquidity,
+        amount0Max,
+        amount1Max,
+        owner: account.address,
+      });
+      try {
+        await publicClient.call({
+          account: account.address,
+          to: manifest.contracts.positionManager,
+          value: amount0Max,
+          data: encodeFunctionData({
+            abi: positionManagerAbi,
+            functionName: "modifyLiquidities",
+            args: [
+              calldata,
+              BigInt(Math.floor(Date.now() / 1000) + 600),
+            ],
+          }),
+        });
+        break;
+      } catch (error) {
+        if (liquidity <= 1n || attempt === 15) throw error;
+        liquidity /= 2n;
+      }
+    }
+    const nextTokenIdBefore = await publicClient.readContract({
+      address: manifest.contracts.positionManager,
+      abi: positionManagerAbi,
+      functionName: "nextTokenId",
+    });
+    const transaction = await contractTransaction(
+      state,
+      `external-liquidity-mint-${launchIndex}`,
+      account,
+      manifest.contracts.positionManager,
+      positionManagerAbi,
+      "modifyLiquidities",
+      [calldata, BigInt(Math.floor(Date.now() / 1000) + 600)],
+      amount0Max,
+    );
+    const mintedLiquidity = await publicClient.readContract({
+      address: manifest.contracts.positionManager,
+      abi: positionManagerAbi,
+      functionName: "getPositionLiquidity",
+      args: [nextTokenIdBefore],
+    });
+    if (mintedLiquidity !== liquidity) {
+      throw new Error(`External liquidity mismatch for ${launchIndex}`);
+    }
+    state.trading.externalLiquidity.push({
+      launchIndex,
+      kind: positionIndex === 0 ? "full-range" : "concentrated",
+      tokenId: nextTokenIdBefore.toString(),
+      liquidity: liquidity.toString(),
+      lockedLiquidity: lockedLiquidity.toString(),
+      tickLower: ticks.tickLower,
+      tickUpper: ticks.tickUpper,
+      transactionHash: transaction.hash,
+    });
+    saveState(state);
+  }
+
   for (const launchIndex of graduated) {
     const launch = state.launches[launchIndex];
     const account = privateKeyToAccount(accounts[90 + launchIndex].privateKey);
@@ -940,6 +1148,183 @@ async function trading() {
     const [nativeQuoted] = await publicClient.readContract({ address: manifest.contracts.assetRouter, abi: assetRouterAbi, functionName: "quoteAssetToNative", args: [launch.token, sellAmount], account: account.address });
     await contractTransaction(state, `direct-v4-sell-${launchIndex}`, account, manifest.contracts.assetRouter, assetRouterAbi, "swapExactAssetForNative", [launch.token, sellAmount, (nativeQuoted * 98n) / 100n || 1n, account.address, BigInt(Math.floor(Date.now() / 1000) + 600)]);
   }
+
+  const universalLaunch = state.launches[graduated[0]];
+  const universalAccount = privateKeyToAccount(accounts[99].privateKey);
+  const poolKey = {
+    currency0: "0x0000000000000000000000000000000000000000",
+    currency1: universalLaunch.token,
+    fee: manifest.market.poolFeePips,
+    tickSpacing: manifest.market.tickSpacing,
+    hooks: manifest.contracts.oracleHook,
+  };
+  state.trading.universalRouterSwaps ??= [];
+  const executeUniversalSwap = async ({
+    label,
+    zeroForOne,
+    exactOutput,
+    amount,
+    limit,
+    value,
+  }) => {
+    const plan = encodeUniversalV4SingleSwap({
+      poolKey,
+      zeroForOne,
+      exactOutput,
+      amount,
+      limit,
+      refundRecipient: universalAccount.address,
+    });
+    const transaction = await contractTransaction(
+      state,
+      label,
+      universalAccount,
+      manifest.contracts.universalRouter,
+      universalRouterAbi,
+      "execute",
+      [
+        plan.commands,
+        plan.inputs,
+        BigInt(Math.floor(Date.now() / 1000) + 600),
+      ],
+      value,
+    );
+    if (
+      !state.trading.universalRouterSwaps.some(
+        (entry) => entry.label === label,
+      )
+    ) {
+      state.trading.universalRouterSwaps.push({
+        label,
+        zeroForOne,
+        exactOutput,
+        amount: amount.toString(),
+        limit: limit.toString(),
+        transactionHash: transaction.hash,
+      });
+      saveState(state);
+    }
+  };
+
+  const directNativeInput = 100_000_000_000n;
+  const [directTokenOutput] = await publicClient.readContract({
+    address: manifest.contracts.quoter,
+    abi: quoterAbi,
+    functionName: "quoteExactInputSingle",
+    args: [
+      {
+        poolKey,
+        zeroForOne: true,
+        exactAmount: directNativeInput,
+        hookData: "0x",
+      },
+    ],
+  });
+  await executeUniversalSwap({
+    label: `universal-exact-in-buy-${universalLaunch.index}`,
+    zeroForOne: true,
+    exactOutput: false,
+    amount: directNativeInput,
+    limit: (directTokenOutput * 98n) / 100n || 1n,
+    value: directNativeInput,
+  });
+
+  const directSellBalance = await publicClient.readContract({
+    address: universalLaunch.token,
+    abi: tokenAbi,
+    functionName: "balanceOf",
+    args: [universalAccount.address],
+  });
+  const directTokenInput = directSellBalance / 8n;
+  await contractTransaction(
+    state,
+    `universal-token-approve-permit2-${universalLaunch.index}`,
+    universalAccount,
+    universalLaunch.token,
+    tokenAbi,
+    "approve",
+    [manifest.contracts.permit2, (1n << 256n) - 1n],
+  );
+  await contractTransaction(
+    state,
+    `universal-permit2-approve-${universalLaunch.index}`,
+    universalAccount,
+    manifest.contracts.permit2,
+    permit2Abi,
+    "approve",
+    [
+      universalLaunch.token,
+      manifest.contracts.universalRouter,
+      (1n << 160n) - 1n,
+      BigInt(Math.floor(Date.now() / 1000) + 86_400),
+    ],
+  );
+  const [directNativeOutput] = await publicClient.readContract({
+    address: manifest.contracts.quoter,
+    abi: quoterAbi,
+    functionName: "quoteExactInputSingle",
+    args: [
+      {
+        poolKey,
+        zeroForOne: false,
+        exactAmount: directTokenInput,
+        hookData: "0x",
+      },
+    ],
+  });
+  await executeUniversalSwap({
+    label: `universal-exact-in-sell-${universalLaunch.index}`,
+    zeroForOne: false,
+    exactOutput: false,
+    amount: directTokenInput,
+    limit: (directNativeOutput * 98n) / 100n || 1n,
+  });
+
+  const exactTokenOutput = 10n ** 18n;
+  const [maximumNativeQuote] = await publicClient.readContract({
+    address: manifest.contracts.quoter,
+    abi: quoterAbi,
+    functionName: "quoteExactOutputSingle",
+    args: [
+      {
+        poolKey,
+        zeroForOne: true,
+        exactAmount: exactTokenOutput,
+        hookData: "0x",
+      },
+    ],
+  });
+  const maximumNativeInput = (maximumNativeQuote * 102n) / 100n + 1n;
+  await executeUniversalSwap({
+    label: `universal-exact-out-buy-${universalLaunch.index}`,
+    zeroForOne: true,
+    exactOutput: true,
+    amount: exactTokenOutput,
+    limit: maximumNativeInput,
+    value: maximumNativeInput,
+  });
+
+  const exactNativeOutput = 10_000_000n;
+  const [maximumTokenQuote] = await publicClient.readContract({
+    address: manifest.contracts.quoter,
+    abi: quoterAbi,
+    functionName: "quoteExactOutputSingle",
+    args: [
+      {
+        poolKey,
+        zeroForOne: false,
+        exactAmount: exactNativeOutput,
+        hookData: "0x",
+      },
+    ],
+  });
+  await executeUniversalSwap({
+    label: `universal-exact-out-sell-${universalLaunch.index}`,
+    zeroForOne: false,
+    exactOutput: true,
+    amount: exactNativeOutput,
+    limit: (maximumTokenQuote * 102n) / 100n + 1n,
+  });
 
   const first = state.launches[0];
   const firstAccount = privateKeyToAccount(accounts[0].privateKey);
@@ -992,8 +1377,10 @@ async function conversions() {
   const assetRouterAbi = artifactAbi("RobynV4AssetRouter");
   const lockerAbi = artifactAbi("RobynV4FeePositionLocker");
   const tokenAbi = artifactAbi("RobynLaunchToken");
+  const hookAbi = artifactAbi("RobynV4OracleHook");
   state.conversions ??= { legs: [] };
   state.conversions.harvests ??= [];
+  state.conversions.hookSettlements ??= [];
   state.conversions.batchAdjustments ??= [];
   if (!state.conversions.oracleWindowTargetTimestamp) {
     const current = await publicClient.getBlock();
@@ -1016,6 +1403,116 @@ async function conversions() {
     const launch = state.launches[launchIndex];
     const account = privateKeyToAccount(accounts[graduationActorIndex(launchIndex)].privateKey);
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
+    const pendingNativeBefore = await publicClient.readContract({
+      address: manifest.contracts.oracleHook,
+      abi: hookAbi,
+      functionName: "pendingNativeFees",
+      args: [launch.token],
+    });
+    if (pendingNativeBefore > 0n) {
+      await contractTransaction(
+        state,
+        `hook-settle-native-${launchIndex}`,
+        account,
+        manifest.contracts.oracleHook,
+        hookAbi,
+        "settleNativeFees",
+        [launch.token, pendingNativeBefore],
+      );
+    }
+    const pendingTokenBefore = await publicClient.readContract({
+      address: manifest.contracts.oracleHook,
+      abi: hookAbi,
+      functionName: "pendingTokenFees",
+      args: [launch.token],
+    });
+    let convertedTokenAmount = 0n;
+    if (pendingTokenBefore > 0n) {
+      convertedTokenAmount =
+        pendingTokenBefore > (1n << 128n) - 1n
+          ? (1n << 128n) - 1n
+          : pendingTokenBefore;
+      let quoted;
+      let minimum;
+      for (let attempt = 0; attempt < 16; attempt += 1) {
+        [quoted] = await publicClient.readContract({
+          address: manifest.contracts.assetRouter,
+          abi: assetRouterAbi,
+          functionName: "quoteAssetToNative",
+          args: [launch.token, convertedTokenAmount],
+        });
+        minimum = (quoted * 99n) / 100n || 1n;
+        try {
+          await publicClient.call({
+            account: account.address,
+            to: manifest.contracts.oracleHook,
+            data: encodeFunctionData({
+              abi: hookAbi,
+              functionName: "convertTokenFees",
+              args: [
+                launch.token,
+                convertedTokenAmount,
+                minimum,
+                deadline,
+              ],
+            }),
+          });
+          break;
+        } catch (error) {
+          state.conversions.batchAdjustments.push({
+            label: `hook-convert-token-${launchIndex}`,
+            attempt,
+            rejectedAmount: convertedTokenAmount.toString(),
+            reason: String(
+              error?.shortMessage ?? error?.message ?? error,
+            ).slice(0, 500),
+          });
+          saveState(state);
+          if (convertedTokenAmount <= 1n || attempt === 15) throw error;
+          convertedTokenAmount /= 2n;
+        }
+      }
+      await contractTransaction(
+        state,
+        `hook-convert-token-${launchIndex}`,
+        account,
+        manifest.contracts.oracleHook,
+        hookAbi,
+        "convertTokenFees",
+        [launch.token, convertedTokenAmount, minimum, deadline],
+      );
+    }
+    const conversionGeneratedNative = await publicClient.readContract({
+      address: manifest.contracts.oracleHook,
+      abi: hookAbi,
+      functionName: "pendingNativeFees",
+      args: [launch.token],
+    });
+    if (conversionGeneratedNative > 0n) {
+      await contractTransaction(
+        state,
+        `hook-settle-native-followup-${launchIndex}`,
+        account,
+        manifest.contracts.oracleHook,
+        hookAbi,
+        "settleNativeFees",
+        [launch.token, conversionGeneratedNative],
+      );
+    }
+    if (
+      !state.conversions.hookSettlements.some(
+        (entry) => entry.launchIndex === launchIndex,
+      )
+    ) {
+      state.conversions.hookSettlements.push({
+        launchIndex,
+        nativeSettled: pendingNativeBefore.toString(),
+        tokenConverted: convertedTokenAmount.toString(),
+        conversionGeneratedNativeSettled:
+          conversionGeneratedNative.toString(),
+      });
+      saveState(state);
+    }
     await contractTransaction(state, `locker-collect-${launchIndex}`, account, launch.locker, lockerAbi, "collectFees", V4_FEE_COLLECTION_MINIMUMS);
     const nativeBalance = await publicClient.getBalance({ address: launch.locker });
     if (nativeBalance > 0n) await contractTransaction(state, `locker-route-native-${launchIndex}`, account, launch.locker, lockerAbi, "routeCollectedNative", [nativeBalance]);
