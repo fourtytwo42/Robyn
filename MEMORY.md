@@ -4,6 +4,13 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- `/whitepaper` is the public Sherwood Compact: a detailed, visually led
+  explanation of atomic launch, bonding, graduation, immutable baskets,
+  50/25/20/5 fee routing, holder/creator/RDAO claims, RDAO governance,
+  ERC-1046/IPFS identity, security boundaries, environment-specific economics,
+  and current testnet/mainnet status. The original generated hero uses the
+  public-domain Robin Hood and Merry Men archetype without copying any film or
+  franchise design. `Whitepaper` is a primary navigation item.
 - A live MetaMask SAT3 buy exposed that the testnet trade panel still quoted and
   submitted graduated launches to their exhausted bonding market. Selector
   `0x2c5211c6` is `InvalidAmount()`, and the former graduated quick amounts also
