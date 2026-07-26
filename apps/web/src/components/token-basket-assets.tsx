@@ -66,19 +66,14 @@ export function TokenBasketPreviewChips({
                 setOpenAddress(null);
               }
             }}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                setOpenAddress(null);
-                event.currentTarget.querySelector("button")?.focus();
-              }
-            }}
           >
             <button
               type="button"
               className="decision-basket-chip"
               aria-expanded={isOpen}
               aria-controls={previewId}
-              onClick={() => setOpenAddress(isOpen ? null : asset.address)}
+              onFocus={() => setOpenAddress(asset.address)}
+              onClick={() => setOpenAddress(asset.address)}
             >
               <b>{asset.symbol}</b> {(asset.weight / 100).toFixed(0)}%
             </button>
