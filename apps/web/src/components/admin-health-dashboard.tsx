@@ -76,12 +76,20 @@ export function AdminHealthDashboard({
         ["Ingested block", value(snapshot.indexer.asOfBlock)],
         ["Projected block", value(snapshot.indexer.projectionAsOfBlock)],
         [
+          "Forest awards block",
+          value(snapshot.indexer.kingProjectionAsOfBlock),
+        ],
+        [
           "Ingestion lag",
           `${value(snapshot.indexer.ingestionLagBlocks)} blocks`,
         ],
         [
           "Projection lag",
           `${value(snapshot.indexer.projectionLagBlocks)} blocks`,
+        ],
+        [
+          "Forest award lag",
+          `${value(snapshot.indexer.kingProjectionLagBlocks)} blocks`,
         ],
         ["Ingestion cycle", `${value(snapshot.indexer.ingestionCycleMs)} ms`],
         ["Projection cycle", `${value(snapshot.indexer.projectionCycleMs)} ms`],
@@ -105,6 +113,8 @@ export function AdminHealthDashboard({
       rows: [
         ["Launches", snapshot.data.launchCount],
         ["Canonical logs", snapshot.data.rawLogCount],
+        ["Forest awards", snapshot.data.kingOfForestAwardCount],
+        ["Current King", snapshot.data.currentKingOfForest ?? "Unclaimed"],
         ["Indexed at", time(snapshot.indexer.indexedAt)],
       ],
     },

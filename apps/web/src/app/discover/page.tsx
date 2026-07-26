@@ -71,6 +71,7 @@ export default async function Discover({
     { label: "New", sort: "new" },
     { label: "Near graduation", sort: "near_graduation", phase: "bonding" },
     { label: "Graduated", sort: "graduated", phase: "graduated" },
+    { label: "King of the Forest", sort: "king_of_forest" },
   ];
 
   return (

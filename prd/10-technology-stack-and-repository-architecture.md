@@ -152,6 +152,10 @@ Tests use deterministic fixtures and pinned block numbers. Financial acceptance 
 - Rollback selects the previous compatible release directory; contract deployments and incompatible migrations require forward remediation.
 - Capacity checks prevent builds, forks or CI jobs from starving the database and live processes on the shared VM.
 
+## Event-derived discovery achievements
+
+King of the Forest is a rebuildable discovery projection, not contract state. The canonical ingester records market and v4 swap logs once. The launch projector incrementally derives distinct lifetime traders, latest bonding progress, and one permanent award per chain/token under a versioned manifest policy. The reigning token is selected from immutable award order rather than a mutable flag. A reorg clears and deterministically rebuilds launch and achievement projections from canonical logs. API and UI consumers treat achievement fields as additive and checkpointed.
+
 ## Observability
 
 - One trace/correlation ID follows API request, queued job, quote attempt, transaction and reconciliation where technically safe.

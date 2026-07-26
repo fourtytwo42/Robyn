@@ -3,6 +3,12 @@
   "environment": "robyn-devnet",
   "chainId": 31337,
   "deploymentBlock": 50,
+  "kingOfForestPolicy": {
+    "version": "forest-v1",
+    "activationBlock": 50,
+    "progressThresholdBps": 5000,
+    "minimumUniqueTraders": 10
+  },
   "gitCommit": "a583a36f4417383b63115e08acbe217c82a95b00",
   "deployer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
   "contracts": {

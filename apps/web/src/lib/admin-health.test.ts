@@ -34,6 +34,8 @@ describe("getAdminHealthSnapshot", () => {
           JSON.stringify({
             asOfBlock: "99",
             projectionAsOfBlock: "99",
+            kingProjectionAsOfBlock: "99",
+            kingProjectionLagBlocks: "0",
             ingestionLagBlocks: "1",
             projectionLagBlocks: "1",
             ingestionCycleMs: 120,
@@ -49,6 +51,8 @@ describe("getAdminHealthSnapshot", () => {
             artifactUpdatedAt: "2026-07-25T23:00:00.000Z",
             launchCount: "12",
             rawLogCount: "7000",
+            kingOfForestAwardCount: "2",
+            currentKingOfForest: "0x1111111111111111111111111111111111111111",
           }),
           { status: 200 },
         ),
@@ -70,13 +74,20 @@ describe("getAdminHealthSnapshot", () => {
         status: "ok",
         asOfBlock: "99",
         projectionAsOfBlock: "99",
+        kingProjectionAsOfBlock: "99",
+        kingProjectionLagBlocks: "0",
         ingestionLagBlocks: "1",
         projectionLagBlocks: "1",
         rpcRetryCount: 3,
       },
       keeper: { status: "ok" },
       artifacts: { status: "ok" },
-      data: { launchCount: "12", rawLogCount: "7000" },
+      data: {
+        launchCount: "12",
+        rawLogCount: "7000",
+        kingOfForestAwardCount: "2",
+        currentKingOfForest: "0x1111111111111111111111111111111111111111",
+      },
     });
   });
 

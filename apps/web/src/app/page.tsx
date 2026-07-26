@@ -5,7 +5,7 @@ import deployment from "@robyn/deployment";
 import { TokenArt } from "@/components/launchpad-visuals";
 import { MarketCard } from "@/components/market-card";
 import { LaunchTokenTrigger } from "@/components/launch-token-trigger";
-import { getLaunches } from "@/lib/data-api";
+import { getKingOfForest, getLaunches } from "@/lib/data-api";
 import { deriveHomepageMetrics } from "@/lib/homepage-metrics";
 import { rankActiveMarkets } from "@/lib/market-ranking";
 import { rewardAssetMetadata } from "@/lib/reward-assets";
@@ -13,6 +13,7 @@ import Link from "next/link";
 import { formatEther } from "viem";
 import { publicEnvironment } from "@/lib/public-environment";
 import { getEthUsdPrice } from "@/lib/eth-usd";
+import { KingOfForestSpotlight } from "@/components/king-of-forest-spotlight";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +26,10 @@ function compactBase(value: string) {
 }
 
 export default async function Home() {
-  const [launches, ethUsdPrice] = await Promise.all([
+  const [launches, ethUsdPrice, kingOfForest] = await Promise.all([
     getLaunches(),
     getEthUsdPrice(),
+    getKingOfForest().catch(() => null),
   ]);
   const isTestnet = publicEnvironment.isTestnet;
   const marketShowcase = rankActiveMarkets(launches.data).slice(0, 4);
@@ -123,6 +125,8 @@ export default async function Home() {
           </strong>
         </article>
       </section>
+
+      <KingOfForestSpotlight forest={kingOfForest} ethUsdPrice={ethUsdPrice} />
 
       <section className="market-radar" aria-labelledby="market-radar-heading">
         <div className="section-heading launchpad-heading">

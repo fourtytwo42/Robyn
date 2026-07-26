@@ -14,6 +14,21 @@ export type LaunchRecord = {
   campaign_id: string | null;
   campaign_release_sha: string | null;
   automated_test_launch: boolean;
+  pool_id?: string | null;
+  kingOfForest?: {
+    awarded: boolean;
+    isCurrent: boolean;
+    awardedAt: string | null;
+    awardedBlock: string | null;
+    qualifyingTransactionHash: string | null;
+    qualifyingLogIndex: number | null;
+    progressBps: number;
+    uniqueTraders: number;
+    progressBpsAtAward: number | null;
+    uniqueTradersAtAward: number | null;
+    marketPhaseAtAward: "bonding" | "graduated" | null;
+    policyVersion: string | null;
+  };
   metadata?: {
     token: string;
     media_id: string;
@@ -85,6 +100,18 @@ export type LaunchList = {
 
 export type LaunchDetail = {
   data: LaunchRecord;
+  asOfBlock: string | null;
+  indexedAt: string | null;
+};
+export type KingOfForestResponse = {
+  policy: {
+    version: string;
+    activationBlock: number;
+    progressThresholdBps: number;
+    minimumUniqueTraders: number;
+  } | null;
+  current: LaunchRecord | null;
+  history: LaunchRecord[];
   asOfBlock: string | null;
   indexedAt: string | null;
 };
@@ -241,4 +268,8 @@ export function getLaunchAnalytics(token: string): Promise<LaunchAnalytics> {
   return getJson<LaunchAnalytics>(
     apiUrl("/launches/" + encodeURIComponent(token) + "/analytics"),
   );
+}
+
+export function getKingOfForest(): Promise<KingOfForestResponse> {
+  return getJson<KingOfForestResponse>(apiUrl("/king-of-forest"));
 }

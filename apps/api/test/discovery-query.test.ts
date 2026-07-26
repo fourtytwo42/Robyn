@@ -110,6 +110,21 @@ describe("parseDiscoveryQuery", () => {
     expect(decodeDiscoveryCursor(cursor)?.window).toBe("1h");
   });
 
+  it("accepts the permanent King of the Forest history view", () => {
+    const parsed = parseDiscoveryQuery({
+      sort: "king_of_forest",
+      window: "all",
+    });
+    expect(parsed.sort).toBe("king_of_forest");
+    const cursor = encodeDiscoveryCursor({
+      launchId: "44",
+      sort: "king_of_forest",
+      window: "all",
+      phase: "all",
+    });
+    expect(decodeDiscoveryCursor(cursor)?.sort).toBe("king_of_forest");
+  });
+
   it("rejects opaque cursors reused with a different market view", () => {
     const cursor = encodeDiscoveryCursor({
       launchId: "42",

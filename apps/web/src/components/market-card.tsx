@@ -88,6 +88,21 @@ export function MarketCard({
           : {})}
       />
       <div className="market-card-copy">
+        {launch.kingOfForest?.awarded ? (
+          <span
+            className={`king-card-chip ${launch.kingOfForest.isCurrent ? "current" : "former"}`}
+            title={
+              launch.kingOfForest.isCurrent
+                ? "Reigning King of the Forest"
+                : "Former King of the Forest"
+            }
+          >
+            <span aria-hidden="true">♛</span>
+            {launch.kingOfForest.isCurrent
+              ? "King of the Forest"
+              : "Forest royalty"}
+          </span>
+        ) : null}
         {launch.automated_test_launch ? (
           <span
             className="campaign-test-chip"

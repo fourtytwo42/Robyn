@@ -92,6 +92,12 @@ const deployment = JSON.parse(
     hook: Address;
   }>;
   deploymentBlock: number;
+  kingOfForestPolicy?: {
+    version: string;
+    activationBlock: number;
+    progressThresholdBps: number;
+    minimumUniqueTraders: number;
+  };
   contracts: {
     baseAsset?: Address;
     conversionRouter?: Address;
@@ -308,6 +314,7 @@ type LaunchRow = {
   campaign_id: string | null;
   campaign_release_sha: string | null;
   automated_test_launch: boolean;
+  pool_id: string | null;
 };
 
 type DiscoveryMetricLog = AnalyticsLog & { launch_token: string };
@@ -351,6 +358,51 @@ async function hydrateMarkets<T extends { token: string; market: string }>(
       market: await resolveLaunchMarket(row.token, row.market),
     })),
   );
+}
+
+type KingStateRow = {
+  token: string;
+  progress_bps: number | null;
+  market_phase: "bonding" | "graduated" | null;
+  unique_traders: string;
+  awarded_block: string | null;
+  awarded_transaction_hash: string | null;
+  awarded_transaction_index: number | null;
+  awarded_log_index: number | null;
+  awarded_at: string | null;
+  awarded_progress_bps: number | null;
+  awarded_unique_traders: number | null;
+  awarded_market_phase: "bonding" | "graduated" | null;
+  policy_version: string | null;
+  is_current: boolean;
+};
+
+async function kingStateMap(tokens: string[]) {
+  if (tokens.length === 0) return new Map<string, KingStateRow>();
+  const rows = await sql.unsafe<KingStateRow[]>(
+    "WITH current_king AS (SELECT token FROM king_of_forest_awards WHERE chain_id=$1 ORDER BY awarded_block DESC,awarded_transaction_index DESC,awarded_log_index DESC,token DESC LIMIT 1), trader_counts AS (SELECT token,count(*)::text unique_traders FROM launch_traders WHERE chain_id=$1 AND token=ANY($2::text[]) GROUP BY token) SELECT requested.token,p.progress_bps,p.market_phase,coalesce(tc.unique_traders,'0') unique_traders,a.awarded_block::text,a.awarded_transaction_hash,a.awarded_transaction_index,a.awarded_log_index,a.awarded_at::text,a.progress_bps awarded_progress_bps,a.unique_traders awarded_unique_traders,a.market_phase awarded_market_phase,a.policy_version,(ck.token IS NOT NULL) is_current FROM unnest($2::text[]) requested(token) LEFT JOIN king_of_forest_progress p ON p.chain_id=$1 AND p.token=requested.token LEFT JOIN trader_counts tc ON tc.token=requested.token LEFT JOIN king_of_forest_awards a ON a.chain_id=$1 AND a.token=requested.token LEFT JOIN current_king ck ON ck.token=requested.token",
+    [chainId, tokens.map((token) => token.toLowerCase())],
+  );
+  return new Map(rows.map((row) => [row.token.toLowerCase(), row]));
+}
+
+function kingOfForestView(row: KingStateRow | undefined) {
+  const policy = deployment.kingOfForestPolicy ?? null;
+  return {
+    awarded: row?.awarded_block !== null && row?.awarded_block !== undefined,
+    isCurrent: row?.is_current ?? false,
+    awardedAt: row?.awarded_at ?? null,
+    awardedBlock: row?.awarded_block ?? null,
+    qualifyingTransactionHash: row?.awarded_transaction_hash ?? null,
+    qualifyingTransactionIndex: row?.awarded_transaction_index ?? null,
+    qualifyingLogIndex: row?.awarded_log_index ?? null,
+    progressBps: row?.progress_bps ?? 0,
+    uniqueTraders: Number(row?.unique_traders ?? "0"),
+    progressBpsAtAward: row?.awarded_progress_bps ?? null,
+    uniqueTradersAtAward: row?.awarded_unique_traders ?? null,
+    marketPhaseAtAward: row?.awarded_market_phase ?? null,
+    policyVersion: row?.policy_version ?? policy?.version ?? null,
+  };
 }
 
 async function launchMetadataMap(tokens: string[]) {
@@ -753,7 +805,7 @@ app.addHook("onSend", async (_request, reply, payload) => {
 async function freshness() {
   const [checkpoints, heartbeats] = await Promise.all([
     sql.unsafe<{ service: string; last_block: string; updated_at: string }[]>(
-      "SELECT service,last_block::text,updated_at::text FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector') AND chain_id=$1",
+      "SELECT service,last_block::text,updated_at::text FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector','king-of-forest-projector') AND chain_id=$1",
       [chainId],
     ),
     sql.unsafe<
@@ -772,6 +824,9 @@ async function freshness() {
   );
   const projection = checkpoints.find(
     (checkpoint) => checkpoint.service === "launch-projector",
+  );
+  const kingProjection = checkpoints.find(
+    (checkpoint) => checkpoint.service === "king-of-forest-projector",
   );
   const ingestionHeartbeat = heartbeats.find(
     (heartbeat) => heartbeat.service === "chain-ingester",
@@ -798,6 +853,12 @@ async function freshness() {
     asOfBlock: ingestion?.last_block ?? null,
     indexedAt: ingestion?.updated_at ?? null,
     projectionAsOfBlock: projection?.last_block ?? null,
+    kingProjectionAsOfBlock: kingProjection?.last_block ?? null,
+    kingProjectionLagBlocks: (ingestionBlock >
+    BigInt(kingProjection?.last_block ?? "0")
+      ? ingestionBlock - BigInt(kingProjection?.last_block ?? "0")
+      : 0n
+    ).toString(),
     ingestionLagBlocks: (headBlock > ingestionBlock
       ? headBlock - ingestionBlock
       : 0n
@@ -817,7 +878,10 @@ async function freshness() {
         ? "ok"
         : "degraded",
     projectionStatus:
-      projectionHeartbeat?.status === "ok" && projectionHeartbeat.fresh
+      projectionHeartbeat?.status === "ok" &&
+      projectionHeartbeat.fresh &&
+      (!deployment.kingOfForestPolicy ||
+        kingProjection?.last_block === projection?.last_block)
         ? "ok"
         : "degraded",
   };
@@ -876,8 +940,15 @@ app.get("/health", async (_request, reply) => {
 app.get("/status", async () => {
   const [state, counts, keeper, artifact] = await Promise.all([
     freshness(),
-    sql.unsafe<{ launches: string; logs: string }[]>(
-      "SELECT (SELECT count(*)::text FROM launches WHERE chain_id=$1) launches,(SELECT count(*)::text FROM raw_logs WHERE chain_id=$1) logs",
+    sql.unsafe<
+      {
+        launches: string;
+        logs: string;
+        king_awards: string;
+        current_king: string | null;
+      }[]
+    >(
+      "SELECT (SELECT count(*)::text FROM launches WHERE chain_id=$1) launches,(SELECT count(*)::text FROM raw_logs WHERE chain_id=$1) logs,(SELECT count(*)::text FROM king_of_forest_awards WHERE chain_id=$1) king_awards,(SELECT token FROM king_of_forest_awards WHERE chain_id=$1 ORDER BY awarded_block DESC,awarded_transaction_index DESC,awarded_log_index DESC,token DESC LIMIT 1) current_king",
       [chainId],
     ),
     keeperState(),
@@ -889,6 +960,8 @@ app.get("/status", async () => {
     ...state,
     launchCount: counts[0]?.launches ?? "0",
     rawLogCount: counts[0]?.logs ?? "0",
+    kingOfForestAwardCount: counts[0]?.king_awards ?? "0",
+    currentKingOfForest: counts[0]?.current_king ?? null,
     formulaVersion: "native-v1",
     ...keeper,
     ...artifact,
@@ -967,7 +1040,7 @@ app.get<{
     request.query.phase !== undefined;
   const candidateLimit = rankedRequest ? 1001 : limit;
   const storedRows = await sql.unsafe<LaunchRow[]>(
-    "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version,campaign_id,campaign_release_sha,automated_test_launch FROM launches WHERE chain_id=$1 AND ($2::bigint IS NULL OR launch_id::bigint<$2::bigint) AND ($4::text IS NULL OR token=$4 OR strpos(lower(name),$4)>0 OR strpos(lower(symbol),$4)>0) AND ($5::text IS NULL OR assets ? $5) AND ($6::integer IS NULL OR jsonb_array_length(assets)=$6) AND ($7::text IS NULL OR creator=$7) ORDER BY CASE WHEN token=$4 THEN 0 ELSE 1 END,launch_id::bigint DESC LIMIT $3",
+    "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version,campaign_id,campaign_release_sha,automated_test_launch,pool_id FROM launches WHERE chain_id=$1 AND ($2::bigint IS NULL OR launch_id::bigint<$2::bigint) AND ($4::text IS NULL OR token=$4 OR strpos(lower(name),$4)>0 OR strpos(lower(symbol),$4)>0) AND ($5::text IS NULL OR assets ? $5) AND ($6::integer IS NULL OR jsonb_array_length(assets)=$6) AND ($7::text IS NULL OR creator=$7) ORDER BY CASE WHEN token=$4 THEN 0 ELSE 1 END,launch_id::bigint DESC LIMIT $3",
     [
       chainId,
       rankedRequest ? null : before,
@@ -984,12 +1057,13 @@ app.get<{
       .send({ error: "ranked_projection_capacity_exceeded" });
   }
   const rows = await hydrateMarkets(storedRows);
-  const [marketMetrics, metadata] = await Promise.all([
+  const [marketMetrics, metadata, kingState] = await Promise.all([
     cachedDiscoveryMetrics(rows).catch((error) => {
       request.log.warn({ error }, "discovery metrics unavailable");
       return new Map<string, ReturnType<typeof deriveLaunchAnalytics>>();
     }),
     launchMetadataMap(rows.map((row) => row.token)),
+    kingStateMap(rows.map((row) => row.token)),
   ]);
   const data = rows.map((row) => {
     const metric = marketMetrics.get(row.token.toLowerCase());
@@ -999,6 +1073,7 @@ app.get<{
     return {
       ...row,
       metadata: metadata.get(row.token.toLowerCase()) ?? null,
+      kingOfForest: kingOfForestView(kingState.get(row.token.toLowerCase())),
       metrics: metric
         ? {
             marketCapBase: metric.marketCapBase,
@@ -1046,6 +1121,7 @@ app.get<{
     };
   });
   const visible = data.filter((row) => {
+    if (sort === "king_of_forest") return row.kingOfForest.awarded;
     if (!row.metrics) return phase === "all";
     if (sort === "near_graduation")
       return row.metrics.marketPhase === "bonding";
@@ -1063,6 +1139,18 @@ app.get<{
   const compareBigInt = (left: bigint, right: bigint) =>
     left === right ? 0 : left > right ? -1 : 1;
   visible.sort((left, right) => {
+    if (sort === "king_of_forest") {
+      const leftAward = kingState.get(left.token.toLowerCase());
+      const rightAward = kingState.get(right.token.toLowerCase());
+      const block =
+        BigInt(rightAward?.awarded_block ?? "0") -
+        BigInt(leftAward?.awarded_block ?? "0");
+      if (block !== 0n) return block > 0n ? 1 : -1;
+      const logIndex =
+        (rightAward?.awarded_log_index ?? 0) -
+        (leftAward?.awarded_log_index ?? 0);
+      if (logIndex !== 0) return logIndex;
+    }
     if (sort === "new")
       return Number(BigInt(right.launch_id) - BigInt(left.launch_id));
     if (sort === "near_graduation") {
@@ -1138,22 +1226,54 @@ app.get<{
   };
 });
 
+app.get("/king-of-forest", async () => {
+  const storedRows = await sql.unsafe<LaunchRow[]>(
+    "SELECT l.launch_id::text,l.token,l.vault,l.market,l.creator,l.name,l.symbol,l.assets,l.weights_bps,l.created_block::text,l.updated_block::text,l.formula_version,l.campaign_id,l.campaign_release_sha,l.automated_test_launch,l.pool_id FROM king_of_forest_awards a JOIN launches l ON l.chain_id=a.chain_id AND l.token=a.token WHERE a.chain_id=$1 ORDER BY a.awarded_block DESC,a.awarded_transaction_index DESC,a.awarded_log_index DESC,a.token DESC LIMIT 100",
+    [chainId],
+  );
+  const rows = await hydrateMarkets(storedRows);
+  const [metadata, metrics, kingState, state] = await Promise.all([
+    launchMetadataMap(rows.map((row) => row.token)),
+    cachedDiscoveryMetrics(rows).catch(() => new Map()),
+    kingStateMap(rows.map((row) => row.token)),
+    freshness(),
+  ]);
+  const history = rows.map((row) => ({
+    ...row,
+    metadata: metadata.get(row.token.toLowerCase()) ?? null,
+    metrics: metrics.get(row.token.toLowerCase()) ?? null,
+    kingOfForest: kingOfForestView(kingState.get(row.token.toLowerCase())),
+  }));
+  return {
+    policy: deployment.kingOfForestPolicy ?? null,
+    current: history[0] ?? null,
+    history,
+    ...state,
+  };
+});
+
 app.get<{ Params: { token: string } }>(
   "/launches/:token",
   async (request, reply) => {
     if (!/^0x[0-9a-fA-F]{40}$/.test(request.params.token))
       return reply.code(400).send({ error: "invalid_token" });
     const storedRows = await sql.unsafe<LaunchRow[]>(
-      "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version,campaign_id,campaign_release_sha,automated_test_launch FROM launches WHERE chain_id=$1 AND token=$2",
+      "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version,campaign_id,campaign_release_sha,automated_test_launch,pool_id FROM launches WHERE chain_id=$1 AND token=$2",
       [chainId, request.params.token.toLowerCase()],
     );
     const rows = await hydrateMarkets(storedRows);
     if (!rows[0]) return reply.code(404).send({ error: "launch_not_found" });
-    const metadata = await launchMetadataMap([rows[0].token]);
+    const [metadata, kingState] = await Promise.all([
+      launchMetadataMap([rows[0].token]),
+      kingStateMap([rows[0].token]),
+    ]);
     return {
       data: {
         ...rows[0],
         metadata: metadata.get(rows[0].token.toLowerCase()) ?? null,
+        kingOfForest: kingOfForestView(
+          kingState.get(rows[0].token.toLowerCase()),
+        ),
       },
       ...(await freshness()),
     };

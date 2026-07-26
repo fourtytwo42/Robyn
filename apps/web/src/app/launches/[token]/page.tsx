@@ -125,6 +125,16 @@ export default async function LaunchDetail({
               <span className="live-chip">
                 {marketPhaseLabel(market.marketPhase)}
               </span>
+              {launch.kingOfForest?.awarded ? (
+                <span
+                  className={`king-card-chip ${launch.kingOfForest.isCurrent ? "current" : "former"}`}
+                >
+                  <span aria-hidden="true">♛</span>
+                  {launch.kingOfForest.isCurrent
+                    ? "King of the Forest"
+                    : "Former King"}
+                </span>
+              ) : null}
               {launch.automated_test_launch ? (
                 <span
                   className="campaign-test-chip"
@@ -238,6 +248,84 @@ export default async function LaunchDetail({
             </article>
           ))}
         </section>
+
+        {deployment.kingOfForestPolicy ? (
+          <section
+            className={`king-progress-card ${launch.kingOfForest?.awarded ? "awarded" : ""}`}
+            aria-labelledby="king-progress-heading"
+          >
+            <div>
+              <p className="card-label">King of the Forest</p>
+              <h2 id="king-progress-heading">
+                {launch.kingOfForest?.isCurrent
+                  ? "Reigning over Sherwood"
+                  : launch.kingOfForest?.awarded
+                    ? "Crowned once, remembered forever"
+                    : "Climb toward the crown"}
+              </h2>
+              <p>
+                {launch.kingOfForest?.awarded
+                  ? `This token earned its permanent crown with ${launch.kingOfForest.uniqueTradersAtAward ?? launch.kingOfForest.uniqueTraders} distinct traders.`
+                  : `Reach ${(deployment.kingOfForestPolicy.progressThresholdBps / 100).toFixed(0)}% progress and ${deployment.kingOfForestPolicy.minimumUniqueTraders} distinct lifetime traders. Graduated tokens remain eligible.`}
+              </p>
+            </div>
+            <div className="king-progress-meters">
+              <div>
+                <span>Market growth</span>
+                <strong>
+                  {Math.min(
+                    100,
+                    ((launch.kingOfForest?.progressBps ??
+                      market.graduationProgressBps) /
+                      deployment.kingOfForestPolicy.progressThresholdBps) *
+                      100,
+                  ).toFixed(0)}
+                  %
+                </strong>
+                <div className="graduation-track" aria-hidden="true">
+                  <i
+                    style={{
+                      width: `${Math.min(100, ((launch.kingOfForest?.progressBps ?? market.graduationProgressBps) / deployment.kingOfForestPolicy.progressThresholdBps) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <small>
+                  {(
+                    (launch.kingOfForest?.progressBps ??
+                      market.graduationProgressBps) / 100
+                  ).toFixed(1)}
+                  % of curve
+                </small>
+              </div>
+              <div>
+                <span>Distinct traders</span>
+                <strong>
+                  {Math.min(
+                    100,
+                    ((launch.kingOfForest?.uniqueTraders ??
+                      market.uniqueTraderCount) /
+                      deployment.kingOfForestPolicy.minimumUniqueTraders) *
+                      100,
+                  ).toFixed(0)}
+                  %
+                </strong>
+                <div className="graduation-track" aria-hidden="true">
+                  <i
+                    style={{
+                      width: `${Math.min(100, ((launch.kingOfForest?.uniqueTraders ?? market.uniqueTraderCount) / deployment.kingOfForestPolicy.minimumUniqueTraders) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <small>
+                  {launch.kingOfForest?.uniqueTraders ??
+                    market.uniqueTraderCount}{" "}
+                  of {deployment.kingOfForestPolicy.minimumUniqueTraders}{" "}
+                  traders
+                </small>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         {market.marketPhase !== "legacy_fixed" ? (
           <section

@@ -4,6 +4,7 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- King of the Forest is implemented on `codex/testnet-subdomain-nav` as a rebuildable, one-time discovery achievement. The manifest policy activates at testnet block `93576793`, requires 5,000 bps bonding progress plus 10 distinct lifetime traders, and only awards on fresh post-activation activity. The newest canonical award reigns; former winners retain their badge and history. Schema migration `0008_king_of_forest.sql`, projector/API/status work, homepage spotlight, Markets history, token progress, card badges, admin health, tests, and documentation are complete in the working tree. An isolated schema-v8 database rebuilt through block `93579188`, reconstructed 69 distinct trader rows across five launches, populated pool IDs for all 15 launches, produced the expected zero retroactive awards, and idled in 1.3 to 2.2 ms cycles. Promotion and live browser acceptance remain pending.
 - Exact public testnet release
   `dbe03449463bab302d94f711535677399eb6fca4` is live at
   `https://testnet.sherwoodforest.trade`. Market-cap presentation now defaults
@@ -1321,6 +1322,15 @@ Durable project context lives here. Update this file whenever information should
 - Next step: review/merge the feature branch. Public chain-46630 deployment remains separately blocked on explicit broadcast authorization, clean exact `origin/main`, phase-one DEX verification, protected build, and live gas estimation after coordinator deployment.
 - Current progress: local and protected-testnet creation now simulate and submit one coordinator call, generate a browser-random salt, and decode the canonical token from that receipt. The indexer gates schema-v2 launches on coordinator event plus seeded/sealed state. Testnet tooling is split into a verified DEX phase and atomic protocol phase.
 - External gates: explicit broadcast authorization is still required before public-testnet deployment. Human alert delivery and independent contract review remain required before real-value operation.
+
+### 2026-07-26 - King of the Forest implementation checkpoint
+
+- Context: Add a one-time discovery crown for meaningful market activity without changing contracts or economics.
+- Decision: Freeze policy in the deployment manifest at 50% bonding progress, 10 distinct lifetime traders, and activation block 93576793. Historical activity rebuilds progress and trader counts, but only a new canonical post-activation trade can award a token.
+- Files: `packages/db/migrations/0008_king_of_forest.sql`, `apps/indexer/src/king-of-forest.ts`, `apps/indexer/src/server.ts`, `apps/api/src/server.ts`, `apps/web/src/components/king-of-forest-spotlight.tsx`, token/discovery/admin views, `docs/king-of-the-forest.md`.
+- Commands/tests: DB/indexer/API/web strict typechecks; 18 indexer tests; 54 API tests; 54 web tests; isolated PostgreSQL migration and full canonical projector rebuild.
+- Result: Rebuild through block 93579188 produced 69 unique-trader rows across five launches, pool IDs for all 15 launches, zero retroactive awards as required, and 1.3 to 2.2 ms idle projection cycles. Captured-block mismatch now clears launch and King projections/checkpoints together.
+- Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
 
