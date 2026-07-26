@@ -320,6 +320,17 @@ body.modal-open {
   gap: 0.65rem;
 }
 
+.wizard-token-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wizard-token-fields > .wizard-wallet-callout,
+.wizard-token-fields > label:nth-of-type(3),
+.wizard-token-fields > .wizard-social-fields,
+.wizard-token-fields > .creator-setup {
+  grid-column: 1 / -1;
+}
+
 .wizard-wallet-callout,
 .wizard-wallet-required {
   display: flex;
@@ -5548,6 +5559,14 @@ main > .notice {
 }
 
 @media (max-width: 620px) {
+  .wizard-token-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .wizard-token-fields > * {
+    grid-column: auto;
+  }
+
   .wizard-social-fields {
     grid-template-columns: 1fr;
   }

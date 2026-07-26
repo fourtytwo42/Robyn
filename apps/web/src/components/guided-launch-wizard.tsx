@@ -279,17 +279,12 @@ const CreatorSetup = forwardRef<CreatorSetupHandle, CreatorSetupProps>(
                   }}
                 />
               </label>
-            ) : (
-              <p className="form-hint">
-                Click the artwork tile to choose a JPEG, PNG, or static WebP.
-              </p>
-            )}
-            {working ? <p className="form-hint">Preparing artwork…</p> : null}
+            ) : null}
+            <p className="form-hint" role="status" aria-live="polite">
+              {working ? "Preparing artwork…" : message}
+            </p>
           </div>
         </div>
-        <p className="form-hint" role="status" aria-live="polite">
-          {message}
-        </p>
       </section>
     );
   },
@@ -512,7 +507,10 @@ export function GuidedLaunchWizard(props: WizardProps) {
             </nav>
             <div className="wizard-layout">
               <div className="wizard-panel">
-                <div className="wizard-fields" hidden={step !== 1}>
+                <div
+                  className="wizard-fields wizard-token-fields"
+                  hidden={step !== 1}
+                >
                   <div className="wizard-wallet-callout">
                     <div>
                       <span>Launch wallet</span>
