@@ -90,6 +90,17 @@ cp "$security_json" "$staging/release-evidence/static-security-audit.json"
     pnpm --filter @robyn/web build
   rm -rf apps/web/.next/cache
 
+  for required_runtime_file in \
+    apps/web/.next/BUILD_ID \
+    apps/web/.next/prerender-manifest.json \
+    apps/web/.next/required-server-files.json \
+    apps/web/.next/routes-manifest.json; do
+    [[ -s "$required_runtime_file" ]] || {
+      echo "missing required Next runtime file: $required_runtime_file" >&2
+      exit 1
+    }
+  done
+
   for marker in DEVNET_ONLY robyn-devnet-session-key generatePrivateKey '"/api/faucet"'; do
     ! grep -RasF -- "$marker" apps/web/.next/static apps/web/.next/server
   done
