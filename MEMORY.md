@@ -5,6 +5,19 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - Schema-v9 guaranteed post-graduation fee work is active on branch `codex/schema9-guaranteed-fee` from exact `841fccd342ce823c5f3905e282f7551469b36bb6`. The schema-v8 endurance run was stopped and preserved as incomplete/superseded at `/var/lib/robyn/testnet-endurance/schema8-c203d00-endurance-20260725/preserved-schema9-fee-hook-20260726T001254Z` after 16942.713 healthy seconds. The fresh v4 hook uses permission bits `0x1044`, retains the oracle, and charges an immutable 1% custom-accounting fee on every graduated-pool swap in addition to the 1% LP fee. The fee router tracks bonding, hook, and locked-LP sources separately under the unchanged 50/25/20/5 allocation. Targeted v4 contracts pass 16 tests; keeper typecheck/lint and 18 tests pass; API/indexer/web types pass. Public schema v8 remains live and untouched until schema-v9 gates pass.
+- A live MetaMask SAT3 buy exposed that the testnet trade panel still quoted and
+  submitted graduated launches to their exhausted bonding market. Selector
+  `0x2c5211c6` is `InvalidAmount()`, and the former graduated quick amounts also
+  exceeded the route's intentional `0.00025 ETH` testnet cap. The repair routes
+  graduated v4 quotes, approvals, buys, and sells through the already-deployed
+  `RobynV4AssetRouter`, reads the cap onchain, uses cap-aware quick amounts,
+  applies a fresh 1% slippage floor and ten-minute deadline, and decodes common
+  router errors. Implementation commit `f351a16` passed the full immutable
+  testnet build and all 490 promotion checks. An `eth_call` from the affected
+  wallet successfully simulated the exact `0.0001 ETH` SAT3 router buy without
+  changing chain state. Post-promotion in-app-browser acceptance with the
+  connected MetaMask wallet proved a live 14.73M SAT3 buy quote, the explicit
+  over-cap message, and a nonzero sell quote. Carry this repair into schema v9.
 - Sherwood Forest's product voice and visual system intentionally use a
   restrained `plant → grow → harvest` metaphor. The homepage, Markets hero,
   Portfolio hero, and guided creation modal use forest language while retaining
