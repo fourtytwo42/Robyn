@@ -10,8 +10,11 @@ Durable project context lives here. Update this file whenever information should
   selected artwork automatically during the final atomic launch action. Step
   one is shorter through reduced gaps, padding, input height, artwork size, and
   a two-row description. Web format, lint, strict typecheck, and all 57 tests
-  pass. Exact release build, public promotion, and browser acceptance remain
-  pending.
+  pass. The public testnet serves the compact flow with 494 deployment checks,
+  zero ingestion/projection lag, and healthy keeper/artifact workers. Browser
+  acceptance confirmed zero internal or horizontal overflow at 1440x900 and
+  1280x800, normal contained scrolling at 390x844, a real file chooser from the
+  artwork tile, no `Use artwork` control, and a fresh `0/3` reward basket.
 - Last verified 2026-07-26: the creator profile avatar tile is now the upload
   control, with a visible plus badge and keyboard focus treatment. The separate
   file chooser row and `Use avatar` button are removed. Selecting an image
@@ -1382,8 +1385,10 @@ Durable project context lives here. Update this file whenever information should
 - Files: `guided-launch-wizard.tsx`, `network-launchpad.testnet.tsx`, compact
   wizard styles, and `guided-launch-wizard.test.ts`.
 - Commands/tests: Prettier, ESLint, strict web typecheck, and all 57 web tests.
-- Result: source validation passes; exact immutable build, promotion, and
-  in-app-browser acceptance remain pending.
+- Result: source validation and immutable release gates pass. Public acceptance
+  confirmed the standard desktop and laptop modal needs no internal scroll,
+  mobile has no horizontal overflow, the artwork tile opens the chooser, and
+  reward roots start empty.
 
 ### 2026-07-26 - Creation, profile, atomic purchase, and live wallet acceptance
 
@@ -2327,6 +2332,15 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-26: compact opt-in launch flow checkpoint
+  `a490107411ddd9a3363da3ca110a6c9d139df1ad` passed all 57 web tests, strict
+  typecheck, lint, the immutable testnet builder, and all 494 deployment checks.
+  Browser acceptance confirmed the wizard layout and content heights match at
+  1440x900 and 1280x800, horizontal overflow is zero at all checked viewports,
+  the artwork tile emits a single-file chooser, `Use artwork` is absent, and
+  reward roots initialize at `0/3` with Continue disabled until a valid basket
+  is deliberately selected.
 
 - 2026-07-26: exact public release
   `6385004380c63ea5445d7668f286d2e000882d1f` passed all 494 deployment checks
