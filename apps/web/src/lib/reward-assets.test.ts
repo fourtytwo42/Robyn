@@ -12,10 +12,11 @@ describe("rewardAssetMetadata", () => {
   it("maps canonical addresses case-insensitively to user-facing names", () => {
     expect(
       rewardAssetMetadata(addresses[0]!.toUpperCase(), addresses, false),
-    ).toEqual({ symbol: "mNVDA", name: "Mock NVIDIA" });
-    expect(rewardAssetMetadata(addresses[1]!, addresses, true)).toEqual({
+    ).toMatchObject({ symbol: "mNVDA", name: "Mock NVIDIA" });
+    expect(rewardAssetMetadata(addresses[1]!, addresses, true)).toMatchObject({
       symbol: "tmSPY",
       name: "Mock S&P 500",
+      mockOnly: true,
     });
   });
 
@@ -26,6 +27,34 @@ describe("rewardAssetMetadata", () => {
         addresses,
         false,
       ),
-    ).toEqual({ symbol: "Unknown asset", name: "Unverified asset" });
+    ).toMatchObject({
+      symbol: "Unknown asset",
+      name: "Unverified asset",
+      verification: "unverified-erc20",
+    });
+  });
+
+  it("uses catalog names, symbols, artwork and verification descriptions", () => {
+    expect(
+      rewardAssetMetadata(addresses[0]!, addresses, true, [
+        {
+          address: addresses[0]!,
+          symbol: "TSLA",
+          name: "Tesla",
+          category: "stock",
+          logoUrl: "https://cdn.example/tsla.png",
+          verification: "robinhood-testnet-faucet-stock",
+          mockOnly: false,
+        },
+      ]),
+    ).toMatchObject({
+      symbol: "TSLA",
+      name: "Tesla",
+      logoUrl: "https://cdn.example/tsla.png",
+      category: "stock",
+      verification: "robinhood-testnet-faucet-stock",
+      description:
+        "Tesla (TSLA) is a faucet-issued Robinhood Chain Testnet asset. It is for testing only and has no backing or redemption rights.",
+    });
   });
 });

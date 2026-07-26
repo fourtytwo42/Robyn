@@ -1,8 +1,13 @@
 import { getLaunches } from "@/lib/data-api";
 import { MarketTapeClient } from "@/components/market-tape-client";
+import { getEthUsdPrice } from "@/lib/eth-usd";
+import { marketCapAmount } from "@/lib/display-format";
 
 export async function MarketTape() {
-  const launches = await getLaunches().catch(() => null);
+  const [launches, ethUsdPrice] = await Promise.all([
+    getLaunches().catch(() => null),
+    getEthUsdPrice(),
+  ]);
   const markets =
     launches?.data
       .filter((launch) => launch.metrics)
@@ -10,8 +15,11 @@ export async function MarketTape() {
       .map((launch) => ({
         token: launch.token,
         symbol: launch.symbol,
-        marketCapBase: launch.metrics!.marketCapBase,
-        baseSymbol: launch.metrics!.baseSymbol,
+        marketCapLabel: marketCapAmount(
+          launch.metrics!.marketCapBase,
+          launch.metrics!.baseSymbol,
+          ethUsdPrice,
+        ),
         change24hBps: launch.metrics!.change24hBps,
       })) ?? [];
   return <MarketTapeClient markets={markets} />;

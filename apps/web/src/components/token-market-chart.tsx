@@ -2,12 +2,10 @@
 
 import { useId, useMemo, useState } from "react";
 import type { LaunchAnalytics } from "@/lib/data-api";
+import { baseUnits, usdAmount } from "@/lib/display-format";
 
 type Range = "1h" | "24h" | "7d" | "all";
-
-function units(value: string) {
-  return Number(BigInt(value)) / 1e18;
-}
+type Currency = "usd" | "eth";
 
 function compact(value: number) {
   return value.toLocaleString("en-US", {
@@ -32,14 +30,33 @@ function timeLabel(timestamp: string | null, blockNumber: string) {
 export function TokenMarketChart({
   analytics,
   symbol,
+  ethUsdPrice,
 }: {
   analytics: LaunchAnalytics["data"];
   symbol: string;
+  ethUsdPrice: number | null;
 }) {
   const gradientId = useId();
   const [mode, setMode] = useState<"price" | "volume">("price");
   const [range, setRange] = useState<Range>("24h");
+  const [currency, setCurrency] = useState<Currency>("usd");
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const canUseUsd = analytics.baseSymbol === "ETH" && ethUsdPrice !== null;
+  const activeCurrency: Currency =
+    currency === "usd" && canUseUsd ? "usd" : "eth";
+  const currencyMultiplier = activeCurrency === "usd" ? (ethUsdPrice ?? 1) : 1;
+
+  function displayValue(value: number, maximumFractionDigits = 8) {
+    return activeCurrency === "usd"
+      ? usdAmount(value, maximumFractionDigits, value >= 10_000)
+      : `${compact(value)} ${analytics.baseSymbol}`;
+  }
+
+  function axisValue(value: number) {
+    return activeCurrency === "usd"
+      ? usdAmount(value, value < 1 ? 6 : 2)
+      : compact(value);
+  }
 
   const chart = useMemo(() => {
     const cutoff =
@@ -65,10 +82,13 @@ export function TokenMarketChart({
     const source = selected.length ? selected : analytics.chart.slice(-1);
     let windowVolume = 0;
     const raw = source.map((point) => {
-      if (point.eventType === "trade") windowVolume += units(point.baseAmount);
+      if (point.eventType === "trade")
+        windowVolume += baseUnits(point.baseAmount);
       return {
         ...point,
-        value: mode === "price" ? units(point.price) : windowVolume,
+        value:
+          (mode === "price" ? baseUnits(point.price) : windowVolume) *
+          currencyMultiplier,
       };
     });
     const values = raw.map((point) => point.value);
@@ -84,7 +104,7 @@ export function TokenMarketChart({
       y: 238 - ((point.value - low) / spread) * 184,
     }));
     return { points, low, high };
-  }, [analytics.chart, mode, range]);
+  }, [analytics.chart, currencyMultiplier, mode, range]);
 
   const path = chart.points
     .map((point, index) => `${index === 0 ? "M" : "L"}${point.x},${point.y}`)
@@ -92,6 +112,7 @@ export function TokenMarketChart({
   const active =
     activeIndex === null ? null : (chart.points[activeIndex] ?? null);
   const current = chart.points.at(-1)?.value ?? 0;
+  const marketCap = baseUnits(analytics.marketCapBase) * currencyMultiplier;
   const insufficient =
     range !== "all" &&
     chart.points.filter((point) => point.eventType === "trade").length === 0;
@@ -113,26 +134,51 @@ export function TokenMarketChart({
           <h2 id="market-chart-heading">
             {mode === "price" ? `${symbol} price` : "Window volume"}
           </h2>
-          <strong className="chart-current">
-            {compact(current)} {analytics.baseSymbol}
-          </strong>
+          <strong className="chart-current">{displayValue(current)}</strong>
+          <span className="chart-market-cap">
+            Market cap <b>{displayValue(marketCap, marketCap < 1 ? 6 : 2)}</b>
+          </span>
         </div>
-        <div className="chart-tabs" role="tablist" aria-label="Chart metric">
-          {(["price", "volume"] as const).map((metric) => (
-            <button
-              key={metric}
-              type="button"
-              role="tab"
-              aria-selected={mode === metric}
-              className={mode === metric ? "active" : ""}
-              onClick={() => {
-                setMode(metric);
-                setActiveIndex(null);
-              }}
-            >
-              {metric === "price" ? "Price" : "Volume"}
-            </button>
-          ))}
+        <div className="chart-controls">
+          <div
+            className="chart-tabs chart-currency-tabs"
+            role="tablist"
+            aria-label="Chart currency"
+          >
+            {(["usd", "eth"] as const).map((unit) => (
+              <button
+                key={unit}
+                type="button"
+                role="tab"
+                disabled={unit === "usd" && !canUseUsd}
+                aria-selected={activeCurrency === unit}
+                className={activeCurrency === unit ? "active" : ""}
+                onClick={() => {
+                  setCurrency(unit);
+                  setActiveIndex(null);
+                }}
+              >
+                {unit.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <div className="chart-tabs" role="tablist" aria-label="Chart metric">
+            {(["price", "volume"] as const).map((metric) => (
+              <button
+                key={metric}
+                type="button"
+                role="tab"
+                aria-selected={mode === metric}
+                className={mode === metric ? "active" : ""}
+                onClick={() => {
+                  setMode(metric);
+                  setActiveIndex(null);
+                }}
+              >
+                {metric === "price" ? "Price" : "Volume"}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       <div className="chart-range-tabs" aria-label="Chart time range">
@@ -179,7 +225,9 @@ export function TokenMarketChart({
                   textAnchor="end"
                   className="chart-axis-label"
                 >
-                  {compact(chart.high - ((chart.high - chart.low) * index) / 4)}
+                  {axisValue(
+                    chart.high - ((chart.high - chart.low) * index) / 4,
+                  )}
                 </text>
               ) : null}
             </g>
@@ -214,7 +262,7 @@ export function TokenMarketChart({
                 }
                 tabIndex={0}
                 role="button"
-                aria-label={`${point.eventType}${point.side ? ` ${point.side}` : ""}, ${compact(point.value)} ${analytics.baseSymbol}, ${timeLabel(point.timestamp, point.blockNumber)}`}
+                aria-label={`${point.eventType}${point.side ? ` ${point.side}` : ""}, ${displayValue(point.value)}, ${timeLabel(point.timestamp, point.blockNumber)}`}
                 className={`chart-point ${point.eventType} ${point.side ?? ""}`}
                 onPointerEnter={() => setActiveIndex(index)}
                 onPointerLeave={() => setActiveIndex(null)}
@@ -235,12 +283,12 @@ export function TokenMarketChart({
                 ? `${active.side} trade`
                 : active.eventType}
             </strong>
-            <span>
-              {compact(active.value)} {analytics.baseSymbol}
-            </span>
+            <span>{displayValue(active.value)}</span>
             {active.eventType === "trade" ? (
               <span>
-                {compact(units(active.baseAmount))} {analytics.baseSymbol}{" "}
+                {displayValue(
+                  baseUnits(active.baseAmount) * currencyMultiplier,
+                )}{" "}
                 traded
               </span>
             ) : null}

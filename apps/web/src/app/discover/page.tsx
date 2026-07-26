@@ -7,6 +7,7 @@ import { rewardAssetMetadata } from "@/lib/reward-assets";
 import deployment from "@robyn/deployment";
 import { ForestCanopy } from "@/components/forest-canopy";
 import { publicEnvironment } from "@/lib/public-environment";
+import { getEthUsdPrice } from "@/lib/eth-usd";
 
 export const dynamic = "force-dynamic";
 
@@ -41,9 +42,10 @@ export default async function Discover({
     window: first(query.window) || "24h",
     phase: first(query.phase) || "all",
   };
-  const [launches, allLaunches] = await Promise.all([
+  const [launches, allLaunches, ethUsdPrice] = await Promise.all([
     getLaunches(filters),
     getLaunches(),
+    getEthUsdPrice(),
   ]);
   const assets = Array.from(
     new Set(allLaunches.data.flatMap((launch) => launch.assets)),
@@ -130,6 +132,7 @@ export default async function Discover({
                 isTestnet={isTestnet}
                 window={filters.window}
                 priority={index < 4}
+                ethUsdPrice={ethUsdPrice}
                 key={launch.token}
               />
             ))}

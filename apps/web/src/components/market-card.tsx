@@ -3,7 +3,7 @@ import deployment from "@robyn/deployment";
 import type { LaunchRecord } from "@/lib/data-api";
 import { rewardAssetMetadata } from "@/lib/reward-assets";
 import { TokenCardArt } from "@/components/launchpad-visuals";
-import { marketAmount } from "@/lib/display-format";
+import { marketAmount, marketCapAmount } from "@/lib/display-format";
 
 function phaseLabel(phase: "legacy_fixed" | "bonding" | "graduated") {
   if (phase === "bonding") return "Bonding";
@@ -16,11 +16,13 @@ export function MarketCard({
   isTestnet,
   window = "24h",
   priority = false,
+  ethUsdPrice,
 }: {
   launch: LaunchRecord;
   isTestnet: boolean;
   window?: string;
   priority?: boolean;
+  ethUsdPrice: number | null;
 }) {
   const metrics = launch.metrics;
   const phase = metrics ? phaseLabel(metrics.marketPhase) : "Live market";
@@ -135,7 +137,11 @@ export function MarketCard({
               <div>
                 <dt>Market cap</dt>
                 <dd>
-                  {marketAmount(metrics.marketCapBase, metrics.baseSymbol)}
+                  {marketCapAmount(
+                    metrics.marketCapBase,
+                    metrics.baseSymbol,
+                    ethUsdPrice,
+                  )}
                 </dd>
               </div>
               <div>
