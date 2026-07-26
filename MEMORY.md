@@ -2,6 +2,36 @@
 
 Durable project context lives here. Update this file whenever information should survive chat context compression or future agent handoff.
 
+
+- Last verified 2026-07-26: schema-v9 mainnet-readiness review found a
+  release-blocking configuration mismatch. `maximumNativeSwap` limited only
+  graduated swaps while bonding `buy()` had no onchain per-transaction cap.
+  Source now adds immutable `maximumCurvePurchase`, enforced in both quote and
+  execution paths and bounded by the graduation threshold. The proposed
+  mainnet value is 0.5 ETH. The existing chain-46630 schema-v9 deployment does
+  not contain this fix and must be replaced before the public campaign.
+- Last verified 2026-07-26: post-remediation validation passes 148 Foundry
+  tests, 256 invariant runs at depth 128, and the 512-wallet, 32-launch,
+  25,000-action simulation across 20 deterministic seeds. The repository gates,
+  Anvil smoke test, mainnet-curve validator, and security audit pass with no
+  unresolved critical, high, or medium finding.
+- Last verified 2026-07-26: the no-broadcast Robinhood mainnet fork rehearsal
+  passes against chain 4663 using the live shared v4 PoolManager,
+  PositionManager, Quoter, Permit2, and production AAPL Stock Token. It proves
+  the proposed 6 ETH graduation threshold, 0.5 ETH purchase cap, atomic creator
+  purchase, graduation, post-graduation swaps, hook and locked-LP settlement,
+  AAPL basket conversion, holder/creator/governance-holder/treasury
+  distribution, exact 50/25/20/5 conservation, and unchanged locked principal.
+  The rehearsal requires production-scale route depth; a deliberately shallow
+  route correctly failed the 1% price-impact guard before the fixture was
+  corrected.
+- Last verified 2026-07-26: root-disk headroom was restored from 2.6 GiB to
+  25 GiB by removing only verified superseded immutable releases.
+- Last verified 2026-07-26: the new deployment purchase-cap verifier initially
+  contained a malformed nested assertion that the ordinary package gates did
+  not parse. It was fixed before commit, and the root test pipeline now runs
+  `node --check` across every `scripts/**/*.mjs` file so deployment and
+  operations scripts cannot carry an unnoticed syntax error.
 ## Active Handoff
 
 - Last verified 2026-07-26: the creator-profile avatar and token-artwork upload
@@ -1378,6 +1408,27 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-26 - Bonding purchase cap remediation
+
+- Context: the production curve configuration described a 0.5 ETH maximum
+  individual curve purchase, but code review proved the existing immutable
+  `maximumNativeSwap` applies only to graduated v4 trading.
+- Decision: add a distinct immutable `maximumCurvePurchase` to the curve and
+  factory configuration, enforce it in `quoteBuy` and `_buyBonding`, reject a
+  cap above the graduation threshold, record it in deployment manifests, and
+  independently retain `maximumNativeSwap` for graduated routes.
+- Files: `RobynV4BondingCurveMarket.sol`, `RobynV4MarketFactory.sol`, v4 tests,
+  testnet deployment/verifier tooling, mainnet curve configuration/validator,
+  and the protocol security review.
+- Commands/tests: focused cap regression and mainnet curve validation pass.
+  The earlier complete assurance run passed 144 tests, but the full suite must
+  run again after this bytecode change.
+- Result: source enforces the intended mainnet limit. Existing testnet bytecode
+  remains unchanged and is no longer the candidate for the full public
+  campaign.
+- Follow-up: rerun every contract/build/security gate, complete the chain-4663
+  fork rehearsal, deploy fresh testnet contracts, rebuild the index, and only
 
 ### 2026-07-26 - Compact opt-in launch setup
 

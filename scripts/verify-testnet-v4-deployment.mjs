@@ -249,6 +249,21 @@ check(
   "fee-and-oracle hook charges an immutable one percent protocol fee",
 );
 check(
+  (await read(contracts.marketFactory, abis.marketFactory, "maximumCurvePurchase")) ===
+    BigInt(manifest.market.maximumCurvePurchase),
+  "market factory enforces the manifest bonding purchase cap",
+);
+check(
+  BigInt(manifest.market.maximumCurvePurchase) <=
+    BigInt(manifest.market.graduationThresholdNative),
+  "bonding purchase cap does not exceed the graduation threshold",
+);
+check(
+  (await read(contracts.marketFactory, abis.marketFactory, "maximumNativeSwap")) ===
+    BigInt(manifest.market.maximumNativeSwap),
+  "market factory enforces the manifest graduated swap cap",
+);
+check(
   (await read(contracts.oracleHook, abis.hook, "deploymentDomain")) ===
     manifest.oracleHook.deploymentDomain,
   "oracle-hook deployment domain matches manifest",

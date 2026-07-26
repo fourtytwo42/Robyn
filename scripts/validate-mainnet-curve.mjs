@@ -47,7 +47,8 @@ assert(minimumGrossDemand === value("minimumGrossBuyDemand"), "gross demand mism
 assert(BigInt(config.curveFeeBps) === 100n, "bonding fee must remain 1%");
 assert(BigInt(config.graduatedProtocolFeeBps) === 100n, "graduated protocol fee must remain 1%");
 assert(config.graduatedPoolLpFeePips === 10_000, "graduated LP fee must remain 1%");
-assert(value("maximumNativeSwap") <= configuredThreshold / 10n, "single buy cap must not exceed 10%");
+assert(value("maximumCurvePurchase") <= configuredThreshold / 10n, "single buy cap must not exceed 10%");
+assert(value("maximumNativeSwap") > 0n, "graduated swap cap must be positive");
 assert(config.policy === "immutable-per-factory", "curve policy must be immutable per factory");
 
 console.log(
@@ -57,6 +58,7 @@ console.log(
       graduationThresholdWei: configuredThreshold.toString(),
       minimumGrossBuyDemandWei: minimumGrossDemand.toString(),
       terminalFullyDilutedValueWei: terminalFdvNative.toString(),
+      maximumCurvePurchaseWei: value("maximumCurvePurchase").toString(),
       maximumNativeSwapWei: value("maximumNativeSwap").toString(),
       valid: true,
     },

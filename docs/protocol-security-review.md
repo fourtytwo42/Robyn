@@ -176,3 +176,48 @@ Schema v4 removes the wallet-aggregated creator claim mapping and makes the laun
   content; interfaces must never promise deletion from IPFS.
 - External pin credentials stay in `/etc/robyn/ipfs.env` and are excluded from
   bundles, logs, source, and backups.
+
+# Schema-v9 fee-hook security addendum
+
+This review covers the deployed schema-v9 fee-and-oracle hook, native fee
+router, graduation adapter, immutable position locker, native basket vault,
+bonding market, factories, atomic coordinator, launch token, reward accounting,
+Governor, and Timelock. It is an internal AI-assisted engineering review, not
+an independent professional audit.
+
+The review found that the production configuration's `maximumNativeSwap` was
+enforced only after graduation while bonding purchases had no onchain
+per-transaction cap. This release-blocking mismatch is remediated by an
+immutable `maximumCurvePurchase`, enforced by both quoting and execution,
+validated not to exceed the graduation threshold, recorded in the deployment
+manifest, and regression-tested. Existing deployed markets do not gain this
+protection and must not be promoted as the mainnet candidate.
+
+The hook's custom-accounting delta was reviewed and tested for exact-input and
+exact-output swaps in both currency directions. Exact-input fees are charged
+against actual output. Exact-output fees add input using upward rounding so a
+sufficiently small nonzero swap cannot evade the configured fee. Slippage,
+price-limit, deadline, partial-fill, callback-authority, and PoolManager-only
+entry conditions are covered by unit, fuzz, adversarial, and stateful tests.
+
+Hook accrual is intentionally non-blocking. Native and launch-token fees remain
+queued when routing or conversion is unavailable. Permissionless settlement is
+bounded by TWAP maturity, spot-to-TWAP deviation, price impact, deadline,
+minimum output, and allowance cleanup. State changes precede external calls,
+and failed settlement leaves the liability available for retry without
+duplicating credit.
+
+Third-party liquidity is an expected economic condition. The
+`testThirdPartyLiquidityDilutesLockedLpFeesButNotHookFees` regression test adds
+an equal external full-range position, executes otherwise-equivalent graduated
+trades, and proves that Sherwood's locked-position LP revenue is diluted while
+the immutable hook fee still accrues and locked principal remains unchanged.
+Both revenue sources enter the same exact 50/25/20/5 accounting policy.
+
+The assurance profile runs 256 invariant campaigns at depth 128 and a
+deterministic 512-wallet, 32-launch, 25,000-action campaign across 20 seeds.
+Slither, dependency, secret, and Foundry gates currently report no unresolved
+critical, high, or medium finding under the documented line-scoped triage.
+These results do not remove the mainnet blocker: an independent professional
+smart-contract audit and remediation rerun remain mandatory before real-value
+deployment.

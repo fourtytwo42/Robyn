@@ -11,6 +11,7 @@
   "initialVirtualNativeReserve": "2250000000000000000",
   "graduationThresholdNative": "6000000000000000000",
   "curveFeeBps": 100,
+  "maximumCurvePurchase": "500000000000000000",
   "maximumNativeSwap": "500000000000000000",
   "graduatedPoolLpFeePips": 10000,
   "graduatedProtocolFeeBps": 100,

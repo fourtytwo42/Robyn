@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo="/home/hendo420/Robyn"
+repo=$(cd $(dirname ${BASH_SOURCE[0]})/.. && pwd)
 output="${SECURITY_AUDIT_OUTPUT:-/tmp/robyn-security-audit.json}"
 work="$(mktemp -d)"
 trap 'rm -rf -- "${work}"' EXIT
@@ -36,8 +36,8 @@ set +e
   cd packages/contracts
   "${slither}" src \
     --solc "${solc}" \
-    --solc-remaps '@openzeppelin/contracts/=/home/hendo420/Robyn/node_modules/@openzeppelin/contracts/' \
-    --solc-args '--base-path /home/hendo420/Robyn/packages/contracts --allow-paths /home/hendo420/Robyn/node_modules' \
+    --solc-remaps=@openzeppelin/contracts/=${repo}/node_modules/@openzeppelin/contracts/ \
+    --solc-args=--base-path\ ${repo}/packages/contracts\ --allow-paths\ ${repo}/node_modules \
     --exclude-dependencies \
     --include-paths 'src/(RobynLaunchToken\.sol|dao/Robyn(DaoToken|TestnetGovernor)\.sol|uniswap/Robyn(V4|Native))' \
     --json "${work}/slither.json" >/dev/null 2>"${work}/slither.log"

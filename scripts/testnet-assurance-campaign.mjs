@@ -39,7 +39,7 @@ import {
   applyHeadroom,
   basketConversionActorIndex,
   graduationActorIndex,
-  assertSchema8Manifest,
+  assertSchema9Manifest,
   launchBasketPlan,
   nativeSweepReserveWei,
   plannedBuyValueWei,
@@ -165,7 +165,7 @@ function requireProtectedFile(path, label) {
 }
 
 function loadManifest() {
-  return assertSchema8Manifest(readJson(manifestPath));
+  return assertSchema9Manifest(readJson(manifestPath));
 }
 
 function loadState() {

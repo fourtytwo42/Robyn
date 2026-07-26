@@ -446,7 +446,7 @@ threshold_native="1400000000000000"
 curve_fee_bps="100"
 minimum_use_bps="9900"
 maximum_native_swap="250000000000000"
-curve="($curve_tokens,$graduation_tokens,$virtual_tokens,$virtual_native,$threshold_native,$curve_fee_bps)"
+curve="($curve_tokens,$graduation_tokens,$virtual_tokens,$virtual_native,$threshold_native,$maximum_native_swap,$curve_fee_bps)"
 deploy_contract adapterDeployer \
   src/uniswap/RobynV4AdapterDeployer.sol:RobynV4AdapterDeployer
 adapter_deployer="${addresses[adapterDeployer]}"
@@ -737,6 +737,7 @@ jq -n \
   --arg virtualTokens "$virtual_tokens" \
   --arg virtualNative "$virtual_native" \
   --arg thresholdNative "$threshold_native" \
+  --arg maximumCurvePurchase "$maximum_native_swap" \
   --arg maximumNativeSwap "$maximum_native_swap" \
   '{
     schemaVersion: $schemaVersion,
@@ -845,6 +846,7 @@ jq -n \
       initialVirtualTokenReserve: $virtualTokens,
       initialVirtualNativeReserve: $virtualNative,
       graduationThresholdNative: $thresholdNative,
+      maximumCurvePurchase: $maximumCurvePurchase,
       minimumUseBps: 9900,
       maximumNativeSwap: $maximumNativeSwap
     },

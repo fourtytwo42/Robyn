@@ -105,7 +105,7 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
         for (uint256 index; index < 3; ++index) {
             address actor = _actor(500 + index);
             vm.prank(actor);
-            markets[index].buy{value: 3 ether}(1);
+            _graduateMarket(markets[index]);
             assertTrue(markets[index].graduated());
 
             RobynV4FeePositionLocker locker = markets[index].graduationAdapter().locker();

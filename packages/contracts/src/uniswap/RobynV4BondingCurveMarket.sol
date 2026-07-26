@@ -15,7 +15,7 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint16 public constant BPS = 10_000;
-    string public constant CONTRACT_VERSION = "1.1.0";
+    string public constant CONTRACT_VERSION = "1.2.0";
 
     struct CurveConfig {
         uint256 curveTokenAllocation;
@@ -24,6 +24,7 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         uint256 initialVirtualNativeReserve;
         uint256 graduationThresholdNative;
         uint16 curveFeeBps;
+        uint256 maximumCurvePurchase;
     }
 
     error Unauthorized();
@@ -31,6 +32,7 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
     error InvalidAmount();
     error AlreadySeeded();
     error NotSeeded();
+    error MaximumCurvePurchaseExceeded(uint256 maximum, uint256 actual);
     error Slippage(uint256 minimum, uint256 actual);
     error CurveInventoryExceeded();
     error FeeRouterAlreadyBound();
@@ -45,6 +47,7 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
     uint256 public immutable initialVirtualTokenReserve;
     uint256 public immutable initialVirtualNativeReserve;
     uint256 public immutable graduationThresholdNative;
+    uint256 public immutable maximumCurvePurchase;
     uint16 public immutable feeBps;
     RobynV4GraduationAdapter public immutable graduationAdapter;
     RobynNativeProtocolFeeRouterV3 public feeRouter;
@@ -91,7 +94,9 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
                 || curve_.curveTokenAllocation == 0 || curve_.graduationTokenAllocation == 0
                 || curve_.initialVirtualTokenReserve <= curve_.curveTokenAllocation
                 || curve_.initialVirtualNativeReserve == 0 || curve_.graduationThresholdNative == 0
-                || curve_.curveFeeBps == 0 || curve_.curveFeeBps > 1_000
+                || curve_.maximumCurvePurchase == 0 || curve_.curveFeeBps == 0
+                || curve_.maximumCurvePurchase > curve_.graduationThresholdNative
+                || curve_.curveFeeBps > 1_000
                 || address(feeVault_.launchToken()) != address(launchToken_)
                 || address(graduationAdapter_) == address(0)
                 || address(graduationAdapter_.launchToken()) != address(launchToken_)
@@ -105,6 +110,7 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         initialVirtualTokenReserve = curve_.initialVirtualTokenReserve;
         initialVirtualNativeReserve = curve_.initialVirtualNativeReserve;
         graduationThresholdNative = curve_.graduationThresholdNative;
+        maximumCurvePurchase = curve_.maximumCurvePurchase;
         feeBps = curve_.curveFeeBps;
         graduationAdapter = graduationAdapter_;
     }
@@ -171,6 +177,9 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         if (!seeded) revert NotSeeded();
         if (graduated) return graduationAdapter.quoteBuy(uint128(nativeInput));
         if (nativeInput == 0) revert InvalidAmount();
+        if (nativeInput > maximumCurvePurchase) {
+            revert MaximumCurvePurchaseExceeded(maximumCurvePurchase, nativeInput);
+        }
         feeAmount = Math.mulDiv(nativeInput, feeBps, BPS);
         uint256 netInput = nativeInput - feeAmount;
         uint256 newTokenReserve = Math.ceilDiv(
@@ -232,6 +241,9 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
     ) private returns (uint256 tokenOutput) {
         if (msg.value == 0) revert InvalidAmount();
 
+        if (msg.value > maximumCurvePurchase) {
+            revert MaximumCurvePurchaseExceeded(maximumCurvePurchase, msg.value);
+        }
         uint256 nativeInput = msg.value;
         uint256 feeAmount = Math.mulDiv(nativeInput, feeBps, BPS);
         uint256 netInput = nativeInput - feeAmount;

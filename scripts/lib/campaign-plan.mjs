@@ -37,7 +37,7 @@ export function basketConversionActorIndex(launchIndex, legIndex) {
   return 96 + ((launchIndex * 3 + legIndex) % REQUIRED_GRADUATED_COUNT);
 }
 
-export function assertSchema8Manifest(manifest) {
+export function assertSchema9Manifest(manifest) {
   if (manifest?.schemaVersion !== 9 || manifest?.chainId !== 46630) {
     throw new Error("Campaign requires a schema-v9 chain-46630 manifest");
   }
@@ -78,7 +78,7 @@ export function assertSchema8Manifest(manifest) {
 }
 
 export function launchBasketPlan(manifest) {
-  assertSchema8Manifest(manifest);
+  assertSchema9Manifest(manifest);
   const addresses = manifest.assetRoutes.map((route) => route.address);
   if (new Set(addresses.map((address) => address.toLowerCase())).size !== 24) {
     throw new Error("Campaign route catalog contains duplicate addresses");

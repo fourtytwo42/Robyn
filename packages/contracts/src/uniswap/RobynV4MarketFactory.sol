@@ -56,6 +56,7 @@ contract RobynV4MarketFactory {
     uint256 public immutable initialVirtualTokenReserve;
     uint256 public immutable initialVirtualNativeReserve;
     uint256 public immutable graduationThresholdNative;
+    uint256 public immutable maximumCurvePurchase;
     uint16 public immutable curveFeeBps;
     uint16 public immutable minimumUseBps;
     uint128 public immutable maximumNativeSwap;
@@ -121,7 +122,9 @@ contract RobynV4MarketFactory {
                 || curve_.curveTokenAllocation == 0 || curve_.graduationTokenAllocation == 0
                 || curve_.initialVirtualTokenReserve <= curve_.curveTokenAllocation
                 || curve_.initialVirtualNativeReserve == 0 || curve_.graduationThresholdNative == 0
-                || curve_.curveFeeBps == 0 || curve_.curveFeeBps > 1_000 || minimumUseBps_ == 0
+                || curve_.maximumCurvePurchase == 0 || curve_.curveFeeBps == 0
+                || curve_.maximumCurvePurchase > curve_.graduationThresholdNative
+                || curve_.curveFeeBps > 1_000 || minimumUseBps_ == 0
                 || minimumUseBps_ > 10_000 || maximumNativeSwap_ == 0
         ) revert InvalidConfiguration();
         launchFactory = dependencies.launchFactory;
@@ -141,6 +144,7 @@ contract RobynV4MarketFactory {
         initialVirtualTokenReserve = curve_.initialVirtualTokenReserve;
         initialVirtualNativeReserve = curve_.initialVirtualNativeReserve;
         graduationThresholdNative = curve_.graduationThresholdNative;
+        maximumCurvePurchase = curve_.maximumCurvePurchase;
         curveFeeBps = curve_.curveFeeBps;
         minimumUseBps = minimumUseBps_;
         maximumNativeSwap = maximumNativeSwap_;
@@ -263,6 +267,7 @@ contract RobynV4MarketFactory {
                 initialVirtualTokenReserve: initialVirtualTokenReserve,
                 initialVirtualNativeReserve: initialVirtualNativeReserve,
                 graduationThresholdNative: graduationThresholdNative,
+                maximumCurvePurchase: maximumCurvePurchase,
                 curveFeeBps: curveFeeBps
             });
         market = marketDeployer.deploy(token, vault, creator, seedAuthority, curve, adapter);

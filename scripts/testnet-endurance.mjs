@@ -31,7 +31,7 @@ import {
   decryptCampaignRoot,
   deriveCampaignAccounts,
 } from "./lib/campaign-wallets.mjs";
-import { applyHeadroom, assertSchema8Manifest } from "./lib/campaign-plan.mjs";
+import { applyHeadroom, assertSchema9Manifest } from "./lib/campaign-plan.mjs";
 import {
   diskHeadroomPass,
   dueCount,
@@ -71,7 +71,7 @@ const manifestPath = resolve(
   process.env.ROBYN_ENDURANCE_MANIFEST ??
     join(releaseRoot, "deployments", "46630-v4.json"),
 );
-const manifest = assertSchema8Manifest(
+const manifest = assertSchema9Manifest(
   JSON.parse(readFileSync(manifestPath, "utf8")),
 );
 const rpcUrl =
