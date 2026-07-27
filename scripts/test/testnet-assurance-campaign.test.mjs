@@ -333,8 +333,13 @@ test("locker conversion fees are settled after the final harvest swap", () => {
     'functionName: "pendingCollectedTokenFees"',
   );
   const routeNative = source.indexOf("`locker-route-native-${launchIndex}`");
+  const settleBasket = source.indexOf("`basket-settle-${launch.index}`");
+  const convertBasket = source.indexOf(
+    "`basket-convert-${launch.index}-${legIndex}`",
+  );
   assert.ok(trackedNativeFees >= 0 && trackedNativeFees < routeNative);
   assert.ok(trackedTokenFees >= 0 && trackedTokenFees < lockerConversion);
+  assert.ok(settleBasket >= 0 && settleBasket < convertBasket);
   assert.doesNotMatch(source, /getBalance\(\{ address: launch\.locker \}\)/);
   assert.doesNotMatch(source, /args: \[launch\.locker\]/);
 });

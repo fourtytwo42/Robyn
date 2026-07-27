@@ -1462,6 +1462,7 @@ async function conversions() {
   const lockerAbi = artifactAbi("RobynV4FeePositionLocker");
   const tokenAbi = artifactAbi("RobynLaunchToken");
   const hookAbi = artifactAbi("RobynV4FeeAndPhaseHook");
+  const feeRouterAbi = artifactAbi("RobynNativeProtocolFeeRouterV4");
   state.conversions ??= { legs: [] };
   state.conversions.harvests ??= [];
   state.conversions.hookSettlements ??= [];
@@ -1641,6 +1642,28 @@ async function conversions() {
     if (!state.conversions.harvests.some((entry) => entry.launchIndex === launchIndex)) {
       state.conversions.harvests.push({ launchIndex, nativeRouted: nativeBalance.toString(), launchTokenCollected: tokenBalance.toString() });
       saveState(state);
+    }
+  }
+  for (const launch of state.launches) {
+    const feeAccount = await publicClient.readContract({
+      address: manifest.contracts.protocolFeeRouter,
+      abi: feeRouterAbi,
+      functionName: "launchAccount",
+      args: [launch.token],
+    });
+    if (feeAccount.pendingBasketNative > 0n) {
+      const account = privateKeyToAccount(
+        accounts[basketConversionActorIndex(launch.index, 0)].privateKey,
+      );
+      await contractTransaction(
+        state,
+        `basket-settle-${launch.index}`,
+        account,
+        manifest.contracts.protocolFeeRouter,
+        feeRouterAbi,
+        "settleBasketFees",
+        [launch.token, feeAccount.pendingBasketNative],
+      );
     }
   }
   for (const launch of state.launches) {
