@@ -1,5 +1,21 @@
 # Project Memory
 
+### 2026-07-27 - Software-wallet-only final acceptance
+
+- Context: The user corrected the final assurance scope after a MetaMask
+  transaction prompt was initiated during browser acceptance.
+- Decision: Do not use MetaMask, Robinhood Wallet, WalletConnect, browser
+  extensions, or other user-controlled wallets for the remaining testnet
+  assurance. Use only the encrypted VM-only campaign wallets and the
+  application's embedded automated wallet test harness.
+- Result: The unsigned MetaMask request was never broadcast; LAN RPC showed
+  equal latest and pending nonces for the connected address. Real-wallet
+  acceptance is explicitly removed from the prerequisites for the ten-hour
+  endurance run.
+- Follow-up: Complete automated wallet-harness acceptance, then start the
+  one-shot ten-accumulated-healthy-hour endurance run from the durable software
+  wallet journal.
+
 ### 2026-07-27 - Final public-testnet lifecycle campaign complete
 
 - Context: Campaign `final-assurance-e458382` ran against the fresh security-remediated chain-46630 deployment through the LAN RPC.
