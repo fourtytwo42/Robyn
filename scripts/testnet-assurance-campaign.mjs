@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import {
   chmodSync,
   mkdirSync,
@@ -481,6 +481,10 @@ async function waitForLaunchAndBind(token, metadata) {
 
 async function init() {
   const manifest = loadManifest();
+  const applicationGitCommit = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  }).trim();
   mkdirSync(stateDir, { recursive: true, mode: 0o700 });
   chmodSync(stateDir, 0o700);
   try {
@@ -498,7 +502,8 @@ async function init() {
   const state = {
     schemaVersion: 1,
     campaignId,
-    releaseSha: manifest.gitCommit,
+    releaseSha: applicationGitCommit,
+    deploymentGitCommit: manifest.gitCommit,
     chainId: 46630,
     walletCount: REQUIRED_WALLET_COUNT,
     actors: publicCampaignAccounts(
@@ -533,8 +538,15 @@ async function verifyRelease(manifest) {
     encoding: "utf8",
   }).trim();
   if (dirty) throw new Error("Campaign requires a clean worktree");
-  if (head !== manifest.gitCommit) {
-    throw new Error("Manifest release SHA does not match the checked-out commit");
+  const deploymentIsAncestor = spawnSync(
+    "git",
+    ["merge-base", "--is-ancestor", manifest.gitCommit, head],
+    { cwd: repoRoot },
+  ).status === 0;
+  if (!deploymentIsAncestor) {
+    throw new Error(
+      "Deployment commit is not an ancestor of the checked-out campaign commit",
+    );
   }
   if (!flag("rehearsal")) {
     execFileSync("git", ["fetch", "origin", "main"], {
@@ -557,13 +569,13 @@ async function verifyRelease(manifest) {
       if (!code || code === "0x") throw new Error(`${name} has no runtime code`);
     }
   }
-  return head;
+  return { applicationGitCommit: head, deploymentGitCommit: manifest.gitCommit };
 }
 
 async function preflight() {
   const manifest = loadManifest();
   const state = loadState();
-  const releaseSha = await verifyRelease(manifest);
+  const release = await verifyRelease(manifest);
   const gasPriceOverride = option("gas-price-wei");
   const l1Override = option("l1-base-fee-wei");
   if (
@@ -627,7 +639,8 @@ async function preflight() {
   }
   state.preflight = {
     checkedAt: new Date().toISOString(),
-    releaseSha,
+    releaseSha: release.applicationGitCommit,
+    deploymentGitCommit: release.deploymentGitCommit,
     chainId: 46630,
     headroomBps: REQUIRED_HEADROOM_BPS.toString(),
     requiredSuccessfulWrites: REQUIRED_SUCCESSFUL_WRITES,
