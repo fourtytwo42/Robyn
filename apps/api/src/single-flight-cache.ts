@@ -47,3 +47,58 @@ export class SingleFlightTtlCache<Value> {
     this.entries.clear();
   }
 }
+
+export class StaleWhileRevalidateCache<Value> {
+  private value: Value | undefined;
+  private refreshedAt = 0;
+  private refresh: Promise<Value> | undefined;
+
+  constructor(
+    private readonly refreshAfterMs: number,
+    private readonly maximumAgeMs: number,
+  ) {
+    if (
+      refreshAfterMs <= 0 ||
+      maximumAgeMs <= 0 ||
+      refreshAfterMs >= maximumAgeMs
+    ) {
+      throw new Error("cache refresh bounds are invalid");
+    }
+  }
+
+  private load(loader: () => Promise<Value>, now: number) {
+    if (this.refresh) return this.refresh;
+    const refresh = loader().then((value) => {
+      this.value = value;
+      this.refreshedAt = now;
+      return value;
+    });
+    this.refresh = refresh;
+    void refresh.then(
+      () => {
+        if (this.refresh === refresh) this.refresh = undefined;
+      },
+      () => {
+        if (this.refresh === refresh) this.refresh = undefined;
+      },
+    );
+    return refresh;
+  }
+
+  async get(loader: () => Promise<Value>, now = Date.now()) {
+    if (this.value === undefined) return this.load(loader, now);
+
+    const age = now - this.refreshedAt;
+    if (age >= this.maximumAgeMs) return this.load(loader, now);
+    if (age >= this.refreshAfterMs) {
+      void this.load(loader, now).catch(() => undefined);
+    }
+    return this.value;
+  }
+
+  clear() {
+    this.value = undefined;
+    this.refreshedAt = 0;
+    this.refresh = undefined;
+  }
+}

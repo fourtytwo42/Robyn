@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { SingleFlightTtlCache } from "../src/single-flight-cache.js";
+import {
+  SingleFlightTtlCache,
+  StaleWhileRevalidateCache,
+} from "../src/single-flight-cache.js";
 
 describe("SingleFlightTtlCache", () => {
   it("coalesces concurrent work and refreshes after expiry", async () => {
@@ -63,5 +66,53 @@ describe("SingleFlightTtlCache", () => {
     const currentLoader = vi.fn(async () => 4);
     await expect(cache.get("current", currentLoader, 1_102)).resolves.toBe(2);
     expect(currentLoader).not.toHaveBeenCalled();
+  });
+});
+
+describe("StaleWhileRevalidateCache", () => {
+  it("serves the last value while one refresh runs in the background", async () => {
+    const cache = new StaleWhileRevalidateCache<number>(100, 500);
+    let resolveRefresh: ((value: number) => void) | undefined;
+    const loader = vi
+      .fn<() => Promise<number>>()
+      .mockResolvedValueOnce(1)
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveRefresh = resolve;
+          }),
+      );
+
+    await expect(cache.get(loader, 1_000)).resolves.toBe(1);
+    await expect(cache.get(loader, 1_101)).resolves.toBe(1);
+    await expect(cache.get(loader, 1_102)).resolves.toBe(1);
+    expect(loader).toHaveBeenCalledTimes(2);
+
+    resolveRefresh?.(2);
+    await vi.waitFor(() => expect(cache.get(loader, 1_103)).resolves.toBe(2));
+  });
+
+  it("blocks for a refresh after the maximum safe age", async () => {
+    const cache = new StaleWhileRevalidateCache<number>(100, 500);
+    const loader = vi
+      .fn<() => Promise<number>>()
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(2);
+
+    await expect(cache.get(loader, 1_000)).resolves.toBe(1);
+    await expect(cache.get(loader, 1_501)).resolves.toBe(2);
+  });
+
+  it("keeps a fresh value when a background refresh fails", async () => {
+    const cache = new StaleWhileRevalidateCache<number>(100, 500);
+    const loader = vi
+      .fn<() => Promise<number>>()
+      .mockResolvedValueOnce(1)
+      .mockRejectedValueOnce(new Error("temporary"));
+
+    await expect(cache.get(loader, 1_000)).resolves.toBe(1);
+    await expect(cache.get(loader, 1_101)).resolves.toBe(1);
+    await vi.waitFor(() => expect(loader).toHaveBeenCalledTimes(2));
+    await expect(cache.get(async () => 2, 1_102)).resolves.toBe(1);
   });
 });

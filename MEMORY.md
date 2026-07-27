@@ -1,10 +1,12 @@
 # Project Memory
 
-### 2026-07-27 - Endurance keeper queue remediation
+### 2026-07-27 - Endurance keeper queue and status-latency remediation
 
-- Context: Run `schema10-e7ea0f4-10h-sw` is paused at 180 preserved healthy
-  seconds after direct BullMQ inspection found failed financial jobs that the
-  API heartbeat did not expose.
+- Context: Run `schema10-e7ea0f4-10h-sw` was paused after direct BullMQ
+  inspection found failed financial jobs that the API heartbeat did not
+  expose. It later accumulated 1,170 healthy seconds on release `b619639` but
+  recurring 1.0 to 4.7 second `/status` responses caused intermittent
+  zero-credit intervals.
 - Cause: The keeper operator was depleted, archived-deployment jobs remained in
   the shared queue, V4 scanner retries were immediate, and retrying jobs whose
   authoritative onchain work had already been consumed were not superseded.
@@ -13,8 +15,21 @@
   under the active endurance evidence directory.
 - Fix: Reject archived jobs, supersede consumed work, back off V4 retries,
   publish queue and operator balance health, and gate endurance on both.
+- Queue result: Release `b619639` is promoted, archived work is removed, active
+  failed work is reconciled without transaction replay, and the queue is empty.
+  Router liabilities are solvent and the operator retains more than its
+  configured safety floor.
+- Status latency cause: `/status` synchronously repeated roughly 100 LAN-RPC
+  invariant reads across every launch, locker, and reward asset on every
+  request. Public pages remained near 130 to 195 ms while the internal status
+  request dominated the endurance p95.
+- Status latency fix: Serve the last verified protocol snapshot while a
+  single-flight background refresh runs. Force a blocking refresh after two
+  minutes so stale health cannot remain indefinitely. Unit tests cover
+  coalescing, background refresh, maximum age, and transient refresh failure.
 - Verification: Full repository tests, 165 Foundry tests, typechecks, lint, and
-  builds pass. Promotion and queue reconciliation remain before journal resume.
+  builds passed for `b619639`; the status-cache change requires its own clean
+  release build, promotion, live latency regression, and journal resume.
 
 ### 2026-07-27 - Software-wallet endurance startup repair
 

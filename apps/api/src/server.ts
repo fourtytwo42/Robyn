@@ -28,7 +28,10 @@ import {
 import { registerCreatorRoutes } from "./creator-routes.js";
 import { registerDaoRoutes } from "./dao-routes.js";
 import { registerCampaignRoutes } from "./campaign-routes.js";
-import { SingleFlightTtlCache } from "./single-flight-cache.js";
+import {
+  SingleFlightTtlCache,
+  StaleWhileRevalidateCache,
+} from "./single-flight-cache.js";
 import {
   AssetCatalogService,
   type AssetCatalogManifest,
@@ -1213,6 +1216,14 @@ async function remediationProtocolState() {
   };
 }
 
+const remediationProtocolStateCache = new StaleWhileRevalidateCache<
+  Awaited<ReturnType<typeof remediationProtocolState>>
+>(10_000, 120_000);
+
+function cachedRemediationProtocolState() {
+  return remediationProtocolStateCache.get(remediationProtocolState);
+}
+
 app.get("/status", async () => {
   const [state, counts, keeper, artifact, protocol] = await Promise.all([
     freshness(),
@@ -1229,7 +1240,7 @@ app.get("/status", async () => {
     ),
     keeperState(),
     artifactState(),
-    remediationProtocolState(),
+    cachedRemediationProtocolState(),
   ]);
   return {
     service: "robyn-api",
