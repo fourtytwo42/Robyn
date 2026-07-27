@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  KeyedStaleWhileRevalidateCache,
   SingleFlightTtlCache,
   StaleWhileRevalidateCache,
 } from "../src/single-flight-cache.js";
@@ -114,5 +115,53 @@ describe("StaleWhileRevalidateCache", () => {
     await expect(cache.get(loader, 1_101)).resolves.toBe(1);
     await vi.waitFor(() => expect(loader).toHaveBeenCalledTimes(2));
     await expect(cache.get(async () => 2, 1_102)).resolves.toBe(1);
+  });
+});
+
+describe("KeyedStaleWhileRevalidateCache", () => {
+  it("refreshes each key in the background without blocking a cached read", async () => {
+    const cache = new KeyedStaleWhileRevalidateCache<string, number>(
+      100,
+      500,
+      2,
+    );
+    let resolveRefresh: ((value: number) => void) | undefined;
+    const firstLoader = vi
+      .fn<() => Promise<number>>()
+      .mockResolvedValueOnce(1)
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveRefresh = resolve;
+          }),
+      );
+
+    await expect(cache.get("first", firstLoader, 1_000)).resolves.toBe(1);
+    await expect(cache.get("second", async () => 2, 1_000)).resolves.toBe(2);
+    await expect(cache.get("first", firstLoader, 1_101)).resolves.toBe(1);
+    expect(firstLoader).toHaveBeenCalledTimes(2);
+
+    resolveRefresh?.(3);
+    await vi.waitFor(() =>
+      expect(cache.get("first", firstLoader, 1_102)).resolves.toBe(3),
+    );
+  });
+
+  it("evicts the least recently used key at its entry bound", async () => {
+    const cache = new KeyedStaleWhileRevalidateCache<string, number>(
+      100,
+      500,
+      2,
+    );
+
+    await cache.get("first", async () => 1, 1_000);
+    await cache.get("second", async () => 2, 1_000);
+    await cache.get("first", async () => 1, 1_001);
+    await cache.get("third", async () => 3, 1_001);
+
+    expect(cache.size).toBe(2);
+    const reload = vi.fn(async () => 4);
+    await expect(cache.get("second", reload, 1_002)).resolves.toBe(4);
+    expect(reload).toHaveBeenCalledOnce();
   });
 });

@@ -29,6 +29,7 @@ import { registerCreatorRoutes } from "./creator-routes.js";
 import { registerDaoRoutes } from "./dao-routes.js";
 import { registerCampaignRoutes } from "./campaign-routes.js";
 import {
+  KeyedStaleWhileRevalidateCache,
   SingleFlightTtlCache,
   StaleWhileRevalidateCache,
 } from "./single-flight-cache.js";
@@ -828,9 +829,10 @@ async function discoveryMetrics(rows: LaunchRow[]) {
   return metrics;
 }
 
-const discoveryMetricsCache = new SingleFlightTtlCache<
+const discoveryMetricsCache = new KeyedStaleWhileRevalidateCache<
+  string,
   Map<string, ReturnType<typeof deriveLaunchAnalytics>>
->(300_000, 4);
+>(60_000, 600_000, 4);
 
 function cachedDiscoveryMetrics(rows: LaunchRow[]) {
   const key = rows

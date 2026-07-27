@@ -1,5 +1,26 @@
 # Project Memory
 
+### 2026-07-27 - Discovery metrics refresh latency remediation
+
+- Context: The ten-hour endurance run reached 5,762.053 healthy seconds on
+  release `905060c`, but one sample every five minutes exceeded the 750 ms API
+  p95 gate. Failed intervals correctly contributed zero healthy time.
+- Cause: The launch-discovery metrics cache expired synchronously every 300
+  seconds. Concurrent Home and Markets requests then recomputed all launch
+  metrics through the LAN RPC, producing 0.8 to 2.0 second responses.
+- Fix: Use a bounded keyed stale-while-revalidate cache for discovery metrics.
+  Cached requests remain non-blocking while each launch-set key refreshes in
+  the background after 60 seconds, with a 10-minute maximum age and four-entry
+  least-recently-used bound.
+- Evidence: The runner was stopped before modification and raw samples were
+  preserved under `/var/lib/robyn/testnet-endurance/active/` with the
+  `samples-before-status-refresh-remediation-*` prefix.
+- Commands/tests: API tests 60/60, repository lint and typecheck, API build,
+  formatting, and `git diff --check` pass.
+- Follow-up: Commit and push, build and promote the exact release, verify
+  repeated five-minute boundaries remain below 750 ms, then resume the same
+  confirmed transaction journal without replay.
+
 ### 2026-07-27 - Endurance keeper queue and status-latency remediation
 
 - Context: Run `schema10-e7ea0f4-10h-sw` was paused after direct BullMQ

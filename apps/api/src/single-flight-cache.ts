@@ -102,3 +102,50 @@ export class StaleWhileRevalidateCache<Value> {
     this.refresh = undefined;
   }
 }
+
+export class KeyedStaleWhileRevalidateCache<Key, Value> {
+  private readonly entries = new Map<Key, StaleWhileRevalidateCache<Value>>();
+
+  constructor(
+    private readonly refreshAfterMs: number,
+    private readonly maximumAgeMs: number,
+    private readonly maximumEntries = 32,
+  ) {
+    if (
+      refreshAfterMs <= 0 ||
+      maximumAgeMs <= 0 ||
+      refreshAfterMs >= maximumAgeMs ||
+      maximumEntries <= 0
+    ) {
+      throw new Error("keyed cache bounds are invalid");
+    }
+  }
+
+  get size() {
+    return this.entries.size;
+  }
+
+  get(key: Key, loader: () => Promise<Value>, now = Date.now()) {
+    let cache = this.entries.get(key);
+    if (cache) {
+      this.entries.delete(key);
+      this.entries.set(key, cache);
+    } else {
+      while (this.entries.size >= this.maximumEntries) {
+        const oldest = this.entries.keys().next().value;
+        if (oldest === undefined) break;
+        this.entries.delete(oldest);
+      }
+      cache = new StaleWhileRevalidateCache<Value>(
+        this.refreshAfterMs,
+        this.maximumAgeMs,
+      );
+      this.entries.set(key, cache);
+    }
+    return cache.get(loader, now);
+  }
+
+  clear() {
+    this.entries.clear();
+  }
+}
