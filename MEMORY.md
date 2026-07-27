@@ -1,6 +1,19 @@
 # Project Memory
 
 Durable project context lives here. Update this file whenever information should survive chat context compression or future agent handoff.
+- Fresh final-assurance testnet deployment 2026-07-27: exact source commit
+  `e6dd172e3f77dcbf8be2c7197d007b66295ad504` was broadcast only to
+  Robinhood Testnet chain 46630. Deployment begins at block 93,808,580 and
+  genesis completed at block 93,808,760. The canonical coordinator is
+  `0x63BBC689a217BD6bF3a13EE0f07123FF734E177E`, fee router is
+  `0x8715C2c1664b70e0d713162fa5Df70811dC159ad`, phase/fee hook is
+  `0x40989ED86f75Ec4177A8aFa024D90B4ad499D8E4`, and asset router is
+  `0x29927d799a5c293BFDb6Fd77d8864Bd92B604F0B`. LAN and official public RPC
+  verification both have zero failures. Manifest SHA-256 is
+  `6b9bb8fec2c973e055d105cd9caa0378134e03c97bcdaad2700505982c999a0d`.
+  Wallet balance after deployment is 0.009913879590852215 testnet ETH. The
+  public application remains on the predecessor until campaign and index gates
+  pass.
 - Final fork-rehearsal correction 2026-07-27: the schema-10 smoke harness
   still assumed synchronous basket/DAO/treasury delivery and immediate holder
   rewards. The remediated router is accounting-only and holder rewards stream
