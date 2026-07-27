@@ -10,6 +10,10 @@ import { INativeFeeConverter } from "../src/dao/INativeFeeConverter.sol";
 import { RobynDaoToken } from "../src/dao/RobynDaoToken.sol";
 import { RobynProtocolFeeRouter } from "../src/dao/RobynProtocolFeeRouter.sol";
 
+interface DaoFeesVm {
+    function warp(uint256 timestamp) external;
+}
+
 contract DaoFeeMockERC20 is ERC20 {
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) { }
 
@@ -121,6 +125,8 @@ contract DaoFeeActor {
 }
 
 contract DaoFeesTest {
+    DaoFeesVm private constant vm =
+        DaoFeesVm(address(uint160(uint256(keccak256("hevm cheat code")))));
     DaoFeeActor private member;
     DaoFeeActor private secondMember;
     DaoFeeActor private treasury;
@@ -200,6 +206,7 @@ contract DaoFeesTest {
 
         uint256 treasuryBefore = address(treasury).balance;
         router.convertPendingToNative(launchToken, 500 ether, 500 ether, block.timestamp + 1);
+        vm.warp(block.timestamp + 7 days);
         account = router.launchAccount(address(launchToken));
         require(account.claimableCreatorNative == 250 ether, "creator native");
         require(account.cumulativeCreatorNative == 250 ether, "creator lifetime");

@@ -393,23 +393,31 @@ fi
 deploy_contract launchDeployer \
   src/uniswap/RobynNativeLaunchDeployerV4.sol:RobynNativeLaunchDeployerV4
 launch_deployer="${addresses[launchDeployer]}"
+deploy_contract vaultDeployer \
+  src/uniswap/RobynNativeVaultDeployerV4.sol:RobynNativeVaultDeployerV4
+vault_deployer="${addresses[vaultDeployer]}"
 deploy_contract launchFactory \
   src/uniswap/RobynNativeLaunchFactoryV4.sol:RobynNativeLaunchFactoryV4 \
-  "$asset_router" "$launch_deployer" 1 3600
+  "$asset_router" "$launch_deployer" "$vault_deployer" 1 3600
 launch_factory="${addresses[launchFactory]}"
 send_transaction "$launch_deployer" 'bindController(address)' "$launch_factory" >/dev/null
+send_transaction "$vault_deployer" 'bindController(address)' "$launch_factory" >/dev/null
 
 deploy_contract feeRouter \
-  src/uniswap/RobynNativeProtocolFeeRouterV3.sol:RobynNativeProtocolFeeRouterV3 \
+  src/uniswap/RobynNativeProtocolFeeRouterV4.sol:RobynNativeProtocolFeeRouterV4 \
   "$dao_token" "$asset_router" "$timelock" "$guardian"
 fee_router="${addresses[feeRouter]}"
 
-hook_artifact="packages/contracts/out/RobynV4OracleHook.sol/RobynV4OracleHook.json"
+deploy_contract tokenSink \
+  src/RobynTokenSink.sol:RobynTokenSink
+token_sink="${addresses[tokenSink]}"
+
+hook_artifact="packages/contracts/out/RobynV4FeeAndPhaseHook.sol/RobynV4FeeAndPhaseHook.json"
 hook_bytecode="$(jq -er '.bytecode.object' "$hook_artifact")"
-hook_domain="$(cast keccak "sherwood-forest-v4-schema9:$(git rev-parse HEAD)")"
+hook_domain="$(cast keccak "sherwood-forest-v4-security-remediation:$(git rev-parse HEAD)")"
 hook_args="$(
-  cast abi-encode 'constructor(address,address,address,bytes32)' \
-    "$pool_manager" "$fee_router" "$deployer" "$hook_domain"
+  cast abi-encode 'constructor(address,address,address,address,bytes32)' \
+    "$pool_manager" "$fee_router" "$deployer" "$position_manager" "$hook_domain"
 )"
 hook_init_code="${hook_bytecode}${hook_args#0x}"
 hook_mining="$(node scripts/mine-v4-hook-salt.mjs "$create2_deployer" "$hook_init_code")"
@@ -441,12 +449,14 @@ hook_initializer="$(
 
 curve_tokens="800000000000000000000000000"
 graduation_tokens="200000000000000000000000000"
-virtual_tokens="1100000000000000000000000000"
+virtual_tokens="1066666666666666666666666666"
 virtual_native="500000000000000"
-threshold_native="1400000000000000"
+threshold_native="1500000000000001"
 curve_fee_bps="100"
 minimum_use_bps="9900"
 maximum_native_swap="250000000000000"
+maximum_native_residual="1000000000"
+maximum_token_residual="1000000000000"
 curve="($curve_tokens,$graduation_tokens,$virtual_tokens,$virtual_native,$threshold_native,$curve_fee_bps,$maximum_native_swap)"
 deploy_contract adapterDeployer \
   src/uniswap/RobynV4AdapterDeployer.sol:RobynV4AdapterDeployer
@@ -457,10 +467,11 @@ locker_deployer="${addresses[lockerDeployer]}"
 deploy_contract marketDeployer \
   src/uniswap/RobynV4MarketDeployer.sol:RobynV4MarketDeployer
 market_deployer="${addresses[marketDeployer]}"
-dependencies="($launch_factory,$fee_router,$asset_router,$hook,$pool_manager,$position_manager,$permit2,$state_view,$adapter_deployer,$locker_deployer,$market_deployer)"
+dependencies="($launch_factory,$fee_router,$asset_router,$hook,$pool_manager,$position_manager,$permit2,$state_view,$adapter_deployer,$locker_deployer,$market_deployer,$token_sink)"
 deploy_contract marketFactory \
   src/uniswap/RobynV4MarketFactory.sol:RobynV4MarketFactory \
-  "$dependencies" "$curve" "$minimum_use_bps" "$maximum_native_swap"
+  "$dependencies" "$curve" "$minimum_use_bps" "$maximum_native_swap" \
+  "$maximum_native_residual" "$maximum_token_residual"
 market_factory="${addresses[marketFactory]}"
 send_transaction "$adapter_deployer" 'bindController(address)' "$market_factory" >/dev/null
 send_transaction "$locker_deployer" 'bindController(address)' "$market_factory" >/dev/null
@@ -476,7 +487,7 @@ send_transaction "$launch_factory" 'bindCoordinator(address)' "$coordinator" >/d
 send_transaction "$market_factory" 'bindCoordinator(address)' "$coordinator" >/dev/null
 send_transaction "$fee_router" 'bindCoordinator(address)' "$coordinator" >/dev/null
 
-exclusions="[$timelock,$fee_router,$governor,$coordinator,$market_factory,$launch_factory,$launch_deployer,$asset_router,$hook,$adapter_deployer,$locker_deployer,$market_deployer,$test_asset_liquidity_locker]"
+exclusions="[$timelock,$fee_router,$governor,$coordinator,$market_factory,$launch_factory,$launch_deployer,$vault_deployer,$asset_router,$hook,$adapter_deployer,$locker_deployer,$market_deployer,$test_asset_liquidity_locker,$token_sink]"
 send_transaction "$dao_token" 'sealRewardExclusions(address[])' "$exclusions" >/dev/null
 send_transaction "$dao_token" 'bindRewardDepositor(address)' "$fee_router" >/dev/null
 
@@ -613,6 +624,7 @@ deployment_transactions="$(
     --arg assetRouter "${txs[assetRouter]}" \
     --arg testAssetLiquidityLocker "${txs[testAssetLiquidityLocker]:-}" \
     --arg launchDeployer "${txs[launchDeployer]}" \
+    --arg vaultDeployer "${txs[vaultDeployer]}" \
     --arg launchFactory "${txs[launchFactory]}" \
     --arg protocolFeeRouter "${txs[feeRouter]}" \
     --arg oracleHook "${txs[oracleHook]}" \
@@ -630,6 +642,7 @@ deployment_transactions="$(
       assetRouter: $assetRouter,
       testAssetLiquidityLocker: $testAssetLiquidityLocker,
       launchDeployer: $launchDeployer,
+      vaultDeployer: $vaultDeployer,
       launchFactory: $launchFactory,
       protocolFeeRouter: $protocolFeeRouter,
       oracleHook: $oracleHook,
@@ -653,6 +666,7 @@ runtime_hashes="$(
     --arg assetRouter "$(runtime_code_hash "$asset_router")" \
     --arg testAssetLiquidityLocker "$(runtime_code_hash "$test_asset_liquidity_locker")" \
     --arg launchDeployer "$(runtime_code_hash "$launch_deployer")" \
+    --arg vaultDeployer "$(runtime_code_hash "$vault_deployer")" \
     --arg launchFactory "$(runtime_code_hash "$launch_factory")" \
     --arg protocolFeeRouter "$(runtime_code_hash "$fee_router")" \
     --arg oracleHook "$(runtime_code_hash "$hook")" \
@@ -674,6 +688,7 @@ runtime_hashes="$(
       assetRouter: $assetRouter,
       testAssetLiquidityLocker: $testAssetLiquidityLocker,
       launchDeployer: $launchDeployer,
+      vaultDeployer: $vaultDeployer,
       launchFactory: $launchFactory,
       protocolFeeRouter: $protocolFeeRouter,
       oracleHook: $oracleHook,
@@ -697,7 +712,7 @@ archived_predecessor_sha="$(
   fi
 )"
 jq -n \
-  --argjson schemaVersion 9 \
+  --argjson schemaVersion 10 \
   --arg environment "$([[ "$rehearsal" == "true" ]] && echo robinhood-testnet-fork-rehearsal || echo robinhood-testnet)" \
   --argjson chainId 46630 \
   --argjson deploymentBlock "$deployment_block" \
@@ -720,6 +735,7 @@ jq -n \
   --arg assetRouter "$asset_router" \
   --arg testAssetLiquidityLocker "$test_asset_liquidity_locker" \
   --arg launchDeployer "$launch_deployer" \
+  --arg vaultDeployer "$vault_deployer" \
   --arg launchFactory "$launch_factory" \
   --arg feeRouter "$fee_router" \
   --arg oracleHook "$hook" \
@@ -730,6 +746,7 @@ jq -n \
   --arg marketDeployer "$market_deployer" \
   --arg marketFactory "$market_factory" \
   --arg coordinator "$coordinator" \
+  --arg tokenSink "$token_sink" \
   --argjson genesis "$launch" \
   --argjson deploymentTransactions "$deployment_transactions" \
   --argjson configurationTransactions "$configuration_transactions" \
@@ -741,6 +758,8 @@ jq -n \
   --arg thresholdNative "$threshold_native" \
   --arg maximumCurvePurchase "$maximum_native_swap" \
   --arg maximumNativeSwap "$maximum_native_swap" \
+  --arg maximumNativeResidual "$maximum_native_residual" \
+  --arg maximumTokenResidual "$maximum_token_residual" \
   '{
     schemaVersion: $schemaVersion,
     environment: $environment,
@@ -790,6 +809,7 @@ jq -n \
       assetRouter: $assetRouter,
       testAssetLiquidityLocker: $testAssetLiquidityLocker,
       launchDeployer: $launchDeployer,
+      vaultDeployer: $vaultDeployer,
       launchFactory: $launchFactory,
       protocolFeeRouter: $feeRouter,
       oracleHook: $oracleHook,
@@ -798,6 +818,7 @@ jq -n \
       marketDeployer: $marketDeployer,
       marketFactory: $marketFactory,
       atomicLaunchCoordinator: $coordinator,
+      tokenSink: $tokenSink,
       guardian: $guardian,
       nativeFeeConverter: "0x0000000000000000000000000000000000000000",
       genesisToken: $genesis.token,
@@ -813,8 +834,9 @@ jq -n \
       create2Deployer: "0x4e59b44847b379578588920cA78FbF26c0B4956C",
       salt: $hookSalt,
       deploymentDomain: $hookDomain,
-      permissionBits: "0x1044",
-      behavior: "immutable-1pct-fee-and-oracle",
+      permissionBits: "0x18e4",
+      behavior: "immutable-phase-gated-1pct-fee-and-post-graduation-oracle",
+      phases: ["Bonding", "Graduating", "Trading"],
       protocolFeeBps: 100
     },
     dao: {
@@ -822,6 +844,8 @@ jq -n \
       tokenSymbol: "RDAO",
       fixedSupply: "1000000000000000000000000000",
       initialOwnerShareBps: 10000,
+      rewardStreamDurationSeconds: 604800,
+      zeroEligibleSupplyPolicy: "queue-until-eligible-supply-returns",
       feePolicy: {
         basketBps: 5000,
         creatorBps: 2500,
@@ -851,7 +875,23 @@ jq -n \
       graduationThresholdNative: $thresholdNative,
       maximumCurvePurchase: $maximumCurvePurchase,
       minimumUseBps: 9900,
-      maximumNativeSwap: $maximumNativeSwap
+      maximumNativeSwap: $maximumNativeSwap,
+      maximumNativeResidual: $maximumNativeResidual,
+      maximumTokenResidual: $maximumTokenResidual,
+      residualPolicy: "tracked-principal-dust-never-routed-or-converted",
+      unattributedNativePolicy: "permissionless-sweep-to-timelock",
+      unattributedLaunchTokenPolicy: "permissionless-sweep-to-immutable-token-sink"
+    },
+    liabilityModel: {
+      intake: "accounting-only",
+      allocationBps: {
+        basket: 5000,
+        creator: 2500,
+        dao: 2000,
+        treasury: 500
+      },
+      settlement: "permissionless-and-destination-isolated",
+      solvencyIncludes: ["basket", "creator", "dao", "treasury"]
     },
     genesis: $genesis
   }' >"$tmp"

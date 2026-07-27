@@ -2,7 +2,7 @@
 import process from "node:process";
 import { concatHex, getAddress, keccak256, numberToHex, sliceHex } from "viem";
 
-const [deployerInput, initCode, flagsInput = "0x1044"] = process.argv.slice(2);
+const [deployerInput, initCode, flagsInput = "0x18e4"] = process.argv.slice(2);
 if (!deployerInput || !initCode?.startsWith("0x")) {
   throw new Error("usage: mine-v4-hook-salt.mjs <create2-deployer> <init-code> [flags]");
 }

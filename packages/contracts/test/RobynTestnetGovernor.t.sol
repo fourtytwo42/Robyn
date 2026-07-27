@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
-import {RobynDaoToken} from "../src/dao/RobynDaoToken.sol";
-import {RobynTestnetGovernor} from "../src/dao/RobynTestnetGovernor.sol";
-import {DaoGovernedValue} from "./DaoGovernance.t.sol";
+import { TimelockController } from "@openzeppelin/contracts/governance/TimelockController.sol";
+import { RobynDaoToken } from "../src/dao/RobynDaoToken.sol";
+import { RobynTestnetGovernor } from "../src/dao/RobynTestnetGovernor.sol";
+import { DaoGovernedValue } from "./DaoGovernance.t.sol";
 
 interface TestnetGovernorVm {
     function prank(address caller) external;
@@ -12,7 +12,8 @@ interface TestnetGovernorVm {
 }
 
 contract RobynTestnetGovernorTest {
-    TestnetGovernorVm private constant vm = TestnetGovernorVm(address(uint160(uint256(keccak256("hevm cheat code")))));
+    TestnetGovernorVm private constant vm =
+        TestnetGovernorVm(address(uint160(uint256(keccak256("hevm cheat code")))));
     address private constant GUARDIAN = address(0xCAFE);
 
     RobynDaoToken private token;
@@ -46,7 +47,8 @@ contract RobynTestnetGovernorTest {
         require(governor.quorumNumerator() == 10, "quorum");
         require(timelock.getMinDelay() == 10 minutes, "timelock");
 
-        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas) = _proposal(42);
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas) =
+            _proposal(42);
         string memory description = "Testnet assurance execution";
         uint256 proposalId = governor.propose(targets, values, calldatas, description);
         require(uint8(governor.state(proposalId)) == 0, "pending");
@@ -60,7 +62,7 @@ contract RobynTestnetGovernorTest {
         require(uint8(governor.state(proposalId)) == 5, "queued");
         try governor.execute(targets, values, calldatas, descriptionHash) {
             revert("early execution accepted");
-        } catch {}
+        } catch { }
         vm.warp(block.timestamp + 10 minutes + 1);
         governor.execute(targets, values, calldatas, descriptionHash);
         require(target.value() == 42, "not executed");
@@ -78,7 +80,8 @@ contract RobynTestnetGovernorTest {
         governor.queue(targets, values, calldatas, descriptionHash);
 
         bytes32 operationSalt = bytes20(address(governor)) ^ descriptionHash;
-        bytes32 operationId = timelock.hashOperationBatch(targets, values, calldatas, bytes32(0), operationSalt);
+        bytes32 operationId =
+            timelock.hashOperationBatch(targets, values, calldatas, bytes32(0), operationSalt);
         vm.prank(GUARDIAN);
         timelock.cancel(operationId);
         require(uint8(governor.state(proposalId)) == 2, "not canceled");

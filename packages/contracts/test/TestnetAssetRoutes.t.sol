@@ -48,7 +48,9 @@ contract TestnetAssetRoutesTest {
             router.routeStatus(address(base), address(reward));
         require(status.ready, "route not ready");
         require(status.kind == IRobynRouteRegistry.RouteKind.FixedTestnet, "route kind");
-        require(router.quoteExactInput(address(base), address(reward), 200 ether) == 1 ether, "quote");
+        require(
+            router.quoteExactInput(address(base), address(reward), 200 ether) == 1 ether, "quote"
+        );
 
         base.approve(address(router), 200 ether);
         uint256 output = router.swapExactInput(
@@ -69,31 +71,35 @@ contract TestnetAssetRoutesTest {
         factory.requireBasketRoutes(assets);
 
         router.setRoutePaused(address(base), address(reward), true);
-        (bool pausedOk,) = address(factory).call(abi.encodeCall(factory.requireBasketRoutes, (assets)));
+        (bool pausedOk,) =
+            address(factory).call(abi.encodeCall(factory.requireBasketRoutes, (assets)));
         require(!pausedOk, "paused route accepted");
 
         assets[0] = address(0xBEEF);
-        (bool missingOk,) = address(factory).call(abi.encodeCall(factory.requireBasketRoutes, (assets)));
+        (bool missingOk,) =
+            address(factory).call(abi.encodeCall(factory.requireBasketRoutes, (assets)));
         require(!missingOk, "missing route accepted");
     }
 
     function testFixedRouteRejectsExpiredAndUnavailableSwaps() public {
         base.approve(address(router), 1 ether);
-        (bool expiredOk,) = address(router).call(
-            abi.encodeCall(
-                router.swapExactInput,
-                (address(base), address(reward), 1 ether, 1, address(this), 0)
-            )
-        );
+        (bool expiredOk,) = address(router)
+            .call(
+                abi.encodeCall(
+                    router.swapExactInput,
+                    (address(base), address(reward), 1 ether, 1, address(this), 0)
+                )
+            );
         require(!expiredOk, "expired swap accepted");
 
         router.setRoutePaused(address(base), address(reward), true);
-        (bool pausedOk,) = address(router).call(
-            abi.encodeCall(
-                router.swapExactInput,
-                (address(base), address(reward), 1 ether, 1, address(this), block.timestamp + 1)
-            )
-        );
+        (bool pausedOk,) = address(router)
+            .call(
+                abi.encodeCall(
+                    router.swapExactInput,
+                    (address(base), address(reward), 1 ether, 1, address(this), block.timestamp + 1)
+                )
+            );
         require(!pausedOk, "paused swap accepted");
     }
 }

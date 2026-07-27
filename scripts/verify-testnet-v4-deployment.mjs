@@ -40,6 +40,7 @@ const requiredContracts = [
   "daoToken",
   "governor",
   "launchDeployer",
+  "vaultDeployer",
   "launchFactory",
   "marketFactory",
   "oracleHook",
@@ -48,6 +49,7 @@ const requiredContracts = [
   "stateView",
   "testAssetLiquidityLocker",
   "timelock",
+  "tokenSink",
   "universalRouter",
 ];
 for (const key of requiredContracts) {
@@ -75,7 +77,7 @@ check(
   manifest.venueProvenance === "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
   "unlisted venue disclosure is exact",
 );
-check(manifest.schemaVersion === 9, "deployment manifest schema is v9");
+check(manifest.schemaVersion === 10, "deployment manifest schema is v10");
 check(
   manifest.kingOfForestPolicy?.version === "forest-v1" &&
     manifest.kingOfForestPolicy?.activationBlock === manifest.deploymentBlock &&
@@ -147,9 +149,11 @@ const abis = {
   assetRouter: await artifactAbi("RobynV4AssetRouter"),
   testAssetLiquidityLocker: await artifactAbi("RobynV4TestAssetLiquidityLocker"),
   launchDeployer: await artifactAbi("RobynNativeLaunchDeployerV4"),
+  vaultDeployer: await artifactAbi("RobynNativeVaultDeployerV4"),
   launchFactory: await artifactAbi("RobynNativeLaunchFactoryV4"),
-  feeRouter: await artifactAbi("RobynNativeProtocolFeeRouterV3"),
-  hook: await artifactAbi("RobynV4OracleHook"),
+  feeRouter: await artifactAbi("RobynNativeProtocolFeeRouterV4"),
+  hook: await artifactAbi("RobynV4FeeAndPhaseHook"),
+  tokenSink: await artifactAbi("RobynTokenSink"),
   adapterDeployer: await artifactAbi("RobynV4AdapterDeployer"),
   lockerDeployer: await artifactAbi("RobynV4LockerDeployer"),
   marketDeployer: await artifactAbi("RobynV4MarketDeployer"),
@@ -273,6 +277,21 @@ check(
   "launch deployer controller is the launch factory",
 );
 check(
+  getAddress(await read(contracts.vaultDeployer, abis.vaultDeployer, "controller")) ===
+    contracts.launchFactory,
+  "vault deployer controller is the launch factory",
+);
+check(
+  getAddress(await read(contracts.launchFactory, abis.launchFactory, "launchDeployer")) ===
+    contracts.launchDeployer,
+  "launch factory references the token deployer",
+);
+check(
+  getAddress(await read(contracts.launchFactory, abis.launchFactory, "vaultDeployer")) ===
+    contracts.vaultDeployer,
+  "launch factory references the vault deployer",
+);
+check(
   getAddress(await read(contracts.launchFactory, abis.launchFactory, "coordinator")) ===
     contracts.atomicLaunchCoordinator,
   "launch factory coordinator is bound",
@@ -299,7 +318,7 @@ check(
 check(
   getAddress(await read(contracts.oracleHook, abis.hook, "feeRouter")) ===
     contracts.protocolFeeRouter,
-  "fee-and-oracle hook references the canonical fee router",
+  "phase-aware fee hook references the canonical fee router",
 );
 check(
   (await read(contracts.oracleHook, abis.hook, "PROTOCOL_FEE_BPS")) === 100,
@@ -321,6 +340,16 @@ check(
   "market factory enforces the manifest graduated swap cap",
 );
 check(
+  (await read(contracts.marketFactory, abis.marketFactory, "maximumNativeResidual")) ===
+    BigInt(manifest.market.maximumNativeResidual),
+  "market factory enforces the manifest native residual ceiling",
+);
+check(
+  (await read(contracts.marketFactory, abis.marketFactory, "maximumTokenResidual")) ===
+    BigInt(manifest.market.maximumTokenResidual),
+  "market factory enforces the manifest token residual ceiling",
+);
+check(
   (await read(contracts.oracleHook, abis.hook, "deploymentDomain")) ===
     manifest.oracleHook.deploymentDomain,
   "oracle-hook deployment domain matches manifest",
@@ -332,8 +361,13 @@ for (const key of ["adapterDeployer", "lockerDeployer", "marketDeployer"]) {
   );
 }
 check(
-  (BigInt(contracts.oracleHook) & 0x3fffn) === 0x1044n,
+  (BigInt(contracts.oracleHook) & 0x3fffn) === 0x18e4n,
   "oracle-hook address exposes only required permission bits",
+);
+check(
+  manifest.oracleHook.permissionBits === "0x18e4" &&
+    manifest.oracleHook.phases?.join(",") === "Bonding,Graduating,Trading",
+  "manifest freezes the immutable phase-aware hook policy",
 );
 
 const fixedSupply = 1_000_000_000n * 10n ** 18n;
@@ -359,12 +393,14 @@ for (const key of [
   "marketFactory",
   "launchFactory",
   "launchDeployer",
+  "vaultDeployer",
   "assetRouter",
   "oracleHook",
   "adapterDeployer",
   "lockerDeployer",
   "marketDeployer",
   "testAssetLiquidityLocker",
+  "tokenSink",
 ]) {
   check(
     await read(contracts.daoToken, abis.daoToken, "isRewardExcluded", [contracts[key]]),
@@ -485,6 +521,10 @@ check(
 check(
   await read(contracts.oracleHook, abis.hook, "registeredPool", [genesis.poolId]),
   "genesis pool is registered in the oracle hook",
+);
+check(
+  (await read(contracts.oracleHook, abis.hook, "poolPhase", [genesis.poolId])) === 1,
+  "genesis pool begins in the immutable Bonding phase",
 );
 const genesisFeeAccount = await read(
   contracts.protocolFeeRouter,

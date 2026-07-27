@@ -513,11 +513,11 @@ async function waitForLaunchAndBind(token, metadata) {
 const coordinatorAbi = artifactAbi("RobynV4LaunchCoordinatorV5");
 const marketAbi = artifactAbi("RobynV4BondingCurveMarket");
 const tokenAbi = artifactAbi("RobynLaunchToken");
-const feeRouterAbi = artifactAbi("RobynNativeProtocolFeeRouterV3");
+const feeRouterAbi = artifactAbi("RobynNativeProtocolFeeRouterV4");
 const daoAbi = artifactAbi("RobynDaoToken");
 const governorAbi = artifactAbi("RobynTestnetGovernor");
 const assetRouterAbi = artifactAbi("RobynV4AssetRouter");
-const hookAbi = artifactAbi("RobynV4OracleHook");
+const hookAbi = artifactAbi("RobynV4FeeAndPhaseHook");
 const lockerAbi = artifactAbi("RobynV4FeePositionLocker");
 
 async function createEnduranceLaunch(index) {

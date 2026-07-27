@@ -7,7 +7,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { RobynLaunchToken } from "../RobynLaunchToken.sol";
 import { RobynNativeBasketVaultV2 } from "./RobynNativeBasketVaultV2.sol";
-import { RobynNativeProtocolFeeRouterV3 } from "./RobynNativeProtocolFeeRouterV3.sol";
+import { RobynNativeProtocolFeeRouterV4 } from "./RobynNativeProtocolFeeRouterV4.sol";
 import { RobynV4GraduationAdapter } from "./RobynV4GraduationAdapter.sol";
 
 /// @notice Native-ETH bonding curve that atomically graduates into locked v4 liquidity.
@@ -50,7 +50,7 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
     uint256 public immutable maximumCurvePurchase;
     uint16 public immutable feeBps;
     RobynV4GraduationAdapter public immutable graduationAdapter;
-    RobynNativeProtocolFeeRouterV3 public feeRouter;
+    RobynNativeProtocolFeeRouterV4 public feeRouter;
 
     uint256 public virtualTokenReserve;
     uint256 public virtualNativeReserve;
@@ -119,7 +119,7 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         if (msg.sender != address(graduationAdapter)) revert Unauthorized();
     }
 
-    function bindFeeRouter(RobynNativeProtocolFeeRouterV3 feeRouter_) external {
+    function bindFeeRouter(RobynNativeProtocolFeeRouterV4 feeRouter_) external {
         if (msg.sender != seedAuthority && msg.sender != graduationAdapter.marketBindingAuthority())
         {
             revert Unauthorized();

@@ -49,7 +49,20 @@ type DaoOverview = {
   eligibleRewardSupply: string;
   totalRewardsDeposited: string;
   totalRewardsClaimed: string;
+  rewardStream: {
+    queued: string;
+    streaming: string;
+    vested: string;
+    claimed: string;
+    ratePerSecond: string;
+    streamEnd: string;
+  };
   pendingCreatorLiability: string;
+  pendingBasketLiability: string;
+  pendingDaoLiability: string;
+  pendingTreasuryLiability: string;
+  totalNativeLiabilities: string;
+  unattributedNative: string;
   totalDaoNativeRewards: string;
   totalTreasuryNative: string;
   treasuryBalance: string;
@@ -69,6 +82,8 @@ type DaoOverview = {
     cumulativeHookLaunchFeesConverted?: string;
     pendingHookNative?: string;
     pendingHookToken?: string;
+    pendingBasketNative?: string;
+    cumulativeBasketNativeSettled?: string;
     cumulativeNativeConverted: string;
   }>;
   governance: {
@@ -450,9 +465,40 @@ export function DaoView({
               claimable
             </h2>
             <p>
-              Rewards already accrued remain yours after transferring governance
-              tokens. Future deposits follow the new holder.
+              Rewards vest continuously over seven days. Accrued rewards remain
+              yours after transferring governance tokens, while future vesting
+              follows current balances.
             </p>
+            <dl className="dao-definition-list">
+              <div>
+                <dt>Streaming</dt>
+                <dd>{tokenAmount(overview.rewardStream.streaming, 6)} ETH</dd>
+              </div>
+              <div>
+                <dt>Estimated daily vesting</dt>
+                <dd>
+                  {tokenAmount(
+                    (BigInt(overview.rewardStream.streaming) / 7n).toString(),
+                    6,
+                  )}{" "}
+                  ETH
+                </dd>
+              </div>
+              <div>
+                <dt>Queued</dt>
+                <dd>{tokenAmount(overview.rewardStream.queued, 6)} ETH</dd>
+              </div>
+              <div>
+                <dt>Stream completion</dt>
+                <dd>
+                  {Number(overview.rewardStream.streamEnd) > 0
+                    ? new Date(
+                        Number(overview.rewardStream.streamEnd) * 1000,
+                      ).toLocaleString()
+                    : "No active stream"}
+                </dd>
+              </div>
+            </dl>
             <div className="action-row">
               <button
                 className="button primary"
@@ -799,7 +845,13 @@ export function DaoView({
                   </span>
                   <span>
                     {deployment.liquidityVenue === "uniswap-v4"
-                      ? `${tokenAmount(fees.pendingHookNative ?? "0", 5)} ETH + ${tokenAmount(fees.pendingHookToken ?? "0", 4)} token`
+                      ? `${tokenAmount(
+                          (
+                            BigInt(fees.pendingHookNative ?? "0") +
+                            BigInt(fees.pendingBasketNative ?? "0")
+                          ).toString(),
+                          5,
+                        )} ETH + ${tokenAmount(fees.pendingHookToken ?? "0", 4)} token`
                       : tokenAmount(
                           (
                             BigInt(fees.pendingCreatorBase) +

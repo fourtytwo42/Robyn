@@ -1,50 +1,51 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {Test} from "forge-std/Test.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
-import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
-import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
-import {SqrtPriceMath} from "@uniswap/v4-core/src/libraries/SqrtPriceMath.sol";
-import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
-import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
-import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
-import {ModifyLiquidityParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
-import {IStateView} from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
-import {IV4Quoter} from "@uniswap/v4-periphery/src/interfaces/IV4Quoter.sol";
-import {HookMiner} from "@uniswap/v4-periphery/src/utils/HookMiner.sol";
-import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
-import {RobynLaunchToken} from "../src/RobynLaunchToken.sol";
-import {RobynDaoToken} from "../src/dao/RobynDaoToken.sol";
-import {RobynNativeBasketVaultV2} from "../src/uniswap/RobynNativeBasketVaultV2.sol";
-import {RobynNativeLaunchDeployerV4} from "../src/uniswap/RobynNativeLaunchDeployerV4.sol";
-import {RobynNativeLaunchFactoryV4} from "../src/uniswap/RobynNativeLaunchFactoryV4.sol";
-import {RobynNativeProtocolFeeRouterV3} from "../src/uniswap/RobynNativeProtocolFeeRouterV3.sol";
-import {RobynV4AssetRouter} from "../src/uniswap/RobynV4AssetRouter.sol";
-import {RobynV4AdapterDeployer} from "../src/uniswap/RobynV4AdapterDeployer.sol";
-import {RobynV4BondingCurveMarket} from "../src/uniswap/RobynV4BondingCurveMarket.sol";
-import {RobynV4FeePositionLocker} from "../src/uniswap/RobynV4FeePositionLocker.sol";
-import {RobynV4LaunchCoordinatorV5} from "../src/uniswap/RobynV4LaunchCoordinatorV5.sol";
-import {RobynV4LockerDeployer} from "../src/uniswap/RobynV4LockerDeployer.sol";
-import {RobynV4MarketDeployer} from "../src/uniswap/RobynV4MarketDeployer.sol";
-import {RobynV4MarketFactory} from "../src/uniswap/RobynV4MarketFactory.sol";
-import {RobynV4OracleHook} from "../src/uniswap/RobynV4OracleHook.sol";
+import { Test } from "forge-std/Test.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IPoolManager } from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import { IHooks } from "@uniswap/v4-core/src/interfaces/IHooks.sol";
+import { Hooks } from "@uniswap/v4-core/src/libraries/Hooks.sol";
+import { SqrtPriceMath } from "@uniswap/v4-core/src/libraries/SqrtPriceMath.sol";
+import { TickMath } from "@uniswap/v4-core/src/libraries/TickMath.sol";
+import { Currency } from "@uniswap/v4-core/src/types/Currency.sol";
+import { PoolKey } from "@uniswap/v4-core/src/types/PoolKey.sol";
+import { ModifyLiquidityParams } from "@uniswap/v4-core/src/types/PoolOperation.sol";
+import { IStateView } from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
+import { IV4Quoter } from "@uniswap/v4-periphery/src/interfaces/IV4Quoter.sol";
+import { HookMiner } from "@uniswap/v4-periphery/src/utils/HookMiner.sol";
+import { IAllowanceTransfer } from "permit2/src/interfaces/IAllowanceTransfer.sol";
+import { RobynLaunchToken } from "../src/RobynLaunchToken.sol";
+import { RobynTokenSink } from "../src/RobynTokenSink.sol";
+import { RobynDaoToken } from "../src/dao/RobynDaoToken.sol";
+import { RobynNativeBasketVaultV2 } from "../src/uniswap/RobynNativeBasketVaultV2.sol";
+import { RobynNativeLaunchDeployerV4 } from "../src/uniswap/RobynNativeLaunchDeployerV4.sol";
+import { RobynNativeLaunchFactoryV4 } from "../src/uniswap/RobynNativeLaunchFactoryV4.sol";
+import { RobynNativeVaultDeployerV4 } from "../src/uniswap/RobynNativeVaultDeployerV4.sol";
+import { RobynNativeProtocolFeeRouterV4 } from "../src/uniswap/RobynNativeProtocolFeeRouterV4.sol";
+import { RobynV4AssetRouter } from "../src/uniswap/RobynV4AssetRouter.sol";
+import { RobynV4AdapterDeployer } from "../src/uniswap/RobynV4AdapterDeployer.sol";
+import { RobynV4BondingCurveMarket } from "../src/uniswap/RobynV4BondingCurveMarket.sol";
+import { RobynV4FeePositionLocker } from "../src/uniswap/RobynV4FeePositionLocker.sol";
+import { RobynV4LaunchCoordinatorV5 } from "../src/uniswap/RobynV4LaunchCoordinatorV5.sol";
+import { RobynV4LockerDeployer } from "../src/uniswap/RobynV4LockerDeployer.sol";
+import { RobynV4MarketDeployer } from "../src/uniswap/RobynV4MarketDeployer.sol";
+import { RobynV4MarketFactory } from "../src/uniswap/RobynV4MarketFactory.sol";
+import { RobynV4FeeAndPhaseHook } from "../src/uniswap/RobynV4FeeAndPhaseHook.sol";
 import {
     IPoolModifyLiquidityFixture,
     ITestPositionManager,
     V4TestAsset
 } from "./RobynV4NativeProtocol.t.sol";
 
-/// @notice No-broadcast schema-v9 rehearsal on a Robinhood mainnet fork.
+/// @notice No-broadcast security-remediated rehearsal on a Robinhood mainnet fork.
 /// @dev Uses canonical chain-4663 v4 contracts and the current production AAPL Stock Token.
 contract RobinhoodMainnetSchema9ForkTest is Test {
     IPoolManager private constant POOL_MANAGER =
         IPoolManager(0x8366a39CC670B4001A1121B8F6A443A643e40951);
     ITestPositionManager private constant POSITION_MANAGER =
         ITestPositionManager(0x58daec3116aae6D93017bAAea7749052E8a04fA7);
-    IV4Quoter private constant QUOTER =
-        IV4Quoter(0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94);
+    IV4Quoter private constant QUOTER = IV4Quoter(0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94);
     IAllowanceTransfer private constant PERMIT2 =
         IAllowanceTransfer(0x000000000022D473030F116dDEE9F6B43aC78BA3);
     address private constant AAPL = 0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9;
@@ -54,17 +55,20 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
         "ipfs://bafkreif2akiscaildcwr6zeux4w6i2s5kmibuf6j4jvcrbozme2q";
 
     RobynV4AssetRouter private assetRouter;
-    RobynV4OracleHook private hook;
-    RobynNativeProtocolFeeRouterV3 private feeRouter;
+    RobynV4FeeAndPhaseHook private hook;
+    RobynNativeProtocolFeeRouterV4 private feeRouter;
     RobynV4LaunchCoordinatorV5 private coordinator;
     RobynDaoToken private daoToken;
     IStateView private stateView;
 
-    receive() external payable {}
+    receive() external payable { }
 
-    function testSchemaV9ProductionLifecycleOnRobinhoodMainnetFork() public {
+    function testRemediatedProductionLifecycleOnRobinhoodMainnetFork() public {
         string memory rpcUrl = vm.envOr("ROBINHOOD_MAINNET_RPC_URL", string(""));
-        if (bytes(rpcUrl).length == 0) return;
+        if (bytes(rpcUrl).length == 0) {
+            vm.skip(true);
+            return;
+        }
         vm.createSelectFork(rpcUrl);
         assertEq(block.chainid, 4663);
         _verifyCanonicalVenueAndStock();
@@ -73,20 +77,22 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
 
         uint256 treasuryBefore = TREASURY.balance;
         (RobynLaunchToken token, RobynNativeBasketVaultV2 vault, RobynV4BondingCurveMarket market) =
-            coordinator.createLaunch{value: 0.5 ether}(_request(bytes32(uint256(4663))));
+            coordinator.createLaunch{ value: 0.5 ether }(_request(bytes32(uint256(4663))));
         assertEq(market.maximumCurvePurchase(), 0.5 ether);
         assertGt(token.balanceOf(address(this)), 0);
 
         {
             for (uint256 purchase; purchase < 20 && !market.graduated(); ++purchase) {
-                market.buy{value: 0.5 ether}(1);
+                market.buy{ value: 0.5 ether }(1);
             }
             assertTrue(market.graduated());
             RobynV4FeePositionLocker locker = market.graduationAdapter().locker();
             uint128 lockedPrincipal = locker.principalLiquidity();
+            assertLe(locker.principalNativeResidual(), 1 gwei);
+            assertLe(locker.principalTokenResidual(), 0.000001 ether);
 
             uint256 pendingTokenBefore = hook.pendingTokenFees(address(token));
-            market.buy{value: 0.01 ether}(1);
+            market.buy{ value: 0.01 ether }(1);
             assertGt(hook.pendingTokenFees(address(token)), pendingTokenBefore);
             uint256 sellAmount = token.balanceOf(address(this)) / 50;
             token.approve(address(market), sellAmount);
@@ -96,12 +102,10 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
             hook.settleNativeFees(token, pendingNative);
 
             vm.warp(block.timestamp + 5 minutes);
-            market.buy{value: 0.000001 ether}(1);
+            market.buy{ value: 0.000001 ether }(1);
             uint128 pendingToken = uint128(hook.pendingTokenFees(address(token)));
             (uint256 tokenFeeQuote,) = assetRouter.quoteAssetToNative(address(token), pendingToken);
-            hook.convertTokenFees(
-                token, pendingToken, (tokenFeeQuote * 99) / 100, block.timestamp
-            );
+            hook.convertTokenFees(token, pendingToken, (tokenFeeQuote * 99) / 100, block.timestamp);
 
             (uint256 collectedNative, uint256 collectedToken) = locker.collectFees(0, 0);
             if (collectedNative != 0) locker.routeCollectedNative(collectedNative);
@@ -112,17 +116,25 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
                     uint128(collectedToken), (lockerQuote * 99) / 100, block.timestamp
                 );
             }
-            assertEq(POSITION_MANAGER.getPositionLiquidity(locker.positionTokenId()), lockedPrincipal);
+            assertEq(
+                POSITION_MANAGER.getPositionLiquidity(locker.positionTokenId()), lockedPrincipal
+            );
         }
+
+        RobynNativeProtocolFeeRouterV4.LaunchFeeAccount memory account =
+            feeRouter.launchAccount(address(token));
+        feeRouter.settleBasketFees(address(token), account.pendingBasketNative);
+        feeRouter.settleDaoFees(feeRouter.totalDaoNativeLiability());
+        feeRouter.settleTreasuryFees(feeRouter.totalTreasuryNativeLiability());
 
         uint256 pendingBasket = vault.totalPendingNative();
         assertGt(pendingBasket, 0);
         (uint256 basketQuote,) = assetRouter.quoteNativeToAsset(AAPL, uint128(pendingBasket));
         vault.convertLeg(0, pendingBasket, (basketQuote * 99) / 100, block.timestamp);
+        vm.warp(block.timestamp + 7 days);
         assertGt(token.claimAll(), 0);
 
-        RobynNativeProtocolFeeRouterV3.LaunchFeeAccount memory account =
-            feeRouter.launchAccount(address(token));
+        account = feeRouter.launchAccount(address(token));
         assertEq(
             feeRouter.totalBasketNative() + account.cumulativeCreatorNative
                 + feeRouter.totalDaoNativeRewards() + feeRouter.totalTreasuryNative(),
@@ -165,27 +177,29 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
         _seedStockPool(stock);
 
         RobynNativeLaunchDeployerV4 launchDeployer = new RobynNativeLaunchDeployerV4();
-        RobynNativeLaunchFactoryV4 launchFactory =
-            new RobynNativeLaunchFactoryV4(assetRouter, launchDeployer, 1 wei, 1 days);
+        RobynNativeVaultDeployerV4 vaultDeployer = new RobynNativeVaultDeployerV4();
+        RobynNativeLaunchFactoryV4 launchFactory = new RobynNativeLaunchFactoryV4(
+            assetRouter, launchDeployer, vaultDeployer, 1 wei, 1 days
+        );
         launchDeployer.bindController(address(launchFactory));
+        vaultDeployer.bindController(address(launchFactory));
         address[] memory recipients = new address[](1);
         recipients[0] = address(this);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1_000_000_000 ether;
         daoToken = new RobynDaoToken(recipients, allocations);
-        feeRouter = new RobynNativeProtocolFeeRouterV3(daoToken, assetRouter, TREASURY, GUARDIAN);
+        feeRouter = new RobynNativeProtocolFeeRouterV4(daoToken, assetRouter, TREASURY, GUARDIAN);
         hook = _deployHook();
 
-        RobynV4BondingCurveMarket.CurveConfig memory curve =
-            RobynV4BondingCurveMarket.CurveConfig({
-                curveTokenAllocation: 800_000_000 ether,
-                graduationTokenAllocation: 200_000_000 ether,
-                initialVirtualTokenReserve: 1_100_000_000 ether,
-                initialVirtualNativeReserve: 2.25 ether,
-                graduationThresholdNative: 6 ether,
-                maximumCurvePurchase: 0.5 ether,
-                curveFeeBps: 100
-            });
+        RobynV4BondingCurveMarket.CurveConfig memory curve = RobynV4BondingCurveMarket.CurveConfig({
+            curveTokenAllocation: 800_000_000 ether,
+            graduationTokenAllocation: 200_000_000 ether,
+            initialVirtualTokenReserve: 1_066_666_666_666_666_666_666_666_666,
+            initialVirtualNativeReserve: 2 ether,
+            graduationThresholdNative: 6 ether + 1,
+            maximumCurvePurchase: 0.5 ether,
+            curveFeeBps: 100
+        });
         RobynV4AdapterDeployer adapterDeployer = new RobynV4AdapterDeployer();
         RobynV4LockerDeployer lockerDeployer = new RobynV4LockerDeployer();
         RobynV4MarketDeployer marketDeployer = new RobynV4MarketDeployer();
@@ -201,11 +215,14 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
                 stateView: stateView,
                 adapterDeployer: adapterDeployer,
                 lockerDeployer: lockerDeployer,
-                marketDeployer: marketDeployer
+                marketDeployer: marketDeployer,
+                tokenSink: address(new RobynTokenSink())
             }),
             curve,
             9_900,
-            0.5 ether
+            0.5 ether,
+            1 gwei,
+            0.000001 ether
         );
         adapterDeployer.bindController(address(marketFactory));
         lockerDeployer.bindController(address(marketFactory));
@@ -242,7 +259,7 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
         uint160 upper = TickMath.getSqrtPriceAtTick(600);
         uint256 nativeAmount =
             SqrtPriceMath.getAmount0Delta(uint160(1 << 96), upper, liquidity, true);
-        liquidityRouter.modifyLiquidity{value: nativeAmount}(
+        liquidityRouter.modifyLiquidity{ value: nativeAmount }(
             key,
             ModifyLiquidityParams({
                 tickLower: -600,
@@ -270,18 +287,19 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
         assertTrue(assetRouter.routeStatus(AAPL).ready);
     }
 
-    function _deployHook() private returns (RobynV4OracleHook deployed) {
-        uint160 flags =
-            Hooks.AFTER_INITIALIZE_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
+    function _deployHook() private returns (RobynV4FeeAndPhaseHook deployed) {
+        uint160 flags = Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_SWAP_FLAG
+            | Hooks.BEFORE_DONATE_FLAG | Hooks.AFTER_INITIALIZE_FLAG | Hooks.AFTER_SWAP_FLAG
+            | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
         bytes32 domain = keccak256("sherwood-schema9-mainnet-fork");
         (address predicted, bytes32 salt) = HookMiner.find(
             address(this),
             flags,
-            type(RobynV4OracleHook).creationCode,
-            abi.encode(POOL_MANAGER, feeRouter, address(this), domain)
+            type(RobynV4FeeAndPhaseHook).creationCode,
+            abi.encode(POOL_MANAGER, feeRouter, address(this), POSITION_MANAGER, domain)
         );
-        deployed = new RobynV4OracleHook{salt: salt}(
-            POOL_MANAGER, feeRouter, address(this), domain
+        deployed = new RobynV4FeeAndPhaseHook{ salt: salt }(
+            POOL_MANAGER, feeRouter, address(this), address(POSITION_MANAGER), domain
         );
         assertEq(address(deployed), predicted);
     }

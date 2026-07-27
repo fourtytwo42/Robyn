@@ -149,7 +149,11 @@ contract RobynDaoLaunchCoordinatorV5 is ReentrancyGuard {
     function predictLaunchAddresses(
         address creator,
         RobynLaunchFactoryV2.LaunchRequest calldata request
-    ) external view returns (address predictedToken, address predictedVault, bytes32 launchSaltHash) {
+    )
+        external
+        view
+        returns (address predictedToken, address predictedVault, bytes32 launchSaltHash)
+    {
         return launchFactory.predictLaunchAddresses(creator, address(this), initialSupply, request);
     }
 }

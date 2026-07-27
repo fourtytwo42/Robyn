@@ -9,19 +9,24 @@ runtime_limit=24576
 init_limit=49152
 contracts=(
   RobynNativeLaunchFactoryV4
+  RobynNativeLaunchDeployerV4
+  RobynNativeVaultDeployerV4
   RobynV4LaunchCoordinatorV5
   RobynV4MarketFactory
   RobynV4BondingCurveMarket
   RobynV4GraduationAdapter
-  RobynV4OracleHook
+  RobynV4FeeAndPhaseHook
   RobynV4FeePositionLocker
   RobynNativeBasketVaultV2
-  RobynNativeProtocolFeeRouterV3
+  RobynNativeProtocolFeeRouterV4
+  RobynTokenSink
   RobynV4AssetRouter
   RobynV4TestAssetLiquidityLocker
   RobynV4AdapterDeployer
   RobynV4LockerDeployer
   RobynV4MarketDeployer
+  RobynDaoToken
+  RobynTestnetGovernor
 )
 
 failed=0

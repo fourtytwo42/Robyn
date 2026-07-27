@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {RobynDaoToken} from "../dao/RobynDaoToken.sol";
-import {RobynNativeBasketVaultV2} from "./RobynNativeBasketVaultV2.sol";
-import {RobynV4AssetRouter} from "./RobynV4AssetRouter.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { RobynDaoToken } from "../dao/RobynDaoToken.sol";
+import { RobynNativeBasketVaultV2 } from "./RobynNativeBasketVaultV2.sol";
+import { RobynV4AssetRouter } from "./RobynV4AssetRouter.sol";
 
 /// @notice Immutable native-ETH 50/25/20/5 fee policy with per-token creator liabilities.
 contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
@@ -80,7 +80,9 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
         uint256 treasury
     );
     event LaunchFeesConverted(address indexed token, uint256 launchAmount, uint256 nativeOutput);
-    event CreatorFeesClaimed(address indexed token, address indexed creator, address indexed recipient, uint256 amount);
+    event CreatorFeesClaimed(
+        address indexed token, address indexed creator, address indexed recipient, uint256 amount
+    );
     event ConversionPauseChanged(bool paused, address indexed caller);
 
     constructor(
@@ -90,9 +92,9 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
         address guardian_
     ) {
         if (
-            address(daoToken_) == address(0) || address(assetRouter_) == address(0) || treasury_ == address(0)
-                || guardian_ == address(0) || address(daoToken_).code.length == 0
-                || address(assetRouter_).code.length == 0
+            address(daoToken_) == address(0) || address(assetRouter_) == address(0)
+                || treasury_ == address(0) || guardian_ == address(0)
+                || address(daoToken_).code.length == 0 || address(assetRouter_).code.length == 0
         ) revert InvalidConfiguration();
         daoToken = daoToken_;
         assetRouter = assetRouter_;
@@ -102,7 +104,8 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
     }
 
     receive() external payable {
-        if (msg.sender != address(assetRouter) && msg.sender != address(assetRouter.poolManager())) {
+        if (msg.sender != address(assetRouter) && msg.sender != address(assetRouter.poolManager()))
+        {
             revert Unauthorized();
         }
     }
@@ -138,8 +141,8 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
         if (msg.sender != coordinator) revert Unauthorized();
         if (
             address(token) == address(0) || creator == address(0) || address(vault) == address(0)
-                || market == address(0) || locker == address(0) || hook == address(0) || hook.code.length == 0
-                || address(vault.launchToken()) != address(token)
+                || market == address(0) || locker == address(0) || hook == address(0)
+                || hook.code.length == 0 || address(vault.launchToken()) != address(token)
         ) revert InvalidConfiguration();
         LaunchFeeAccount storage account = _launchAccounts[address(token)];
         if (account.registered) revert LaunchAlreadyRegistered();
@@ -161,11 +164,12 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
         _allocateNative(address(token), account, msg.sender, msg.value);
     }
 
-    function convertAndRouteLaunchFees(IERC20 token, uint128 amount, uint256 minimumNativeOut, uint256 deadline)
-        external
-        nonReentrant
-        returns (uint256 nativeOut)
-    {
+    function convertAndRouteLaunchFees(
+        IERC20 token,
+        uint128 amount,
+        uint256 minimumNativeOut,
+        uint256 deadline
+    ) external nonReentrant returns (uint256 nativeOut) {
         LaunchFeeAccount storage account = _authorizedAccount(address(token));
         if (msg.sender != account.locker && msg.sender != account.hook) revert InvalidSource();
         if (paused) revert ConversionPaused();
@@ -204,7 +208,11 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
         _payCreatorClaim(token, msg.sender, recipient, amount);
     }
 
-    function claimCreatorFeesBatch(address[] calldata tokens) external nonReentrant returns (uint256 amount) {
+    function claimCreatorFeesBatch(address[] calldata tokens)
+        external
+        nonReentrant
+        returns (uint256 amount)
+    {
         return _claimCreatorBatch(tokens, payable(msg.sender));
     }
 
@@ -217,7 +225,10 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
         return _claimCreatorBatch(tokens, recipient);
     }
 
-    function _claimCreatorBatch(address[] calldata tokens, address payable recipient) private returns (uint256 amount) {
+    function _claimCreatorBatch(address[] calldata tokens, address payable recipient)
+        private
+        returns (uint256 amount)
+    {
         if (tokens.length == 0) revert InvalidConfiguration();
         uint256[] memory amounts = new uint256[](tokens.length);
         for (uint256 index; index < tokens.length; ++index) {
@@ -246,21 +257,38 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
         totalCreatorNativeLiability -= amount;
     }
 
-    function _payCreatorClaim(address token, address creator, address payable recipient, uint256 amount) private {
+    function _payCreatorClaim(
+        address token,
+        address creator,
+        address payable recipient,
+        uint256 amount
+    ) private {
         if (amount == 0) revert NothingPending();
         emit CreatorFeesClaimed(token, creator, recipient, amount);
         _sendNative(recipient, amount);
     }
 
-    function _authorizedAccount(address token) private view returns (LaunchFeeAccount storage account) {
+    function _authorizedAccount(address token)
+        private
+        view
+        returns (LaunchFeeAccount storage account)
+    {
         account = _launchAccounts[token];
         if (!account.registered) revert UnknownLaunch();
-        if (msg.sender != account.market && msg.sender != account.locker && msg.sender != account.hook) {
+        if (
+            msg.sender != account.market && msg.sender != account.locker
+                && msg.sender != account.hook
+        ) {
             revert InvalidSource();
         }
     }
 
-    function _allocateNative(address token, LaunchFeeAccount storage account, address source, uint256 amount) private {
+    function _allocateNative(
+        address token,
+        LaunchFeeAccount storage account,
+        address source,
+        uint256 amount
+    ) private {
         if (amount == 0) revert InvalidConfiguration();
         uint256 creatorAmount = (amount * CREATOR_BPS) / BPS;
         uint256 daoAmount = (amount * DAO_REWARD_BPS) / BPS;
@@ -282,11 +310,13 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
         totalDaoNativeRewards += daoAmount;
         totalTreasuryNative += treasuryAmount;
         totalBasketNative += basketAmount;
-        account.vault.recordFees{value: basketAmount}();
-        daoToken.depositRewards{value: daoAmount}();
-        (bool sent,) = treasury.call{value: treasuryAmount}("");
+        account.vault.recordFees{ value: basketAmount }();
+        daoToken.depositRewards{ value: daoAmount }();
+        (bool sent,) = treasury.call{ value: treasuryAmount }("");
         if (!sent) revert NativeTransferFailed();
-        emit NativeFeesRouted(token, source, amount, basketAmount, creatorAmount, daoAmount, treasuryAmount);
+        emit NativeFeesRouted(
+            token, source, amount, basketAmount, creatorAmount, daoAmount, treasuryAmount
+        );
         assert(address(this).balance >= totalCreatorNativeLiability);
     }
 
@@ -294,7 +324,7 @@ contract RobynNativeProtocolFeeRouterV3 is ReentrancyGuard {
     // ownership checks; liabilities are cleared before this pull-payment call.
     // slither-disable-next-line arbitrary-send-eth
     function _sendNative(address payable recipient, uint256 amount) private {
-        (bool sent,) = recipient.call{value: amount}("");
+        (bool sent,) = recipient.call{ value: amount }("");
         if (!sent) revert NativeTransferFailed();
     }
 }

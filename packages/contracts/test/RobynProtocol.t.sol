@@ -13,6 +13,10 @@ import { DevnetLockedLiquidityPool } from "../src/devnet/DevnetLockedLiquidityPo
 import { DevnetMarketFactory } from "../src/devnet/DevnetMarketFactory.sol";
 import { DevnetMockERC20 } from "../src/devnet/DevnetMockERC20.sol";
 
+interface RobynProtocolVm {
+    function warp(uint256 timestamp) external;
+}
+
 contract ProtocolMockERC20 is ERC20 {
     uint16 public feeBps;
 
@@ -166,6 +170,8 @@ contract ProtocolActor {
 }
 
 contract RobynProtocolTest {
+    RobynProtocolVm private constant vm =
+        RobynProtocolVm(address(uint160(uint256(keccak256("hevm cheat code")))));
     uint256 private constant CURVE_ALLOCATION = 800_000_000 ether;
     uint256 private constant GRADUATION_ALLOCATION = 200_000_000 ether;
     uint256 private constant INITIAL_VIRTUAL_TOKEN = 1_066_666_666_666_666_666_666_666_666;
@@ -232,6 +238,7 @@ contract RobynProtocolTest {
         vault.recordFees(1_000);
 
         uint256 actualOutput = vault.convertLeg(0, 400, 350, block.timestamp);
+        vm.warp(block.timestamp + 7 days);
 
         require(actualOutput == 360, "vault output delta");
         require(vault.leg(0).rewardsDeposited == 324, "token deposit delta");
@@ -244,6 +251,7 @@ contract RobynProtocolTest {
     function testBuyerCannotEarnPrePurchaseRewardAndSellerKeepsIt() public {
         vault.recordFees(1_000);
         vault.convertLeg(0, 400, 400, block.timestamp);
+        vm.warp(block.timestamp + 7 days);
         uint256 sellerFirst = token.withdrawableRewardOf(address(this), 0);
         require(sellerFirst >= 399 && sellerFirst <= 400, "initial seller reward");
 
@@ -253,6 +261,7 @@ contract RobynProtocolTest {
 
         vault.recordFees(1_000);
         vault.convertLeg(0, 400, 400, block.timestamp);
+        vm.warp(block.timestamp + 7 days);
         uint256 sellerSecond = token.withdrawableRewardOf(address(this), 0);
         uint256 buyerSecond = token.withdrawableRewardOf(address(buyer), 0);
         require(sellerSecond >= 199 && sellerSecond <= 200, "seller next reward");
@@ -262,6 +271,30 @@ contract RobynProtocolTest {
         uint256 claimed = token.totalRewardsClaimed(0);
         require(claimed <= token.totalRewardsReceived(0), "insolvent");
         require(token.totalRewardsReceived(0) - claimed <= 3, "rounding bound");
+    }
+
+    function testRollingStreamSettlesTransfersAndBlocksSameBlockCapture() public {
+        vault.recordFees(1_000);
+        vault.convertLeg(0, 400, 400, block.timestamp);
+        require(token.transfer(address(buyer), SUPPLY / 2), "transfer");
+        require(token.withdrawableRewardOf(address(this), 0) == 0, "sender same-block reward");
+        require(token.withdrawableRewardOf(address(buyer), 0) == 0, "buyer same-block reward");
+
+        vm.warp(block.timestamp + 1 days);
+        uint256 senderDayOne = token.withdrawableRewardOf(address(this), 0);
+        uint256 buyerDayOne = token.withdrawableRewardOf(address(buyer), 0);
+        require(senderDayOne > 0 && buyerDayOne > 0, "stream did not vest");
+        require(
+            senderDayOne > buyerDayOne - 2 && senderDayOne < buyerDayOne + 2, "equal holders differ"
+        );
+
+        buyer.transferToken(token, address(this), SUPPLY / 2);
+        uint256 buyerAccrued = token.withdrawableRewardOf(address(buyer), 0);
+        vm.warp(block.timestamp + 1 days);
+        require(
+            token.withdrawableRewardOf(address(buyer), 0) == buyerAccrued, "former holder accrued"
+        );
+        require(token.withdrawableRewardOf(address(this), 0) > senderDayOne * 2, "owner accrual");
     }
 
     function testMaliciousRewardTokenCannotReenterClaim() public {
@@ -281,6 +314,7 @@ contract RobynProtocolTest {
         maliciousReward.mint(address(this), 1_000);
         maliciousReward.approve(address(guardedToken), 1_000);
         guardedToken.distributeReward(0, 1_000);
+        vm.warp(block.timestamp + 7 days);
         maliciousReward.arm(guardedToken, 0);
 
         uint256 claimed = guardedToken.claim(0);
@@ -420,6 +454,7 @@ contract RobynProtocolTest {
         base.approve(address(excludedVault), type(uint256).max);
         excludedVault.recordFees(1_000);
         excludedVault.convertLeg(0, 400, 400, block.timestamp);
+        vm.warp(block.timestamp + 7 days);
 
         uint256 creatorReward = excludedToken.withdrawableRewardOf(address(this), 0);
         require(creatorReward >= 399 && creatorReward <= 400, "creator diluted");
@@ -463,6 +498,7 @@ contract RobynProtocolTest {
         require(marketVault.leg(0).pendingBase == 0.4 ether, "buy leg 0");
 
         marketVault.convertLeg(0, 0.4 ether, 0.4 ether, block.timestamp);
+        vm.warp(block.timestamp + 7 days);
         uint256 claimable = marketToken.withdrawableRewardOf(address(trader), 0);
         require(claimable > 0, "trader claimable");
         require(trader.claim(marketToken, 0) == claimable, "trader claim");
@@ -562,6 +598,7 @@ contract RobynProtocolTest {
         vault.convertLeg(0, 400, 400, block.timestamp);
         vault.convertLeg(1, 400, 800, block.timestamp);
         vault.convertLeg(2, 200, 600, block.timestamp);
+        vm.warp(block.timestamp + 7 days);
 
         uint256 expected0 = token.withdrawableRewardOf(address(this), 0);
         uint256 expected1 = token.withdrawableRewardOf(address(this), 1);
@@ -596,6 +633,7 @@ contract RobynProtocolTest {
             fiveRewards[i].approve(address(five), 100);
             five.distributeReward(i, 100);
         }
+        vm.warp(block.timestamp + 7 days);
         uint256 claimed = five.claimAll();
         require(claimed >= 495 && claimed <= 500, "five asset claim");
     }
@@ -604,6 +642,7 @@ contract RobynProtocolTest {
         uint256 transferAmount = (uint256(rawTransfer) % (SUPPLY - 1)) + 1;
         vault.recordFees(1_000);
         vault.convertLeg(0, 400, 400, block.timestamp);
+        vm.warp(block.timestamp + 7 days);
         require(token.transfer(address(buyer), transferAmount), "transfer");
 
         require(token.withdrawableRewardOf(address(buyer), 0) == 0, "buyer prior entitlement");

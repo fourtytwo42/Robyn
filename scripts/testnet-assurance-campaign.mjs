@@ -1377,7 +1377,7 @@ async function conversions() {
   const assetRouterAbi = artifactAbi("RobynV4AssetRouter");
   const lockerAbi = artifactAbi("RobynV4FeePositionLocker");
   const tokenAbi = artifactAbi("RobynLaunchToken");
-  const hookAbi = artifactAbi("RobynV4OracleHook");
+  const hookAbi = artifactAbi("RobynV4FeeAndPhaseHook");
   state.conversions ??= { legs: [] };
   state.conversions.harvests ??= [];
   state.conversions.hookSettlements ??= [];
@@ -1835,7 +1835,7 @@ async function claims() {
   const accounts = loadAccounts();
   const tokenAbi = artifactAbi("RobynLaunchToken");
   const marketAbi = artifactAbi("RobynV4BondingCurveMarket");
-  const feeRouterAbi = artifactAbi("RobynNativeProtocolFeeRouterV3");
+  const feeRouterAbi = artifactAbi("RobynNativeProtocolFeeRouterV4");
   const daoAbi = artifactAbi("RobynDaoToken");
   state.claims ??= { holder: [], creator: [], dao: [] };
 

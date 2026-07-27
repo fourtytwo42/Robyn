@@ -118,6 +118,37 @@ export function AdminHealthDashboard({
         ["Indexed at", time(snapshot.indexer.indexedAt)],
       ],
     },
+    ...(snapshot.protocol
+      ? [
+          {
+            name: "Protocol invariants",
+            status: snapshot.protocol.status,
+            rows: [
+              [
+                "Router solvency",
+                snapshot.protocol.routerSolvent ? "Conserved" : "Mismatch",
+              ],
+              ["Native liabilities", snapshot.protocol.liabilities],
+              ["Unattributed native", snapshot.protocol.unattributedNative],
+              [
+                "DAO stream",
+                snapshot.protocol.daoStreamConserved ? "Conserved" : "Mismatch",
+              ],
+              ["DAO queued", snapshot.protocol.daoQueued],
+              ["DAO streaming", snapshot.protocol.daoStreaming],
+              ["Bonding pools", snapshot.protocol.bondingPools],
+              ["Trading pools", snapshot.protocol.tradingPools],
+              ["Phase mismatches", snapshot.protocol.phaseMismatchCount],
+              ["Locker mismatches", snapshot.protocol.lockerMismatchCount],
+              [
+                "Reward stream mismatches",
+                snapshot.protocol.rewardStreamMismatchCount,
+              ],
+              ["Token sink", snapshot.protocol.tokenSink],
+            ],
+          },
+        ]
+      : []),
   ];
 
   return (

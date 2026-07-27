@@ -3,7 +3,13 @@ import cookie from "@fastify/cookie";
 import { Redis } from "ioredis";
 import { readFile } from "node:fs/promises";
 import { createDatabase } from "@robyn/db";
-import { createPublicClient, http, type Address } from "viem";
+import {
+  createPublicClient,
+  http,
+  parseAbi,
+  type Address,
+  type Hex,
+} from "viem";
 import {
   encodeDiscoveryCursor,
   parseDiscoveryQuery,
@@ -116,6 +122,7 @@ const deployment = JSON.parse(
     stateView?: Address;
     oracleHook?: Address;
     assetRouter?: Address;
+    tokenSink?: Address;
   };
   ipfsMetadata?: {
     tokenListCid?: string | null;
@@ -124,6 +131,41 @@ const deployment = JSON.parse(
   };
   assetCatalog?: AssetCatalogManifest;
 };
+const remediationRouterAbi = parseAbi([
+  "function totalNativeLiabilities() view returns (uint256)",
+  "function unattributedNative() view returns (uint256)",
+]);
+const remediationDaoAbi = parseAbi([
+  "function totalRewardsDeposited() view returns (uint256)",
+  "function totalRewardsClaimed() view returns (uint256)",
+  "function totalRewardsVested() view returns (uint256)",
+  "function queuedRewards() view returns (uint256)",
+  "function streamingRewards() view returns (uint256)",
+]);
+const remediationMarketAbi = parseAbi([
+  "function graduated() view returns (bool)",
+]);
+const remediationHookAbi = parseAbi([
+  "function poolPhase(bytes32) view returns (uint8)",
+]);
+const remediationLockerAbi = parseAbi([
+  "function principalNativeResidual() view returns (uint256)",
+  "function principalTokenResidual() view returns (uint256)",
+  "function pendingCollectedNativeFees() view returns (uint256)",
+  "function pendingCollectedTokenFees() view returns (uint256)",
+  "function unattributedNative() view returns (uint256)",
+  "function unattributedLaunchTokens() view returns (uint256)",
+]);
+const balanceOfAbi = parseAbi([
+  "function balanceOf(address) view returns (uint256)",
+]);
+const remediationLaunchTokenAbi = parseAbi([
+  "function rewardAssetCount() view returns (uint256)",
+  "function pendingWithoutSupply(uint256) view returns (uint256)",
+  "function totalRewardsReceived(uint256) view returns (uint256)",
+  "function streamingRewards(uint256) view returns (uint256)",
+  "function totalRewardsVested(uint256) view returns (uint256)",
+]);
 const assetCatalog = new AssetCatalogService(
   rpcClient,
   chainId,
@@ -939,8 +981,226 @@ app.get("/health", async (_request, reply) => {
   });
 });
 
+async function remediationProtocolState() {
+  if (
+    (deployment.schemaVersion ?? 0) < 10 ||
+    !deployment.contracts.oracleHook ||
+    !deployment.contracts.tokenSink
+  ) {
+    return null;
+  }
+  const router = deployment.contracts.protocolFeeRouter;
+  const daoToken = deployment.contracts.daoToken;
+  const [liabilities, unattributedNative, routerBalance, daoValues, launches] =
+    await Promise.all([
+      rpcClient.readContract({
+        address: router,
+        abi: remediationRouterAbi,
+        functionName: "totalNativeLiabilities",
+      }),
+      rpcClient.readContract({
+        address: router,
+        abi: remediationRouterAbi,
+        functionName: "unattributedNative",
+      }),
+      rpcClient.getBalance({ address: router }),
+      Promise.all([
+        rpcClient.readContract({
+          address: daoToken,
+          abi: remediationDaoAbi,
+          functionName: "totalRewardsDeposited",
+        }),
+        rpcClient.readContract({
+          address: daoToken,
+          abi: remediationDaoAbi,
+          functionName: "totalRewardsClaimed",
+        }),
+        rpcClient.readContract({
+          address: daoToken,
+          abi: remediationDaoAbi,
+          functionName: "totalRewardsVested",
+        }),
+        rpcClient.readContract({
+          address: daoToken,
+          abi: remediationDaoAbi,
+          functionName: "queuedRewards",
+        }),
+        rpcClient.readContract({
+          address: daoToken,
+          abi: remediationDaoAbi,
+          functionName: "streamingRewards",
+        }),
+      ]),
+      sql.unsafe<
+        {
+          token: Address;
+          market: Address;
+          locker: Address;
+          pool_id: Hex | null;
+        }[]
+      >(
+        "SELECT token,market,locker,pool_id FROM launches WHERE chain_id=$1 ORDER BY launch_id",
+        [chainId],
+      ),
+    ]);
+  const [daoDeposited, daoClaimed, daoVested, daoQueued, daoStreaming] =
+    daoValues;
+  let phaseMismatchCount = 0;
+  let lockerMismatchCount = 0;
+  let rewardStreamMismatchCount = 0;
+  let bondingPools = 0;
+  let tradingPools = 0;
+  for (const launch of launches) {
+    if (!launch.pool_id) {
+      phaseMismatchCount += 1;
+      continue;
+    }
+    const [graduated, phase, lockerValues, lockerNative, lockerToken, count] =
+      await Promise.all([
+        rpcClient.readContract({
+          address: launch.market,
+          abi: remediationMarketAbi,
+          functionName: "graduated",
+        }),
+        rpcClient.readContract({
+          address: deployment.contracts.oracleHook,
+          abi: remediationHookAbi,
+          functionName: "poolPhase",
+          args: [launch.pool_id],
+        }),
+        Promise.all([
+          rpcClient.readContract({
+            address: launch.locker,
+            abi: remediationLockerAbi,
+            functionName: "principalNativeResidual",
+          }),
+          rpcClient.readContract({
+            address: launch.locker,
+            abi: remediationLockerAbi,
+            functionName: "principalTokenResidual",
+          }),
+          rpcClient.readContract({
+            address: launch.locker,
+            abi: remediationLockerAbi,
+            functionName: "pendingCollectedNativeFees",
+          }),
+          rpcClient.readContract({
+            address: launch.locker,
+            abi: remediationLockerAbi,
+            functionName: "pendingCollectedTokenFees",
+          }),
+          rpcClient.readContract({
+            address: launch.locker,
+            abi: remediationLockerAbi,
+            functionName: "unattributedNative",
+          }),
+          rpcClient.readContract({
+            address: launch.locker,
+            abi: remediationLockerAbi,
+            functionName: "unattributedLaunchTokens",
+          }),
+        ]),
+        rpcClient.getBalance({ address: launch.locker }),
+        rpcClient.readContract({
+          address: launch.token,
+          abi: balanceOfAbi,
+          functionName: "balanceOf",
+          args: [launch.locker],
+        }),
+        rpcClient.readContract({
+          address: launch.token,
+          abi: remediationLaunchTokenAbi,
+          functionName: "rewardAssetCount",
+        }),
+      ]);
+    if (phase === 1) bondingPools += 1;
+    if (phase === 3) tradingPools += 1;
+    if ((graduated && phase !== 3) || (!graduated && phase !== 1)) {
+      phaseMismatchCount += 1;
+    }
+    const [
+      principalNativeResidual,
+      principalTokenResidual,
+      pendingNativeFees,
+      pendingTokenFees,
+      lockerUnattributedNative,
+      lockerUnattributedToken,
+    ] = lockerValues;
+    if (
+      lockerNative !==
+        principalNativeResidual +
+          pendingNativeFees +
+          lockerUnattributedNative ||
+      lockerToken !==
+        principalTokenResidual + pendingTokenFees + lockerUnattributedToken
+    ) {
+      lockerMismatchCount += 1;
+    }
+    for (let index = 0n; index < count; index += 1n) {
+      const [received, queued, streaming, vested] = await Promise.all([
+        rpcClient.readContract({
+          address: launch.token,
+          abi: remediationLaunchTokenAbi,
+          functionName: "totalRewardsReceived",
+          args: [index],
+        }),
+        rpcClient.readContract({
+          address: launch.token,
+          abi: remediationLaunchTokenAbi,
+          functionName: "pendingWithoutSupply",
+          args: [index],
+        }),
+        rpcClient.readContract({
+          address: launch.token,
+          abi: remediationLaunchTokenAbi,
+          functionName: "streamingRewards",
+          args: [index],
+        }),
+        rpcClient.readContract({
+          address: launch.token,
+          abi: remediationLaunchTokenAbi,
+          functionName: "totalRewardsVested",
+          args: [index],
+        }),
+      ]);
+      if (received !== queued + streaming + vested) {
+        rewardStreamMismatchCount += 1;
+      }
+    }
+  }
+  const routerSolvent = routerBalance >= liabilities;
+  const daoStreamConserved =
+    daoDeposited === daoQueued + daoStreaming + daoVested &&
+    daoClaimed <= daoVested;
+  return {
+    status:
+      routerSolvent &&
+      daoStreamConserved &&
+      phaseMismatchCount === 0 &&
+      lockerMismatchCount === 0 &&
+      rewardStreamMismatchCount === 0
+        ? "ok"
+        : "degraded",
+    routerSolvent,
+    routerBalance: routerBalance.toString(),
+    liabilities: liabilities.toString(),
+    unattributedNative: unattributedNative.toString(),
+    daoStreamConserved,
+    daoQueued: daoQueued.toString(),
+    daoStreaming: daoStreaming.toString(),
+    daoVested: daoVested.toString(),
+    daoClaimed: daoClaimed.toString(),
+    phaseMismatchCount,
+    lockerMismatchCount,
+    rewardStreamMismatchCount,
+    bondingPools,
+    tradingPools,
+    tokenSink: deployment.contracts.tokenSink,
+  };
+}
+
 app.get("/status", async () => {
-  const [state, counts, keeper, artifact] = await Promise.all([
+  const [state, counts, keeper, artifact, protocol] = await Promise.all([
     freshness(),
     sql.unsafe<
       {
@@ -955,6 +1215,7 @@ app.get("/status", async () => {
     ),
     keeperState(),
     artifactState(),
+    remediationProtocolState(),
   ]);
   return {
     service: "robyn-api",
@@ -965,6 +1226,7 @@ app.get("/status", async () => {
     kingOfForestAwardCount: counts[0]?.king_awards ?? "0",
     currentKingOfForest: counts[0]?.current_king ?? null,
     formulaVersion: "native-v1",
+    protocol,
     ...keeper,
     ...artifact,
   };

@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
-import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
-import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
-import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
-import {IPositionManager} from "@uniswap/v4-periphery/src/interfaces/IPositionManager.sol";
-import {IStateView} from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
-import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
-import {RobynLaunchToken} from "../RobynLaunchToken.sol";
-import {RobynNativeBasketVaultV2} from "./RobynNativeBasketVaultV2.sol";
-import {RobynNativeLaunchFactoryV4} from "./RobynNativeLaunchFactoryV4.sol";
-import {RobynNativeProtocolFeeRouterV3} from "./RobynNativeProtocolFeeRouterV3.sol";
-import {RobynV4AssetRouter} from "./RobynV4AssetRouter.sol";
-import {RobynV4AdapterDeployer} from "./RobynV4AdapterDeployer.sol";
-import {RobynV4BondingCurveMarket} from "./RobynV4BondingCurveMarket.sol";
-import {IPositionManagerPermit2, RobynV4FeePositionLocker} from "./RobynV4FeePositionLocker.sol";
-import {RobynV4GraduationAdapter} from "./RobynV4GraduationAdapter.sol";
-import {RobynV4LockerDeployer} from "./RobynV4LockerDeployer.sol";
-import {RobynV4MarketDeployer} from "./RobynV4MarketDeployer.sol";
-import {RobynV4OracleHook} from "./RobynV4OracleHook.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { IPoolManager } from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import { IHooks } from "@uniswap/v4-core/src/interfaces/IHooks.sol";
+import { PoolId, PoolIdLibrary } from "@uniswap/v4-core/src/types/PoolId.sol";
+import { PoolKey } from "@uniswap/v4-core/src/types/PoolKey.sol";
+import { IPositionManager } from "@uniswap/v4-periphery/src/interfaces/IPositionManager.sol";
+import { IStateView } from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
+import { IAllowanceTransfer } from "permit2/src/interfaces/IAllowanceTransfer.sol";
+import { RobynLaunchToken } from "../RobynLaunchToken.sol";
+import { RobynNativeBasketVaultV2 } from "./RobynNativeBasketVaultV2.sol";
+import { RobynNativeLaunchFactoryV4 } from "./RobynNativeLaunchFactoryV4.sol";
+import { RobynNativeProtocolFeeRouterV4 } from "./RobynNativeProtocolFeeRouterV4.sol";
+import { RobynV4AssetRouter } from "./RobynV4AssetRouter.sol";
+import { RobynV4AdapterDeployer } from "./RobynV4AdapterDeployer.sol";
+import { RobynV4BondingCurveMarket } from "./RobynV4BondingCurveMarket.sol";
+import { IPositionManagerPermit2, RobynV4FeePositionLocker } from "./RobynV4FeePositionLocker.sol";
+import { RobynV4GraduationAdapter } from "./RobynV4GraduationAdapter.sol";
+import { RobynV4LockerDeployer } from "./RobynV4LockerDeployer.sol";
+import { RobynV4MarketDeployer } from "./RobynV4MarketDeployer.sol";
+import { RobynV4FeeAndPhaseHook } from "./RobynV4FeeAndPhaseHook.sol";
 
 /// @notice Coordinator-only factory that preinitializes native-ETH v4 pools atomically.
 contract RobynV4MarketFactory {
@@ -38,9 +38,9 @@ contract RobynV4MarketFactory {
     error PoolInitializationMismatch();
 
     RobynNativeLaunchFactoryV4 public immutable launchFactory;
-    RobynNativeProtocolFeeRouterV3 public immutable feeRouter;
+    RobynNativeProtocolFeeRouterV4 public immutable feeRouter;
     RobynV4AssetRouter public immutable assetRouter;
-    RobynV4OracleHook public immutable oracleHook;
+    RobynV4FeeAndPhaseHook public immutable oracleHook;
     IPoolManager public immutable poolManager;
     IPositionManager public immutable positionManager;
     IAllowanceTransfer public immutable permit2;
@@ -49,6 +49,7 @@ contract RobynV4MarketFactory {
     RobynV4LockerDeployer public immutable lockerDeployer;
     RobynV4MarketDeployer public immutable marketDeployer;
     address public immutable initializer;
+    address public immutable tokenSink;
     address public coordinator;
 
     uint256 public immutable curveTokenAllocation;
@@ -60,6 +61,8 @@ contract RobynV4MarketFactory {
     uint16 public immutable curveFeeBps;
     uint16 public immutable minimumUseBps;
     uint128 public immutable maximumNativeSwap;
+    uint256 public immutable maximumNativeResidual;
+    uint256 public immutable maximumTokenResidual;
     uint160 public immutable terminalSqrtPriceX96;
     uint256 public immutable terminalNativePerTokenX18;
 
@@ -80,9 +83,9 @@ contract RobynV4MarketFactory {
 
     struct Dependencies {
         RobynNativeLaunchFactoryV4 launchFactory;
-        RobynNativeProtocolFeeRouterV3 feeRouter;
+        RobynNativeProtocolFeeRouterV4 feeRouter;
         RobynV4AssetRouter assetRouter;
-        RobynV4OracleHook oracleHook;
+        RobynV4FeeAndPhaseHook oracleHook;
         IPoolManager poolManager;
         IPositionManager positionManager;
         IAllowanceTransfer permit2;
@@ -90,42 +93,55 @@ contract RobynV4MarketFactory {
         RobynV4AdapterDeployer adapterDeployer;
         RobynV4LockerDeployer lockerDeployer;
         RobynV4MarketDeployer marketDeployer;
+        address tokenSink;
     }
 
     constructor(
         Dependencies memory dependencies,
         RobynV4BondingCurveMarket.CurveConfig memory curve_,
         uint16 minimumUseBps_,
-        uint128 maximumNativeSwap_
+        uint128 maximumNativeSwap_,
+        uint256 maximumNativeResidual_,
+        uint256 maximumTokenResidual_
     ) {
         if (
-            address(dependencies.launchFactory) == address(0) || address(dependencies.feeRouter) == address(0)
-                || address(dependencies.assetRouter) == address(0) || address(dependencies.oracleHook) == address(0)
+            address(dependencies.launchFactory) == address(0)
+                || address(dependencies.feeRouter) == address(0)
+                || address(dependencies.assetRouter) == address(0)
+                || address(dependencies.oracleHook) == address(0)
                 || address(dependencies.poolManager) == address(0)
-                || address(dependencies.positionManager) == address(0) || address(dependencies.permit2) == address(0)
-                || address(dependencies.stateView) == address(0) || address(dependencies.adapterDeployer) == address(0)
+                || address(dependencies.positionManager) == address(0)
+                || address(dependencies.permit2) == address(0)
+                || address(dependencies.stateView) == address(0)
+                || address(dependencies.adapterDeployer) == address(0)
                 || address(dependencies.lockerDeployer) == address(0)
                 || address(dependencies.marketDeployer) == address(0)
+                || dependencies.tokenSink == address(0) || dependencies.tokenSink.code.length == 0
                 || address(dependencies.launchFactory).code.length == 0
                 || address(dependencies.feeRouter).code.length == 0
                 || address(dependencies.assetRouter).code.length == 0
                 || address(dependencies.oracleHook).code.length == 0
                 || address(dependencies.poolManager).code.length == 0
                 || address(dependencies.positionManager).code.length == 0
-                || address(dependencies.permit2).code.length == 0 || address(dependencies.stateView).code.length == 0
+                || address(dependencies.permit2).code.length == 0
+                || address(dependencies.stateView).code.length == 0
                 || address(dependencies.adapterDeployer).code.length == 0
                 || address(dependencies.lockerDeployer).code.length == 0
                 || address(dependencies.marketDeployer).code.length == 0
-                || address(dependencies.launchFactory.assetRouter()) != address(dependencies.assetRouter)
-                || address(dependencies.feeRouter.assetRouter()) != address(dependencies.assetRouter)
-                || address(dependencies.oracleHook.poolManager()) != address(dependencies.poolManager)
-                || curve_.curveTokenAllocation == 0 || curve_.graduationTokenAllocation == 0
+                || address(dependencies.launchFactory.assetRouter())
+                    != address(dependencies.assetRouter)
+                || address(dependencies.feeRouter.assetRouter())
+                    != address(dependencies.assetRouter)
+                || address(dependencies.oracleHook.poolManager())
+                    != address(dependencies.poolManager) || curve_.curveTokenAllocation == 0
+                || curve_.graduationTokenAllocation == 0
                 || curve_.initialVirtualTokenReserve <= curve_.curveTokenAllocation
                 || curve_.initialVirtualNativeReserve == 0 || curve_.graduationThresholdNative == 0
                 || curve_.maximumCurvePurchase == 0 || curve_.curveFeeBps == 0
                 || curve_.maximumCurvePurchase > curve_.graduationThresholdNative
-                || curve_.curveFeeBps > 1_000 || minimumUseBps_ == 0
-                || minimumUseBps_ > 10_000 || maximumNativeSwap_ == 0
+                || curve_.curveFeeBps > 1_000 || minimumUseBps_ == 0 || minimumUseBps_ > 10_000
+                || maximumNativeSwap_ == 0 || maximumNativeResidual_ == 0
+                || maximumTokenResidual_ == 0
         ) revert InvalidConfiguration();
         launchFactory = dependencies.launchFactory;
         feeRouter = dependencies.feeRouter;
@@ -138,6 +154,7 @@ contract RobynV4MarketFactory {
         adapterDeployer = dependencies.adapterDeployer;
         lockerDeployer = dependencies.lockerDeployer;
         marketDeployer = dependencies.marketDeployer;
+        tokenSink = dependencies.tokenSink;
         initializer = msg.sender;
         curveTokenAllocation = curve_.curveTokenAllocation;
         graduationTokenAllocation = curve_.graduationTokenAllocation;
@@ -148,9 +165,14 @@ contract RobynV4MarketFactory {
         curveFeeBps = curve_.curveFeeBps;
         minimumUseBps = minimumUseBps_;
         maximumNativeSwap = maximumNativeSwap_;
-        uint256 terminalTokenReserve = curve_.initialVirtualTokenReserve - curve_.curveTokenAllocation;
-        uint256 terminalNativeReserve =
-            Math.ceilDiv(curve_.initialVirtualNativeReserve * curve_.initialVirtualTokenReserve, terminalTokenReserve);
+        maximumNativeResidual = maximumNativeResidual_;
+        maximumTokenResidual = maximumTokenResidual_;
+        uint256 terminalTokenReserve =
+            curve_.initialVirtualTokenReserve - curve_.curveTokenAllocation;
+        uint256 terminalNativeReserve = Math.ceilDiv(
+            curve_.initialVirtualNativeReserve * curve_.initialVirtualTokenReserve,
+            terminalTokenReserve
+        );
         terminalNativePerTokenX18 = Math.mulDiv(terminalNativeReserve, 1e18, terminalTokenReserve);
         terminalSqrtPriceX96 = _sqrtPriceForNativePerToken(terminalNativePerTokenX18);
     }
@@ -203,7 +225,10 @@ contract RobynV4MarketFactory {
         );
     }
 
-    function _createAdapter(RobynLaunchToken token) private returns (RobynV4GraduationAdapter adapter, bytes32 poolId) {
+    function _createAdapter(RobynLaunchToken token)
+        private
+        returns (RobynV4GraduationAdapter adapter, bytes32 poolId)
+    {
         adapter = adapterDeployer.deploy(
             RobynV4AdapterDeployer.Deployment({
                 launchToken: token,
@@ -226,14 +251,21 @@ contract RobynV4MarketFactory {
             token,
             key,
             address(adapter),
-            maximumNativeSwap
+            maximumNativeSwap,
+            feeRouter.treasury(),
+            tokenSink,
+            maximumNativeResidual,
+            maximumTokenResidual
         );
         adapter.bindLocker(locker);
         poolId = PoolId.unwrap(key.toId());
-        oracleHook.registerPool(key);
+        oracleHook.registerPool(key, address(adapter));
         int24 initializedTick = poolManager.initialize(key, terminalSqrtPriceX96);
         (uint160 actualSqrtPriceX96, int24 actualTick,,) = stateView.getSlot0(PoolId.wrap(poolId));
-        if (actualSqrtPriceX96 != terminalSqrtPriceX96 || actualTick != initializedTick || actualSqrtPriceX96 == 0) {
+        if (
+            actualSqrtPriceX96 != terminalSqrtPriceX96 || actualTick != initializedTick
+                || actualSqrtPriceX96 == 0
+        ) {
             revert PoolInitializationMismatch();
         }
         assetRouter.configureLaunchRoute(

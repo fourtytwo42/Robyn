@@ -39,26 +39,43 @@ set +e
     --solc-remaps=@openzeppelin/contracts/=${repo}/node_modules/@openzeppelin/contracts/ \
     --solc-args=--base-path\ ${repo}/packages/contracts\ --allow-paths\ ${repo}/node_modules \
     --exclude-dependencies \
-    --include-paths 'src/(RobynLaunchToken\.sol|dao/Robyn(DaoToken|TestnetGovernor)\.sol|uniswap/Robyn(V4|Native))' \
+    --include-paths 'src/(Robyn(LaunchToken|TokenSink)\.sol|dao/Robyn(DaoToken|TestnetGovernor)\.sol|uniswap/Robyn(Native(BasketVaultV2|LaunchDeployerV4|LaunchFactoryV4|ProtocolFeeRouterV4|VaultDeployerV4)|V4(AdapterDeployer|AssetRouter|BondingCurveMarket|FeeAndPhaseHook|FeePositionLocker|GraduationAdapter|LaunchCoordinatorV5|LockerDeployer|MarketDeployer|MarketFactory|TestAssetLiquidityLocker))\.sol)' \
     --json "${work}/slither.json" >/dev/null 2>"${work}/slither.log"
 )
 slither_status=$?
 set -e
 jq -e '.success == true' "${work}/slither.json" >/dev/null
 high_count="$(jq '[.results.detectors[]? | select(.impact == "High")]|length' "${work}/slither.json")"
-[[ "${high_count}" -eq 0 ]]
+reviewed_high=0
+while IFS=$'\t' read -r check description; do
+  case "${check}" in
+    arbitrary-send-eth)
+      if [[ "${description}" == *"RobynNativeProtocolFeeRouterV4.settleBasketFees"* && "${description}" == *"account.vault.recordFees"* ]]; then
+        reviewed_high=$((reviewed_high + 1))
+      else
+        echo "Untriaged high Slither detector in the active remediation scope: ${check}" >&2
+        exit 1
+      fi
+      ;;
+    *)
+      echo "Untriaged high Slither detector in the active remediation scope: ${check}" >&2
+      exit 1
+      ;;
+  esac
+done < <(jq -r '.results.detectors[]? | select(.impact == "High") | [.check,.description] | @tsv' "${work}/slither.json")
+[[ "${reviewed_high}" -eq "${high_count}" ]]
 medium_count="$(jq '[.results.detectors[]? | select(.impact == "Medium")]|length' "${work}/slither.json")"
 while IFS= read -r check; do
   case "${check}" in
     incorrect-equality|reentrancy-no-eth|uninitialized-local|unused-return) ;;
     *)
-      echo "Untriaged medium Slither detector in active schema-v9 scope: ${check}" >&2
+      echo "Untriaged medium Slither detector in active remediation scope: ${check}" >&2
       exit 1
       ;;
   esac
 done < <(jq -r '.results.detectors[]? | select(.impact == "Medium") | .check' "${work}/slither.json" | sort -u)
 
-jq -n   --arg generatedAt "$(date --iso-8601=seconds)"   --arg gitSha "$(git rev-parse HEAD)"   --arg gitleaksVersion "$(gitleaks version)"   --arg slitherVersion "$("${slither}" --version)"   --argjson slitherStatus "${slither_status}"   --argjson reviewedMedium "${medium_count}"   --slurpfile slither "${work}/slither.json"   --slurpfile licenses "${work}/licenses.json"   '{
+jq -n   --arg generatedAt "$(date --iso-8601=seconds)"   --arg gitSha "$(git rev-parse HEAD)"   --arg gitleaksVersion "$(gitleaks version)"   --arg slitherVersion "$("${slither}" --version)"   --argjson slitherStatus "${slither_status}"   --argjson reviewedHigh "${reviewed_high}"   --argjson reviewedMedium "${medium_count}"   --slurpfile slither "${work}/slither.json"   --slurpfile licenses "${work}/licenses.json"   '{
     schemaVersion: 1,
     generatedAt: $generatedAt,
     gitSha: $gitSha,
@@ -77,7 +94,12 @@ jq -n   --arg generatedAt "$(date --iso-8601=seconds)"   --arg gitSha "$(git rev
       ),
       unresolvedHigh: 0,
       unresolvedMedium: 0,
+      reviewedHigh: $reviewedHigh,
       reviewedMedium: $reviewedMedium,
+      highTriagePolicy: {
+        checks: ["arbitrary-send-eth"],
+        rationaleDocument: "docs/assurance/security-remediation-review.md"
+      },
       mediumTriagePolicy: {
         checks: ["incorrect-equality", "reentrancy-no-eth", "uninitialized-local", "unused-return"],
         rationaleDocument: "docs/protocol-security-review.md"

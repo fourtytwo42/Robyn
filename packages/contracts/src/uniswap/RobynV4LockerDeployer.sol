@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
-import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
-import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
-import {IPositionManagerPermit2, RobynV4FeePositionLocker} from "./RobynV4FeePositionLocker.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IPoolManager } from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import { PoolKey } from "@uniswap/v4-core/src/types/PoolKey.sol";
+import { IAllowanceTransfer } from "permit2/src/interfaces/IAllowanceTransfer.sol";
+import { IPositionManagerPermit2, RobynV4FeePositionLocker } from "./RobynV4FeePositionLocker.sol";
 
 /// @notice Size-bounded immutable locker creation helper controlled by one market factory.
 contract RobynV4LockerDeployer {
@@ -34,11 +34,25 @@ contract RobynV4LockerDeployer {
         IERC20 launchToken,
         PoolKey memory key,
         address feeRecipient,
-        uint128 maximumNativeSwap
+        uint128 maximumNativeSwap,
+        address payable treasury,
+        address tokenSink,
+        uint256 maximumNativeResidual,
+        uint256 maximumTokenResidual
     ) external returns (RobynV4FeePositionLocker locker) {
         if (msg.sender != controller) revert Unauthorized();
         locker = new RobynV4FeePositionLocker(
-            positionManager, permit2, poolManager, launchToken, key, feeRecipient, maximumNativeSwap
+            positionManager,
+            permit2,
+            poolManager,
+            launchToken,
+            key,
+            feeRecipient,
+            maximumNativeSwap,
+            treasury,
+            tokenSink,
+            maximumNativeResidual,
+            maximumTokenResidual
         );
     }
 }

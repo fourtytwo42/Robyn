@@ -29,6 +29,21 @@ export type AdminHealthSnapshot = {
   };
   keeper: { status: "ok" | "degraded"; updatedAt: string | null };
   artifacts: { status: "ok" | "degraded"; updatedAt: string | null };
+  protocol: null | {
+    status: "ok" | "degraded";
+    routerSolvent: boolean;
+    liabilities: string;
+    unattributedNative: string;
+    daoStreamConserved: boolean;
+    daoQueued: string;
+    daoStreaming: string;
+    phaseMismatchCount: number;
+    lockerMismatchCount: number;
+    rewardStreamMismatchCount: number;
+    bondingPools: number;
+    tradingPools: number;
+    tokenSink: string;
+  };
   data: {
     launchCount: string;
     rawLogCount: string;
@@ -46,6 +61,12 @@ function stringOrNull(value: unknown) {
 
 function numberOrNull(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function recordOrNull(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : null;
 }
 
 async function rpcRequest(
@@ -103,11 +124,18 @@ export async function getAdminHealthSnapshot(
   const projectionOk = data.projectionStatus === "ok";
   const keeperOk = data.keeperStatus === "ok";
   const artifactsOk = data.artifactStatus === "ok";
+  const protocol = recordOrNull(data.protocol);
+  const protocolOk = protocol === null || protocol.status === "ok";
   const web = getHealthStatus(now);
 
   return {
     overall:
-      rpcOk && ingestionOk && projectionOk && keeperOk && artifactsOk
+      rpcOk &&
+      ingestionOk &&
+      projectionOk &&
+      keeperOk &&
+      artifactsOk &&
+      protocolOk
         ? "ok"
         : "degraded",
     generatedAt: now.toISOString(),
@@ -146,6 +174,24 @@ export async function getAdminHealthSnapshot(
       status: artifactsOk ? "ok" : "degraded",
       updatedAt: stringOrNull(data.artifactUpdatedAt),
     },
+    protocol: protocol
+      ? {
+          status: protocol.status === "ok" ? "ok" : "degraded",
+          routerSolvent: protocol.routerSolvent === true,
+          liabilities: stringOrNull(protocol.liabilities) ?? "0",
+          unattributedNative: stringOrNull(protocol.unattributedNative) ?? "0",
+          daoStreamConserved: protocol.daoStreamConserved === true,
+          daoQueued: stringOrNull(protocol.daoQueued) ?? "0",
+          daoStreaming: stringOrNull(protocol.daoStreaming) ?? "0",
+          phaseMismatchCount: numberOrNull(protocol.phaseMismatchCount) ?? 0,
+          lockerMismatchCount: numberOrNull(protocol.lockerMismatchCount) ?? 0,
+          rewardStreamMismatchCount:
+            numberOrNull(protocol.rewardStreamMismatchCount) ?? 0,
+          bondingPools: numberOrNull(protocol.bondingPools) ?? 0,
+          tradingPools: numberOrNull(protocol.tradingPools) ?? 0,
+          tokenSink: stringOrNull(protocol.tokenSink) ?? "Unavailable",
+        }
+      : null,
     data: {
       launchCount: stringOrNull(data.launchCount) ?? "0",
       rawLogCount: stringOrNull(data.rawLogCount) ?? "0",

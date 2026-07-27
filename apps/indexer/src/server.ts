@@ -41,6 +41,7 @@ type Manifest = {
     legacyMarketFactories?: Address[];
     atomicLaunchCoordinator?: Address;
     protocolFeeRouter?: Address;
+    oracleHook?: Address;
   };
 };
 const manifest = JSON.parse(
@@ -180,17 +181,26 @@ const kingPolicy = manifest.kingOfForestPolicy
   : null;
 
 async function currentIndexedAddresses() {
-  const launches = await sql.unsafe<{ token: string; market: string }[]>(
-    "SELECT token,market FROM launches WHERE chain_id=$1",
+  const launches = await sql.unsafe<
+    {
+      token: string;
+      vault: string;
+      market: string;
+      adapter: string | null;
+      locker: string | null;
+    }[]
+  >(
+    "SELECT token,vault,market,adapter,locker FROM launches WHERE chain_id=$1",
     [manifest.chainId],
   );
   return [
     ...new Set([
       ...indexedAddresses,
-      ...launches.flatMap(({ token, market }) => [
-        token.toLowerCase() as Address,
-        market.toLowerCase() as Address,
-      ]),
+      ...launches.flatMap(({ token, vault, market, adapter, locker }) =>
+        [token, vault, market, adapter, locker]
+          .filter((value): value is string => Boolean(value))
+          .map((value) => value.toLowerCase() as Address),
+      ),
     ]),
   ];
 }
@@ -216,7 +226,13 @@ function newlyCreatedLaunchAddresses(
       });
       const args = decoded.args as unknown as Record<string, unknown>;
       const receipt = args.receipt as Record<string, unknown> | undefined;
-      for (const value of [args.token, receipt?.market ?? args.market]) {
+      for (const value of [
+        args.token,
+        receipt?.vault ?? args.vault,
+        receipt?.market ?? args.market,
+        receipt?.adapter ?? args.adapter,
+        receipt?.locker ?? args.locker,
+      ]) {
         if (typeof value !== "string") continue;
         const address = value.toLowerCase() as Address;
         const previous = addresses.get(address);
@@ -234,6 +250,13 @@ const marketStateAbi = [
   {
     type: "function",
     name: "seeded",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "graduated",
     stateMutability: "view",
     inputs: [],
     outputs: [{ type: "bool" }],
@@ -271,10 +294,21 @@ const feeRouterStateAbi = [
           { name: "claimableCreatorNative", type: "uint256" },
           { name: "cumulativeCreatorNative", type: "uint256" },
           { name: "claimedCreatorNative", type: "uint256" },
+          { name: "pendingBasketNative", type: "uint256" },
+          { name: "cumulativeBasketNativeSettled", type: "uint256" },
           { name: "registered", type: "bool" },
         ],
       },
     ],
+  },
+] as const;
+const phaseHookStateAbi = [
+  {
+    type: "function",
+    name: "poolPhase",
+    stateMutability: "view",
+    inputs: [{ type: "bytes32" }],
+    outputs: [{ type: "uint8" }],
   },
 ] as const;
 const nativeV4FeeRouterStateAbi = [
@@ -302,6 +336,8 @@ const nativeV4FeeRouterStateAbi = [
           { name: "claimableCreatorNative", type: "uint256" },
           { name: "cumulativeCreatorNative", type: "uint256" },
           { name: "claimedCreatorNative", type: "uint256" },
+          { name: "pendingBasketNative", type: "uint256" },
+          { name: "cumulativeBasketNativeSettled", type: "uint256" },
           { name: "registered", type: "bool" },
         ],
       },
@@ -475,11 +511,16 @@ async function projectLaunch(
       eventCreator !== creator.toLowerCase()
     )
       throw new Error(`Factory mappings differ for launch ${id}`);
-    const [seeded, exclusionsSealed] = await Promise.all([
+    const [seeded, graduated, exclusionsSealed] = await Promise.all([
       client.readContract({
         address: market,
         abi: marketStateAbi,
         functionName: "seeded",
+      }),
+      client.readContract({
+        address: market,
+        abi: marketStateAbi,
+        functionName: "graduated",
       }),
       client.readContract({
         address: token,
@@ -489,6 +530,20 @@ async function projectLaunch(
     ]);
     if (!seeded || !exclusionsSealed) {
       throw new Error(`Launch ${id} is not sealed and seeded`);
+    }
+    if (manifest.liquidityVenue === "uniswap-v4") {
+      if (!manifest.contracts.oracleHook) {
+        throw new Error(`Launch ${id} has no canonical phase hook`);
+      }
+      const phase = await client.readContract({
+        address: manifest.contracts.oracleHook,
+        abi: phaseHookStateAbi,
+        functionName: "poolPhase",
+        args: [String(atomic.args.poolId) as Hex],
+      });
+      if ((graduated && phase !== 3) || (!graduated && phase !== 1)) {
+        throw new Error(`Launch ${id} market and pool phases differ`);
+      }
     }
     if (manifest.contracts.protocolFeeRouter) {
       const feeAccount = await client.readContract({
@@ -556,13 +611,19 @@ async function projectLaunch(
     [manifest.chainId, token.toLowerCase()],
   );
   await sql.unsafe(
-    "INSERT INTO launches (chain_id,launch_id,token,vault,market,creator,name,symbol,assets,weights_bps,created_block,updated_block,formula_version,campaign_id,campaign_release_sha,automated_test_launch,pool_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12,$13,$14,$15,$16,$17) ON CONFLICT (chain_id,token) DO UPDATE SET market=EXCLUDED.market,name=EXCLUDED.name,symbol=EXCLUDED.symbol,assets=EXCLUDED.assets,weights_bps=EXCLUDED.weights_bps,created_block=EXCLUDED.created_block,updated_block=EXCLUDED.updated_block,formula_version=EXCLUDED.formula_version,campaign_id=EXCLUDED.campaign_id,campaign_release_sha=EXCLUDED.campaign_release_sha,automated_test_launch=EXCLUDED.automated_test_launch,pool_id=EXCLUDED.pool_id",
+    "INSERT INTO launches (chain_id,launch_id,token,vault,market,adapter,locker,creator,name,symbol,assets,weights_bps,created_block,updated_block,formula_version,campaign_id,campaign_release_sha,automated_test_launch,pool_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12::jsonb,$13,$14,$15,$16,$17,$18,$19) ON CONFLICT (chain_id,token) DO UPDATE SET vault=EXCLUDED.vault,market=EXCLUDED.market,adapter=EXCLUDED.adapter,locker=EXCLUDED.locker,name=EXCLUDED.name,symbol=EXCLUDED.symbol,assets=EXCLUDED.assets,weights_bps=EXCLUDED.weights_bps,created_block=EXCLUDED.created_block,updated_block=EXCLUDED.updated_block,formula_version=EXCLUDED.formula_version,campaign_id=EXCLUDED.campaign_id,campaign_release_sha=EXCLUDED.campaign_release_sha,automated_test_launch=EXCLUDED.automated_test_launch,pool_id=EXCLUDED.pool_id",
     [
       manifest.chainId,
       id.toString(),
       token.toLowerCase(),
       vault.toLowerCase(),
       market.toLowerCase(),
+      atomic && typeof atomic.args.adapter === "string"
+        ? atomic.args.adapter.toLowerCase()
+        : null,
+      atomic && typeof atomic.args.locker === "string"
+        ? atomic.args.locker.toLowerCase()
+        : null,
       creator.toLowerCase(),
       name,
       symbol,

@@ -65,6 +65,8 @@ export const launches = pgTable(
     token: text("token").notNull(),
     vault: text("vault").notNull(),
     market: text("market").notNull(),
+    adapter: text("adapter"),
+    locker: text("locker"),
     creator: text("creator").notNull(),
     name: text("name").notNull(),
     symbol: text("symbol").notNull(),

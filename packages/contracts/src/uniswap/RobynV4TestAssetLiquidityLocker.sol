@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
-import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
-import {BalanceDelta, BalanceDeltaLibrary} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
-import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
-import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
-import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
-import {ModifyLiquidityParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
-import {SafeCallback} from "@uniswap/v4-periphery/src/base/SafeCallback.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { IPoolManager } from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import { IHooks } from "@uniswap/v4-core/src/interfaces/IHooks.sol";
+import { BalanceDelta, BalanceDeltaLibrary } from "@uniswap/v4-core/src/types/BalanceDelta.sol";
+import { Currency } from "@uniswap/v4-core/src/types/Currency.sol";
+import { PoolId, PoolIdLibrary } from "@uniswap/v4-core/src/types/PoolId.sol";
+import { PoolKey } from "@uniswap/v4-core/src/types/PoolKey.sol";
+import { ModifyLiquidityParams } from "@uniswap/v4-core/src/types/PoolOperation.sol";
+import { SafeCallback } from "@uniswap/v4-periphery/src/base/SafeCallback.sol";
 
 /// @notice Permanently locks minimal native-ETH liquidity for disclosed Robyn testnet mock assets.
 /// @dev This test-only contract intentionally has no liquidity-removal, fee-collection, or rescue path.
@@ -45,7 +45,11 @@ contract RobynV4TestAssetLiquidityLocker is SafeCallback, ReentrancyGuard {
     mapping(bytes32 poolId => LockedPosition position) private _positions;
 
     event TestAssetLiquidityLocked(
-        address indexed asset, bytes32 indexed poolId, uint128 liquidity, uint256 nativeAmount, uint256 tokenAmount
+        address indexed asset,
+        bytes32 indexed poolId,
+        uint128 liquidity,
+        uint256 nativeAmount,
+        uint256 tokenAmount
     );
     event ConfigurationSealed();
 
@@ -56,7 +60,7 @@ contract RobynV4TestAssetLiquidityLocker is SafeCallback, ReentrancyGuard {
         initializer = msg.sender;
     }
 
-    receive() external payable {}
+    receive() external payable { }
 
     function seed(address asset, uint128 liquidity, uint256 maximumTokenInput)
         external
@@ -66,8 +70,10 @@ contract RobynV4TestAssetLiquidityLocker is SafeCallback, ReentrancyGuard {
     {
         if (msg.sender != initializer) revert Unauthorized();
         if (configurationSealed) revert Sealed();
-        if (asset == address(0) || asset.code.length == 0 || liquidity == 0 || maximumTokenInput == 0 || msg.value == 0)
-        {
+        if (
+            asset == address(0) || asset.code.length == 0 || liquidity == 0
+                || maximumTokenInput == 0 || msg.value == 0
+        ) {
             revert InvalidConfiguration();
         }
 
@@ -79,16 +85,18 @@ contract RobynV4TestAssetLiquidityLocker is SafeCallback, ReentrancyGuard {
         uint256 tokenBefore = IERC20(asset).balanceOf(address(this));
         IERC20(asset).safeTransferFrom(msg.sender, address(this), maximumTokenInput);
         poolManager.initialize(key, INITIAL_SQRT_PRICE_X96);
-        (nativeAmount, tokenAmount) = abi.decode(poolManager.unlock(abi.encode(key, liquidity)), (uint256, uint256));
+        (nativeAmount, tokenAmount) =
+            abi.decode(poolManager.unlock(abi.encode(key, liquidity)), (uint256, uint256));
 
-        _positions[poolId] =
-            LockedPosition({asset: asset, liquidity: liquidity, nativeAmount: nativeAmount, tokenAmount: tokenAmount});
+        _positions[poolId] = LockedPosition({
+            asset: asset, liquidity: liquidity, nativeAmount: nativeAmount, tokenAmount: tokenAmount
+        });
 
         uint256 tokenRefund = IERC20(asset).balanceOf(address(this)) - tokenBefore;
         if (tokenRefund != 0) IERC20(asset).safeTransfer(msg.sender, tokenRefund);
         uint256 nativeRefund = address(this).balance - nativeBefore;
         if (nativeRefund != 0) {
-            (bool refunded,) = payable(msg.sender).call{value: nativeRefund}("");
+            (bool refunded,) = payable(msg.sender).call{ value: nativeRefund }("");
             if (!refunded) revert NativeTransferFailed();
         }
         emit TestAssetLiquidityLocked(asset, poolId, liquidity, nativeAmount, tokenAmount);
@@ -126,7 +134,7 @@ contract RobynV4TestAssetLiquidityLocker is SafeCallback, ReentrancyGuard {
         if (nativeDelta >= 0 || tokenDelta >= 0) revert InvalidConfiguration();
         uint256 nativeAmount = SafeCast.toUint256(-int256(nativeDelta));
         uint256 tokenAmount = SafeCast.toUint256(-int256(tokenDelta));
-        poolManager.settle{value: nativeAmount}();
+        poolManager.settle{ value: nativeAmount }();
         poolManager.sync(key.currency1);
         IERC20(Currency.unwrap(key.currency1)).safeTransfer(address(poolManager), tokenAmount);
         poolManager.settle();

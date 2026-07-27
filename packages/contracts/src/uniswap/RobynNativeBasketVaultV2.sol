@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {RobynLaunchToken} from "../RobynLaunchToken.sol";
-import {RobynV4AssetRouter} from "./RobynV4AssetRouter.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { RobynLaunchToken } from "../RobynLaunchToken.sol";
+import { RobynV4AssetRouter } from "./RobynV4AssetRouter.sol";
 
 /// @notice Per-launch vault that converts native ETH fee allocations into immutable basket rewards.
 contract RobynNativeBasketVaultV2 is ReentrancyGuard {
@@ -162,7 +162,7 @@ contract RobynNativeBasketVaultV2 is ReentrancyGuard {
         if (selected.pendingNative == 0) selected.pendingSince = 0;
         totalNativeConsumed += amount;
         uint256 rewardBefore = selected.asset.balanceOf(address(this));
-        uint256 reported = assetRouter.swapExactNativeForAsset{value: amount}(
+        uint256 reported = assetRouter.swapExactNativeForAsset{ value: amount }(
             address(selected.asset), minimumOutput, address(this), deadline
         );
         actualOutput = selected.asset.balanceOf(address(this)) - rewardBefore;
@@ -175,7 +175,14 @@ contract RobynNativeBasketVaultV2 is ReentrancyGuard {
         selected.asset.forceApprove(address(launchToken), 0);
         selected.rewardsDeposited += rewardDeposited;
         emit LegConverted(
-            index, address(selected.asset), msg.sender, amount, minimumOutput, actualOutput, rewardDeposited, deadline
+            index,
+            address(selected.asset),
+            msg.sender,
+            amount,
+            minimumOutput,
+            actualOutput,
+            rewardDeposited,
+            deadline
         );
         assert(totalPendingNative() + totalNativeConsumed == totalFeesReceived);
     }

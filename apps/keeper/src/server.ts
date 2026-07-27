@@ -39,6 +39,7 @@ type Manifest = {
     factory: Address;
     baseAsset?: Address;
     wrappedNative?: Address;
+    daoToken?: Address;
     protocolFeeRouter?: Address;
     oracleHook?: Address;
     nativeFeeConverter?: Address;
@@ -420,6 +421,20 @@ const positionLockerAbi = [
 const v4PositionLockerAbi = [
   {
     type: "function",
+    name: "pendingCollectedNativeFees",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "pendingCollectedTokenFees",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
     name: "maximumNativeSaleOutput",
     stateMutability: "view",
     inputs: [],
@@ -514,18 +529,55 @@ const nativeProtocolFeeRouterAbi = [
           { name: "claimableCreatorNative", type: "uint256" },
           { name: "cumulativeCreatorNative", type: "uint256" },
           { name: "claimedCreatorNative", type: "uint256" },
+          { name: "pendingBasketNative", type: "uint256" },
+          { name: "cumulativeBasketNativeSettled", type: "uint256" },
           { name: "registered", type: "bool" },
         ],
       },
     ],
   },
-] as const;
-const erc20BalanceAbi = [
   {
     type: "function",
-    name: "balanceOf",
+    name: "totalDaoNativeLiability",
     stateMutability: "view",
-    inputs: [{ type: "address" }],
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "totalTreasuryNativeLiability",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "settleBasketFees",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "address" }, { type: "uint256" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "settleDaoFees",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "uint256" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "settleTreasuryFees",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "uint256" }],
+    outputs: [],
+  },
+] as const;
+const streamedDaoAbi = [
+  {
+    type: "function",
+    name: "eligibleRewardSupply",
+    stateMutability: "view",
+    inputs: [],
     outputs: [{ type: "uint256" }],
   },
 ] as const;
@@ -867,6 +919,7 @@ async function scan() {
     }
     if (isNativeV4 && manifest.contracts.protocolFeeRouter) {
       await enqueueV4LaunchFeeConversion(launch);
+      await enqueueV4ProtocolSettlement(launch);
     } else if (
       manifest.contracts.protocolFeeRouter &&
       manifest.contracts.nativeFeeConverter
@@ -1005,10 +1058,9 @@ async function enqueueV4LaunchFeeConversion(launch: {
     return;
   const [pendingLocked, pendingHook] = await Promise.all([
     publicClient.readContract({
-      address: launch.token,
-      abi: erc20BalanceAbi,
-      functionName: "balanceOf",
-      args: [account.locker],
+      address: account.locker,
+      abi: v4PositionLockerAbi,
+      functionName: "pendingCollectedTokenFees",
     }),
     publicClient.readContract({
       address: hook,
@@ -1072,6 +1124,61 @@ async function enqueueV4LaunchFeeConversion(launch: {
     await queue.add("convert-v4-launch-fees", payload, {
       jobId: key,
       priority: 2,
+      removeOnComplete: false,
+    });
+  } else if (await existing.isFailed()) {
+    await audit(key, "queued", existing.attemptsMade, payload);
+    await existing.retry();
+  }
+}
+
+async function enqueueV4ProtocolSettlement(launch: {
+  token: Address;
+  vault: Address;
+  market: Address;
+}) {
+  const router = manifest.contracts.protocolFeeRouter;
+  if (!router) return;
+  const [account, daoPending, treasuryPending] = await Promise.all([
+    publicClient.readContract({
+      address: router,
+      abi: nativeProtocolFeeRouterAbi,
+      functionName: "launchAccount",
+      args: [launch.token],
+    }),
+    publicClient.readContract({
+      address: router,
+      abi: nativeProtocolFeeRouterAbi,
+      functionName: "totalDaoNativeLiability",
+    }),
+    publicClient.readContract({
+      address: router,
+      abi: nativeProtocolFeeRouterAbi,
+      functionName: "totalTreasuryNativeLiability",
+    }),
+  ]);
+  if (!account.registered) return;
+  const pending = account.pendingBasketNative + daoPending + treasuryPending;
+  await supersedeStaleProtocolDeadLetters(
+    launch.token,
+    "protocol-native",
+    pending,
+  );
+  if (pending === 0n) return;
+  const key = protocolNativeJobId(launch.token);
+  const payload: ProtocolConversionJob = {
+    kind: "protocol-native",
+    idempotencyKey: key,
+    token: launch.token,
+    locker: account.locker,
+    observedAmount: pending.toString(),
+  };
+  const existing = await queue.getJob(key);
+  if (!existing) {
+    await audit(key, "queued", 0, payload);
+    await queue.add("settle-v4-native-liabilities", payload, {
+      jobId: key,
+      priority: 1,
       removeOnComplete: false,
     });
   } else if (await existing.isFailed()) {
@@ -1201,12 +1308,15 @@ async function enqueueHarvest(launch: {
     const hook = manifest.contracts.oracleHook;
     if (!hook) return;
     const [nativeBalance, tokenBalance, hookNativeBalance] = await Promise.all([
-      publicClient.getBalance({ address: locker }),
       publicClient.readContract({
-        address: launch.token,
-        abi: erc20BalanceAbi,
-        functionName: "balanceOf",
-        args: [locker],
+        address: locker,
+        abi: v4PositionLockerAbi,
+        functionName: "pendingCollectedNativeFees",
+      }),
+      publicClient.readContract({
+        address: locker,
+        abi: v4PositionLockerAbi,
+        functionName: "pendingCollectedTokenFees",
       }),
       publicClient.readContract({
         address: hook,
@@ -1488,12 +1598,15 @@ async function processHarvest(
     const hook = manifest.contracts.oracleHook;
     if (!hook) throw new Error("V4 protocol hook is missing");
     const [nativeBefore, tokenBefore, hookNativeBefore] = await Promise.all([
-      publicClient.getBalance({ address: job.data.locker }),
       publicClient.readContract({
-        address: job.data.token,
-        abi: erc20BalanceAbi,
-        functionName: "balanceOf",
-        args: [job.data.locker],
+        address: job.data.locker,
+        abi: v4PositionLockerAbi,
+        functionName: "pendingCollectedNativeFees",
+      }),
+      publicClient.readContract({
+        address: job.data.locker,
+        abi: v4PositionLockerAbi,
+        functionName: "pendingCollectedTokenFees",
       }),
       publicClient.readContract({
         address: hook,
@@ -1541,8 +1654,10 @@ async function processHarvest(
         throw new Error("Uniswap v4 fee collection reverted");
       }
     }
-    const nativeBalance = await publicClient.getBalance({
+    const nativeBalance = await publicClient.readContract({
       address: job.data.locker,
+      abi: v4PositionLockerAbi,
+      functionName: "pendingCollectedNativeFees",
     });
     if (nativeBalance > 0n) {
       const routing = await publicClient.simulateContract({
@@ -1633,17 +1748,100 @@ async function processProtocolConversion(
     job.data,
   );
   if (isNativeV4) {
-    if (job.data.kind !== "protocol-launch") {
-      throw new Error("Native v4 has no base-to-native protocol conversion");
+    const router = manifest.contracts.protocolFeeRouter;
+    if (!router) throw new Error("V4 protocol fee router is missing");
+    if (job.data.kind === "protocol-native") {
+      const daoToken = manifest.contracts.daoToken;
+      if (!daoToken) throw new Error("V4 DAO token is missing");
+      let transactionHash = ("0x" + "0".repeat(64)) as Hash;
+      let settled = 0n;
+      const account = await publicClient.readContract({
+        address: router,
+        abi: nativeProtocolFeeRouterAbi,
+        functionName: "launchAccount",
+        args: [job.data.token],
+      });
+      if (account.pendingBasketNative > 0n) {
+        const simulation = await publicClient.simulateContract({
+          address: router,
+          abi: nativeProtocolFeeRouterAbi,
+          functionName: "settleBasketFees",
+          args: [job.data.token, account.pendingBasketNative],
+          account: writeAccount,
+        });
+        transactionHash = await walletClient.writeContract(simulation.request);
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: transactionHash,
+          timeout: 30_000,
+        });
+        if (receipt.status !== "success")
+          throw new Error("V4 basket settlement reverted");
+        settled += account.pendingBasketNative;
+      }
+      const [daoPending, eligibleSupply] = await Promise.all([
+        publicClient.readContract({
+          address: router,
+          abi: nativeProtocolFeeRouterAbi,
+          functionName: "totalDaoNativeLiability",
+        }),
+        publicClient.readContract({
+          address: daoToken,
+          abi: streamedDaoAbi,
+          functionName: "eligibleRewardSupply",
+        }),
+      ]);
+      if (daoPending > 0n && eligibleSupply > 0n) {
+        const simulation = await publicClient.simulateContract({
+          address: router,
+          abi: nativeProtocolFeeRouterAbi,
+          functionName: "settleDaoFees",
+          args: [daoPending],
+          account: writeAccount,
+        });
+        transactionHash = await walletClient.writeContract(simulation.request);
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: transactionHash,
+          timeout: 30_000,
+        });
+        if (receipt.status !== "success")
+          throw new Error("V4 DAO settlement reverted");
+        settled += daoPending;
+      }
+      const treasuryPending = await publicClient.readContract({
+        address: router,
+        abi: nativeProtocolFeeRouterAbi,
+        functionName: "totalTreasuryNativeLiability",
+      });
+      if (treasuryPending > 0n) {
+        const simulation = await publicClient.simulateContract({
+          address: router,
+          abi: nativeProtocolFeeRouterAbi,
+          functionName: "settleTreasuryFees",
+          args: [treasuryPending],
+          account: writeAccount,
+        });
+        transactionHash = await walletClient.writeContract(simulation.request);
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: transactionHash,
+          timeout: 30_000,
+        });
+        if (receipt.status !== "success")
+          throw new Error("V4 treasury settlement reverted");
+        settled += treasuryPending;
+      }
+      return {
+        operation: "protocol-native",
+        transactionHash,
+        inputAmount: settled.toString(),
+      };
     }
     const hook = manifest.contracts.oracleHook;
     if (!hook) throw new Error("V4 protocol hook is missing");
     const [pendingLocked, pendingHook] = await Promise.all([
       publicClient.readContract({
-        address: job.data.token,
-        abi: erc20BalanceAbi,
-        functionName: "balanceOf",
-        args: [job.data.locker],
+        address: job.data.locker,
+        abi: v4PositionLockerAbi,
+        functionName: "pendingCollectedTokenFees",
       }),
       publicClient.readContract({
         address: hook,

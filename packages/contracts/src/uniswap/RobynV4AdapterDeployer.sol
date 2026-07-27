@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
-import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
-import {IPositionManager} from "@uniswap/v4-periphery/src/interfaces/IPositionManager.sol";
-import {IStateView} from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
-import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
-import {RobynV4AssetRouter} from "./RobynV4AssetRouter.sol";
-import {RobynV4GraduationAdapter} from "./RobynV4GraduationAdapter.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IPoolManager } from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import { IHooks } from "@uniswap/v4-core/src/interfaces/IHooks.sol";
+import { IPositionManager } from "@uniswap/v4-periphery/src/interfaces/IPositionManager.sol";
+import { IStateView } from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
+import { IAllowanceTransfer } from "permit2/src/interfaces/IAllowanceTransfer.sol";
+import { RobynV4AssetRouter } from "./RobynV4AssetRouter.sol";
+import { RobynV4GraduationAdapter } from "./RobynV4GraduationAdapter.sol";
 
 /// @notice Size-bounded adapter creation helper controlled by one market factory.
 contract RobynV4AdapterDeployer {
@@ -43,7 +43,10 @@ contract RobynV4AdapterDeployer {
         controller = controller_;
     }
 
-    function deploy(Deployment calldata deployment) external returns (RobynV4GraduationAdapter adapter) {
+    function deploy(Deployment calldata deployment)
+        external
+        returns (RobynV4GraduationAdapter adapter)
+    {
         if (msg.sender != controller) revert Unauthorized();
         adapter = new RobynV4GraduationAdapter(
             deployment.launchToken,

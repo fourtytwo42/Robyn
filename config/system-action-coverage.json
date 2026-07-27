@@ -44,10 +44,22 @@
       "functions": [
         "bindController",
         "deployToken",
-        "deployVault",
         "predictToken",
-        "predictVault",
         "sealExclusions"
+      ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
+    },
+    {
+      "contract": "RobynNativeVaultDeployerV4",
+      "source": "packages/contracts/src/uniswap/RobynNativeVaultDeployerV4.sol",
+      "artifact": "RobynNativeVaultDeployerV4",
+      "functions": [
+        "bindController",
+        "deployVault",
+        "predictVault"
       ],
       "evidence": [
         "RobynV4NativeProtocol.t.sol",
@@ -114,6 +126,7 @@
       "functions": [
         "bindFeeRouter",
         "buy",
+        "buyFor",
         "graduationProgressBps",
         "nativePerToken",
         "nativeRaised",
@@ -161,7 +174,11 @@
         "mintAndLock",
         "onERC721Received",
         "poolKey",
-        "routeCollectedNative"
+        "routeCollectedNative",
+        "sweepUnattributedLaunchTokens",
+        "sweepUnattributedNative",
+        "unattributedLaunchTokens",
+        "unattributedNative"
       ],
       "evidence": [
         "RobynV4NativeProtocol.t.sol",
@@ -169,17 +186,25 @@
       ]
     },
     {
-      "contract": "RobynV4OracleHook",
-      "source": "packages/contracts/src/uniswap/RobynV4OracleHook.sol",
-      "artifact": "RobynV4OracleHook",
+      "contract": "RobynV4FeeAndPhaseHook",
+      "source": "packages/contracts/src/uniswap/RobynV4FeeAndPhaseHook.sol",
+      "artifact": "RobynV4FeeAndPhaseHook",
       "functions": [
+        "activateTrading",
         "afterInitialize",
         "afterSwap",
+        "beforeAddLiquidity",
+        "beforeDonate",
+        "beforeSwap",
+        "beginGraduation",
         "bindRegistrar",
         "consult",
+        "convertTokenFees",
         "latestObservation",
         "observation",
-        "registerPool"
+        "poolKey",
+        "registerPool",
+        "settleNativeFees"
       ],
       "evidence": [
         "RobynV4NativeProtocol.t.sol",
@@ -225,9 +250,9 @@
       ]
     },
     {
-      "contract": "RobynNativeProtocolFeeRouterV3",
-      "source": "packages/contracts/src/uniswap/RobynNativeProtocolFeeRouterV3.sol",
-      "artifact": "RobynNativeProtocolFeeRouterV3",
+      "contract": "RobynNativeProtocolFeeRouterV4",
+      "source": "packages/contracts/src/uniswap/RobynNativeProtocolFeeRouterV4.sol",
+      "artifact": "RobynNativeProtocolFeeRouterV4",
       "functions": [
         "bindCoordinator",
         "claimCreatorFees",
@@ -238,8 +263,24 @@
         "launchAccount",
         "registerLaunch",
         "routeNativeFees",
-        "setPaused"
+        "setPaused",
+        "settleBasketFees",
+        "settleDaoFees",
+        "settleTreasuryFees",
+        "sweepUnattributedNative",
+        "totalNativeLiabilities",
+        "unattributedNative"
       ],
+      "evidence": [
+        "RobynV4NativeProtocol.t.sol",
+        "RobynV4HundredsUsersSimulation.t.sol"
+      ]
+    },
+    {
+      "contract": "RobynTokenSink",
+      "source": "packages/contracts/src/RobynTokenSink.sol",
+      "artifact": "RobynTokenSink",
+      "functions": [],
       "evidence": [
         "RobynV4NativeProtocol.t.sol",
         "RobynV4HundredsUsersSimulation.t.sol"
@@ -251,12 +292,18 @@
       "artifact": "RobynLaunchToken",
       "functions": [
         "accumulativeRewardOf",
+        "activateQueuedRewards",
         "claim",
         "claimAll",
+        "currentRewardPerToken",
         "distributeReward",
+        "lastTimeRewardApplicable",
         "rewardAsset",
+        "rewardStream",
         "sealExclusions",
+        "streamingRewards",
         "tokenURI",
+        "totalRewardsVested",
         "withdrawableRewardOf",
         "withdrawnRewardOf"
       ],
@@ -277,16 +324,22 @@
       "functions": [
         "CLOCK_MODE",
         "accumulativeRewardOf",
+        "activateQueuedRewards",
         "bindRewardDepositor",
         "claimRewards",
         "claimRewardsTo",
         "claimableRewardOf",
         "clock",
+        "currentRewardPerToken",
         "depositRewards",
         "eligibleRewardSupply",
+        "lastTimeRewardApplicable",
+        "magnifiedRewardPerShare",
         "nonces",
         "rewardExclusions",
-        "sealRewardExclusions"
+        "sealRewardExclusions",
+        "streamingRewards",
+        "totalRewardsVested"
       ],
       "inheritedFunctions": [
         "approve",
@@ -426,6 +479,11 @@
     },
     {
       "method": "GET",
+      "path": "/king-of-forest",
+      "source": "apps/api/src/server.ts"
+    },
+    {
+      "method": "GET",
       "path": "/launch-metadata/:preparationId",
       "source": "apps/api/src/creator-routes.ts"
     },
@@ -531,8 +589,8 @@
       "source": "apps/web/src/app/page.tsx"
     },
     {
-      "route": "/create",
-      "source": "apps/web/src/app/create/page.tsx"
+      "route": "/admin/health",
+      "source": "apps/web/src/app/admin/health/page.tsx"
     },
     {
       "route": "/dao",
@@ -553,6 +611,14 @@
     {
       "route": "/portfolio",
       "source": "apps/web/src/app/portfolio/page.tsx"
+    },
+    {
+      "route": "/users/[address]",
+      "source": "apps/web/src/app/users/[address]/page.tsx"
+    },
+    {
+      "route": "/whitepaper",
+      "source": "apps/web/src/app/whitepaper/page.tsx"
     }
   ],
   "workers": [

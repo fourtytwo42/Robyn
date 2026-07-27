@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
-import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
-import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
-import {StateLibrary} from "@uniswap/v4-core/src/libraries/StateLibrary.sol";
-import {BalanceDelta, BalanceDeltaLibrary} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
-import {Currency, CurrencyLibrary} from "@uniswap/v4-core/src/types/Currency.sol";
-import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
-import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
-import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {RobynNativeProtocolFeeRouterV3} from "./RobynNativeProtocolFeeRouterV3.sol";
+import { IPoolManager } from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import { IHooks } from "@uniswap/v4-core/src/interfaces/IHooks.sol";
+import { Hooks } from "@uniswap/v4-core/src/libraries/Hooks.sol";
+import { StateLibrary } from "@uniswap/v4-core/src/libraries/StateLibrary.sol";
+import { BalanceDelta, BalanceDeltaLibrary } from "@uniswap/v4-core/src/types/BalanceDelta.sol";
+import { Currency, CurrencyLibrary } from "@uniswap/v4-core/src/types/Currency.sol";
+import { PoolId, PoolIdLibrary } from "@uniswap/v4-core/src/types/PoolId.sol";
+import { PoolKey } from "@uniswap/v4-core/src/types/PoolKey.sol";
+import { SwapParams } from "@uniswap/v4-core/src/types/PoolOperation.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { RobynNativeProtocolFeeRouterV3 } from "./RobynNativeProtocolFeeRouterV3.sol";
 
 /// @notice Immutable one-percent fee and observation hook for registered Robyn launch pools.
 contract RobynV4OracleHook is ReentrancyGuard {
@@ -68,7 +68,8 @@ contract RobynV4OracleHook is ReentrancyGuard {
     mapping(address token => uint256 amount) public cumulativeTokenFees;
     mapping(bytes32 poolId => uint8 count) public observationCount;
     mapping(bytes32 poolId => uint8 index) public observationIndex;
-    mapping(bytes32 poolId => mapping(uint8 index => Observation observation)) private _observations;
+    mapping(bytes32 poolId => mapping(uint8 index => Observation observation)) private
+        _observations;
 
     event RegistrarBound(address indexed registrar);
     event PoolRegistered(bytes32 indexed poolId);
@@ -84,7 +85,9 @@ contract RobynV4OracleHook is ReentrancyGuard {
         bool zeroForOne
     );
     event NativeFeesSettled(address indexed token, address indexed caller, uint256 amount);
-    event TokenFeesConverted(address indexed token, address indexed caller, uint256 tokenAmount, uint256 nativeOut);
+    event TokenFeesConverted(
+        address indexed token, address indexed caller, uint256 tokenAmount, uint256 nativeOut
+    );
 
     constructor(
         IPoolManager poolManager_,
@@ -94,8 +97,8 @@ contract RobynV4OracleHook is ReentrancyGuard {
     ) {
         if (
             address(poolManager_) == address(0) || address(poolManager_).code.length == 0
-                || address(feeRouter_) == address(0) || address(feeRouter_).code.length == 0 || initializer_ == address(0)
-                || deploymentDomain_ == bytes32(0)
+                || address(feeRouter_) == address(0) || address(feeRouter_).code.length == 0
+                || initializer_ == address(0) || deploymentDomain_ == bytes32(0)
         ) {
             revert InvalidConfiguration();
         }
@@ -136,7 +139,10 @@ contract RobynV4OracleHook is ReentrancyGuard {
         if (msg.sender != registrar) revert Unauthorized();
         if (address(key.hooks) != address(this)) revert InvalidConfiguration();
         address token = Currency.unwrap(key.currency1);
-        if (Currency.unwrap(key.currency0) != address(0) || token == address(0) || token.code.length == 0) {
+        if (
+            Currency.unwrap(key.currency0) != address(0) || token == address(0)
+                || token.code.length == 0
+        ) {
             revert InvalidConfiguration();
         }
         poolId = PoolId.unwrap(key.toId());
@@ -147,7 +153,10 @@ contract RobynV4OracleHook is ReentrancyGuard {
         emit PoolRegistered(poolId);
     }
 
-    function afterInitialize(address, PoolKey calldata key, uint160, int24 tick) external returns (bytes4) {
+    function afterInitialize(address, PoolKey calldata key, uint160, int24 tick)
+        external
+        returns (bytes4)
+    {
         _requirePoolManager();
         bytes32 poolId = PoolId.unwrap(key.toId());
         if (!registeredPool[poolId]) revert PoolNotRegistered();
@@ -155,10 +164,13 @@ contract RobynV4OracleHook is ReentrancyGuard {
         return IHooks.afterInitialize.selector;
     }
 
-    function afterSwap(address, PoolKey calldata key, SwapParams calldata params, BalanceDelta delta, bytes calldata)
-        external
-        returns (bytes4, int128)
-    {
+    function afterSwap(
+        address,
+        PoolKey calldata key,
+        SwapParams calldata params,
+        BalanceDelta delta,
+        bytes calldata
+    ) external returns (bytes4, int128) {
         _requirePoolManager();
         bytes32 poolId = PoolId.unwrap(key.toId());
         if (!registeredPool[poolId]) revert PoolNotRegistered();
@@ -172,15 +184,16 @@ contract RobynV4OracleHook is ReentrancyGuard {
         address tokenAddress = address(token);
         if (amount == 0 || amount > pendingNativeFees[tokenAddress]) revert InvalidAmount();
         pendingNativeFees[tokenAddress] -= amount;
-        feeRouter.routeNativeFees{value: amount}(token);
+        feeRouter.routeNativeFees{ value: amount }(token);
         emit NativeFeesSettled(tokenAddress, msg.sender, amount);
     }
 
-    function convertTokenFees(IERC20 token, uint128 amount, uint256 minimumNativeOut, uint256 deadline)
-        external
-        nonReentrant
-        returns (uint256 nativeOut)
-    {
+    function convertTokenFees(
+        IERC20 token,
+        uint128 amount,
+        uint256 minimumNativeOut,
+        uint256 deadline
+    ) external nonReentrant returns (uint256 nativeOut) {
         address tokenAddress = address(token);
         if (amount == 0 || amount > pendingTokenFees[tokenAddress]) revert InvalidAmount();
         _enforceSaleSafety(tokenAddress, amount, minimumNativeOut);
@@ -202,7 +215,8 @@ contract RobynV4OracleHook is ReentrancyGuard {
         if (exactInput ? unspecifiedDelta <= 0 : unspecifiedDelta >= 0) revert InvalidAmount();
         uint256 transferred = _absoluteDelta(unspecifiedDelta);
         if (transferred == 0) revert InvalidAmount();
-        uint256 fee = exactInput ? _ceilDiv(transferred * PROTOCOL_FEE_BPS, BPS) : _ceilDiv(transferred, 99);
+        uint256 fee =
+            exactInput ? _ceilDiv(transferred * PROTOCOL_FEE_BPS, BPS) : _ceilDiv(transferred, 99);
         if (fee == 0 || fee > uint256(uint128(type(int128).max))) revert InvalidAmount();
 
         Currency currency = _unspecifiedCurrency(key, params);
@@ -253,10 +267,11 @@ contract RobynV4OracleHook is ReentrancyGuard {
         uint32 target = now32 - secondsAgo;
         uint8 latestIndex = observationIndex[poolId];
         Observation memory latest = _observations[poolId][latestIndex];
-        int56 currentCumulative = latest.tickCumulative + int56(latest.tick) * int56(uint56(now32 - latest.timestamp));
+        int56 currentCumulative =
+            latest.tickCumulative + int56(latest.tick) * int56(uint56(now32 - latest.timestamp));
         Observation memory selected = _observationAtOrBefore(poolId, target, count, latestIndex);
-        int56 targetCumulative =
-            selected.tickCumulative + int56(selected.tick) * int56(uint56(target - selected.timestamp));
+        int56 targetCumulative = selected.tickCumulative + int56(selected.tick)
+            * int56(uint56(target - selected.timestamp));
         int56 delta = currentCumulative - targetCumulative;
         int56 divisor = int56(uint56(secondsAgo));
         int56 quotient = delta / divisor;
@@ -271,7 +286,8 @@ contract RobynV4OracleHook is ReentrancyGuard {
         returns (Observation memory selected)
     {
         for (uint8 offset; offset < count; ++offset) {
-            uint8 index = uint8((uint16(latestIndex) + OBSERVATION_CAPACITY - offset) % OBSERVATION_CAPACITY);
+            uint8 index =
+                uint8((uint16(latestIndex) + OBSERVATION_CAPACITY - offset) % OBSERVATION_CAPACITY);
             Observation memory candidate = _observations[poolId][index];
             if (candidate.timestamp <= target) return candidate;
         }
@@ -294,8 +310,8 @@ contract RobynV4OracleHook is ReentrancyGuard {
             _observations[poolId][previousIndex] = previous;
             return;
         }
-        int56 cumulative =
-            previous.tickCumulative + int56(previous.tick) * int56(uint56(timestamp - previous.timestamp));
+        int56 cumulative = previous.tickCumulative + int56(previous.tick)
+            * int56(uint56(timestamp - previous.timestamp));
         uint8 nextIndex = uint8((uint16(previousIndex) + 1) % OBSERVATION_CAPACITY);
         _observations[poolId][nextIndex] = Observation(timestamp, tick, cumulative);
         observationIndex[poolId] = nextIndex;
@@ -316,8 +332,9 @@ contract RobynV4OracleHook is ReentrancyGuard {
         (int24 meanTick,) = this.consult(poolId, TWAP_WINDOW);
         int24 spotTick;
         (sqrtPriceX96, spotTick,,) = poolManager.getSlot0(PoolId.wrap(poolId));
-        uint256 tickDeviation =
-            spotTick >= meanTick ? uint256(uint24(spotTick - meanTick)) : uint256(uint24(meanTick - spotTick));
+        uint256 tickDeviation = spotTick >= meanTick
+            ? uint256(uint24(spotTick - meanTick))
+            : uint256(uint24(meanTick - spotTick));
         if (tickDeviation > MAX_SPOT_TWAP_TICK_DEVIATION) revert SpotTwapDeviation(tickDeviation);
     }
 
@@ -330,13 +347,18 @@ contract RobynV4OracleHook is ReentrancyGuard {
     ) private {
         (uint256 quotedNative,) = feeRouter.assetRouter().quoteAssetToNative(token, amount);
         uint256 maximumNative = feeRouter.assetRouter().routeStatus(token).maximumNativeInput;
-        if (quotedNative == 0 || quotedNative > maximumNative) revert SaleTooLarge(quotedNative, maximumNative);
+        if (quotedNative == 0 || quotedNative > maximumNative) {
+            revert SaleTooLarge(quotedNative, maximumNative);
+        }
         uint256 requiredMinimum = Math.mulDiv(quotedNative, BPS - MAX_CONVERSION_SLIPPAGE_BPS, BPS);
-        if (minimumNativeOut < requiredMinimum) revert WeakMinimumOutput(minimumNativeOut, requiredMinimum);
+        if (minimumNativeOut < requiredMinimum) {
+            revert WeakMinimumOutput(minimumNativeOut, requiredMinimum);
+        }
 
         uint256 ratioX96 = Math.mulDiv(uint256(sqrtPriceX96), uint256(sqrtPriceX96), 1 << 96);
         uint256 idealNative = Math.mulDiv(amount, Math.mulDiv(1e18, 1 << 96, ratioX96), 1e18);
-        uint256 adjustedQuote = Math.mulDiv(quotedNative, FEE_DENOMINATOR, FEE_DENOMINATOR - poolFee);
+        uint256 adjustedQuote =
+            Math.mulDiv(quotedNative, FEE_DENOMINATOR, FEE_DENOMINATOR - poolFee);
         adjustedQuote = Math.mulDiv(adjustedQuote, BPS, BPS - PROTOCOL_FEE_BPS);
         if (idealNative == 0 || adjustedQuote * BPS < idealNative * (BPS - MAX_PRICE_IMPACT_BPS)) {
             revert ExcessivePriceImpact(idealNative, quotedNative);
@@ -349,7 +371,11 @@ contract RobynV4OracleHook is ReentrancyGuard {
         return _observations[poolId][observationIndex[poolId]];
     }
 
-    function _unspecifiedDelta(SwapParams calldata params, BalanceDelta delta) private pure returns (int128) {
+    function _unspecifiedDelta(SwapParams calldata params, BalanceDelta delta)
+        private
+        pure
+        returns (int128)
+    {
         bool specifiedIsCurrency0 = params.zeroForOne == (params.amountSpecified < 0);
         return specifiedIsCurrency0 ? delta.amount1() : delta.amount0();
     }

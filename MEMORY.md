@@ -1,6 +1,49 @@
 # Project Memory
 
 Durable project context lives here. Update this file whenever information should survive chat context compression or future agent handoff.
+
+- Security-remediation checkpoint 2026-07-27: active work is on
+  `codex/security-remediation` in `/home/hendo420/Robyn-schema9`, based on
+  `09f4d80bde00931c9f88521b50692fe11bd8bb7b`. The public schema-v9 testnet
+  deployment is unchanged and its endurance runner remains stopped. No
+  remediated contracts have been broadcast.
+- Security-remediation implementation 2026-07-27: the candidate adds the
+  phase-aware v4 hook, principal-safe locker, accounting-only V4 fee router,
+  immutable token sink, and seven-day transfer-aware launch-token and DAO
+  reward streams. The indexer now persists and ingests canonical token, vault,
+  market, adapter, and locker addresses. API, keeper, web, schema-10 deployment
+  tooling, verifier, health invariants, and action coverage are updated.
+- Security-remediation validation 2026-07-27: full format, strict typecheck,
+  lint, repository tests, Foundry tests, 256-run/depth-128 invariants, the
+  512-wallet/32-launch/25,000-action simulation across 20 seeds, contract-size
+  checks, dependency audit, Git-history secret scan, and active-scope Slither
+  review pass. An integration review caught and fixed a stale indexer router
+  tuple. A manual review caught and fixed native residual dust being returned
+  rather than held as principal. Detailed status is in
+  `docs/assurance/security-remediation-review.md`.
+- Security-remediation mainnet fork 2026-07-27: the first no-broadcast run
+  against Robinhood's official public mainnet RPC failed with approximately
+  0.5 ETH native residual. The 1.1B/2.25 ETH virtual reserves did not match the
+  800M bonding, 200M graduation, and 6 ETH target allocations. Production now
+  uses `1066666666666666666666666666` virtual tokens and 2 ETH virtual native;
+  curve exhaustion is 6 ETH plus one wei and exactly matches the graduation
+  inventory at terminal price. The corrected full lifecycle passes on chain
+  4663 within the 1 gwei and 0.000001-token residual ceilings.
+- Security-remediation blockers 2026-07-27: fresh testnet deployment, lifecycle
+  campaign, empty-index rebuild, browser/real-wallet acceptance, recovery
+  drills, reproducible builds, a new eight-hour run, and independent
+  professional audit remain required.
+- Security-remediation deployment rehearsal 2026-07-27: the first standard
+  Anvil fork rehearsal found `RobynNativeLaunchDeployerV4` at 25,776 runtime
+  bytes, above EIP-170. Token and vault CREATE2 deployment are now split
+  between `RobynNativeLaunchDeployerV4` and
+  `RobynNativeVaultDeployerV4`. Their runtimes are 17,518 and 9,299 bytes, and
+  the size gate now covers every deployed component. A normal-limit chain-46630
+  fork deployment, genesis launch, and verifier pass. The 56 deployment and
+  configuration transactions use 59,143,474 gas. Current pricing plus 25%
+  headroom requires 890,050,177,359,800 wei versus a project-wallet balance of
+  11,163,294,240,852,215 wei. No public transaction was broadcast.
+
 - Security audit checkpoint 2026-07-26: a fresh manual review of deployed
   schema-v9 Solidity commit `e435b78` found a release-blocking pre-graduation
   v4-pool access flaw. The market factory initializes and registers a launch
@@ -120,6 +163,17 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-26 security-remediation work is active on
+  `codex/security-remediation` in `/home/hendo420/Robyn-schema9`, based on
+  `09f4d80bde00931c9f88521b50692fe11bd8bb7b`. The public schema-v9 deployment
+  remains unchanged and the endurance service is inactive. Fresh source now
+  includes a phase-aware v4 hook, principal-safe locker, accounting-only V4 fee
+  router, immutable token sink, and seven-day transfer-aware launch-token and
+  DAO reward streams. The complete Foundry suite passes 165 tests, including
+  the 512-wallet, 32-launch, 25,000-action campaign. Mainnet-fork tests still
+  skip without their RPC environment and are not accepted as rehearsal
+  evidence. Deployment tooling is being upgraded to manifest schema 10; no
+  remediated testnet deployment has occurred.
 - Fresh capped schema-v9 deployment `e435b78`, the 100-wallet public campaign,
   exact accounting reconciliation, empty-database rebuild, King projection,
   and release `19053b1` browser acceptance are passing. Server-side testnet

@@ -28,6 +28,10 @@ const terminalVirtualNative = ceilDiv(invariant, terminalVirtualToken);
 const requiredNetNative = terminalVirtualNative - initialVirtualNative;
 const terminalPriceX18 = (terminalVirtualNative * 10n ** 18n) / terminalVirtualToken;
 const terminalFdvNative = (terminalPriceX18 * totalSupply) / 10n ** 18n;
+const graduationNativeAtTerminal = ceilDiv(
+  graduationAllocation * terminalVirtualNative,
+  terminalVirtualToken,
+);
 const minimumGrossDemand = ceilDiv(
   configuredThreshold * bps,
   bps - BigInt(config.curveFeeBps),
@@ -43,12 +47,24 @@ assert(terminalVirtualNative === value("terminalVirtualNativeReserve"), "termina
 assert(requiredNetNative === configuredThreshold, "curve exhaustion must require exactly 6 ETH net");
 assert(terminalPriceX18 === value("terminalNativePerTokenX18"), "terminal price mismatch");
 assert(terminalFdvNative === value("terminalFullyDilutedValueNative"), "terminal FDV mismatch");
+assert(
+  graduationNativeAtTerminal === configuredThreshold,
+  "graduation inventory must consume the complete native curve reserve",
+);
 assert(minimumGrossDemand === value("minimumGrossBuyDemand"), "gross demand mismatch");
 assert(BigInt(config.curveFeeBps) === 100n, "bonding fee must remain 1%");
 assert(BigInt(config.graduatedProtocolFeeBps) === 100n, "graduated protocol fee must remain 1%");
 assert(config.graduatedPoolLpFeePips === 10_000, "graduated LP fee must remain 1%");
 assert(value("maximumCurvePurchase") <= configuredThreshold / 10n, "single buy cap must not exceed 10%");
 assert(value("maximumNativeSwap") > 0n, "graduated swap cap must be positive");
+assert(
+  value("maximumNativeResidual") <= 1_000_000_000n,
+  "native graduation residual ceiling must not exceed 1 gwei",
+);
+assert(
+  value("maximumTokenResidual") <= 1_000_000_000_000n,
+  "token graduation residual ceiling must not exceed 0.000001 token",
+);
 assert(config.policy === "immutable-per-factory", "curve policy must be immutable per factory");
 
 console.log(
@@ -58,6 +74,9 @@ console.log(
       graduationThresholdWei: configuredThreshold.toString(),
       minimumGrossBuyDemandWei: minimumGrossDemand.toString(),
       terminalFullyDilutedValueWei: terminalFdvNative.toString(),
+      graduationNativeAtTerminalWei: graduationNativeAtTerminal.toString(),
+      maximumNativeResidualWei: value("maximumNativeResidual").toString(),
+      maximumTokenResidual: value("maximumTokenResidual").toString(),
       maximumCurvePurchaseWei: value("maximumCurvePurchase").toString(),
       maximumNativeSwapWei: value("maximumNativeSwap").toString(),
       valid: true,

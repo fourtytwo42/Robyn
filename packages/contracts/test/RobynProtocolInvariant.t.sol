@@ -143,7 +143,10 @@ contract RobynProtocolInvariantTest {
             uint256 claimed = token.totalRewardsClaimed(i);
             require(selected.rewardsDeposited == received, "vault reward mismatch");
             require(claimed <= distributed, "claimed exceeds distributed");
-            require(distributed + token.pendingWithoutSupply(i) == received, "reward conservation");
+            require(
+                distributed + token.pendingWithoutSupply(i) + token.streamingRewards(i) == received,
+                "reward conservation"
+            );
             require(rewards[i].balanceOf(address(token)) == received - claimed, "reward balance");
 
             uint256 withdrawn;

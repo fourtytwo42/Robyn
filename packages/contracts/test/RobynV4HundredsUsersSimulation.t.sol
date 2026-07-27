@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
-import {RobynLaunchToken} from "../src/RobynLaunchToken.sol";
-import {RobynTestnetGovernor} from "../src/dao/RobynTestnetGovernor.sol";
-import {RobynNativeBasketVaultV2} from "../src/uniswap/RobynNativeBasketVaultV2.sol";
-import {RobynNativeLaunchFactoryV4} from "../src/uniswap/RobynNativeLaunchFactoryV4.sol";
-import {RobynNativeProtocolFeeRouterV3} from "../src/uniswap/RobynNativeProtocolFeeRouterV3.sol";
-import {RobynV4BondingCurveMarket} from "../src/uniswap/RobynV4BondingCurveMarket.sol";
-import {RobynV4FeePositionLocker} from "../src/uniswap/RobynV4FeePositionLocker.sol";
-import {RobynV4NativeProtocolTest, V4TestAsset} from "./RobynV4NativeProtocol.t.sol";
+import { TimelockController } from "@openzeppelin/contracts/governance/TimelockController.sol";
+import { RobynLaunchToken } from "../src/RobynLaunchToken.sol";
+import { RobynTestnetGovernor } from "../src/dao/RobynTestnetGovernor.sol";
+import { RobynNativeBasketVaultV2 } from "../src/uniswap/RobynNativeBasketVaultV2.sol";
+import { RobynNativeLaunchFactoryV4 } from "../src/uniswap/RobynNativeLaunchFactoryV4.sol";
+import { RobynNativeProtocolFeeRouterV4 } from "../src/uniswap/RobynNativeProtocolFeeRouterV4.sol";
+import { RobynV4BondingCurveMarket } from "../src/uniswap/RobynV4BondingCurveMarket.sol";
+import { RobynV4FeePositionLocker } from "../src/uniswap/RobynV4FeePositionLocker.sol";
+import { RobynV4NativeProtocolTest, V4TestAsset } from "./RobynV4NativeProtocol.t.sol";
 
 contract AssuranceGovernedValue {
     address public immutable timelock;
@@ -61,8 +61,11 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
         for (uint256 index; index < LAUNCH_COUNT; ++index) {
             address creator = _actor(index % 8);
             vm.prank(creator);
-            (RobynLaunchToken token, RobynNativeBasketVaultV2 vault, RobynV4BondingCurveMarket market) =
-                coordinator.createLaunch(_campaignRequest(index));
+            (
+                RobynLaunchToken token,
+                RobynNativeBasketVaultV2 vault,
+                RobynV4BondingCurveMarket market
+            ) = coordinator.createLaunch(_campaignRequest(index));
             tokens.push(token);
             vaults.push(vault);
             markets.push(market);
@@ -86,7 +89,7 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
                     token.approve(address(market), sellAmount);
                     market.sell(sellAmount, 1);
                 } else {
-                    market.buy{value: 0.000005 ether}(1);
+                    market.buy{ value: 0.000005 ether }(1);
                 }
                 vm.stopPrank();
                 ++successfulActions;
@@ -115,7 +118,7 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
             assertEq(positionManager.getPositionLiquidity(locker.positionTokenId()), principal);
 
             vm.prank(actor);
-            markets[index].buy{value: 0.001 ether}(1);
+            markets[index].buy{ value: 0.001 ether }(1);
             uint256 balance = tokens[index].balanceOf(actor);
             uint256 sellAmount = balance / 100;
             vm.startPrank(actor);
@@ -133,9 +136,15 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
             for (uint256 legIndex; legIndex < 3; ++legIndex) {
                 RobynNativeBasketVaultV2.BasketLeg memory selected = vault.leg(legIndex);
                 if (selected.pendingNative != 0) {
-                    (uint256 quote,) =
-                        assetRouter.quoteNativeToAsset(address(selected.asset), uint128(selected.pendingNative));
-                    vault.convertLeg(legIndex, selected.pendingNative, (quote * 99) / 100, block.timestamp + 1 hours);
+                    (uint256 quote,) = assetRouter.quoteNativeToAsset(
+                        address(selected.asset), uint128(selected.pendingNative)
+                    );
+                    vault.convertLeg(
+                        legIndex,
+                        selected.pendingNative,
+                        (quote * 99) / 100,
+                        block.timestamp + 1 hours
+                    );
                 }
             }
             assertEq(vault.totalPendingNative(), 0);
@@ -170,7 +179,8 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
 
     function _runShortenedGovernance() private {
         address[] memory empty = new address[](0);
-        TimelockController timelock = new TimelockController(10 minutes, empty, empty, address(this));
+        TimelockController timelock =
+            new TimelockController(10 minutes, empty, empty, address(this));
         RobynTestnetGovernor governor = new RobynTestnetGovernor(daoToken, timelock);
         timelock.grantRole(timelock.PROPOSER_ROLE(), address(governor));
         timelock.grantRole(timelock.CANCELLER_ROLE(), address(0xCAFE));
@@ -217,7 +227,7 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
             assertTrue(tokens[index].exclusionsSealed());
             assertTrue(markets[index].seeded());
             assertEq(vaults[index].totalPendingNative(), 0);
-            RobynNativeProtocolFeeRouterV3.LaunchFeeAccount memory account =
+            RobynNativeProtocolFeeRouterV4.LaunchFeeAccount memory account =
                 feeRouter.launchAccount(address(tokens[index]));
             assertTrue(account.registered);
             assertEq(account.claimableCreatorNative, 0);
@@ -227,10 +237,11 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
         }
         assertEq(
             cumulativeFees,
-            basketFees + creatorFees + feeRouter.totalDaoNativeRewards() + feeRouter.totalTreasuryNative()
+            feeRouter.totalBasketNative() + creatorFees + feeRouter.totalDaoNativeRewards()
+                + feeRouter.totalTreasuryNative()
         );
-        assertEq(basketFees, feeRouter.totalBasketNative());
-        assertGe(address(feeRouter).balance, feeRouter.totalCreatorNativeLiability());
+        assertEq(basketFees + feeRouter.totalBasketNativeLiability(), feeRouter.totalBasketNative());
+        assertGe(address(feeRouter).balance, feeRouter.totalNativeLiabilities());
     }
 
     function _campaignRequest(uint256 index)

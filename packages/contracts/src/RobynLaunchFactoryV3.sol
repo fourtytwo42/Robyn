@@ -31,7 +31,9 @@ contract RobynLaunchFactoryV3 is RobynLaunchFactoryV2 {
             maximumPendingDelay_
         )
     {
-        if (address(conversionRouter_).code.length == 0) revert RouteRegistryUnavailable();
+        if (address(conversionRouter_).code.length == 0) {
+            revert RouteRegistryUnavailable();
+        }
         routeRegistry = IRobynRouteRegistry(address(conversionRouter_));
     }
 

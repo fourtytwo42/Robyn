@@ -1,21 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
-import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
-import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
-import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
-import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
-import {IPositionManager} from "@uniswap/v4-periphery/src/interfaces/IPositionManager.sol";
-import {IStateView} from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
-import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
-import {RobynNativeProtocolFeeRouterV3} from "./RobynNativeProtocolFeeRouterV3.sol";
-import {RobynV4AssetRouter} from "./RobynV4AssetRouter.sol";
-import {IPositionManagerPermit2, RobynV4FeePositionLocker} from "./RobynV4FeePositionLocker.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { IPoolManager } from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import { IHooks } from "@uniswap/v4-core/src/interfaces/IHooks.sol";
+import { Currency } from "@uniswap/v4-core/src/types/Currency.sol";
+import { PoolId, PoolIdLibrary } from "@uniswap/v4-core/src/types/PoolId.sol";
+import { PoolKey } from "@uniswap/v4-core/src/types/PoolKey.sol";
+import { IPositionManager } from "@uniswap/v4-periphery/src/interfaces/IPositionManager.sol";
+import { IStateView } from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
+import { IAllowanceTransfer } from "permit2/src/interfaces/IAllowanceTransfer.sol";
+import { RobynNativeProtocolFeeRouterV4 } from "./RobynNativeProtocolFeeRouterV4.sol";
+import { RobynV4AssetRouter } from "./RobynV4AssetRouter.sol";
+import { RobynV4FeeAndPhaseHook } from "./RobynV4FeeAndPhaseHook.sol";
+import { IPositionManagerPermit2, RobynV4FeePositionLocker } from "./RobynV4FeePositionLocker.sol";
 
 /// @notice Market-bound adapter for native v4 graduation and post-graduation execution.
 contract RobynV4GraduationAdapter is ReentrancyGuard {
@@ -65,7 +66,12 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
         uint256 tokenUsed,
         uint256 nativeUsed
     );
-    event PoolTrade(address indexed recipient, address indexed inputToken, uint256 inputAmount, uint256 outputAmount);
+    event PoolTrade(
+        address indexed recipient,
+        address indexed inputToken,
+        uint256 inputAmount,
+        uint256 outputAmount
+    );
 
     constructor(
         IERC20 launchToken_,
@@ -88,8 +94,8 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
                 || address(launchToken_).code.length == 0 || address(poolManager_).code.length == 0
                 || address(positionManager_).code.length == 0 || address(permit2_).code.length == 0
                 || address(stateView_).code.length == 0 || address(assetRouter_).code.length == 0
-                || address(hook_).code.length == 0 || initialSqrtPriceX96_ == 0 || minimumUseBps_ == 0
-                || minimumUseBps_ > BPS || maximumNativeSwap_ == 0
+                || address(hook_).code.length == 0 || initialSqrtPriceX96_ == 0
+                || minimumUseBps_ == 0 || minimumUseBps_ > BPS || maximumNativeSwap_ == 0
         ) revert InvalidConfiguration();
         launchToken = launchToken_;
         poolManager = poolManager_;
@@ -111,7 +117,7 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
         poolId = PoolId.unwrap(_poolKey.toId());
     }
 
-    receive() external payable {}
+    receive() external payable { }
 
     function poolKey() external view returns (PoolKey memory) {
         return _poolKey;
@@ -130,13 +136,14 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
         if (address(locker) != address(0)) revert AlreadyBound();
         if (
             address(locker_) == address(0) || address(locker_).code.length == 0
-                || address(locker_.launchToken()) != address(launchToken) || locker_.adapter() != address(this)
+                || address(locker_.launchToken()) != address(launchToken)
+                || locker_.adapter() != address(this)
         ) revert InvalidConfiguration();
         locker = locker_;
         emit LockerBound(address(locker_));
     }
 
-    function bindFeeRouter(RobynNativeProtocolFeeRouterV3 feeRouter) external {
+    function bindFeeRouter(RobynNativeProtocolFeeRouterV4 feeRouter) external {
         if (msg.sender != marketBindingAuthority) revert Unauthorized();
         if (address(locker) == address(0)) revert InvalidConfiguration();
         locker.bindFeeRouter(feeRouter);
@@ -156,12 +163,16 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
         if (initialized) revert AlreadyInitialized();
         if (address(locker) == address(0)) revert InvalidConfiguration();
         if (tokenAmount == 0 || msg.value == 0) revert InvalidAmount();
+        RobynV4FeeAndPhaseHook hook = RobynV4FeeAndPhaseHook(payable(address(_poolKey.hooks)));
         uint256 nativeBefore = address(this).balance - msg.value;
         launchToken.safeTransferFrom(msg.sender, address(locker), tokenAmount);
-        (tokenId, liquidity, tokenUsed, nativeUsed) = locker.mintAndLock{value: msg.value}(tokenAmount, minimumUseBps);
+        hook.beginGraduation(address(launchToken));
+        (tokenId, liquidity, tokenUsed, nativeUsed) =
+            locker.mintAndLock{ value: msg.value }(tokenAmount, minimumUseBps);
+        hook.activateTrading(address(launchToken));
         uint256 nativeRefund = address(this).balance - nativeBefore;
         if (nativeRefund != 0) {
-            (bool sent,) = payable(bondingMarket).call{value: nativeRefund}("");
+            (bool sent,) = payable(bondingMarket).call{ value: nativeRefund }("");
             if (!sent) revert NativeTransferFailed();
         }
         initialized = true;
@@ -179,7 +190,7 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
         if (recipient == address(0) || msg.value == 0 || minimumTokenOutput == 0) {
             revert InvalidAmount();
         }
-        tokenOutput = assetRouter.swapExactNativeForAsset{value: msg.value}(
+        tokenOutput = assetRouter.swapExactNativeForAsset{ value: msg.value }(
             address(launchToken), minimumTokenOutput, recipient, block.timestamp
         );
         emit PoolTrade(recipient, address(0), msg.value, tokenOutput);
@@ -204,13 +215,19 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
         emit PoolTrade(recipient, address(launchToken), tokenInput, nativeOutput);
     }
 
-    function quoteBuy(uint128 nativeInput) external returns (uint256 nominalFee, uint256 tokenOutput) {
+    function quoteBuy(uint128 nativeInput)
+        external
+        returns (uint256 nominalFee, uint256 tokenOutput)
+    {
         if (!initialized) revert NotInitialized();
         (tokenOutput,) = assetRouter.quoteNativeToAsset(address(launchToken), nativeInput);
         nominalFee = Math.mulDiv(nativeInput, TOTAL_NOMINAL_FEE_PIPS, 1_000_000);
     }
 
-    function quoteSell(uint128 tokenInput) external returns (uint256 nominalFeeNative, uint256 nativeOutput) {
+    function quoteSell(uint128 tokenInput)
+        external
+        returns (uint256 nominalFeeNative, uint256 nativeOutput)
+    {
         if (!initialized) revert NotInitialized();
         (nativeOutput,) = assetRouter.quoteAssetToNative(address(launchToken), tokenInput);
         uint256 tokenFee = Math.mulDiv(tokenInput, TOTAL_NOMINAL_FEE_PIPS, 1_000_000);

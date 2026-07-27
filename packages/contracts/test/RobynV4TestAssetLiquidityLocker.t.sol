@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {Test} from "forge-std/Test.sol";
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
-import {PoolId} from "@uniswap/v4-core/src/types/PoolId.sol";
-import {IStateView} from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
-import {RobynV4TestAssetLiquidityLocker} from "../src/uniswap/RobynV4TestAssetLiquidityLocker.sol";
+import { Test } from "forge-std/Test.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { IPoolManager } from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import { PoolId } from "@uniswap/v4-core/src/types/PoolId.sol";
+import { IStateView } from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
+import {
+    RobynV4TestAssetLiquidityLocker
+} from "../src/uniswap/RobynV4TestAssetLiquidityLocker.sol";
 
 contract LockerTestAsset is ERC20 {
     constructor() ERC20("Robyn Testnet Mock Asset", "tmTEST") {
@@ -20,7 +22,7 @@ contract RobynV4TestAssetLiquidityLockerTest is Test {
     LockerTestAsset internal asset;
     RobynV4TestAssetLiquidityLocker internal locker;
 
-    receive() external payable {}
+    receive() external payable { }
 
     function setUp() public {
         vm.deal(address(this), 100 ether);
@@ -43,9 +45,13 @@ contract RobynV4TestAssetLiquidityLockerTest is Test {
 
     function testSeedsFullRangeLiquidityAndPermanentlyOmitsRemoval() public {
         (bytes32 poolId, uint256 nativeAmount, uint256 tokenAmount) =
-            locker.seed{value: 11 ether}(address(asset), 10 ether, 11 ether);
+            locker.seed{ value: 11 ether }(address(asset), 10 ether, 11 ether);
         (uint128 liquidity,,) = stateView.getPositionInfo(
-            PoolId.wrap(poolId), address(locker), locker.TICK_LOWER(), locker.TICK_UPPER(), bytes32(0)
+            PoolId.wrap(poolId),
+            address(locker),
+            locker.TICK_LOWER(),
+            locker.TICK_UPPER(),
+            bytes32(0)
         );
 
         assertEq(liquidity, 10 ether);
@@ -56,10 +62,18 @@ contract RobynV4TestAssetLiquidityLockerTest is Test {
         assertEq(locker.position(poolId).asset, address(asset));
 
         (bool removed,) = address(locker)
-            .call(abi.encodeWithSignature("remove(bytes32,uint128,address)", poolId, liquidity, address(this)));
+            .call(
+                abi.encodeWithSignature(
+                    "remove(bytes32,uint128,address)", poolId, liquidity, address(this)
+                )
+            );
         assertFalse(removed);
         (uint128 liquidityAfter,,) = stateView.getPositionInfo(
-            PoolId.wrap(poolId), address(locker), locker.TICK_LOWER(), locker.TICK_UPPER(), bytes32(0)
+            PoolId.wrap(poolId),
+            address(locker),
+            locker.TICK_LOWER(),
+            locker.TICK_UPPER(),
+            bytes32(0)
         );
         assertEq(liquidityAfter, liquidity);
     }
@@ -68,17 +82,20 @@ contract RobynV4TestAssetLiquidityLockerTest is Test {
         vm.deal(address(0xBEEF), 1 ether);
         vm.prank(address(0xBEEF));
         vm.expectRevert(RobynV4TestAssetLiquidityLocker.Unauthorized.selector);
-        locker.seed{value: 1 ether}(address(asset), 1 ether, 1 ether);
+        locker.seed{ value: 1 ether }(address(asset), 1 ether, 1 ether);
 
         locker.seal();
         assertTrue(locker.configurationSealed());
         vm.expectRevert(RobynV4TestAssetLiquidityLocker.Sealed.selector);
-        locker.seed{value: 1 ether}(address(asset), 1 ether, 1 ether);
+        locker.seed{ value: 1 ether }(address(asset), 1 ether, 1 ether);
         vm.expectRevert(RobynV4TestAssetLiquidityLocker.Sealed.selector);
         locker.seal();
     }
 
-    function _deployPinned(string memory path, bytes memory constructorArgs) private returns (address deployed) {
+    function _deployPinned(string memory path, bytes memory constructorArgs)
+        private
+        returns (address deployed)
+    {
         bytes memory creationCode = vm.parseJsonBytes(vm.readFile(path), ".bytecode.object");
         bytes memory initCode = bytes.concat(creationCode, constructorArgs);
         assembly {

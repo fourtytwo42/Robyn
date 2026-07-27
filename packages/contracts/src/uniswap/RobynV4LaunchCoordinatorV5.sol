@@ -7,7 +7,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 import { RobynLaunchToken } from "../RobynLaunchToken.sol";
 import { RobynNativeBasketVaultV2 } from "./RobynNativeBasketVaultV2.sol";
 import { RobynNativeLaunchFactoryV4 } from "./RobynNativeLaunchFactoryV4.sol";
-import { RobynNativeProtocolFeeRouterV3 } from "./RobynNativeProtocolFeeRouterV3.sol";
+import { RobynNativeProtocolFeeRouterV4 } from "./RobynNativeProtocolFeeRouterV4.sol";
 import { RobynV4BondingCurveMarket } from "./RobynV4BondingCurveMarket.sol";
 import { RobynV4GraduationAdapter } from "./RobynV4GraduationAdapter.sol";
 import { RobynV4MarketFactory } from "./RobynV4MarketFactory.sol";
@@ -52,7 +52,7 @@ contract RobynV4LaunchCoordinatorV5 is ReentrancyGuard {
 
     RobynNativeLaunchFactoryV4 public immutable launchFactory;
     RobynV4MarketFactory public immutable marketFactory;
-    RobynNativeProtocolFeeRouterV3 public immutable feeRouter;
+    RobynNativeProtocolFeeRouterV4 public immutable feeRouter;
     uint256 public immutable initialSupply;
 
     event AtomicV4LaunchCreated(
@@ -68,7 +68,7 @@ contract RobynV4LaunchCoordinatorV5 is ReentrancyGuard {
     constructor(
         RobynNativeLaunchFactoryV4 launchFactory_,
         RobynV4MarketFactory marketFactory_,
-        RobynNativeProtocolFeeRouterV3 feeRouter_
+        RobynNativeProtocolFeeRouterV4 feeRouter_
     ) {
         if (
             address(launchFactory_) == address(0) || address(marketFactory_) == address(0)
@@ -155,7 +155,7 @@ contract RobynV4LaunchCoordinatorV5 is ReentrancyGuard {
         view
         returns (address[] memory exclusions)
     {
-        exclusions = new address[](9);
+        exclusions = new address[](10);
         exclusions[0] = address(artifacts.market);
         exclusions[1] = address(artifacts.adapter);
         exclusions[2] = artifacts.locker;
@@ -165,6 +165,7 @@ contract RobynV4LaunchCoordinatorV5 is ReentrancyGuard {
         exclusions[6] = address(marketFactory.oracleHook());
         exclusions[7] = address(marketFactory.poolManager());
         exclusions[8] = address(marketFactory.positionManager());
+        exclusions[9] = marketFactory.tokenSink();
     }
 
     function _assertLaunch(

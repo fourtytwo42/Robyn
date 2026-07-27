@@ -437,6 +437,11 @@ export default async function LaunchDetail({
               assets={basket}
               explorerUrl={publicEnvironment.explorerUrl}
             />
+            <p className="muted">
+              Basket rewards vest continuously over seven days. Your claimable
+              amount grows while you hold the token, and rewards vested before a
+              transfer remain yours.
+            </p>
           </section>
 
           <section
