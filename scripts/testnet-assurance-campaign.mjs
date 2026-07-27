@@ -1598,9 +1598,17 @@ async function conversions() {
       saveState(state);
     }
     await contractTransaction(state, `locker-collect-${launchIndex}`, account, launch.locker, lockerAbi, "collectFees", V4_FEE_COLLECTION_MINIMUMS);
-    const nativeBalance = await publicClient.getBalance({ address: launch.locker });
+    const nativeBalance = await publicClient.readContract({
+      address: launch.locker,
+      abi: lockerAbi,
+      functionName: "pendingCollectedNativeFees",
+    });
     if (nativeBalance > 0n) await contractTransaction(state, `locker-route-native-${launchIndex}`, account, launch.locker, lockerAbi, "routeCollectedNative", [nativeBalance]);
-    const tokenBalance = await publicClient.readContract({ address: launch.token, abi: tokenAbi, functionName: "balanceOf", args: [launch.locker] });
+    const tokenBalance = await publicClient.readContract({
+      address: launch.locker,
+      abi: lockerAbi,
+      functionName: "pendingCollectedTokenFees",
+    });
     if (tokenBalance > 0n) {
       const amount = tokenBalance > (1n << 128n) - 1n ? (1n << 128n) - 1n : tokenBalance;
       const [quoted] = await publicClient.readContract({ address: manifest.contracts.assetRouter, abi: assetRouterAbi, functionName: "quoteAssetToNative", args: [launch.token, amount] });

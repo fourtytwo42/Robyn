@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-07-27 - Campaign locker fee-accounting correction
+
+- Context: Campaign `final-assurance-e458382` completed the fixed trading workload and three graduations, waited for the real five-minute oracle window, then confirmed four hook/locker conversion transactions before failing safely at `locker-route-native-0`.
+- Root cause: The campaign runner tried to route the locker's entire ETH balance and convert its entire launch-token balance. The principal-safe locker correctly rejected the request because only `pendingCollectedNativeFees` and `pendingCollectedTokenFees` are collectible revenue.
+- Decision: Preserve all 1,539 confirmed transactions and resume without replay. Read the two tracked pending-fee values from the locker and use only those exact amounts for native routing and launch-token conversion.
+- Files: `scripts/testnet-assurance-campaign.mjs`, `scripts/test/testnet-assurance-campaign.test.mjs`.
+- Commands/tests: Node syntax, campaign test suite 18/18, formatting, and diff check pass.
+- Follow-up: Commit and push the runner correction, resume conversions from the durable journal, then complete governance, claims, fill, sweep, reconciliation, and the remaining pre-endurance gates.
 
 ### 2026-07-27 - Final campaign graduation top-up repair
 
