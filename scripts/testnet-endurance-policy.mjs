@@ -113,6 +113,36 @@ export function enduranceSamplePassed(
   return infrastructurePassed && !workloadFailure;
 }
 
+export function protocolHealthFailures(protocol) {
+  if (!protocol || typeof protocol !== "object") {
+    return ["protocol invariant snapshot is unavailable"];
+  }
+  const failures = [];
+  if (protocol.status !== "ok") {
+    failures.push("protocol invariant status is not ok");
+  }
+  if (protocol.routerSolvent !== true) {
+    failures.push("protocol router is insolvent");
+  }
+  if (protocol.daoStreamConserved !== true) {
+    failures.push("DAO reward stream is not conserved");
+  }
+  for (const [field, description] of [
+    ["phaseMismatchCount", "pool phase"],
+    ["lockerMismatchCount", "locker accounting"],
+    ["rewardStreamMismatchCount", "reward stream"],
+  ]) {
+    const count = Number(protocol[field]);
+    if (!Number.isSafeInteger(count) || count !== 0) {
+      failures.push(`${description} mismatch count is ${protocol[field]}`);
+    }
+  }
+  if (BigInt(protocol.unattributedNative ?? "-1") !== 0n) {
+    failures.push("protocol has unattributed native balance");
+  }
+  return failures;
+}
+
 export function enduranceCoverageFailures(state) {
   const labels = (state.transactions ?? []).map(({ label }) => label);
   const has = (prefix) => labels.some((label) => label.startsWith(prefix));

@@ -55,6 +55,7 @@ import {
   isApprovedTestnetRpcUrl,
   percentile,
   processContinuityFailures,
+  protocolHealthFailures,
   reconcileReleaseIdentity,
   rewardClaimIndexes,
   transactionFundingTarget,
@@ -1447,6 +1448,7 @@ async function sample() {
     ) {
       failures.push("indexer pipeline status is degraded");
     }
+    failures.push(...protocolHealthFailures(status.protocol));
     state.ingestionLagSamples = [
       ...(state.ingestionLagSamples ?? []),
       ingestionLag,

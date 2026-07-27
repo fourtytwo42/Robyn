@@ -12,6 +12,7 @@ import {
   percentile,
   processContinuityFailures,
   reconcileReleaseIdentity,
+  protocolHealthFailures,
   rewardClaimIndexes,
   boundedTerminalCurveBuyValue,
   terminalCurveBuyValue,
@@ -207,6 +208,41 @@ test("unresolved workload failures keep passing infrastructure paused", () => {
     false,
   );
   assert.equal(enduranceSamplePassed(false, undefined), false);
+});
+
+test("protocol health gate rejects every conservation mismatch", () => {
+  const healthy = {
+    status: "ok",
+    routerSolvent: true,
+    daoStreamConserved: true,
+    phaseMismatchCount: 0,
+    lockerMismatchCount: 0,
+    rewardStreamMismatchCount: 0,
+    unattributedNative: "0",
+  };
+  assert.deepEqual(protocolHealthFailures(healthy), []);
+  assert.match(
+    protocolHealthFailures({
+      ...healthy,
+      status: "degraded",
+      rewardStreamMismatchCount: 1,
+    }).join(" "),
+    /status is not ok.*reward stream mismatch count is 1/,
+  );
+  assert.match(
+    protocolHealthFailures({
+      ...healthy,
+      routerSolvent: false,
+      daoStreamConserved: false,
+      phaseMismatchCount: 1,
+      lockerMismatchCount: 2,
+      unattributedNative: "1",
+    }).join(" "),
+    /router is insolvent.*DAO reward stream.*pool phase.*locker accounting.*unattributed native/,
+  );
+  assert.deepEqual(protocolHealthFailures(undefined), [
+    "protocol invariant snapshot is unavailable",
+  ]);
 });
 
 test("same-deployment release repair resumes the durable journal", () => {

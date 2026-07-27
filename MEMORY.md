@@ -30,6 +30,16 @@
 - Live latency result: Release `ad372a7` reduced the internal `/status` p95 to
   7.8 ms across 20 samples. Home, Markets, and DAO p95 values were 98.8,
   111.8, and 82.0 ms. The release was promoted with 531 verifier checks.
+- Endurance funding: The project wallet funded the keeper operator with another
+  0.001 test ETH at 2026-07-27 15:58 UTC before it crossed its safety floor.
+  The project wallet retained more than the required 0.0015 ETH reserve, and
+  the receipt is protected in the active endurance evidence directory.
+- Protocol gate correction: A transient reward-stream mismatch appeared in the
+  API protocol snapshot, but the runner incorrectly credited that sample
+  because it did not gate the additive protocol health fields. The sample was
+  preserved, the runner stopped, and the policy now fails any degraded protocol
+  status, insolvency, DAO stream discrepancy, phase/locker/reward mismatch, or
+  unattributed native balance. A focused policy test covers every condition.
 - Route recovery: Two testnet basket routes reached their immutable reference
   deviation boundary after one-way campaign conversions. Protected evidence
   records direct Universal Router counter-trades from the encrypted project
