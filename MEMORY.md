@@ -1,6 +1,14 @@
 # Project Memory
 
 Durable project context lives here. Update this file whenever information should survive chat context compression or future agent handoff.
+- Final fork-rehearsal correction 2026-07-27: the schema-10 smoke harness
+  still assumed synchronous basket/DAO/treasury delivery and immediate holder
+  rewards. The remediated router is accounting-only and holder rewards stream
+  for seven days. The harness now explicitly settles each queued liability,
+  advances only its isolated Anvil clock for stream verification, and derives
+  deadlines from chain time. The exact chain-46630 fork deployment then passed
+  the full deployment verifier and lifecycle smoke with zero failures at fork
+  block 93,806,751. No public transaction was sent.
 - Final testnet assurance checkpoint 2026-07-27: the user authorized a fresh
   security-remediated chain-46630 deployment, the fixed 100-wallet lifecycle
   campaign, internal security/recovery/browser gates, and a ten-accumulated-

@@ -65,6 +65,11 @@ minimum_99() {
   node -e 'console.log((BigInt(process.argv[1]) * 99n / 100n).toString())' "$1"
 }
 
+chain_deadline() {
+  local timestamp
+  timestamp="$(cast block latest --field timestamp --rpc-url "$rpc_url")"
+  printf '%s\n' "$(( timestamp + 600 ))"
+}
 route_results='[]'
 while IFS=$'\t' read -r symbol asset; do
   status="$(cast call "$router" \
@@ -77,7 +82,7 @@ while IFS=$'\t' read -r symbol asset; do
   quote="$(cast call "$router" 'quoteNativeToAsset(address,uint128)(uint256,uint256)' \
     "$asset" "$native_in" --rpc-url "$rpc_url" | quote_first)"
   minimum="$(minimum_99 "$quote")"
-  deadline="$(( $(date +%s) + 600 ))"
+  deadline="$(chain_deadline)"
   buy_tx="$(send "$router" 'swapExactNativeForAsset(address,uint256,address,uint256)' \
     "$asset" "$minimum" "$account" "$deadline" --value "$native_in")"
   after="$(cast call "$asset" 'balanceOf(address)(uint256)' "$account" --rpc-url "$rpc_url" | quote_first)"
@@ -158,6 +163,31 @@ sell_minimum="$(minimum_99 "$sell_quote")"
 post_sell_tx="$(
   send "$market" 'sell(uint256,uint256)' "$sell_amount" "$sell_minimum" --gas-limit 2000000
 )"
+launch_account="$(cast call "$fee_router" \
+  'launchAccount(address)((address,address,address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,bool))' \
+  "$token" --rpc-url "$rpc_url" --json)"
+pending_basket="$(jq -er '.[0][15]' <<<"$launch_account")"
+dao_liability="$(cast call "$fee_router" 'totalDaoNativeLiability()(uint256)' \
+  --rpc-url "$rpc_url" | quote_first)"
+treasury_liability="$(cast call "$fee_router" 'totalTreasuryNativeLiability()(uint256)' \
+  --rpc-url "$rpc_url" | quote_first)"
+settlement_results='{}'
+if [[ "$pending_basket" -gt 0 ]]; then
+  settlement_tx="$(send "$fee_router" 'settleBasketFees(address,uint256)' \
+    "$token" "$pending_basket")"
+  settlement_results="$(jq --arg transaction "$settlement_tx" '.basket=$transaction' \
+    <<<"$settlement_results")"
+fi
+if [[ "$dao_liability" -gt 0 ]]; then
+  settlement_tx="$(send "$fee_router" 'settleDaoFees(uint256)' "$dao_liability")"
+  settlement_results="$(jq --arg transaction "$settlement_tx" '.dao=$transaction' \
+    <<<"$settlement_results")"
+fi
+if [[ "$treasury_liability" -gt 0 ]]; then
+  settlement_tx="$(send "$fee_router" 'settleTreasuryFees(uint256)' "$treasury_liability")"
+  settlement_results="$(jq --arg transaction "$settlement_tx" '.treasury=$transaction' \
+    <<<"$settlement_results")"
+fi
 
 conversion_results='[]'
 for index in 0 1 2; do
@@ -179,9 +209,11 @@ for index in 0 1 2; do
   output="$(cast call "$router" 'quoteNativeToAsset(address,uint128)(uint256,uint256)' \
     "$asset" "$amount" --rpc-url "$rpc_url" | quote_first)"
   minimum="$(minimum_99 "$output")"
-  deadline="$(( $(date +%s) + 600 ))"
+  deadline="$(chain_deadline)"
   conversion_tx="$(send "$vault" 'convertLeg(uint256,uint256,uint256,uint256)' \
     "$index" "$amount" "$minimum" "$deadline")"
+  cast rpc evm_increaseTime 604800 --rpc-url "$rpc_url" >/dev/null
+  cast rpc evm_mine --rpc-url "$rpc_url" >/dev/null
   claimable="$(cast call "$token" 'withdrawableRewardOf(address,uint256)(uint256)' \
     "$account" "$index" --rpc-url "$rpc_url" | quote_first)"
   [[ "$claimable" -gt 0 ]] || { echo "Basket leg $index created no holder reward" >&2; exit 1; }
@@ -194,7 +226,7 @@ for index in 0 1 2; do
 done
 
 creator_claimable="$(cast call "$fee_router" \
-  'launchAccount(address)((address,address,address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,bool))' \
+  'launchAccount(address)((address,address,address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,bool))' \
   "$token" --rpc-url "$rpc_url" --json | jq -er '.[0][12]')"
 [[ "$creator_claimable" -gt 0 ]] || { echo "Creator reward was not accrued" >&2; exit 1; }
 creator_claim_tx="$(send "$fee_router" 'claimCreatorFees(address)' "$token")"
@@ -227,6 +259,7 @@ jq -n \
   --arg postSell "$post_sell_tx" \
   --arg positionTokenId "$position_id" \
   --argjson conversions "$conversion_results" \
+  --argjson settlementResults "$settlement_results" \
   --arg creatorClaim "$creator_claim_tx" \
   --arg daoClaim "$dao_claim_tx" \
   --arg creatorLiability "$creator_liability" \
@@ -238,6 +271,7 @@ jq -n \
       postGraduationBuy:$postBuy,
       postGraduationApproval:$approval,postGraduationSell:$postSell,
       positionTokenId:$positionTokenId},
+    settlements:$settlementResults,
     basketConversions:$conversions,
     claims:{creator:$creatorClaim,rdao:$daoClaim},
     solvency:{creatorLiability:$creatorLiability,feeRouterBalance:$feeRouterBalance}
