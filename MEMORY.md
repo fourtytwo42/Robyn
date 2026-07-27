@@ -3267,6 +3267,15 @@ When sources conflict, use this order:
 - Files: `scripts/verify-testnet-v4-deployment.mjs`, `scripts/test/testnet-v4-deployment-verifier.test.mjs`, and root test wiring.
 - Follow-up: A fresh schema-v9 deployment manifest must contain the Universal Router and immutable curve cap and pass the complete verifier before cutover.
 
+### 2026-07-27 - Final assurance deployment and isolated index rebuild
+
+- Context: Final internal testnet assurance froze source commit `e6dd172e3f77dcbf8be2c7197d007b66295ad504`; the manifest commit is `97d8db896f2d41c5ca72ddd05a68b4c8819c338f`.
+- Result: Internal audit, 256-run/depth-128 invariants, 512-wallet/25,000-action simulation, no-broadcast Robinhood mainnet fork rehearsal, two clean reproducible builds, exact release build, live chain-46630 deployment, and LAN/public-RPC deployment verification passed. The active new coordinator is `0x63BBC689a217BD6bF3a13EE0f07123FF734E177E`; deployment block is `93808580`.
+- Index rebuild: Fresh database `robyn_testnet_final_e6dd172` was migrated and rebuilt only from canonical logs through isolated ingester/projector processes. It projected the single genesis launch at block `93808760`, matched the manifest and onchain launch count, and reached zero ingestion/projection lag with no restarts. An isolated API, artifact service, and keeper are healthy on ports 3112/3211 and Redis DB 3; the public schema predecessor remains active.
+- Release: Immutable staged artifact `/opt/robyn/testnet-releases/97d8db8-final-assurance` passes its release gates and complete checksum verification. It has not been publicly promoted.
+- Blocker: Fixed campaign `final-assurance-e6dd172` has 100 encrypted actors but its fail-closed preflight requires `0.01682413048944 ETH` including reserve and headroom. Controlled available balance was `0.009913879590852215 ETH`, leaving about `0.006910251 ETH` short. Do not reduce campaign coverage or the `0.0015 ETH` reserve; obtain faucet funding before `fund` or `all`.
+- Follow-up: Complete the 1,510-write campaign, reconciliation, browser and real-wallet acceptance, recovery/restore, public promotion, and fresh ten-hour accumulated-healthy endurance gate.
+
 ## Open Follow-ups
 
 - Configure a vendor-neutral IPFS Pinning Service endpoint/token in the
