@@ -316,6 +316,36 @@ contract RobynV4NativeProtocolTest is Test {
         bootstrapRouter.configureRoute(address(basketAsset), configured);
     }
 
+    function testAssetRouterRejectsDirectNativeAndSweepsForcedNative() public {
+        (bool directSent, bytes memory revertData) = address(assetRouter).call{ value: 1 ether }("");
+        assertFalse(directSent);
+        assertEq(
+            revertData,
+            abi.encodeWithSelector(RobynV4AssetRouter.DirectNativeTransferRejected.selector)
+        );
+        assertEq(assetRouter.unattributedNative(), 0);
+
+        ForceNative forced = new ForceNative{ value: 1 ether }();
+        forced.force(payable(address(assetRouter)));
+        assertEq(assetRouter.unattributedNative(), 1 ether);
+
+        uint128 swapAmount = 0.002 ether;
+        (uint256 quote,) = assetRouter.quoteNativeToAsset(address(basketAsset), swapAmount);
+        assetRouter.swapExactNativeForAsset{ value: swapAmount }(
+            address(basketAsset), (quote * 99) / 100, address(this), block.timestamp
+        );
+        assertEq(assetRouter.unattributedNative(), 1 ether);
+
+        uint256 timelockBefore = address(this).balance;
+        assertEq(assetRouter.sweepUnattributedNative(), 1 ether);
+        assertEq(address(this).balance - timelockBefore, 1 ether);
+        assertEq(assetRouter.unattributedNative(), 0);
+        assertEq(assetRouter.cumulativeUnattributedNativeSwept(), 1 ether);
+
+        vm.expectRevert(RobynV4AssetRouter.NothingPending.selector);
+        assetRouter.sweepUnattributedNative();
+    }
+
     function testCurveFeesConserveImmutableSplit() public {
         (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
             coordinator.createLaunch(_request(bytes32(uint256(2))));

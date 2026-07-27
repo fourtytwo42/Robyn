@@ -24,7 +24,7 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
     using PoolIdLibrary for PoolKey;
     using SafeERC20 for IERC20;
 
-    string public constant CONTRACT_VERSION = "1.2.0";
+    string public constant CONTRACT_VERSION = "1.3.0";
     uint16 public constant BPS = 10_000;
     uint24 public constant FEE_DENOMINATOR = 1_000_000;
     uint16 public constant MAX_PROTECTED_ROUTE_SLIPPAGE_BPS = 100;
@@ -38,6 +38,8 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
     error ExcessivePriceImpact(uint256 idealOutput, uint256 quotedOutput);
     error DeadlineExpired();
     error NativeTransferFailed();
+    error DirectNativeTransferRejected();
+    error NothingPending();
 
     struct Route {
         uint24 fee;
@@ -82,6 +84,7 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
     IV4Quoter public immutable quoter;
     IStateView public immutable stateView;
     mapping(address asset => Route route) private _routes;
+    uint256 public cumulativeUnattributedNativeSwept;
 
     event LaunchRegistrarBound(address indexed registrar);
     event RouteConfigured(
@@ -106,6 +109,7 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         uint256 inputAmount,
         uint256 outputAmount
     );
+    event UnattributedNativeSwept(address indexed timelockTreasury, uint256 amount);
 
     constructor(
         IPoolManager poolManager_,
@@ -125,7 +129,29 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         initializer = msg.sender;
     }
 
-    receive() external payable { }
+    /// @dev Native input enters only through swapExactNativeForAsset. PoolManager
+    /// output is sent directly to the requested recipient, so no fallback
+    /// transfer is required by the canonical swap path.
+    receive() external payable {
+        revert DirectNativeTransferRejected();
+    }
+
+    /// @notice Returns ETH forced into the router outside an explicit swap.
+    /// @dev The router has no persistent native liability. nonReentrant swap and
+    /// sweep entrypoints prevent transient msg.value from being swept.
+    function unattributedNative() public view returns (uint256) {
+        return address(this).balance;
+    }
+
+    /// @notice Permissionlessly forwards forced ETH to the immutable timelock.
+    function sweepUnattributedNative() external nonReentrant returns (uint256 amount) {
+        amount = unattributedNative();
+        if (amount == 0) revert NothingPending();
+        cumulativeUnattributedNativeSwept += amount;
+        (bool sent,) = payable(governor).call{ value: amount }("");
+        if (!sent) revert NativeTransferFailed();
+        emit UnattributedNativeSwept(governor, amount);
+    }
 
     function bindLaunchRegistrar(address registrar) external {
         if (msg.sender != initializer) revert Unauthorized();
