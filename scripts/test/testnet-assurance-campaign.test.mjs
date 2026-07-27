@@ -239,6 +239,17 @@ test("graduation top-up covers the remaining net reserve within fixed bounds", (
   );
 });
 
+test("graduation rounding dust uses a separate resumable transaction", () => {
+  const source = readFileSync(
+    new URL("../testnet-assurance-campaign.mjs", import.meta.url),
+    "utf8",
+  );
+  const topup = source.indexOf("`trade-graduate-${launchIndex}`");
+  const dust = source.indexOf("`trade-graduate-dust-${launchIndex}`");
+  const finalClassification = source.indexOf("const graduated = []");
+  assert.ok(topup >= 0 && dust > topup && finalClassification > dust);
+});
+
 test("launch-fee conversion waits beyond the complete five-minute oracle window", () => {
   assert.equal(V4_ORACLE_WINDOW_MATURITY_SECONDS, 301);
 });

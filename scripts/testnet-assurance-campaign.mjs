@@ -1004,17 +1004,50 @@ async function trading() {
       feeBps,
       maximumCurvePurchaseWei,
     });
-    if (value === 0n) throw new Error(`Launch ${launchIndex} did not graduate at its threshold`);
-    const [, quoted] = await publicClient.readContract({
+    if (value > 0n) {
+      const [, quoted] = await publicClient.readContract({
+        address: launch.market,
+        abi: marketAbi,
+        functionName: "quoteBuy",
+        args: [value],
+        account: account.address,
+      });
+      await contractTransaction(
+        state,
+        `trade-graduate-${launchIndex}`,
+        account,
+        launch.market,
+        marketAbi,
+        "buy",
+        [(quoted * 98n) / 100n || 1n],
+        value,
+      );
+    }
+    const graduatedAfterTopup = await publicClient.readContract({
       address: launch.market,
       abi: marketAbi,
-      functionName: "quoteBuy",
-      args: [value],
-      account: account.address,
+      functionName: "graduated",
     });
-    await contractTransaction(state, `trade-graduate-${launchIndex}`, account, launch.market, marketAbi, "buy", [
-      (quoted * 98n) / 100n || 1n,
-    ], value);
+    if (!graduatedAfterTopup) {
+      const terminalDustValue = 1n;
+      const [, terminalDustQuote] = await publicClient.readContract({
+        address: launch.market,
+        abi: marketAbi,
+        functionName: "quoteBuy",
+        args: [terminalDustValue],
+        account: account.address,
+      });
+      await contractTransaction(
+        state,
+        `trade-graduate-dust-${launchIndex}`,
+        account,
+        launch.market,
+        marketAbi,
+        "buy",
+        [(terminalDustQuote * 98n) / 100n || 1n],
+        terminalDustValue,
+      );
+    }
   }
 
 
