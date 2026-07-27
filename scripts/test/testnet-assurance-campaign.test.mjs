@@ -13,12 +13,14 @@ import {
   applyHeadroom,
   basketConversionActorIndex,
   graduationActorIndex,
+  graduationTopupValueWei,
   launchBasketPlan,
   minimumActionCount,
   nativeSweepReserveWei,
   plannedBuyValueWei,
   plannedTransactionValueWei,
   plannedWalletValueWei,
+  MAXIMUM_GRADUATION_TOPUP_WEI,
   PLANNED_SWEEP_GAS_UNITS_PER_ACTOR,
   PRICED_TRANSACTION_COUNT,
   weightedWalletFunding,
@@ -206,6 +208,37 @@ test("graduated launches reuse their deliberately funded terminal actors", () =>
   );
 });
 
+test("graduation top-up covers the remaining net reserve within fixed bounds", () => {
+  assert.equal(
+    graduationTopupValueWei({
+      thresholdWei: 1_000n,
+      raisedWei: 901n,
+      feeBps: 100n,
+      maximumCurvePurchaseWei: 100n,
+    }),
+    100n,
+  );
+  assert.equal(
+    graduationTopupValueWei({
+      thresholdWei: 1_000n,
+      raisedWei: 1_000n,
+      feeBps: 100n,
+      maximumCurvePurchaseWei: 100n,
+    }),
+    0n,
+  );
+  assert.throws(
+    () =>
+      graduationTopupValueWei({
+        thresholdWei: 1_000n,
+        raisedWei: 901n,
+        feeBps: 100n,
+        maximumCurvePurchaseWei: 99n,
+      }),
+    /fixed campaign bound/,
+  );
+});
+
 test("launch-fee conversion waits beyond the complete five-minute oracle window", () => {
   assert.equal(V4_ORACLE_WINDOW_MATURITY_SECONDS, 301);
 });
@@ -233,6 +266,7 @@ test("campaign value projection includes every planned payable user action", () 
   for (let index = 0; index < 900; index += 1) {
     expected += plannedBuyValueWei(index);
   }
+  expected += 3n * MAXIMUM_GRADUATION_TOPUP_WEI;
   expected += 3n * 250_000_000_000n;
   expected += 2n * 20_000_000_000n;
   expected += 100_000_000_000n + 250_000_000_000_000n;

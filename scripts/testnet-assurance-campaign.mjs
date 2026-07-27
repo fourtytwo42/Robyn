@@ -44,6 +44,7 @@ import {
   applyHeadroom,
   basketConversionActorIndex,
   graduationActorIndex,
+  graduationTopupValueWei,
   assertSecurityRemediationManifest,
   launchBasketPlan,
   nativeSweepReserveWei,
@@ -979,6 +980,43 @@ async function trading() {
     });
     await contractTransaction(state, `trade-sell-${approval.index}`, account, launch.market, marketAbi, "sell", [amount, (quoted * 98n) / 100n || 1n]);
   }
+  for (let launchIndex = 0; launchIndex < 3; launchIndex += 1) {
+    const launch = state.launches[launchIndex];
+    const account = privateKeyToAccount(
+      accounts[graduationActorIndex(launchIndex)].privateKey,
+    );
+    const alreadyGraduated = await publicClient.readContract({
+      address: launch.market,
+      abi: marketAbi,
+      functionName: "graduated",
+    });
+    if (alreadyGraduated) continue;
+    const [thresholdWei, raisedWei, feeBps, maximumCurvePurchaseWei] =
+      await Promise.all([
+        publicClient.readContract({ address: launch.market, abi: marketAbi, functionName: "graduationThresholdNative" }),
+        publicClient.readContract({ address: launch.market, abi: marketAbi, functionName: "nativeRaised" }),
+        publicClient.readContract({ address: launch.market, abi: marketAbi, functionName: "feeBps" }),
+        publicClient.readContract({ address: launch.market, abi: marketAbi, functionName: "maximumCurvePurchase" }),
+      ]);
+    const value = graduationTopupValueWei({
+      thresholdWei,
+      raisedWei,
+      feeBps,
+      maximumCurvePurchaseWei,
+    });
+    if (value === 0n) throw new Error(`Launch ${launchIndex} did not graduate at its threshold`);
+    const [, quoted] = await publicClient.readContract({
+      address: launch.market,
+      abi: marketAbi,
+      functionName: "quoteBuy",
+      args: [value],
+      account: account.address,
+    });
+    await contractTransaction(state, `trade-graduate-${launchIndex}`, account, launch.market, marketAbi, "buy", [
+      (quoted * 98n) / 100n || 1n,
+    ], value);
+  }
+
 
   const graduated = [];
   const bondingProgress = [];

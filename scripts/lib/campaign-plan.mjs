@@ -9,6 +9,7 @@ export const REQUIRED_DISK_HEADROOM_BYTES = 5n * 1024n * 1024n * 1024n;
 export const REQUIRED_HEADROOM_BPS = 2_500n;
 export const V4_FEE_COLLECTION_MINIMUMS = [0n, 0n];
 export const V4_ORACLE_WINDOW_MATURITY_SECONDS = 301;
+export const MAXIMUM_GRADUATION_TOPUP_WEI = 100_000_000_000_000n;
 
 export function graduationActorIndex(launchIndex) {
   if (
@@ -21,6 +22,33 @@ export function graduationActorIndex(launchIndex) {
     );
   }
   return 96 + launchIndex;
+}
+export function graduationTopupValueWei({
+  thresholdWei,
+  raisedWei,
+  feeBps,
+  maximumCurvePurchaseWei,
+}) {
+  if (
+    thresholdWei <= 0n ||
+    raisedWei < 0n ||
+    feeBps < 0n ||
+    feeBps >= 10_000n ||
+    maximumCurvePurchaseWei <= 0n
+  ) {
+    throw new Error("Graduation top-up inputs are invalid");
+  }
+  if (raisedWei >= thresholdWei) return 0n;
+  const requiredNetWei = thresholdWei - raisedWei;
+  const grossWei =
+    (requiredNetWei * 10_000n + (10_000n - feeBps) - 1n) / (10_000n - feeBps);
+  if (
+    grossWei > maximumCurvePurchaseWei ||
+    grossWei > MAXIMUM_GRADUATION_TOPUP_WEI
+  ) {
+    throw new Error("Graduation top-up exceeds the fixed campaign bound");
+  }
+  return grossWei;
 }
 
 export function basketConversionActorIndex(launchIndex, legIndex) {
@@ -152,6 +180,7 @@ export function plannedTransactionValueWei() {
   for (let index = 0; index < 900; index += 1) {
     value += plannedBuyValueWei(index);
   }
+  value += 3n * MAXIMUM_GRADUATION_TOPUP_WEI;
   value += 3n * 250_000_000_000n;
   value += 2n * 20_000_000_000n;
   value += 100_000_000_000n + 250_000_000_000_000n;
@@ -170,6 +199,9 @@ export function plannedWalletValueWei(actorIndex) {
   let value = 0n;
   for (let index = actorIndex; index < 900; index += REQUIRED_WALLET_COUNT) {
     value += plannedBuyValueWei(index);
+  }
+  if (actorIndex >= 96 && actorIndex <= 98) {
+    value += MAXIMUM_GRADUATION_TOPUP_WEI;
   }
   if (actorIndex >= 90 && actorIndex <= 92) value += 250_000_000_000n;
   if (actorIndex === 96 || actorIndex === 97) value += 20_000_000_000n;

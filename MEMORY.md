@@ -1,6 +1,15 @@
 # Project Memory
 
 
+### 2026-07-27 - Final campaign graduation top-up repair
+
+- Context: Campaign `final-assurance-e458382` completed funding, eight atomic launches, 900 buys, 200 transfers, 150 approvals, and 150 sells, then failed closed because all three intended graduates remained at 94.71% progress.
+- Root cause: The fixed 900-buy plan ended slightly below the live `0.001500000000000001 ETH` net graduation threshold after the 1% curve fee and planned sells. The runner assumed those purchases would graduate without calculating the remaining net reserve.
+- Decision: Preserve all 1,508 confirmed transactions and resume without replay. Compute each remaining gross top-up from live `graduationThresholdNative`, `nativeRaised`, `feeBps`, and `maximumCurvePurchase`, bound it to `0.0001 ETH`, and journal one dedicated terminal buy per intended graduate.
+- Files: `scripts/lib/campaign-plan.mjs`, `scripts/testnet-assurance-campaign.mjs`, `scripts/test/testnet-assurance-campaign.test.mjs`.
+- Commands/tests: Node syntax and all 17 campaign tests pass, including exact fee gross-up, zero-needed, cap-rejection, total-value, and per-wallet funding conservation.
+- Follow-up: Commit and push the runner repair, resume the same campaign journal, prove three graduations and five distinct bonding states, then continue conversions, governance, claims, fill, sweep, and reconciliation.
+
 ### 2026-07-27 - Faucet funding and immutable web-cache correction
 
 - Context: The fixed 100-wallet campaign was blocked on faucet funding, and the staged read-only Next.js artifact logged an EACCES attempt to create `.next/cache` while fetching the ETH/USD reference price.
