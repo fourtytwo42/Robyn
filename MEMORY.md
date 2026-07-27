@@ -1,5 +1,14 @@
 # Project Memory
 
+
+### 2026-07-27 - Faucet funding and immutable web-cache correction
+
+- Context: The fixed 100-wallet campaign was blocked on faucet funding, and the staged read-only Next.js artifact logged an EACCES attempt to create `.next/cache` while fetching the ETH/USD reference price.
+- Decision: Keep the immutable release read-only. Use a 60-second process-memory quote cache backed by a `cache: no-store` Coinbase request instead of Next.js disk revalidation.
+- Files: `apps/web/src/lib/eth-usd.ts`, `apps/web/src/lib/eth-usd.test.ts`.
+- Commands/tests: Web test suite 57/57, strict typecheck, lint, formatting, diff check, and optimized production build pass.
+- Result: Project wallet balance is `0.019913879590852215 ETH`, above the `0.01682413048944 ETH` full campaign requirement including headroom and the `0.0015 ETH` reserve.
+- Follow-up: Commit and push the application fix, rebuild an immutable exact release, verify no cache-write errors under read-only permissions, then initialize and fund a campaign tied to the new application SHA.
 Durable project context lives here. Update this file whenever information should survive chat context compression or future agent handoff.
 - Fresh final-assurance testnet deployment 2026-07-27: exact source commit
   `e6dd172e3f77dcbf8be2c7197d007b66295ad504` was broadcast only to
