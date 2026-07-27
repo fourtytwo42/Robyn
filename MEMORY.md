@@ -43,6 +43,16 @@ Durable project context lives here. Update this file whenever information should
   configuration transactions use 59,143,474 gas. Current pricing plus 25%
   headroom requires 890,050,177,359,800 wei versus a project-wallet balance of
   11,163,294,240,852,215 wei. No public transaction was broadcast.
+- Security-remediation testnet deployment 2026-07-27: exact `origin/main`
+  `e754037bd40c5caee426e31b0886514da9c9ed12` was broadcast to chain 46630.
+  The schema-10 deployment starts at block 93,785,971 and its genesis launch
+  succeeded at block 93,786,122. LAN and official public RPC verification each
+  pass all 531 checks with zero failures. The manifest SHA-256 is
+  `5056fd70c94c2184de4498350348a19c16bbce6d9a2102ff7554d0e321db7912`.
+  The project wallet retains 0.010525774830852215 testnet ETH. The archived
+  schema-v9 manifest is preserved under
+  `/home/hendo420/.local/state/robyn-testnet-deployments/schema9-security-no-go-e435b78/`.
+  Application/index cutover and the eight-launch campaign are not yet complete.
 
 - Security audit checkpoint 2026-07-26: a fresh manual review of deployed
   schema-v9 Solidity commit `e435b78` found a release-blocking pre-graduation
