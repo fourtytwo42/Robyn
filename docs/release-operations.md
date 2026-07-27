@@ -183,9 +183,13 @@ only for backend, indexer, projector, keeper, and operator processes. Never use
 the credentialed URL as `NEXT_PUBLIC_ROBYN_RPC_URL`, because that value is
 compiled into the browser bundle. The browser must use a non-secret endpoint or
 a rate-limited Sherwood RPC gateway. Before activation, verify the paid provider
-supports the production `eth_getLogs` range and request mix. Alchemy's Free tier
-currently limits log requests to 10 blocks, so PAYG must be enabled and retested
-before using that account for production indexing.
+supports the production `eth_getLogs` range and request mix. The protected
+Alchemy PAYG endpoint passed chain-ID and canonical-hash checks, 200-block and
+1,000-block `eth_getLogs` probes, ordinary read methods, and a bounded 40-request
+mixed-read burst with 40/40 successes and 727 ms p95 latency on 2026-07-27. This
+is provider preflight evidence only; it does not authorize a mainnet process
+cutover. Rotate credentials disclosed through chat and apply least-privilege
+provider restrictions before production activation.
 When mainnet is eventually authorized, load
 `infrastructure/pm2/ecosystem.mainnet.config.cjs`. It reuses the reviewed public
 service topology while replacing every process name, port, queue, Redis

@@ -472,11 +472,14 @@ Durable project context lives here. Update this file whenever information should
   `/home/hendo420/.config/robyn/mainnet/server-rpc.env`. It is reserved for
   future mainnet API, indexer, projector, keeper, and operator traffic. Never
   compile or expose its credential in the browser bundle. Canonical block hash,
-  fee history, and bounded historical-log probes passed. The account remains on
-  Alchemy's Free tier, which rejects `eth_getLogs` ranges greater than 10 blocks;
-  enable PAYG and repeat the production request-mix test before any mainnet
-  process cutover. Testnet remains on Robinhood's public testnet RPC and the
-  mainnet application remains inactive.
+  fee history, ordinary reads, and 200-block and 1,000-block historical-log
+  probes passed after PAYG activation. A bounded 40-request mixed-read burst
+  completed 40/40 requests successfully with 727 ms p95 latency. This confirms
+  the former Free-tier 10-block `eth_getLogs` restriction is removed for the
+  tested account. No live process was cut over. Testnet remains on Robinhood's
+  public testnet RPC and the mainnet application remains inactive. Before
+  production activation, rotate any credential shared through chat and restrict
+  the replacement key to the required backend origins and methods.
   `codex/security-remediation` in `/home/hendo420/Robyn-schema9`, based on
   `09f4d80bde00931c9f88521b50692fe11bd8bb7b`. The public schema-v9 deployment
   remains unchanged and the endurance service is inactive. Fresh source now
