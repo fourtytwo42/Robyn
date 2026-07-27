@@ -3333,6 +3333,13 @@ When sources conflict, use this order:
 - Blocker: Fixed campaign `final-assurance-e6dd172` has 100 encrypted actors but its fail-closed preflight requires `0.01682413048944 ETH` including reserve and headroom. Controlled available balance was `0.009913879590852215 ETH`, leaving about `0.006910251 ETH` short. Do not reduce campaign coverage or the `0.0015 ETH` reserve; obtain faucet funding before `fund` or `all`.
 - Follow-up: Complete the 1,510-write campaign, reconciliation, browser and real-wallet acceptance, recovery/restore, public promotion, and fresh ten-hour accumulated-healthy endurance gate.
 
+### 2026-07-27 - Final assurance encrypted backup and isolated restore
+
+- Context: The fresh security-remediated candidate required a recovery proof before public promotion and endurance.
+- Result: Encrypted backup `/var/backups/robyn/sherwood-testnet-final-20260727T062704Z.tar.zst.age` and its checksum passed an isolated restore. The restored PostgreSQL fingerprint exactly matched `robyn_testnet_final_e6dd172`; 77 MinIO artifacts and 10 CID mappings were verified; an empty Kubo repository reproduced the recorded CIDs; and isolated artifact/API services on alternate ports reported chain `46630` with nine launches without reading live data directories.
+- Evidence: `/home/hendo420/.local/state/robyn-testnet-campaigns/final-assurance-e458382/backup-restore-summary.json`.
+- Follow-up: Build and promote the exact pushed documentation commit, complete automated browser and real-wallet acceptance, then start the ten-hour endurance gate.
+
 ## Open Follow-ups
 
 - Configure a vendor-neutral IPFS Pinning Service endpoint/token in the
