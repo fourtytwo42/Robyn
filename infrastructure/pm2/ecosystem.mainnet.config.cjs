@@ -7,6 +7,7 @@ function required(name) {
 const releaseRoot = required("ROBYN_MAINNET_RELEASE_ROOT");
 const manifest = required("ROBYN_MAINNET_MANIFEST");
 const rpcUrl = required("ROBYN_MAINNET_SERVER_RPC_URL");
+const wsRpcUrl = required("ROBYN_MAINNET_WS_RPC_URL");
 const operatorKeyFile = required("ROBYN_MAINNET_OPERATOR_KEY_FILE");
 const database = process.env.ROBYN_MAINNET_DATABASE || "robyn_mainnet";
 const authOrigins =
@@ -17,6 +18,7 @@ const authOrigins =
 process.env.ROBYN_TESTNET_RELEASE_ROOT = releaseRoot;
 process.env.ROBYN_TESTNET_MANIFEST = manifest;
 process.env.ROBYN_TESTNET_SERVER_RPC_URL = rpcUrl;
+process.env.ROBYN_TESTNET_WS_RPC_URL = wsRpcUrl;
 process.env.ROBYN_OPERATOR_KEY_FILE = operatorKeyFile;
 process.env.ROBYN_TESTNET_DATABASE = database;
 process.env.ROBYN_TESTNET_AUTH_ORIGINS = authOrigins;
@@ -43,6 +45,8 @@ module.exports = {
       CHAIN_ID: "4663",
       ROBYN_RELEASE_SHA: app.env.ROBYN_RELEASE_SHA,
       ROBYN_OPERATOR_RPC_URL: rpcUrl,
+      ROBYN_OPERATOR_WS_RPC_URL:
+        name === "robyn-indexer-mainnet" ? wsRpcUrl : "",
       RPC_GATEWAY_HEALTH_URL: rpcUrl,
       ROBYN_MANIFEST: manifest,
       PGDATABASE: database,

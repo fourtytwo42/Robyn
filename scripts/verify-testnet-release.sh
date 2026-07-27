@@ -17,9 +17,14 @@ testnet="$(jq '[.[]|select(.name|endswith("-testnet"))]' <<<"$pm2_json")"
 [[ "$(jq --arg root "$release_real" '[.[]|select((.name=="robyn-web-testnet" and .pm2_env.pm_cwd!=($root+"/apps/web")) or (.name!="robyn-web-testnet" and .pm2_env.pm_cwd!=$root))]|length' <<<"$testnet")" -eq 0 ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_INDEXER_ROLE' <<<"$testnet")" == "ingester" ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-projector-testnet")|.pm2_env.env.ROBYN_INDEXER_ROLE' <<<"$testnet")" == "projector" ]]
+indexer_ws_url="$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_OPERATOR_WS_RPC_URL' <<<"$testnet")"
+[[ "$indexer_ws_url" == wss://robinhood-testnet.g.alchemy.com/v2/* ]]
+[[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_RECONCILIATION_MS' <<<"$testnet")" == "30000" ]]
+[[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_HEARTBEAT_MS' <<<"$testnet")" == "10000" ]]
+[[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_WS_DEBOUNCE_MS' <<<"$testnet")" == "500" ]]
 
 server_rpc_url="$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_OPERATOR_RPC_URL' <<<"$testnet")"
-[[ -n "$server_rpc_url" && "$server_rpc_url" != "null" ]]
+[[ "$server_rpc_url" == https://robinhood-testnet.g.alchemy.com/v2/* ]]
 for process_name in robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet; do
   [[ "$(jq -r --arg name "$process_name" '.[]|select(.name==$name)|.pm2_env.env.ROBYN_OPERATOR_RPC_URL' <<<"$testnet")" == "$server_rpc_url" ]]
 done

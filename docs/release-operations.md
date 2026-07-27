@@ -190,6 +190,22 @@ mixed-read burst with 40/40 successes and 727 ms p95 latency on 2026-07-27. This
 is provider preflight evidence only; it does not authorize a mainnet process
 cutover. Rotate credentials disclosed through chat and apply least-privilege
 provider restrictions before production activation.
+
+The canonical ingester uses a filtered `logs` WebSocket only as a low-latency
+wake signal. Testnet and future mainnet use separate protected Alchemy HTTP and
+WebSocket endpoints so the same provider behavior is exercised before
+production. `ROBYN_TESTNET_SERVER_RPC_URL`, `ROBYN_TESTNET_WS_RPC_URL`,
+`ROBYN_MAINNET_SERVER_RPC_URL` and `ROBYN_MAINNET_WS_RPC_URL` are server-only
+values and must never enter the web bundle. Every notification is debounced,
+and canonical ingestion still reads from the durable checkpoint through the
+observed head with HTTP `eth_getLogs`. A 30-second HTTP reconciliation runs even
+when the WebSocket is healthy, so disconnects, missed notifications, provider
+restarts and reorgs cannot create an index gap. After a WebSocket reconnect or
+address-filter change, the same checkpoint catch-up is authoritative. The
+current launch addresses are included in the filter and the subscription is
+rebuilt when a launch adds new addresses. If the WebSocket is unavailable, the
+ingester remains correct through reconciliation-only mode.
+
 When mainnet is eventually authorized, load
 `infrastructure/pm2/ecosystem.mainnet.config.cjs`. It reuses the reviewed public
 service topology while replacing every process name, port, queue, Redis

@@ -13,6 +13,7 @@ const rpcUrl =
   process.env.ROBYN_TESTNET_SERVER_RPC_URL ||
   process.env.ROBYN_TESTNET_RPC_URL ||
   "https://rpc.testnet.chain.robinhood.com";
+const wsRpcUrl = process.env.ROBYN_TESTNET_WS_RPC_URL || "";
 const operatorKeyFile = required("ROBYN_OPERATOR_KEY_FILE");
 const nodeBinary = "/opt/node-v24.18.0-linux-x64/bin/node";
 const database = process.env.ROBYN_TESTNET_DATABASE || "robyn_testnet";
@@ -90,9 +91,12 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         ROBYN_OPERATOR_RPC_URL: rpcUrl,
+        ROBYN_OPERATOR_WS_RPC_URL: wsRpcUrl,
         ROBYN_MANIFEST: manifest,
         ROBYN_INDEXER_ROLE: "ingester",
-        INDEXER_POLL_MS: "1000",
+        INDEXER_RECONCILIATION_MS: "30000",
+        INDEXER_HEARTBEAT_MS: "10000",
+        INDEXER_WS_DEBOUNCE_MS: "500",
         INDEXER_BLOCK_RANGE: "200",
         INDEXER_BLOCK_READ_CONCURRENCY: "3",
         INDEXER_MAXIMUM_CONSECUTIVE_FAILURES: "24",

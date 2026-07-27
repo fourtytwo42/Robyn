@@ -444,12 +444,13 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- 2026-07-27: Sherwood testnet server and operator traffic now use only
-  `https://rpc.testnet.chain.robinhood.com`; the old LAN dependency was removed
-  from all running PM2 environments and persistence. A 61-sample, 60-minute
-  observation passed with zero bad statuses, ingestion lag 0, projection lag at
-  most 38 blocks, resolved transient alerts, and one encrypted software-wallet
-  write indexed exactly once. Evidence is under
+- 2026-07-27: Sherwood testnet server and operator traffic no longer depend on
+  the old LAN RPC. The public-RPC cutover first passed a 61-sample, 60-minute
+  observation with zero bad statuses, ingestion lag 0, projection lag at most
+  38 blocks, resolved transient alerts, and one encrypted software-wallet write
+  indexed exactly once. Testnet backend traffic is now aligned with future
+  mainnet on separate protected Alchemy HTTP and WebSocket endpoints. Evidence
+  for the original cutover is under
   `/home/hendo420/.local/state/robyn-rpc-cutover/20260727T191852Z/`.
 - 2026-07-27: host `192.168.50.117` is now an experimental Docker-based
   Robinhood Mainnet pruned node. The old testnet node services are disabled and
@@ -465,7 +466,7 @@ Durable project context lives here. Update this file whenever information should
 - Current blocker: allow initial sync to finish, run the read-only canonical
   comparison, then start and complete `robinhood-mainnet-trial.service`. If the
   memory, disk, latency, canonical, or restart gates fail, stop the experimental
-  node and keep testnet on the public endpoint.
+  node and keep testnet on its protected Alchemy endpoints.
 - 2026-07-26 security-remediation work is active on
 - 2026-07-27: the user-provided Alchemy Robinhood Mainnet endpoint is verified
   on chain `4663` and stored only in mode-0600 protected configuration at
@@ -476,10 +477,17 @@ Durable project context lives here. Update this file whenever information should
   probes passed after PAYG activation. A bounded 40-request mixed-read burst
   completed 40/40 requests successfully with 727 ms p95 latency. This confirms
   the former Free-tier 10-block `eth_getLogs` restriction is removed for the
-  tested account. No live process was cut over. Testnet remains on Robinhood's
-  public testnet RPC and the mainnet application remains inactive. Before
+  tested account. The mainnet application remains inactive. Before
   production activation, rotate any credential shared through chat and restrict
   the replacement key to the required backend origins and methods.
+- 2026-07-27: canonical ingestion now uses filtered Alchemy `logs` WebSocket
+  notifications as debounced wake signals with a 30-second HTTP reconciliation
+  fallback on both testnet and future mainnet. HTTP `eth_getLogs`, canonical
+  block hashes and the durable database checkpoint remain authoritative. The
+  subscription follows the current launch-address set, reconnects with bounded
+  backoff, and cannot disable periodic catch-up. Testnet uses mode-0600 Alchemy
+  HTTP and WebSocket endpoints for backend traffic. Mainnet has separate
+  protected HTTP and WebSocket endpoints; its application remains inactive.
   `codex/security-remediation` in `/home/hendo420/Robyn-schema9`, based on
   `09f4d80bde00931c9f88521b50692fe11bd8bb7b`. The public schema-v9 deployment
   remains unchanged and the endurance service is inactive. Fresh source now

@@ -4,7 +4,11 @@ Last verified: 2026-07-27
 
 ## Boundary and topology
 
-Sherwood Forest testnet uses Robinhood's public HTTPS testnet RPC for browser and server traffic. The dedicated host at `192.168.50.117` is reserved for an experimental Robinhood Chain Mainnet pruned node and is not a dependency of the testnet application.
+Sherwood Forest testnet uses protected Alchemy testnet HTTP and WebSocket
+endpoints for server, indexer, projector, keeper and operator traffic. Browser
+configuration never contains an Alchemy credential. The dedicated host at
+`192.168.50.117` is reserved for an experimental Robinhood Chain Mainnet pruned
+node and is not a dependency of the testnet application.
 
 - Application VM: `192.168.50.250`
 - Testnet RPC: `https://rpc.testnet.chain.robinhood.com`
@@ -115,8 +119,16 @@ projected disk runway. A projected runway below 60 days fails the trial; below
 
 ## Testnet continuity and recovery
 
-All protected testnet processes use the public testnet RPC for `ROBYN_TESTNET_SERVER_RPC_URL`, `ROBYN_OPERATOR_RPC_URL`, and browser traffic. No testnet process may reference `192.168.50.117:8547` after it becomes chain `4663`.
+All protected testnet processes use Alchemy testnet for
+`ROBYN_TESTNET_SERVER_RPC_URL` and `ROBYN_OPERATOR_RPC_URL`. The canonical
+ingester additionally uses the protected `ROBYN_TESTNET_WS_RPC_URL` as a
+filtered log wake source with 30-second HTTP reconciliation. No credentialed URL
+may be compiled into the browser, and no testnet process may reference
+`192.168.50.117:8547` after it becomes chain `4663`.
 
 The former testnet database is reproducible public data and is not backed up. Its service definitions, configuration, snapshot metadata, image provenance, and checksums are archived before deletion. Recreating a private testnet node requires a fresh trusted snapshot and a separate capacity decision.
 
-If the mainnet trial fails, stop and disable the mainnet services, preserve the database and evidence when safe, and keep the testnet application on Robinhood's public testnet RPC. Do not silently point testnet traffic back at the repurposed LAN endpoint.
+If the mainnet trial fails, stop and disable the mainnet services, preserve the
+database and evidence when safe, and keep the testnet application on its
+protected Alchemy testnet endpoints. Do not silently point testnet traffic back
+at the repurposed LAN endpoint.

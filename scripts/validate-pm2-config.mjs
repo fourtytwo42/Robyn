@@ -20,6 +20,7 @@ const testnet = loadConfig("infrastructure/pm2/ecosystem.testnet.config.cjs", {
   ROBYN_OPERATOR_KEY_FILE: "/etc/robyn/testnet-operator-key",
   ROBYN_TESTNET_AUTH_ORIGINS: "https://testnet.sherwoodforest.trade",
   ROBYN_TESTNET_SERVER_RPC_URL: "http://192.0.2.10:8547",
+  ROBYN_TESTNET_WS_RPC_URL: "wss://example.invalid/testnet",
 });
 
 const minimums = new Map([
@@ -82,6 +83,18 @@ for (const app of apps) {
       "robyn-api-testnet must restrict authentication and CORS to the testnet hostname",
     );
   }
+  if (
+    app.name === "robyn-indexer-testnet" &&
+    (app.env?.ROBYN_OPERATOR_WS_RPC_URL !==
+      "wss://example.invalid/testnet" ||
+      app.env?.INDEXER_RECONCILIATION_MS !== "30000" ||
+      app.env?.INDEXER_HEARTBEAT_MS !== "10000" ||
+      app.env?.INDEXER_WS_DEBOUNCE_MS !== "500")
+  ) {
+    throw new Error(
+      "robyn-indexer-testnet must use filtered WebSocket wakes with 30-second reconciliation",
+    );
+  }
 }
 
 for (const name of minimums.keys()) {
@@ -105,10 +118,48 @@ if (testnetWeb?.env?.RPC_GATEWAY_HEALTH_URL !== privateTestnetRpc) {
   throw new Error("robyn-web-testnet health checks must use the server-only testnet RPC");
 }
 
+delete require.cache[
+  require.resolve(
+    path.join(repoRoot, "infrastructure/pm2/ecosystem.testnet.config.cjs"),
+  )
+];
+const mainnetHttpRpc = "https://example.invalid/mainnet";
+const mainnetWebSocketRpc = "wss://example.invalid/mainnet";
+const mainnet = loadConfig("infrastructure/pm2/ecosystem.mainnet.config.cjs", {
+  ROBYN_MAINNET_RELEASE_ROOT: "/opt/robyn/mainnet-releases/validation",
+  ROBYN_MAINNET_MANIFEST: "/etc/robyn/mainnet-validation.json",
+  ROBYN_MAINNET_SERVER_RPC_URL: mainnetHttpRpc,
+  ROBYN_MAINNET_WS_RPC_URL: mainnetWebSocketRpc,
+  ROBYN_MAINNET_OPERATOR_KEY_FILE: "/etc/robyn/mainnet-operator-key",
+});
+const mainnetIndexer = mainnet.apps.find(
+  (app) => app.name === "robyn-indexer-mainnet",
+);
+if (
+  mainnetIndexer?.env?.ROBYN_OPERATOR_RPC_URL !== mainnetHttpRpc ||
+  mainnetIndexer?.env?.ROBYN_OPERATOR_WS_RPC_URL !== mainnetWebSocketRpc ||
+  mainnetIndexer?.env?.INDEXER_RECONCILIATION_MS !== "30000" ||
+  mainnetIndexer?.env?.INDEXER_HEARTBEAT_MS !== "10000"
+) {
+  throw new Error(
+    "robyn-indexer-mainnet must mirror the filtered WebSocket and reconciliation policy",
+  );
+}
+if (
+  mainnet.apps.some(
+    (app) =>
+      app.name !== "robyn-indexer-mainnet" &&
+      app.env?.ROBYN_OPERATOR_WS_RPC_URL,
+  )
+) {
+  throw new Error("mainnet WebSocket credentials must be indexer-only");
+}
+
 process.stdout.write(
   `${JSON.stringify({
     schemaVersion: 1,
     checkedApps: apps.length,
+    checkedMainnetApps: mainnet.apps.length,
     memoryBudgetsMiB: Object.fromEntries(
       apps.map((app) => [app.name, memoryMegabytes(app.max_memory_restart)]),
     ),

@@ -67,6 +67,7 @@ start_stack() {
   set +a
   as_operator env \
     ROBYN_TESTNET_SERVER_RPC_URL="${ROBYN_TESTNET_SERVER_RPC_URL:-https://rpc.testnet.chain.robinhood.com}" \
+    ROBYN_TESTNET_WS_RPC_URL="${ROBYN_TESTNET_WS_RPC_URL:-}" \
     ROBYN_TESTNET_RELEASE_ROOT="$selected" \
     ROBYN_TESTNET_MANIFEST="$selected/deployments/46630-v4.json" \
     ROBYN_TESTNET_DATABASE="$selected_database" \

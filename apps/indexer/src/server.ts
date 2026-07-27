@@ -27,6 +27,11 @@ import {
   validateKingOfForestPolicy,
   type KingOfForestPolicy,
 } from "./king-of-forest.js";
+import {
+  createDebouncedWake,
+  FilteredLogWakeClient,
+  WakeCoordinator,
+} from "./wake.js";
 
 type Manifest = {
   schemaVersion?: number;
@@ -63,7 +68,14 @@ const role = process.env.ROBYN_INDEXER_ROLE ?? "combined";
 if (!["ingester", "projector", "combined"].includes(role)) {
   throw new Error(`Unsupported indexer role: ${role}`);
 }
-const pollMs = Number(process.env.INDEXER_POLL_MS ?? "1000");
+const reconciliationMs = Number(
+  process.env.INDEXER_RECONCILIATION_MS ??
+    process.env.INDEXER_POLL_MS ??
+    "30000",
+);
+const ingesterHeartbeatMs = Number(process.env.INDEXER_HEARTBEAT_MS ?? "10000");
+const wakeDebounceMs = Number(process.env.INDEXER_WS_DEBOUNCE_MS ?? "500");
+const wakeRpcUrl = process.env.ROBYN_OPERATOR_WS_RPC_URL?.trim() || null;
 const projectorPollMs = Number(process.env.PROJECTOR_POLL_MS ?? "1000");
 const blockRange = BigInt(process.env.INDEXER_BLOCK_RANGE ?? "250");
 const blockReadConcurrency = Number(
@@ -73,6 +85,12 @@ const maximumConsecutiveFailures = Number(
   process.env.INDEXER_MAXIMUM_CONSECUTIVE_FAILURES ?? "24",
 );
 let stopping = false;
+const ingesterWake = new WakeCoordinator();
+const debouncedIngesterWake = createDebouncedWake(
+  () => ingesterWake.trigger(),
+  wakeDebounceMs,
+);
+let filteredLogWakeClient: FilteredLogWakeClient | undefined;
 
 const indexedAddresses = [
   ...new Set(
@@ -1310,16 +1328,119 @@ async function runPipeline(
   }
 }
 
+async function runIngesterPipeline() {
+  let failures = 0;
+  let rpcRetryCount = 0;
+  let lastRpcDegradationAt: string | null = null;
+  if (
+    !Number.isSafeInteger(ingesterHeartbeatMs) ||
+    ingesterHeartbeatMs <= 0 ||
+    ingesterHeartbeatMs > reconciliationMs
+  ) {
+    throw new Error(
+      "Indexer heartbeat interval must be positive and no greater than reconciliation",
+    );
+  }
+  if (wakeRpcUrl) {
+    filteredLogWakeClient = new FilteredLogWakeClient({
+      url: wakeRpcUrl,
+      addresses: await currentIndexedAddresses(),
+      onNotification: () => debouncedIngesterWake.notify(),
+    });
+    filteredLogWakeClient.start();
+  }
+  while (!stopping) {
+    try {
+      const result = await syncOnce();
+      failures = 0;
+      if (filteredLogWakeClient) {
+        filteredLogWakeClient.updateAddresses(await currentIndexedAddresses());
+      }
+      const heartbeatMetadata = {
+        ...result,
+        rpcRetryCount,
+        lastRpcDegradationAt,
+        wakeMode: filteredLogWakeClient
+          ? "filtered-logs-websocket"
+          : "reconciliation-only",
+        reconciliationMs,
+        webSocket: filteredLogWakeClient?.snapshot() ?? null,
+        heartbeatOnly: false,
+      };
+      await recordHeartbeat("chain-ingester", "ok", heartbeatMetadata);
+      if (!stopping) {
+        const reconciliationDeadline = performance.now() + reconciliationMs;
+        while (!stopping) {
+          const remainingMs = Math.ceil(
+            reconciliationDeadline - performance.now(),
+          );
+          if (remainingMs <= 0) break;
+          const wakeReason = await ingesterWake.wait(
+            Math.min(remainingMs, ingesterHeartbeatMs),
+          );
+          if (wakeReason === "event") break;
+          if (performance.now() >= reconciliationDeadline) break;
+          await recordHeartbeat("chain-ingester", "ok", {
+            ...heartbeatMetadata,
+            webSocket: filteredLogWakeClient?.snapshot() ?? null,
+            heartbeatOnly: true,
+          });
+        }
+      }
+    } catch (error) {
+      failures += 1;
+      rpcRetryCount += 1;
+      lastRpcDegradationAt = new Date().toISOString();
+      const message = error instanceof Error ? error.message : String(error);
+      await recordHeartbeat("chain-ingester", "degraded", {
+        consecutiveFailures: failures,
+        rpcRetryCount,
+        lastRpcDegradationAt,
+        error: message.slice(0, 1_000),
+        wakeMode: filteredLogWakeClient
+          ? "filtered-logs-websocket"
+          : "reconciliation-only",
+        reconciliationMs,
+        webSocket: filteredLogWakeClient?.snapshot() ?? null,
+      }).catch(() => undefined);
+      process.stderr.write(
+        JSON.stringify({
+          level: "error",
+          event: "chain-ingester_failed",
+          consecutiveFailures: failures,
+          message,
+        }) + "\n",
+      );
+      if (failures >= maximumConsecutiveFailures) {
+        throw new Error(
+          `chain-ingester remained unhealthy for ${failures} polls`,
+        );
+      }
+    }
+    if (stopping) break;
+    if (failures > 0) {
+      await sleep(failureBackoffMs(reconciliationMs, failures - 1));
+    }
+  }
+  filteredLogWakeClient?.stop();
+}
+
 process.on("SIGTERM", () => {
   stopping = true;
+  debouncedIngesterWake.cancel();
+  filteredLogWakeClient?.stop();
+  ingesterWake.trigger();
 });
 process.on("SIGINT", () => {
   stopping = true;
+  debouncedIngesterWake.cancel();
+  filteredLogWakeClient?.stop();
+  ingesterWake.trigger();
 });
 
 const pipelines: Promise<void>[] = [];
 if (role === "ingester" || role === "combined") {
-  pipelines.push(runPipeline("chain-ingester", pollMs, async () => syncOnce()));
+  pipelines.push(runIngesterPipeline());
 }
 if (role === "projector" || role === "combined") {
   pipelines.push(
