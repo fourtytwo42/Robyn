@@ -247,6 +247,7 @@ test("graduation rounding dust uses a separate resumable transaction", () => {
   const topup = source.indexOf("`trade-graduate-${launchIndex}`");
   const dust = source.indexOf("`trade-graduate-dust-${launchIndex}`");
   const finalClassification = source.indexOf("const graduated = []");
+  assert.match(source, /const terminalDustValue = 10n/);
   assert.ok(topup >= 0 && dust > topup && finalClassification > dust);
 });
 

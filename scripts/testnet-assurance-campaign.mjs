@@ -1029,7 +1029,7 @@ async function trading() {
       functionName: "graduated",
     });
     if (!graduatedAfterTopup) {
-      const terminalDustValue = 1n;
+      const terminalDustValue = 10n;
       const [, terminalDustQuote] = await publicClient.readContract({
         address: launch.market,
         abi: marketAbi,
