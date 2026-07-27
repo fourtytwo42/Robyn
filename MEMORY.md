@@ -467,6 +467,16 @@ Durable project context lives here. Update this file whenever information should
   memory, disk, latency, canonical, or restart gates fail, stop the experimental
   node and keep testnet on the public endpoint.
 - 2026-07-26 security-remediation work is active on
+- 2026-07-27: the user-provided Alchemy Robinhood Mainnet endpoint is verified
+  on chain `4663` and stored only in mode-0600 protected configuration at
+  `/home/hendo420/.config/robyn/mainnet/server-rpc.env`. It is reserved for
+  future mainnet API, indexer, projector, keeper, and operator traffic. Never
+  compile or expose its credential in the browser bundle. Canonical block hash,
+  fee history, and bounded historical-log probes passed. The account remains on
+  Alchemy's Free tier, which rejects `eth_getLogs` ranges greater than 10 blocks;
+  enable PAYG and repeat the production request-mix test before any mainnet
+  process cutover. Testnet remains on Robinhood's public testnet RPC and the
+  mainnet application remains inactive.
   `codex/security-remediation` in `/home/hendo420/Robyn-schema9`, based on
   `09f4d80bde00931c9f88521b50692fe11bd8bb7b`. The public schema-v9 deployment
   remains unchanged and the endurance service is inactive. Fresh source now

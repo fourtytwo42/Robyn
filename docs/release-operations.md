@@ -176,6 +176,16 @@ does not activate it. Mainnet activation remains a separate explicit operation
 after contracts, assets, legal review, security review, recovery and real-wallet
 acceptance pass.
 
+
+Keep credentialed mainnet server RPC configuration in
+`/home/hendo420/.config/robyn/mainnet/server-rpc.env` with mode `0600`. Load it
+only for backend, indexer, projector, keeper, and operator processes. Never use
+the credentialed URL as `NEXT_PUBLIC_ROBYN_RPC_URL`, because that value is
+compiled into the browser bundle. The browser must use a non-secret endpoint or
+a rate-limited Sherwood RPC gateway. Before activation, verify the paid provider
+supports the production `eth_getLogs` range and request mix. Alchemy's Free tier
+currently limits log requests to 10 blocks, so PAYG must be enabled and retested
+before using that account for production indexing.
 When mainnet is eventually authorized, load
 `infrastructure/pm2/ecosystem.mainnet.config.cjs`. It reuses the reviewed public
 service topology while replacing every process name, port, queue, Redis
