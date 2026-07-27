@@ -16,6 +16,7 @@ export const ENDURANCE_LAUNCH_THRESHOLDS_SECONDS = [
   7.5 * 60 * 60,
 ];
 export const ENDURANCE_RESERVE_WEI = 1_500_000_000_000_000n;
+export const ENDURANCE_L1_DATA_FEE_RESERVE_WEI = 25_000_000_000_000n;
 export const ENDURANCE_MINIMUM_DISK_BYTES = 12n * 1024n * 1024n * 1024n;
 export const ENDURANCE_MINIMUM_DISK_PERCENT = 15;
 export const ENDURANCE_MINIMUM_MEMORY_BYTES = 1024n * 1024n * 1024n;
@@ -47,8 +48,14 @@ export function transactionFundingTarget({
   valueWei,
   estimatedGas,
   maxFeePerGas,
+  additionalFeeReserveWei = 0n,
 }) {
-  if (valueWei < 0n || estimatedGas <= 0n || maxFeePerGas <= 0n) {
+  if (
+    valueWei < 0n ||
+    estimatedGas <= 0n ||
+    maxFeePerGas <= 0n ||
+    additionalFeeReserveWei < 0n
+  ) {
     throw new Error("Transaction funding values are invalid");
   }
   const bps = 10_000n;
@@ -58,7 +65,7 @@ export function transactionFundingTarget({
   const feeReserve = gasLimit * maxFeePerGas;
   const bufferedFeeReserve =
     feeReserve + ceilDiv(feeReserve * headroomBps, bps);
-  return valueWei + bufferedFeeReserve;
+  return valueWei + bufferedFeeReserve + additionalFeeReserveWei;
 }
 
 export function terminalCurveBuyValue({

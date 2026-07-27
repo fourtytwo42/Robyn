@@ -44,6 +44,7 @@ import {
   enduranceSamplePassed,
   enduranceCoverageFailures,
   ENDURANCE_DURATION_SECONDS,
+  ENDURANCE_L1_DATA_FEE_RESERVE_WEI,
   ENDURANCE_MAXIMUM_API_P95_MS,
   ENDURANCE_MINIMUM_MEMORY_BYTES,
   ENDURANCE_RESERVE_WEI,
@@ -801,6 +802,7 @@ async function maybeGraduate() {
         valueWei: value,
         estimatedGas,
         maxFeePerGas,
+        additionalFeeReserveWei: ENDURANCE_L1_DATA_FEE_RESERVE_WEI,
       });
       const buyerBalance = await publicClient.getBalance({
         address: account.address,

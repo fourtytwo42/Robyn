@@ -27,9 +27,22 @@
   single-flight background refresh runs. Force a blocking refresh after two
   minutes so stale health cannot remain indefinitely. Unit tests cover
   coalescing, background refresh, maximum age, and transient refresh failure.
+- Live latency result: Release `ad372a7` reduced the internal `/status` p95 to
+  7.8 ms across 20 samples. Home, Markets, and DAO p95 values were 98.8,
+  111.8, and 82.0 ms. The release was promoted with 531 verifier checks.
+- Route recovery: Two testnet basket routes reached their immutable reference
+  deviation boundary after one-way campaign conversions. Protected evidence
+  records direct Universal Router counter-trades from the encrypted project
+  software wallet, the restored route state, and safe retries of quote-stage
+  jobs that had never submitted transactions.
+- Workload funding bug: The first endurance graduation paused after the actor
+  was funded to an EIP-1559 gas estimate that omitted the chain's additional L1
+  data cost. Add a separate 0.000025 ETH per-transaction L1 data reserve to the
+  dynamic 25% gas headroom calculation. This does not reduce workload value or
+  the project-wallet 0.0015 ETH reserve.
 - Verification: Full repository tests, 165 Foundry tests, typechecks, lint, and
-  builds passed for `b619639`; the status-cache change requires its own clean
-  release build, promotion, live latency regression, and journal resume.
+  builds passed for `b619639` and the exact `ad372a7` status-cache release.
+  The funding fix requires its own clean release build and journal resume.
 
 ### 2026-07-27 - Software-wallet endurance startup repair
 
