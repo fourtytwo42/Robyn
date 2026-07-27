@@ -1,0 +1,13 @@
+[Unit]
+Description=Robinhood Mainnet 48-hour read and capacity trial
+After=robinhood-mainnet-node.service network-online.target
+Requires=robinhood-mainnet-node.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/run-robinhood-mainnet-trial
+User=root
+TimeoutStartSec=infinity
+Nice=5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=5

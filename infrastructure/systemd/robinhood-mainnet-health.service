@@ -1,0 +1,8 @@
+[Unit]
+Description=Collect Robinhood Mainnet node health metrics
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/collect-robinhood-mainnet-health
+User=root

@@ -78,7 +78,7 @@ test("approved testnet RPC allowlist rejects arbitrary endpoints", () => {
     isApprovedTestnetRpcUrl("https://rpc.testnet.chain.robinhood.com"),
     true,
   );
-  assert.equal(isApprovedTestnetRpcUrl("http://192.168.50.117:8547"), true);
+  assert.equal(isApprovedTestnetRpcUrl("http://192.168.50.117:8547"), false);
   assert.equal(isApprovedTestnetRpcUrl("http://127.0.0.1:8545"), false);
   assert.equal(isApprovedTestnetRpcUrl("https://attacker.invalid"), false);
 });

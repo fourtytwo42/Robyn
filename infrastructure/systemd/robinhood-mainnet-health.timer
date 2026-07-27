@@ -1,0 +1,12 @@
+[Unit]
+Description=Sample Robinhood Mainnet node health every 30 seconds
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=30s
+AccuracySec=5s
+Persistent=true
+Unit=robinhood-mainnet-health.service
+
+[Install]
+WantedBy=timers.target

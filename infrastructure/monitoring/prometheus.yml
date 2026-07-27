@@ -26,14 +26,14 @@ scrape_configs:
       - targets: ["192.168.50.117:9100"]
         labels:
           component: robinhood-rpc-host
-          environment: robinhood-testnet
-          chain_id: "46630"
-  - job_name: robinhood-testnet-nitro
+          environment: robinhood-mainnet
+          chain_id: "4663"
+  - job_name: robinhood-mainnet-nitro
     metrics_path: /metrics
     static_configs:
       - targets: ["192.168.50.117:16071"]
         labels:
-          component: robinhood-testnet-nitro
-          environment: robinhood-testnet
-          chain_id: "46630"
+          component: robinhood-mainnet-nitro
+          environment: robinhood-mainnet
+          chain_id: "4663"
           rpc_endpoint: "192.168.50.117:8547"

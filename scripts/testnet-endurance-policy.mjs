@@ -1,7 +1,6 @@
 export const ENDURANCE_DURATION_SECONDS = 10 * 60 * 60;
 const APPROVED_TESTNET_RPC_URLS = new Set([
   "https://rpc.testnet.chain.robinhood.com",
-  "http://192.168.50.117:8547",
 ]);
 
 export const isApprovedTestnetRpcUrl = (url) => APPROVED_TESTNET_RPC_URLS.has(url);

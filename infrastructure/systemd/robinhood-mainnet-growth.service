@@ -1,0 +1,12 @@
+[Unit]
+Description=Measure Robinhood Mainnet database growth and disk runway
+After=robinhood-mainnet-node.service
+Requires=robinhood-mainnet-node.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/collect-robinhood-mainnet-growth
+User=root
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

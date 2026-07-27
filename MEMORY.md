@@ -444,6 +444,28 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-27: Sherwood testnet server and operator traffic now use only
+  `https://rpc.testnet.chain.robinhood.com`; the old LAN dependency was removed
+  from all running PM2 environments and persistence. A 61-sample, 60-minute
+  observation passed with zero bad statuses, ingestion lag 0, projection lag at
+  most 38 blocks, resolved transient alerts, and one encrypted software-wallet
+  write indexed exactly once. Evidence is under
+  `/home/hendo420/.local/state/robyn-rpc-cutover/20260727T191852Z/`.
+- 2026-07-27: host `192.168.50.117` is now an experimental Docker-based
+  Robinhood Mainnet pruned node. The old testnet node services are disabled and
+  only the validated `/srv/robinhood/testnet/data` chain database was deleted.
+  Nitro `v3.11.2-3599aca` is pinned by digest
+  `sha256:ebc985e3b105980734630744981e1542001c22d74cba57509fe0d5ed8bb84c14`.
+  It serves chain `4663` through LAN-only Nginx at `192.168.50.117:8547`, uses
+  dRPC execution and PublicNode beacon endpoints, and is actively catching up
+  from the checksum-verified 2026-07-12 pruned snapshot. Health metrics and
+  alerts are live; the static 48-hour acceptance trial must not start until
+  `eth_syncing=false` and head lag is at most 50 blocks. No mainnet transaction
+  has been broadcast, and Sherwood's mainnet application remains inactive.
+- Current blocker: allow initial sync to finish, run the read-only canonical
+  comparison, then start and complete `robinhood-mainnet-trial.service`. If the
+  memory, disk, latency, canonical, or restart gates fail, stop the experimental
+  node and keep testnet on the public endpoint.
 - 2026-07-26 security-remediation work is active on
   `codex/security-remediation` in `/home/hendo420/Robyn-schema9`, based on
   `09f4d80bde00931c9f88521b50692fe11bd8bb7b`. The public schema-v9 deployment
@@ -1839,6 +1861,34 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-27 - Public-testnet RPC cutover and Docker mainnet-node conversion
+
+- Context: the user approved moving all Sherwood testnet backend traffic to
+  Robinhood's public testnet RPC, then repurposing the dedicated Docker Nitro
+  host for a capacity-measured Robinhood Mainnet pruned-node trial.
+- Decision: keep the app stack native on `192.168.50.250`, allow Docker only on
+  the dedicated RPC host, configure no paid fallback, keep the mainnet app
+  inactive, and broadcast no mainnet transactions.
+- Testnet result: public RPC chain identity, canonical hashes, and 52 deployed
+  contract bytecodes matched before cutover. All six PM2 apps and persisted
+  environments now use the public RPC. The 60-minute observation and bounded
+  encrypted software-wallet transaction passed; endurance remains stopped.
+- Mainnet result: archived and checksummed the old configuration, disabled the
+  testnet units, deleted only the reproducible 176 GB testnet chain database,
+  and started a fresh Docker mainnet unit from the immutable Nitro digest. The
+  official 2026-07-12 snapshot SHA-256 is
+  `12fc2f2dd77460ab2d61a810d79e930bc26a7a7129befdf1f27cae7d0dbb4178`;
+  chain-info and genesis hashes are recorded in conversion evidence. LAN RPC
+  returns `0x1237`; the container has a 28 GiB memory cap, uses about 5 GiB
+  during catch-up, has no OOM or restart, and disk has about 408 GB available.
+- Monitoring: Prometheus scrapes both Nitro and node-exporter mainnet metrics.
+  Chain identity, sync, lag, L1 dependencies, disk, memory, swap, restart, and
+  OOM rules are active. Daily growth and the static 48-hour trial services are
+  installed but the trial has not started.
+- Follow-up: wait for `eth_syncing=false` and lag at most 50, run the read-only
+  canonical comparison, complete the 48-hour trial, then record observed disk
+  growth and the capacity verdict. The node is experimental until those pass.
 
 ### 2026-07-27 - Schema-10 smart-contract audit checkpoint
 
@@ -3504,6 +3554,9 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Complete the experimental mainnet RPC node's initial synchronization and
+  read-only verification, then run its static 48-hour capacity trial. Do not
+  treat it as a production dependency before all acceptance gates pass.
 - Configure a vendor-neutral IPFS Pinning Service endpoint/token in the
   protected testnet API environment.
 - Complete independent browser-persona UAT when subagent runtimes expose the
@@ -3534,7 +3587,10 @@ When sources conflict, use this order:
 
 - Read `AGENTS.md` and `MEMORY.md` before making future changes in this workspace.
 - `/home/hendo420/Robyn` on VM `robyn` is authoritative. Never run project code, builds, tests, services, databases, migrations, workers, RPC nodes, deployments or Git operations on the Windows workstation.
-- Never use Docker, Docker Compose, Kubernetes, containers, container images or a container registry for this project.
+- Never use Docker, Docker Compose, Kubernetes, containers, container images or
+  a container registry for the application stack. The dedicated RPC host is an
+  explicit Docker exception approved on 2026-07-27 to match Robinhood's
+  supported Nitro deployment pattern.
 - When Node services exist, persist them with a committed PM2 ecosystem, systemd startup integration and `pm2 save`, then verify after reboot.
 - Run PostgreSQL, Redis, MinIO, monitoring, reverse proxy, any self-hosted CI runner and any project-operated RPC node natively on the VM under systemd.
 - Backup jobs run on the VM, but recoverable backup copies must leave the VM failure domain.

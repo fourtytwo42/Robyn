@@ -379,49 +379,53 @@ groups:
         for: 2m
         labels:
           severity: critical
-          chain_id: "46630"
+          chain_id: "4663"
           component: robinhood-rpc-host
           launch: all
           asset: all
           runbook: robinhood-rpc-node
         annotations:
           summary: Robinhood RPC node host metrics are unavailable
-          description: The private chain-46630 node host cannot be scraped from the Robyn VM.
+          description: The LAN-only chain-4663 node host cannot be scraped from the Robyn VM.
           runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
       - alert: RobinhoodNitroDown
-        expr: up{job="robinhood-testnet-nitro"} == 0
+        expr: up{job="robinhood-mainnet-nitro"} == 0
         for: 2m
         labels:
           severity: critical
-          chain_id: "46630"
-          component: robinhood-testnet-nitro
+          chain_id: "4663"
+          component: robinhood-mainnet-nitro
           launch: all
           asset: all
           runbook: robinhood-rpc-node
         annotations:
-          summary: Robinhood Testnet Nitro metrics are unavailable
-          description: The private Nitro node is down, bootstrapping, or unreachable from the Robyn VM.
+          summary: Robinhood Mainnet Nitro metrics are unavailable
+          description: The LAN-only Nitro node is down, bootstrapping, or unreachable from the Robyn VM.
           runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
       - alert: RobinhoodRpcDiskHeadroomLow
-        expr: node_filesystem_avail_bytes{job="robinhood-rpc-host",mountpoint="/",fstype!=""} / node_filesystem_size_bytes{job="robinhood-rpc-host",mountpoint="/",fstype!=""} < 0.25
+        expr: |
+          node_filesystem_avail_bytes{job="robinhood-rpc-host",mountpoint="/",fstype!=""} < 100000000000
+          or
+          node_filesystem_avail_bytes{job="robinhood-rpc-host",mountpoint="/",fstype!=""}
+            / node_filesystem_size_bytes{job="robinhood-rpc-host",mountpoint="/",fstype!=""} < 0.20
         for: 5m
         labels:
           severity: critical
-          chain_id: "46630"
+          chain_id: "4663"
           component: robinhood-rpc-disk
           launch: all
           asset: all
           runbook: robinhood-rpc-node
         annotations:
-          summary: Robinhood RPC node has less than 25 percent disk free
-          description: Stop adding services and expand or replace storage before the node reaches its safety floor.
+          summary: Robinhood RPC node crossed its disk safety floor
+          description: Available disk is below 100 GB or 20 percent, so snapshot recovery and continued chain growth lack the required margin.
           runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
       - alert: RobinhoodRpcMemoryHeadroomLow
         expr: node_memory_MemAvailable_bytes{job="robinhood-rpc-host"} / node_memory_MemTotal_bytes{job="robinhood-rpc-host"} < 0.10
         for: 5m
         labels:
           severity: critical
-          chain_id: "46630"
+          chain_id: "4663"
           component: robinhood-rpc-memory
           launch: all
           asset: all
@@ -429,4 +433,134 @@ groups:
         annotations:
           summary: Robinhood RPC node has less than 10 percent memory available
           description: Nitro is operating below the minimum memory safety floor.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
+      - alert: RobinhoodMainnetRpcUnavailable
+        expr: robinhood_mainnet_rpc_up == 0
+        for: 2m
+        labels:
+          severity: critical
+          chain_id: "4663"
+          component: robinhood-mainnet-rpc
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Robinhood Mainnet RPC is unavailable
+          description: The local Nitro HTTP endpoint has not returned a block number for two minutes.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
+      - alert: RobinhoodMainnetChainMismatch
+        expr: robinhood_mainnet_rpc_up == 1 and robinhood_mainnet_chain_id_ok != 1
+        for: 1m
+        labels:
+          severity: critical
+          chain_id: "4663"
+          component: robinhood-mainnet-rpc
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Robinhood Mainnet RPC returned the wrong chain ID
+          description: The repurposed LAN endpoint must return chain ID 4663 and must never serve testnet.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
+      - alert: RobinhoodMainnetHeadLagHigh
+        expr: robinhood_mainnet_head_lag_blocks > 50
+        for: 2m
+        labels:
+          severity: warning
+          chain_id: "4663"
+          component: robinhood-mainnet-sync
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Robinhood Mainnet node is more than 50 blocks behind
+          description: Initial catch-up may fire this alert; acceptance requires it to resolve and remain resolved.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
+      - alert: RobinhoodMainnetL1ExecutionDown
+        expr: robinhood_mainnet_l1_execution_up == 0
+        for: 2m
+        labels:
+          severity: critical
+          chain_id: "4663"
+          component: robinhood-mainnet-l1
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Ethereum execution dependency is unavailable
+          description: The free Ethereum execution endpoint has failed for two minutes.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
+      - alert: RobinhoodMainnetL1BeaconDown
+        expr: robinhood_mainnet_l1_beacon_up == 0
+        for: 2m
+        labels:
+          severity: critical
+          chain_id: "4663"
+          component: robinhood-mainnet-l1
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Ethereum beacon dependency is unavailable
+          description: The free Ethereum beacon endpoint has failed for two minutes.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
+      - alert: RobinhoodMainnetMemoryFloorLow
+        expr: node_memory_MemAvailable_bytes{job="robinhood-rpc-host"} < 2147483648
+        for: 5m
+        labels:
+          severity: critical
+          chain_id: "4663"
+          component: robinhood-rpc-memory
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Robinhood Mainnet host has less than 2 GiB available memory
+          description: The 32 GB trial has crossed its absolute memory failure threshold.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
+      - alert: RobinhoodMainnetSwapHigh
+        expr: node_memory_SwapTotal_bytes{job="robinhood-rpc-host"} - node_memory_SwapFree_bytes{job="robinhood-rpc-host"} > 2147483648
+        for: 5m
+        labels:
+          severity: critical
+          chain_id: "4663"
+          component: robinhood-rpc-memory
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Robinhood Mainnet host is using more than 2 GiB swap
+          description: Sustained swap above the trial threshold invalidates the 32 GB acceptance gate.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
+      - alert: RobinhoodMainnetRestarted
+        expr: changes(robinhood_mainnet_service_restarts_total[10m]) > 0
+        labels:
+          severity: critical
+          chain_id: "4663"
+          component: robinhood-mainnet-runtime
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Robinhood Mainnet Nitro restarted
+          description: Any unplanned restart invalidates the active acceptance trial.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
+      - alert: RobinhoodMainnetOomKilled
+        expr: robinhood_mainnet_oom_killed == 1
+        labels:
+          severity: critical
+          chain_id: "4663"
+          component: robinhood-mainnet-runtime
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Robinhood Mainnet Nitro was OOM-killed
+          description: The 32 GB memory trial has failed and the node must not be accepted.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
+      - alert: RobinhoodMainnetDiskRunwayWarning
+        expr: robinhood_mainnet_disk_runway_days > 0 and robinhood_mainnet_disk_runway_days < 120
+        for: 1h
+        labels:
+          severity: warning
+          chain_id: "4663"
+          component: robinhood-rpc-disk
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Robinhood Mainnet disk runway is below 120 days
+          description: Plan storage expansion or RPC replacement before the node reaches its hard capacity gate.
+          runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md
+      - alert: RobinhoodMainnetDiskRunwayCritical
+        expr: robinhood_mainnet_disk_runway_days > 0 and robinhood_mainnet_disk_runway_days < 60
+        for: 15m
+        labels:
+          severity: critical
+          chain_id: "4663"
+          component: robinhood-rpc-disk
+          runbook: robinhood-rpc-node
+        annotations:
+          summary: Robinhood Mainnet disk runway is below 60 days
+          description: The node has failed its storage runway gate and should be stopped or expanded.
           runbook_url: https://github.com/fourtytwo42/Robyn/blob/main/docs/robinhood-rpc-node.md

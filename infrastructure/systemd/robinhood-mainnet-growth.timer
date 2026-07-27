@@ -1,0 +1,12 @@
+[Unit]
+Description=Measure Robinhood Mainnet database growth daily
+
+[Timer]
+OnBootSec=1h
+OnUnitActiveSec=24h
+AccuracySec=5m
+Persistent=true
+Unit=robinhood-mainnet-growth.service
+
+[Install]
+WantedBy=timers.target
