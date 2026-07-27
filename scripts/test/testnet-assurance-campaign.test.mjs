@@ -213,7 +213,7 @@ test("graduation top-up covers the remaining net reserve within fixed bounds", (
     graduationTopupValueWei({
       thresholdWei: 1_000n,
       raisedWei: 901n,
-      feeBps: 100n,
+      feeBps: 100,
       maximumCurvePurchaseWei: 100n,
     }),
     100n,

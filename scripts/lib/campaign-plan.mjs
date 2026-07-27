@@ -29,23 +29,24 @@ export function graduationTopupValueWei({
   feeBps,
   maximumCurvePurchaseWei,
 }) {
+  const threshold = BigInt(thresholdWei);
+  const raised = BigInt(raisedWei);
+  const fee = BigInt(feeBps);
+  const maximumPurchase = BigInt(maximumCurvePurchaseWei);
   if (
-    thresholdWei <= 0n ||
-    raisedWei < 0n ||
-    feeBps < 0n ||
-    feeBps >= 10_000n ||
-    maximumCurvePurchaseWei <= 0n
+    threshold <= 0n ||
+    raised < 0n ||
+    fee < 0n ||
+    fee >= 10_000n ||
+    maximumPurchase <= 0n
   ) {
     throw new Error("Graduation top-up inputs are invalid");
   }
-  if (raisedWei >= thresholdWei) return 0n;
-  const requiredNetWei = thresholdWei - raisedWei;
+  if (raised >= threshold) return 0n;
+  const requiredNetWei = threshold - raised;
   const grossWei =
-    (requiredNetWei * 10_000n + (10_000n - feeBps) - 1n) / (10_000n - feeBps);
-  if (
-    grossWei > maximumCurvePurchaseWei ||
-    grossWei > MAXIMUM_GRADUATION_TOPUP_WEI
-  ) {
+    (requiredNetWei * 10_000n + (10_000n - fee) - 1n) / (10_000n - fee);
+  if (grossWei > maximumPurchase || grossWei > MAXIMUM_GRADUATION_TOPUP_WEI) {
     throw new Error("Graduation top-up exceeds the fixed campaign bound");
   }
   return grossWei;
