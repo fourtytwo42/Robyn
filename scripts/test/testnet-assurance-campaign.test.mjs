@@ -360,3 +360,14 @@ test("claims settle queued DAO and treasury liabilities before reward claims", (
   assert.ok(holderClaim > streamAccrual);
   assert.ok(daoClaim > holderClaim);
 });
+
+test("creator claims exercise direct, claim-to, batch, and batch-to paths", () => {
+  const source = readFileSync(
+    new URL("../testnet-assurance-campaign.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /method = "claimCreatorFees"/);
+  assert.match(source, /method = "claimCreatorFeesTo"/);
+  assert.match(source, /method = "claimCreatorFeesBatch"/);
+  assert.match(source, /method = "claimCreatorFeesBatchTo"/);
+});

@@ -2024,8 +2024,23 @@ async function claims() {
     const account = privateKeyToAccount(accounts[launch.index].privateKey);
     const feeAccount = await publicClient.readContract({ address: manifest.contracts.protocolFeeRouter, abi: feeRouterAbi, functionName: "launchAccount", args: [launch.token] });
     if (feeAccount.claimableCreatorNative === 0n) throw new Error(`Creator ${launch.index} has no claimable native rewards`);
-    await contractTransaction(state, `creator-claim-${launch.index}`, account, manifest.contracts.protocolFeeRouter, feeRouterAbi, "claimCreatorFees", [launch.token]);
-    if (!state.claims.creator.some((entry) => entry.launchIndex === launch.index)) state.claims.creator.push({ launchIndex: launch.index, creator: account.address, amount: feeAccount.claimableCreatorNative.toString() });
+    let method = "claimCreatorFees";
+    let args = [launch.token];
+    let recipient = account.address;
+    if (launch.index === 0) {
+      method = "claimCreatorFeesTo";
+      recipient = accounts[60].address;
+      args = [launch.token, recipient];
+    } else if (launch.index === 1) {
+      method = "claimCreatorFeesBatch";
+      args = [[launch.token]];
+    } else if (launch.index === 2) {
+      method = "claimCreatorFeesBatchTo";
+      recipient = accounts[61].address;
+      args = [[launch.token], recipient];
+    }
+    await contractTransaction(state, `creator-claim-${launch.index}`, account, manifest.contracts.protocolFeeRouter, feeRouterAbi, method, args);
+    if (!state.claims.creator.some((entry) => entry.launchIndex === launch.index)) state.claims.creator.push({ launchIndex: launch.index, creator: account.address, recipient, method, amount: feeAccount.claimableCreatorNative.toString() });
     saveState(state);
   }
 
