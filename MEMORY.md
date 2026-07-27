@@ -1569,24 +1569,31 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
-### 2026-07-26 - Security-remediated schema-10 deployment awaiting cutover
+### 2026-07-26 - Security-remediated schema-10 deployment and campaign funding gate
 
 - Context: the high and medium security findings against schema-v9 required
   fresh immutable contracts and pools. The stopped schema-v9 endurance run is
   not evidence for the remediated stack.
-- Decision: keep the public application on the archived release until a clean
-  schema-10 projection, release verifier, and immutable application promotion
-  pass. Campaign and endurance tooling must reject schema-v9 manifests rather
-  than silently using archived deployment state.
+- Decision: campaign and endurance tooling must reject schema-v9 manifests
+  rather than silently using archived deployment state. An application-only
+  repair may follow the immutable deployment commit only when it is a verified
+  descendant and both commits are recorded in campaign evidence.
 - Result: schema-10 contracts from `e754037bd40c5caee426e31b0886514da9c9ed12`
   are deployed on testnet and independently verified through both LAN and
-  public RPCs. The isolated `robyn_testnet_schema10_e754037` database contains
-  the canonical genesis coordinator event and its projected launch. Script
-  compatibility updates for schema-10 promotion, campaign, and endurance are
-  being validated before the application cutover.
-- Follow-up: commit the compatibility checkpoint, build a fresh immutable web
-  release, promote only after PM2/status verification, then complete the new
-  lifecycle campaign, recovery gates, browser/wallet acceptance, and a new
+  public RPCs. Exact release `03e568ac987ce4cdce42c6d99d4cdd6c10e463ae`
+  is live at `https://testnet.sherwoodforest.trade`; all six testnet PM2
+  processes use `robyn_testnet_schema10_e754037`, LAN RPC
+  `192.168.50.117:8547`, and the release verifier passes 531 checks with zero
+  ingestion/projection lag. The initialized encrypted 100-wallet campaign is
+  `schema10-security-remediation-03e568a`.
+- Blocker: its fixed no-reduced-coverage preflight requires
+  `0.01725697598448 ETH` including headroom and reserve, while the project
+  wallet has `0.010525774830852215 ETH`. Request at least
+  `0.006731201153627785 ETH` additional testnet funding before any campaign
+  transaction. No campaign wallets have been funded and no campaign action was
+  sent.
+- Follow-up: after funding, rerun preflight, fund the 100 actors, then complete
+  the lifecycle campaign, recovery gates, browser/wallet acceptance, and a new
   uninterrupted endurance run.
 
 ### 2026-07-26 - Schema-v9 promotion, browser acceptance, and endurance preflight
