@@ -33,7 +33,7 @@ const minimums = new Map([
   ["robyn-api-testnet", 384],
   ["robyn-indexer-testnet", 384],
   ["robyn-projector-testnet", 384],
-  ["robyn-keeper-testnet", 256],
+  ["robyn-keeper-testnet", 512],
   ["robyn-artifacts-testnet", 384],
 ]);
 

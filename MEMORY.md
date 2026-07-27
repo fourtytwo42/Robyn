@@ -1,5 +1,26 @@
 # Project Memory
 
+### 2026-07-27 - Software-wallet endurance startup repair
+
+- Context: The completed final-assurance campaign root could not be decrypted
+  because its original passphrase file was no longer available. No endurance
+  transaction was submitted from that failed startup.
+- Decision: Use a fresh dedicated encrypted 100-wallet root for endurance and
+  retain the completed campaign only as checksummed prerequisite evidence.
+  MetaMask, Robinhood Wallet, WalletConnect, extensions, and user-controlled
+  wallets remain outside the final assurance workflow.
+- Funding: Recovered 0.0018 testnet ETH from accessible, completed schema-v9
+  campaign software wallets into the project wallet. The fresh fixed-workload
+  preflight passes with the 0.0015 ETH reserve intact.
+- Operations: The initial zero-healthy-time samples correctly paused on disk
+  headroom, a service-restart alert, and repeated keeper restarts. Six verified
+  superseded immutable releases were removed while preserving current and
+  previous releases, restoring root headroom from 11 GiB to 20 GiB.
+- Root cause: `robyn-keeper-testnet` normally uses about 445 MiB RSS but its PM2
+  ceiling was 256 MiB, so PM2 repeatedly restarted an otherwise healthy keeper.
+  Raise the declared and validated testnet keeper ceiling to 512 MiB, promote a
+  fresh exact release, and resume the same zero-healthy-time journal.
+
 ### 2026-07-27 - Testnet promotion database inheritance fix
 
 - Context: Promoting the software-wallet-only application checkpoint without an
