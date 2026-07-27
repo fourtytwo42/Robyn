@@ -186,8 +186,8 @@ test("cost projection includes Nitro L1 data, 25 percent headroom, and hard rese
 });
 
 test("native sweep reserve uses the live gas estimate with headroom", () => {
-  assert.equal(nativeSweepReserveWei(10n, 21_000n), 262_500n);
-  assert.equal(nativeSweepReserveWei(10n, 28_239n), 352_990n);
+  assert.equal(nativeSweepReserveWei(10n, 21_000n), 315_000n);
+  assert.equal(nativeSweepReserveWei(10n, 28_239n), 423_590n);
   assert.throws(() => nativeSweepReserveWei(-1n, 0n), /cannot be negative/);
 });
 

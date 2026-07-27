@@ -5,6 +5,7 @@
 - Context: Governance, 20 holder claims, all eight creator claims, and ten streamed DAO claims passed. During token sweeping, `sweep-token-1-0` exhausted its 25%-buffered gas limit while settling transfer-aware reward state.
 - Root cause: The live transfer path can accrue and settle multiple reward streams between estimation and mining. On this transaction, the RPC estimate plus 25% was still too tight; the receipt consumed the exact gas limit and failed without changing token state.
 - Decision: Preserve the failed receipt as evidence, clear only its unconfirmed journal slot, and permit a same-label retry. Use a separate 50% execution-gas limit margin while retaining the 25% economic funding headroom. Confirmed transactions remain immutable and are never replayed.
+- Follow-on: Token and DAO sweeping then reached the native sweep stage with 2,097 confirmed transactions, where the old 25% native reserve calculation was smaller than the new 50% transaction gas limit. No transaction was submitted. Native sweep reserve now uses the exact 50% execution-gas limit so value plus maximum fee cannot exceed the actor balance.
 - Files: `scripts/lib/campaign-plan.mjs`, `scripts/testnet-assurance-campaign.mjs`, `scripts/test/testnet-assurance-campaign.test.mjs`.
 - Commands/tests: Node syntax, campaign test suite 22/22, formatting, and diff check pass.
 - Follow-up: Commit and push, resume the same sweep journal, reconcile the completed lifecycle, and continue the remaining pre-endurance gates.

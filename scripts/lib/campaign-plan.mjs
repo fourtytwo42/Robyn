@@ -289,7 +289,7 @@ export function nativeSweepReserveWei(gasPriceWei, estimatedGasUnits) {
   if (gasPriceWei < 0n || estimatedGasUnits < 0n) {
     throw new Error("Sweep fee inputs cannot be negative");
   }
-  return applyHeadroom(estimatedGasUnits) * gasPriceWei;
+  return transactionGasLimit(estimatedGasUnits) * gasPriceWei;
 }
 
 export function projectCampaignCost({
