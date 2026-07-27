@@ -22,12 +22,14 @@ import {
   isLegacyStreamJobId,
   isLegExecutable,
   isReusableStreamJobKind,
+  jobBelongsToActiveDeployment,
   protocolLaunchJobId,
   protocolNativeJobId,
   shouldSupersedeProtocolFailure,
 } from "./eligibility.js";
 import {
   databaseText,
+  keeperHeartbeatHealthy,
   redisConnectionOptions,
   transactionAccount,
 } from "./runtime-config.js";
@@ -185,6 +187,12 @@ const maximumProtocolBase = BigInt(
 const minimumLaunchFees = BigInt(
   process.env.KEEPER_MINIMUM_LAUNCH_FEES ?? "1000000000000",
 );
+const minimumOperatorBalance = BigInt(
+  process.env.KEEPER_MINIMUM_OPERATOR_BALANCE_WEI ??
+    (isTestnet ? "250000000000000" : "0"),
+);
+if (minimumOperatorBalance < 0n)
+  throw new Error("Keeper minimum operator balance cannot be negative");
 let stopping = false;
 
 const vaultAbi = [
@@ -678,10 +686,85 @@ async function audit(
 }
 
 async function heartbeat() {
+  const [counts, operatorBalance] = await Promise.all([
+    queue.getJobCounts("waiting", "active", "delayed", "failed"),
+    publicClient.getBalance({ address: operator as Address }),
+  ]);
+  const healthy = keeperHeartbeatHealthy({
+    failedJobs: counts.failed ?? 0,
+    operatorBalance,
+    minimumOperatorBalance,
+  });
   await sql.unsafe(
-    "INSERT INTO service_heartbeats (service,status,metadata) VALUES ('conversion-keeper','ok',$1::jsonb) ON CONFLICT (service) DO UPDATE SET status='ok',metadata=EXCLUDED.metadata,updated_at=now()",
-    [JSON.stringify({ queue: queueName, chainId: manifest.chainId })],
+    "INSERT INTO service_heartbeats (service,status,metadata) VALUES ('conversion-keeper',$1,$2::jsonb) ON CONFLICT (service) DO UPDATE SET status=EXCLUDED.status,metadata=EXCLUDED.metadata,updated_at=now()",
+    [
+      healthy ? "ok" : "degraded",
+      JSON.stringify({
+        queue: queueName,
+        chainId: manifest.chainId,
+        queueCounts: counts,
+        operator,
+        operatorBalanceWei: operatorBalance.toString(),
+        minimumOperatorBalanceWei: minimumOperatorBalance.toString(),
+      }),
+    ],
   );
+}
+
+async function activeLaunchTokens() {
+  const rows = await sql.unsafe<{ token: Address }[]>(
+    "SELECT token FROM launches WHERE chain_id=$1",
+    [manifest.chainId],
+  );
+  return new Set(rows.map((row) => row.token.toLowerCase()));
+}
+
+async function reconcileForeignDeploymentJobs() {
+  const activeTokens = await activeLaunchTokens();
+  const jobs = await queue.getJobs(
+    ["waiting", "delayed", "failed", "paused"],
+    0,
+    -1,
+    true,
+  );
+  let removed = 0;
+  for (const job of jobs) {
+    if (jobBelongsToActiveDeployment(job.data.token, activeTokens)) continue;
+    const payload = job.data;
+    const attempts = job.attemptsMade;
+    await job.remove();
+    await audit(
+      payload.idempotencyKey,
+      "superseded",
+      attempts,
+      payload,
+      "Job belongs to an archived deployment; payload retained in the append-only audit log",
+    );
+    removed += 1;
+  }
+  if (removed > 0) {
+    process.stdout.write(
+      JSON.stringify({
+        level: "info",
+        event: "foreign_deployment_jobs_reconciled",
+        count: removed,
+      }) + "\n",
+    );
+  }
+}
+
+async function supersedeFailedQueueJob(
+  key: string,
+  message: string,
+  result: unknown = null,
+) {
+  const job = await queue.getJob(key);
+  if (!job || !(await job.isFailed())) return false;
+  const payload = job.data;
+  const attempts = job.attemptsMade;
+  await job.remove();
+  await audit(key, "superseded", attempts, payload, message, result);
+  return true;
 }
 
 async function supersedeStaleProtocolDeadLetters(
@@ -697,7 +780,7 @@ async function supersedeStaleProtocolDeadLetters(
       state: string;
     }[]
   >(
-    "SELECT idempotency_key,attempts,payload,state FROM job_audit WHERE queue=$1 AND state='dead_letter' AND payload->>'kind'=$2 AND lower(payload->>'token')=$3",
+    "SELECT idempotency_key,attempts,payload,state FROM job_audit WHERE queue=$1 AND state IN ('dead_letter','retrying') AND payload->>'kind'=$2 AND lower(payload->>'token')=$3",
     [queueName, kind, token.toLowerCase()],
   );
   for (const row of rows) {
@@ -941,8 +1024,17 @@ async function scan() {
           maximumPendingDelay: current.delay,
           chainTimestamp: current.timestamp,
         })
-      )
+      ) {
+        await supersedeFailedQueueJob(
+          conversionJobId(launch.vault, index),
+          "Authoritative onchain conversion leg is no longer executable",
+          {
+            pendingBase: current.leg.pendingBase.toString(),
+            pendingSince: current.leg.pendingSince.toString(),
+          },
+        );
         continue;
+      }
       const key = conversionJobId(launch.vault, index);
       const payload: ConvertJob = {
         kind: "convert",
@@ -1126,7 +1218,10 @@ async function enqueueV4LaunchFeeConversion(launch: {
       priority: 2,
       removeOnComplete: false,
     });
-  } else if (await existing.isFailed()) {
+  } else if (
+    (await existing.isFailed()) &&
+    isFailedJobRetryDue(existing.attemptsMade, existing.finishedOn, Date.now())
+  ) {
     await audit(key, "queued", existing.attemptsMade, payload);
     await existing.retry();
   }
@@ -1181,7 +1276,10 @@ async function enqueueV4ProtocolSettlement(launch: {
       priority: 1,
       removeOnComplete: false,
     });
-  } else if (await existing.isFailed()) {
+  } else if (
+    (await existing.isFailed()) &&
+    isFailedJobRetryDue(existing.attemptsMade, existing.finishedOn, Date.now())
+  ) {
     await audit(key, "queued", existing.attemptsMade, payload);
     await existing.retry();
   }
@@ -1373,6 +1471,10 @@ async function enqueueHarvest(launch: {
       simulation.result[0] === 0n &&
       simulation.result[1] === 0n
     ) {
+      await supersedeFailedQueueJob(
+        harvestJobId(locker),
+        "Authoritative onchain fee balances and collection result are empty",
+      );
       return;
     }
   } else {
@@ -1994,6 +2096,21 @@ async function processProtocolConversion(
 async function processKeeperJob(
   job: Job<KeeperJob, KeeperResult>,
 ): Promise<KeeperResult> {
+  const activeTokens = await activeLaunchTokens();
+  if (!jobBelongsToActiveDeployment(job.data.token, activeTokens)) {
+    return {
+      operation:
+        job.data.kind === "harvest"
+          ? "harvest"
+          : job.data.kind === "protocol-native"
+            ? "protocol-native"
+            : job.data.kind === "protocol-launch"
+              ? "protocol-launch"
+              : "convert",
+      transactionHash: ("0x" + "0".repeat(64)) as Hash,
+      inputAmount: "0",
+    };
+  }
   if (job.data.kind === "harvest") {
     return processHarvest(job as Job<HarvestJob, KeeperResult>);
   }
@@ -2087,6 +2204,7 @@ process.on("SIGTERM", () => {
 process.on("SIGINT", () => {
   stopping = true;
 });
+await reconcileForeignDeploymentJobs();
 await reconcileLegacyStreamJobs();
 await reconcileLegacyConversionJobs();
 await runScan();

@@ -10,6 +10,7 @@ import {
   isLegacyStreamJobId,
   isLegExecutable,
   isReusableStreamJobKind,
+  jobBelongsToActiveDeployment,
   protocolObservationChanged,
   protocolLaunchJobId,
   protocolNativeJobId,
@@ -120,11 +121,19 @@ describe("keeper eligibility", () => {
     expect(shouldSupersedeProtocolFailure("dead_letter", "100", 75n)).toBe(
       true,
     );
+    expect(shouldSupersedeProtocolFailure("retrying", "100", 75n)).toBe(true);
     expect(shouldSupersedeProtocolFailure("superseded", "100", 75n)).toBe(
       false,
     );
     expect(shouldSupersedeProtocolFailure("dead_letter", "100", 100n)).toBe(
       false,
     );
+  });
+
+  it("rejects jobs from archived deployments", () => {
+    const active = new Set(["0xabcdef"]);
+    expect(jobBelongsToActiveDeployment("0xABCDEF", active)).toBe(true);
+    expect(jobBelongsToActiveDeployment("0x123456", active)).toBe(false);
+    expect(jobBelongsToActiveDeployment(undefined, active)).toBe(false);
   });
 });

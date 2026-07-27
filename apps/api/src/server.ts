@@ -933,13 +933,27 @@ async function freshness() {
 
 async function keeperState() {
   const rows = await sql.unsafe<
-    { status: string; updated_at: string; fresh: boolean }[]
+    {
+      status: string;
+      updated_at: string;
+      fresh: boolean;
+      metadata: {
+        queueCounts?: Record<string, number>;
+        operatorBalanceWei?: string;
+        minimumOperatorBalanceWei?: string;
+      } | null;
+    }[]
   >(
-    "SELECT status,updated_at::text,(updated_at > now() - interval '30 seconds') fresh FROM service_heartbeats WHERE service='conversion-keeper'",
+    "SELECT status,updated_at::text,(updated_at > now() - interval '30 seconds') fresh,metadata FROM service_heartbeats WHERE service='conversion-keeper'",
   );
+  const metadata = rows[0]?.metadata;
   return {
     keeperStatus: rows[0]?.status === "ok" && rows[0].fresh ? "ok" : "degraded",
     keeperUpdatedAt: rows[0]?.updated_at ?? null,
+    keeperQueueCounts: metadata?.queueCounts ?? null,
+    keeperOperatorBalanceWei: metadata?.operatorBalanceWei ?? null,
+    keeperMinimumOperatorBalanceWei:
+      metadata?.minimumOperatorBalanceWei ?? null,
   };
 }
 

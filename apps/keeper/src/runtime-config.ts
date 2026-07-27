@@ -38,3 +38,21 @@ export function redisConnectionOptions(value: string) {
     maxRetriesPerRequest: null,
   };
 }
+
+export function keeperHeartbeatHealthy(input: {
+  failedJobs: number;
+  operatorBalance: bigint;
+  minimumOperatorBalance: bigint;
+}): boolean {
+  if (
+    !Number.isSafeInteger(input.failedJobs) ||
+    input.failedJobs < 0 ||
+    input.minimumOperatorBalance < 0n
+  ) {
+    throw new Error("Keeper heartbeat input is invalid");
+  }
+  return (
+    input.failedJobs === 0 &&
+    input.operatorBalance >= input.minimumOperatorBalance
+  );
+}

@@ -109,9 +109,16 @@ export function shouldSupersedeProtocolFailure(
   authoritativeAmount: bigint,
 ): boolean {
   return (
-    state === "dead_letter" &&
+    (state === "dead_letter" || state === "retrying") &&
     protocolObservationChanged(observedAmount, authoritativeAmount)
   );
+}
+
+export function jobBelongsToActiveDeployment(
+  token: string | undefined,
+  activeTokens: ReadonlySet<string>,
+): boolean {
+  return typeof token === "string" && activeTokens.has(token.toLowerCase());
 }
 
 export function failureAuditState(

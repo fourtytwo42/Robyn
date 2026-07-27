@@ -1,5 +1,21 @@
 # Project Memory
 
+### 2026-07-27 - Endurance keeper queue remediation
+
+- Context: Run `schema10-e7ea0f4-10h-sw` is paused at 180 preserved healthy
+  seconds after direct BullMQ inspection found failed financial jobs that the
+  API heartbeat did not expose.
+- Cause: The keeper operator was depleted, archived-deployment jobs remained in
+  the shared queue, V4 scanner retries were immediate, and retrying jobs whose
+  authoritative onchain work had already been consumed were not superseded.
+- Funding: Recovered 0.002928487677177834 test ETH from a completed campaign and
+  funded the keeper operator with 0.002 ETH. Transaction evidence is protected
+  under the active endurance evidence directory.
+- Fix: Reject archived jobs, supersede consumed work, back off V4 retries,
+  publish queue and operator balance health, and gate endurance on both.
+- Verification: Full repository tests, 165 Foundry tests, typechecks, lint, and
+  builds pass. Promotion and queue reconciliation remain before journal resume.
+
 ### 2026-07-27 - Software-wallet endurance startup repair
 
 - Context: The completed final-assurance campaign root could not be decrypted

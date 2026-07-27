@@ -1456,6 +1456,18 @@ async function sample() {
       );
     }
     if (status.keeperStatus !== "ok") failures.push("keeper status is not ok");
+    const keeperFailed = Number(status.keeperQueueCounts?.failed ?? 0);
+    if (!Number.isSafeInteger(keeperFailed) || keeperFailed > 0) {
+      failures.push(`keeper queue has ${keeperFailed} failed jobs`);
+    }
+    if (
+      status.keeperOperatorBalanceWei !== null &&
+      status.keeperMinimumOperatorBalanceWei !== null &&
+      BigInt(status.keeperOperatorBalanceWei) <
+        BigInt(status.keeperMinimumOperatorBalanceWei)
+    ) {
+      failures.push("keeper operator balance is below its safety floor");
+    }
     if (status.artifactStatus !== "ok") {
       failures.push("artifact status is not ok");
     }

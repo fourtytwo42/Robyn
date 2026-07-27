@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   databaseText,
+  keeperHeartbeatHealthy,
   redisConnectionOptions,
   transactionAccount,
 } from "../src/runtime-config.js";
@@ -45,5 +46,29 @@ describe("keeper runtime configuration", () => {
     expect(() => transactionAccount(true, undefined, "0xaddress")).toThrow(
       "signing account",
     );
+  });
+
+  it("degrades for failed jobs or a low operator balance", () => {
+    expect(
+      keeperHeartbeatHealthy({
+        failedJobs: 0,
+        operatorBalance: 250n,
+        minimumOperatorBalance: 250n,
+      }),
+    ).toBe(true);
+    expect(
+      keeperHeartbeatHealthy({
+        failedJobs: 1,
+        operatorBalance: 250n,
+        minimumOperatorBalance: 250n,
+      }),
+    ).toBe(false);
+    expect(
+      keeperHeartbeatHealthy({
+        failedJobs: 0,
+        operatorBalance: 249n,
+        minimumOperatorBalance: 250n,
+      }),
+    ).toBe(false);
   });
 });
