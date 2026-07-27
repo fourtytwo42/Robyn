@@ -278,6 +278,13 @@ export function applyHeadroom(value, headroomBps = REQUIRED_HEADROOM_BPS) {
   return value + (value * headroomBps + 9_999n) / 10_000n;
 }
 
+export function transactionGasLimit(estimatedGasUnits) {
+  if (estimatedGasUnits < 0n) {
+    throw new Error("Estimated transaction gas cannot be negative");
+  }
+  return (estimatedGasUnits * 3n + 1n) / 2n;
+}
+
 export function nativeSweepReserveWei(gasPriceWei, estimatedGasUnits) {
   if (gasPriceWei < 0n || estimatedGasUnits < 0n) {
     throw new Error("Sweep fee inputs cannot be negative");

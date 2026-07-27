@@ -61,6 +61,7 @@ import {
   V4_ORACLE_WINDOW_MATURITY_SECONDS,
   REQUIRED_SUCCESSFUL_WRITES,
   REQUIRED_WALLET_COUNT,
+  transactionGasLimit,
   weightedWalletFunding,
 } from "./lib/campaign-plan.mjs";
 
@@ -298,7 +299,29 @@ async function recordTransaction(state, label, client, request) {
   const previous = state.transactions.find((entry) => entry.label === label);
   if (previous) return previous;
   state.submittedTransactions ??= {};
+  state.failedTransactions ??= [];
   let hash = state.submittedTransactions[label]?.hash;
+  if (hash) {
+    const submittedReceipt = await publicClient.waitForTransactionReceipt({
+      hash,
+      confirmations: 1,
+      timeout: 180_000,
+    });
+    if (submittedReceipt.status !== "success") {
+      if (!state.failedTransactions.some((entry) => entry.hash === hash)) {
+        state.failedTransactions.push({
+          label,
+          hash,
+          blockNumber: submittedReceipt.blockNumber.toString(),
+          gasUsed: submittedReceipt.gasUsed.toString(),
+          recordedAt: new Date().toISOString(),
+        });
+      }
+      delete state.submittedTransactions[label];
+      saveState(state);
+      hash = undefined;
+    }
+  }
   if (!hash) {
     const pricedRequest =
       state.preflight?.gasPriceWei && request.gasPrice === undefined
@@ -307,7 +330,7 @@ async function recordTransaction(state, label, client, request) {
     const estimatedGas = await publicClient.estimateGas(pricedRequest);
     hash = await client.sendTransaction({
       ...pricedRequest,
-      gas: applyHeadroom(estimatedGas),
+      gas: transactionGasLimit(estimatedGas),
     });
     state.submittedTransactions[label] = {
       hash,
@@ -323,6 +346,17 @@ async function recordTransaction(state, label, client, request) {
     timeout: 180_000,
   });
   if (receipt.status !== "success") {
+    if (!state.failedTransactions.some((entry) => entry.hash === hash)) {
+      state.failedTransactions.push({
+        label,
+        hash,
+        blockNumber: receipt.blockNumber.toString(),
+        gasUsed: receipt.gasUsed.toString(),
+        recordedAt: new Date().toISOString(),
+      });
+    }
+    delete state.submittedTransactions[label];
+    saveState(state);
     throw new Error(`Transaction failed: ${label} ${hash}`);
   }
   const entry = {

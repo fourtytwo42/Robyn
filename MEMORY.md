@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-07-27 - Campaign dynamic-transfer gas correction
+
+- Context: Governance, 20 holder claims, all eight creator claims, and ten streamed DAO claims passed. During token sweeping, `sweep-token-1-0` exhausted its 25%-buffered gas limit while settling transfer-aware reward state.
+- Root cause: The live transfer path can accrue and settle multiple reward streams between estimation and mining. On this transaction, the RPC estimate plus 25% was still too tight; the receipt consumed the exact gas limit and failed without changing token state.
+- Decision: Preserve the failed receipt as evidence, clear only its unconfirmed journal slot, and permit a same-label retry. Use a separate 50% execution-gas limit margin while retaining the 25% economic funding headroom. Confirmed transactions remain immutable and are never replayed.
+- Files: `scripts/lib/campaign-plan.mjs`, `scripts/testnet-assurance-campaign.mjs`, `scripts/test/testnet-assurance-campaign.test.mjs`.
+- Commands/tests: Node syntax, campaign test suite 22/22, formatting, and diff check pass.
+- Follow-up: Commit and push, resume the same sweep journal, reconcile the completed lifecycle, and continue the remaining pre-endurance gates.
+
 ### 2026-07-27 - Campaign streamed DAO settlement correction
 
 - Context: The accounting-only fee router intentionally queues DAO and treasury liabilities. The campaign claims phase still assumed these destinations were paid synchronously.

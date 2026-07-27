@@ -27,6 +27,7 @@ import {
   projectCampaignCost,
   REQUIRED_RESERVE_WEI,
   REQUIRED_DISK_HEADROOM_BYTES,
+  transactionGasLimit,
   V4_FEE_COLLECTION_MINIMUMS,
   V4_ORACLE_WINDOW_MATURITY_SECONDS,
 } from "../lib/campaign-plan.mjs";
@@ -188,6 +189,13 @@ test("native sweep reserve uses the live gas estimate with headroom", () => {
   assert.equal(nativeSweepReserveWei(10n, 21_000n), 262_500n);
   assert.equal(nativeSweepReserveWei(10n, 28_239n), 352_990n);
   assert.throws(() => nativeSweepReserveWei(-1n, 0n), /cannot be negative/);
+});
+
+test("submitted transactions use a 50 percent execution-gas margin", () => {
+  assert.equal(transactionGasLimit(0n), 0n);
+  assert.equal(transactionGasLimit(21_000n), 31_500n);
+  assert.equal(transactionGasLimit(21_001n), 31_502n);
+  assert.throws(() => transactionGasLimit(-1n), /cannot be negative/);
 });
 
 test("fixed action inventory exceeds the 1,500-write gate before optional retries", () => {
@@ -370,4 +378,14 @@ test("creator claims exercise direct, claim-to, batch, and batch-to paths", () =
   assert.match(source, /method = "claimCreatorFeesTo"/);
   assert.match(source, /method = "claimCreatorFeesBatch"/);
   assert.match(source, /method = "claimCreatorFeesBatchTo"/);
+});
+
+test("failed transactions are journaled and cleared for a safe retry", () => {
+  const source = readFileSync(
+    new URL("../testnet-assurance-campaign.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /state\.failedTransactions \?\?= \[\]/);
+  assert.match(source, /delete state\.submittedTransactions\[label\]/);
+  assert.match(source, /gas: transactionGasLimit\(estimatedGas\)/);
 });
