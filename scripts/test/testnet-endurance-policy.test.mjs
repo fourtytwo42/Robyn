@@ -41,8 +41,9 @@ test("launch and cadence thresholds are deterministic", () => {
   assert.equal(dueCount(0, 600), 1);
   assert.equal(dueCount(1_199, 600), 2);
   assert.equal(dueLaunchCount(0), 1);
-  assert.equal(dueLaunchCount(7_199), 1);
-  assert.equal(dueLaunchCount(21_600), 4);
+  assert.equal(dueLaunchCount(8_999), 1);
+  assert.equal(dueLaunchCount(9_000), 2);
+  assert.equal(dueLaunchCount(27_000), 4);
 });
 
 test("disk gate requires bytes and percentage", () => {

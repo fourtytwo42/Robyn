@@ -472,7 +472,7 @@ async function prepareMetadata(account, index) {
       mediaId: media.body.data.media_id,
       name,
       symbol,
-      description: `Automated eight-hour endurance launch ${index + 1}.`,
+      description: `Automated ten-hour endurance launch ${index + 1}.`,
       campaignId: runId,
       releaseSha: releaseManifest.gitSha,
     }),

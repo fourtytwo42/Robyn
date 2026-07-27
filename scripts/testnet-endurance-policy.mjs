@@ -1,4 +1,4 @@
-export const ENDURANCE_DURATION_SECONDS = 8 * 60 * 60;
+export const ENDURANCE_DURATION_SECONDS = 10 * 60 * 60;
 const APPROVED_TESTNET_RPC_URLS = new Set([
   "https://rpc.testnet.chain.robinhood.com",
   "http://192.168.50.117:8547",
@@ -9,7 +9,12 @@ export const isApprovedTestnetRpcUrl = (url) => APPROVED_TESTNET_RPC_URLS.has(ur
 export const ENDURANCE_SAMPLE_INTERVAL_SECONDS = 30;
 export const ENDURANCE_WRITE_INTERVAL_SECONDS = 10 * 60;
 export const ENDURANCE_REVIEW_INTERVAL_SECONDS = 20 * 60;
-export const ENDURANCE_LAUNCH_THRESHOLDS_SECONDS = [0, 2 * 60 * 60, 4 * 60 * 60, 6 * 60 * 60];
+export const ENDURANCE_LAUNCH_THRESHOLDS_SECONDS = [
+  0,
+  2.5 * 60 * 60,
+  5 * 60 * 60,
+  7.5 * 60 * 60,
+];
 export const ENDURANCE_RESERVE_WEI = 1_500_000_000_000_000n;
 export const ENDURANCE_MINIMUM_DISK_BYTES = 12n * 1024n * 1024n * 1024n;
 export const ENDURANCE_MINIMUM_DISK_PERCENT = 15;

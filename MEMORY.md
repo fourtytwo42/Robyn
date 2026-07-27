@@ -1,6 +1,18 @@
 # Project Memory
 
 Durable project context lives here. Update this file whenever information should survive chat context compression or future agent handoff.
+- Final testnet assurance checkpoint 2026-07-27: the user authorized a fresh
+  security-remediated chain-46630 deployment, the fixed 100-wallet lifecycle
+  campaign, internal security/recovery/browser gates, and a ten-accumulated-
+  healthy-hour endurance run. Failed intervals count zero. Application or
+  infrastructure fixes may resume in a new evidence segment after regression
+  and promotion, but any contract/deployment change, accounting discrepancy,
+  or locked-principal violation resets endurance to zero. The public target is
+  `testnet.sherwoodforest.trade`; Robinhood mainnet broadcasting, independent
+  audit, external penetration testing, and legal review remain deferred and
+  unclaimed. The `sherwood-10-hour-readiness-monitor` heartbeat is active every
+  20 minutes with this policy. Source commit `1e808ed` matches `origin/main`,
+  while the current deployed contracts predate its adapter/router ETH fixes.
 
 - SF10-01B asset-router remediation 2026-07-27: the canonical v4 flow does not
   require fallback ETH receipt, so `RobynV4AssetRouter` now rejects direct ETH
