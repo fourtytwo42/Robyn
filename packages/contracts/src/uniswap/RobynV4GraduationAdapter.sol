@@ -28,7 +28,7 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
     uint24 public constant TOTAL_NOMINAL_FEE_PIPS = POOL_FEE_PIPS + PROTOCOL_FEE_PIPS;
     int24 public constant TICK_SPACING = 200;
     uint16 public constant BPS = 10_000;
-    string public constant CONTRACT_VERSION = "1.0.0";
+    string public constant CONTRACT_VERSION = "1.1.0";
 
     error Unauthorized();
     error InvalidConfiguration();
@@ -37,6 +37,8 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
     error NotInitialized();
     error InvalidAmount();
     error NativeTransferFailed();
+    error DirectNativeTransferRejected();
+    error NothingPending();
 
     IERC20 public immutable launchToken;
     IPoolManager public immutable poolManager;
@@ -54,6 +56,7 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
 
     address public bondingMarket;
     bool public initialized;
+    uint256 public cumulativeUnattributedNativeSwept;
 
     event MarketBound(address indexed market);
     event LockerBound(address indexed locker);
@@ -72,6 +75,7 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
         uint256 inputAmount,
         uint256 outputAmount
     );
+    event UnattributedNativeSwept(address indexed treasury, uint256 amount);
 
     constructor(
         IERC20 launchToken_,
@@ -117,7 +121,12 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
         poolId = PoolId.unwrap(_poolKey.toId());
     }
 
-    receive() external payable { }
+    /// @dev All expected native value enters through explicit payable functions.
+    /// Forced ETH can still arrive without executing code and is handled by
+    /// sweepUnattributedNative().
+    receive() external payable {
+        revert DirectNativeTransferRejected();
+    }
 
     function poolKey() external view returns (PoolKey memory) {
         return _poolKey;
@@ -148,6 +157,27 @@ contract RobynV4GraduationAdapter is ReentrancyGuard {
         if (address(locker) == address(0)) revert InvalidConfiguration();
         locker.bindFeeRouter(feeRouter);
         emit FeeRouterBound(address(feeRouter));
+    }
+
+    /// @notice Returns native ETH that arrived outside an explicit adapter operation.
+    /// @dev The adapter has no persistent native liability. The nonReentrant guard
+    /// prevents sweeping transient value during graduation or a routed purchase.
+    function unattributedNative() public view returns (uint256) {
+        return address(this).balance;
+    }
+
+    /// @notice Permissionlessly forwards forced or otherwise unattributed ETH to
+    /// the immutable timelock treasury configured on the canonical locker.
+    function sweepUnattributedNative() external nonReentrant returns (uint256 amount) {
+        RobynV4FeePositionLocker locker_ = locker;
+        if (address(locker_) == address(0)) revert InvalidConfiguration();
+        amount = unattributedNative();
+        if (amount == 0) revert NothingPending();
+        address payable treasury = locker_.treasury();
+        cumulativeUnattributedNativeSwept += amount;
+        (bool sent,) = treasury.call{ value: amount }("");
+        if (!sent) revert NativeTransferFailed();
+        emit UnattributedNativeSwept(treasury, amount);
     }
 
     // Only the immutable bonding market can call this guarded one-shot path;

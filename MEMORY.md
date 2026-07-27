@@ -2,6 +2,16 @@
 
 Durable project context lives here. Update this file whenever information should survive chat context compression or future agent handoff.
 
+- SF10-01A adapter remediation 2026-07-27: `RobynV4GraduationAdapter` now
+  rejects direct ETH and permissionlessly sweeps unavoidable forced ETH to the
+  immutable timelock treasury read from its canonical locker. The adapter
+  exposes unattributed and cumulative-sweep accounting, and regression tests
+  prove direct rejection, forced-ETH reconciliation, treasury-only routing,
+  and zero-balance failure. The assurance suite passes 162 tests with 256-run
+  depth-128 invariants and the 512-wallet/32-launch/25,000-action simulation;
+  contract sizes and `scripts/security-audit.sh` pass. The change requires a
+  fresh immutable deployment. `RobynV4AssetRouter` still has the related low
+  unsolicited-ETH cleanup tracked as SF10-01B.
 - Security-remediation checkpoint 2026-07-27: active work is on
   `codex/security-remediation` in `/home/hendo420/Robyn-schema9`, based on
   `09f4d80bde00931c9f88521b50692fe11bd8bb7b`. The public schema-v9 testnet
@@ -1585,12 +1595,12 @@ Durable project context lives here. Update this file whenever information should
   32-launch, 25,000-action simulation. Live release verification through LAN
   RPC `192.168.50.117:8547` passed 531 checks against
   `/opt/robyn/testnet-releases/03e568a-security-remediation`.
-- Finding: no known critical/high/medium Solidity issue remains. One new low
-  finding remains: `SF10-01`, unrestricted `receive()` functions in
-  `RobynV4AssetRouter` and `RobynV4GraduationAdapter` can trap unsolicited ETH
-  without a sweep/reconciliation path. This is not currently a solvency or
-  extraction issue, but should be fixed before mainnet.
-- Follow-up: mainnet remains NO-GO until SF10-01 is fixed or formally accepted,
+- Finding: no known critical/high/medium Solidity issue remains. The adapter
+  half of low finding `SF10-01` is closed in source by direct-transfer rejection
+  plus permissionless forced-ETH sweep to the immutable timelock treasury.
+  `RobynV4AssetRouter` retains the related low cleanup as `SF10-01B`.
+- Follow-up: mainnet remains NO-GO until SF10-01B is fixed or formally accepted,
+  fresh contracts containing the adapter fix are deployed,
   the remediated public-testnet lifecycle campaign and empty-DB rebuild pass,
   browser and real-wallet acceptance pass, recovery/backup/restore and
   reproducibility gates pass, an uninterrupted eight-hour endurance gate passes,

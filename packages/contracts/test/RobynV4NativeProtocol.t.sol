@@ -31,6 +31,7 @@ import { RobynV4AssetRouter } from "../src/uniswap/RobynV4AssetRouter.sol";
 import { RobynV4AdapterDeployer } from "../src/uniswap/RobynV4AdapterDeployer.sol";
 import { RobynV4BondingCurveMarket } from "../src/uniswap/RobynV4BondingCurveMarket.sol";
 import { RobynV4FeePositionLocker } from "../src/uniswap/RobynV4FeePositionLocker.sol";
+import { RobynV4GraduationAdapter } from "../src/uniswap/RobynV4GraduationAdapter.sol";
 import { RobynV4LaunchCoordinatorV5 } from "../src/uniswap/RobynV4LaunchCoordinatorV5.sol";
 import { RobynV4LockerDeployer } from "../src/uniswap/RobynV4LockerDeployer.sol";
 import { RobynV4MarketDeployer } from "../src/uniswap/RobynV4MarketDeployer.sol";
@@ -73,6 +74,14 @@ interface IPoolDonateFixture {
 contract V4TestAsset is ERC20 {
     constructor() ERC20("Test Basket Asset", "TBA") {
         _mint(msg.sender, 10_000_000 ether);
+    }
+}
+
+contract ForceNative {
+    constructor() payable { }
+
+    function force(address payable recipient) external {
+        selfdestruct(recipient);
     }
 }
 
@@ -497,6 +506,33 @@ contract RobynV4NativeProtocolTest is Test {
         assertEq(locker.principalNativeResidual(), principalNativeResidual);
         assertEq(address(locker).balance, principalNativeResidual);
         assertEq(positionManager.getPositionLiquidity(locker.positionTokenId()), principalLiquidity);
+    }
+
+    function testGraduationAdapterRejectsDirectNativeAndSweepsForcedNative() public {
+        (,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(bytes32(uint256(308))));
+        RobynV4GraduationAdapter adapter = market.graduationAdapter();
+
+        (bool directSent, bytes memory revertData) = address(adapter).call{ value: 1 ether }("");
+        assertFalse(directSent);
+        assertEq(
+            revertData,
+            abi.encodeWithSelector(RobynV4GraduationAdapter.DirectNativeTransferRejected.selector)
+        );
+        assertEq(adapter.unattributedNative(), 0);
+
+        ForceNative forced = new ForceNative{ value: 1 ether }();
+        forced.force(payable(address(adapter)));
+        assertEq(adapter.unattributedNative(), 1 ether);
+
+        uint256 treasuryBefore = TREASURY.balance;
+        assertEq(adapter.sweepUnattributedNative(), 1 ether);
+        assertEq(TREASURY.balance - treasuryBefore, 1 ether);
+        assertEq(adapter.unattributedNative(), 0);
+        assertEq(adapter.cumulativeUnattributedNativeSwept(), 1 ether);
+
+        vm.expectRevert(RobynV4GraduationAdapter.NothingPending.selector);
+        adapter.sweepUnattributedNative();
     }
 
     function testThirdPartyLiquidityDilutesLockedLpFeesButNotHookFees() public {

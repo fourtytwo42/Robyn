@@ -93,41 +93,67 @@ Fresh checks run on 2026-07-27:
 
 ## Findings
 
-### SF10-01: Auxiliary v4 contracts can trap unsolicited ETH
+### SF10-01A: Graduation adapter can trap unsolicited ETH
+
+Severity: Low
+
+Status: Closed in source, fresh deployment required.
+
+The adapter now rejects direct native transfers. Because forced ETH cannot be
+prevented at the EVM level, it exposes `unattributedNative()` and a
+permissionless, non-reentrant `sweepUnattributedNative()` that forwards the
+entire idle balance to the immutable timelock treasury configured on its
+canonical locker. The adapter has no persistent native liability, and the
+reentrancy guard prevents sweeping transient value during graduation or routed
+trading.
+
+Regression coverage proves:
+
+- A direct ETH transfer reverts with `DirectNativeTransferRejected`.
+- Forced ETH is classified as unattributed rather than protocol revenue.
+- Anyone can sweep it only to the immutable timelock treasury.
+- The amount and cumulative swept total reconcile exactly.
+- A zero-balance sweep fails closed.
+
+The full 162-test assurance suite, 256-run/depth-128 invariants,
+512-wallet/32-launch/25,000-action simulation, contract-size gate, dependency
+and secret scans, and active-scope static analysis pass after the change.
+
+### SF10-01B: Asset router can trap unsolicited ETH
 
 Severity: Low
 
 Affected code:
 
 - `packages/contracts/src/uniswap/RobynV4AssetRouter.sol:128`
-- `packages/contracts/src/uniswap/RobynV4GraduationAdapter.sol:120`
 
-`RobynV4AssetRouter` and `RobynV4GraduationAdapter` have unrestricted
-`receive()` functions. Their normal swap and graduation paths do not classify
-or sweep ETH that was sent outside the protocol flow. The current accounting
-does not treat those balances as protocol revenue, so this is not a fee
-extraction, solvency, or trading-blocking issue. It can still leave ETH stuck
-and complicate operational reconciliation.
+`RobynV4AssetRouter` still has an unrestricted `receive()` function. Its normal
+swap paths do not classify or sweep ETH sent outside the protocol flow. The
+current accounting does not treat that balance as protocol revenue, so this is
+not a fee extraction, solvency, or trading-blocking issue. It can still leave
+ETH stuck and complicate operational reconciliation.
 
 Exploit conditions:
 
-- Anyone can force or send ETH to the router or adapter.
+- Anyone can force or send ETH to the router.
 - The ETH is not recoverable through a dedicated protocol function.
 - Existing refund math does not leak prior unsolicited ETH to later users.
 
 Recommended fix:
 
-- Prefer rejecting direct ETH where possible.
-- If a contract must accept native ETH because of Uniswap callbacks or refund
-  paths, add an explicit `unattributedNative()` view and permissionless sweep to
-  the timelock treasury.
+- Confirm whether Uniswap callback and refund paths require the router's
+  `receive()` function.
+- Reject direct ETH if it is not required. Otherwise add an explicit
+  `unattributedNative()` view and permissionless sweep to the timelock treasury.
 - Add tests proving unsolicited ETH is not counted as protocol fees, cannot be
   taken by users, and can be reconciled.
 
 Release impact:
 
 - Does not block testnet continuation.
-- Should be fixed before mainnet to keep recovery and accounting clean.
+- The adapter source fix changes bytecode and requires fresh immutable
+  deployment before it can protect a live pool.
+- The remaining asset-router cleanup should be resolved before mainnet.
 
 ## Previously reported findings
 
@@ -141,9 +167,9 @@ The prior schema-v9 audit findings are closed in schema 10 at the source level:
   accounting-only fee intake and queued DAO settlement.
 - SF-04 instant reward deposits enabling predictable reward sniping: mitigated
   by seven-day transfer-aware reward streams.
-- SF-05 unsolicited ETH misclassification in fee surfaces: closed for router
-  and locker revenue surfaces; SF10-01 remains for auxiliary router and adapter
-  stuck ETH.
+- SF-05 unsolicited ETH misclassification in fee surfaces: closed for fee
+  router, locker, and graduation adapter revenue surfaces; SF10-01B remains for
+  asset-router stuck ETH.
 
 ## Manual review notes
 
@@ -204,7 +230,8 @@ Current verdict: NO-GO for mainnet.
 
 Reasons:
 
-- One low Solidity cleanup item remains: SF10-01.
+- One low Solidity cleanup item remains: SF10-01B in the asset router. The
+  adapter half, SF10-01A, is closed in source but not in the deployed bytecode.
 - The remediated public-testnet campaign has not run because funding preflight
   is blocked.
 - The fresh schema-10 deployment currently has only the genesis launch indexed,
@@ -219,7 +246,8 @@ Reasons:
 
 ## Recommended next steps
 
-1. Fix SF10-01 with restricted receives or unattributed ETH sweep functions.
+1. Apply the same direct-transfer and forced-ETH analysis to the asset router,
+   then deploy fresh contracts containing the adapter fix.
 2. Promote an exact-current application release so served release and
    `origin/main` are aligned.
 3. Add the requested testnet ETH and rerun the fixed no-reduced-coverage
