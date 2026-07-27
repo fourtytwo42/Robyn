@@ -40,6 +40,13 @@
   preserved, the runner stopped, and the policy now fails any degraded protocol
   status, insolvency, DAO stream discrepancy, phase/locker/reward mismatch, or
   unattributed native balance. A focused policy test covers every condition.
+- Keeper dust correction: Two matured basket legs with one wei pending reached
+  the maximum-delay path, but their native-to-asset quotes rounded to zero and
+  became dead letters after six retries. The endurance clock stopped and the
+  failed jobs were preserved. The scanner now preflights each executable native
+  conversion and leaves unquotable dust queued onchain, superseding an existing
+  failed queue entry without broadcasting. The worker shares the same quote
+  usability rule, and focused tests cover zero, one-unit, and usable outputs.
 - Route recovery: Two testnet basket routes reached their immutable reference
   deviation boundary after one-way campaign conversions. Protected evidence
   records direct Universal Router counter-trades from the encrypted project

@@ -14,6 +14,11 @@ export function isLegExecutable(state: LegState): boolean {
   );
 }
 
+export function conversionQuoteIsUsable(expectedOutput: bigint): boolean {
+  if (expectedOutput <= 0n) return false;
+  return (expectedOutput * 9_950n) / 10_000n > 0n;
+}
+
 export function conversionJobId(vault: string, legIndex: bigint): string {
   return [
     "convert",

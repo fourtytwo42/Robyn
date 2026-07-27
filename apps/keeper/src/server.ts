@@ -14,6 +14,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { createDatabase } from "@robyn/db";
 import {
   boundedProtocolInput,
+  conversionQuoteIsUsable,
   conversionJobId,
   isFailedJobRetryDue,
   failureAuditState,
@@ -1036,6 +1037,49 @@ async function scan() {
         continue;
       }
       const key = conversionJobId(launch.vault, index);
+      if (isNativeV4) {
+        let routeIsUsable = false;
+        try {
+          const assetRouter = await publicClient.readContract({
+            address: launch.vault,
+            abi: nativeVaultAbi,
+            functionName: "assetRouter",
+          });
+          const route = await publicClient.readContract({
+            address: assetRouter,
+            abi: v4AssetRouterAbi,
+            functionName: "route",
+            args: [current.leg.asset],
+          });
+          const conversionInput =
+            current.leg.pendingBase > route.maximumNativeInput
+              ? route.maximumNativeInput
+              : current.leg.pendingBase;
+          if (conversionInput > 0n) {
+            const quote = await publicClient.simulateContract({
+              address: assetRouter,
+              abi: v4AssetRouterAbi,
+              functionName: "quoteNativeToAsset",
+              args: [current.leg.asset, conversionInput],
+              account: writeAccount,
+            });
+            routeIsUsable = conversionQuoteIsUsable(quote.result[0]);
+          }
+        } catch {
+          // Unsafe oracle, impact, liquidity, or dust remains queued onchain.
+        }
+        if (!routeIsUsable) {
+          await supersedeFailedQueueJob(
+            key,
+            "Authoritative native conversion route cannot quote the pending input",
+            {
+              pendingBase: current.leg.pendingBase.toString(),
+              pendingSince: current.leg.pendingSince.toString(),
+            },
+          );
+          continue;
+        }
+      }
       const payload: ConvertJob = {
         kind: "convert",
         idempotencyKey: key,
@@ -1586,7 +1630,7 @@ async function processConversion(
       });
       const expected = quote.result[0];
       const minimumOutput = (expected * 9_950n) / 10_000n;
-      if (expected === 0n || minimumOutput === 0n) {
+      if (!conversionQuoteIsUsable(expected)) {
         throw new Error("Native conversion route is unavailable");
       }
       return publicClient.simulateContract({

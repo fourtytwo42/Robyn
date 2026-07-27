@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   boundedProtocolInput,
+  conversionQuoteIsUsable,
   conversionJobId,
   failedJobRetryDelayMs,
   isFailedJobRetryDue,
@@ -37,6 +38,12 @@ describe("keeper eligibility", () => {
   it("does not execute an empty or immature leg", () => {
     expect(isLegExecutable(base)).toBe(false);
     expect(isLegExecutable({ ...base, pendingBase: 0n })).toBe(false);
+  });
+
+  it("does not queue native conversion dust that rounds to zero", () => {
+    expect(conversionQuoteIsUsable(0n)).toBe(false);
+    expect(conversionQuoteIsUsable(1n)).toBe(false);
+    expect(conversionQuoteIsUsable(2n)).toBe(true);
   });
 
   it("keeps auto-retried protocol failures in retrying state", () => {
