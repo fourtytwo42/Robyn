@@ -1962,6 +1962,46 @@ async function claims() {
     await contractTransaction(state, `post-rdao-fee-buy-${index}`, account, launch.market, marketAbi, "buy", [(quoted * 98n) / 100n || 1n], value);
   }
 
+  const settlementAccount = privateKeyToAccount(accounts[0].privateKey);
+  const daoLiability = await publicClient.readContract({
+    address: manifest.contracts.protocolFeeRouter,
+    abi: feeRouterAbi,
+    functionName: "totalDaoNativeLiability",
+  });
+  if (daoLiability > 0n) {
+    await contractTransaction(
+      state,
+      "dao-fee-settlement",
+      settlementAccount,
+      manifest.contracts.protocolFeeRouter,
+      feeRouterAbi,
+      "settleDaoFees",
+      [daoLiability],
+    );
+  }
+  const treasuryLiability = await publicClient.readContract({
+    address: manifest.contracts.protocolFeeRouter,
+    abi: feeRouterAbi,
+    functionName: "totalTreasuryNativeLiability",
+  });
+  if (treasuryLiability > 0n) {
+    await contractTransaction(
+      state,
+      "treasury-fee-settlement",
+      settlementAccount,
+      manifest.contracts.protocolFeeRouter,
+      feeRouterAbi,
+      "settleTreasuryFees",
+      [treasuryLiability],
+    );
+  }
+  state.claims.settlements = {
+    daoNative: daoLiability.toString(),
+    treasuryNative: treasuryLiability.toString(),
+  };
+  saveState(state);
+  await advanceOrWait(2, "DAO reward stream accrual");
+
   for (let actorIndex = 0; state.claims.holder.length < 20 && actorIndex < accounts.length; actorIndex += 1) {
     const account = privateKeyToAccount(accounts[actorIndex].privateKey);
     let selected = null;

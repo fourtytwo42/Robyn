@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-07-27 - Campaign streamed DAO settlement correction
+
+- Context: The accounting-only fee router intentionally queues DAO and treasury liabilities. The campaign claims phase still assumed these destinations were paid synchronously.
+- Decision: After the post-governance fee-bearing buys, permissionlessly settle the complete queued DAO and treasury liabilities, journal both transactions, wait for real chain time to begin vesting the seven-day DAO stream, and only then evaluate holder and DAO claims.
+- Files: `scripts/testnet-assurance-campaign.mjs`, `scripts/test/testnet-assurance-campaign.test.mjs`.
+- Commands/tests: Node syntax, campaign test suite 19/19, formatting, and diff check pass.
+- Result: Conversion phase is complete with all 24 unique basket routes exercised. Governance is progressing through the real testnet voting lifecycle without artificial time changes.
+
 ### 2026-07-27 - Campaign locker fee-accounting correction
 
 - Context: Campaign `final-assurance-e458382` completed the fixed trading workload and three graduations, waited for the real five-minute oracle window, then confirmed four hook/locker conversion transactions before failing safely at `locker-route-native-0`.

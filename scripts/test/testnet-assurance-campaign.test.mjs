@@ -343,3 +343,20 @@ test("locker conversion fees are settled after the final harvest swap", () => {
   assert.doesNotMatch(source, /getBalance\(\{ address: launch\.locker \}\)/);
   assert.doesNotMatch(source, /args: \[launch\.locker\]/);
 });
+
+test("claims settle queued DAO and treasury liabilities before reward claims", () => {
+  const source = readFileSync(
+    new URL("../testnet-assurance-campaign.mjs", import.meta.url),
+    "utf8",
+  );
+  const daoSettlement = source.indexOf('"dao-fee-settlement"');
+  const treasurySettlement = source.indexOf('"treasury-fee-settlement"');
+  const streamAccrual = source.indexOf('"DAO reward stream accrual"');
+  const holderClaim = source.indexOf("`holder-claim-${claimIndex}`");
+  const daoClaim = source.indexOf("`rdao-claim-${index}`");
+  assert.ok(daoSettlement >= 0);
+  assert.ok(treasurySettlement > daoSettlement);
+  assert.ok(streamAccrual > treasurySettlement);
+  assert.ok(holderClaim > streamAccrual);
+  assert.ok(daoClaim > holderClaim);
+});
