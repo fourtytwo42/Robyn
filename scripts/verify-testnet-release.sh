@@ -80,7 +80,7 @@ jq -n \
   --arg verifiedAt "$(date -u +%FT%TZ)" \
   --arg releasePath "$release_real" \
   --arg gitSha "$git_sha" \
-  --arg serverRpcUrl "$server_rpc_url" \
+  --arg serverRpcProvider "alchemy-robinhood-testnet" \
   --arg database "$database" \
   --argjson activeDatabaseIndexers "$(
     printf '%s\n' "${active_database_indexers[@]}" |
@@ -89,5 +89,5 @@ jq -n \
   --argjson status "$status" \
   --argjson publicStatus "$public_status" \
   --argjson verifierChecks "$(jq '.checks|length' /tmp/robyn-testnet-deployment-verify.json)" \
-  '{verifiedAt:$verifiedAt,releasePath:$releasePath,gitSha:$gitSha,serverRpcUrl:$serverRpcUrl,database:$database,activeDatabaseIndexers:$activeDatabaseIndexers,status:$status,publicStatus:$publicStatus,verifierChecks:$verifierChecks}'
+  '{verifiedAt:$verifiedAt,releasePath:$releasePath,gitSha:$gitSha,serverRpcProvider:$serverRpcProvider,database:$database,activeDatabaseIndexers:$activeDatabaseIndexers,status:$status,publicStatus:$publicStatus,verifierChecks:$verifierChecks}'
 rm -f /tmp/robyn-testnet-deployment-verify.json

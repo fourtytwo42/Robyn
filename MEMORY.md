@@ -1,5 +1,21 @@
 # Project Memory
 
+### 2026-07-27 - Alchemy HTTP and filtered-log WebSocket alignment
+
+- Context: The user required testnet and the future mainnet application to use
+  the same provider pattern so testnet exercises production-like RPC behavior.
+- Decision: Protected backend traffic uses separate Alchemy HTTPS and WSS
+  endpoints for each network. Filtered log subscriptions are wake signals;
+  canonical HTTP logs, block hashes, and durable checkpoints remain
+  authoritative with 30-second reconciliation. Browser RPC stays keyless so a
+  provider credential is never compiled into public JavaScript.
+- Result: Exact release `90ac35b` was promoted on testnet. Six PM2 services are
+  online, ingestion and projection lag were zero, 531 deployment checks passed,
+  router liabilities were solvent, and keeper queues were empty.
+- Security correction: Release verification now records only the provider name,
+  never a credential-bearing RPC URL. Existing release-history output was
+  sanitized. Rotate credentials shared through chat before production use.
+
 ### 2026-07-27 - Ten-hour endurance run stopped by user
 
 - Context: The user explicitly asked to stop both the scheduled monitor and
