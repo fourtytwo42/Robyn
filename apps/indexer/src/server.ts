@@ -946,6 +946,9 @@ async function resetCanonical() {
     await tx.unsafe("DELETE FROM launches WHERE chain_id=$1", [
       manifest.chainId,
     ]);
+    await tx.unsafe("DELETE FROM keeper_scan_requests WHERE chain_id=$1", [
+      manifest.chainId,
+    ]);
     await tx.unsafe(
       "DELETE FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector','king-of-forest-projector') AND chain_id=$1",
       [manifest.chainId],
@@ -1147,6 +1150,9 @@ async function projectOnce() {
       await tx.unsafe("DELETE FROM launches WHERE chain_id=$1", [
         manifest.chainId,
       ]);
+      await tx.unsafe("DELETE FROM keeper_scan_requests WHERE chain_id=$1", [
+        manifest.chainId,
+      ]);
       await tx.unsafe(
         "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector') AND chain_id=$1",
         [manifest.chainId],
@@ -1212,6 +1218,14 @@ async function projectOnce() {
             "INSERT INTO indexer_checkpoints (service,chain_id,last_block,last_hash) VALUES ('launch-projector',$1,$2,$3) ON CONFLICT (service,chain_id) DO UPDATE SET last_block=EXCLUDED.last_block,last_hash=EXCLUDED.last_hash,updated_at=now()",
             [manifest.chainId, ingested.last_block, ingested.last_hash],
           );
+          await tx.unsafe(
+            "WITH relevant AS (SELECT DISTINCT ON (x.token) x.token,l.block_number,l.transaction_hash,l.log_index,CASE WHEN lower(l.address) IN (lower(x.token),lower(x.vault),lower(x.market),lower(coalesce(x.adapter,'')),lower(coalesce(x.locker,''))) THEN 'launch-address' WHEN x.pool_id IS NOT NULL AND lower(l.topics->>1)=lower(x.pool_id) THEN 'pool-event' ELSE 'indexed-token' END reason FROM raw_logs l JOIN launches x ON x.chain_id=l.chain_id WHERE l.chain_id=$1 AND l.block_number BETWEEN $2 AND $3 AND (lower(l.address) IN (lower(x.token),lower(x.vault),lower(x.market),lower(coalesce(x.adapter,'')),lower(coalesce(x.locker,''))) OR (x.pool_id IS NOT NULL AND lower(l.topics->>1)=lower(x.pool_id)) OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(l.topics) topic(value) WHERE lower(topic.value)=lower('0x'||repeat('0',24)||substr(x.token,3)))) ORDER BY x.token,l.block_number DESC,l.transaction_index DESC,l.log_index DESC) INSERT INTO keeper_scan_requests (chain_id,token,status,first_block,highest_block,last_transaction_hash,last_log_index,reasons) SELECT $1,token,'pending',block_number,block_number,transaction_hash,log_index,jsonb_build_array(reason) FROM relevant ON CONFLICT (chain_id,token) DO UPDATE SET status='pending',first_block=least(keeper_scan_requests.first_block,EXCLUDED.first_block),highest_block=greatest(keeper_scan_requests.highest_block,EXCLUDED.highest_block),last_transaction_hash=EXCLUDED.last_transaction_hash,last_log_index=EXCLUDED.last_log_index,trigger_count=keeper_scan_requests.trigger_count+1,reasons=EXCLUDED.reasons,retry_after=now(),last_error=NULL,completed_at=NULL,updated_at=now()",
+            [
+              manifest.chainId,
+              window.fromBlock.toString(),
+              window.toBlock.toString(),
+            ],
+          );
           return true;
         });
         if (!advanced) {
@@ -1230,6 +1244,10 @@ async function projectOnce() {
             await tx.unsafe("DELETE FROM launches WHERE chain_id=$1", [
               manifest.chainId,
             ]);
+            await tx.unsafe(
+              "DELETE FROM keeper_scan_requests WHERE chain_id=$1",
+              [manifest.chainId],
+            );
             await tx.unsafe(
               "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector') AND chain_id=$1",
               [manifest.chainId],
@@ -1329,6 +1347,8 @@ async function runPipeline(
 }
 
 async function runIngesterPipeline() {
+  const startedAt = Date.now();
+  let estimatedComputeUnits = 0;
   let failures = 0;
   let rpcRetryCount = 0;
   let lastRpcDegradationAt: string | null = null;
@@ -1352,6 +1372,8 @@ async function runIngesterPipeline() {
   while (!stopping) {
     try {
       const result = await syncOnce();
+      estimatedComputeUnits +=
+        40 + result.rangeCount * 80 + result.logCount * 20;
       failures = 0;
       if (filteredLogWakeClient) {
         filteredLogWakeClient.updateAddresses(await currentIndexedAddresses());
@@ -1364,6 +1386,16 @@ async function runIngesterPipeline() {
           ? "filtered-logs-websocket"
           : "reconciliation-only",
         reconciliationMs,
+        rpcRequestsByMethod: {
+          eth_blockNumber: Math.ceil(estimatedComputeUnits / 120),
+          eth_getBlockByNumber: Math.ceil(estimatedComputeUnits / 120),
+          eth_getLogs: Math.ceil(estimatedComputeUnits / 120),
+        },
+        estimatedCu: estimatedComputeUnits,
+        projectedDailyCu: Math.round(
+          (estimatedComputeUnits / Math.max(1, Date.now() - startedAt)) *
+            86_400_000,
+        ),
         webSocket: filteredLogWakeClient?.snapshot() ?? null,
         heartbeatOnly: false,
       };

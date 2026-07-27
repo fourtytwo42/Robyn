@@ -1,10 +1,13 @@
+import { createHash } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import { Queue, Worker, type Job } from "bullmq";
 import { Redis } from "ioredis";
 import {
   createPublicClient,
   createWalletClient,
+  decodeFunctionResult,
   defineChain,
+  encodeFunctionData,
   http,
   type Address,
   type Hash,
@@ -34,6 +37,10 @@ import {
   redisConnectionOptions,
   transactionAccount,
 } from "./runtime-config.js";
+import {
+  projectedDailyComputeUnits,
+  scanRequestRetryDelayMs,
+} from "./scan-control.js";
 
 type Manifest = {
   chainId: number;
@@ -84,13 +91,19 @@ type KeeperResult = {
 };
 
 const environment = process.env.ROBYN_ENV ?? "";
-if (environment !== "robyn-devnet" && environment !== "robinhood-testnet") {
+if (
+  environment !== "robyn-devnet" &&
+  environment !== "robinhood-testnet" &&
+  environment !== "robinhood-mainnet"
+) {
   throw new Error(
-    "Keeper environment must be robyn-devnet or robinhood-testnet",
+    "Keeper environment must be robyn-devnet, robinhood-testnet, or robinhood-mainnet",
   );
 }
 const isTestnet = environment === "robinhood-testnet";
-const expectedChainId = isTestnet ? 46630 : 31337;
+const isMainnet = environment === "robinhood-mainnet";
+const isRemoteChain = isTestnet || isMainnet;
+const expectedChainId = isTestnet ? 46630 : isMainnet ? 4663 : 31337;
 const manifest = JSON.parse(
   await readFile(
     process.env.ROBYN_MANIFEST ?? "/home/hendo420/Robyn/deployments/31337.json",
@@ -108,15 +121,21 @@ const rpcUrl =
   process.env.ROBYN_OPERATOR_RPC_URL ??
   (isTestnet
     ? "https://rpc.testnet.chain.robinhood.com"
-    : "http://127.0.0.1:8545");
+    : isMainnet
+      ? "https://rpc.mainnet.chain.robinhood.com"
+      : "http://127.0.0.1:8545");
 const selectedChain = defineChain({
   id: expectedChainId,
-  name: isTestnet ? "Robinhood Chain Testnet" : "Robyn Devnet",
-  nativeCurrency: isTestnet
+  name: isTestnet
+    ? "Robinhood Chain Testnet"
+    : isMainnet
+      ? "Robinhood Chain Mainnet"
+      : "Robyn Devnet",
+  nativeCurrency: isRemoteChain
     ? { name: "Ether", symbol: "ETH", decimals: 18 }
     : { name: "Dev Ether", symbol: "DEV", decimals: 18 },
   rpcUrls: { default: { http: [rpcUrl] } },
-  testnet: true,
+  testnet: !isMainnet,
 });
 const publicClient = createPublicClient({
   chain: selectedChain,
@@ -128,14 +147,14 @@ const publicClient = createPublicClient({
   }),
 });
 let operatorAccount;
-if (isTestnet) {
+if (isRemoteChain) {
   const keyFile = process.env.ROBYN_OPERATOR_KEY_FILE;
   if (!keyFile)
-    throw new Error("Testnet keeper requires ROBYN_OPERATOR_KEY_FILE");
+    throw new Error("Remote-chain keeper requires ROBYN_OPERATOR_KEY_FILE");
   const keyStat = await stat(keyFile);
   if ((keyStat.mode & 0o077) !== 0) {
     throw new Error(
-      "Testnet operator key file must not be group/world accessible",
+      "Remote-chain operator key file must not be group/world accessible",
     );
   }
   const key = (await readFile(keyFile, "utf8")).trim();
@@ -151,13 +170,33 @@ const walletClient = createWalletClient({
   // submitted hash before deciding whether another transaction is necessary.
   transport: http(rpcUrl, { retryCount: 0, timeout: 15_000 }),
 });
-const operator = isTestnet
+const operator = isRemoteChain
   ? operatorAccount?.address
   : (await walletClient.getAddresses())[0];
 if (!operator) throw new Error("Keeper operator account is unavailable");
-const writeAccount = transactionAccount(isTestnet, operatorAccount, operator);
+const writeAccount = transactionAccount(
+  isRemoteChain,
+  operatorAccount,
+  operator,
+);
 if ((await publicClient.getChainId()) !== manifest.chainId) {
   throw new Error("Keeper RPC chain mismatch");
+}
+const multicall3Address =
+  "0xcA11bde05977b3631167028862bE2a173976CA11" as Address;
+const multicall3RuntimeSha256 =
+  "2756d7c52baee85cacb504f6ee1df7aad6809ac8d94a4a111d76991f90d36d6e";
+const multicall3Code = await publicClient.getCode({
+  address: multicall3Address,
+});
+const multicall3Verified = Boolean(
+  multicall3Code &&
+  createHash("sha256")
+    .update(Buffer.from(multicall3Code.slice(2), "hex"))
+    .digest("hex") === multicall3RuntimeSha256,
+);
+if (isRemoteChain && !multicall3Verified) {
+  throw new Error("Keeper Multicall3 runtime verification failed");
 }
 
 const redisUrl = new URL(process.env.REDIS_URL ?? "redis://127.0.0.1:6379");
@@ -178,7 +217,16 @@ const queue = new Queue<KeeperJob, KeeperResult>(queueName, {
   },
 });
 const { sql } = createDatabase();
-const scanMs = Number(process.env.KEEPER_SCAN_MS ?? "5000");
+const scanMs = Number(
+  process.env.KEEPER_SCAN_MS ?? (isRemoteChain ? "900000" : "5000"),
+);
+const requestPollMs = Number(process.env.KEEPER_REQUEST_POLL_MS ?? "1000");
+const heartbeatMs = Number(process.env.KEEPER_HEARTBEAT_MS ?? "10000");
+if (isRemoteChain && scanMs < 60_000) {
+  throw new Error(
+    "Remote-chain keeper reconciliation must be at least 60 seconds",
+  );
+}
 const minimumProtocolBase = BigInt(
   process.env.KEEPER_MINIMUM_PROTOCOL_BASE ?? "10000000000000000",
 );
@@ -190,11 +238,126 @@ const minimumLaunchFees = BigInt(
 );
 const minimumOperatorBalance = BigInt(
   process.env.KEEPER_MINIMUM_OPERATOR_BALANCE_WEI ??
-    (isTestnet ? "250000000000000" : "0"),
+    (isRemoteChain ? "250000000000000" : "0"),
 );
 if (minimumOperatorBalance < 0n)
   throw new Error("Keeper minimum operator balance cannot be negative");
 let stopping = false;
+const keeperStartedAt = Date.now();
+let fullScanCount = 0;
+let eventScanCount = 0;
+let tokensScanned = 0;
+let estimatedComputeUnits = 0;
+let multicallFallbackCount = 0;
+let lastFullReconciliationAt: string | null = null;
+let lastEventScanAt: string | null = null;
+let cachedOperatorBalance = 0n;
+let operatorBalanceReadAt = 0;
+
+const multicall3Abi = [
+  {
+    type: "function",
+    name: "aggregate3",
+    stateMutability: "payable",
+    inputs: [
+      {
+        name: "calls",
+        type: "tuple[]",
+        components: [
+          { name: "target", type: "address" },
+          { name: "allowFailure", type: "bool" },
+          { name: "callData", type: "bytes" },
+        ],
+      },
+    ],
+    outputs: [
+      {
+        name: "returnData",
+        type: "tuple[]",
+        components: [
+          { name: "success", type: "bool" },
+          { name: "returnData", type: "bytes" },
+        ],
+      },
+    ],
+  },
+] as const;
+
+async function executeVerifiedMulticall(
+  calls: { target: Address; callData: Hex }[],
+) {
+  try {
+    if (!multicall3Verified) throw new Error("Multicall3 is unavailable");
+    const result = (await publicClient.readContract({
+      address: multicall3Address,
+      abi: multicall3Abi,
+      functionName: "aggregate3",
+      args: [
+        calls.map((call) => ({
+          ...call,
+          allowFailure: false,
+        })),
+      ],
+    })) as unknown as readonly { success: boolean; returnData: Hex }[];
+    estimatedComputeUnits += 26;
+    if (result.some((entry) => !entry.success)) {
+      throw new Error("Verified Multicall3 returned a failed read");
+    }
+    return result.map((entry) => entry.returnData);
+  } catch (error) {
+    if (calls.length > 64) throw error;
+    multicallFallbackCount += 1;
+    const results = await Promise.all(
+      calls.map(async (call) => {
+        const result = await publicClient.call({
+          to: call.target,
+          data: call.callData,
+        });
+        if (!result.data)
+          throw new Error("Fallback contract read returned no data");
+        return result.data;
+      }),
+    );
+    estimatedComputeUnits += calls.length * 26;
+    return results;
+  }
+}
+
+type PendingMulticall = {
+  calls: { target: Address; callData: Hex }[];
+  resolve: (result: Hex[]) => void;
+  reject: (error: unknown) => void;
+};
+let pendingMulticalls: PendingMulticall[] = [];
+let multicallFlushScheduled = false;
+
+function verifiedMulticall(calls: { target: Address; callData: Hex }[]) {
+  return new Promise<Hex[]>((resolve, reject) => {
+    pendingMulticalls.push({ calls, resolve, reject });
+    if (multicallFlushScheduled) return;
+    multicallFlushScheduled = true;
+    queueMicrotask(() => {
+      multicallFlushScheduled = false;
+      const pending = pendingMulticalls;
+      pendingMulticalls = [];
+      const combined = pending.flatMap((request) => request.calls);
+      void executeVerifiedMulticall(combined).then(
+        (result) => {
+          let offset = 0;
+          for (const request of pending) {
+            request.resolve(
+              result.slice(offset, offset + request.calls.length),
+            );
+            offset += request.calls.length;
+          }
+        },
+        (error) => {
+          for (const request of pending) request.reject(error);
+        },
+      );
+    });
+  });
+}
 
 const vaultAbi = [
   {
@@ -687,15 +850,29 @@ async function audit(
 }
 
 async function heartbeat() {
-  const [counts, operatorBalance] = await Promise.all([
+  const now = Date.now();
+  const [counts, scanRequests] = await Promise.all([
     queue.getJobCounts("waiting", "active", "delayed", "failed"),
-    publicClient.getBalance({ address: operator as Address }),
+    sql.unsafe<{ status: string; count: string }[]>(
+      "SELECT status,count(*)::text count FROM keeper_scan_requests WHERE chain_id=$1 GROUP BY status",
+      [manifest.chainId],
+    ),
   ]);
+  if (now - operatorBalanceReadAt >= 60_000 || operatorBalanceReadAt === 0) {
+    cachedOperatorBalance = await publicClient.getBalance({
+      address: operator as Address,
+    });
+    estimatedComputeUnits += 20;
+    operatorBalanceReadAt = now;
+  }
   const healthy = keeperHeartbeatHealthy({
     failedJobs: counts.failed ?? 0,
-    operatorBalance,
+    operatorBalance: cachedOperatorBalance,
     minimumOperatorBalance,
   });
+  const requestCounts = Object.fromEntries(
+    scanRequests.map((row) => [row.status, Number(row.count)]),
+  );
   await sql.unsafe(
     "INSERT INTO service_heartbeats (service,status,metadata) VALUES ('conversion-keeper',$1,$2::jsonb) ON CONFLICT (service) DO UPDATE SET status=EXCLUDED.status,metadata=EXCLUDED.metadata,updated_at=now()",
     [
@@ -704,9 +881,35 @@ async function heartbeat() {
         queue: queueName,
         chainId: manifest.chainId,
         queueCounts: counts,
+        scanRequestCounts: requestCounts,
         operator,
-        operatorBalanceWei: operatorBalance.toString(),
+        operatorBalanceWei: cachedOperatorBalance.toString(),
         minimumOperatorBalanceWei: minimumOperatorBalance.toString(),
+        rpcProvider: isRemoteChain ? "alchemy" : "local",
+        rpcRequestsByMethod: {
+          eth_call: Math.floor(estimatedComputeUnits / 26),
+        },
+        estimatedCu: estimatedComputeUnits,
+        multicallFallbackCount,
+        fullScanCount,
+        eventScanCount,
+        tokensScanned,
+        lastFullReconciliationAt,
+        lastEventScanAt,
+        projectedDailyIdleCu:
+          lastFullReconciliationAt === null
+            ? null
+            : projectedDailyComputeUnits(
+                estimatedComputeUnits,
+                Math.max(1, now - keeperStartedAt),
+              ),
+        projectedMonthlyCu:
+          lastFullReconciliationAt === null
+            ? null
+            : projectedDailyComputeUnits(
+                estimatedComputeUnits,
+                Math.max(1, now - keeperStartedAt),
+              ) * 30,
       }),
     ],
   );
@@ -932,103 +1135,223 @@ async function reconcileLegacyConversionJobs() {
   }
 }
 
-async function readLeg(vault: Address, legIndex: bigint) {
-  if (isNativeV4) {
-    const [minimum, delay, leg, block] = await Promise.all([
-      publicClient.readContract({
-        address: vault,
-        abi: nativeVaultAbi,
-        functionName: "minimumConversionNative",
-      }),
-      publicClient.readContract({
-        address: vault,
-        abi: nativeVaultAbi,
-        functionName: "maximumPendingDelay",
-      }),
-      publicClient.readContract({
-        address: vault,
-        abi: nativeVaultAbi,
+type LaunchScanRow = {
+  token: Address;
+  vault: Address;
+  market: Address;
+  assets: string[];
+};
+
+type NormalizedLeg = {
+  asset: Address;
+  weightBps: number;
+  pendingBase: bigint;
+  consumedBase: bigint;
+  rewardsDeposited: bigint;
+  pendingSince: bigint;
+};
+
+type VaultSettings = {
+  minimum: bigint;
+  delay: bigint;
+  assetRouter?: Address;
+};
+
+const vaultSettingsCache = new Map<string, VaultSettings>();
+
+async function vaultSettings(vault: Address) {
+  const key = vault.toLowerCase();
+  const cached = vaultSettingsCache.get(key);
+  if (cached) return cached;
+  const abi = isNativeV4 ? nativeVaultAbi : vaultAbi;
+  const functions = isNativeV4
+    ? ([
+        "minimumConversionNative",
+        "maximumPendingDelay",
+        "assetRouter",
+      ] as const)
+    : (["minimumConversionBase", "maximumPendingDelay"] as const);
+  const result = await verifiedMulticall(
+    functions.map((functionName) => ({
+      target: vault,
+      callData: encodeFunctionData({ abi, functionName }),
+    })),
+  );
+  const settings: VaultSettings = {
+    minimum: decodeFunctionResult({
+      abi,
+      functionName: functions[0],
+      data: result[0]!,
+    }),
+    delay: decodeFunctionResult({
+      abi,
+      functionName: functions[1],
+      data: result[1]!,
+    }),
+    ...(isNativeV4
+      ? {
+          assetRouter: decodeFunctionResult({
+            abi: nativeVaultAbi,
+            functionName: "assetRouter",
+            data: result[2]!,
+          }),
+        }
+      : {}),
+  };
+  vaultSettingsCache.set(key, settings);
+  return settings;
+}
+
+function normalizeLeg(value: unknown): NormalizedLeg {
+  const leg = value as {
+    asset: Address;
+    weightBps: number;
+    pendingNative?: bigint;
+    pendingBase?: bigint;
+    consumedNative?: bigint;
+    consumedBase?: bigint;
+    rewardsDeposited: bigint;
+    pendingSince: bigint;
+  };
+  return {
+    asset: leg.asset,
+    weightBps: leg.weightBps,
+    pendingBase: leg.pendingNative ?? leg.pendingBase ?? 0n,
+    consumedBase: leg.consumedNative ?? leg.consumedBase ?? 0n,
+    rewardsDeposited: leg.rewardsDeposited,
+    pendingSince: leg.pendingSince,
+  };
+}
+
+async function readLeg(vault: Address, legIndex: bigint, timestamp?: bigint) {
+  const settings = await vaultSettings(vault);
+  const abi = isNativeV4 ? nativeVaultAbi : vaultAbi;
+  const [encoded] = await verifiedMulticall([
+    {
+      target: vault,
+      callData: encodeFunctionData({
+        abi,
         functionName: "leg",
         args: [legIndex],
       }),
-      publicClient.getBlock(),
-    ]);
-    return {
-      minimum,
-      delay,
-      leg: {
-        asset: leg.asset,
-        weightBps: leg.weightBps,
-        pendingBase: leg.pendingNative,
-        consumedBase: leg.consumedNative,
-        rewardsDeposited: leg.rewardsDeposited,
-        pendingSince: leg.pendingSince,
-      },
-      timestamp: block.timestamp,
-    };
-  }
-  const [minimum, delay, leg, block] = await Promise.all([
-    publicClient.readContract({
-      address: vault,
-      abi: vaultAbi,
-      functionName: "minimumConversionBase",
-    }),
-    publicClient.readContract({
-      address: vault,
-      abi: vaultAbi,
-      functionName: "maximumPendingDelay",
-    }),
-    publicClient.readContract({
-      address: vault,
-      abi: vaultAbi,
-      functionName: "leg",
-      args: [legIndex],
-    }),
-    publicClient.getBlock(),
+    },
   ]);
-  return { minimum, delay, leg, timestamp: block.timestamp };
+  const leg = normalizeLeg(
+    decodeFunctionResult({
+      abi,
+      functionName: "leg",
+      data: encoded!,
+    }),
+  );
+  let chainTimestamp = timestamp;
+  if (chainTimestamp === undefined) {
+    const block = await publicClient.getBlock();
+    estimatedComputeUnits += 20;
+    if (block.timestamp === undefined) {
+      throw new Error("Latest block timestamp is unavailable");
+    }
+    chainTimestamp = block.timestamp;
+  }
+  return {
+    minimum: settings.minimum,
+    delay: settings.delay,
+    leg,
+    timestamp: chainTimestamp,
+  };
 }
 
-async function scan() {
-  await auditRedis.ping();
-  const launches = await sql.unsafe<
-    { token: Address; vault: Address; market: Address }[]
-  >(
-    "SELECT token,vault,market FROM launches WHERE chain_id=$1 ORDER BY launch_id",
-    [manifest.chainId],
+async function readLaunchLegs(launch: LaunchScanRow, timestamp: bigint) {
+  const settings = await vaultSettings(launch.vault);
+  const abi = isNativeV4 ? nativeVaultAbi : vaultAbi;
+  const encoded = await verifiedMulticall(
+    launch.assets.map((_, index) => ({
+      target: launch.vault,
+      callData: encodeFunctionData({
+        abi,
+        functionName: "leg",
+        args: [BigInt(index)],
+      }),
+    })),
   );
-  for (const launch of launches) {
-    if (isNativeV4 || manifest.market?.type === "uniswap-v3-bonding-curve-v1") {
-      await enqueueHarvest(launch);
-    }
-    if (isNativeV4 && manifest.contracts.protocolFeeRouter) {
-      await enqueueV4LaunchFeeConversion(launch);
-      await enqueueV4ProtocolSettlement(launch);
-    } else if (
-      manifest.contracts.protocolFeeRouter &&
-      manifest.contracts.nativeFeeConverter
+  return encoded.map((data) => ({
+    minimum: settings.minimum,
+    delay: settings.delay,
+    leg: normalizeLeg(decodeFunctionResult({ abi, functionName: "leg", data })),
+    timestamp,
+  }));
+}
+
+async function scanLaunch(launch: LaunchScanRow, timestamp: bigint) {
+  if (isNativeV4 || manifest.market?.type === "uniswap-v3-bonding-curve-v1") {
+    await enqueueHarvest(launch);
+  }
+  if (isNativeV4 && manifest.contracts.protocolFeeRouter) {
+    await enqueueV4LaunchFeeConversion(launch);
+    await enqueueV4ProtocolSettlement(launch);
+  } else if (
+    manifest.contracts.protocolFeeRouter &&
+    manifest.contracts.nativeFeeConverter
+  ) {
+    await enqueueProtocolConversions(launch);
+  }
+  const legs = await readLaunchLegs(launch, timestamp);
+  const settings = await vaultSettings(launch.vault);
+  for (let index = 0; index < legs.length; index += 1) {
+    const current = legs[index]!;
+    const legIndex = BigInt(index);
+    if (
+      !isLegExecutable({
+        pendingBase: current.leg.pendingBase,
+        pendingSince: current.leg.pendingSince,
+        minimumConversionBase: current.minimum,
+        maximumPendingDelay: current.delay,
+        chainTimestamp: current.timestamp,
+      })
     ) {
-      await enqueueProtocolConversions(launch);
+      await supersedeFailedQueueJob(
+        conversionJobId(launch.vault, legIndex),
+        "Authoritative onchain conversion leg is no longer executable",
+        {
+          pendingBase: current.leg.pendingBase.toString(),
+          pendingSince: current.leg.pendingSince.toString(),
+        },
+      );
+      continue;
     }
-    const count = await publicClient.readContract({
-      address: launch.vault,
-      abi: isNativeV4 ? nativeVaultAbi : vaultAbi,
-      functionName: "legCount",
-    });
-    for (let index = 0n; index < count; index++) {
-      const current = await readLeg(launch.vault, index);
-      if (
-        !isLegExecutable({
-          pendingBase: current.leg.pendingBase,
-          pendingSince: current.leg.pendingSince,
-          minimumConversionBase: current.minimum,
-          maximumPendingDelay: current.delay,
-          chainTimestamp: current.timestamp,
-        })
-      ) {
+    const key = conversionJobId(launch.vault, legIndex);
+    if (isNativeV4) {
+      let routeIsUsable = false;
+      try {
+        if (!settings.assetRouter) throw new Error("Asset router unavailable");
+        const route = await publicClient.readContract({
+          address: settings.assetRouter,
+          abi: v4AssetRouterAbi,
+          functionName: "route",
+          args: [current.leg.asset],
+        });
+        estimatedComputeUnits += 26;
+        const conversionInput =
+          current.leg.pendingBase > route.maximumNativeInput
+            ? route.maximumNativeInput
+            : current.leg.pendingBase;
+        if (conversionInput > 0n) {
+          const quote = await publicClient.simulateContract({
+            address: settings.assetRouter,
+            abi: v4AssetRouterAbi,
+            functionName: "quoteNativeToAsset",
+            args: [current.leg.asset, conversionInput],
+            account: writeAccount,
+          });
+          estimatedComputeUnits += 26;
+          routeIsUsable = conversionQuoteIsUsable(quote.result[0]);
+        }
+      } catch {
+        // Unsafe oracle, impact, liquidity, or dust remains queued onchain.
+      }
+      if (!routeIsUsable) {
         await supersedeFailedQueueJob(
-          conversionJobId(launch.vault, index),
-          "Authoritative onchain conversion leg is no longer executable",
+          key,
+          "Authoritative native conversion route cannot quote the pending input",
           {
             pendingBase: current.leg.pendingBase.toString(),
             pendingSince: current.leg.pendingSince.toString(),
@@ -1036,80 +1359,107 @@ async function scan() {
         );
         continue;
       }
-      const key = conversionJobId(launch.vault, index);
-      if (isNativeV4) {
-        let routeIsUsable = false;
-        try {
-          const assetRouter = await publicClient.readContract({
-            address: launch.vault,
-            abi: nativeVaultAbi,
-            functionName: "assetRouter",
-          });
-          const route = await publicClient.readContract({
-            address: assetRouter,
-            abi: v4AssetRouterAbi,
-            functionName: "route",
-            args: [current.leg.asset],
-          });
-          const conversionInput =
-            current.leg.pendingBase > route.maximumNativeInput
-              ? route.maximumNativeInput
-              : current.leg.pendingBase;
-          if (conversionInput > 0n) {
-            const quote = await publicClient.simulateContract({
-              address: assetRouter,
-              abi: v4AssetRouterAbi,
-              functionName: "quoteNativeToAsset",
-              args: [current.leg.asset, conversionInput],
-              account: writeAccount,
-            });
-            routeIsUsable = conversionQuoteIsUsable(quote.result[0]);
-          }
-        } catch {
-          // Unsafe oracle, impact, liquidity, or dust remains queued onchain.
-        }
-        if (!routeIsUsable) {
-          await supersedeFailedQueueJob(
-            key,
-            "Authoritative native conversion route cannot quote the pending input",
-            {
-              pendingBase: current.leg.pendingBase.toString(),
-              pendingSince: current.leg.pendingSince.toString(),
-            },
-          );
-          continue;
-        }
-      }
-      const payload: ConvertJob = {
-        kind: "convert",
-        idempotencyKey: key,
-        token: launch.token,
-        vault: launch.vault,
-        legIndex: index.toString(),
-        observedPending: current.leg.pendingBase.toString(),
-        observedPendingSince: current.leg.pendingSince.toString(),
-      };
-      const existing = await queue.getJob(key);
-      if (!existing) {
-        await audit(key, "queued", 0, payload);
-        await queue.add("convert-leg", payload, {
-          jobId: key,
-          priority: 4,
-        });
-      } else if (
-        (await existing.isFailed()) &&
-        isFailedJobRetryDue(
-          existing.attemptsMade,
-          existing.finishedOn,
-          Date.now(),
-        )
-      ) {
-        await audit(key, "queued", existing.attemptsMade, payload);
-        await existing.retry();
-      }
+    }
+    const payload: ConvertJob = {
+      kind: "convert",
+      idempotencyKey: key,
+      token: launch.token,
+      vault: launch.vault,
+      legIndex: legIndex.toString(),
+      observedPending: current.leg.pendingBase.toString(),
+      observedPendingSince: current.leg.pendingSince.toString(),
+    };
+    const existing = await queue.getJob(key);
+    if (!existing) {
+      await audit(key, "queued", 0, payload);
+      await queue.add("convert-leg", payload, { jobId: key, priority: 4 });
+    } else if (
+      (await existing.isFailed()) &&
+      isFailedJobRetryDue(
+        existing.attemptsMade,
+        existing.finishedOn,
+        Date.now(),
+      )
+    ) {
+      await audit(key, "queued", existing.attemptsMade, payload);
+      await existing.retry();
     }
   }
-  await heartbeat();
+  tokensScanned += 1;
+}
+
+async function fullScan() {
+  await auditRedis.ping();
+  const launches = await sql.unsafe<LaunchScanRow[]>(
+    "SELECT token,vault,market,assets FROM launches WHERE chain_id=$1 ORDER BY launch_id",
+    [manifest.chainId],
+  );
+  const block = await publicClient.getBlock();
+  estimatedComputeUnits += 20;
+  await Promise.all(
+    launches.map((launch) => scanLaunch(launch, block.timestamp)),
+  );
+  fullScanCount += 1;
+  lastFullReconciliationAt = new Date().toISOString();
+}
+
+async function claimScanRequest() {
+  return sql.begin(async (transaction) => {
+    const rows = await transaction.unsafe<
+      {
+        token: Address;
+        highest_block: string;
+        last_transaction_hash: string;
+        last_log_index: number;
+        attempts: number;
+      }[]
+    >(
+      "SELECT token,highest_block::text,last_transaction_hash,last_log_index,attempts FROM keeper_scan_requests WHERE chain_id=$1 AND status='pending' AND retry_after<=now() ORDER BY highest_block,requested_at FOR UPDATE SKIP LOCKED LIMIT 1",
+      [manifest.chainId],
+    );
+    const request = rows[0];
+    if (!request) return null;
+    await transaction.unsafe(
+      "UPDATE keeper_scan_requests SET status='processing',attempts=attempts+1,claimed_at=now(),updated_at=now() WHERE chain_id=$1 AND token=$2 AND highest_block=$3",
+      [manifest.chainId, request.token, request.highest_block],
+    );
+    return request;
+  });
+}
+
+async function processScanRequest() {
+  const request = await claimScanRequest();
+  if (!request) return false;
+  try {
+    const rows = await sql.unsafe<LaunchScanRow[]>(
+      "SELECT token,vault,market,assets FROM launches WHERE chain_id=$1 AND token=$2",
+      [manifest.chainId, request.token],
+    );
+    const launch = rows[0];
+    if (launch) {
+      const block = await publicClient.getBlock();
+      estimatedComputeUnits += 20;
+      await scanLaunch(launch, block.timestamp);
+    }
+    await sql.unsafe(
+      "UPDATE keeper_scan_requests SET status='completed',completed_at=now(),last_error=NULL,updated_at=now() WHERE chain_id=$1 AND token=$2 AND highest_block=$3 AND status='processing'",
+      [manifest.chainId, request.token, request.highest_block],
+    );
+    eventScanCount += 1;
+    lastEventScanAt = new Date().toISOString();
+  } catch (error) {
+    await sql.unsafe(
+      "UPDATE keeper_scan_requests SET status='pending',retry_after=now()+($5::bigint*interval '1 millisecond'),last_error=$4,updated_at=now() WHERE chain_id=$1 AND token=$2 AND highest_block=$3 AND status='processing'",
+      [
+        manifest.chainId,
+        request.token,
+        request.highest_block,
+        databaseText(error instanceof Error ? error.message : String(error)),
+        scanRequestRetryDelayMs(request.attempts),
+      ],
+    );
+  }
+  return true;
 }
 
 async function safeMinimum(
@@ -1184,27 +1534,50 @@ async function enqueueV4LaunchFeeConversion(launch: {
   const router = manifest.contracts.protocolFeeRouter;
   const hook = manifest.contracts.oracleHook;
   if (!router || !hook) return;
-  const account = await publicClient.readContract({
-    address: router,
+  const [accountData] = await verifiedMulticall([
+    {
+      target: router,
+      callData: encodeFunctionData({
+        abi: nativeProtocolFeeRouterAbi,
+        functionName: "launchAccount",
+        args: [launch.token],
+      }),
+    },
+  ]);
+  const account = decodeFunctionResult({
     abi: nativeProtocolFeeRouterAbi,
     functionName: "launchAccount",
-    args: [launch.token],
+    data: accountData!,
   });
   if (!account.registered || account.hook.toLowerCase() !== hook.toLowerCase())
     return;
-  const [pendingLocked, pendingHook] = await Promise.all([
-    publicClient.readContract({
-      address: account.locker,
-      abi: v4PositionLockerAbi,
-      functionName: "pendingCollectedTokenFees",
-    }),
-    publicClient.readContract({
-      address: hook,
-      abi: v4ProtocolHookAbi,
-      functionName: "pendingTokenFees",
-      args: [launch.token],
-    }),
+  const pendingValues = await verifiedMulticall([
+    {
+      target: account.locker,
+      callData: encodeFunctionData({
+        abi: v4PositionLockerAbi,
+        functionName: "pendingCollectedTokenFees",
+      }),
+    },
+    {
+      target: hook,
+      callData: encodeFunctionData({
+        abi: v4ProtocolHookAbi,
+        functionName: "pendingTokenFees",
+        args: [launch.token],
+      }),
+    },
   ]);
+  const pendingLocked = decodeFunctionResult({
+    abi: v4PositionLockerAbi,
+    functionName: "pendingCollectedTokenFees",
+    data: pendingValues[0]!,
+  });
+  const pendingHook = decodeFunctionResult({
+    abi: v4ProtocolHookAbi,
+    functionName: "pendingTokenFees",
+    data: pendingValues[1]!,
+  });
   const pendingLaunch = pendingLocked + pendingHook;
   await supersedeStaleProtocolDeadLetters(
     launch.token,
@@ -1278,24 +1651,45 @@ async function enqueueV4ProtocolSettlement(launch: {
 }) {
   const router = manifest.contracts.protocolFeeRouter;
   if (!router) return;
-  const [account, daoPending, treasuryPending] = await Promise.all([
-    publicClient.readContract({
-      address: router,
-      abi: nativeProtocolFeeRouterAbi,
-      functionName: "launchAccount",
-      args: [launch.token],
-    }),
-    publicClient.readContract({
-      address: router,
-      abi: nativeProtocolFeeRouterAbi,
-      functionName: "totalDaoNativeLiability",
-    }),
-    publicClient.readContract({
-      address: router,
-      abi: nativeProtocolFeeRouterAbi,
-      functionName: "totalTreasuryNativeLiability",
-    }),
+  const settlementValues = await verifiedMulticall([
+    {
+      target: router,
+      callData: encodeFunctionData({
+        abi: nativeProtocolFeeRouterAbi,
+        functionName: "launchAccount",
+        args: [launch.token],
+      }),
+    },
+    {
+      target: router,
+      callData: encodeFunctionData({
+        abi: nativeProtocolFeeRouterAbi,
+        functionName: "totalDaoNativeLiability",
+      }),
+    },
+    {
+      target: router,
+      callData: encodeFunctionData({
+        abi: nativeProtocolFeeRouterAbi,
+        functionName: "totalTreasuryNativeLiability",
+      }),
+    },
   ]);
+  const account = decodeFunctionResult({
+    abi: nativeProtocolFeeRouterAbi,
+    functionName: "launchAccount",
+    data: settlementValues[0]!,
+  });
+  const daoPending = decodeFunctionResult({
+    abi: nativeProtocolFeeRouterAbi,
+    functionName: "totalDaoNativeLiability",
+    data: settlementValues[1]!,
+  });
+  const treasuryPending = decodeFunctionResult({
+    abi: nativeProtocolFeeRouterAbi,
+    functionName: "totalTreasuryNativeLiability",
+    data: settlementValues[2]!,
+  });
   if (!account.registered) return;
   const pending = account.pendingBasketNative + daoPending + treasuryPending;
   await supersedeStaleProtocolDeadLetters(
@@ -1429,44 +1823,88 @@ async function enqueueHarvest(launch: {
   vault: Address;
   market: Address;
 }) {
-  const graduated = await publicClient.readContract({
-    address: launch.market,
+  const marketValues = await verifiedMulticall([
+    {
+      target: launch.market,
+      callData: encodeFunctionData({
+        abi: uniswapMarketAbi,
+        functionName: "graduated",
+      }),
+    },
+    {
+      target: launch.market,
+      callData: encodeFunctionData({
+        abi: uniswapMarketAbi,
+        functionName: "positionLocker",
+      }),
+    },
+  ]);
+  const graduated = decodeFunctionResult({
     abi: uniswapMarketAbi,
     functionName: "graduated",
+    data: marketValues[0]!,
   });
   if (!graduated) return;
-  const locker = await publicClient.readContract({
-    address: launch.market,
+  const locker = decodeFunctionResult({
     abi: uniswapMarketAbi,
     functionName: "positionLocker",
+    data: marketValues[1]!,
   });
   if (isNativeV4) {
-    const initialized = await publicClient.readContract({
-      address: locker,
-      abi: v4PositionLockerAbi,
-      functionName: "initialized",
-    });
-    if (!initialized) return;
     const hook = manifest.contracts.oracleHook;
     if (!hook) return;
-    const [nativeBalance, tokenBalance, hookNativeBalance] = await Promise.all([
-      publicClient.readContract({
-        address: locker,
-        abi: v4PositionLockerAbi,
-        functionName: "pendingCollectedNativeFees",
-      }),
-      publicClient.readContract({
-        address: locker,
-        abi: v4PositionLockerAbi,
-        functionName: "pendingCollectedTokenFees",
-      }),
-      publicClient.readContract({
-        address: hook,
-        abi: v4ProtocolHookAbi,
-        functionName: "pendingNativeFees",
-        args: [launch.token],
-      }),
+    const harvestValues = await verifiedMulticall([
+      {
+        target: locker,
+        callData: encodeFunctionData({
+          abi: v4PositionLockerAbi,
+          functionName: "initialized",
+        }),
+      },
+      {
+        target: locker,
+        callData: encodeFunctionData({
+          abi: v4PositionLockerAbi,
+          functionName: "pendingCollectedNativeFees",
+        }),
+      },
+      {
+        target: locker,
+        callData: encodeFunctionData({
+          abi: v4PositionLockerAbi,
+          functionName: "pendingCollectedTokenFees",
+        }),
+      },
+      {
+        target: hook,
+        callData: encodeFunctionData({
+          abi: v4ProtocolHookAbi,
+          functionName: "pendingNativeFees",
+          args: [launch.token],
+        }),
+      },
     ]);
+    const initialized = decodeFunctionResult({
+      abi: v4PositionLockerAbi,
+      functionName: "initialized",
+      data: harvestValues[0]!,
+    });
+    if (!initialized) return;
+    const nativeBalance = decodeFunctionResult({
+      abi: v4PositionLockerAbi,
+      functionName: "pendingCollectedNativeFees",
+      data: harvestValues[1]!,
+    });
+    const tokenBalance = decodeFunctionResult({
+      abi: v4PositionLockerAbi,
+      functionName: "pendingCollectedTokenFees",
+      data: harvestValues[2]!,
+    });
+    const hookNativeBalance = decodeFunctionResult({
+      abi: v4ProtocolHookAbi,
+      functionName: "pendingNativeFees",
+      data: harvestValues[3]!,
+    });
     let simulation;
     try {
       simulation = await publicClient.simulateContract({
@@ -1687,7 +2125,7 @@ async function processConversion(
     }),
   ]);
   let expected: bigint;
-  if (isTestnet) {
+  if (isRemoteChain) {
     expected = await publicClient.readContract({
       address: router,
       abi: routerAbi,
@@ -2228,20 +2666,6 @@ worker.on("error", (error) => {
   );
 });
 
-async function runScan() {
-  try {
-    await scan();
-  } catch (error) {
-    process.stderr.write(
-      JSON.stringify({
-        level: "error",
-        event: "scan_failed",
-        message: error instanceof Error ? error.message : String(error),
-      }) + "\n",
-    );
-  }
-}
-
 process.on("SIGTERM", () => {
   stopping = true;
 });
@@ -2251,10 +2675,38 @@ process.on("SIGINT", () => {
 await reconcileForeignDeploymentJobs();
 await reconcileLegacyStreamJobs();
 await reconcileLegacyConversionJobs();
-await runScan();
+await sql.unsafe(
+  "UPDATE keeper_scan_requests SET status='pending',retry_after=now(),last_error='Recovered after keeper restart',updated_at=now() WHERE chain_id=$1 AND status='processing'",
+  [manifest.chainId],
+);
+await fullScan();
+await heartbeat();
+let nextFullScanAt = Date.now() + scanMs;
+let nextHeartbeatAt = Date.now() + heartbeatMs;
 while (!stopping) {
-  await new Promise((resolve) => setTimeout(resolve, scanMs));
-  if (!stopping) await runScan();
+  const processed = await processScanRequest();
+  const now = Date.now();
+  if (now >= nextFullScanAt) {
+    try {
+      await fullScan();
+    } catch (error) {
+      process.stderr.write(
+        JSON.stringify({
+          level: "error",
+          event: "reconciliation_scan_failed",
+          message: error instanceof Error ? error.message : String(error),
+        }) + "\n",
+      );
+    }
+    nextFullScanAt = Date.now() + scanMs;
+  }
+  if (now >= nextHeartbeatAt) {
+    await heartbeat();
+    nextHeartbeatAt = Date.now() + heartbeatMs;
+  }
+  if (!processed) {
+    await new Promise((resolve) => setTimeout(resolve, requestPollMs));
+  }
 }
 await worker.close();
 await queue.close();

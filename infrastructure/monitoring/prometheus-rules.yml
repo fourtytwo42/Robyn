@@ -126,6 +126,76 @@ groups:
           summary: "Sherwood Forest public RPC required retries"
           description: "{{ $value }} degraded pipeline cycles were recorded in two minutes."
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
+      - alert: RobynTestnetAlchemyIdleBudget
+        expr: robyn_testnet_rpc_projected_daily_cu > 250000
+        for: 15m
+        labels:
+          {
+            severity: warning,
+            chain_id: "46630",
+            component: keeper,
+            runbook: rpc-cost,
+          }
+        annotations:
+          summary: "Sherwood Forest projected idle RPC usage exceeds budget"
+          description: "Projected keeper usage is {{ $value }} compute units per day."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/testnet-operations.md#alchemy-compute-budget"
+      - alert: RobynTestnetAlchemyMonthlyBudget
+        expr: robyn_testnet_rpc_projected_monthly_cu > 30000000
+        for: 15m
+        labels:
+          {
+            severity: critical,
+            chain_id: "46630",
+            component: keeper,
+            runbook: rpc-cost,
+          }
+        annotations:
+          summary: "Sherwood Forest projected monthly RPC usage exceeds allowance"
+          description: "Projected keeper usage is {{ $value }} compute units per month."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/testnet-operations.md#alchemy-compute-budget"
+      - alert: RobynTestnetKeeperScanBacklog
+        expr: robyn_testnet_keeper_pending_scans > 0
+        for: 15m
+        labels:
+          {
+            severity: critical,
+            chain_id: "46630",
+            component: keeper,
+            runbook: conversion-failure,
+          }
+        annotations:
+          summary: "Sherwood Forest canonical keeper requests are stale"
+          description: "{{ $value }} token scan requests have remained pending."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#conversion-failure"
+      - alert: RobynTestnetWebSocketWakeDown
+        expr: robyn_testnet_websocket_wake_up == 0 and robyn_testnet_pipeline_up{component="indexer"} == 0
+        for: 2m
+        labels:
+          {
+            severity: warning,
+            chain_id: "46630",
+            component: indexer,
+            runbook: indexer-lag,
+          }
+        annotations:
+          summary: "Sherwood Forest WebSocket wake and canonical ingestion are unhealthy"
+          description: "The filtered wake channel is unavailable and HTTP reconciliation is not healthy."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
+      - alert: RobynTestnetProtocolAuditStale
+        expr: robyn_testnet_protocol_audit_up == 0
+        for: 30m
+        labels:
+          {
+            severity: critical,
+            chain_id: "46630",
+            component: api,
+            runbook: accounting-drift,
+          }
+        annotations:
+          summary: "Sherwood Forest protocol audit is stale or degraded"
+          description: "The persisted 15-minute protocol audit is not healthy."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#accounting-drift"
       - alert: RobynRpcDivergence
         expr: robyn_rpc_divergence_blocks > 2 or robyn_assurance_drill{alert="RobynRpcDivergence"} == 1
         for: 1m

@@ -63,6 +63,7 @@ module.exports = {
         ROBYN_OPERATOR_RPC_URL: rpcUrl,
         ROBYN_MANIFEST: manifest,
         ROBYN_RELEASE_SHA: releaseSha,
+        ROBYN_PROTOCOL_AUDIT_INTERVAL_MS: "900000",
         ROBYN_ENDURANCE_STATUS_FILE:
           process.env.ROBYN_ENDURANCE_STATUS_FILE ||
           "/var/lib/robyn/testnet-endurance/active/state.json",
@@ -94,7 +95,7 @@ module.exports = {
         ROBYN_OPERATOR_WS_RPC_URL: wsRpcUrl,
         ROBYN_MANIFEST: manifest,
         ROBYN_INDEXER_ROLE: "ingester",
-        INDEXER_RECONCILIATION_MS: "30000",
+        INDEXER_RECONCILIATION_MS: "90000",
         INDEXER_HEARTBEAT_MS: "10000",
         INDEXER_WS_DEBOUNCE_MS: "500",
         INDEXER_BLOCK_RANGE: "200",
@@ -147,7 +148,9 @@ module.exports = {
         ROBYN_MANIFEST: manifest,
         ROBYN_QUEUE_NAME: "robyn-conversions-testnet",
         REDIS_URL: "redis://127.0.0.1:6379/1",
-        KEEPER_SCAN_MS: "5000",
+        KEEPER_SCAN_MS: "900000",
+        KEEPER_REQUEST_POLL_MS: "1000",
+        KEEPER_HEARTBEAT_MS: "10000",
         ROBYN_RPC_RETRY_COUNT: "5",
         ROBYN_RPC_RETRY_DELAY_MS: "500",
         ROBYN_RPC_TIMEOUT_MS: "15000",

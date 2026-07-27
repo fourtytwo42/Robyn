@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import { Redis } from "ioredis";
@@ -5,6 +6,8 @@ import { readFile } from "node:fs/promises";
 import { createDatabase } from "@robyn/db";
 import {
   createPublicClient,
+  decodeFunctionResult,
+  encodeFunctionData,
   http,
   parseAbi,
   type Address,
@@ -31,7 +34,6 @@ import { registerCampaignRoutes } from "./campaign-routes.js";
 import {
   KeyedStaleWhileRevalidateCache,
   SingleFlightTtlCache,
-  StaleWhileRevalidateCache,
 } from "./single-flight-cache.js";
 import {
   AssetCatalogService,
@@ -135,6 +137,92 @@ const deployment = JSON.parse(
   };
   assetCatalog?: AssetCatalogManifest;
 };
+const multicall3Address =
+  "0xcA11bde05977b3631167028862bE2a173976CA11" as Address;
+const multicall3RuntimeSha256 =
+  "2756d7c52baee85cacb504f6ee1df7aad6809ac8d94a4a111d76991f90d36d6e";
+const multicall3Abi = parseAbi([
+  "function aggregate3((address target,bool allowFailure,bytes callData)[] calls) payable returns ((bool success,bytes returnData)[] returnData)",
+  "function getEthBalance(address address_) view returns (uint256 balance)",
+]);
+const multicall3Code = await rpcClient.getCode({ address: multicall3Address });
+const multicall3Verified = Boolean(
+  multicall3Code &&
+  createHash("sha256")
+    .update(Buffer.from(multicall3Code.slice(2), "hex"))
+    .digest("hex") === multicall3RuntimeSha256,
+);
+if ((chainId === 46630 || chainId === 4663) && !multicall3Verified) {
+  throw new Error("API Multicall3 runtime verification failed");
+}
+const protocolAuditStartedAt = Date.now();
+let protocolAuditEstimatedCu = 0;
+let protocolAuditMulticallFallbacks = 0;
+
+type BatchRead = {
+  address: Address;
+  abi: readonly unknown[];
+  functionName: string;
+  args?: readonly unknown[];
+};
+
+async function verifiedBatchRead(calls: BatchRead[], blockNumber: bigint) {
+  const encoded = calls.map((call) => ({
+    target: call.address,
+    allowFailure: false,
+    callData: encodeFunctionData(call as never),
+  }));
+  let returnData: readonly Hex[];
+  try {
+    if (!multicall3Verified) throw new Error("Multicall3 is unavailable");
+    const callData = encodeFunctionData({
+      abi: multicall3Abi,
+      functionName: "aggregate3",
+      args: [encoded],
+    });
+    const response = await rpcClient.call({
+      to: multicall3Address,
+      data: callData,
+      blockNumber,
+    });
+    if (!response.data) throw new Error("Multicall3 returned no audit data");
+    const result = decodeFunctionResult({
+      abi: multicall3Abi,
+      functionName: "aggregate3",
+      data: response.data,
+    }) as readonly { success: boolean; returnData: Hex }[];
+    protocolAuditEstimatedCu += 26;
+    if (result.some((entry) => !entry.success)) {
+      throw new Error("Verified Multicall3 returned a failed audit read");
+    }
+    returnData = result.map((entry) => entry.returnData);
+  } catch (error) {
+    if (calls.length > 64) throw error;
+    protocolAuditMulticallFallbacks += 1;
+    returnData = await Promise.all(
+      encoded.map(async (call) => {
+        const response = await rpcClient.call({
+          to: call.target,
+          data: call.callData,
+          blockNumber,
+        });
+        if (!response.data)
+          throw new Error("Fallback audit read returned no data");
+        return response.data;
+      }),
+    );
+    protocolAuditEstimatedCu += calls.length * 26;
+  }
+  return returnData.map((data, index) => {
+    const call = calls[index]!;
+    return decodeFunctionResult({
+      abi: call.abi,
+      functionName: call.functionName,
+      data,
+    } as never);
+  });
+}
+
 const remediationRouterAbi = parseAbi([
   "function totalNativeLiabilities() view returns (uint256)",
   "function unattributedNative() view returns (uint256)",
@@ -918,10 +1006,17 @@ async function freshness() {
     ).toString(),
     ingestionCycleMs: Number(ingestionHeartbeat?.metadata.cycleMs ?? 0),
     projectionCycleMs: Number(projectionHeartbeat?.metadata.cycleMs ?? 0),
+    indexerRpcRequestsByMethod:
+      ingestionHeartbeat?.metadata.rpcRequestsByMethod ?? null,
+    indexerEstimatedCu: Number(ingestionHeartbeat?.metadata.estimatedCu ?? 0),
+    indexerProjectedDailyCu: Number(
+      ingestionHeartbeat?.metadata.projectedDailyCu ?? 0,
+    ),
     rpcRetryCount:
       Number(ingestionHeartbeat?.metadata.rpcRetryCount ?? 0) +
       Number(projectionHeartbeat?.metadata.rpcRetryCount ?? 0),
     lastRpcDegradationAt: lastDegradations.at(-1) ?? null,
+    webSocketWake: ingestionHeartbeat?.metadata.webSocket ?? null,
     ingestionStatus:
       ingestionHeartbeat?.status === "ok" && ingestionHeartbeat.fresh
         ? "ok"
@@ -944,8 +1039,18 @@ async function keeperState() {
       fresh: boolean;
       metadata: {
         queueCounts?: Record<string, number>;
+        scanRequestCounts?: Record<string, number>;
         operatorBalanceWei?: string;
         minimumOperatorBalanceWei?: string;
+        rpcRequestsByMethod?: Record<string, number>;
+        estimatedCu?: number;
+        fullScanCount?: number;
+        eventScanCount?: number;
+        tokensScanned?: number;
+        lastFullReconciliationAt?: string | null;
+        lastEventScanAt?: string | null;
+        projectedDailyIdleCu?: number | null;
+        projectedMonthlyCu?: number | null;
       } | null;
     }[]
   >(
@@ -956,6 +1061,16 @@ async function keeperState() {
     keeperStatus: rows[0]?.status === "ok" && rows[0].fresh ? "ok" : "degraded",
     keeperUpdatedAt: rows[0]?.updated_at ?? null,
     keeperQueueCounts: metadata?.queueCounts ?? null,
+    keeperScanRequestCounts: metadata?.scanRequestCounts ?? null,
+    keeperRpcRequestsByMethod: metadata?.rpcRequestsByMethod ?? null,
+    keeperEstimatedCu: metadata?.estimatedCu ?? null,
+    keeperFullScanCount: metadata?.fullScanCount ?? null,
+    keeperEventScanCount: metadata?.eventScanCount ?? null,
+    keeperTokensScanned: metadata?.tokensScanned ?? null,
+    keeperLastFullReconciliationAt: metadata?.lastFullReconciliationAt ?? null,
+    keeperLastEventScanAt: metadata?.lastEventScanAt ?? null,
+    keeperProjectedDailyIdleCu: metadata?.projectedDailyIdleCu ?? null,
+    keeperProjectedMonthlyCu: metadata?.projectedMonthlyCu ?? null,
     keeperOperatorBalanceWei: metadata?.operatorBalanceWei ?? null,
     keeperMinimumOperatorBalanceWei:
       metadata?.minimumOperatorBalanceWei ?? null,
@@ -1008,70 +1123,63 @@ async function remediationProtocolState() {
   ) {
     return null;
   }
+  const began = performance.now();
   const router = deployment.contracts.protocolFeeRouter;
   const daoToken = deployment.contracts.daoToken;
   const blockNumber = await rpcClient.getBlockNumber();
-  const [liabilities, unattributedNative, routerBalance, daoValues, launches] =
-    await Promise.all([
-      rpcClient.readContract({
-        blockNumber,
+  protocolAuditEstimatedCu += 20;
+  const launches = await sql.unsafe<
+    {
+      token: Address;
+      market: Address;
+      locker: Address;
+      pool_id: Hex | null;
+      reward_count: number;
+    }[]
+  >(
+    "SELECT token,market,locker,pool_id,jsonb_array_length(assets)::integer reward_count FROM launches WHERE chain_id=$1 ORDER BY launch_id",
+    [chainId],
+  );
+  const global = await verifiedBatchRead(
+    [
+      {
         address: router,
         abi: remediationRouterAbi,
         functionName: "totalNativeLiabilities",
-      }),
-      rpcClient.readContract({
-        blockNumber,
+      },
+      {
         address: router,
         abi: remediationRouterAbi,
         functionName: "unattributedNative",
-      }),
-      rpcClient.getBalance({ address: router, blockNumber }),
-      Promise.all([
-        rpcClient.readContract({
-          blockNumber,
-          address: daoToken,
-          abi: remediationDaoAbi,
-          functionName: "totalRewardsDeposited",
-        }),
-        rpcClient.readContract({
-          blockNumber,
-          address: daoToken,
-          abi: remediationDaoAbi,
-          functionName: "totalRewardsClaimed",
-        }),
-        rpcClient.readContract({
-          blockNumber,
-          address: daoToken,
-          abi: remediationDaoAbi,
-          functionName: "totalRewardsVested",
-        }),
-        rpcClient.readContract({
-          blockNumber,
-          address: daoToken,
-          abi: remediationDaoAbi,
-          functionName: "queuedRewards",
-        }),
-        rpcClient.readContract({
-          blockNumber,
-          address: daoToken,
-          abi: remediationDaoAbi,
-          functionName: "streamingRewards",
-        }),
-      ]),
-      sql.unsafe<
-        {
-          token: Address;
-          market: Address;
-          locker: Address;
-          pool_id: Hex | null;
-        }[]
-      >(
-        "SELECT token,market,locker,pool_id FROM launches WHERE chain_id=$1 ORDER BY launch_id",
-        [chainId],
-      ),
-    ]);
-  const [daoDeposited, daoClaimed, daoVested, daoQueued, daoStreaming] =
-    daoValues;
+      },
+      {
+        address: multicall3Address,
+        abi: multicall3Abi,
+        functionName: "getEthBalance",
+        args: [router],
+      },
+      ...[
+        "totalRewardsDeposited",
+        "totalRewardsClaimed",
+        "totalRewardsVested",
+        "queuedRewards",
+        "streamingRewards",
+      ].map((functionName) => ({
+        address: daoToken,
+        abi: remediationDaoAbi,
+        functionName,
+      })),
+    ],
+    blockNumber,
+  );
+  const liabilities = global[0] as bigint;
+  const unattributedNative = global[1] as bigint;
+  const routerBalance = global[2] as bigint;
+  const daoDeposited = global[3] as bigint;
+  const daoClaimed = global[4] as bigint;
+  const daoVested = global[5] as bigint;
+  const daoQueued = global[6] as bigint;
+  const daoStreaming = global[7] as bigint;
   let phaseMismatchCount = 0;
   let lockerMismatchCount = 0;
   let rewardStreamMismatchCount = 0;
@@ -1082,87 +1190,74 @@ async function remediationProtocolState() {
       phaseMismatchCount += 1;
       continue;
     }
-    const [graduated, phase, lockerValues, lockerNative, lockerToken, count] =
-      await Promise.all([
-        rpcClient.readContract({
-          blockNumber,
-          address: launch.market,
-          abi: remediationMarketAbi,
-          functionName: "graduated",
-        }),
-        rpcClient.readContract({
-          blockNumber,
-          address: deployment.contracts.oracleHook,
-          abi: remediationHookAbi,
-          functionName: "poolPhase",
-          args: [launch.pool_id],
-        }),
-        Promise.all([
-          rpcClient.readContract({
-            blockNumber,
-            address: launch.locker,
-            abi: remediationLockerAbi,
-            functionName: "principalNativeResidual",
-          }),
-          rpcClient.readContract({
-            blockNumber,
-            address: launch.locker,
-            abi: remediationLockerAbi,
-            functionName: "principalTokenResidual",
-          }),
-          rpcClient.readContract({
-            blockNumber,
-            address: launch.locker,
-            abi: remediationLockerAbi,
-            functionName: "pendingCollectedNativeFees",
-          }),
-          rpcClient.readContract({
-            blockNumber,
-            address: launch.locker,
-            abi: remediationLockerAbi,
-            functionName: "pendingCollectedTokenFees",
-          }),
-          rpcClient.readContract({
-            blockNumber,
-            address: launch.locker,
-            abi: remediationLockerAbi,
-            functionName: "unattributedNative",
-          }),
-          rpcClient.readContract({
-            blockNumber,
-            address: launch.locker,
-            abi: remediationLockerAbi,
-            functionName: "unattributedLaunchTokens",
-          }),
-        ]),
-        rpcClient.getBalance({ address: launch.locker, blockNumber }),
-        rpcClient.readContract({
-          blockNumber,
-          address: launch.token,
-          abi: balanceOfAbi,
-          functionName: "balanceOf",
-          args: [launch.locker],
-        }),
-        rpcClient.readContract({
-          blockNumber,
+    const calls: BatchRead[] = [
+      {
+        address: launch.market,
+        abi: remediationMarketAbi,
+        functionName: "graduated",
+      },
+      {
+        address: deployment.contracts.oracleHook,
+        abi: remediationHookAbi,
+        functionName: "poolPhase",
+        args: [launch.pool_id],
+      },
+      ...[
+        "principalNativeResidual",
+        "principalTokenResidual",
+        "pendingCollectedNativeFees",
+        "pendingCollectedTokenFees",
+        "unattributedNative",
+        "unattributedLaunchTokens",
+      ].map((functionName) => ({
+        address: launch.locker,
+        abi: remediationLockerAbi,
+        functionName,
+      })),
+      {
+        address: multicall3Address,
+        abi: multicall3Abi,
+        functionName: "getEthBalance",
+        args: [launch.locker],
+      },
+      {
+        address: launch.token,
+        abi: balanceOfAbi,
+        functionName: "balanceOf",
+        args: [launch.locker],
+      },
+    ];
+    for (let index = 0; index < launch.reward_count; index += 1) {
+      for (const functionName of [
+        "totalRewardsReceived",
+        "pendingWithoutSupply",
+        "streamingRewards",
+        "totalRewardsVested",
+      ]) {
+        calls.push({
           address: launch.token,
           abi: remediationLaunchTokenAbi,
-          functionName: "rewardAssetCount",
-        }),
-      ]);
+          functionName,
+          args: [BigInt(index)],
+        });
+      }
+    }
+    const values = await verifiedBatchRead(calls, blockNumber);
+    const graduated = values[0] as boolean;
+    const phase = Number(values[1]);
     if (phase === 1) bondingPools += 1;
     if (phase === 3) tradingPools += 1;
     if ((graduated && phase !== 3) || (!graduated && phase !== 1)) {
       phaseMismatchCount += 1;
     }
-    const [
-      principalNativeResidual,
-      principalTokenResidual,
-      pendingNativeFees,
-      pendingTokenFees,
-      lockerUnattributedNative,
-      lockerUnattributedToken,
-    ] = lockerValues;
+    const principalNativeResidual = values[2] as bigint;
+    const principalTokenResidual = values[3] as bigint;
+    const pendingNativeFees = values[4] as bigint;
+    const pendingTokenFees = values[5] as bigint;
+    const lockerUnattributedNative = values[6] as bigint;
+    const lockerUnattributedToken = values[7] as bigint;
+    const lockerNative = values[8] as bigint;
+    const lockerToken = values[9] as bigint;
     if (
       lockerNative !==
         principalNativeResidual +
@@ -1173,40 +1268,16 @@ async function remediationProtocolState() {
     ) {
       lockerMismatchCount += 1;
     }
-    for (let index = 0n; index < count; index += 1n) {
-      const [received, queued, streaming, vested] = await Promise.all([
-        rpcClient.readContract({
-          blockNumber,
-          address: launch.token,
-          abi: remediationLaunchTokenAbi,
-          functionName: "totalRewardsReceived",
-          args: [index],
-        }),
-        rpcClient.readContract({
-          blockNumber,
-          address: launch.token,
-          abi: remediationLaunchTokenAbi,
-          functionName: "pendingWithoutSupply",
-          args: [index],
-        }),
-        rpcClient.readContract({
-          blockNumber,
-          address: launch.token,
-          abi: remediationLaunchTokenAbi,
-          functionName: "streamingRewards",
-          args: [index],
-        }),
-        rpcClient.readContract({
-          blockNumber,
-          address: launch.token,
-          abi: remediationLaunchTokenAbi,
-          functionName: "totalRewardsVested",
-          args: [index],
-        }),
-      ]);
+    let offset = 10;
+    for (let index = 0; index < launch.reward_count; index += 1) {
+      const received = values[offset] as bigint;
+      const queued = values[offset + 1] as bigint;
+      const streaming = values[offset + 2] as bigint;
+      const vested = values[offset + 3] as bigint;
       if (received !== queued + streaming + vested) {
         rewardStreamMismatchCount += 1;
       }
+      offset += 4;
     }
   }
   const routerSolvent = routerBalance >= liabilities;
@@ -1222,6 +1293,21 @@ async function remediationProtocolState() {
       rewardStreamMismatchCount === 0
         ? "ok"
         : "degraded",
+    asOfBlock: blockNumber.toString(),
+    durationMs: Math.round((performance.now() - began) * 100) / 100,
+    estimatedCu: protocolAuditEstimatedCu,
+    projectedDailyCu: Math.round(
+      (protocolAuditEstimatedCu /
+        Math.max(1, Date.now() - protocolAuditStartedAt)) *
+        86_400_000,
+    ),
+    projectedMonthlyCu:
+      Math.round(
+        (protocolAuditEstimatedCu /
+          Math.max(1, Date.now() - protocolAuditStartedAt)) *
+          86_400_000,
+      ) * 30,
+    multicallFallbackCount: protocolAuditMulticallFallbacks,
     routerSolvent,
     routerBalance: routerBalance.toString(),
     liabilities: liabilities.toString(),
@@ -1240,12 +1326,73 @@ async function remediationProtocolState() {
   };
 }
 
-const remediationProtocolStateCache = new StaleWhileRevalidateCache<
-  Awaited<ReturnType<typeof remediationProtocolState>>
->(10_000, 120_000);
+const protocolAuditIntervalMs = Number(
+  process.env.ROBYN_PROTOCOL_AUDIT_INTERVAL_MS ?? "900000",
+);
+let protocolAuditInFlight: Promise<void> | null = null;
+let protocolAuditTimer: NodeJS.Timeout | null = null;
 
-function cachedRemediationProtocolState() {
-  return remediationProtocolStateCache.get(remediationProtocolState);
+function runProtocolAudit() {
+  if (protocolAuditInFlight) return protocolAuditInFlight;
+  protocolAuditInFlight = (async () => {
+    try {
+      const snapshot = await remediationProtocolState();
+      await sql.unsafe(
+        "INSERT INTO service_heartbeats (service,status,metadata) VALUES ('protocol-auditor',$1,$2::jsonb) ON CONFLICT (service) DO UPDATE SET status=EXCLUDED.status,metadata=EXCLUDED.metadata,updated_at=now()",
+        [
+          snapshot?.status ?? "ok",
+          JSON.stringify({
+            snapshot,
+            provider: "alchemy",
+            intervalMs: protocolAuditIntervalMs,
+            completedAt: new Date().toISOString(),
+          }),
+        ],
+      );
+    } catch (error) {
+      await sql.unsafe(
+        "INSERT INTO service_heartbeats (service,status,metadata) VALUES ('protocol-auditor','degraded',$1::jsonb) ON CONFLICT (service) DO UPDATE SET status='degraded',metadata=coalesce(service_heartbeats.metadata,'{}'::jsonb)||EXCLUDED.metadata,updated_at=now()",
+        [
+          JSON.stringify({
+            lastError: error instanceof Error ? error.message : String(error),
+            failedAt: new Date().toISOString(),
+          }),
+        ],
+      );
+    } finally {
+      protocolAuditInFlight = null;
+    }
+  })();
+  return protocolAuditInFlight;
+}
+
+async function persistedProtocolState() {
+  const rows = await sql.unsafe<
+    {
+      status: string;
+      updated_at: string;
+      fresh: boolean;
+      metadata: {
+        snapshot?: Awaited<ReturnType<typeof remediationProtocolState>>;
+        completedAt?: string;
+        failedAt?: string;
+        lastError?: string;
+        intervalMs?: number;
+      } | null;
+    }[]
+  >(
+    "SELECT status,updated_at::text,(updated_at > now() - interval '30 minutes') fresh,metadata FROM service_heartbeats WHERE service='protocol-auditor'",
+  );
+  const row = rows[0];
+  return {
+    ...(row?.metadata?.snapshot ?? null),
+    auditStatus: row && row.status === "ok" && row.fresh ? "ok" : "degraded",
+    auditUpdatedAt: row?.updated_at ?? null,
+    auditCompletedAt: row?.metadata?.completedAt ?? null,
+    auditFailedAt: row?.metadata?.failedAt ?? null,
+    auditLastError: row?.metadata?.lastError ?? null,
+    auditIntervalMs: row?.metadata?.intervalMs ?? protocolAuditIntervalMs,
+  };
 }
 
 app.get("/status", async () => {
@@ -1264,7 +1411,7 @@ app.get("/status", async () => {
     ),
     keeperState(),
     artifactState(),
-    cachedRemediationProtocolState(),
+    persistedProtocolState(),
   ]);
   return {
     service: "robyn-api",
@@ -2000,7 +2147,15 @@ registerCampaignRoutes(app, {
 });
 registerDaoRoutes(app, rpcClient, deployment);
 
+void runProtocolAudit();
+protocolAuditTimer = setInterval(
+  () => void runProtocolAudit(),
+  protocolAuditIntervalMs,
+);
+protocolAuditTimer.unref();
+
 const close = async () => {
+  if (protocolAuditTimer) clearInterval(protocolAuditTimer);
   await app.close();
   redis.disconnect();
   await sql.end();

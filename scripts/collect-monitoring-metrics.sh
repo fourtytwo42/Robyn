@@ -140,6 +140,33 @@ metric "robyn_testnet_indexer_cycle_milliseconds{chain_id=\"46630\",component=\"
 printf '# HELP robyn_testnet_rpc_retry_count Cumulative degraded public-RPC pipeline cycles.\n# TYPE robyn_testnet_rpc_retry_count counter\n' >>"${tmp}"
 metric "robyn_testnet_rpc_retry_count{chain_id=\"46630\",component=\"indexer\"}" "${testnet_rpc_retries}"
 
+testnet_keeper_daily_cu="$(json_get "${testnet_status_json}" '.keeperProjectedDailyIdleCu')"; [[ "${testnet_keeper_daily_cu}" =~ ^[0-9]+$ ]] || testnet_keeper_daily_cu=0
+testnet_keeper_monthly_cu="$(json_get "${testnet_status_json}" '.keeperProjectedMonthlyCu')"; [[ "${testnet_keeper_monthly_cu}" =~ ^[0-9]+$ ]] || testnet_keeper_monthly_cu=0
+testnet_keeper_pending_scans="$(json_get "${testnet_status_json}" '.keeperScanRequestCounts.pending')"; [[ "${testnet_keeper_pending_scans}" =~ ^[0-9]+$ ]] || testnet_keeper_pending_scans=0
+testnet_protocol_daily_cu="$(json_get "${testnet_status_json}" '.protocol.projectedDailyCu')"; [[ "${testnet_protocol_daily_cu}" =~ ^[0-9]+$ ]] || testnet_protocol_daily_cu=0
+testnet_protocol_monthly_cu="$(json_get "${testnet_status_json}" '.protocol.projectedMonthlyCu')"; [[ "${testnet_protocol_monthly_cu}" =~ ^[0-9]+$ ]] || testnet_protocol_monthly_cu=0
+testnet_indexer_daily_cu="$(json_get "${testnet_status_json}" '.indexerProjectedDailyCu')"; [[ "${testnet_indexer_daily_cu}" =~ ^[0-9]+$ ]] || testnet_indexer_daily_cu=0
+testnet_indexer_monthly_cu=$((testnet_indexer_daily_cu * 30))
+testnet_total_daily_cu=$((testnet_keeper_daily_cu + testnet_protocol_daily_cu + testnet_indexer_daily_cu))
+testnet_total_monthly_cu=$((testnet_keeper_monthly_cu + testnet_protocol_monthly_cu + testnet_indexer_monthly_cu))
+testnet_ws_state="$(json_get "${testnet_status_json}" '.webSocketWake.state')"
+[[ "${testnet_ws_state}" == "subscribed" ]] && testnet_ws_up=1 || testnet_ws_up=0
+[[ "$(json_get "${testnet_status_json}" '.protocol.auditStatus')" == "ok" ]] && testnet_protocol_audit_up=1 || testnet_protocol_audit_up=0
+printf '# HELP robyn_testnet_keeper_projected_daily_cu Projected daily Alchemy compute units from keeper activity.\n# TYPE robyn_testnet_keeper_projected_daily_cu gauge\n' >>"${tmp}"
+metric "robyn_testnet_keeper_projected_daily_cu{chain_id=\"46630\",component=\"keeper\"}" "${testnet_keeper_daily_cu}"
+printf '# HELP robyn_testnet_keeper_projected_monthly_cu Projected monthly Alchemy compute units from keeper activity.\n# TYPE robyn_testnet_keeper_projected_monthly_cu gauge\n' >>"${tmp}"
+metric "robyn_testnet_keeper_projected_monthly_cu{chain_id=\"46630\",component=\"keeper\"}" "${testnet_keeper_monthly_cu}"
+printf '# HELP robyn_testnet_rpc_projected_daily_cu Combined projected daily Alchemy compute units.\n# TYPE robyn_testnet_rpc_projected_daily_cu gauge\n' >>"${tmp}"
+metric "robyn_testnet_rpc_projected_daily_cu{chain_id=\"46630\",component=\"backend\"}" "${testnet_total_daily_cu}"
+printf '# HELP robyn_testnet_rpc_projected_monthly_cu Combined projected monthly Alchemy compute units.\n# TYPE robyn_testnet_rpc_projected_monthly_cu gauge\n' >>"${tmp}"
+metric "robyn_testnet_rpc_projected_monthly_cu{chain_id=\"46630\",component=\"backend\"}" "${testnet_total_monthly_cu}"
+printf '# HELP robyn_testnet_keeper_pending_scans Pending canonical token scan requests.\n# TYPE robyn_testnet_keeper_pending_scans gauge\n' >>"${tmp}"
+metric "robyn_testnet_keeper_pending_scans{chain_id=\"46630\",component=\"keeper\"}" "${testnet_keeper_pending_scans}"
+printf '# HELP robyn_testnet_websocket_wake_up Whether the filtered log WebSocket subscription is active.\n# TYPE robyn_testnet_websocket_wake_up gauge\n' >>"${tmp}"
+metric "robyn_testnet_websocket_wake_up{chain_id=\"46630\",component=\"indexer\"}" "${testnet_ws_up}"
+printf '# HELP robyn_testnet_protocol_audit_up Whether the persisted background protocol audit is fresh and healthy.\n# TYPE robyn_testnet_protocol_audit_up gauge\n' >>"${tmp}"
+metric "robyn_testnet_protocol_audit_up{chain_id=\"46630\",component=\"api\"}" "${testnet_protocol_audit_up}"
+
 printf '# HELP robyn_queue_jobs Current BullMQ job counts by state.\n# TYPE robyn_queue_jobs gauge\n' >>"${tmp}"
 for state in wait active delayed failed completed; do
   count="$(redis_count "bull:robyn-conversions:${state}")"

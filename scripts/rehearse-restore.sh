@@ -313,7 +313,7 @@ runuser -u hendo420 -- env "${common_env[@]}" \
 app_pids+=("$!")
 runuser -u hendo420 -- env "${common_env[@]}" \
   ROBYN_ENV=robyn-devnet ROBYN_QUEUE_NAME=robyn-restore-conversions \
-  KEEPER_SCAN_MS=5000 \
+  KEEPER_SCAN_MS=900000 \
   node "${source_dir}/apps/keeper/dist/server.js" \
   >"${work}/keeper.log" 2>&1 &
 app_pids+=("$!")

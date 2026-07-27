@@ -230,3 +230,35 @@ holder claim, post-graduation sell, native conversion, creator claim, RDAO
 claim, final block, exact Git SHA, and independent deployment verification.
 This smoke spends testnet ETH and changes public testnet state; it is not a
 rehearsal and is intentionally not repeatable against the same genesis market.
+
+## Alchemy compute budget
+
+The protected testnet backend uses Alchemy HTTPS for canonical reads and a
+filtered-log WebSocket only as an ingestion wake signal. Browser RPC remains on
+the public keyless endpoint. Canonical HTTP logs, block hashes, and PostgreSQL
+checkpoints remain authoritative. In quiet periods, the canonical HTTP safety
+reconciliation runs every 90 seconds while heartbeat records continue every 10
+seconds.
+
+The projector writes coalesced token-specific requests to
+`keeper_scan_requests` only when its canonical checkpoint commits. The keeper
+polls this local table every second, scans only affected launches, and performs
+a complete reconciliation every 15 minutes. A restart returns interrupted
+requests to `pending`; a reorg rebuild removes derived requests before replaying
+canonical logs. Confirmed BullMQ transactions retain their existing durable
+idempotency rules.
+
+`/status` is database-only. The API runs the expensive protocol reconciliation
+in the background every 15 minutes, pins every batched read to one block, and
+persists the latest result as the `protocol-auditor` heartbeat. Both the API and
+keeper verify the standard Multicall3 runtime at
+`0xcA11bde05977b3631167028862bE2a173976CA11` against SHA-256
+`2756d7c52baee85cacb504f6ee1df7aad6809ac8d94a4a111d76991f90d36d6e`.
+A bounded individual-call fallback is allowed only after that runtime check.
+
+Operational budgets are 250,000 idle compute units per day and 30 million
+compute units per normal month. Prometheus alerts on either projection, a
+15-minute scan backlog, a stale protocol audit, or simultaneous WebSocket and
+HTTP-ingestion degradation. Provider keys are network-specific protected
+secrets and must never appear in Git, release evidence, logs, status responses,
+or browser bundles.
