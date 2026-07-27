@@ -99,7 +99,7 @@ test("weighted funding tree preserves distinct wallet budgets and edge costs", (
 
 test("eight baskets cover every route exactly once", () => {
   const manifest = {
-    schemaVersion: 9,
+    schemaVersion: 10,
     chainId: 46630,
     governanceProfile: "robinhood-testnet-short-assurance",
     dao: {

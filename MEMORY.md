@@ -1569,6 +1569,26 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-26 - Security-remediated schema-10 deployment awaiting cutover
+
+- Context: the high and medium security findings against schema-v9 required
+  fresh immutable contracts and pools. The stopped schema-v9 endurance run is
+  not evidence for the remediated stack.
+- Decision: keep the public application on the archived release until a clean
+  schema-10 projection, release verifier, and immutable application promotion
+  pass. Campaign and endurance tooling must reject schema-v9 manifests rather
+  than silently using archived deployment state.
+- Result: schema-10 contracts from `e754037bd40c5caee426e31b0886514da9c9ed12`
+  are deployed on testnet and independently verified through both LAN and
+  public RPCs. The isolated `robyn_testnet_schema10_e754037` database contains
+  the canonical genesis coordinator event and its projected launch. Script
+  compatibility updates for schema-10 promotion, campaign, and endurance are
+  being validated before the application cutover.
+- Follow-up: commit the compatibility checkpoint, build a fresh immutable web
+  release, promote only after PM2/status verification, then complete the new
+  lifecycle campaign, recovery gates, browser/wallet acceptance, and a new
+  uninterrupted endurance run.
+
 ### 2026-07-26 - Schema-v9 promotion, browser acceptance, and endurance preflight
 
 - Context: the capped schema-v9 public campaign completed and the final release

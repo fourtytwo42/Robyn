@@ -8,7 +8,7 @@ sha256sum -c testnet-release-manifest.json.sha256 >/dev/null
 sha256sum -c testnet-release-files.sha256 >/dev/null
 git_sha="$(jq -r .gitSha testnet-release-manifest.json)"
 manifest="$release_real/deployments/46630-v4.json"
-jq -e '.schemaVersion == 9 and .chainId == 46630' "$manifest" >/dev/null
+jq -e '.schemaVersion == 10 and .chainId == 46630' "$manifest" >/dev/null
 
 pm2_json="$(PM2_HOME=/home/hendo420/.pm2 "$release_real/node_modules/.bin/pm2" jlist)"
 testnet="$(jq '[.[]|select(.name|endswith("-testnet"))]' <<<"$pm2_json")"

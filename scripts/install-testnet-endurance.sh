@@ -4,8 +4,8 @@ set -euo pipefail
 run_id="${1:?usage: install-testnet-endurance.sh RUN_ID}"
 [[ "$run_id" =~ ^[a-z0-9][a-z0-9-]{2,63}$ ]]
 repo="${ROBYN_REPO:-/home/hendo420/Robyn-schema9}"
-campaign_root=/home/hendo420/.local/state/robyn-testnet-deployments/schema9-e435b78
-campaign_state=/home/hendo420/.local/state/robyn-testnet-campaigns/schema9-e435b78-public
+campaign_root="${ROBYN_CAMPAIGN_ROOT:?set ROBYN_CAMPAIGN_ROOT to the protected remediation campaign directory}"
+campaign_state="${ROBYN_CAMPAIGN_STATE:?set ROBYN_CAMPAIGN_STATE to the completed remediation campaign state directory}"
 output=/var/lib/robyn/testnet-endurance
 run_dir="$output/$run_id"
 install -d -o hendo420 -g hendo420 -m 0700 "$output" "$run_dir"

@@ -10,8 +10,8 @@ history=/var/lib/robyn/testnet-release-history
 operator=hendo420
 pm2_home=/home/hendo420/.pm2
 release_env=/home/hendo420/.config/robyn/testnet/release.env
-database="${ROBYN_TESTNET_DATABASE:-robyn_testnet_schema9_3b0f907}"
-campaign_token_file="${ROBYN_CAMPAIGN_OPERATOR_TOKEN_FILE:-/home/hendo420/.local/state/robyn-testnet-deployments/schema9-e435b78/campaign-operator-token}"
+database="${ROBYN_TESTNET_DATABASE:-robyn_testnet_schema10_e754037}"
+campaign_token_file="${ROBYN_CAMPAIGN_OPERATOR_TOKEN_FILE:-/home/hendo420/.config/robyn/testnet/campaign-operator-token}"
 operator_key=/home/hendo420/.config/robyn/testnet/operator.key
 [[ -d "$target" && -r "$release_env" && -r "$campaign_token_file" ]]
 (cd "$target" && sha256sum -c testnet-release-manifest.json.sha256 >/dev/null && sha256sum -c testnet-release-files.sha256 >/dev/null)

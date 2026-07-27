@@ -44,7 +44,7 @@ import {
   applyHeadroom,
   basketConversionActorIndex,
   graduationActorIndex,
-  assertSchema9Manifest,
+  assertSecurityRemediationManifest,
   launchBasketPlan,
   nativeSweepReserveWei,
   plannedBuyValueWei,
@@ -203,7 +203,7 @@ function requireProtectedFile(path, label) {
 }
 
 function loadManifest() {
-  return assertSchema9Manifest(readJson(manifestPath));
+  return assertSecurityRemediationManifest(readJson(manifestPath));
 }
 
 function loadState() {
