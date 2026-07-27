@@ -1,5 +1,23 @@
 # Project Memory
 
+### 2026-07-27 - Ten-hour endurance run stopped by user
+
+- Context: The user explicitly asked to stop both the scheduled monitor and
+  the active endurance run.
+- Result: `robyn-testnet-endurance.service` is inactive and remains a static,
+  manually started one-shot unit. The
+  `sherwood-10-hour-readiness-monitor` heartbeat automation was deleted.
+- Stop point: The final sample at `2026-07-27T18:46:44.257Z` passed on exact
+  release `2399cf16e3df2e355694268dcc7092ed807c0196` with 8,042.824
+  accumulated healthy seconds, 105 confirmed endurance transactions, 14 write
+  cycles, and one endurance launch.
+- Evidence: A timestamped `samples-user-stopped-*` copy was preserved beside
+  the durable state and confirmed transaction journal under
+  `/var/lib/robyn/testnet-endurance/active/`.
+- Follow-up: Do not restart the runner or recreate its monitor unless the user
+  explicitly requests it. Any future resume must use the durable confirmed
+  transaction journal without replay.
+
 ### 2026-07-27 - Discovery metrics refresh latency remediation
 
 - Context: The ten-hour endurance run reached 5,762.053 healthy seconds on
