@@ -1569,6 +1569,33 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-27 - Schema-10 smart-contract audit checkpoint
+
+- Context: the user requested a full security audit of the smart contracts as
+  they stand after the security-remediation release.
+- Result: internal AI-assisted audit report added at
+  `docs/assurance/schema10-security-audit-2026-07-27.md`. Fresh
+  `scripts/security-audit.sh` passed on commit
+  `e94da5afa3a56555de1519c602b887e760cbaa3a`; Gitleaks reported no leaks,
+  dependency audit found no high/critical known vulnerability, Foundry default
+  tests passed, and Slither had zero unresolved high or medium findings after
+  active-scope triage. `FOUNDRY_PROFILE=assurance forge test --root
+  packages/contracts -vv` passed 159 tests, 0 failures, 1 environment-gated
+  fork skip, including 256-run/depth-128 invariants and the 512-wallet,
+  32-launch, 25,000-action simulation. Live release verification through LAN
+  RPC `192.168.50.117:8547` passed 531 checks against
+  `/opt/robyn/testnet-releases/03e568a-security-remediation`.
+- Finding: no known critical/high/medium Solidity issue remains. One new low
+  finding remains: `SF10-01`, unrestricted `receive()` functions in
+  `RobynV4AssetRouter` and `RobynV4GraduationAdapter` can trap unsolicited ETH
+  without a sweep/reconciliation path. This is not currently a solvency or
+  extraction issue, but should be fixed before mainnet.
+- Follow-up: mainnet remains NO-GO until SF10-01 is fixed or formally accepted,
+  the remediated public-testnet lifecycle campaign and empty-DB rebuild pass,
+  browser and real-wallet acceptance pass, recovery/backup/restore and
+  reproducibility gates pass, an uninterrupted eight-hour endurance gate passes,
+  and an independent professional audit reviews the final exact commit.
+
 ### 2026-07-26 - Security-remediated schema-10 deployment and campaign funding gate
 
 - Context: the high and medium security findings against schema-v9 required
