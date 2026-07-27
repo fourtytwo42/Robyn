@@ -1,20 +1,39 @@
 # Project Memory
 
+### 2026-07-27 - Testnet promotion database inheritance fix
+
+- Context: Promoting the software-wallet-only application checkpoint without an
+  explicit `ROBYN_TESTNET_DATABASE` selected the script's stale schema-10
+  default instead of the active final-assurance database. The verifier exposed
+  one launch, one phase mismatch, and degraded protocol status.
+- Decision: A promotion now uses an explicitly supplied database or inherits
+  the active testnet PM2 database. If neither exists, it fails closed. Database
+  names are restricted to alphanumeric characters and underscores.
+- Result: Services were immediately rebound to
+  `robyn_testnet_final_e6dd172`. Public status returned to nine launches, three
+  King awards, six bonding pools, three trading pools, zero phase/locker/reward
+  mismatches, solvent liabilities, and zero indexing lag. Contracts and chain
+  state were unaffected.
+- Files: `scripts/promote-testnet-release.sh`.
+- Follow-up: Build and promote the corrected exact commit before endurance.
+
 ### 2026-07-27 - Software-wallet-only final acceptance
 
 - Context: The user corrected the final assurance scope after a MetaMask
   transaction prompt was initiated during browser acceptance.
 - Decision: Do not use MetaMask, Robinhood Wallet, WalletConnect, browser
   extensions, or other user-controlled wallets for the remaining testnet
-  assurance. Use only the encrypted VM-only campaign wallets and the
-  application's embedded automated wallet test harness.
+  assurance. Use only the encrypted VM-only campaign wallets for signing and
+  state-changing wallet tests. Browser acceptance remains automated,
+  disconnected/read-only UI, responsive, accessibility, and error-state
+  coverage.
 - Result: The unsigned MetaMask request was never broadcast; LAN RPC showed
   equal latest and pending nonces for the connected address. Real-wallet
   acceptance is explicitly removed from the prerequisites for the ten-hour
   endurance run.
-- Follow-up: Complete automated wallet-harness acceptance, then start the
-  one-shot ten-accumulated-healthy-hour endurance run from the durable software
-  wallet journal.
+- Follow-up: Promote the exact application-only candidate, finish automated
+  browser acceptance, then start the one-shot ten-accumulated-healthy-hour
+  endurance run from the durable software-wallet journal.
 
 ### 2026-07-27 - Final public-testnet lifecycle campaign complete
 

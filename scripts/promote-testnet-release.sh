@@ -10,7 +10,7 @@ history=/var/lib/robyn/testnet-release-history
 operator=hendo420
 pm2_home=/home/hendo420/.pm2
 release_env=/home/hendo420/.config/robyn/testnet/release.env
-database="${ROBYN_TESTNET_DATABASE:-robyn_testnet_schema10_e754037}"
+requested_database="${ROBYN_TESTNET_DATABASE:-}"
 campaign_token_file="${ROBYN_CAMPAIGN_OPERATOR_TOKEN_FILE:-/home/hendo420/.config/robyn/testnet/campaign-operator-token}"
 operator_key=/home/hendo420/.config/robyn/testnet/operator.key
 [[ -d "$target" && -r "$release_env" && -r "$campaign_token_file" ]]
@@ -42,6 +42,18 @@ if [[ -n "$old" ]]; then
       head -n 1
   )"
 fi
+database="$requested_database"
+if [[ -z "$database" ]]; then
+  [[ -n "$old_database" ]] || {
+    echo "set ROBYN_TESTNET_DATABASE when no active testnet database can be inherited" >&2
+    exit 1
+  }
+  database="$old_database"
+fi
+[[ "$database" =~ ^[A-Za-z0-9_]+$ ]] || {
+  echo "invalid testnet database name: $database" >&2
+  exit 1
+}
 start_stack() {
   local selected="$1"
   local selected_database="$2"
