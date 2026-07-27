@@ -47,6 +47,12 @@
   conversion and leaves unquotable dust queued onchain, superseding an existing
   failed queue entry without broadcasting. The worker shares the same quote
   usability rule, and focused tests cover zero, one-unit, and usable outputs.
+- Protocol snapshot consistency: Reward-stream invariants could transiently
+  disagree because the API read deposited, queued, streaming, and vested values
+  at different moving chain heads. The corrected endurance gate safely rejected
+  those samples. The protocol health collector now captures one block number
+  and pins every router, DAO, market, hook, locker, balance, and reward read to
+  that same canonical block before comparing conservation values.
 - Route recovery: Two testnet basket routes reached their immutable reference
   deviation boundary after one-way campaign conversions. Protected evidence
   records direct Universal Router counter-trades from the encrypted project

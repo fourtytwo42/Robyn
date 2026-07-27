@@ -1008,41 +1008,49 @@ async function remediationProtocolState() {
   }
   const router = deployment.contracts.protocolFeeRouter;
   const daoToken = deployment.contracts.daoToken;
+  const blockNumber = await rpcClient.getBlockNumber();
   const [liabilities, unattributedNative, routerBalance, daoValues, launches] =
     await Promise.all([
       rpcClient.readContract({
+        blockNumber,
         address: router,
         abi: remediationRouterAbi,
         functionName: "totalNativeLiabilities",
       }),
       rpcClient.readContract({
+        blockNumber,
         address: router,
         abi: remediationRouterAbi,
         functionName: "unattributedNative",
       }),
-      rpcClient.getBalance({ address: router }),
+      rpcClient.getBalance({ address: router, blockNumber }),
       Promise.all([
         rpcClient.readContract({
+          blockNumber,
           address: daoToken,
           abi: remediationDaoAbi,
           functionName: "totalRewardsDeposited",
         }),
         rpcClient.readContract({
+          blockNumber,
           address: daoToken,
           abi: remediationDaoAbi,
           functionName: "totalRewardsClaimed",
         }),
         rpcClient.readContract({
+          blockNumber,
           address: daoToken,
           abi: remediationDaoAbi,
           functionName: "totalRewardsVested",
         }),
         rpcClient.readContract({
+          blockNumber,
           address: daoToken,
           abi: remediationDaoAbi,
           functionName: "queuedRewards",
         }),
         rpcClient.readContract({
+          blockNumber,
           address: daoToken,
           abi: remediationDaoAbi,
           functionName: "streamingRewards",
@@ -1075,11 +1083,13 @@ async function remediationProtocolState() {
     const [graduated, phase, lockerValues, lockerNative, lockerToken, count] =
       await Promise.all([
         rpcClient.readContract({
+          blockNumber,
           address: launch.market,
           abi: remediationMarketAbi,
           functionName: "graduated",
         }),
         rpcClient.readContract({
+          blockNumber,
           address: deployment.contracts.oracleHook,
           abi: remediationHookAbi,
           functionName: "poolPhase",
@@ -1087,44 +1097,52 @@ async function remediationProtocolState() {
         }),
         Promise.all([
           rpcClient.readContract({
+            blockNumber,
             address: launch.locker,
             abi: remediationLockerAbi,
             functionName: "principalNativeResidual",
           }),
           rpcClient.readContract({
+            blockNumber,
             address: launch.locker,
             abi: remediationLockerAbi,
             functionName: "principalTokenResidual",
           }),
           rpcClient.readContract({
+            blockNumber,
             address: launch.locker,
             abi: remediationLockerAbi,
             functionName: "pendingCollectedNativeFees",
           }),
           rpcClient.readContract({
+            blockNumber,
             address: launch.locker,
             abi: remediationLockerAbi,
             functionName: "pendingCollectedTokenFees",
           }),
           rpcClient.readContract({
+            blockNumber,
             address: launch.locker,
             abi: remediationLockerAbi,
             functionName: "unattributedNative",
           }),
           rpcClient.readContract({
+            blockNumber,
             address: launch.locker,
             abi: remediationLockerAbi,
             functionName: "unattributedLaunchTokens",
           }),
         ]),
-        rpcClient.getBalance({ address: launch.locker }),
+        rpcClient.getBalance({ address: launch.locker, blockNumber }),
         rpcClient.readContract({
+          blockNumber,
           address: launch.token,
           abi: balanceOfAbi,
           functionName: "balanceOf",
           args: [launch.locker],
         }),
         rpcClient.readContract({
+          blockNumber,
           address: launch.token,
           abi: remediationLaunchTokenAbi,
           functionName: "rewardAssetCount",
@@ -1156,24 +1174,28 @@ async function remediationProtocolState() {
     for (let index = 0n; index < count; index += 1n) {
       const [received, queued, streaming, vested] = await Promise.all([
         rpcClient.readContract({
+          blockNumber,
           address: launch.token,
           abi: remediationLaunchTokenAbi,
           functionName: "totalRewardsReceived",
           args: [index],
         }),
         rpcClient.readContract({
+          blockNumber,
           address: launch.token,
           abi: remediationLaunchTokenAbi,
           functionName: "pendingWithoutSupply",
           args: [index],
         }),
         rpcClient.readContract({
+          blockNumber,
           address: launch.token,
           abi: remediationLaunchTokenAbi,
           functionName: "streamingRewards",
           args: [index],
         }),
         rpcClient.readContract({
+          blockNumber,
           address: launch.token,
           abi: remediationLaunchTokenAbi,
           functionName: "totalRewardsVested",
