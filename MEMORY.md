@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-07-27 - Final public-testnet lifecycle campaign complete
+
+- Context: Campaign `final-assurance-e458382` ran against the fresh security-remediated chain-46630 deployment through the LAN RPC.
+- Result: All phases passed with 2,197 confirmed transactions and 1,997 product writes: 100 funded actors, eight immutable-metadata launches covering all 24 basket assets, 900 buys, 200 transfers, 150 approvals, 150 sells, three graduations and five bonding states, direct and routed v4 swaps, hook and LP fee settlement, 24 basket conversions, successful/defeated/cancelled governance, 20 holder claims, eight creator claims across all four public claim methods, ten streamed DAO claims, token/RDAO/native sweep, and the 0.0015 ETH reserve preserved.
+- Evidence: One failed out-of-gas sweep receipt is retained as expected remediation evidence; it changed no state and the same logical action later passed with the corrected gas margin. `state.json`, `evidence.json`, and `deployment-verifier.json` have a verified `SHA256SUMS` manifest in the protected campaign directory.
+- Verification: Fresh live deployment verification passes 531 checks with zero failures through `192.168.50.117:8547`.
+- Follow-up: Build the clean exact candidate, reconstruct an empty isolated database from canonical logs, reconcile projections and liabilities, complete browser/real-wallet/recovery/reproducibility gates, promote the exact release, then start the ten-hour endurance clock from zero.
+
 ### 2026-07-27 - Campaign dynamic-transfer gas correction
 
 - Context: Governance, 20 holder claims, all eight creator claims, and ten streamed DAO claims passed. During token sweeping, `sweep-token-1-0` exhausted its 25%-buffered gas limit while settling transfer-aware reward state.
