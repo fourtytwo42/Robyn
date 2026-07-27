@@ -9,9 +9,13 @@
   canonical HTTP logs, block hashes, and durable checkpoints remain
   authoritative with 30-second reconciliation. Browser RPC stays keyless so a
   provider credential is never compiled into public JavaScript.
-- Result: Exact release `90ac35b` was promoted on testnet. Six PM2 services are
+- Result: Exact release `53bcf10` was promoted on testnet. Six PM2 services are
   online, ingestion and projection lag were zero, 531 deployment checks passed,
   router liabilities were solvent, and keeper queues were empty.
+- Mainnet preflight: The protected HTTPS and WSS entries now use the same active
+  Alchemy app credential. Read-only chain ID returned `4663` and a filtered-log
+  subscription succeeded. The mainnet application remains inactive and no
+  transaction was broadcast.
 - Security correction: Release verification now records only the provider name,
   never a credential-bearing RPC URL. Existing release-history output was
   sanitized. Rotate credentials shared through chat before production use.
