@@ -77,7 +77,7 @@ check(
   manifest.venueProvenance === "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
   "unlisted venue disclosure is exact",
 );
-check(manifest.schemaVersion === 10, "deployment manifest schema is v10");
+check(manifest.schemaVersion === 11, "deployment manifest schema is v11");
 check(
   manifest.kingOfForestPolicy?.version === "forest-v1" &&
     manifest.kingOfForestPolicy?.activationBlock === manifest.deploymentBlock &&
@@ -381,19 +381,28 @@ check(
   "manifest records the fixed 100% bootstrap RDAO allocation",
 );
 check(
-  manifest.rewardStreams?.launchTokenDurationSeconds === 0 &&
-    manifest.rewardStreams?.daoDurationSeconds === 0 &&
-    manifest.rewardStreams?.vesting === "none" &&
-    manifest.dao.rewardStreamDurationSeconds === 0,
-  "manifest records immediate basket and DAO reward allocation",
+  manifest.rewardStreams?.launchTokenDurationSeconds === 3600 &&
+    manifest.rewardStreams?.daoDurationSeconds === 3600 &&
+    manifest.rewardStreams?.creatorDurationSeconds === 3600 &&
+    manifest.rewardStreams?.release === "rolling-linear-one-hour" &&
+    manifest.dao.rewardStreamDurationSeconds === 3600,
+  "manifest records one-hour holder, DAO, and creator reward release",
 );
 check(
-  (await read(contracts.daoToken, abis.daoToken, "REWARD_STREAM_DURATION")) === 0n,
-  "RDAO rewards allocate immediately",
+  (await read(contracts.daoToken, abis.daoToken, "REWARD_STREAM_DURATION")) === 3600n,
+  "RDAO rewards unlock over one hour",
 );
 check(
-  (await read(contracts.genesisToken, abis.token, "REWARD_STREAM_DURATION")) === 0n,
-  "launch-token rewards allocate immediately",
+  (await read(contracts.genesisToken, abis.token, "REWARD_STREAM_DURATION")) === 3600n,
+  "launch-token rewards unlock over one hour",
+);
+check(
+  (await read(
+    contracts.protocolFeeRouter,
+    abis.feeRouter,
+    "CREATOR_REWARD_STREAM_DURATION",
+  )) === 3600n,
+  "creator rewards unlock over one hour",
 );
 check(
   (await read(contracts.protocolFeeRouter, abis.feeRouter, "MAX_CREATOR_RECIPIENTS")) ===

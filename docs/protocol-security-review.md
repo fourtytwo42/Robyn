@@ -229,9 +229,9 @@ Last verified: 2026-07-27
 The schema-v9 findings SF-01, SF-02, SF-03, and SF-05 are addressed in a fresh,
 undeployed candidate with phase-aware pools, principal-safe fee collection,
 non-blocking destination liabilities, and explicit unsolicited-asset handling.
-SF-04 is now an explicit product-policy risk: basket and DAO rewards allocate
-immediately, with transfer-aware accounting but without a time-weighted
-anti-sniping window. Creator rewards are immediately claimable and may be split
+SF-04 is remediated by transfer-aware rolling one-hour release schedules for
+basket, DAO, and creator rewards. Claims remain available throughout the
+release but transfer only the amount unlocked so far. Creator rewards may be split
 across creator-selected recipients for future fees. The detailed authority
 trace, finding status, automated evidence, and remaining release blockers are
 recorded in

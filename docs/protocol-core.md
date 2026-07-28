@@ -166,9 +166,11 @@ exactly 10,000 basis points. An open split can be changed; a locked split can
 never be changed. Updating a split never reallocates ETH already assigned to a
 recipient. Each recipient claims its own token-scoped balance.
 
-Launch-token holder basket rewards and DAO-holder native rewards use immediate
-transfer-aware per-share accounting. A deposit is claimable without a vesting
-delay, and balances settle before transfers so rewards assigned before a
-transfer stay with the previous holder. If eligible supply is zero, deposits
-queue until eligible supply returns. Immediate allocation does not prevent a
-wallet from entering before a predictable settlement and exiting afterward.
+Launch-token holder basket rewards, DAO-holder native rewards, and creator
+native rewards use rolling one-hour linear release schedules and pull claims.
+Holder and DAO balances settle before transfers so each account earns only the
+rewards unlocking while it holds the corresponding token. Accrued rewards stay
+with the previous holder. Creator fees are assigned under the split active when
+the fee arrives, then unlock independently for each recipient. New deposits
+checkpoint vested rewards before extending the remaining tail. If eligible
+supply is zero, holder or DAO deposits queue until eligible supply returns.

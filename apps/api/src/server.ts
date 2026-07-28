@@ -225,7 +225,9 @@ async function verifiedBatchRead(calls: BatchRead[], blockNumber: bigint) {
 
 const remediationRouterAbi = parseAbi([
   "function totalNativeLiabilities() view returns (uint256)",
+  "function totalCreatorNativeLiability() view returns (uint256)",
   "function unattributedNative() view returns (uint256)",
+  "function creatorRewardStream(address token,address recipient) view returns ((uint256 claimable,uint256 unvested,uint256 assigned,uint256 vested,uint256 claimed,uint256 ratePerSecond,uint256 lastUpdateTime,uint256 streamEnd))",
 ]);
 const remediationDaoAbi = parseAbi([
   "function totalRewardsDeposited() view returns (uint256)",
@@ -942,7 +944,7 @@ app.addHook("onSend", async (_request, reply, payload) => {
 async function freshness() {
   const [checkpoints, heartbeats] = await Promise.all([
     sql.unsafe<{ service: string; last_block: string; updated_at: string }[]>(
-      "SELECT service,last_block::text,updated_at::text FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector','king-of-forest-projector') AND chain_id=$1",
+      "SELECT service,last_block::text,updated_at::text FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector','king-of-forest-projector','reward-stream-projector') AND chain_id=$1",
       [chainId],
     ),
     sql.unsafe<
@@ -964,6 +966,9 @@ async function freshness() {
   );
   const kingProjection = checkpoints.find(
     (checkpoint) => checkpoint.service === "king-of-forest-projector",
+  );
+  const rewardProjection = checkpoints.find(
+    (checkpoint) => checkpoint.service === "reward-stream-projector",
   );
   const ingestionHeartbeat = heartbeats.find(
     (heartbeat) => heartbeat.service === "chain-ingester",
@@ -991,9 +996,15 @@ async function freshness() {
     indexedAt: ingestion?.updated_at ?? null,
     projectionAsOfBlock: projection?.last_block ?? null,
     kingProjectionAsOfBlock: kingProjection?.last_block ?? null,
+    rewardProjectionAsOfBlock: rewardProjection?.last_block ?? null,
     kingProjectionLagBlocks: (ingestionBlock >
     BigInt(kingProjection?.last_block ?? "0")
       ? ingestionBlock - BigInt(kingProjection?.last_block ?? "0")
+      : 0n
+    ).toString(),
+    rewardProjectionLagBlocks: (ingestionBlock >
+    BigInt(rewardProjection?.last_block ?? "0")
+      ? ingestionBlock - BigInt(rewardProjection?.last_block ?? "0")
       : 0n
     ).toString(),
     ingestionLagBlocks: (headBlock > ingestionBlock
@@ -1025,7 +1036,8 @@ async function freshness() {
       projectionHeartbeat?.status === "ok" &&
       projectionHeartbeat.fresh &&
       (!deployment.kingOfForestPolicy ||
-        kingProjection?.last_block === projection?.last_block)
+        kingProjection?.last_block === projection?.last_block) &&
+      rewardProjection?.last_block === projection?.last_block
         ? "ok"
         : "degraded",
   };
@@ -1153,6 +1165,11 @@ async function remediationProtocolState() {
         functionName: "unattributedNative",
       },
       {
+        address: router,
+        abi: remediationRouterAbi,
+        functionName: "totalCreatorNativeLiability",
+      },
+      {
         address: multicall3Address,
         abi: multicall3Abi,
         functionName: "getEthBalance",
@@ -1174,12 +1191,49 @@ async function remediationProtocolState() {
   );
   const liabilities = global[0] as bigint;
   const unattributedNative = global[1] as bigint;
-  const routerBalance = global[2] as bigint;
-  const daoDeposited = global[3] as bigint;
-  const daoClaimed = global[4] as bigint;
-  const daoVested = global[5] as bigint;
-  const daoQueued = global[6] as bigint;
-  const daoStreaming = global[7] as bigint;
+  const creatorLiability = global[2] as bigint;
+  const routerBalance = global[3] as bigint;
+  const daoDeposited = global[4] as bigint;
+  const daoClaimed = global[5] as bigint;
+  const daoVested = global[6] as bigint;
+  const daoQueued = global[7] as bigint;
+  const daoStreaming = global[8] as bigint;
+  const creatorRecipients = await sql.unsafe<
+    { token: Address; recipient: Address }[]
+  >(
+    "SELECT DISTINCT token,recipient FROM reward_stream_events WHERE chain_id=$1 AND category='creator' AND event_name='CreatorFeesAssigned' AND token IS NOT NULL AND recipient IS NOT NULL",
+    [chainId],
+  );
+  const creatorStreams = creatorRecipients.length
+    ? await verifiedBatchRead(
+        creatorRecipients.map(({ token, recipient }) => ({
+          address: router,
+          abi: remediationRouterAbi,
+          functionName: "creatorRewardStream",
+          args: [token, recipient],
+        })),
+        blockNumber,
+      )
+    : [];
+  let creatorAssigned = 0n;
+  let creatorVested = 0n;
+  let creatorClaimed = 0n;
+  let creatorClaimable = 0n;
+  let creatorUnvested = 0n;
+  for (const raw of creatorStreams) {
+    const stream = raw as {
+      claimable: bigint;
+      unvested: bigint;
+      assigned: bigint;
+      vested: bigint;
+      claimed: bigint;
+    };
+    creatorAssigned += stream.assigned;
+    creatorVested += stream.vested;
+    creatorClaimed += stream.claimed;
+    creatorClaimable += stream.claimable;
+    creatorUnvested += stream.unvested;
+  }
   let phaseMismatchCount = 0;
   let lockerMismatchCount = 0;
   let rewardStreamMismatchCount = 0;
@@ -1284,6 +1338,10 @@ async function remediationProtocolState() {
   const daoStreamConserved =
     daoDeposited === daoQueued + daoStreaming + daoVested &&
     daoClaimed <= daoVested;
+  const creatorStreamConserved =
+    creatorAssigned === creatorVested + creatorUnvested &&
+    creatorVested === creatorClaimed + creatorClaimable &&
+    creatorLiability === creatorClaimable + creatorUnvested;
   protocolAuditCompletedRuns += 1;
   const projectedDailyCu = Math.round(
     (protocolAuditEstimatedCu / protocolAuditCompletedRuns) *
@@ -1293,6 +1351,7 @@ async function remediationProtocolState() {
     status:
       routerSolvent &&
       daoStreamConserved &&
+      creatorStreamConserved &&
       phaseMismatchCount === 0 &&
       lockerMismatchCount === 0 &&
       rewardStreamMismatchCount === 0
@@ -1313,6 +1372,12 @@ async function remediationProtocolState() {
     daoStreaming: daoStreaming.toString(),
     daoVested: daoVested.toString(),
     daoClaimed: daoClaimed.toString(),
+    creatorStreamConserved,
+    creatorAssigned: creatorAssigned.toString(),
+    creatorVested: creatorVested.toString(),
+    creatorClaimed: creatorClaimed.toString(),
+    creatorClaimable: creatorClaimable.toString(),
+    creatorUnvested: creatorUnvested.toString(),
     phaseMismatchCount,
     lockerMismatchCount,
     rewardStreamMismatchCount,

@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {RobynDaoToken} from "../src/dao/RobynDaoToken.sol";
+import { RobynDaoToken } from "../src/dao/RobynDaoToken.sol";
 
 interface DaoTokenMatrixVm {
     function addr(uint256 privateKey) external returns (address);
     function deal(address account, uint256 newBalance) external;
     function prank(address caller) external;
-    function sign(uint256 privateKey, bytes32 digest) external returns (uint8 v, bytes32 r, bytes32 s);
+    function sign(uint256 privateKey, bytes32 digest)
+        external
+        returns (uint8 v, bytes32 r, bytes32 s);
     function warp(uint256 timestamp) external;
 }
 
 contract DaoRewardDepositor {
     function deposit(RobynDaoToken token) external payable {
-        token.depositRewards{value: msg.value}();
+        token.depositRewards{ value: msg.value }();
     }
 }
 
@@ -24,10 +26,12 @@ contract DaoRewardRejector {
 }
 
 contract DaoTokenMatrixTest {
-    DaoTokenMatrixVm private constant vm = DaoTokenMatrixVm(address(uint160(uint256(keccak256("hevm cheat code")))));
+    DaoTokenMatrixVm private constant vm =
+        DaoTokenMatrixVm(address(uint160(uint256(keccak256("hevm cheat code")))));
     uint256 private constant HOLDER_KEY = 0xA11CE;
-    bytes32 private constant PERMIT_TYPEHASH =
-        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    bytes32 private constant PERMIT_TYPEHASH = keccak256(
+        "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+    );
     bytes32 private constant DELEGATION_TYPEHASH =
         keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
 
@@ -57,8 +61,10 @@ contract DaoTokenMatrixTest {
         address spender = address(0xCAFE);
         uint256 amount = 10_000 ether;
         uint256 deadline = block.timestamp + 1 days;
-        bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, holder, spender, amount, 0, deadline));
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", token.DOMAIN_SEPARATOR(), structHash));
+        bytes32 structHash =
+            keccak256(abi.encode(PERMIT_TYPEHASH, holder, spender, amount, 0, deadline));
+        bytes32 digest =
+            keccak256(abi.encodePacked("\x19\x01", token.DOMAIN_SEPARATOR(), structHash));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(HOLDER_KEY, digest);
         token.permit(holder, spender, amount, deadline, v, r, s);
         require(token.allowance(holder, spender) == amount, "permit allowance");
@@ -68,33 +74,35 @@ contract DaoTokenMatrixTest {
         require(token.balanceOf(spender) == amount, "permit transfer");
         try token.permit(holder, spender, amount, deadline, v, r, s) {
             revert("permit replay accepted");
-        } catch {}
+        } catch { }
     }
 
     function testDelegationBySignatureAndReplayProtection() external {
         address delegatee = address(0xD1E6A7E);
         uint256 expiry = block.timestamp + 1 days;
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, 0, expiry));
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", token.DOMAIN_SEPARATOR(), structHash));
+        bytes32 digest =
+            keccak256(abi.encodePacked("\x19\x01", token.DOMAIN_SEPARATOR(), structHash));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(HOLDER_KEY, digest);
         token.delegateBySig(delegatee, 0, expiry, v, r, s);
         require(token.delegates(holder) == delegatee, "delegatee");
         require(token.getVotes(delegatee) == 900_000_000 ether, "delegated votes");
         try token.delegateBySig(delegatee, 0, expiry, v, r, s) {
             revert("delegation replay accepted");
-        } catch {}
+        } catch { }
 
         vm.warp(expiry + 1);
         bytes32 expiredHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, 1, expiry));
-        bytes32 expiredDigest = keccak256(abi.encodePacked("\x19\x01", token.DOMAIN_SEPARATOR(), expiredHash));
+        bytes32 expiredDigest =
+            keccak256(abi.encodePacked("\x19\x01", token.DOMAIN_SEPARATOR(), expiredHash));
         (v, r, s) = vm.sign(HOLDER_KEY, expiredDigest);
         try token.delegateBySig(delegatee, 1, expiry, v, r, s) {
             revert("expired delegation accepted");
-        } catch {}
+        } catch { }
     }
 
     function testRewardClaimToFailureRollbackAndExclusionRules() external {
-        depositor.deposit{value: 9 ether}(token);
+        depositor.deposit{ value: 9 ether }(token);
         vm.warp(block.timestamp + 1 hours);
         uint256 claimable = token.claimableRewardOf(holder);
         require(claimable > 0, "holder reward");
@@ -104,50 +112,88 @@ contract DaoTokenMatrixTest {
         token.claimRewardsTo(recipient);
         require(recipient.balance - beforeBalance == claimable, "claim-to amount");
 
-        depositor.deposit{value: 9 ether}(token);
+        depositor.deposit{ value: 9 ether }(token);
         vm.warp(block.timestamp + 1 hours);
         uint256 secondClaim = token.claimableRewardOf(holder);
         DaoRewardRejector rejector = new DaoRewardRejector();
         vm.prank(holder);
         try token.claimRewardsTo(payable(address(rejector))) {
             revert("rejecting recipient accepted");
-        } catch {}
+        } catch { }
         require(token.claimableRewardOf(holder) == secondClaim, "failed claim lost reward");
 
         vm.prank(excluded);
         try token.claimRewards() {
             revert("excluded claim accepted");
-        } catch {}
+        } catch { }
         vm.prank(holder);
-        try token.depositRewards{value: 1}() {
+        try token.depositRewards{ value: 1 }() {
             revert("unauthorized deposit accepted");
-        } catch {}
+        } catch { }
     }
 
-    function testImmediateRewardsPreservePriorHolderEntitlement() external {
-        require(token.REWARD_STREAM_DURATION() == 0, "stream duration");
+    function testOneHourStreamPreventsSameBlockRewardSniping() external {
+        require(token.REWARD_STREAM_DURATION() == 1 hours, "stream duration");
         address newcomer = address(0xA55E7);
-        depositor.deposit{value: 9 ether}(token);
-        uint256 holderFirst = token.claimableRewardOf(holder);
-        require(holderFirst >= 9 ether - 1 && holderFirst <= 9 ether, "first reward not immediate");
-
+        depositor.deposit{ value: 9 ether }(token);
         vm.prank(holder);
         token.transfer(newcomer, 450_000_000 ether);
-        require(token.claimableRewardOf(holder) == holderFirst, "sender lost prior reward");
-        require(token.claimableRewardOf(newcomer) == 0, "newcomer captured prior reward");
+        require(token.claimableRewardOf(holder) == 0, "same-block holder reward");
+        require(token.claimableRewardOf(newcomer) == 0, "same-block newcomer reward");
 
-        depositor.deposit{value: 9 ether}(token);
-        uint256 holderSecond = token.claimableRewardOf(holder);
-        uint256 newcomerSecond = token.claimableRewardOf(newcomer);
-        require(holderSecond >= holderFirst + 4.5 ether - 1, "holder second reward");
-        require(newcomerSecond >= 4.5 ether - 1 && newcomerSecond <= 4.5 ether, "newcomer second reward");
+        vm.warp(block.timestamp + 10 minutes);
+        uint256 holderAfterTenMinutes = token.claimableRewardOf(holder);
+        uint256 newcomerAfterTenMinutes = token.claimableRewardOf(newcomer);
+        require(holderAfterTenMinutes > 0 && newcomerAfterTenMinutes > 0, "ten-minute accrual");
+        require(
+            holderAfterTenMinutes > newcomerAfterTenMinutes - 2
+                && holderAfterTenMinutes < newcomerAfterTenMinutes + 2,
+            "equal balances accrue equally"
+        );
 
         vm.prank(newcomer);
         token.transfer(holder, 450_000_000 ether);
         uint256 newcomerAccrued = token.claimableRewardOf(newcomer);
-        depositor.deposit{value: 9 ether}(token);
+        vm.warp(block.timestamp + 10 minutes);
         require(token.claimableRewardOf(newcomer) == newcomerAccrued, "former holder gained");
-        require(token.claimableRewardOf(holder) >= holderFirst + 13.5 ether - 2, "current holder reward");
+        require(
+            token.claimableRewardOf(holder) > holderAfterTenMinutes * 2,
+            "current holder did not accrue"
+        );
+    }
+
+    function testClaimsAtZeroTenThirtyFiftyNineAndSixtyMinutes() external {
+        uint256 started = block.timestamp;
+        depositor.deposit{ value: 9 ether }(token);
+        require(token.claimableRewardOf(holder) == 0, "zero-minute claimable");
+
+        vm.warp(started + 10 minutes);
+        uint256 atTen = token.claimableRewardOf(holder);
+        require(atTen >= 1.5 ether - 1 && atTen <= 1.5 ether, "ten-minute amount");
+        vm.prank(holder);
+        require(token.claimRewards() == atTen, "ten-minute claim");
+
+        vm.warp(started + 30 minutes);
+        uint256 atThirty = token.claimableRewardOf(holder);
+        require(atThirty >= 3 ether - 1 && atThirty <= 3 ether, "thirty-minute amount");
+        vm.prank(holder);
+        require(token.claimRewards() == atThirty, "thirty-minute claim");
+
+        vm.warp(started + 59 minutes);
+        uint256 atFiftyNine = token.claimableRewardOf(holder);
+        require(
+            atFiftyNine >= 4.35 ether - 1 && atFiftyNine <= 4.35 ether,
+            "fifty-nine-minute amount"
+        );
+        vm.prank(holder);
+        require(token.claimRewards() == atFiftyNine, "fifty-nine-minute claim");
+
+        vm.warp(started + 60 minutes);
+        uint256 atSixty = token.claimableRewardOf(holder);
+        require(atSixty >= 0.15 ether - 2 && atSixty <= 0.15 ether, "sixty-minute amount");
+        vm.prank(holder);
+        require(token.claimRewards() == atSixty, "sixty-minute claim");
+        require(token.streamingRewards() == 0, "stream remains");
     }
 
     function testZeroEligibleSupplyPausesAndPermissionlesslyResumesStream() external {
@@ -156,24 +202,24 @@ contract DaoTokenMatrixTest {
         token.transfer(excluded, holderBalance);
         require(token.eligibleRewardSupply() == 0, "eligible supply remains");
 
-        depositor.deposit{value: 7 ether}(token);
+        depositor.deposit{ value: 7 ether }(token);
         require(token.queuedRewards() == 7 ether, "reward not queued");
         require(token.rewardRate() == 0, "zero-supply stream started");
 
         vm.prank(excluded);
         token.transfer(holder, 900_000_000 ether);
         require(token.eligibleRewardSupply() == 900_000_000 ether, "supply not restored");
-        uint256 activated = token.claimableRewardOf(holder);
-        require(activated >= 7 ether - 1 && activated <= 7 ether, "queued reward not activated");
+        vm.warp(block.timestamp + 10 minutes);
+        require(token.claimableRewardOf(holder) > 0, "queued stream not activated");
     }
 
     function testInitializationAndFixedSupplyValidation() external {
         try token.bindRewardDepositor(address(depositor)) {
             revert("reward depositor rebound");
-        } catch {}
+        } catch { }
         try token.sealRewardExclusions(new address[](1)) {
             revert("exclusions resealed");
-        } catch {}
+        } catch { }
         require(token.totalSupply() == 1_000_000_000 ether, "fixed supply");
 
         address[] memory invalidRecipients = new address[](1);
@@ -182,6 +228,6 @@ contract DaoTokenMatrixTest {
         invalidAmounts[0] = 999_999_999 ether;
         try new RobynDaoToken(invalidRecipients, invalidAmounts) {
             revert("invalid supply accepted");
-        } catch {}
+        } catch { }
     }
 }

@@ -2034,7 +2034,7 @@ async function claims() {
     treasuryNative: treasuryLiability.toString(),
   };
   saveState(state);
-  await advanceOrWait(2, "DAO reward stream accrual");
+  await advanceOrWait(10 * 60, "one-hour reward stream accrual");
 
   for (let actorIndex = 0; state.claims.holder.length < 20 && actorIndex < accounts.length; actorIndex += 1) {
     const account = privateKeyToAccount(accounts[actorIndex].privateKey);
@@ -2056,8 +2056,13 @@ async function claims() {
 
   for (const launch of state.launches) {
     const account = privateKeyToAccount(accounts[launch.index].privateKey);
-    const feeAccount = await publicClient.readContract({ address: manifest.contracts.protocolFeeRouter, abi: feeRouterAbi, functionName: "launchAccount", args: [launch.token] });
-    if (feeAccount.claimableCreatorNative === 0n) throw new Error(`Creator ${launch.index} has no claimable native rewards`);
+    const creatorClaimable = await publicClient.readContract({
+      address: manifest.contracts.protocolFeeRouter,
+      abi: feeRouterAbi,
+      functionName: "claimableCreatorNativeByRecipient",
+      args: [launch.token, account.address],
+    });
+    if (creatorClaimable === 0n) throw new Error(`Creator ${launch.index} has no unlocked native rewards`);
     let method = "claimCreatorFees";
     let args = [launch.token];
     let recipient = account.address;
@@ -2074,7 +2079,7 @@ async function claims() {
       args = [[launch.token], recipient];
     }
     await contractTransaction(state, `creator-claim-${launch.index}`, account, manifest.contracts.protocolFeeRouter, feeRouterAbi, method, args);
-    if (!state.claims.creator.some((entry) => entry.launchIndex === launch.index)) state.claims.creator.push({ launchIndex: launch.index, creator: account.address, recipient, method, amount: feeAccount.claimableCreatorNative.toString() });
+    if (!state.claims.creator.some((entry) => entry.launchIndex === launch.index)) state.claims.creator.push({ launchIndex: launch.index, creator: account.address, recipient, method, amount: creatorClaimable.toString() });
     saveState(state);
   }
 

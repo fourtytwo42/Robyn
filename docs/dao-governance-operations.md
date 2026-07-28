@@ -53,11 +53,12 @@ Schema-v4 manifests bind RDAO, Governor, Timelock, guardian, `RobynProtocolFeeRo
 
 - Keeper conversion remains permissionless and bounded. Pending creator base is not claimable or presented as ETH until native conversion succeeds.
 - Creator claims are launch-token scoped. Operators diagnose claims with `launchAccount(token)` and reconcile `claimableCreatorNative + claimedCreatorNative == cumulativeCreatorNative` for completed conversion credit.
-- The active v4 router assigns creator fees immediately to one to eight
-  creator-selected recipients. Shares must total 10,000 basis points. Open
-  splits affect future fees only; locked splits are irreversible. Reconcile
-  each recipient's claimable plus claimed amount against its cumulative amount,
-  then reconcile recipient totals to the launch-level creator liability.
+- The active v4 router assigns creator fees to one to eight creator-selected
+  recipients under a rolling one-hour linear release. Shares must total 10,000
+  basis points. Open splits affect future fees only; locked splits are
+  irreversible. Reconcile each recipient's claimable, unvested, and claimed
+  amounts against its cumulative assigned amount, then reconcile recipient
+  totals to the launch-level creator liability.
 - Batch claim failures are fail-closed: an unknown token, foreign creator, invalid recipient, reentrancy, or failed native receiver reverts every debit and event.
 - The public DAO surface shows aggregate creator liability for solvency only. Personal creator claim controls live on the canonical token page and `/portfolio`.
 - Incident response must compare the sum of all launch `claimableCreatorNative` values with `totalCreatorNativeLiability` before and after any recovery, index rebuild, or release promotion.

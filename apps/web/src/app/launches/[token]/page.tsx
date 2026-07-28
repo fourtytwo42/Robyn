@@ -438,9 +438,9 @@ export default async function LaunchDetail({
               explorerUrl={publicEnvironment.explorerUrl}
             />
             <p className="muted">
-              Converted basket rewards are assigned immediately according to
-              current token balances. Rewards assigned before a transfer remain
-              with the previous holder.
+              Converted basket rewards unlock linearly over one hour. Holders
+              earn the portion that unlocks while they hold the token, and
+              accrued rewards remain theirs after a transfer.
             </p>
           </section>
 

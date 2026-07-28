@@ -52,6 +52,32 @@ Acceptance criteria:
 
 ## Epic I: Epoch calculation and verification
 
+For native Sherwood launches, the active model is a transfer-aware rolling
+one-hour stream rather than an epoch. The historical adapter epoch stories
+below apply only to a future adapter whose token cannot checkpoint transfers.
+
+### US-REWARD-015: Earn while rewards unlock
+
+- Release: R1
+- Priority: Must
+- Persona: Holder
+- PRD: REWARD-013, REWARD-014
+- Depends on: Transfer-aware launch token
+
+As a holder, I want basket assets to unlock over one hour according to the
+balance I hold during that interval so that a late buyer cannot capture earlier
+rewards.
+
+Acceptance criteria:
+
+1. Deposits unlock linearly over a rolling 3,600-second schedule.
+2. Transfers checkpoint both wallets before balances change.
+3. Accrued rewards stay with the prior holder and remain pull-claimable.
+4. Claims withdraw only the currently unlocked amount without forfeiting or
+   relocking the remainder.
+5. A same-block buy, settlement, claim, and sell earns no meaningful
+   retroactive reward.
+
 ### US-REWARD-004: Earn according to holding duration
 
 - Release: R1
@@ -148,8 +174,9 @@ As a holder, I want a pull-based claim that cannot be duplicated so that my enti
 
 Acceptance criteria:
 
-1. Valid proof transfers exact selected assets to the intended wallet.
-2. Reusing the same epoch/asset entitlement reverts without moving funds.
+1. A valid pull claim transfers the currently unlocked selected assets to the
+   intended wallet.
+2. Repeating a claim without new accrual reverts without moving funds.
 3. Claim complexity is bounded by selected assets/proofs, not total holders.
 4. Malicious receiver/token callbacks cannot reenter and overclaim.
 
@@ -234,4 +261,3 @@ Acceptance criteria:
 1. Route pause blocks only new affected conversions.
 2. Existing unaffected finalized claims remain callable.
 3. No emergency role can redirect claim receiver or sweep accrued funds.
-

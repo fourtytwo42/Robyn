@@ -530,6 +530,28 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-28: the one-hour pull-claim rewards release is active in isolated VM
+  worktree `/home/hendo420/Robyn-one-hour-rewards` on branch
+  `codex/one-hour-pull-claims`, based on clean `origin/main` commit
+  `2eb489404841b589d0e3510d1aba0b8619b96b1b`. Source now restores
+  transfer-aware one-hour rolling streams for launch-holder basket assets and
+  DAO native rewards, adds per-launch/per-recipient one-hour creator streams,
+  preserves future-only one-to-eight-recipient creator splits and irreversible
+  locks, and segregates forced ETH in the bonding market for permissionless
+  treasury sweep. Indexing, additive API fields, creator/DAO/admin UI, schema-11
+  deployment metadata, verifier checks, campaign scripts, user stories, and
+  documentation are updated. The complete repository test command passes;
+  Foundry passes 188 tests with one environment-gated skip, 8 invariants at
+  256 runs and depth 128, and the 512-wallet/32-launch/25,000-action campaign
+  across 20 seeds. Formatting, lint, all seven typechecks, production build,
+  contract sizes, schema-11 verifier/campaign tests, Gitleaks, dependency
+  audit, license inventory, and active-scope Slither pass with zero unresolved
+  high or medium findings. The single Slither high result is a reviewed,
+  exact-call-graph false positive for guarded terminal graduation and is
+  documented in `docs/assurance/schema11-security-audit-2026-07-28.md`. The
+  release is not deployed. Reproducible build, gas/funding, fresh testnet
+  deployment, index rebuild, lifecycle, browser, recovery, and endurance gates
+  remain required.
 - 2026-07-27: the next testnet contract candidate assigns launch-holder basket
   rewards, creator ETH, and DAO-holder ETH immediately, with no vesting delay.
   Transfer-aware accounting preserves rewards assigned before a balance move;
@@ -1998,6 +2020,34 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-28 - One-hour pull-claim rewards candidate
+
+- Context: Product policy now requires holder basket, DAO native, and creator
+  native rewards to unlock linearly over a rolling one-hour horizon while
+  remaining pull claims.
+- Decision: Restore transfer-aware one-hour streams for holder and DAO rewards.
+  Assign the creator 25 percent share to the split active at allocation time
+  and maintain a separate one-hour stream for each launch and recipient.
+  Deposits checkpoint vested value before extending only the unvested tail;
+  split changes affect future allocations only.
+- Files: `RobynLaunchToken.sol`, `RobynDaoToken.sol`,
+  `RobynNativeProtocolFeeRouterV4.sol`,
+  `RobynV4BondingCurveMarket.sol`, reward index migration and projector, reward
+  APIs and UI, schema-11 deployment/verifier scripts, campaign scripts,
+  whitepaper, PRDs, user stories, and security/operations documentation.
+- Commands/tests: Complete repository tests pass; Foundry passes 188 tests with
+  one environment-gated skip, required invariants at 256 runs and depth 128,
+  and the 20-seed 512-wallet economic simulation. Formatting, lint, all seven
+  typechecks, production build, contract-size, deployment verifier, campaign
+  policy, secret, dependency, license, and Slither gates pass with zero
+  unresolved high or medium findings.
+- Result: Source-only candidate in `/home/hendo420/Robyn-one-hour-rewards`;
+  current public testnet contracts remain unchanged.
+- Follow-up: Complete every contract and operational gate, preserve the
+  `0.0015 ETH` deployment reserve, archive the predecessor deployment, deploy a
+  fresh immutable testnet stack, rebuild from canonical logs, and run complete
+  lifecycle and browser acceptance. Do not broadcast to Robinhood Mainnet.
 
 ### 2026-07-27 - Immediate rewards and configurable creator splits
 
@@ -3778,6 +3828,9 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Complete full validation and fresh testnet deployment of the one-hour
+  pull-claim candidate. Any contract correction requires a fresh deployment
+  and complete rerun of contract-dependent gates.
 - Re-run live deployment gas and funding preflight for the immediate-reward and
   creator-split candidate. The earlier one-hour candidate estimate is stale.
   Preserve at least `0.0015 ETH`; do not deploy or reduce validation coverage

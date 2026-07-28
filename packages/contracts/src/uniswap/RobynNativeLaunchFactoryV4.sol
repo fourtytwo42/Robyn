@@ -34,7 +34,7 @@ contract RobynNativeLaunchFactoryV4 {
         bytes32 launchSaltHash;
     }
 
-    string public constant CONTRACT_VERSION = "4.0.0";
+    string public constant CONTRACT_VERSION = "5.0.0";
     uint256 public immutable chainId;
     RobynV4AssetRouter public immutable assetRouter;
     RobynNativeLaunchDeployerV4 public immutable launchDeployer;

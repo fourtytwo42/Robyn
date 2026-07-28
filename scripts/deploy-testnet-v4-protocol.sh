@@ -712,7 +712,7 @@ archived_predecessor_sha="$(
   fi
 )"
 jq -n \
-  --argjson schemaVersion 10 \
+  --argjson schemaVersion 11 \
   --arg environment "$([[ "$rehearsal" == "true" ]] && echo robinhood-testnet-fork-rehearsal || echo robinhood-testnet)" \
   --argjson chainId 46630 \
   --argjson deploymentBlock "$deployment_block" \
@@ -840,14 +840,15 @@ jq -n \
       protocolFeeBps: 100
     },
     rewardStreams: {
-      launchTokenDurationSeconds: 0,
-      daoDurationSeconds: 0,
-      vesting: "none",
-      allocation: "immediate-at-settlement",
-      claims: "immediately-claimable"
+      launchTokenDurationSeconds: 3600,
+      daoDurationSeconds: 3600,
+      creatorDurationSeconds: 3600,
+      release: "rolling-linear-one-hour",
+      allocation: "balance-held-while-unlocking",
+      claims: "pull-claim-vested-amount-only"
     },
     creatorRewards: {
-      allocation: "immediate-at-fee-intake",
+      allocation: "assigned-at-fee-intake-and-unlocked-over-one-hour",
       maximumRecipients: 8,
       sharesTotalBps: 10000,
       updatesAffect: "future-fees-only",
@@ -858,7 +859,7 @@ jq -n \
       tokenSymbol: "RDAO",
       fixedSupply: "1000000000000000000000000000",
       initialOwnerShareBps: 10000,
-      rewardStreamDurationSeconds: 0,
+      rewardStreamDurationSeconds: 3600,
       zeroEligibleSupplyPolicy: "queue-until-eligible-supply-returns",
       feePolicy: {
         basketBps: 5000,

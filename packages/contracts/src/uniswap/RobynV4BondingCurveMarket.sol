@@ -15,7 +15,7 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint16 public constant BPS = 10_000;
-    string public constant CONTRACT_VERSION = "1.2.0";
+    string public constant CONTRACT_VERSION = "2.0.0";
 
     struct CurveConfig {
         uint256 curveTokenAllocation;
@@ -37,6 +37,7 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
     error CurveInventoryExceeded();
     error FeeRouterAlreadyBound();
     error NativeTransferFailed();
+    error NothingPending();
 
     RobynLaunchToken public immutable launchToken;
     RobynNativeBasketVaultV2 public immutable feeVault;
@@ -55,6 +56,8 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
     uint256 public virtualTokenReserve;
     uint256 public virtualNativeReserve;
     uint256 public realCurveTokenReserve;
+    uint256 public curveNativePrincipal;
+    uint256 public cumulativeUnattributedNativeSwept;
     bool public seeded;
     bool public graduated;
 
@@ -78,6 +81,7 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         uint256 finalCurvePrice
     );
     event GraduationSurplusRouted(uint256 nativeAmount);
+    event UnattributedNativeSwept(address indexed treasury, uint256 nativeAmount);
     event FeeRouterBound(address indexed feeRouter);
 
     constructor(
@@ -117,6 +121,21 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
 
     receive() external payable {
         if (msg.sender != address(graduationAdapter)) revert Unauthorized();
+    }
+
+    function unattributedNative() public view returns (uint256) {
+        uint256 balance = address(this).balance;
+        return balance > curveNativePrincipal ? balance - curveNativePrincipal : 0;
+    }
+
+    function sweepUnattributedNative() external nonReentrant returns (uint256 amount) {
+        if (address(feeRouter) == address(0)) revert InvalidConfiguration();
+        amount = unattributedNative();
+        if (amount == 0) revert NothingPending();
+        address payable treasury = feeRouter.treasury();
+        cumulativeUnattributedNativeSwept += amount;
+        _sendNative(treasury, amount);
+        emit UnattributedNativeSwept(treasury, amount);
     }
 
     function bindFeeRouter(RobynNativeProtocolFeeRouterV4 feeRouter_) external {
@@ -269,6 +288,7 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         virtualNativeReserve += netInput;
         virtualTokenReserve -= tokenOutput;
         realCurveTokenReserve -= tokenOutput;
+        curveNativePrincipal += netInput;
         _recordFee(feeAmount);
         IERC20(address(launchToken)).safeTransfer(recipient, tokenOutput);
         if (usedInput < nativeInput) _sendNative(refundRecipient, nativeInput - usedInput);
@@ -299,6 +319,7 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
         virtualTokenReserve += tokenInput;
         virtualNativeReserve -= grossOutput;
         realCurveTokenReserve += tokenInput;
+        curveNativePrincipal -= grossOutput;
         _recordFee(feeAmount);
         _sendNative(payable(msg.sender), nativeOutput);
         emit Sold(msg.sender, tokenInput, feeAmount, nativeOutput);
@@ -316,13 +337,16 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
     function _graduate() private {
         uint256 finalPrice = Math.mulDiv(virtualNativeReserve, 1e18, virtualTokenReserve);
         uint256 tokenLiquidity = IERC20(address(launchToken)).balanceOf(address(this));
-        uint256 nativeLiquidity = address(this).balance;
+        uint256 nativeLiquidity = curveNativePrincipal;
+        uint256 unattributedBefore = unattributedNative();
         IERC20(address(launchToken)).forceApprove(address(graduationAdapter), tokenLiquidity);
         graduated = true;
+        curveNativePrincipal = 0;
         (uint256 tokenId,, uint256 tokenUsed, uint256 nativeUsed) =
             graduationAdapter.graduate{ value: nativeLiquidity }(tokenLiquidity);
         IERC20(address(launchToken)).forceApprove(address(graduationAdapter), 0);
-        uint256 graduationSurplus = address(this).balance;
+        uint256 balanceAfter = address(this).balance;
+        uint256 graduationSurplus = balanceAfter > unattributedBefore ? balanceAfter - unattributedBefore : 0;
         if (graduationSurplus != 0) {
             feeRouter.routeNativeFees{ value: graduationSurplus }(launchToken);
             emit GraduationSurplusRouted(graduationSurplus);

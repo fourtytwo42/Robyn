@@ -5,12 +5,14 @@
 - As an RDAO holder, I can see balance, eligible reward supply, claimable ETH, and lifetime claims so I understand my position.
 - As an RDAO holder, I can claim to myself or another valid recipient so contract and operational wallets are supported.
 - As a sender, I retain rewards accrued before an RDAO transfer so transfers cannot confiscate earned ETH.
-- As a recipient, I earn only deposits occurring after receipt so reward accounting is not retroactive.
-- As a user, I see that instant deposits permit buy-before-conversion participation so the reward-sniping tradeoff is explicit.
+- As a recipient, I earn only the portion unlocking while I hold RDAO so reward accounting is not retroactive.
+- As a member, I can claim any unlocked amount during the rolling one-hour release without forfeiting the remainder.
 
 ## Creator rewards
 
-- As a creator, I see each token's pending conversion, claimable native ETH, lifetime earned, and lifetime claimed independently.
+- As a creator recipient, I see each token's claimable native ETH, amount still
+  unlocking over one hour, lifetime assigned, and lifetime claimed
+  independently.
 - As a creator, I can claim a launch's native fees from that token page only when the connected wallet is its immutable canonical creator.
 - As a creator with multiple launches, I can claim one token without changing any other token's balance.
 - As a creator, I can use Portfolio to see every token I created, claim individually, or Claim All in one transaction.
@@ -19,6 +21,10 @@
 - As a protocol observer, I understand that wallet-gated controls do not make public onchain balances or events private.
 - As a DAO member, I no longer see creator-claim controls in DAO Rewards; Treasury retains aggregate creator-liability monitoring.
 - As a token holder, I can verify the creator share cannot reduce the immutable 50% basket share.
+- As a creator, I can assign the creator share to one through eight recipients,
+  change an open split for future fees only, or irreversibly lock it.
+- As a removed split recipient, I retain and continue unlocking every amount
+  assigned before the split changed.
 
 ## Delegation and voting
 

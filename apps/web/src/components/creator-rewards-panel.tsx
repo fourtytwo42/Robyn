@@ -21,6 +21,23 @@ type CreatorSplit = {
   sharesBps: number[];
   locked: boolean;
   maxRecipients: number;
+  recipientRewards: CreatorRecipientReward[];
+};
+
+type CreatorRewardStream = {
+  claimable: string;
+  unvested: string;
+  assigned: string;
+  vested: string;
+  claimed: string;
+  ratePerSecond: string;
+  lastUpdateTime: string;
+  streamEnd: string;
+};
+
+type CreatorRecipientReward = CreatorRewardStream & {
+  recipient: Address;
+  shareBps: number;
 };
 
 export type CreatorRewardState = {
@@ -29,8 +46,10 @@ export type CreatorRewardState = {
   viewerIsCreator: boolean;
   pendingCreatorBase: string;
   claimableNative: string;
+  unlockingNative: string;
   lifetimeAccruedNative: string;
   lifetimeClaimedNative: string;
+  rewardStream: CreatorRewardStream;
   creatorSplit: CreatorSplit | null;
 };
 
@@ -38,6 +57,11 @@ function amount(value: string, digits = 6) {
   return Number(formatEther(BigInt(value))).toLocaleString(undefined, {
     maximumFractionDigits: digits,
   });
+}
+
+function completion(value: string) {
+  if (value === "0") return "No active stream";
+  return new Date(Number(value) * 1_000).toLocaleString();
 }
 
 export function CreatorRewardsPanel({
@@ -114,7 +138,13 @@ export function CreatorRewardsPanel({
     };
   }, [refresh]);
 
-  if (!data || (!isCreator && BigInt(data.claimableNative) === 0n)) return null;
+  if (
+    !data ||
+    (!isCreator &&
+      BigInt(data.claimableNative) === 0n &&
+      BigInt(data.unlockingNative) === 0n)
+  )
+    return null;
   const creatorSplit = data.creatorSplit;
 
   async function claim() {
@@ -218,8 +248,8 @@ export function CreatorRewardsPanel({
           {amount(data.claimableNative)} ETH claimable
         </h2>
         <p>
-          Your assigned fees are claimable immediately. Each launch keeps an
-          independent balance.
+          Assigned fees unlock linearly over one hour. You can claim any
+          unlocked amount now, and the remainder keeps unlocking.
         </p>
       </div>
       <dl className="creator-earnings-metrics">
@@ -228,7 +258,11 @@ export function CreatorRewardsPanel({
           <dd>{amount(data.pendingCreatorBase)} mUSD</dd>
         </div>
         <div>
-          <dt>Lifetime earned</dt>
+          <dt>Unlocking over 1 hour</dt>
+          <dd>{amount(data.unlockingNative)} ETH</dd>
+        </div>
+        <div>
+          <dt>Lifetime assigned</dt>
           <dd>{amount(data.lifetimeAccruedNative)} ETH</dd>
         </div>
         <div>
@@ -236,6 +270,9 @@ export function CreatorRewardsPanel({
           <dd>{amount(data.lifetimeClaimedNative)} ETH</dd>
         </div>
       </dl>
+      <p className="muted">
+        Current stream completes {completion(data.rewardStream.streamEnd)}.
+      </p>
       <button
         className="button primary"
         disabled={working || BigInt(data.claimableNative) === 0n}
@@ -312,6 +349,19 @@ export function CreatorRewardsPanel({
                   </button>
                 ) : null}
               </div>
+            ))}
+          </div>
+          <div className="creator-earnings-metrics">
+            {creatorSplit.recipientRewards.map((reward) => (
+              <article key={reward.recipient}>
+                <strong>{reward.shareBps / 100}%</strong>
+                <span>{reward.recipient}</span>
+                <small>
+                  {amount(reward.claimable)} ETH claimable,{" "}
+                  {amount(reward.unvested)} ETH unlocking
+                </small>
+                <small>Completes {completion(reward.streamEnd)}</small>
+              </article>
             ))}
           </div>
           {!creatorSplit.locked ? (

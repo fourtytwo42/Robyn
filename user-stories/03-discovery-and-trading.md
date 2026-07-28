@@ -1,5 +1,24 @@
 # Discovery and trading stories
 
+### US-DISCOVERY-000: Earn King of the Forest once
+
+- Release: R1
+- Priority: Must
+- Persona: Holder, Trader, Creator
+- PRD: DISC-007
+- Depends on: Canonical launch and trade projection
+
+As a market participant, I want King of the Forest awarded by a deterministic
+one-time rule so that the featured token reflects verifiable activity.
+
+Acceptance criteria:
+
+1. A post-activation qualifying trade must leave the launch at or above 50%
+   bonding progress with at least 10 distinct lifetime trader wallets.
+2. A launch can receive the award at most once per chain.
+3. Canonical replay, duplicate logs, reorg removal, history ordering, and the
+   current reigning token are deterministic.
+
 ## Epic F: Find and evaluate launches
 
 ### US-DISC-001: Search by canonical identity
@@ -211,4 +230,3 @@ Acceptance criteria:
 1. Destination domain/market address is verified and clearly external.
 2. Robyn shows fee/basket disclosure before handoff.
 3. Return/reload reconciles resulting onchain balance without claiming Robyn executed the trade.
-

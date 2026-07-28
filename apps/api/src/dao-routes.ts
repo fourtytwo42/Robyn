@@ -90,6 +90,7 @@ const nativeLaunchAccountAbi = parseAbi([
   "function launchAccount(address) view returns ((address creator,address vault,address market,address locker,address hook,uint256 cumulativeNativeFees,uint256 cumulativeLaunchFeesConverted,uint256 cumulativeBondingNativeFees,uint256 cumulativeLockedLpNativeFees,uint256 cumulativeHookNativeFees,uint256 cumulativeLockedLaunchFeesConverted,uint256 cumulativeHookLaunchFeesConverted,uint256 claimableCreatorNative,uint256 cumulativeCreatorNative,uint256 claimedCreatorNative,uint256 pendingBasketNative,uint256 cumulativeBasketNativeSettled,bool registered))",
   "function creatorFeeSplit(address token) view returns (address[] recipients,uint16[] sharesBps,bool locked)",
   "function claimableCreatorNativeByRecipient(address token,address recipient) view returns (uint256)",
+  "function creatorRewardStream(address token,address recipient) view returns ((uint256 claimable,uint256 unvested,uint256 assigned,uint256 vested,uint256 claimed,uint256 ratePerSecond,uint256 lastUpdateTime,uint256 streamEnd))",
   "function cumulativeCreatorNativeByRecipient(address token,address recipient) view returns (uint256)",
   "function claimedCreatorNativeByRecipient(address token,address recipient) view returns (uint256)",
   "function MAX_CREATOR_RECIPIENTS() view returns (uint8)",
@@ -646,15 +647,31 @@ export function registerDaoRoutes(
       sharesBps: number[];
       locked: boolean;
       maxRecipients: number;
+      recipientRewards: Array<{
+        recipient: Address;
+        shareBps: number;
+        claimable: string;
+        unvested: string;
+        assigned: string;
+        vested: string;
+        claimed: string;
+        ratePerSecond: string;
+        lastUpdateTime: string;
+        streamEnd: string;
+      }>;
     } | null = null;
+    let rewardStream = {
+      claimable: claimableNative.toString(),
+      unvested: "0",
+      assigned: lifetimeAccruedNative.toString(),
+      vested: (lifetimeClaimedNative + claimableNative).toString(),
+      claimed: lifetimeClaimedNative.toString(),
+      ratePerSecond: "0",
+      lastUpdateTime: "0",
+      streamEnd: "0",
+    };
     if (deployment.liquidityVenue === "uniswap-v4") {
-      const [
-        split,
-        recipientClaimable,
-        recipientCumulative,
-        recipientClaimed,
-        maxRecipients,
-      ] = await Promise.all([
+      const [split, viewerStream, maxRecipients] = await Promise.all([
         rpcClient.readContract({
           address: deployment.contracts.protocolFeeRouter,
           abi: nativeLaunchAccountAbi,
@@ -665,40 +682,65 @@ export function registerDaoRoutes(
           ? rpcClient.readContract({
               address: deployment.contracts.protocolFeeRouter,
               abi: nativeLaunchAccountAbi,
-              functionName: "claimableCreatorNativeByRecipient",
+              functionName: "creatorRewardStream",
               args: [token, viewer],
             })
-          : Promise.resolve(0n),
-        viewer
-          ? rpcClient.readContract({
-              address: deployment.contracts.protocolFeeRouter,
-              abi: nativeLaunchAccountAbi,
-              functionName: "cumulativeCreatorNativeByRecipient",
-              args: [token, viewer],
-            })
-          : Promise.resolve(0n),
-        viewer
-          ? rpcClient.readContract({
-              address: deployment.contracts.protocolFeeRouter,
-              abi: nativeLaunchAccountAbi,
-              functionName: "claimedCreatorNativeByRecipient",
-              args: [token, viewer],
-            })
-          : Promise.resolve(0n),
+          : Promise.resolve({
+              claimable: 0n,
+              unvested: 0n,
+              assigned: 0n,
+              vested: 0n,
+              claimed: 0n,
+              ratePerSecond: 0n,
+              lastUpdateTime: 0n,
+              streamEnd: 0n,
+            }),
         rpcClient.readContract({
           address: deployment.contracts.protocolFeeRouter,
           abi: nativeLaunchAccountAbi,
           functionName: "MAX_CREATOR_RECIPIENTS",
         }),
       ]);
-      claimableNative = recipientClaimable;
-      lifetimeAccruedNative = recipientCumulative;
-      lifetimeClaimedNative = recipientClaimed;
+      claimableNative = viewerStream.claimable;
+      lifetimeAccruedNative = viewerStream.assigned;
+      lifetimeClaimedNative = viewerStream.claimed;
+      rewardStream = {
+        claimable: viewerStream.claimable.toString(),
+        unvested: viewerStream.unvested.toString(),
+        assigned: viewerStream.assigned.toString(),
+        vested: viewerStream.vested.toString(),
+        claimed: viewerStream.claimed.toString(),
+        ratePerSecond: viewerStream.ratePerSecond.toString(),
+        lastUpdateTime: viewerStream.lastUpdateTime.toString(),
+        streamEnd: viewerStream.streamEnd.toString(),
+      };
+      const recipientStreams = await Promise.all(
+        split[0].map((recipient) =>
+          rpcClient.readContract({
+            address: deployment.contracts.protocolFeeRouter,
+            abi: nativeLaunchAccountAbi,
+            functionName: "creatorRewardStream",
+            args: [token, recipient],
+          }),
+        ),
+      );
       creatorSplit = {
         recipients: [...split[0]],
         sharesBps: split[1].map(Number),
         locked: split[2],
         maxRecipients: Number(maxRecipients),
+        recipientRewards: split[0].map((recipient, index) => ({
+          recipient,
+          shareBps: Number(split[1][index]!),
+          claimable: recipientStreams[index]!.claimable.toString(),
+          unvested: recipientStreams[index]!.unvested.toString(),
+          assigned: recipientStreams[index]!.assigned.toString(),
+          vested: recipientStreams[index]!.vested.toString(),
+          claimed: recipientStreams[index]!.claimed.toString(),
+          ratePerSecond: recipientStreams[index]!.ratePerSecond.toString(),
+          lastUpdateTime: recipientStreams[index]!.lastUpdateTime.toString(),
+          streamEnd: recipientStreams[index]!.streamEnd.toString(),
+        })),
       };
     }
     return {
@@ -715,6 +757,8 @@ export function registerDaoRoutes(
         claimableNative: claimableNative.toString(),
         lifetimeAccruedNative: lifetimeAccruedNative.toString(),
         lifetimeClaimedNative: lifetimeClaimedNative.toString(),
+        unlockingNative: rewardStream.unvested,
+        rewardStream,
         creatorSplit,
       },
     };

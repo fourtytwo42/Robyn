@@ -152,6 +152,11 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
     }
 
     function _claimRewardsAndCreators() private {
+        // Holder, DAO, and creator rewards are all pull claims that unlock
+        // linearly over one hour. Advance to the end of the active streams so
+        // this campaign reconciles every assigned reward and liability.
+        vm.warp(block.timestamp + 1 hours);
+
         for (uint256 index; index < 128; ++index) {
             address actor = _actor(index);
             uint256 launchIndex = index % LAUNCH_COUNT;

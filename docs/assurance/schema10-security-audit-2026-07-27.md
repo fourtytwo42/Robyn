@@ -205,7 +205,7 @@ settlement.
 
 ### Immediate rewards
 
-`RobynLaunchToken` and `RobynDaoToken` assign each deposit immediately.
+The audited schema-10 release assigned each deposit at settlement time.
 Transfers settle sender and receiver before balances move, preserving rewards
 already assigned to the prior holder. If eligible supply becomes zero, rewards
 remain queued and activate when eligible supply returns. Buying before a

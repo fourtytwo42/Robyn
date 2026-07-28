@@ -17,7 +17,29 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
     uint16 public constant DAO_REWARD_BPS = 2_000;
     uint16 public constant TREASURY_BPS = 500;
     uint8 public constant MAX_CREATOR_RECIPIENTS = 8;
-    string public constant CONTRACT_VERSION = "6.0.0";
+    uint256 public constant CREATOR_REWARD_STREAM_DURATION = 1 hours;
+    string public constant CONTRACT_VERSION = "7.0.0";
+
+    struct CreatorRewardStream {
+        uint256 rewardRate;
+        uint256 periodFinish;
+        uint256 lastUpdateTime;
+        uint256 streamStartTime;
+        uint256 streamTotal;
+        uint256 streamReleased;
+        uint256 accrued;
+    }
+
+    struct CreatorRewardState {
+        uint256 claimable;
+        uint256 unvested;
+        uint256 assigned;
+        uint256 vested;
+        uint256 claimed;
+        uint256 ratePerSecond;
+        uint256 lastUpdateTime;
+        uint256 streamEnd;
+    }
 
     struct CreatorFeeSplit {
         address[] recipients;
@@ -68,7 +90,7 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
 
     mapping(address token => LaunchFeeAccount account) private _launchAccounts;
     mapping(address token => CreatorFeeSplit split) private _creatorFeeSplits;
-    mapping(address token => mapping(address recipient => uint256 amount)) public claimableCreatorNativeByRecipient;
+    mapping(address token => mapping(address recipient => CreatorRewardStream stream)) private _creatorRewardStreams;
     mapping(address token => mapping(address recipient => uint256 amount)) public cumulativeCreatorNativeByRecipient;
     mapping(address token => mapping(address recipient => uint256 amount)) public claimedCreatorNativeByRecipient;
     uint256 public totalCreatorNativeLiability;
@@ -109,6 +131,14 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
         address indexed token, address indexed creator, address[] recipients, uint16[] sharesBps, bool locked
     );
     event CreatorFeesAssigned(address indexed token, address indexed recipient, uint256 amount);
+    event CreatorRewardStreamUpdated(
+        address indexed token,
+        address indexed recipient,
+        uint256 rewardRate,
+        uint256 periodFinish,
+        uint256 claimable,
+        uint256 unvested
+    );
     event ConversionPauseChanged(bool paused, address indexed caller);
 
     constructor(
@@ -218,6 +248,38 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
         }
         split.locked = lockConfiguration;
         emit CreatorFeeSplitConfigured(token, msg.sender, recipients, sharesBps, lockConfiguration);
+    }
+
+    function claimableCreatorNativeByRecipient(address token, address recipient) public view returns (uint256) {
+        if (!_launchAccounts[token].registered) revert UnknownLaunch();
+        CreatorRewardStream memory stream = _creatorRewardStreams[token][recipient];
+        return stream.accrued + _newlyVestedCreatorRewards(stream);
+    }
+
+    function creatorRewardStream(address token, address recipient)
+        external
+        view
+        returns (CreatorRewardState memory state)
+    {
+        if (!_launchAccounts[token].registered) revert UnknownLaunch();
+        CreatorRewardStream memory stream = _creatorRewardStreams[token][recipient];
+        uint256 newlyVested = _newlyVestedCreatorRewards(stream);
+        uint256 vestedInStream = _vestedCreatorStreamRewards(stream);
+        state = CreatorRewardState({
+            claimable: stream.accrued + newlyVested,
+            unvested: stream.streamTotal - vestedInStream,
+            assigned: cumulativeCreatorNativeByRecipient[token][recipient],
+            vested: claimedCreatorNativeByRecipient[token][recipient] + stream.accrued + newlyVested,
+            claimed: claimedCreatorNativeByRecipient[token][recipient],
+            ratePerSecond: stream.rewardRate,
+            lastUpdateTime: stream.lastUpdateTime,
+            streamEnd: stream.periodFinish
+        });
+    }
+
+    function checkpointCreatorRewards(address token, address recipient) external {
+        if (!_launchAccounts[token].registered) revert UnknownLaunch();
+        _updateCreatorStream(token, recipient);
     }
 
     function routeNativeFees(IERC20 token) external payable nonReentrant {
@@ -355,8 +417,10 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
     function _debitCreatorClaim(address token, address creator) private returns (uint256 amount) {
         LaunchFeeAccount storage account = _launchAccounts[token];
         if (!account.registered) revert UnknownLaunch();
-        amount = claimableCreatorNativeByRecipient[token][creator];
-        claimableCreatorNativeByRecipient[token][creator] = 0;
+        _updateCreatorStream(token, creator);
+        CreatorRewardStream storage stream = _creatorRewardStreams[token][creator];
+        amount = stream.accrued;
+        stream.accrued = 0;
         claimedCreatorNativeByRecipient[token][creator] += amount;
         account.claimableCreatorNative -= amount;
         account.claimedCreatorNative += amount;
@@ -415,10 +479,56 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
         for (uint256 index; index < split.recipients.length; ++index) {
             uint256 share = index == last ? amount - assigned : (amount * split.sharesBps[index]) / BPS;
             assigned += share;
-            claimableCreatorNativeByRecipient[token][split.recipients[index]] += share;
-            cumulativeCreatorNativeByRecipient[token][split.recipients[index]] += share;
-            emit CreatorFeesAssigned(token, split.recipients[index], share);
+            address recipient = split.recipients[index];
+            _updateCreatorStream(token, recipient);
+            _startOrExtendCreatorStream(token, recipient, share);
+            cumulativeCreatorNativeByRecipient[token][recipient] += share;
+            emit CreatorFeesAssigned(token, recipient, share);
         }
+    }
+
+    function _updateCreatorStream(address token, address recipient) private {
+        CreatorRewardStream storage stream = _creatorRewardStreams[token][recipient];
+        uint256 newlyVested = _newlyVestedCreatorRewards(stream);
+        if (newlyVested != 0) {
+            stream.accrued += newlyVested;
+            stream.streamReleased += newlyVested;
+        }
+        uint256 applicable = block.timestamp < stream.periodFinish ? block.timestamp : stream.periodFinish;
+        if (applicable > stream.lastUpdateTime) stream.lastUpdateTime = applicable;
+    }
+
+    function _startOrExtendCreatorStream(address token, address recipient, uint256 amount) private {
+        CreatorRewardStream storage stream = _creatorRewardStreams[token][recipient];
+        uint256 remaining = stream.streamTotal - _vestedCreatorStreamRewards(stream);
+        uint256 distributable = remaining + amount;
+        stream.rewardRate = distributable / CREATOR_REWARD_STREAM_DURATION;
+        stream.periodFinish = block.timestamp + CREATOR_REWARD_STREAM_DURATION;
+        stream.lastUpdateTime = block.timestamp;
+        stream.streamStartTime = block.timestamp;
+        stream.streamTotal = distributable;
+        stream.streamReleased = 0;
+        emit CreatorRewardStreamUpdated(
+            token,
+            recipient,
+            stream.rewardRate,
+            stream.periodFinish,
+            stream.accrued,
+            distributable
+        );
+    }
+
+    function _vestedCreatorStreamRewards(CreatorRewardStream memory stream) private view returns (uint256) {
+        if (stream.streamTotal == 0 || block.timestamp <= stream.streamStartTime) return 0;
+        if (block.timestamp >= stream.periodFinish) return stream.streamTotal;
+        return
+            (stream.streamTotal * (block.timestamp - stream.streamStartTime))
+                / CREATOR_REWARD_STREAM_DURATION;
+    }
+
+    function _newlyVestedCreatorRewards(CreatorRewardStream memory stream) private view returns (uint256) {
+        uint256 vested = _vestedCreatorStreamRewards(stream);
+        return vested > stream.streamReleased ? vested - stream.streamReleased : 0;
     }
 
     function _validateCreatorFeeSplit(address[] calldata recipients, uint16[] calldata sharesBps) private pure {

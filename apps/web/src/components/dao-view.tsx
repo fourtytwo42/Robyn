@@ -155,6 +155,11 @@ function percentage(value: number) {
   return (value / 100).toFixed(value % 100 === 0 ? 0 : 2) + "%";
 }
 
+function streamCompletion(value: string) {
+  if (value === "0") return "No active stream";
+  return new Date(Number(value) * 1_000).toLocaleString();
+}
+
 export function DaoView({
   deployment,
   proposalId,
@@ -465,18 +470,26 @@ export function DaoView({
               claimable
             </h2>
             <p>
-              Settled platform fees are assigned immediately according to
-              current governance-token balances. Assigned rewards remain yours
+              Settled platform fees unlock linearly over one hour according to
+              the balance held while they unlock. Accrued rewards remain yours
               after a transfer.
             </p>
             <dl className="dao-definition-list">
               <div>
-                <dt>Allocation timing</dt>
-                <dd>Immediate</dd>
+                <dt>Release</dt>
+                <dd>Unlocking over 1 hour</dd>
               </div>
               <div>
                 <dt>Queued</dt>
                 <dd>{tokenAmount(overview.rewardStream.queued, 6)} ETH</dd>
+              </div>
+              <div>
+                <dt>Currently unlocking</dt>
+                <dd>{tokenAmount(overview.rewardStream.streaming, 6)} ETH</dd>
+              </div>
+              <div>
+                <dt>Completion</dt>
+                <dd>{streamCompletion(overview.rewardStream.streamEnd)}</dd>
               </div>
               <div>
                 <dt>Queue behavior</dt>

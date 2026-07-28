@@ -19,6 +19,8 @@ export type AdminHealthSnapshot = {
     projectionAsOfBlock: string | null;
     kingProjectionAsOfBlock: string | null;
     kingProjectionLagBlocks: string | null;
+    rewardProjectionAsOfBlock: string | null;
+    rewardProjectionLagBlocks: string | null;
     ingestionLagBlocks: string | null;
     projectionLagBlocks: string | null;
     ingestionCycleMs: number | null;
@@ -37,6 +39,12 @@ export type AdminHealthSnapshot = {
     daoStreamConserved: boolean;
     daoQueued: string;
     daoStreaming: string;
+    creatorStreamConserved: boolean;
+    creatorAssigned: string;
+    creatorVested: string;
+    creatorClaimed: string;
+    creatorClaimable: string;
+    creatorUnvested: string;
     phaseMismatchCount: number;
     lockerMismatchCount: number;
     rewardStreamMismatchCount: number;
@@ -158,6 +166,8 @@ export async function getAdminHealthSnapshot(
       projectionAsOfBlock: stringOrNull(data.projectionAsOfBlock),
       kingProjectionAsOfBlock: stringOrNull(data.kingProjectionAsOfBlock),
       kingProjectionLagBlocks: stringOrNull(data.kingProjectionLagBlocks),
+      rewardProjectionAsOfBlock: stringOrNull(data.rewardProjectionAsOfBlock),
+      rewardProjectionLagBlocks: stringOrNull(data.rewardProjectionLagBlocks),
       ingestionLagBlocks: stringOrNull(data.ingestionLagBlocks),
       projectionLagBlocks: stringOrNull(data.projectionLagBlocks),
       ingestionCycleMs: numberOrNull(data.ingestionCycleMs),
@@ -183,6 +193,12 @@ export async function getAdminHealthSnapshot(
           daoStreamConserved: protocol.daoStreamConserved === true,
           daoQueued: stringOrNull(protocol.daoQueued) ?? "0",
           daoStreaming: stringOrNull(protocol.daoStreaming) ?? "0",
+          creatorStreamConserved: protocol.creatorStreamConserved === true,
+          creatorAssigned: stringOrNull(protocol.creatorAssigned) ?? "0",
+          creatorVested: stringOrNull(protocol.creatorVested) ?? "0",
+          creatorClaimed: stringOrNull(protocol.creatorClaimed) ?? "0",
+          creatorClaimable: stringOrNull(protocol.creatorClaimable) ?? "0",
+          creatorUnvested: stringOrNull(protocol.creatorUnvested) ?? "0",
           phaseMismatchCount: numberOrNull(protocol.phaseMismatchCount) ?? 0,
           lockerMismatchCount: numberOrNull(protocol.lockerMismatchCount) ?? 0,
           rewardStreamMismatchCount:

@@ -18,8 +18,8 @@ Robyn has a member-owned governance and revenue layer without weakening any laun
 | Destination | Original fee | Settlement |
 | --- | ---: | --- |
 | Launch holder basket | 50% | Base asset enters the existing basket vault immediately |
-| Launch creator | 25% | Base queues; realized native ETH is pull-claimable |
-| Eligible RDAO holders | 20% | Base queues; realized ETH is deposited using transfer-aware accounting |
+| Launch creator | 25% | Native ETH is assigned to the active split, unlocks over one hour and remains pull-claimable |
+| Eligible RDAO holders | 20% | ETH unlocks over one hour using transfer-aware accounting and remains pull-claimable |
 | DAO timelock treasury | 5% | Base queues; realized ETH is sent to the timelock |
 
 Basket rounding dust remains in the basket half. Native conversion rounding dust goes to treasury. Existing launches cannot have their split, creator, basket, LP lock, accrued rewards, or historical votes changed.
@@ -30,8 +30,11 @@ Basket rounding dust remains in the basket half. Native conversion rounding dust
 - ERC-20 Permit and ERC20Votes with timestamp checkpoints.
 - Liquid manifest-defined initial allocations totaling exactly 100%; future grants use treasury-funded vesting contracts.
 - Balance controls reward weight. Delegation checkpoints control governance weight.
-- Rewards accrue instantly when deposited. Pre-deposit buyers participate, a disclosed reward-sniping tradeoff.
-- Transfers preserve already accrued rewards for the sender and direct only future deposits to the recipient.
+- Rewards unlock linearly over a rolling one-hour schedule.
+- Transfers preserve already accrued rewards for the sender and direct only
+  future unlocking to the recipient.
+- Claims may occur at any time, transfer only the currently unlocked amount,
+  and do not forfeit the remainder.
 - Timelock, treasury reserve, fee router, Governor, coordinator, market factory, and unusable protocol balances are permanently reward-excluded.
 
 ## Governance requirements
@@ -51,7 +54,8 @@ Basket rounding dust remains in the basket half. Native conversion rounding dust
 - Base-to-native conversion accepts a maximum input, allowing large queues to drain through bounded batches.
 - The converter rejects missing pools, stale/insufficient observations, spot/TWAP disagreement, more than configured post-fee spot price impact, unsafe caller minimums, and expired deadlines.
 - Failed conversions leave accounting and custody queued for retry. Allowances clear after success and transaction reversion clears them after failure.
-- Creator and RDAO claims use pull accounting and support alternate recipients.
+- Creator and RDAO claims use one-hour pull accounting and support alternate
+  recipients.
 
 ## Product interface
 
@@ -73,13 +77,19 @@ Basket rounding dust remains in the basket half. Native conversion rounding dust
 
 ## Token-specific creator rewards
 
-- Every launch fee account stores pending creator base, claimable creator native ETH, lifetime creator ETH accrued, and lifetime creator ETH claimed.
+- Every launch fee account stores claimable creator native ETH, unvested
+  creator ETH, lifetime creator ETH assigned, vested, and claimed.
 - Conversion credits creator ETH to the originating launch token. A claim against one token cannot reduce another token's entitlement, including when both tokens have the same creator.
 - Creator claims accept a token address. Batch claims validate immutable creator ownership for every token, skip owned zero balances, revert atomically on unknown or foreign tokens, clear liabilities before interaction, send one aggregate payment, and emit one token-attributed event per paid launch.
 - The global creator liability is retained only as a solvency invariant. Wallet-aggregated personal claims are removed.
 - The token earnings panel renders only when the connected wallet equals the factory-recorded creator. `/portfolio` is the unified wallet profile and includes created launches, aggregate totals, per-token claims, Claim All, and advanced claim-to controls.
 - DAO Rewards contains only RDAO member rewards. DAO Treasury may display aggregate creator liabilities and public token-level accounting for monitoring, but it does not expose personal creator claim controls.
 - UI gating is convenience and information hierarchy, not privacy. Contract storage and events remain public.
+- Each launch defaults to one editable 100% creator recipient. The creator may
+  configure one through eight recipients totaling 10,000 basis points and may
+  lock the split irreversibly. Changes affect future fees only.
+- Every recipient has an independent rolling one-hour stream. Removing a
+  recipient never changes amounts already assigned to that recipient.
 
 ## Legal disclosure
 

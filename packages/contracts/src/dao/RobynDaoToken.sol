@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
-import {ERC20Votes} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
-import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import { ERC20Votes } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+import { Nonces } from "@openzeppelin/contracts/utils/Nonces.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
-/// @notice Fixed-supply governance token with transfer-aware immediate native rewards.
+/// @notice Fixed-supply governance token with transfer-aware one-hour native reward streams.
 contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
     uint256 public constant FIXED_SUPPLY = 1_000_000_000 ether;
     uint256 private constant MAGNITUDE = 1 << 128;
     uint256 private constant MAX_EXCLUSIONS = 16;
-    uint256 public constant REWARD_STREAM_DURATION = 0;
-    string public constant CONTRACT_VERSION = "4.0.0";
+    uint256 public constant REWARD_STREAM_DURATION = 1 hours;
+    string public constant CONTRACT_VERSION = "5.0.0";
 
     error Unauthorized();
     error InvalidConfiguration();
@@ -48,9 +49,10 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
     event RewardExclusionsSealed(address[] accounts);
     event RewardsDeposited(uint256 amount, uint256 eligibleSupply, uint256 cumulativeDeposited);
     event RewardsClaimed(address indexed account, address indexed recipient, uint256 amount);
-    event RewardStreamUpdated(uint256 rewardRate, uint256 periodFinish, uint256 queuedRewards, uint256 eligibleSupply);
+    event RewardStreamUpdated(
+        uint256 rewardRate, uint256 periodFinish, uint256 queuedRewards, uint256 eligibleSupply
+    );
     event RewardStreamPaused(uint256 queuedRewards);
-    event RewardsDistributed(uint256 amount, uint256 eligibleSupply);
 
     constructor(address[] memory recipients, uint256[] memory amounts)
         ERC20("Robyn DAO", "RDAO")
@@ -109,34 +111,46 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
     function depositRewards() external payable nonReentrant {
         if (msg.sender != rewardDepositor) revert Unauthorized();
         if (msg.value == 0) revert InvalidConfiguration();
+        _updateReward(address(0));
         totalRewardsDeposited += msg.value;
         queuedRewards += msg.value;
         uint256 supply = eligibleRewardSupply();
-        if (supply != 0) _distributeQueued(supply);
+        if (supply != 0) _startOrExtendStream(supply);
         emit RewardsDeposited(msg.value, supply, totalRewardsDeposited);
     }
 
     function activateQueuedRewards() external nonReentrant {
+        _updateReward(address(0));
         uint256 supply = eligibleRewardSupply();
         if (supply == 0) revert NoEligibleRewardSupply();
         if (queuedRewards == 0) revert NothingToClaim();
-        _distributeQueued(supply);
+        _startOrExtendStream(supply);
     }
 
     function lastTimeRewardApplicable() public view returns (uint256) {
-        return block.timestamp;
+        return block.timestamp < periodFinish ? block.timestamp : periodFinish;
     }
 
     function currentRewardPerToken() public view returns (uint256) {
-        return rewardPerTokenStored;
+        uint256 supply = eligibleRewardSupply();
+        if (supply == 0) return rewardPerTokenStored;
+        uint256 newlyVested = _newlyVestedRewards();
+        return rewardPerTokenStored + Math.mulDiv(newlyVested, MAGNITUDE, supply);
     }
 
     function streamingRewards() public view returns (uint256) {
-        return 0;
+        return streamTotal - _vestedStreamRewards();
     }
 
     function totalRewardsVested() external view returns (uint256) {
-        return totalRewardsDeposited - queuedRewards;
+        uint256 supply = eligibleRewardSupply();
+        uint256 newlyVested = supply == 0 ? 0 : _newlyVestedRewards();
+        uint256 rewardPerTokenIncrease =
+            supply == 0 ? 0 : Math.mulDiv(newlyVested, MAGNITUDE, supply);
+        uint256 represented =
+            supply == 0 ? 0 : Math.mulDiv(rewardPerTokenIncrease, supply, MAGNITUDE);
+        uint256 unrepresented = newlyVested - represented;
+        return totalRewardsDeposited - queuedRewards - streamingRewards() - unrepresented;
     }
 
     function magnifiedRewardPerShare() external view returns (uint256) {
@@ -151,7 +165,11 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
     function claimableRewardOf(address account) public view returns (uint256) {
         if (isRewardExcluded[account]) return 0;
         return _accruedRewards[account]
-            + (balanceOf(account) * (currentRewardPerToken() - userRewardPerTokenPaid[account])) / MAGNITUDE;
+            + Math.mulDiv(
+                balanceOf(account),
+                currentRewardPerToken() - userRewardPerTokenPaid[account],
+                MAGNITUDE
+            );
     }
 
     function claimRewards() external returns (uint256 amount) {
@@ -163,7 +181,11 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
         return _claim(msg.sender, recipient);
     }
 
-    function _claim(address account, address payable recipient) private nonReentrant returns (uint256 amount) {
+    function _claim(address account, address payable recipient)
+        private
+        nonReentrant
+        returns (uint256 amount)
+    {
         if (isRewardExcluded[account]) revert RewardAccountExcluded();
         _updateReward(account);
         amount = _accruedRewards[account];
@@ -171,7 +193,7 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
         _accruedRewards[account] = 0;
         withdrawnRewards[account] += amount;
         totalRewardsClaimed += amount;
-        (bool sent,) = recipient.call{value: amount}("");
+        (bool sent,) = recipient.call{ value: amount }("");
         if (!sent) revert NativeTransferFailed();
         emit RewardsClaimed(account, recipient, amount);
     }
@@ -192,26 +214,80 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
     }
 
     function _updateReward(address account) private {
+        uint256 nextRewardPerToken = currentRewardPerToken();
+        uint256 newlyVested = _newlyVestedRewards();
+        uint256 rewardPerTokenIncrease = nextRewardPerToken - rewardPerTokenStored;
+        uint256 supply = eligibleRewardSupply();
+        uint256 represented =
+            supply == 0 ? 0 : Math.mulDiv(rewardPerTokenIncrease, supply, MAGNITUDE);
+        rewardPerTokenStored = nextRewardPerToken;
+        queuedRewards += newlyVested - represented;
+        streamReleased += newlyVested;
+        lastUpdateTime = lastTimeRewardApplicable();
         if (account != address(0) && !isRewardExcluded[account]) {
-            _accruedRewards[account] += (balanceOf(account) * (rewardPerTokenStored - userRewardPerTokenPaid[account]))
-                / MAGNITUDE;
-            userRewardPerTokenPaid[account] = rewardPerTokenStored;
+            _accruedRewards[account] += Math.mulDiv(
+                balanceOf(account),
+                nextRewardPerToken - userRewardPerTokenPaid[account],
+                MAGNITUDE
+            );
+            userRewardPerTokenPaid[account] = nextRewardPerToken;
         }
     }
 
     function _reconcileEligibleSupply() private {
         uint256 supply = eligibleRewardSupply();
-        if (supply != 0 && queuedRewards != 0) {
-            _distributeQueued(supply);
+        if (supply == 0) {
+            if (streamTotal > streamReleased) {
+                queuedRewards += streamTotal - streamReleased;
+                rewardRate = 0;
+                streamTotal = 0;
+                streamReleased = 0;
+                periodFinish = block.timestamp;
+                lastUpdateTime = block.timestamp;
+                emit RewardStreamPaused(queuedRewards);
+            }
+            return;
+        }
+        if (streamTotal == streamReleased && queuedRewards != 0) {
+            _startOrExtendStream(supply);
         }
     }
 
-    function _distributeQueued(uint256 supply) private {
-        uint256 distributable = queuedRewards;
+    function _startOrExtendStream(uint256 supply) private {
+        uint256 remaining = streamingRewards();
+        uint256 distributable = queuedRewards + remaining;
+        uint256 rewardPerTokenIncrease = Math.mulDiv(distributable, MAGNITUDE, supply);
+        uint256 represented = Math.mulDiv(rewardPerTokenIncrease, supply, MAGNITUDE);
+        if (represented == 0) {
+            queuedRewards = distributable;
+            rewardRate = 0;
+            streamTotal = 0;
+            streamReleased = 0;
+            streamStartTime = block.timestamp;
+            periodFinish = block.timestamp;
+            lastUpdateTime = block.timestamp;
+            emit RewardStreamPaused(queuedRewards);
+            return;
+        }
+        rewardRate = distributable / REWARD_STREAM_DURATION;
+        streamTotal = distributable;
+        streamReleased = 0;
+        streamStartTime = block.timestamp;
+        periodFinish = block.timestamp + REWARD_STREAM_DURATION;
+        lastUpdateTime = block.timestamp;
         queuedRewards = 0;
-        rewardPerTokenStored += (distributable * MAGNITUDE) / supply;
-        emit RewardsDistributed(distributable, supply);
-        emit RewardStreamUpdated(0, block.timestamp, 0, supply);
+        emit RewardStreamUpdated(rewardRate, periodFinish, queuedRewards, supply);
+    }
+
+    function _vestedStreamRewards() private view returns (uint256) {
+        if (streamTotal == 0 || block.timestamp <= streamStartTime) return 0;
+        if (block.timestamp >= periodFinish) return streamTotal;
+        return (streamTotal * (block.timestamp - streamStartTime)) / REWARD_STREAM_DURATION;
+    }
+
+    function _newlyVestedRewards() private view returns (uint256) {
+        uint256 vested = _vestedStreamRewards();
+        return vested > streamReleased ? vested - streamReleased : 0;
     }
 
     function nonces(address owner) public view override(ERC20Permit, Nonces) returns (uint256) {

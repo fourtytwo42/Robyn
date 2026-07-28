@@ -878,13 +878,13 @@ async function claimEligible(account, launch, cycle) {
       candidate.address.toLowerCase() === launch.creator.toLowerCase(),
   );
   if (creatorIndex >= 0) {
-    const accountState = await publicClient.readContract({
+    const creatorClaimable = await publicClient.readContract({
       address: manifest.contracts.protocolFeeRouter,
       abi: feeRouterAbi,
-      functionName: "launchAccount",
-      args: [launch.token],
+      functionName: "claimableCreatorNativeByRecipient",
+      args: [launch.token, accounts[creatorIndex].address],
     });
-    if (accountState.claimableCreatorNative > 0n) {
+    if (creatorClaimable > 0n) {
       await contractTransaction(
         `endurance-creator-claim-${launch.token}-${cycle}`,
         accounts[creatorIndex],

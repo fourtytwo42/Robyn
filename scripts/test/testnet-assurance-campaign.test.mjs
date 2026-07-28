@@ -102,7 +102,7 @@ test("weighted funding tree preserves distinct wallet budgets and edge costs", (
 
 test("eight baskets cover every route exactly once", () => {
   const manifest = {
-    schemaVersion: 10,
+    schemaVersion: 11,
     chainId: 46630,
     governanceProfile: "robinhood-testnet-short-assurance",
     dao: {
@@ -359,7 +359,7 @@ test("claims settle queued DAO and treasury liabilities before reward claims", (
   );
   const daoSettlement = source.indexOf('"dao-fee-settlement"');
   const treasurySettlement = source.indexOf('"treasury-fee-settlement"');
-  const streamAccrual = source.indexOf('"DAO reward stream accrual"');
+  const streamAccrual = source.indexOf('"one-hour reward stream accrual"');
   const holderClaim = source.indexOf("`holder-claim-${claimIndex}`");
   const daoClaim = source.indexOf("`rdao-claim-${index}`");
   assert.ok(daoSettlement >= 0);

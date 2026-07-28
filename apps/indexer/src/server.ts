@@ -198,6 +198,86 @@ const kingPolicy = manifest.kingOfForestPolicy
   ? validateKingOfForestPolicy(manifest.kingOfForestPolicy)
   : null;
 
+const rewardStreamEventDefinitions = [
+  {
+    category: "holder",
+    event: parseAbiItem(
+      "event RewardReceived(uint256 indexed assetIndex,address indexed asset,uint256 received,uint256 distributed,uint256 pendingWithoutSupply)",
+    ),
+  },
+  {
+    category: "holder",
+    event: parseAbiItem(
+      "event RewardStreamUpdated(uint256 indexed assetIndex,uint256 rewardRate,uint256 periodFinish,uint256 queuedRewards,uint256 eligibleSupply)",
+    ),
+  },
+  {
+    category: "holder",
+    event: parseAbiItem(
+      "event RewardStreamPaused(uint256 indexed assetIndex,uint256 queuedRewards)",
+    ),
+  },
+  {
+    category: "holder",
+    event: parseAbiItem(
+      "event RewardClaimed(address indexed account,uint256 indexed assetIndex,address indexed asset,uint256 amount)",
+    ),
+  },
+  {
+    category: "dao",
+    event: parseAbiItem(
+      "event RewardsDeposited(uint256 amount,uint256 eligibleSupply,uint256 cumulativeDeposited)",
+    ),
+  },
+  {
+    category: "dao",
+    event: parseAbiItem(
+      "event RewardStreamUpdated(uint256 rewardRate,uint256 periodFinish,uint256 queuedRewards,uint256 eligibleSupply)",
+    ),
+  },
+  {
+    category: "dao",
+    event: parseAbiItem("event RewardStreamPaused(uint256 queuedRewards)"),
+  },
+  {
+    category: "dao",
+    event: parseAbiItem(
+      "event RewardsClaimed(address indexed account,address indexed recipient,uint256 amount)",
+    ),
+  },
+  {
+    category: "creator",
+    event: parseAbiItem(
+      "event CreatorFeesAssigned(address indexed token,address indexed recipient,uint256 amount)",
+    ),
+  },
+  {
+    category: "creator",
+    event: parseAbiItem(
+      "event CreatorRewardStreamUpdated(address indexed token,address indexed recipient,uint256 rewardRate,uint256 periodFinish,uint256 claimable,uint256 unvested)",
+    ),
+  },
+  {
+    category: "creator",
+    event: parseAbiItem(
+      "event CreatorFeesClaimed(address indexed token,address indexed claimant,address indexed recipient,uint256 amount)",
+    ),
+  },
+  {
+    category: "creator",
+    event: parseAbiItem(
+      "event CreatorFeeSplitConfigured(address indexed token,address indexed creator,address[] recipients,uint16[] sharesBps,bool locked)",
+    ),
+  },
+] as const;
+const rewardStreamEventByTopic = new Map(
+  rewardStreamEventDefinitions.map((definition) => [
+    toEventSelector(definition.event).toLowerCase(),
+    definition,
+  ]),
+);
+const rewardStreamEventTopics = [...rewardStreamEventByTopic.keys()];
+
 async function currentIndexedAddresses() {
   const launches = await sql.unsafe<
     {
@@ -924,6 +1004,117 @@ async function projectKingOfForest(asOfBlock: bigint) {
   return { processedLogs: logs.length, awarded };
 }
 
+type RewardProjectionLog = {
+  token: string | null;
+  block_number: string;
+  block_hash: string;
+  transaction_hash: Hex;
+  log_index: number;
+  address: Address;
+  topics: Hex[];
+  data: Hex;
+};
+
+function rewardPayload(value: unknown) {
+  return JSON.stringify(value, (_key, nested) =>
+    typeof nested === "bigint" ? nested.toString() : nested,
+  );
+}
+
+async function projectRewardStreams(asOfBlock: bigint) {
+  const daoAddress =
+    typeof manifest.contracts.daoToken === "string"
+      ? manifest.contracts.daoToken.toLowerCase()
+      : null;
+  const [checkpoint] = await sql.unsafe<
+    { last_block: string; last_hash: string }[]
+  >(
+    "SELECT last_block::text,last_hash FROM indexer_checkpoints WHERE service='reward-stream-projector' AND chain_id=$1",
+    [manifest.chainId],
+  );
+  const fromBlock = checkpoint
+    ? BigInt(checkpoint.last_block) + 1n
+    : BigInt(manifest.deploymentBlock);
+  if (fromBlock > asOfBlock) return 0;
+  const logs = await sql.unsafe<RewardProjectionLog[]>(
+    "SELECT x.token,l.block_number::text,l.block_hash,l.transaction_hash,l.log_index,l.address,l.topics,l.data FROM raw_logs l JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number AND b.hash=l.block_hash AND b.canonical=true LEFT JOIN launches x ON x.chain_id=l.chain_id AND x.token=l.address WHERE l.chain_id=$1 AND l.block_number BETWEEN $2 AND $3 AND l.topics->>0=ANY($4::text[]) ORDER BY l.block_number,l.transaction_index,l.log_index",
+    [
+      manifest.chainId,
+      fromBlock.toString(),
+      asOfBlock.toString(),
+      rewardStreamEventTopics,
+    ],
+  );
+  await sql.begin(async (tx) => {
+    for (const log of logs) {
+      const definition = rewardStreamEventByTopic.get(
+        log.topics[0]!.toLowerCase(),
+      );
+      if (!definition) continue;
+      if (definition.category === "holder" && !log.token) continue;
+      if (
+        definition.category === "dao" &&
+        log.address.toLowerCase() !== daoAddress
+      )
+        continue;
+      if (
+        definition.category === "creator" &&
+        log.address.toLowerCase() !==
+          manifest.contracts.protocolFeeRouter?.toLowerCase()
+      )
+        continue;
+      const decoded = decodeEventLog({
+        abi: [definition.event],
+        data: log.data,
+        topics: log.topics as [Hex, ...Hex[]],
+      });
+      const args = decoded.args as Record<string, unknown>;
+      const token =
+        definition.category === "holder"
+          ? log.token
+          : typeof args.token === "string"
+            ? args.token.toLowerCase()
+            : null;
+      const recipient =
+        typeof args.recipient === "string"
+          ? args.recipient.toLowerCase()
+          : typeof args.account === "string"
+            ? args.account.toLowerCase()
+            : null;
+      const assetIndex =
+        typeof args.assetIndex === "bigint" ? Number(args.assetIndex) : null;
+      await tx.unsafe(
+        "INSERT INTO reward_stream_events (chain_id,transaction_hash,log_index,block_number,block_hash,address,category,token,recipient,event_name,asset_index,payload) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb) ON CONFLICT (chain_id,transaction_hash,log_index) DO NOTHING",
+        [
+          manifest.chainId,
+          log.transaction_hash.toLowerCase(),
+          log.log_index,
+          log.block_number,
+          log.block_hash.toLowerCase(),
+          log.address.toLowerCase(),
+          definition.category,
+          token,
+          recipient,
+          decoded.eventName,
+          assetIndex,
+          rewardPayload(args),
+        ],
+      );
+    }
+    const [captured] = await tx.unsafe<{ hash: string }[]>(
+      "SELECT hash FROM chain_blocks WHERE chain_id=$1 AND number=$2 AND canonical=true",
+      [manifest.chainId, asOfBlock.toString()],
+    );
+    if (!captured)
+      throw new Error("Reward projection target block is not canonical");
+    await tx.unsafe(
+      "INSERT INTO indexer_checkpoints (service,chain_id,last_block,last_hash) VALUES ('reward-stream-projector',$1,$2,$3) ON CONFLICT (service,chain_id) DO UPDATE SET last_block=EXCLUDED.last_block,last_hash=EXCLUDED.last_hash,updated_at=now()",
+      [manifest.chainId, asOfBlock.toString(), captured.hash.toLowerCase()],
+    );
+  });
+  return logs.length;
+}
+
 async function resetCanonical() {
   await sql.begin(async (tx) => {
     await tx.unsafe("DELETE FROM launch_traders WHERE chain_id=$1", [
@@ -949,8 +1140,11 @@ async function resetCanonical() {
     await tx.unsafe("DELETE FROM keeper_scan_requests WHERE chain_id=$1", [
       manifest.chainId,
     ]);
+    await tx.unsafe("DELETE FROM reward_stream_events WHERE chain_id=$1", [
+      manifest.chainId,
+    ]);
     await tx.unsafe(
-      "DELETE FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector','king-of-forest-projector') AND chain_id=$1",
+      "DELETE FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector','king-of-forest-projector','reward-stream-projector') AND chain_id=$1",
       [manifest.chainId],
     );
     await tx.unsafe(
@@ -1153,8 +1347,11 @@ async function projectOnce() {
       await tx.unsafe("DELETE FROM keeper_scan_requests WHERE chain_id=$1", [
         manifest.chainId,
       ]);
+      await tx.unsafe("DELETE FROM reward_stream_events WHERE chain_id=$1", [
+        manifest.chainId,
+      ]);
       await tx.unsafe(
-        "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector') AND chain_id=$1",
+        "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector','reward-stream-projector') AND chain_id=$1",
         [manifest.chainId],
       );
     });
@@ -1167,6 +1364,7 @@ async function projectOnce() {
   );
   let projectedLaunches = 0;
   let kingProjection = { processedLogs: 0, awarded: 0 };
+  let projectedRewardEvents = 0;
   if (window) {
     let ids: bigint[];
     let atomicLaunches: Map<string, AtomicLaunchProjection> | undefined;
@@ -1196,6 +1394,9 @@ async function projectOnce() {
       async () => {
         await reconcileMetadataBindings();
         kingProjection = await projectKingOfForest(BigInt(ingested.last_block));
+        projectedRewardEvents = await projectRewardStreams(
+          BigInt(ingested.last_block),
+        );
       },
       async () => {
         const advanced = await sql.begin(async (tx) => {
@@ -1404,7 +1605,11 @@ async function projectOnce() {
               [manifest.chainId],
             );
             await tx.unsafe(
-              "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector') AND chain_id=$1",
+              "DELETE FROM reward_stream_events WHERE chain_id=$1",
+              [manifest.chainId],
+            );
+            await tx.unsafe(
+              "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector','reward-stream-projector') AND chain_id=$1",
               [manifest.chainId],
             );
           });
@@ -1417,6 +1622,9 @@ async function projectOnce() {
   } else {
     await reconcileMetadataBindings();
     kingProjection = await projectKingOfForest(BigInt(ingested.last_block));
+    projectedRewardEvents = await projectRewardStreams(
+      BigInt(ingested.last_block),
+    );
   }
   const cycleMs = Math.round((performance.now() - began) * 100) / 100;
   process.stdout.write(
@@ -1427,12 +1635,14 @@ async function projectOnce() {
       projectedLaunches,
       kingProcessedLogs: kingProjection.processedLogs,
       kingAwards: kingProjection.awarded,
+      projectedRewardEvents,
       cycleMs,
     }) + "\n",
   );
   return {
     checkpoint: ingested.last_block,
     projectedLaunches,
+    projectedRewardEvents,
     cycleMs,
   };
 }

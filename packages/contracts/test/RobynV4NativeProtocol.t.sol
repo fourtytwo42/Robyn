@@ -82,6 +82,12 @@ contract ForceNative {
     }
 }
 
+contract RejectNative {
+    receive() external payable {
+        revert("reject");
+    }
+}
+
 contract RobynV4NativeProtocolTest is Test {
     using PoolIdLibrary for PoolKey;
 
@@ -352,7 +358,10 @@ contract RobynV4NativeProtocolTest is Test {
 
         market.buy{value: 0.1 ether}(1);
         uint256 firstAllocation = 0.00025 ether;
-        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), firstAllocation);
+        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), 0);
+        vm.warp(block.timestamp + 30 minutes);
+        uint256 firstVested = feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
+        assertEq(firstVested, firstAllocation / 2);
 
         address[] memory recipients = new address[](2);
         recipients[0] = firstRecipient;
@@ -365,13 +374,18 @@ contract RobynV4NativeProtocolTest is Test {
         market.buy{value: 0.1 ether}(1);
         assertEq(
             feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)),
-            firstAllocation,
+            firstVested,
             "accrued creator claim changed"
         );
-        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), firstRecipient), 0.00015 ether);
+        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), firstRecipient), 0);
         assertEq(feeRouter.cumulativeCreatorNativeByRecipient(address(token), firstRecipient), 0.00015 ether);
-        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), secondRecipient), 0.0001 ether);
+        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), secondRecipient), 0);
         assertEq(feeRouter.launchAccount(address(token)).claimableCreatorNative, 0.0005 ether);
+
+        vm.warp(block.timestamp + 1 hours);
+        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), firstAllocation);
+        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), firstRecipient), 0.00015 ether);
+        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), secondRecipient), 0.0001 ether);
 
         uint256 firstBalanceBefore = firstRecipient.balance;
         vm.prank(firstRecipient);
@@ -380,6 +394,151 @@ contract RobynV4NativeProtocolTest is Test {
         assertEq(feeRouter.claimedCreatorNativeByRecipient(address(token), firstRecipient), 0.00015 ether);
         assertEq(feeRouter.launchAccount(address(token)).claimableCreatorNative, 0.00035 ether);
         assertEq(feeRouter.totalCreatorNativeLiability(), 0.00035 ether);
+    }
+
+    function testCreatorRewardsUnlockLinearlyWithoutRelockingVestedAmounts() public {
+        (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(bytes32(uint256(307))));
+
+        market.buy{value: 0.1 ether}(1);
+        uint256 allocation = 0.00025 ether;
+        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), 0);
+
+        vm.warp(block.timestamp + 10 minutes);
+        uint256 vestedAtTen = allocation / 6;
+        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), vestedAtTen);
+
+        market.buy{value: 0.1 ether}(1);
+        assertEq(
+            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)),
+            vestedAtTen,
+            "vested rewards were relocked"
+        );
+        RobynNativeProtocolFeeRouterV4.CreatorRewardState memory state =
+            feeRouter.creatorRewardStream(address(token), address(this));
+        assertEq(state.claimable, vestedAtTen);
+        assertEq(state.assigned, allocation * 2);
+        assertEq(state.vested, vestedAtTen);
+        assertEq(state.claimed, 0);
+        assertEq(state.unvested, allocation * 2 - vestedAtTen);
+        assertEq(state.streamEnd, block.timestamp + 1 hours);
+
+        vm.warp(block.timestamp + 30 minutes);
+        uint256 expectedTailVested = (state.unvested * 30 minutes) / 1 hours;
+        assertEq(
+            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)),
+            vestedAtTen + expectedTailVested
+        );
+
+        uint256 balanceBefore = address(this).balance;
+        uint256 claimed = feeRouter.claimCreatorFees(address(token));
+        assertEq(claimed, vestedAtTen + expectedTailVested);
+        assertEq(address(this).balance - balanceBefore, claimed);
+
+        vm.warp(block.timestamp + 30 minutes);
+        uint256 remainder = feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
+        assertEq(remainder + claimed, allocation * 2);
+        assertEq(feeRouter.claimCreatorFees(address(token)), remainder);
+        assertEq(feeRouter.totalCreatorNativeLiability(), 0);
+    }
+
+    function testCreatorClaimsAtZeroTenThirtyFiftyNineAndSixtyMinutes() public {
+        (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(bytes32(uint256(309))));
+        uint256 started = block.timestamp;
+        uint256 assigned = 0.00025 ether;
+        market.buy{value: 0.1 ether}(1);
+        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), 0);
+
+        uint256 claimed;
+        vm.warp(started + 10 minutes);
+        uint256 atTen = feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
+        assertEq(atTen, (assigned * 10 minutes) / 1 hours);
+        claimed += feeRouter.claimCreatorFees(address(token));
+
+        vm.warp(started + 30 minutes);
+        uint256 atThirty = feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
+        assertEq(atThirty, (assigned * 30 minutes) / 1 hours - claimed);
+        claimed += feeRouter.claimCreatorFees(address(token));
+
+        vm.warp(started + 59 minutes);
+        uint256 atFiftyNine =
+            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
+        assertEq(atFiftyNine, (assigned * 59 minutes) / 1 hours - claimed);
+        claimed += feeRouter.claimCreatorFees(address(token));
+
+        vm.warp(started + 60 minutes);
+        uint256 atSixty = feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
+        assertEq(atSixty, assigned - claimed);
+        claimed += feeRouter.claimCreatorFees(address(token));
+        assertEq(claimed, assigned);
+        assertEq(feeRouter.totalCreatorNativeLiability(), 0);
+    }
+
+    function testCreatorBatchToAndFailedRecipientPreserveStreams() public {
+        (RobynLaunchToken first,, RobynV4BondingCurveMarket firstMarket) =
+            coordinator.createLaunch(_request(bytes32(uint256(310))));
+        (RobynLaunchToken second,, RobynV4BondingCurveMarket secondMarket) =
+            coordinator.createLaunch(_request(bytes32(uint256(311))));
+        firstMarket.buy{value: 0.1 ether}(1);
+        secondMarket.buy{value: 0.1 ether}(1);
+        vm.warp(block.timestamp + 1 hours);
+
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(first);
+        tokens[1] = address(second);
+        address payable recipient = payable(address(0x1234));
+        uint256 beforeBalance = recipient.balance;
+        uint256 claimed = feeRouter.claimCreatorFeesBatchTo(tokens, recipient);
+        assertEq(claimed, 0.0005 ether);
+        assertEq(recipient.balance - beforeBalance, claimed);
+
+        firstMarket.buy{value: 0.1 ether}(1);
+        vm.warp(block.timestamp + 1 hours);
+        uint256 claimable =
+            feeRouter.claimableCreatorNativeByRecipient(address(first), address(this));
+        uint256 liabilityBefore = feeRouter.totalCreatorNativeLiability();
+        RejectNative rejector = new RejectNative();
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.NativeTransferFailed.selector);
+        feeRouter.claimCreatorFeesTo(address(first), payable(address(rejector)));
+        assertEq(
+            feeRouter.claimableCreatorNativeByRecipient(address(first), address(this)),
+            claimable,
+            "failed recipient lost claim"
+        );
+        assertEq(feeRouter.totalCreatorNativeLiability(), liabilityBefore);
+    }
+
+    function testForcedNativeCannotChangeCurvePrincipalOrBlockGraduation() public {
+        (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(bytes32(uint256(308))));
+
+        ForceNative forcedBeforeBuy = new ForceNative{value: 0.25 ether}();
+        forcedBeforeBuy.force(payable(address(market)));
+        assertEq(market.unattributedNative(), 0.25 ether);
+        assertEq(market.curveNativePrincipal(), 0);
+
+        market.buy{value: 0.5 ether}(1);
+        uint256 principalAfterBuy = market.curveNativePrincipal();
+        assertGt(principalAfterBuy, 0);
+        assertEq(market.unattributedNative(), 0.25 ether);
+
+        ForceNative forcedMidCurve = new ForceNative{value: 0.125 ether}();
+        forcedMidCurve.force(payable(address(market)));
+        assertEq(market.unattributedNative(), 0.375 ether);
+        assertEq(market.curveNativePrincipal(), principalAfterBuy);
+
+        _graduateMarket(market);
+        assertTrue(market.graduated());
+        assertEq(market.curveNativePrincipal(), 0);
+        assertEq(market.unattributedNative(), 0.375 ether);
+        assertEq(token.balanceOf(address(market)), 0);
+
+        uint256 treasuryBefore = TREASURY.balance;
+        assertEq(market.sweepUnattributedNative(), 0.375 ether);
+        assertEq(TREASURY.balance - treasuryBefore, 0.375 ether);
+        assertEq(market.cumulativeUnattributedNativeSwept(), 0.375 ether);
+        assertEq(market.unattributedNative(), 0);
     }
 
     function testCreatorFeeSplitCanBePermanentlyLockedOnlyByCreator() public {

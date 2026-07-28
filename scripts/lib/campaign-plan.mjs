@@ -67,7 +67,7 @@ export function basketConversionActorIndex(launchIndex, legIndex) {
 }
 
 export function assertSecurityRemediationManifest(manifest) {
-  if (manifest?.schemaVersion !== 10 || manifest?.chainId !== 46630) {
+  if (manifest?.schemaVersion !== 11 || manifest?.chainId !== 46630) {
     throw new Error(
       "Campaign requires a schema-10 security-remediated chain-46630 manifest",
     );

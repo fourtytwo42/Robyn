@@ -118,10 +118,17 @@ export function CreatorPortfolio({
         (sum, row) => ({
           pending: sum.pending + BigInt(row.rewards.pendingCreatorBase),
           claimable: sum.claimable + BigInt(row.rewards.claimableNative),
+          unlocking: sum.unlocking + BigInt(row.rewards.unlockingNative),
           accrued: sum.accrued + BigInt(row.rewards.lifetimeAccruedNative),
           claimed: sum.claimed + BigInt(row.rewards.lifetimeClaimedNative),
         }),
-        { pending: 0n, claimable: 0n, accrued: 0n, claimed: 0n },
+        {
+          pending: 0n,
+          claimable: 0n,
+          unlocking: 0n,
+          accrued: 0n,
+          claimed: 0n,
+        },
       ),
     [launches],
   );
@@ -211,11 +218,15 @@ export function CreatorPortfolio({
           <strong>{amount(totals.claimable.toString())} ETH</strong>
         </article>
         <article>
+          <span>Unlocking over 1 hour</span>
+          <strong>{amount(totals.unlocking.toString())} ETH</strong>
+        </article>
+        <article>
           <span>Pending conversion</span>
           <strong>{amount(totals.pending.toString())} mUSD</strong>
         </article>
         <article>
-          <span>Lifetime earned</span>
+          <span>Lifetime assigned</span>
           <strong>{amount(totals.accrued.toString())} ETH</strong>
         </article>
         <article>
@@ -270,11 +281,15 @@ export function CreatorPortfolio({
                   <dd>{amount(rewards.claimableNative)} ETH</dd>
                 </div>
                 <div>
+                  <dt>Unlocking over 1 hour</dt>
+                  <dd>{amount(rewards.unlockingNative)} ETH</dd>
+                </div>
+                <div>
                   <dt>Pending</dt>
                   <dd>{amount(rewards.pendingCreatorBase)} mUSD</dd>
                 </div>
                 <div>
-                  <dt>Lifetime</dt>
+                  <dt>Lifetime assigned</dt>
                   <dd>{amount(rewards.lifetimeAccruedNative)} ETH</dd>
                 </div>
               </dl>

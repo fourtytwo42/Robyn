@@ -80,6 +80,10 @@ export function AdminHealthDashboard({
           value(snapshot.indexer.kingProjectionAsOfBlock),
         ],
         [
+          "Reward streams block",
+          value(snapshot.indexer.rewardProjectionAsOfBlock),
+        ],
+        [
           "Ingestion lag",
           `${value(snapshot.indexer.ingestionLagBlocks)} blocks`,
         ],
@@ -90,6 +94,10 @@ export function AdminHealthDashboard({
         [
           "Forest award lag",
           `${value(snapshot.indexer.kingProjectionLagBlocks)} blocks`,
+        ],
+        [
+          "Reward stream lag",
+          `${value(snapshot.indexer.rewardProjectionLagBlocks)} blocks`,
         ],
         ["Ingestion cycle", `${value(snapshot.indexer.ingestionCycleMs)} ms`],
         ["Projection cycle", `${value(snapshot.indexer.projectionCycleMs)} ms`],
@@ -136,6 +144,17 @@ export function AdminHealthDashboard({
               ],
               ["DAO queued", snapshot.protocol.daoQueued],
               ["DAO streaming", snapshot.protocol.daoStreaming],
+              [
+                "Creator streams",
+                snapshot.protocol.creatorStreamConserved
+                  ? "Conserved"
+                  : "Mismatch",
+              ],
+              ["Creator assigned", snapshot.protocol.creatorAssigned],
+              ["Creator vested", snapshot.protocol.creatorVested],
+              ["Creator claimable", snapshot.protocol.creatorClaimable],
+              ["Creator unlocking", snapshot.protocol.creatorUnvested],
+              ["Creator claimed", snapshot.protocol.creatorClaimed],
               ["Bonding pools", snapshot.protocol.bondingPools],
               ["Trading pools", snapshot.protocol.tradingPools],
               ["Phase mismatches", snapshot.protocol.phaseMismatchCount],

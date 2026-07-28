@@ -77,8 +77,9 @@ Display upstream contracts, Robyn contracts, basket configuration hash, implemen
 | Pending fee | Fee value belongs to the launch but has not been claimed from the upstream protocol |
 | Pending cash | Claimed WETH/USDG assigned to a basket leg but not converted |
 | Purchased | Reward asset acquired and held by the vault/controller |
-| Accrued | Holder allocation calculated by native accumulator or proposed epoch |
-| Claimable | Allocation finalized and available to withdraw |
+| Unlocking | Purchased reward asset is releasing linearly over the rolling one-hour stream |
+| Accrued | Holder allocation checkpointed by the transfer-aware accumulator |
+| Claimable | Currently unlocked allocation available to withdraw |
 | Claimed | Asset transferred to holder and marked consumed |
 | Delayed | Conversion or epoch is intentionally waiting for threshold, quote, challenge or route recovery |
 | Reconciled exception | Issuer action or exceptional loss has been publicly accounted for under incident policy |
@@ -113,6 +114,8 @@ Time weighting must be defined in block units with a published formula. The defa
 | REWARD-010 | Failed asset conversion MUST remain visible as pending cash for the same leg | MUST | Failure-path E2E |
 | REWARD-011 | Small claims SHOULD remain available for batching rather than be forfeited | SHOULD | Multi-epoch claim test |
 | REWARD-012 | The page MUST explain that received Stock Tokens may be subject to issuer restrictions and controls | MUST for R2 | Copy/legal test |
+| REWARD-013 | Native holder rewards MUST unlock linearly over one rolling hour and checkpoint both accounts before every transfer | MUST | Unit, fuzz and transfer-timing tests |
+| REWARD-014 | A pull claim MUST transfer only the currently unlocked amount and leave the remaining stream intact | MUST | 0, 10, 30, 59 and 60 minute claim tests |
 
 ## Portfolio
 
