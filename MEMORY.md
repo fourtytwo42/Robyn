@@ -556,6 +556,18 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-28: the product owner replaced the separate 24-hour observation and
+  longer endurance requirements with one two-hour schema-11 endurance run. The
+  two hours count as the complete prelaunch observation period. The run must
+  exercise realistic creation, bonding and graduated trading, settlements,
+  one-hour holder/creator/DAO streams, claims, indexing, keeper processing, and
+  public UI/API reads while continuously enforcing solvency, fixed-supply,
+  locked-principal, queue, lag, restart, resource, and RPC-CU gates. Internal
+  smart-contract audits are the only planned contract review before launch;
+  this is an explicit product-owner risk acceptance, not an independent audit.
+  Do not describe a passing run as independently audited or as eliminating
+  smart-contract risk, and do not deploy mainnet without a separate explicit
+  authorization.
 - 2026-07-28: active schema-11 source `98e94c444664c7f067ffd83b6d68abefdf99c7b2`
   passed reproducibility and the schema-11 fork rehearsal before a fresh public
   testnet deployment at block `94516447`. Pre-deployment verification passed
@@ -3872,9 +3884,11 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Complete schema-11 recovery, 24-hour observation, and endurance gates before
-  considering testnet-production assurance closed. Public health and initial
-  browser acceptance now pass on the post-audit-correction release.
+- Complete the schema-11 recovery gate and the product-owner-approved two-hour
+  endurance run. The endurance window is also the entire observation period.
+  Public health and initial browser acceptance pass on the
+  post-audit-correction release. Record the shortened assurance window and lack
+  of independent audit as accepted residual risk in the final release report.
 - Rotate the Alchemy credentials exposed in chat. Create separate protected
   testnet and mainnet applications/keys, verify both HTTP and WSS, then revoke
   the superseded shared credential without placing any key in Git, logs,
@@ -3892,7 +3906,9 @@ When sources conflict, use this order:
   Codex in-app browser, or obtain an explicit product-owner waiver. Root-agent
   serialized UAT is complete but is not independent.
 - Configure and test a human alert receiver before unattended public-testnet or real-value operation; local Prometheus/Grafana alert state alone is insufficient.
-- Obtain independent protocol/security review before real-value operation. Stateful invariants and malicious callbacks are now implemented, but the internal engineering review is not independent.
+- Independent protocol/security review is explicitly deferred by the product
+  owner for this launch. Preserve this as an accepted residual risk; the
+  internal engineering review is not independent.
 - Ask Vladdy whether the team will provide a repository/license and whether a native multi-asset mode is planned; current deployed contracts do not expose a safe weighted-basket seam.
 - Reconcile Alloy's current `0x5a5f...10f2` launchpad and `0x0E9705...` index factory with the pinned MIT repository and its older published deployment before treating the repository as exact source for the current app.
 - Obtain HoodETF and BASKET Protocol complete source repositories, licenses and audit status before considering code reuse; do not infer a copying license from Blockscout verification.
