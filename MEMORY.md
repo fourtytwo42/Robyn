@@ -562,9 +562,12 @@ Durable project context lives here. Update this file whenever information should
   537/537 checks. The bounded live smoke completed 93 submitted and 93 confirmed
   journaled actions, including holder, creator, and DAO pull claims. The active
   application now serves schema 11 from rebuilt database
-  `robyn_testnet_rehearsal`; release `a335fb0` was promoted. Commit `7012d45`
-  corrects the health audit for bounded one-unit uncheckpointed stream dust and
-  adds regression tests; build and promote the final exact commit next.
+  `robyn_testnet_rehearsal`. The current exact release contains commit
+  `7012d45`, which corrects the health audit for bounded one-unit
+  uncheckpointed stream dust and adds regression tests. Public health is OK,
+  all 537 deployment checks pass, and desktop plus 390x844 in-app-browser
+  acceptance found the canonical schema-11 token, one-hour reward copy, zero
+  horizontal overflow, and no console warnings or errors.
   Checksummed evidence is under
   `/home/hendo420/robyn-evidence/schema11-one-hour-98e94c4/`.
   The keeper operator was funded above its `0.00025 ETH` minimum. Four failed
@@ -3869,9 +3872,9 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Promote the exact post-audit-correction schema-11 release, verify public
-  browser and health acceptance, then complete recovery, 24-hour observation,
-  and endurance gates before considering testnet-production assurance closed.
+- Complete schema-11 recovery, 24-hour observation, and endurance gates before
+  considering testnet-production assurance closed. Public health and initial
+  browser acceptance now pass on the post-audit-correction release.
 - Rotate the Alchemy credentials exposed in chat. Create separate protected
   testnet and mainnet applications/keys, verify both HTTP and WSS, then revoke
   the superseded shared credential without placing any key in Git, logs,
