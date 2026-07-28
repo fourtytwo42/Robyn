@@ -121,3 +121,12 @@ export async function isolateScheduledScan<T>(
     await resumeActivity();
   }
 }
+
+export async function runScanStages<T>(
+  items: readonly T[],
+  stages: readonly ((item: T) => void | Promise<void>)[],
+) {
+  for (const stage of stages) {
+    await Promise.all(items.map((item) => Promise.resolve(stage(item))));
+  }
+}

@@ -5,6 +5,7 @@ import {
   projectedDailyComputeUnits,
   projectedScheduledDailyComputeUnits,
   requestCompletionIsCurrent,
+  runScanStages,
   scanRequestRetryDelayMs,
 } from "../src/scan-control.js";
 
@@ -128,5 +129,21 @@ describe("event-driven keeper scan control", () => {
       ),
     ).rejects.toThrow("scan failed");
     expect(calls).toEqual(["pause", "scan", "resume"]);
+  });
+
+  it("completes every launch in one scan stage before starting the next", async () => {
+    const calls: string[] = [];
+    await runScanStages(
+      [1, 2],
+      [
+        (item) => {
+          calls.push(`harvest-${item}`);
+        },
+        (item) => {
+          calls.push(`settle-${item}`);
+        },
+      ],
+    );
+    expect(calls).toEqual(["harvest-1", "harvest-2", "settle-1", "settle-2"]);
   });
 });

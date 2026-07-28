@@ -1,5 +1,24 @@
 # Project Memory
 
+### 2026-07-28 - Keeper reconciliation stages are batched across launches
+
+- Context: Exact release `1275035` isolated the scheduled keeper scan from
+  concurrent worker activity, but two indexed launches still projected a
+  combined 253,667 idle CU/day, above the 250,000 gate. Equivalent Multicall
+  reads could not coalesce because each launch advanced asynchronously through
+  harvest, fee conversion, settlement, and basket scans.
+- Decision: Run each full-reconciliation operation as a launch-wide stage
+  barrier so equivalent reads for every launch enter the same Multicall batch.
+  Event-driven requests continue using the complete token-specific scan
+  immediately, and the 15-minute safety reconciliation remains unchanged.
+- Files: `apps/keeper/src/server.ts`, `apps/keeper/src/scan-control.ts`, and
+  `apps/keeper/test/scan-control.test.ts`.
+- Verification: Keeper lint, 30 focused tests, TypeScript build, and
+  `git diff --check` pass.
+- Follow-up: Reproducibly build and promote the exact change, measure the live
+  aggregate CU projection, check keeper funding, and start a fresh run ID only
+  if all pre-clock gates pass.
+
 ### 2026-07-28 - Keeper idle CU measurement is isolated
 
 - Context: After promoting `125e2f8`, the indexed failed-run launch raised the

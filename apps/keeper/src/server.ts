@@ -41,6 +41,7 @@ import {
 import {
   isolateScheduledScan,
   projectedScheduledDailyComputeUnits,
+  runScanStages,
   scanRequestRetryDelayMs,
 } from "./scan-control.js";
 
@@ -1280,18 +1281,24 @@ async function readLaunchLegs(launch: LaunchScanRow, timestamp: bigint) {
   }));
 }
 
-async function scanLaunch(launch: LaunchScanRow, timestamp: bigint) {
-  if (isNativeV4 || manifest.market?.type === "uniswap-v3-bonding-curve-v1") {
-    await enqueueHarvest(launch);
-  }
-  if (isNativeV4 && manifest.contracts.protocolFeeRouter) {
-    await enqueueV4LaunchFeeConversion(launch);
-    await enqueueV4ProtocolSettlement(launch);
-  } else if (
-    manifest.contracts.protocolFeeRouter &&
-    manifest.contracts.nativeFeeConverter
-  ) {
-    await enqueueProtocolConversions(launch);
+async function scanLaunch(
+  launch: LaunchScanRow,
+  timestamp: bigint,
+  options: { includeProtocolStages?: boolean } = {},
+) {
+  if (options.includeProtocolStages ?? true) {
+    if (isNativeV4 || manifest.market?.type === "uniswap-v3-bonding-curve-v1") {
+      await enqueueHarvest(launch);
+    }
+    if (isNativeV4 && manifest.contracts.protocolFeeRouter) {
+      await enqueueV4LaunchFeeConversion(launch);
+      await enqueueV4ProtocolSettlement(launch);
+    } else if (
+      manifest.contracts.protocolFeeRouter &&
+      manifest.contracts.nativeFeeConverter
+    ) {
+      await enqueueProtocolConversions(launch);
+    }
   }
   const legs = await readLaunchLegs(launch, timestamp);
   const settings = await vaultSettings(launch.vault);
@@ -1409,9 +1416,35 @@ async function fullScan() {
       );
       const block = await publicClient.getBlock();
       estimatedComputeUnits += 20;
-      await Promise.all(
-        launches.map((launch) => scanLaunch(launch, block.timestamp)),
-      );
+      await runScanStages(launches, [
+        async (launch) => {
+          if (
+            isNativeV4 ||
+            manifest.market?.type === "uniswap-v3-bonding-curve-v1"
+          ) {
+            await enqueueHarvest(launch);
+          }
+        },
+        async (launch) => {
+          if (isNativeV4 && manifest.contracts.protocolFeeRouter) {
+            await enqueueV4LaunchFeeConversion(launch);
+          } else if (
+            manifest.contracts.protocolFeeRouter &&
+            manifest.contracts.nativeFeeConverter
+          ) {
+            await enqueueProtocolConversions(launch);
+          }
+        },
+        async (launch) => {
+          if (isNativeV4 && manifest.contracts.protocolFeeRouter) {
+            await enqueueV4ProtocolSettlement(launch);
+          }
+        },
+        (launch) =>
+          scanLaunch(launch, block.timestamp, {
+            includeProtocolStages: false,
+          }),
+      ]);
       fullScanEstimatedComputeUnits +=
         estimatedComputeUnits - computeUnitsBeforeScan;
       fullScanCount += 1;
