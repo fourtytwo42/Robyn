@@ -1,5 +1,49 @@
 # Project Memory
 
+### 2026-07-28 - Immediate-reward testnet release accepted
+
+- Context: The user authorized a fresh Robinhood Testnet deployment and broad
+  live lifecycle acceptance for immediate holder and DAO rewards plus
+  configurable creator splits. This remains testnet-only and does not authorize
+  Robinhood Mainnet.
+- Deployment: The fresh chain-46630 stack deployed at block `94184199`.
+  Initial verification passed all 536 checks. The DAO token is
+  `0xf63b9F324BB907a148A73f7D6253b722A563Ea6a`, fee router is
+  `0x14E99a69A352CA79c54b5F3BB41Cd1776323769d`, hook is
+  `0x40B105D0F060184915E05D7Ef1f60658375Ed8e4`, launch factory is
+  `0x47b2538976CE91A6088060De9E9D360F61553c34`, and genesis token is
+  `0xA10d289d4755C29CAd739503468Fad355C9954d8`.
+- Live lifecycle: The crash-safe software-wallet journal contains 93 submitted
+  and 93 confirmed actions covering all 24 basket routes, bonding buys,
+  graduation, post-graduation buys and sells, settlements, conversions,
+  immediate holder and DAO claims, and creator claims. A separate atomic launch
+  created `IRWD` at `0x20DB03E96538B79Ff7E4f59Ae9ebE16025360544`
+  with an initial purchase. Its creator split was proven future-only at 60/40,
+  claimed by both recipients, changed to 100% creator, irreversibly locked, and
+  rejected a later edit.
+- Governance: A harmless proposal preserving the 600-second timelock completed
+  the real delegate, propose, 10-minute delay, vote, 30-minute voting period,
+  queue, 10-minute timelock, and execute lifecycle. Final proposal state is
+  `Executed`, and the timelock remains 600 seconds.
+- Keeper correction: Live conversion retries exposed a self-triggered batch
+  cascade against route input limits. Commit `3515431` retains completed
+  conversion jobs and permits the next batch only after the 15-minute
+  reconciliation interval. Testnet proved exactly one batch per basket leg per
+  interval, empty failed and active queues, stable pacing, and solvent
+  liabilities. Commit `4a62448` makes release verification lifecycle-aware
+  while preserving strict fresh-deployment checks.
+- Verification: Repository lint, typecheck, builds, 174 active Foundry tests,
+  keeper tests, public route checks, and lifecycle-aware verification pass.
+  Final chain reconciliation again passed 536 checks with zero failures, fixed
+  supplies unchanged, genesis phase `Trading`, router balance equal to
+  liabilities, no unattributed native value, locked position 612 and principal
+  unchanged, governance executed, and the project wallet above the required
+  `0.0015 ETH` reserve. Automated in-app-browser acceptance passed without
+  initiating any user-controlled wallet action.
+- Evidence: `/home/hendo420/robyn-evidence/immediate-rewards-721d008/`.
+  `robyn-testnet-endurance.service` remains inactive and must not be restarted
+  without explicit user authorization.
+
 ### 2026-07-27 - Immediate-reward contracts deployed to testnet
 
 - Context: The user authorized a fresh Robinhood Testnet deployment and full
