@@ -138,6 +138,19 @@ test("runner is fixed to one uninterrupted two-hour release gate", () => {
   assert.match(source, /phase: readiness \? "readiness" : "endurance"/);
 });
 
+test("pre-clock readiness tolerates an empty ingestion-lag history", () => {
+  const source = readFileSync(
+    new URL("../testnet-endurance.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    source,
+    /const ingestionLagSamples = state\.ingestionLagSamples \?\? \[\]/,
+  );
+  assert.match(source, /ingestionLagSamples\.length >= 20/);
+  assert.doesNotMatch(source, /state\.ingestionLagSamples\.length >= 20/);
+});
+
 test("advanced fee probes use runnable one-shot maintenance cycles", () => {
   const source = readFileSync(
     new URL("../testnet-endurance.mjs", import.meta.url),

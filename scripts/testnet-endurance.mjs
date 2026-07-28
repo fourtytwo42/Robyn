@@ -2126,8 +2126,9 @@ async function sample({ readiness = false } = {}) {
         ingestionLag,
       ].slice(-20);
     }
-    const ingestionLagP95 = percentile(state.ingestionLagSamples, 0.95);
-    if (state.ingestionLagSamples.length >= 20 && ingestionLagP95 > 50) {
+    const ingestionLagSamples = state.ingestionLagSamples ?? [];
+    const ingestionLagP95 = percentile(ingestionLagSamples, 0.95);
+    if (ingestionLagSamples.length >= 20 && ingestionLagP95 > 50) {
       failures.push(
         `ingestion lag p95 ${ingestionLagP95} blocks exceeds threshold`,
       );

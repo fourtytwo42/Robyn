@@ -1,5 +1,16 @@
 # Project Memory
 
+### 2026-07-28 - Cold readiness p95 state is optional
+
+- Context: Pre-clock run `schema11-2h-cec4470-09` reached readiness with
+  correct protected wallet paths but failed its first readiness sample because
+  `state.ingestionLagSamples` does not exist before endurance sampling begins.
+  No workload clock or write started.
+- Decision: Treat missing ingestion-lag history as an empty array when
+  computing and gating p95. Preserve the failed pre-clock evidence and use a
+  new run ID after rebuilding.
+- Files: `scripts/testnet-endurance.mjs` and its policy regression test.
+
 ### 2026-07-28 - Idle CU gate receives measured margin
 
 - Context: The promoted `7f0a65b` release passed its full verifier, but a
