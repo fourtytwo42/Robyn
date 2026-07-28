@@ -328,6 +328,25 @@ test("transaction funding includes dynamic EIP-1559 fee headroom", () => {
   );
 });
 
+test("funding preflight and execution share all required campaign wallet targets", () => {
+  const source = readFileSync(
+    new URL("../testnet-endurance.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.equal(source.match(/campaignFundingTargets\(\)/g)?.length, 3);
+  for (const [index, amount] of [
+    [96, "700_000_000_000_000n"],
+    [97, "700_000_000_000_000n"],
+    [98, "700_000_000_000_000n"],
+    [99, "500_000_000_000_000n"],
+  ]) {
+    assert.match(
+      source,
+      new RegExp(`targetByIndex\\.set\\(${index}, ${amount}\\)`),
+    );
+  }
+});
+
 test("unresolved workload failures keep passing infrastructure paused", () => {
   assert.equal(enduranceSamplePassed(true, undefined), true);
   assert.equal(

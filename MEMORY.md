@@ -1,5 +1,21 @@
 # Project Memory
 
+### 2026-07-28 - Endurance funding execution matches its preflight
+
+- Context: The exact `af04488` funding preflight proved sufficient balance but
+  showed wallets 98 and 99 below their required targets. Preflight budgeted
+  both wallets, while `ensureFunding()` omitted them even though later direct
+  Universal Router and third graduated-fee coverage use them.
+- Decision: Define one campaign funding-target map and use it for both
+  preflight and funding execution, including wallets 96 through 99. This
+  prevents the budget check and actual allocations from diverging.
+- Files: `scripts/testnet-endurance.mjs` and
+  `scripts/test/testnet-endurance-policy.test.mjs`.
+- Verification: All 20 endurance policy tests, Node syntax, formatting, and
+  `git diff --check` pass. No endurance clock or new transaction was started.
+- Follow-up: Rebuild and promote the exact runner release before installing a
+  fresh run ID.
+
 ### 2026-07-28 - Keeper reconciliation stages are batched across launches
 
 - Context: Exact release `1275035` isolated the scheduled keeper scan from

@@ -714,7 +714,7 @@ async function createEnduranceLaunch(index) {
   }
 }
 
-async function fundingPreflight() {
+function campaignFundingTargets() {
   const targetByIndex = new Map();
   for (let index = 0; index < 20; index += 1) {
     targetByIndex.set(index, 100_000_000_000_000n);
@@ -726,8 +726,11 @@ async function fundingPreflight() {
   targetByIndex.set(97, 700_000_000_000_000n);
   targetByIndex.set(98, 700_000_000_000_000n);
   targetByIndex.set(99, 500_000_000_000_000n);
-  targetByIndex.set(99, 500_000_000_000_000n);
-  targetByIndex.set(98, 700_000_000_000_000n);
+  return targetByIndex;
+}
+
+async function fundingPreflight() {
+  const targetByIndex = campaignFundingTargets();
   const balances = await Promise.all(
     [...targetByIndex.keys()].map((index) =>
       publicClient.getBalance({ address: accounts[index].address }),
@@ -763,15 +766,7 @@ async function fundingPreflight() {
 }
 async function ensureFunding() {
   if (state.funding?.completedAt) return;
-  const targetByIndex = new Map();
-  for (let index = 0; index < 20; index += 1) {
-    targetByIndex.set(index, 100_000_000_000_000n);
-  }
-  for (let index = 40; index < 48; index += 1) {
-    targetByIndex.set(index, 500_000_000_000_000n);
-  }
-  targetByIndex.set(96, 700_000_000_000_000n);
-  targetByIndex.set(97, 700_000_000_000_000n);
+  const targetByIndex = campaignFundingTargets();
   const balances = await Promise.all(
     [...targetByIndex.keys()].map((index) =>
       publicClient.getBalance({ address: accounts[index].address }),
