@@ -30,6 +30,12 @@
   No backup or fault injection had begun. The gate now normalizes those fields
   with `tonumber`; the failed attempt remains preserved under
   `/var/lib/robyn/testnet-recovery/schema11-a4de7f5-recovery/`.
+- Recovery correction 2: The next attempt successfully created and decrypted
+  the encrypted backup and verified every restored artifact, but its checksum
+  manifest included itself and therefore could never match. No live fault
+  injection had begun. Both snapshot and final evidence sealing now exclude
+  `SHA256SUMS`; partial evidence remains under
+  `/var/lib/robyn/testnet-recovery/schema11-25a6082-recovery-2/`.
 
 ### 2026-07-28 - Schema-11 one-hour rewards deployed to testnet
 

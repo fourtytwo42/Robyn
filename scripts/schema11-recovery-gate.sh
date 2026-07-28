@@ -112,7 +112,8 @@ sed -E 's#=.*#=<redacted>#' /home/hendo420/.config/robyn/testnet/release.env >"$
 systemctl cat pm2-hendo420.service postgresql.service redis-server.service minio.service robyn-ipfs.service nginx.service >"${snapshot}/configuration/systemd-units.txt"
 find /home/hendo420/robyn-evidence/schema11-one-hour-98e94c4 -type f \( -name '*.jsonl' -o -name '*journal*' \) -exec cp --parents {} "${snapshot}/journals" \;
 jq -n --arg createdAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg gitSha "${served_sha}" --arg manifestSha256 "${manifest_sha}" --arg database "${database}" --arg databaseFingerprint "${source_fingerprint}" '{schemaVersion:1,createdAt:$createdAt,gitSha:$gitSha,manifestSha256:$manifestSha256,chainId:46630,database:$database,databaseFingerprint:$databaseFingerprint,secretsIncluded:false}' >"${snapshot}/manifest.json"
-(cd "${snapshot}" && find . -type f -print0 | sort -z | xargs -0 sha256sum >SHA256SUMS)
+(cd "${snapshot}" && find . -type f -print0 | sort -z | xargs -0 sha256sum >"${work}/snapshot.SHA256SUMS")
+mv "${work}/snapshot.SHA256SUMS" "${snapshot}/SHA256SUMS"
 archive="${backup_root}/schema11-${run_id}.tar.zst"
 encrypted="${archive}.age"
 tar --zstd -cf "${archive}" -C "${snapshot}" .
@@ -226,5 +227,6 @@ status_json >"${evidence}/status-after.json"
 runuser -u hendo420 -- env PM2_HOME="${PM2_HOME}" "${pm2}" jlist >"${evidence}/pm2-after.json"
 
 jq -n --arg completedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg releaseSha "${served_sha}" --arg manifestSha256 "${manifest_sha}" --arg encryptedBackup "${encrypted}" --arg sourceDatabase "${database}" --arg restoredDatabase "${restore_db}" --arg sourceFingerprint "${source_fingerprint}" --arg restoredFingerprint "${restored_fingerprint}" --argjson artifactCount "${source_count}" '{schemaVersion:1,completedAt:$completedAt,releaseSha:$releaseSha,manifestSha256:$manifestSha256,encryptedBackup:$encryptedBackup,sourceDatabase:$sourceDatabase,restoredDatabase:$restoredDatabase,databaseFingerprintMatch:($sourceFingerprint==$restoredFingerprint),sourceFingerprint:$sourceFingerprint,restoredFingerprint:$restoredFingerprint,artifactCount:$artifactCount,redisRestored:true,minioRestored:true,ipfsReproduced:true,pm2Recovery:true,nativeServiceRecovery:true,rpcRecovery:true,noDuplicateCanonicalLogs:true,noFailedFinancialJobs:true,offVmBackup:true,passed:true}' >"${evidence}/summary.json"
-(cd "${evidence}" && find . -type f -print0 | sort -z | xargs -0 sha256sum >SHA256SUMS)
+(cd "${evidence}" && find . -type f -print0 | sort -z | xargs -0 sha256sum >"${work}/evidence.SHA256SUMS")
+mv "${work}/evidence.SHA256SUMS" "${evidence}/SHA256SUMS"
 printf 'recovery=passed\nsummary=%s\nbackup=%s\n' "${evidence}/summary.json" "${encrypted}"
