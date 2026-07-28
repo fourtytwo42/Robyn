@@ -1,5 +1,33 @@
 # Project Memory
 
+### 2026-07-28 - Smart-contract audit NO-GO after immediate rewards
+
+- Context: The user requested a fresh audit of the current immediate-reward and
+  configurable-creator-split contracts after the latest testnet changes.
+- Scope: Exact source/served release
+  `2eb489404841b589d0e3510d1aba0b8619b96b1b`, deployment manifest
+  `deployments/46630-v4.json`, active chain `46630`, evidence directory
+  `/home/hendo420/robyn-evidence/security-audit-2eb4894-2026-07-28`.
+- Result: Internal verdict is NO-GO for Robinhood Mainnet. Found one high
+  issue: forced ETH sent to a bonding market can make terminal graduation revert
+  with `RobynV4FeePositionLocker.ResidualTooLarge` because
+  `RobynV4BondingCurveMarket._graduate()` forwards `address(this).balance`
+  rather than tracked curve-raised native principal. Found one medium economic
+  issue: immediate DAO and launch-holder rewards are balance-at-settlement
+  capturable; this is expected from the current no-vesting product policy but
+  needs explicit acceptance or redesign before mainnet.
+- Evidence/tests: Temporary proof patches and logs were saved under the audit
+  evidence directory. `testAuditForcedNativePermanentlyBlocksGraduation` and
+  `testAuditDaoRewardsAreCapturedBySettlementTimeHolder` passed in the three
+  inherited Foundry suites. Baseline build, Foundry assurance, 256/depth-128
+  invariants, 512-wallet economic simulation, Gitleaks, pnpm audit, and the
+  repo security script passed.
+- Report: `docs/assurance/security-audit-2026-07-28.md`.
+- Follow-up: Fix tracked graduation principal plus safe bonding-market
+  forced-ETH sweep, decide/disclose or redesign immediate reward timing, add
+  permanent regression tests, rerun full assurance gates, and obtain an
+  independent professional smart-contract audit before Robinhood Mainnet.
+
 ### 2026-07-28 - Immediate-reward testnet release accepted
 
 - Context: The user authorized a fresh Robinhood Testnet deployment and broad
