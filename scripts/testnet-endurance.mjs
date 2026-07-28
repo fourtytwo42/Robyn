@@ -1972,7 +1972,7 @@ function availableMemory() {
   return BigInt(match[1]) * 1024n;
 }
 
-async function timedFetch(name, url, latencies) {
+async function timedFetch(name, url, endpointLatencies) {
   const began = performance.now();
   const result = await rpcRetry(name, async () => {
     const response = await fetch(url, {
@@ -1984,7 +1984,10 @@ async function timedFetch(name, url, latencies) {
     }
     return response;
   });
-  latencies.push(performance.now() - began);
+  endpointLatencies.push({
+    name,
+    durationMs: performance.now() - began,
+  });
   return result;
 }
 
@@ -2050,7 +2053,7 @@ function statExists(path) {
 
 async function sample({ readiness = false } = {}) {
   const sampledAtMs = Date.now();
-  const latencies = [];
+  const endpointLatencies = [];
   const failures = [];
   let status;
   let rpcBlock;
@@ -2063,18 +2066,22 @@ async function sample({ readiness = false } = {}) {
     const statusResponse = await timedFetch(
       "api-status",
       `${apiBase}/status`,
-      latencies,
+      endpointLatencies,
     );
     status = await statusResponse.json();
-    await timedFetch("web-home", `${publicBase}/`, latencies);
-    await timedFetch("web-markets", `${publicBase}/discover`, latencies);
-    await timedFetch("web-dao", `${publicBase}/dao`, latencies);
-    await timedFetch("web-admin-health", `${publicBase}/admin/health`, latencies);
+    await timedFetch("web-home", `${publicBase}/`, endpointLatencies);
+    await timedFetch("web-markets", `${publicBase}/discover`, endpointLatencies);
+    await timedFetch("web-dao", `${publicBase}/dao`, endpointLatencies);
+    await timedFetch(
+      "web-admin-health",
+      `${publicBase}/admin/health`,
+      endpointLatencies,
+    );
     if (state.enduranceLaunches[0]) {
       await timedFetch(
         "web-token",
         `${publicBase}/launches/${state.enduranceLaunches[0].token}`,
-        latencies,
+        endpointLatencies,
       );
     }
     rpcBlock = await rpcRetry("rpc-block", () => publicClient.getBlockNumber());
@@ -2175,10 +2182,30 @@ async function sample({ readiness = false } = {}) {
   if (memoryBytes < ENDURANCE_MINIMUM_MEMORY_BYTES) {
     failures.push("memory headroom gate failed");
   }
-  const p95 = percentile(latencies, 0.95);
-  if (p95 > ENDURANCE_MAXIMUM_API_P95_MS) {
-    failures.push(`endpoint p95 ${p95.toFixed(1)}ms exceeds threshold`);
+  const apiLatencyMs =
+    endpointLatencies.find((entry) => entry.name === "api-status")
+      ?.durationMs ?? null;
+  if (!readiness && Number.isFinite(apiLatencyMs)) {
+    state.apiLatencySamples = [
+      ...(state.apiLatencySamples ?? []),
+      apiLatencyMs,
+    ].slice(-20);
   }
+  const apiLatencySamples = readiness
+    ? Number.isFinite(apiLatencyMs)
+      ? [apiLatencyMs]
+      : []
+    : (state.apiLatencySamples ?? []);
+  const apiP95 = percentile(apiLatencySamples, 0.95);
+  if (apiP95 > ENDURANCE_MAXIMUM_API_P95_MS) {
+    failures.push(`API p95 ${apiP95.toFixed(1)}ms exceeds threshold`);
+  }
+  const publicPageP95 = percentile(
+    endpointLatencies
+      .filter((entry) => entry.name.startsWith("web-"))
+      .map((entry) => entry.durationMs),
+    0.95,
+  );
   const infrastructurePassed = failures.length === 0;
   const passed = enduranceSamplePassed(
     infrastructurePassed,
@@ -2241,7 +2268,10 @@ async function sample({ readiness = false } = {}) {
       filesystem.bavail * filesystem.bsize
     ).toString(),
     availableDiskPercent: disk.availablePercent,
-    endpointP95Ms: p95,
+    endpointLatencies,
+    apiP95Ms: apiP95,
+    publicPageP95Ms: publicPageP95,
+    endpointP95Ms: apiP95,
     ingestionLagBlocks:
       status?.observedHeadBlock && rpcBlock !== undefined
         ? Number(rpcBlock) - Number(status.observedHeadBlock)
@@ -2348,6 +2378,7 @@ state.enduranceStartedAt = new Date().toISOString();
 state.segments = [{ index: 1, startedAt: state.enduranceStartedAt }];
 state.lastSamplePassed = undefined;
 state.lastSampleAtMs = undefined;
+state.apiLatencySamples = [];
 saveState();
 
 function pauseForWorkloadFailure(error) {

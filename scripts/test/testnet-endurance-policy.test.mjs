@@ -128,6 +128,13 @@ test("runner is fixed to one uninterrupted two-hour release gate", () => {
     "utf8",
   );
   assert.match(source, /targetHealthySeconds:\s*ENDURANCE_DURATION_SECONDS/);
+  assert.match(source, /endpointLatencies\.push\(\{\s*name,\s*durationMs:/);
+  assert.match(
+    source,
+    /API p95 \$\{apiP95\.toFixed\(1\)\}ms exceeds threshold/,
+  );
+  assert.match(source, /publicPageP95Ms:\s*publicPageP95/);
+  assert.doesNotMatch(source, /endpoint p95 .* exceeds threshold/);
   assert.match(source, /mode:\s*"uninterrupted"/);
   assert.match(source, /terminalFailure/);
   assert.match(source, /dueLaunchCount\(state\.healthySeconds\)/);

@@ -1,5 +1,25 @@
 # Project Memory
 
+### 2026-07-28 - Endurance API latency gate excludes page-render latency
+
+- Context: Fresh run `schema11-2h-b28b2db-12` passed funding and readiness,
+  journaled 18 confirmed transactions, created launch
+  `0x50bEB644142fc0Bee3AAd0b2181407c6E6332e7c`, and passed its 537-check
+  deployment review. Its second endurance sample failed at zero credited
+  healthy seconds because the runner combined API status and SSR page timings
+  into a value labeled API p95. Live route measurements showed API status at
+  0.11 to 0.24 seconds while the launch page was the slowest SSR route.
+- Decision: Retain successful-response checks for every public route, record
+  every named endpoint duration, and apply the 750 ms gate only to a rolling
+  20-sample API latency window. Preserve the failed run and all confirmed
+  hashes; never replay them.
+- Files: `scripts/testnet-endurance.mjs` and
+  `scripts/test/testnet-endurance-policy.test.mjs`.
+- Commands/tests: All 21 endurance policy tests and syntax validation for
+  every JavaScript runner script pass.
+- Follow-up: Commit, push, reproducibly rebuild and promote the exact runner,
+  then install a new run ID with new salts and a fresh uninterrupted clock.
+
 ### 2026-07-28 - Deep protocol audit batches all launch state
 
 - Context: Promoted release `9bbc237` indexed the preserved failed-run launch,
@@ -858,6 +878,14 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-28: run `schema11-2h-b28b2db-12` is preserved as a zero-credit
+  failed run with 18 confirmed transactions and one fresh launch. The
+  deployment, workload, accounting, process, lag, resource, and CU checks
+  passed; the sole failure was a runner defect that mixed SSR page-render
+  latency into the API p95 gate. The correction records named route durations
+  and gates a rolling API-only p95. Do not replay any confirmed hash. Commit,
+  push, reproducibly build, promote, and use a new run ID before the next
+  two-hour attempt.
 - 2026-07-28: the product owner replaced the separate 24-hour observation and
   longer endurance requirements with one two-hour schema-11 endurance run. The
   two hours count as the complete prelaunch observation period. The run must
@@ -2379,6 +2407,18 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-28 - Final endurance retry requires an exact rebuilt runner
+
+- Exact release `b28b2db3bf6406c02f1e430babe813f439237237` passed reproducible
+  build comparison, promotion, all 537 deployment checks, and live CU
+  preflight at 241,187 projected CU/day.
+- Run `schema11-2h-b28b2db-12` failed closed at zero credited time after 18
+  confirmed transactions because page and API timings were incorrectly
+  combined. The static service is stopped and the evidence remains durable.
+- The corrected runner has focused tests passing but is not yet committed,
+  pushed, built, or promoted. A replacement run must use a new ID, salts,
+  launches, and full two-hour clock.
+
 ### 2026-07-28 - One-hour pull-claim rewards candidate
 
 - Context: Product policy now requires holder basket, DAO native, and creator
@@ -3563,6 +3603,15 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-28: exact release `b28b2db` passed reproducibility, promotion, all
+  537 live deployment checks, router and reward conservation, zero Multicall
+  fallback, and a measured aggregate idle projection of 241,187 CU/day.
+  Replacement run `schema11-2h-b28b2db-12` passed readiness and its first
+  deployment review before failing closed at zero healthy seconds on a
+  misclassified SSR latency sample. Twelve samples per public route afterward
+  returned HTTP 200; API status measured 0.11 to 0.24 seconds and the token
+  page measured 0.34 to 0.67 seconds. The API-only latency correction passes
+  all 21 endurance policy tests and complete runner-script syntax validation.
 - 2026-07-27: the event-driven Alchemy keeper release passed repository lint,
   typecheck, package tests, Anvil smoke, 165 Foundry tests with one
   environment-gated fork skip, deployment verifier tests, security scans, and
@@ -4186,6 +4235,9 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Commit and promote the API-only endurance latency correction, then run a
+  fresh two-hour attempt under a new run ID without replaying any transaction
+  from `schema11-2h-b28b2db-12`.
 - Complete the schema-11 recovery gate and the product-owner-approved two-hour
   endurance run. The endurance window is also the entire observation period.
   Public health and initial browser acceptance pass on the
