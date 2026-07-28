@@ -20,7 +20,7 @@ testnet="$(jq '[.[]|select(.name|endswith("-testnet"))]' <<<"$pm2_json")"
 indexer_ws_url="$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_OPERATOR_WS_RPC_URL' <<<"$testnet")"
 [[ "$indexer_ws_url" == wss://robinhood-testnet.g.alchemy.com/v2/* ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_RECONCILIATION_MS' <<<"$testnet")" == "900000" ]]
-[[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_HEARTBEAT_MS' <<<"$testnet")" == "4000" ]]
+[[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_HEARTBEAT_MS' <<<"$testnet")" == "5200" ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_WS_DEBOUNCE_MS' <<<"$testnet")" == "500" ]]
 
 server_rpc_url="$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_OPERATOR_RPC_URL' <<<"$testnet")"
@@ -63,14 +63,26 @@ public_status="$(curl -fsS https://testnet.sherwoodforest.trade/api/status)"
    "$(jq -r .launchCount <<<"$public_status")" ]]
 [[ "$(jq -r .chainId <<<"$public_status")" -eq 46630 ]]
 for observed in "$status" "$public_status"; do
+  observed_head="$(jq -r .observedHeadBlock <<<"$observed")"
+  canonical_checkpoint="$(jq -r .asOfBlock <<<"$observed")"
+  indexed_at="$(jq -r .indexedAt <<<"$observed")"
+  [[ "$observed_head" =~ ^[0-9]+$ ]]
+  [[ "$canonical_checkpoint" =~ ^[0-9]+$ ]]
+  [[ "$observed_head" -ge "$canonical_checkpoint" ]]
+  indexed_at_epoch="$(date -u -d "$indexed_at" +%s)"
+  [[ $(( $(date -u +%s) - indexed_at_epoch )) -le 120 ]]
   [[ "$(jq -r .ingestionStatus <<<"$observed")" == "ok" ]]
   [[ "$(jq -r .projectionStatus <<<"$observed")" == "ok" ]]
   [[ "$(jq -r .projectionAsOfBlock <<<"$observed")" =~ ^[0-9]+$ ]]
-  [[ "$(jq -r .ingestionLagBlocks <<<"$observed")" -le 100 ]]
   [[ "$(jq -r .projectionLagBlocks <<<"$observed")" -le 100 ]]
   jq -e '.ingestionCycleMs >= 0 and .projectionCycleMs >= 0 and .rpcRetryCount >= 0' \
     <<<"$observed" >/dev/null
 done
+local_observed_head="$(jq -r .observedHeadBlock <<<"$status")"
+public_observed_head="$(jq -r .observedHeadBlock <<<"$public_status")"
+observed_head_gap=$(( local_observed_head - public_observed_head ))
+[[ "$observed_head_gap" -lt 0 ]] && observed_head_gap=$(( -observed_head_gap ))
+[[ "$observed_head_gap" -le 100 ]]
 ROBYN_TESTNET_RPC_URL="$server_rpc_url" \
   ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS=true \
   node scripts/verify-testnet-v4-deployment.mjs "$manifest" \

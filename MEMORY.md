@@ -1,5 +1,23 @@
 # Project Memory
 
+### 2026-07-28 - Release verifier follows event-driven head liveness
+
+- Context: Exact release `450eb5a` was healthy, but promotion exhausted its
+  retry window because `verify-testnet-release.sh` still treated distance from
+  the last canonical event as ingestion lag. The verifier also still required
+  the superseded four-second heartbeat while the release pins 5.2 seconds.
+- Decision: Verify a fresh numeric `observedHeadBlock`, require its persisted
+  observation time to be no more than 120 seconds old, require local and
+  public status head observations within 100 blocks, and retain the canonical
+  projection consistency gate. Do not require quiet event-driven checkpoints
+  to move when no relevant log exists.
+- Files: `scripts/verify-testnet-release.sh` and
+  `scripts/test/release-verifier-redaction.test.mjs`.
+- Verification: Shell syntax, PM2 topology validation, formatting, and all 20
+  release/endurance policy tests pass.
+- Follow-up: Commit and push, reproducibly rebuild, promote the exact release,
+  then begin a new run ID only after pre-clock readiness passes.
+
 ### 2026-07-28 - Endurance gains a pre-clock readiness phase
 
 - Context: Run `schema11-2h-9ca9726-07` failed before its clock because it
