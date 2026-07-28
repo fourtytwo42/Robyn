@@ -87,12 +87,12 @@ for (const app of apps) {
     app.name === "robyn-indexer-testnet" &&
     (app.env?.ROBYN_OPERATOR_WS_RPC_URL !==
       "wss://example.invalid/testnet" ||
-      app.env?.INDEXER_RECONCILIATION_MS !== "30000" ||
+      app.env?.INDEXER_RECONCILIATION_MS !== "900000" ||
       app.env?.INDEXER_HEARTBEAT_MS !== "10000" ||
       app.env?.INDEXER_WS_DEBOUNCE_MS !== "500")
   ) {
     throw new Error(
-      "robyn-indexer-testnet must use filtered WebSocket wakes with 30-second reconciliation",
+      "robyn-indexer-testnet must use filtered WebSocket wakes with 15-minute reconciliation",
     );
   }
 }
@@ -138,11 +138,11 @@ const mainnetIndexer = mainnet.apps.find(
 if (
   mainnetIndexer?.env?.ROBYN_OPERATOR_RPC_URL !== mainnetHttpRpc ||
   mainnetIndexer?.env?.ROBYN_OPERATOR_WS_RPC_URL !== mainnetWebSocketRpc ||
-  mainnetIndexer?.env?.INDEXER_RECONCILIATION_MS !== "30000" ||
+  mainnetIndexer?.env?.INDEXER_RECONCILIATION_MS !== "900000" ||
   mainnetIndexer?.env?.INDEXER_HEARTBEAT_MS !== "10000"
 ) {
   throw new Error(
-    "robyn-indexer-mainnet must mirror the filtered WebSocket and reconciliation policy",
+    "robyn-indexer-mainnet must mirror the filtered WebSocket and 15-minute reconciliation policy",
   );
 }
 if (

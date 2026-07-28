@@ -95,7 +95,7 @@ module.exports = {
         ROBYN_OPERATOR_WS_RPC_URL: wsRpcUrl,
         ROBYN_MANIFEST: manifest,
         ROBYN_INDEXER_ROLE: "ingester",
-        INDEXER_RECONCILIATION_MS: "120000",
+        INDEXER_RECONCILIATION_MS: "900000",
         INDEXER_HEARTBEAT_MS: "10000",
         INDEXER_WS_DEBOUNCE_MS: "500",
         INDEXER_BLOCK_RANGE: "200",

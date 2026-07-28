@@ -71,7 +71,7 @@ if (!["ingester", "projector", "combined"].includes(role)) {
 const reconciliationMs = Number(
   process.env.INDEXER_RECONCILIATION_MS ??
     process.env.INDEXER_POLL_MS ??
-    "30000",
+    "900000",
 );
 const ingesterHeartbeatMs = Number(process.env.INDEXER_HEARTBEAT_MS ?? "10000");
 const wakeDebounceMs = Number(process.env.INDEXER_WS_DEBOUNCE_MS ?? "500");
