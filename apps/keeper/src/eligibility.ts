@@ -60,6 +60,22 @@ export function isFailedJobRetryDue(
   );
 }
 
+export function completedConversionBatchIsDue(
+  finishedOn: number | undefined,
+  now: number,
+  cooldownMs: number,
+): boolean {
+  if (
+    finishedOn === undefined ||
+    !Number.isFinite(now) ||
+    !Number.isFinite(cooldownMs) ||
+    cooldownMs <= 0
+  ) {
+    return false;
+  }
+  return now - finishedOn >= cooldownMs;
+}
+
 function normalizedAddress(address: string): string {
   return address.toLowerCase();
 }

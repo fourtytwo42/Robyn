@@ -17,6 +17,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { createDatabase } from "@robyn/db";
 import {
   boundedProtocolInput,
+  completedConversionBatchIsDue,
   conversionQuoteIsUsable,
   conversionJobId,
   isFailedJobRetryDue,
@@ -1380,6 +1381,16 @@ async function scanLaunch(launch: LaunchScanRow, timestamp: bigint) {
     ) {
       await audit(key, "queued", existing.attemptsMade, payload);
       await existing.retry();
+    } else if (
+      (await existing.isCompleted()) &&
+      completedConversionBatchIsDue(existing.finishedOn, Date.now(), scanMs)
+    ) {
+      await existing.remove();
+      await audit(key, "queued", 0, payload);
+      await queue.add("convert-leg", payload, {
+        jobId: key,
+        priority: 4,
+      });
     }
   }
   tokensScanned += 1;
@@ -2624,11 +2635,7 @@ async function finalizeCompletedJob(
     null,
     result,
   );
-  if (
-    isReusableStreamJobKind(job.data.kind) ||
-    job.data.kind === "convert" ||
-    job.data.kind === undefined
-  ) {
+  if (isReusableStreamJobKind(job.data.kind) || job.data.kind === undefined) {
     await job.remove();
   }
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   boundedProtocolInput,
+  completedConversionBatchIsDue,
   conversionQuoteIsUsable,
   conversionJobId,
   failedJobRetryDelayMs,
@@ -81,6 +82,16 @@ describe("keeper eligibility", () => {
     expect(isFailedJobRetryDue(1, undefined, 1_000_000)).toBe(false);
     expect(() => failedJobRetryDelayMs(-1)).toThrow("retry policy");
   });
+
+  it("paces completed conversion batches by the reconciliation interval", () => {
+    expect(completedConversionBatchIsDue(1_000, 900_999, 900_000)).toBe(false);
+    expect(completedConversionBatchIsDue(1_000, 901_000, 900_000)).toBe(true);
+    expect(completedConversionBatchIsDue(undefined, 901_000, 900_000)).toBe(
+      false,
+    );
+    expect(completedConversionBatchIsDue(1_000, 901_000, 0)).toBe(false);
+  });
+
   it("uses one reusable job id for each financial stream", () => {
     expect(protocolNativeJobId("0xABCDEF")).toBe("protocol-native-0xabcdef");
     expect(protocolLaunchJobId("0xABCDEF")).toBe("protocol-launch-0xabcdef");

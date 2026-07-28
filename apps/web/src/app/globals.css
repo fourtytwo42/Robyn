@@ -1434,6 +1434,7 @@ h1 {
 
 .health-card dd {
   margin: 0.4rem 0 0;
+  overflow-wrap: anywhere;
   font-family:
     "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 0.9rem;
