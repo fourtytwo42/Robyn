@@ -347,6 +347,14 @@ test("funding preflight and execution share all required campaign wallet targets
   }
 });
 
+test("endurance deployment reviews permit canonical lifecycle progression", () => {
+  const source = readFileSync(
+    new URL("../testnet-endurance.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS: "true"/);
+});
+
 test("unresolved workload failures keep passing infrastructure paused", () => {
   assert.equal(enduranceSamplePassed(true, undefined), true);
   assert.equal(

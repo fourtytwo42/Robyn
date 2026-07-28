@@ -2003,7 +2003,11 @@ async function runReview(reviewIndex) {
     {
       encoding: "utf8",
       maxBuffer: 16 * 1024 * 1024,
-      env: { ...process.env, ROBYN_TESTNET_RPC_URL: rpcUrl },
+      env: {
+        ...process.env,
+        ROBYN_TESTNET_RPC_URL: rpcUrl,
+        ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS: "true",
+      },
     },
   );
   const verification = JSON.parse(output);

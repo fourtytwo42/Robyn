@@ -1,5 +1,22 @@
 # Project Memory
 
+### 2026-07-28 - Endurance deployment reviews allow live lifecycle state
+
+- Context: Run `schema11-2h-50a9402-11` passed readiness and began its clock,
+  then failed at zero accumulated healthy seconds after 20 journaled
+  transactions. Its deployment review rejected the already graduated genesis
+  market and Trading pool, even though the verifier has an explicit
+  lifecycle-progress mode and promotion already uses it.
+- Decision: Set `ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS=true` for endurance
+  deployment reviews. Fresh deployment verification remains strict; live
+  endurance reviews still require the market and hook phases to agree.
+- Evidence: Preserve the failed run and every confirmed hash under
+  `/var/lib/robyn/testnet-endurance/schema11-2h-50a9402-11`; never replay them.
+- Verification: All 21 endurance policy tests pass, and the live verifier
+  passes all 537 checks with lifecycle progression enabled.
+- Follow-up: Rebuild and promote the exact runner release, then use a new run
+  ID, salts, launches, and uninterrupted clock.
+
 ### 2026-07-28 - Endurance funding execution matches its preflight
 
 - Context: The exact `af04488` funding preflight proved sufficient balance but
