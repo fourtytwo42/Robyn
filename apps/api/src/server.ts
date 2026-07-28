@@ -39,6 +39,7 @@ import {
   AssetCatalogService,
   type AssetCatalogManifest,
 } from "./asset-catalog.js";
+import { rewardStreamConservation } from "./reward-conservation.js";
 
 const app = Fastify({
   logger: { level: process.env.LOG_LEVEL ?? "info" },
@@ -1237,6 +1238,7 @@ async function remediationProtocolState() {
   let phaseMismatchCount = 0;
   let lockerMismatchCount = 0;
   let rewardStreamMismatchCount = 0;
+  let rewardStreamRoundingDust = 0n;
   let bondingPools = 0;
   let tradingPools = 0;
   for (const launch of launches) {
@@ -1328,16 +1330,29 @@ async function remediationProtocolState() {
       const queued = values[offset + 1] as bigint;
       const streaming = values[offset + 2] as bigint;
       const vested = values[offset + 3] as bigint;
-      if (received !== queued + streaming + vested) {
+      const conservation = rewardStreamConservation(
+        received,
+        queued,
+        streaming,
+        vested,
+      );
+      if (!conservation.conserved) {
         rewardStreamMismatchCount += 1;
+      } else {
+        rewardStreamRoundingDust += conservation.uncheckpointedRoundingDust;
       }
       offset += 4;
     }
   }
   const routerSolvent = routerBalance >= liabilities;
+  const daoConservation = rewardStreamConservation(
+    daoDeposited,
+    daoQueued,
+    daoStreaming,
+    daoVested,
+  );
   const daoStreamConserved =
-    daoDeposited === daoQueued + daoStreaming + daoVested &&
-    daoClaimed <= daoVested;
+    daoConservation.conserved && daoClaimed <= daoVested;
   const creatorStreamConserved =
     creatorAssigned === creatorVested + creatorUnvested &&
     creatorVested === creatorClaimed + creatorClaimable &&
@@ -1372,6 +1387,8 @@ async function remediationProtocolState() {
     daoStreaming: daoStreaming.toString(),
     daoVested: daoVested.toString(),
     daoClaimed: daoClaimed.toString(),
+    daoUncheckpointedRoundingDust:
+      daoConservation.uncheckpointedRoundingDust.toString(),
     creatorStreamConserved,
     creatorAssigned: creatorAssigned.toString(),
     creatorVested: creatorVested.toString(),
@@ -1381,6 +1398,7 @@ async function remediationProtocolState() {
     phaseMismatchCount,
     lockerMismatchCount,
     rewardStreamMismatchCount,
+    rewardStreamRoundingDust: rewardStreamRoundingDust.toString(),
     bondingPools,
     tradingPools,
     tokenSink: deployment.contracts.tokenSink,
