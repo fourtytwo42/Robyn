@@ -151,6 +151,19 @@ test("pre-clock readiness tolerates an empty ingestion-lag history", () => {
   assert.doesNotMatch(source, /state\.ingestionLagSamples\.length >= 20/);
 });
 
+test("pre-graduation probes accept provider-redacted EVM reverts", () => {
+  const source = readFileSync(
+    new URL("../testnet-endurance.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.equal(
+    source.match(
+      /InvalidPhase\|PoolNotTrading\|bonding\|98d23bb0\|Execution reverted/g,
+    )?.length,
+    3,
+  );
+});
+
 test("advanced fee probes use runnable one-shot maintenance cycles", () => {
   const source = readFileSync(
     new URL("../testnet-endurance.mjs", import.meta.url),

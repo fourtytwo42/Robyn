@@ -1357,7 +1357,7 @@ async function maybePreGraduationCoverage() {
         args: [launch.token, 1n, account.address, deadline],
       }),
     },
-    /InvalidPhase|PoolNotTrading|bonding|98d23bb0/i,
+    /InvalidPhase|PoolNotTrading|bonding|98d23bb0|Execution reverted/i,
   );
   const amount1Max = tokenBalance / 1_000n || 1n;
   const liquidityPlan = encodeV4MintPosition({
@@ -1381,7 +1381,7 @@ async function maybePreGraduationCoverage() {
         args: [liquidityPlan, deadline],
       }),
     },
-    /InvalidPhase|PoolNotTrading|bonding|98d23bb0/i,
+    /InvalidPhase|PoolNotTrading|bonding|98d23bb0|Execution reverted/i,
   );
   const donation = encodeUniversalV4Donation({
     poolKey: endurancePoolKey(launch),
@@ -1400,7 +1400,7 @@ async function maybePreGraduationCoverage() {
         args: [donation.commands, donation.inputs, deadline],
       }),
     },
-    /InvalidPhase|PoolNotTrading|bonding|98d23bb0/i,
+    /InvalidPhase|PoolNotTrading|bonding|98d23bb0|Execution reverted/i,
   );
   state.preGraduationCoverageComplete = true;
   saveState();

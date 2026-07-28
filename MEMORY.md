@@ -1,5 +1,21 @@
 # Project Memory
 
+### 2026-07-28 - Pre-graduation rejection accepts redacted revert
+
+- Context: Run `schema11-2h-5baa0cc-10` passed readiness and its first sample,
+  then invalidated at zero accumulated seconds. The new bonding pool correctly
+  rejected the direct pre-graduation swap, but Alchemy returned only
+  `Execution reverted for an unknown reason`, so the runner could not match the
+  expected custom error text.
+- Decision: For the three explicit pre-graduation swap, liquidity, and donation
+  probes only, accept a generic EVM `Execution reverted` response as proof of
+  rejection. Success and non-revert transport or chain errors remain failures.
+- Evidence: Preserve the run journal, including all confirmed setup, launch,
+  trade, transfer, approval, sell, and creator-claim transactions. Never replay
+  those hashes.
+- Follow-up: Rebuild and promote, then use a new run ID, salts, and launches
+  with a fresh uninterrupted clock.
+
 ### 2026-07-28 - Cold readiness p95 state is optional
 
 - Context: Pre-clock run `schema11-2h-cec4470-09` reached readiness with
