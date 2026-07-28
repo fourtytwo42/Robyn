@@ -48,7 +48,7 @@ wait_healthy() {
   local label="$1"
   for _ in {1..120}; do
     if status_json >"${evidence}/health-${label}.json.tmp" 2>/dev/null &&
-      jq -e '.overall=="ok" and .protocol.status=="ok" and .protocol.routerSolvent==true and .protocol.daoStreamConserved==true and .protocol.creatorStreamConserved==true and .protocol.rewardStreamMismatchCount==0 and .indexer.ingestionLagBlocks<=100 and .indexer.projectionLagBlocks<=100' "${evidence}/health-${label}.json.tmp" >/dev/null; then
+      jq -e '.overall=="ok" and .protocol.status=="ok" and .protocol.routerSolvent==true and .protocol.daoStreamConserved==true and .protocol.creatorStreamConserved==true and (.protocol.rewardStreamMismatchCount|tonumber)==0 and (.indexer.ingestionLagBlocks|tonumber)<=100 and (.indexer.projectionLagBlocks|tonumber)<=100' "${evidence}/health-${label}.json.tmp" >/dev/null; then
       mv "${evidence}/health-${label}.json.tmp" "${evidence}/health-${label}.json"
       return 0
     fi

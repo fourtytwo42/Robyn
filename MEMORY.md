@@ -25,6 +25,11 @@
   preflight while preserving `0.0015 ETH`, then begin the fresh two-hour clock.
   The release remains not independently audited, not penetration-tested, not
   legally reviewed, and unauthorized for Robinhood Mainnet.
+- Recovery correction: The first recovery attempt stopped at its baseline
+  predicate because the health API serializes lag counters as decimal strings.
+  No backup or fault injection had begun. The gate now normalizes those fields
+  with `tonumber`; the failed attempt remains preserved under
+  `/var/lib/robyn/testnet-recovery/schema11-a4de7f5-recovery/`.
 
 ### 2026-07-28 - Schema-11 one-hour rewards deployed to testnet
 
