@@ -158,3 +158,17 @@ The canonical identity is `AtomicLaunchCreated` from the creator transaction rec
 The schema-v4 protocol adds fixed-supply RDAO governance and the immutable 50/25/20/5 fee router with per-token creator-native accounting. Architecture, accounting, keeper controls, and invariants are specified in [DAO Governance and Fee Operations](dao-governance-operations.md) and PRD 11.
 
 `RobynProtocolFeeRouterV2` keeps launch identity as the accounting key. Native conversion credits `claimableCreatorNative` on that launch's account, while `cumulativeCreatorNative` and `claimedCreatorNative` preserve lifetime reconciliation. The router retains `totalCreatorNativeLiability` as a global conservation check but exposes no wallet-aggregated creator balance. Single and batch claims validate the immutable creator recorded when the coordinator registered the launch.
+
+The active v4 router extends this model with creator-selected recipient splits.
+Each launch defaults to its canonical creator at 100%. The creator may assign
+future creator fees across one to eight unique addresses whose shares total
+exactly 10,000 basis points. An open split can be changed; a locked split can
+never be changed. Updating a split never reallocates ETH already assigned to a
+recipient. Each recipient claims its own token-scoped balance.
+
+Launch-token holder basket rewards and DAO-holder native rewards use immediate
+transfer-aware per-share accounting. A deposit is claimable without a vesting
+delay, and balances settle before transfers so rewards assigned before a
+transfer stay with the previous holder. If eligible supply is zero, deposits
+queue until eligible supply returns. Immediate allocation does not prevent a
+wallet from entering before a predictable settlement and exiting afterward.

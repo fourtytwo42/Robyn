@@ -840,17 +840,25 @@ jq -n \
       protocolFeeBps: 100
     },
     rewardStreams: {
-      launchTokenDurationSeconds: 3600,
-      daoDurationSeconds: 3600,
-      vesting: "continuous-linear",
-      claims: "available-while-vesting"
+      launchTokenDurationSeconds: 0,
+      daoDurationSeconds: 0,
+      vesting: "none",
+      allocation: "immediate-at-settlement",
+      claims: "immediately-claimable"
+    },
+    creatorRewards: {
+      allocation: "immediate-at-fee-intake",
+      maximumRecipients: 8,
+      sharesTotalBps: 10000,
+      updatesAffect: "future-fees-only",
+      lockPolicy: "creator-controlled-and-irreversible"
     },
     dao: {
       tokenName: "Robyn DAO",
       tokenSymbol: "RDAO",
       fixedSupply: "1000000000000000000000000000",
       initialOwnerShareBps: 10000,
-      rewardStreamDurationSeconds: 3600,
+      rewardStreamDurationSeconds: 0,
       zeroEligibleSupplyPolicy: "queue-until-eligible-supply-returns",
       feePolicy: {
         basketBps: 5000,

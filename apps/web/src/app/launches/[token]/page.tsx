@@ -438,9 +438,9 @@ export default async function LaunchDetail({
               explorerUrl={publicEnvironment.explorerUrl}
             />
             <p className="muted">
-              Basket rewards vest continuously over one hour. Your claimable
-              amount grows while you hold the token, and rewards vested before a
-              transfer remain yours.
+              Converted basket rewards are assigned immediately according to
+              current token balances. Rewards assigned before a transfer remain
+              with the previous holder.
             </p>
           </section>
 

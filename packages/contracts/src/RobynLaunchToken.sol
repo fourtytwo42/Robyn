@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/// @notice Fixed-supply token with transfer-aware, multi-asset one-hour reward streams.
+/// @notice Fixed-supply token with transfer-aware, immediate multi-asset rewards.
 contract RobynLaunchToken is ERC20, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint8 public constant MAX_REWARD_ASSETS = 5;
     uint8 public constant MAX_EXCLUDED_ACCOUNTS = 16;
     uint256 public constant MAGNITUDE = 2 ** 128;
-    uint256 public constant REWARD_STREAM_DURATION = 1 hours;
-    string public constant CONTRACT_VERSION = "3.1.0";
+    uint256 public constant REWARD_STREAM_DURATION = 0;
+    string public constant CONTRACT_VERSION = "4.0.0";
 
     error Unauthorized();
     error InvalidAssetCount();
@@ -73,9 +73,8 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         uint256 eligibleSupply
     );
     event RewardStreamPaused(uint256 indexed assetIndex, uint256 queuedRewards);
-    event RewardClaimed(
-        address indexed account, uint256 indexed assetIndex, address indexed asset, uint256 amount
-    );
+    event RewardDistributed(uint256 indexed assetIndex, uint256 amount, uint256 eligibleSupply);
+    event RewardClaimed(address indexed account, uint256 indexed assetIndex, address indexed asset, uint256 amount);
     event ExclusionsSealed(address[] accounts, uint256 eligibleSupply);
 
     constructor(
@@ -155,32 +154,24 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         _validateAssetIndex(index);
         uint256 supply = eligibleSupply;
         if (supply == 0) return magnifiedRewardPerShare[index];
-        uint256 newlyVested = _newlyVestedRewards(index);
-        return magnifiedRewardPerShare[index] + (newlyVested * MAGNITUDE) / supply;
+        return magnifiedRewardPerShare[index];
     }
 
     function streamingRewards(uint256 index) public view returns (uint256) {
         _validateAssetIndex(index);
-        RewardStream memory stream = _streams[index];
-        return stream.streamTotal - _vestedStreamRewards(index);
+        return 0;
     }
 
     function totalRewardsVested(uint256 index) external view returns (uint256) {
         _validateAssetIndex(index);
-        uint256 unrecorded = eligibleSupply == 0 ? 0 : _newlyVestedRewards(index);
-        return totalRewardsDistributed[index] + unrecorded;
+        return totalRewardsDistributed[index];
     }
 
-    function distributeReward(uint256 index, uint256 requestedAmount)
-        external
-        nonReentrant
-        returns (uint256 received)
-    {
+    function distributeReward(uint256 index, uint256 requestedAmount) external nonReentrant returns (uint256 received) {
         if (msg.sender != controller) revert Unauthorized();
         if (!exclusionsSealed) revert ExclusionsNotSealed();
         _validateAssetIndex(index);
         if (requestedAmount == 0) revert InvalidAmount();
-        _updateStream(index);
         IERC20 asset = _rewardAssets[index];
         uint256 beforeBalance = asset.balanceOf(address(this));
         asset.safeTransferFrom(msg.sender, address(this), requestedAmount);
@@ -189,16 +180,16 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         totalRewardsReceived[index] += received;
         pendingWithoutSupply[index] += received;
         uint256 supply = eligibleSupply;
-        if (supply != 0) _startOrExtendStream(index, supply);
-        emit RewardReceived(index, address(asset), received, 0, pendingWithoutSupply[index]);
+        uint256 distributed;
+        if (supply != 0) distributed = _distributePending(index, supply);
+        emit RewardReceived(index, address(asset), received, distributed, pendingWithoutSupply[index]);
     }
 
     function activateQueuedRewards(uint256 index) external nonReentrant {
         _validateAssetIndex(index);
-        _updateStream(index);
         if (eligibleSupply == 0) revert NoEligibleRewardSupply();
         if (pendingWithoutSupply[index] == 0) revert NoRewardAvailable();
-        _startOrExtendStream(index, eligibleSupply);
+        _distributePending(index, eligibleSupply);
     }
 
     function accumulativeRewardOf(address account, uint256 index) public view returns (uint256) {
@@ -216,9 +207,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         _validateAssetIndex(index);
         if (isExcluded[account]) return 0;
         return _accruedRewards[account][index]
-            + (balanceOf(account)
-                * (currentRewardPerToken(index) - userRewardPerTokenPaid[account][index]))
-            / MAGNITUDE;
+            + (balanceOf(account) * (currentRewardPerToken(index) - userRewardPerTokenPaid[account][index])) / MAGNITUDE;
     }
 
     function claim(uint256 index) public nonReentrant returns (uint256 amount) {
@@ -244,10 +233,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         return _claimUpdatedAsset(account, index, amount);
     }
 
-    function _claimUpdatedAsset(address account, uint256 index, uint256 amount)
-        private
-        returns (uint256)
-    {
+    function _claimUpdatedAsset(address account, uint256 index, uint256 amount) private returns (uint256) {
         _accruedRewards[account][index] = 0;
         _withdrawn[account][index] += amount;
         totalRewardsClaimed[index] += amount;
@@ -274,92 +260,30 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     }
 
     function _updateAccount(address account, uint256 index) private {
-        _updateStream(index);
         if (account != address(0) && !isExcluded[account]) {
             _accruedRewards[
                     account
                 ][
                     index
-                ] += (balanceOf(account)
-                    * (magnifiedRewardPerShare[index] - userRewardPerTokenPaid[account][index]))
+                ] += (balanceOf(account) * (magnifiedRewardPerShare[index] - userRewardPerTokenPaid[account][index]))
                 / MAGNITUDE;
             userRewardPerTokenPaid[account][index] = magnifiedRewardPerShare[index];
         }
     }
 
-    function _updateStream(uint256 index) private {
-        RewardStream storage stream = _streams[index];
-        uint256 applicable =
-            block.timestamp < stream.periodFinish ? block.timestamp : stream.periodFinish;
-        if (applicable <= stream.lastUpdateTime) return;
-        uint256 supply = eligibleSupply;
-        if (supply == 0) {
-            if (stream.streamTotal > stream.streamReleased) {
-                pendingWithoutSupply[index] += stream.streamTotal - stream.streamReleased;
-                stream.rewardRate = 0;
-                stream.streamTotal = 0;
-                stream.streamReleased = 0;
-                stream.periodFinish = block.timestamp;
-                emit RewardStreamPaused(index, pendingWithoutSupply[index]);
-            }
-            stream.lastUpdateTime = block.timestamp;
-            return;
-        }
-        uint256 emitted = _newlyVestedRewards(index);
-        magnifiedRewardPerShare[index] += (emitted * MAGNITUDE) / supply;
-        totalRewardsDistributed[index] += emitted;
-        stream.streamReleased += emitted;
-        stream.lastUpdateTime = applicable;
-    }
-
     function _reconcileEligibleSupply(uint256 index) private {
-        RewardStream storage stream = _streams[index];
-        if (eligibleSupply == 0) {
-            if (stream.streamTotal > stream.streamReleased) {
-                pendingWithoutSupply[index] += stream.streamTotal - stream.streamReleased;
-                stream.rewardRate = 0;
-                stream.streamTotal = 0;
-                stream.streamReleased = 0;
-                stream.periodFinish = block.timestamp;
-                stream.lastUpdateTime = block.timestamp;
-                emit RewardStreamPaused(index, pendingWithoutSupply[index]);
-            }
-            return;
-        }
-        if (stream.streamTotal == stream.streamReleased && pendingWithoutSupply[index] != 0) {
-            _startOrExtendStream(index, eligibleSupply);
+        if (eligibleSupply != 0 && pendingWithoutSupply[index] != 0) {
+            _distributePending(index, eligibleSupply);
         }
     }
 
-    function _startOrExtendStream(uint256 index, uint256 supply) private {
-        RewardStream storage stream = _streams[index];
-        uint256 remaining = stream.streamTotal - _vestedStreamRewards(index);
-        uint256 distributable = pendingWithoutSupply[index] + remaining;
-        stream.rewardRate = distributable / REWARD_STREAM_DURATION;
-        stream.streamTotal = distributable;
-        stream.streamReleased = 0;
-        stream.streamStartTime = block.timestamp;
-        stream.periodFinish = block.timestamp + REWARD_STREAM_DURATION;
-        stream.lastUpdateTime = block.timestamp;
+    function _distributePending(uint256 index, uint256 supply) private returns (uint256 distributed) {
+        distributed = pendingWithoutSupply[index];
         pendingWithoutSupply[index] = 0;
-        emit RewardStreamUpdated(
-            index, stream.rewardRate, stream.periodFinish, pendingWithoutSupply[index], supply
-        );
-    }
-
-    function _vestedStreamRewards(uint256 index) private view returns (uint256) {
-        RewardStream memory stream = _streams[index];
-        if (stream.streamTotal == 0 || block.timestamp <= stream.streamStartTime) return 0;
-        if (block.timestamp >= stream.periodFinish) return stream.streamTotal;
-        return
-            (stream.streamTotal * (block.timestamp - stream.streamStartTime))
-                / REWARD_STREAM_DURATION;
-    }
-
-    function _newlyVestedRewards(uint256 index) private view returns (uint256) {
-        RewardStream memory stream = _streams[index];
-        uint256 vested = _vestedStreamRewards(index);
-        return vested > stream.streamReleased ? vested - stream.streamReleased : 0;
+        magnifiedRewardPerShare[index] += (distributed * MAGNITUDE) / supply;
+        totalRewardsDistributed[index] += distributed;
+        emit RewardDistributed(index, distributed, supply);
+        emit RewardStreamUpdated(index, 0, block.timestamp, 0, supply);
     }
 
     function _validateAssetIndex(uint256 index) private view {
@@ -369,8 +293,8 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     function _validateTokenUri(string memory value) private pure {
         bytes memory uri = bytes(value);
         if (
-            uri.length < 28 || uri.length > 140 || uri[0] != "i" || uri[1] != "p" || uri[2] != "f"
-                || uri[3] != "s" || uri[4] != ":" || uri[5] != "/" || uri[6] != "/" || uri[7] != "b"
+            uri.length < 28 || uri.length > 140 || uri[0] != "i" || uri[1] != "p" || uri[2] != "f" || uri[3] != "s"
+                || uri[4] != ":" || uri[5] != "/" || uri[6] != "/" || uri[7] != "b"
         ) revert InvalidTokenUri();
         for (uint256 i = 8; i < uri.length; ++i) {
             bytes1 character = uri[i];

@@ -465,32 +465,22 @@ export function DaoView({
               claimable
             </h2>
             <p>
-              Rewards vest continuously over one hour. Accrued rewards remain
-              yours after transferring governance tokens, while future vesting
-              follows current balances.
+              Settled platform fees are assigned immediately according to
+              current governance-token balances. Assigned rewards remain yours
+              after a transfer.
             </p>
             <dl className="dao-definition-list">
               <div>
-                <dt>Streaming</dt>
-                <dd>{tokenAmount(overview.rewardStream.streaming, 6)} ETH</dd>
-              </div>
-              <div>
-                <dt>Vesting window</dt>
-                <dd>1 hour</dd>
+                <dt>Allocation timing</dt>
+                <dd>Immediate</dd>
               </div>
               <div>
                 <dt>Queued</dt>
                 <dd>{tokenAmount(overview.rewardStream.queued, 6)} ETH</dd>
               </div>
               <div>
-                <dt>Stream completion</dt>
-                <dd>
-                  {Number(overview.rewardStream.streamEnd) > 0
-                    ? new Date(
-                        Number(overview.rewardStream.streamEnd) * 1000,
-                      ).toLocaleString()
-                    : "No active stream"}
-                </dd>
+                <dt>Queue behavior</dt>
+                <dd>Releases when eligible supply returns</dd>
               </div>
             </dl>
             <div className="action-row">

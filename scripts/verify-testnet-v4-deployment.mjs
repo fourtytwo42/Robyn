@@ -381,18 +381,43 @@ check(
   "manifest records the fixed 100% bootstrap RDAO allocation",
 );
 check(
-  manifest.rewardStreams?.launchTokenDurationSeconds === 3_600 &&
-    manifest.rewardStreams?.daoDurationSeconds === 3_600 &&
-    manifest.dao.rewardStreamDurationSeconds === 3_600,
-  "manifest records one-hour basket and DAO reward streams",
+  manifest.rewardStreams?.launchTokenDurationSeconds === 0 &&
+    manifest.rewardStreams?.daoDurationSeconds === 0 &&
+    manifest.rewardStreams?.vesting === "none" &&
+    manifest.dao.rewardStreamDurationSeconds === 0,
+  "manifest records immediate basket and DAO reward allocation",
 );
 check(
-  (await read(contracts.daoToken, abis.daoToken, "REWARD_STREAM_DURATION")) === 3_600n,
-  "RDAO reward stream is one hour",
+  (await read(contracts.daoToken, abis.daoToken, "REWARD_STREAM_DURATION")) === 0n,
+  "RDAO rewards allocate immediately",
 );
 check(
-  (await read(contracts.genesisToken, abis.token, "REWARD_STREAM_DURATION")) === 3_600n,
-  "launch-token reward stream is one hour",
+  (await read(contracts.genesisToken, abis.token, "REWARD_STREAM_DURATION")) === 0n,
+  "launch-token rewards allocate immediately",
+);
+check(
+  (await read(contracts.protocolFeeRouter, abis.feeRouter, "MAX_CREATOR_RECIPIENTS")) ===
+    8,
+  "creator reward splits support at most eight recipients",
+);
+const genesisCreatorSplit = await read(
+  contracts.protocolFeeRouter,
+  abis.feeRouter,
+  "creatorFeeSplit",
+  [contracts.genesisToken],
+);
+const genesisCreatorFeeAccount = await read(
+  contracts.protocolFeeRouter,
+  abis.feeRouter,
+  "launchAccount",
+  [contracts.genesisToken],
+);
+check(
+  genesisCreatorSplit[0].length === 1 &&
+    genesisCreatorSplit[0][0] === genesisCreatorFeeAccount.creator &&
+    genesisCreatorSplit[1][0] === 10_000 &&
+    genesisCreatorSplit[2] === false,
+  "genesis creator rewards default to one editable 100% recipient",
 );
 check(
   getAddress(await read(contracts.daoToken, abis.daoToken, "rewardDepositor")) ===

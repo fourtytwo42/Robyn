@@ -194,8 +194,10 @@ export default function WhitepaperPage() {
                 <p>
                   Keepers settle bounded work without custody. Basket assets,
                   creator ETH, DAO-member ETH, and treasury ETH accrue
-                  independently. Users pull what they have earned instead of
-                  depending on a push payment.
+                  independently and become claimable immediately after
+                  settlement. A creator may divide future creator fees among
+                  several addresses, then keep that split editable or lock it
+                  permanently.
                 </p>
               </div>
             </li>

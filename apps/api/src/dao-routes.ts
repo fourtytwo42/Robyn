@@ -88,6 +88,11 @@ const launchAccountAbi = parseAbi([
 ]);
 const nativeLaunchAccountAbi = parseAbi([
   "function launchAccount(address) view returns ((address creator,address vault,address market,address locker,address hook,uint256 cumulativeNativeFees,uint256 cumulativeLaunchFeesConverted,uint256 cumulativeBondingNativeFees,uint256 cumulativeLockedLpNativeFees,uint256 cumulativeHookNativeFees,uint256 cumulativeLockedLaunchFeesConverted,uint256 cumulativeHookLaunchFeesConverted,uint256 claimableCreatorNative,uint256 cumulativeCreatorNative,uint256 claimedCreatorNative,uint256 pendingBasketNative,uint256 cumulativeBasketNativeSettled,bool registered))",
+  "function creatorFeeSplit(address token) view returns (address[] recipients,uint16[] sharesBps,bool locked)",
+  "function claimableCreatorNativeByRecipient(address token,address recipient) view returns (uint256)",
+  "function cumulativeCreatorNativeByRecipient(address token,address recipient) view returns (uint256)",
+  "function claimedCreatorNativeByRecipient(address token,address recipient) view returns (uint256)",
+  "function MAX_CREATOR_RECIPIENTS() view returns (uint8)",
 ]);
 const hookFeeStateAbi = parseAbi([
   "function pendingNativeFees(address) view returns (uint256)",
@@ -624,6 +629,78 @@ export function registerDaoRoutes(
     if (!feeAccount.registered) {
       return reply.code(404).send({ error: "launch_not_found" });
     }
+    let claimableNative =
+      viewer?.toLowerCase() === feeAccount.creator.toLowerCase()
+        ? feeAccount.claimableCreatorNative
+        : 0n;
+    let lifetimeAccruedNative =
+      viewer?.toLowerCase() === feeAccount.creator.toLowerCase()
+        ? feeAccount.cumulativeCreatorNative
+        : 0n;
+    let lifetimeClaimedNative =
+      viewer?.toLowerCase() === feeAccount.creator.toLowerCase()
+        ? feeAccount.claimedCreatorNative
+        : 0n;
+    let creatorSplit: {
+      recipients: Address[];
+      sharesBps: number[];
+      locked: boolean;
+      maxRecipients: number;
+    } | null = null;
+    if (deployment.liquidityVenue === "uniswap-v4") {
+      const [
+        split,
+        recipientClaimable,
+        recipientCumulative,
+        recipientClaimed,
+        maxRecipients,
+      ] = await Promise.all([
+        rpcClient.readContract({
+          address: deployment.contracts.protocolFeeRouter,
+          abi: nativeLaunchAccountAbi,
+          functionName: "creatorFeeSplit",
+          args: [token],
+        }),
+        viewer
+          ? rpcClient.readContract({
+              address: deployment.contracts.protocolFeeRouter,
+              abi: nativeLaunchAccountAbi,
+              functionName: "claimableCreatorNativeByRecipient",
+              args: [token, viewer],
+            })
+          : Promise.resolve(0n),
+        viewer
+          ? rpcClient.readContract({
+              address: deployment.contracts.protocolFeeRouter,
+              abi: nativeLaunchAccountAbi,
+              functionName: "cumulativeCreatorNativeByRecipient",
+              args: [token, viewer],
+            })
+          : Promise.resolve(0n),
+        viewer
+          ? rpcClient.readContract({
+              address: deployment.contracts.protocolFeeRouter,
+              abi: nativeLaunchAccountAbi,
+              functionName: "claimedCreatorNativeByRecipient",
+              args: [token, viewer],
+            })
+          : Promise.resolve(0n),
+        rpcClient.readContract({
+          address: deployment.contracts.protocolFeeRouter,
+          abi: nativeLaunchAccountAbi,
+          functionName: "MAX_CREATOR_RECIPIENTS",
+        }),
+      ]);
+      claimableNative = recipientClaimable;
+      lifetimeAccruedNative = recipientCumulative;
+      lifetimeClaimedNative = recipientClaimed;
+      creatorSplit = {
+        recipients: [...split[0]],
+        sharesBps: split[1].map(Number),
+        locked: split[2],
+        maxRecipients: Number(maxRecipients),
+      };
+    }
     return {
       data: {
         token,
@@ -635,9 +712,10 @@ export function registerDaoRoutes(
             ? feeAccount.pendingCreatorBase.toString()
             : "0",
         pendingCreatorNative: "0",
-        claimableNative: feeAccount.claimableCreatorNative.toString(),
-        lifetimeAccruedNative: feeAccount.cumulativeCreatorNative.toString(),
-        lifetimeClaimedNative: feeAccount.claimedCreatorNative.toString(),
+        claimableNative: claimableNative.toString(),
+        lifetimeAccruedNative: lifetimeAccruedNative.toString(),
+        lifetimeClaimedNative: lifetimeClaimedNative.toString(),
+        creatorSplit,
       },
     };
   });

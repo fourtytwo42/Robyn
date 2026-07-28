@@ -158,8 +158,10 @@ The prior schema-v9 audit findings are closed in schema 10 at the source level:
   by principal-safe locker accounting.
 - SF-03 zero eligible DAO supply halting fee-bearing trades: closed by
   accounting-only fee intake and queued DAO settlement.
-- SF-04 instant reward deposits enabling predictable reward sniping: mitigated
-  by one-hour transfer-aware reward streams.
+- SF-04 instant reward deposits enabling predictable reward sniping: reopened
+  as an explicit product-policy risk. Immediate transfer-aware accounting
+  prevents retroactive capture but does not prevent entering before a
+  predictable settlement.
 - SF-05 unsolicited ETH misclassification in fee surfaces: closed in source for
   fee router, locker, graduation adapter, and asset router.
 
@@ -201,12 +203,19 @@ Destination settlement is permissionless and isolated, so a failed or
 temporarily unavailable destination cannot block trading or unrelated
 settlement.
 
-### One-hour reward streams
+### Immediate rewards
 
-`RobynLaunchToken` and `RobynDaoToken` now stream rewards over one hour.
-Transfers settle sender and receiver before balances move. Same-block reward
-capture is covered by tests. If eligible supply becomes zero, rewards pause in
-queued state and can restart when eligible supply returns.
+`RobynLaunchToken` and `RobynDaoToken` assign each deposit immediately.
+Transfers settle sender and receiver before balances move, preserving rewards
+already assigned to the prior holder. If eligible supply becomes zero, rewards
+remain queued and activate when eligible supply returns. Buying before a
+predictable settlement can still capture a pro-rata share; this is accepted for
+testnet but remains a mainnet-review item.
+
+Creator rewards are also immediate. The canonical creator may divide future
+creator-fee allocations across up to eight unique addresses totaling exactly
+10,000 basis points. An open split can be edited, while a locked split is
+irreversible. Changes never reassign rewards already accrued to a recipient.
 
 ### Atomic launch and graduation
 

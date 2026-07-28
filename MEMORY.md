@@ -464,22 +464,24 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- 2026-07-27: the next testnet contract candidate changes both launch-token
-  basket rewards and DAO native rewards from seven-day streams to one-hour
-  continuous streams. Claims remain available throughout vesting, transfers
-  preserve already accrued rewards, and same-block capture remains zero. The
-  launch and DAO token contract identities are bumped to `3.1.0`; the deployment
-  manifest and verifier require both immutable durations to equal 3,600 seconds.
-  All 165 Foundry tests pass, including the 512-wallet economic simulation, and
-  both reward-accounting invariant suites pass at 256 runs and depth 128. Web
-  tests, lint, typecheck, formatting, script syntax, and deployment-verifier
-  tests pass. This source change is not live in the current immutable testnet
-  deployment. A fresh deployment, index rebuild, exact release promotion, and
-  browser acceptance are required before claiming the one-hour timing is live.
-  Live pricing estimates `0.0008625872724096 ETH` for a full replacement with
-  25% headroom. The deployer has `0.002020816467029947 ETH`; preserving the
-  required `0.0015 ETH` reserve leaves a `0.000341770805379653 ETH` shortfall.
-  Obtain at least `0.0004 ETH` more testnet funding before deployment.
+- 2026-07-27: the next testnet contract candidate assigns launch-holder basket
+  rewards, creator ETH, and DAO-holder ETH immediately, with no vesting delay.
+  Transfer-aware accounting preserves rewards assigned before a balance move;
+  zero eligible supply still queues holder or DAO deposits. The canonical token
+  creator may divide future creator fees among one to eight unique addresses
+  totaling 10,000 basis points. Open splits remain editable, locked splits are
+  irreversible, and changes cannot reassign accrued ETH. The launch and DAO
+  token contracts are `4.0.0`; the v4 fee router is `6.0.0`. The contract,
+  API, token-page editor, manifest, verifier, smoke flow, whitepaper, and
+  security documentation are updated. All 174 Foundry tests pass, including
+  the 512-wallet campaign; both invariant suites pass at 256 runs and depth
+  128; repository lint, typecheck, tests, script syntax, and verifier tests
+  pass. Immediate allocation explicitly accepts predictable pre-settlement
+  reward entry as an economic-design risk, so SF-04 remains a mainnet review
+  item. This source is not live. A fresh deployment, index rebuild, exact
+  promotion, and browser acceptance are required. Re-run live gas and funding
+  preflight because the prior one-hour estimate is stale; preserve the
+  `0.0015 ETH` reserve and do not deploy while underfunded.
 - 2026-07-27: the Alchemy compute-unit remediation is implemented and promoted
   on testnet. Canonical filtered-log WebSocket notifications wake the indexer;
   HTTP reconciliation, keeper full scans, and deep protocol audits each run
@@ -1930,6 +1932,33 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-27 - Immediate rewards and configurable creator splits
+
+- Context: Product policy removed the one-hour candidate delay from
+  launch-holder basket rewards and DAO-holder native rewards; creator rewards
+  were already immediate and now require multi-recipient allocation.
+- Decision: Assign holder and DAO deposits immediately. Let only the canonical
+  token creator configure one to eight unique creator-reward recipients whose
+  positive shares total exactly 10,000 basis points. Configuration changes
+  affect future fees only. A creator may leave the split open or lock it
+  irreversibly.
+- Files: `RobynLaunchToken.sol`, `RobynDaoToken.sol`,
+  `RobynNativeProtocolFeeRouterV4.sol`, creator reward API and token-page UI,
+  deployment/verifier/smoke scripts, whitepaper, and security/operations docs.
+- Commands/tests: 174 Foundry tests pass; both invariant suites pass at 256
+  runs and depth 128; the 512-wallet, 32-launch, 25,000-action campaign passes;
+  repository lint, typecheck, tests, formatting, shell syntax, and verifier
+  tests pass.
+- Result: Immediate claims, transfer-boundary preservation, zero-supply
+  queueing, future-only split changes, recipient claims, invalid split
+  rejection, and irreversible locking are covered. SF-04 predictable
+  pre-settlement entry is explicitly accepted for testnet and remains a
+  mainnet review item.
+- Follow-up: Re-run the live gas/funding preflight, deploy a fresh immutable
+  testnet stack only with the required reserve, rebuild projections, promote
+  the exact release, and complete browser acceptance. The current live testnet
+  still uses the predecessor contracts.
 
 ### 2026-07-27 - Thirty-minute Alchemy activity measurement
 
@@ -3683,6 +3712,10 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Re-run live deployment gas and funding preflight for the immediate-reward and
+  creator-split candidate. The earlier one-hour candidate estimate is stale.
+  Preserve at least `0.0015 ETH`; do not deploy or reduce validation coverage
+  to fit available funding.
 - Rotate the Alchemy credentials exposed in chat. Create separate protected
   testnet and mainnet applications/keys, verify both HTTP and WSS, then revoke
   the superseded shared credential without placing any key in Git, logs,

@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { RobynLaunchToken } from "../src/RobynLaunchToken.sol";
-import { FeeBasketVault, IRobynConversionRouter } from "../src/FeeBasketVault.sol";
-import { RobynLaunchFactory } from "../src/RobynLaunchFactory.sol";
-import { DevnetFixedPriceMarket } from "../src/devnet/DevnetFixedPriceMarket.sol";
-import { DevnetBondingCurveMarket } from "../src/devnet/DevnetBondingCurveMarket.sol";
-import { DevnetLockedLiquidityPool } from "../src/devnet/DevnetLockedLiquidityPool.sol";
-import { DevnetMarketFactory } from "../src/devnet/DevnetMarketFactory.sol";
-import { DevnetMockERC20 } from "../src/devnet/DevnetMockERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {RobynLaunchToken} from "../src/RobynLaunchToken.sol";
+import {FeeBasketVault, IRobynConversionRouter} from "../src/FeeBasketVault.sol";
+import {RobynLaunchFactory} from "../src/RobynLaunchFactory.sol";
+import {DevnetFixedPriceMarket} from "../src/devnet/DevnetFixedPriceMarket.sol";
+import {DevnetBondingCurveMarket} from "../src/devnet/DevnetBondingCurveMarket.sol";
+import {DevnetLockedLiquidityPool} from "../src/devnet/DevnetLockedLiquidityPool.sol";
+import {DevnetMarketFactory} from "../src/devnet/DevnetMarketFactory.sol";
+import {DevnetMockERC20} from "../src/devnet/DevnetMockERC20.sol";
 
 interface RobynProtocolVm {
     function warp(uint256 timestamp) external;
@@ -20,7 +20,7 @@ interface RobynProtocolVm {
 contract ProtocolMockERC20 is ERC20 {
     uint16 public feeBps;
 
-    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) { }
+    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
 
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
@@ -48,7 +48,7 @@ contract ReentrantRewardToken is ERC20 {
     bool public armed;
     bool public callbackRejected;
 
-    constructor() ERC20("Reentrant Reward", "REENT") { }
+    constructor() ERC20("Reentrant Reward", "REENT") {}
 
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
@@ -63,8 +63,7 @@ contract ReentrantRewardToken is ERC20 {
     function _update(address from, address to, uint256 value) internal override {
         if (armed && from == address(target) && to != address(0)) {
             armed = false;
-            (bool succeeded,) =
-                address(target).call(abi.encodeCall(RobynLaunchToken.claim, assetIndex));
+            (bool succeeded,) = address(target).call(abi.encodeCall(RobynLaunchToken.claim, assetIndex));
             callbackRejected = !succeeded;
         }
         super._update(from, to, value);
@@ -122,11 +121,9 @@ contract ReentrantProtocolRouter is IRobynConversionRouter {
         address recipient,
         uint256 deadline
     ) external returns (uint256 reportedAmountOut) {
-        (bool convertSucceeded,) = address(target)
-            .call(abi.encodeCall(FeeBasketVault.convertLeg, (0, 1, 1, deadline)));
+        (bool convertSucceeded,) = address(target).call(abi.encodeCall(FeeBasketVault.convertLeg, (0, 1, 1, deadline)));
         convertCallbackRejected = !convertSucceeded;
-        (bool recordSucceeded,) =
-            address(target).call(abi.encodeCall(FeeBasketVault.recordFees, (1)));
+        (bool recordSucceeded,) = address(target).call(abi.encodeCall(FeeBasketVault.recordFees, (1)));
         recordCallbackRejected = !recordSucceeded;
         require(convertCallbackRejected && recordCallbackRejected, "reentry accepted");
 
@@ -154,24 +151,17 @@ contract ProtocolActor {
         asset.approve(spender, amount);
     }
 
-    function buy(DevnetFixedPriceMarket market, uint256 amount, uint256 minimumOutput)
-        external
-        returns (uint256)
-    {
+    function buy(DevnetFixedPriceMarket market, uint256 amount, uint256 minimumOutput) external returns (uint256) {
         return market.buy(amount, minimumOutput);
     }
 
-    function sell(DevnetFixedPriceMarket market, uint256 amount, uint256 minimumOutput)
-        external
-        returns (uint256)
-    {
+    function sell(DevnetFixedPriceMarket market, uint256 amount, uint256 minimumOutput) external returns (uint256) {
         return market.sell(amount, minimumOutput);
     }
 }
 
 contract RobynProtocolTest {
-    RobynProtocolVm private constant vm =
-        RobynProtocolVm(address(uint160(uint256(keccak256("hevm cheat code")))));
+    RobynProtocolVm private constant vm = RobynProtocolVm(address(uint160(uint256(keccak256("hevm cheat code")))));
     uint256 private constant CURVE_ALLOCATION = 800_000_000 ether;
     uint256 private constant GRADUATION_ALLOCATION = 200_000_000 ether;
     uint256 private constant INITIAL_VIRTUAL_TOKEN = 1_066_666_666_666_666_666_666_666_666;
@@ -194,8 +184,7 @@ contract RobynProtocolTest {
         rewards[2] = new ProtocolMockERC20("Mock Ether", "mETH");
         router = new ProtocolMockRouter();
         factory = new RobynLaunchFactory(base, router, 1, 1 days);
-        (token, vault) =
-            factory.createLaunch("Robyn Community", "ROBYN", SUPPLY, _assets(), _weights());
+        (token, vault) = factory.createLaunch("Robyn Community", "ROBYN", SUPPLY, _assets(), _weights());
         factory.sealLaunchExclusions(token, new address[](0));
         buyer = new ProtocolActor();
 
@@ -273,34 +262,28 @@ contract RobynProtocolTest {
         require(token.totalRewardsReceived(0) - claimed <= 3, "rounding bound");
     }
 
-    function testRollingStreamSettlesTransfersAndBlocksSameBlockCapture() public {
-        require(token.REWARD_STREAM_DURATION() == 1 hours, "stream duration");
+    function testImmediateRewardsSettleBeforeTransfers() public {
+        require(token.REWARD_STREAM_DURATION() == 0, "stream duration");
         vault.recordFees(1_000);
         vault.convertLeg(0, 400, 400, block.timestamp);
-        require(token.transfer(address(buyer), SUPPLY / 2), "transfer");
-        require(token.withdrawableRewardOf(address(this), 0) == 0, "sender same-block reward");
-        require(token.withdrawableRewardOf(address(buyer), 0) == 0, "buyer same-block reward");
+        uint256 senderFirst = token.withdrawableRewardOf(address(this), 0);
+        require(senderFirst >= 399 && senderFirst <= 400, "first reward not immediate");
 
-        vm.warp(block.timestamp + 10 minutes);
-        uint256 senderAfterTenMinutes = token.withdrawableRewardOf(address(this), 0);
-        uint256 buyerAfterTenMinutes = token.withdrawableRewardOf(address(buyer), 0);
-        require(senderAfterTenMinutes > 0 && buyerAfterTenMinutes > 0, "stream did not vest");
-        require(
-            senderAfterTenMinutes > buyerAfterTenMinutes - 2
-                && senderAfterTenMinutes < buyerAfterTenMinutes + 2,
-            "equal holders differ"
-        );
+        require(token.transfer(address(buyer), SUPPLY / 2), "transfer");
+        require(token.withdrawableRewardOf(address(this), 0) == senderFirst, "sender lost prior reward");
+        require(token.withdrawableRewardOf(address(buyer), 0) == 0, "buyer captured prior reward");
+
+        vault.recordFees(1_000);
+        vault.convertLeg(0, 400, 400, block.timestamp);
+        require(token.withdrawableRewardOf(address(this), 0) >= senderFirst + 199, "sender second reward");
+        require(token.withdrawableRewardOf(address(buyer), 0) >= 199, "buyer second reward");
 
         buyer.transferToken(token, address(this), SUPPLY / 2);
         uint256 buyerAccrued = token.withdrawableRewardOf(address(buyer), 0);
-        vm.warp(block.timestamp + 10 minutes);
-        require(
-            token.withdrawableRewardOf(address(buyer), 0) == buyerAccrued, "former holder accrued"
-        );
-        require(
-            token.withdrawableRewardOf(address(this), 0) > senderAfterTenMinutes * 2,
-            "owner accrual"
-        );
+        vault.recordFees(1_000);
+        vault.convertLeg(0, 400, 400, block.timestamp);
+        require(token.withdrawableRewardOf(address(buyer), 0) == buyerAccrued, "former holder accrued");
+        require(token.withdrawableRewardOf(address(this), 0) >= senderFirst + 598, "owner reward");
     }
 
     function testMaliciousRewardTokenCannotReenterClaim() public {
@@ -335,8 +318,7 @@ contract RobynProtocolTest {
         ProtocolMockERC20 attackBase = new ProtocolMockERC20("Attack Base", "ABASE");
         ProtocolMockERC20 attackReward = new ProtocolMockERC20("Attack Reward", "ARWD");
         ReentrantProtocolRouter attackRouter = new ReentrantProtocolRouter();
-        RobynLaunchFactory attackFactory =
-            new RobynLaunchFactory(attackBase, attackRouter, 1, 1 days);
+        RobynLaunchFactory attackFactory = new RobynLaunchFactory(attackBase, attackRouter, 1, 1 days);
         address[] memory assets = new address[](1);
         assets[0] = address(attackReward);
         uint16[] memory weights = new uint16[](1);
@@ -367,7 +349,7 @@ contract RobynProtocolTest {
 
         try vault.convertLeg(1, 400, 800, block.timestamp) {
             revert("failed route accepted");
-        } catch { }
+        } catch {}
 
         require(vault.leg(1).pendingBase == 400, "failed pending changed");
         require(vault.leg(1).consumedBase == 0, "failed consumed");
@@ -386,10 +368,10 @@ contract RobynProtocolTest {
 
         try vault.convertLeg(0, 400, 0, block.timestamp) {
             revert("zero minimum accepted");
-        } catch { }
+        } catch {}
         try vault.convertLeg(0, 400, 400, block.timestamp - 1) {
             revert("stale quote accepted");
-        } catch { }
+        } catch {}
 
         require(vault.leg(0).pendingBase == 400, "pending changed");
         require(base.balanceOf(address(vault)) == 1_000, "principal changed");
@@ -401,10 +383,10 @@ contract RobynProtocolTest {
 
         try token.distributeReward(0, 100) {
             revert("unauthorized deposit");
-        } catch { }
+        } catch {}
         try vault.bindLaunchToken(token) {
             revert("rebind accepted");
-        } catch { }
+        } catch {}
     }
 
     function testRejectsDuplicateBasketAssets() public {
@@ -412,7 +394,7 @@ contract RobynProtocolTest {
         assets[2] = assets[0];
         try factory.createLaunch("Bad", "BAD", SUPPLY, assets, _weights()) {
             revert("duplicate accepted");
-        } catch { }
+        } catch {}
     }
 
     function testDistributionCannotStartBeforeExclusionsAreSealed() public {
@@ -423,7 +405,7 @@ contract RobynProtocolTest {
 
         try unsealedVault.convertLeg(0, 400, 400, block.timestamp) {
             revert("unsealed distribution");
-        } catch { }
+        } catch {}
         require(unsealedVault.leg(0).pendingBase == 400, "unsealed principal");
 
         factory.sealLaunchExclusions(unsealedToken, new address[](0));
@@ -432,8 +414,7 @@ contract RobynProtocolTest {
     }
 
     function testExclusionListIsBounded() public {
-        (RobynLaunchToken boundedToken,) =
-            factory.createLaunch("Bounded", "BND", SUPPLY, _assets(), _weights());
+        (RobynLaunchToken boundedToken,) = factory.createLaunch("Bounded", "BND", SUPPLY, _assets(), _weights());
         address[] memory exclusions = new address[](17);
         for (uint256 i; i < exclusions.length; ++i) {
             // forge-lint: disable-next-line(unsafe-typecast)
@@ -442,7 +423,7 @@ contract RobynProtocolTest {
 
         try factory.sealLaunchExclusions(boundedToken, exclusions) {
             revert("oversized exclusion list accepted");
-        } catch { }
+        } catch {}
         require(!boundedToken.exclusionsSealed(), "failed seal changed state");
     }
 
@@ -467,18 +448,17 @@ contract RobynProtocolTest {
         require(excludedToken.withdrawableRewardOf(address(inventory), 0) == 0, "inventory reward");
         try factory.sealLaunchExclusions(excludedToken, exclusions) {
             revert("reseal accepted");
-        } catch { }
+        } catch {}
     }
 
     function testDevnetBaseFaucetClaimsOncePerAddress() public {
-        DevnetMockERC20 faucetToken =
-            new DevnetMockERC20("Faucet", "FAU", address(this), 10_000 ether);
+        DevnetMockERC20 faucetToken = new DevnetMockERC20("Faucet", "FAU", address(this), 10_000 ether);
         ProtocolActor recipient = new ProtocolActor();
         faucetToken.claimFaucet(address(recipient));
         require(faucetToken.balanceOf(address(recipient)) == 10_000 ether, "faucet balance");
         try faucetToken.claimFaucet(address(recipient)) {
             revert("duplicate faucet");
-        } catch { }
+        } catch {}
     }
 
     function testDevnetMarketBuySellFeeConversionAndHolderClaim() public {
@@ -519,8 +499,7 @@ contract RobynProtocolTest {
     }
 
     function testDevnetMarketFactoryCreatesOneCreatorOwnedMarket() public {
-        (RobynLaunchToken marketToken,) =
-            factory.createLaunch("Factory Market", "FMKT", SUPPLY, _assets(), _weights());
+        (RobynLaunchToken marketToken,) = factory.createLaunch("Factory Market", "FMKT", SUPPLY, _assets(), _weights());
         DevnetMarketFactory marketFactory = new DevnetMarketFactory(
             base,
             factory,
@@ -538,7 +517,7 @@ contract RobynProtocolTest {
         require(address(market.launchToken()) == address(marketToken), "market token");
         try marketFactory.createMarket(marketToken) {
             revert("duplicate market accepted");
-        } catch { }
+        } catch {}
     }
 
     function testDevnetBondingCurveGraduatesAndKeepsBasketFees() public {
@@ -592,10 +571,10 @@ contract RobynProtocolTest {
 
         try pool.initialize() {
             revert("pool reinitialized");
-        } catch { }
+        } catch {}
         try pool.buyFor(address(this), 1 ether, 1) {
             revert("direct pool buy accepted");
-        } catch { }
+        } catch {}
         require(market.graduated(), "graduation reversed");
     }
 
