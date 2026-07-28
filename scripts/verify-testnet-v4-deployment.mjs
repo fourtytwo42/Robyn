@@ -552,7 +552,14 @@ check(
   "receipt-derived pool ID matches market factory",
 );
 check(await read(market, abis.market, "seeded"), "genesis bonding market is seeded");
-check(!(await read(market, abis.market, "graduated")), "genesis begins on the bonding curve");
+const allowLifecycleProgress = process.env.ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS === "true";
+const genesisGraduated = await read(market, abis.market, "graduated");
+check(
+  !genesisGraduated || allowLifecycleProgress,
+  allowLifecycleProgress
+    ? "genesis market lifecycle progression is permitted"
+    : "genesis begins on the bonding curve",
+);
 check(
   getAddress(await read(adapter, abis.adapter, "locker")) === locker,
   "adapter is bound to the receipt-derived immutable locker",
@@ -561,9 +568,17 @@ check(
   await read(contracts.oracleHook, abis.hook, "registeredPool", [genesis.poolId]),
   "genesis pool is registered in the oracle hook",
 );
+const genesisPoolPhase = await read(
+  contracts.oracleHook,
+  abis.hook,
+  "poolPhase",
+  [genesis.poolId],
+);
 check(
-  (await read(contracts.oracleHook, abis.hook, "poolPhase", [genesis.poolId])) === 1,
-  "genesis pool begins in the immutable Bonding phase",
+  genesisPoolPhase === 1 || (allowLifecycleProgress && genesisGraduated && genesisPoolPhase === 3),
+  allowLifecycleProgress
+    ? "genesis pool lifecycle phase matches its market state"
+    : "genesis pool begins in the immutable Bonding phase",
 );
 const genesisFeeAccount = await read(
   contracts.protocolFeeRouter,

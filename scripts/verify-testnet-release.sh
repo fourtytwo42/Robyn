@@ -72,6 +72,7 @@ for observed in "$status" "$public_status"; do
     <<<"$observed" >/dev/null
 done
 ROBYN_TESTNET_RPC_URL="$server_rpc_url" \
+  ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS=true \
   node scripts/verify-testnet-v4-deployment.mjs "$manifest" \
   > /tmp/robyn-testnet-deployment-verify.json
 jq -e '.failures|length==0' /tmp/robyn-testnet-deployment-verify.json >/dev/null
