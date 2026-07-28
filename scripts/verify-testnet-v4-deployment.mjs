@@ -381,6 +381,20 @@ check(
   "manifest records the fixed 100% bootstrap RDAO allocation",
 );
 check(
+  manifest.rewardStreams?.launchTokenDurationSeconds === 3_600 &&
+    manifest.rewardStreams?.daoDurationSeconds === 3_600 &&
+    manifest.dao.rewardStreamDurationSeconds === 3_600,
+  "manifest records one-hour basket and DAO reward streams",
+);
+check(
+  (await read(contracts.daoToken, abis.daoToken, "REWARD_STREAM_DURATION")) === 3_600n,
+  "RDAO reward stream is one hour",
+);
+check(
+  (await read(contracts.genesisToken, abis.token, "REWARD_STREAM_DURATION")) === 3_600n,
+  "launch-token reward stream is one hour",
+);
+check(
   getAddress(await read(contracts.daoToken, abis.daoToken, "rewardDepositor")) ===
     contracts.protocolFeeRouter,
   "RDAO reward depositor is the protocol fee router",

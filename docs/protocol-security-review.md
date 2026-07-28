@@ -228,7 +228,7 @@ Last verified: 2026-07-27
 
 The schema-v9 audit findings SF-01 through SF-05 are addressed in a fresh,
 undeployed candidate with phase-aware pools, principal-safe fee collection,
-non-blocking destination liabilities, seven-day transfer-aware reward streams,
+non-blocking destination liabilities, one-hour transfer-aware reward streams,
 and explicit unsolicited-asset handling. The detailed authority trace,
 finding-by-finding closure, automated evidence, and remaining release blockers
 are recorded in

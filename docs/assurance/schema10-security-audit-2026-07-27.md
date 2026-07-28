@@ -159,7 +159,7 @@ The prior schema-v9 audit findings are closed in schema 10 at the source level:
 - SF-03 zero eligible DAO supply halting fee-bearing trades: closed by
   accounting-only fee intake and queued DAO settlement.
 - SF-04 instant reward deposits enabling predictable reward sniping: mitigated
-  by seven-day transfer-aware reward streams.
+  by one-hour transfer-aware reward streams.
 - SF-05 unsolicited ETH misclassification in fee surfaces: closed in source for
   fee router, locker, graduation adapter, and asset router.
 
@@ -201,9 +201,9 @@ Destination settlement is permissionless and isolated, so a failed or
 temporarily unavailable destination cannot block trading or unrelated
 settlement.
 
-### Seven-day reward streams
+### One-hour reward streams
 
-`RobynLaunchToken` and `RobynDaoToken` now stream rewards over seven days.
+`RobynLaunchToken` and `RobynDaoToken` now stream rewards over one hour.
 Transfers settle sender and receiver before balances move. Same-block reward
 capture is covered by tests. If eligible supply becomes zero, rewards pause in
 queued state and can restart when eligible supply returns.

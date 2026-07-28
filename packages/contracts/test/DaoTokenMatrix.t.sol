@@ -103,7 +103,7 @@ contract DaoTokenMatrixTest {
 
     function testRewardClaimToFailureRollbackAndExclusionRules() external {
         depositor.deposit{ value: 9 ether }(token);
-        vm.warp(block.timestamp + 7 days);
+        vm.warp(block.timestamp + 1 hours);
         uint256 claimable = token.claimableRewardOf(holder);
         require(claimable > 0, "holder reward");
         address payable recipient = payable(address(0x1234));
@@ -113,7 +113,7 @@ contract DaoTokenMatrixTest {
         require(recipient.balance - beforeBalance == claimable, "claim-to amount");
 
         depositor.deposit{ value: 9 ether }(token);
-        vm.warp(block.timestamp + 7 days);
+        vm.warp(block.timestamp + 1 hours);
         uint256 secondClaim = token.claimableRewardOf(holder);
         DaoRewardRejector rejector = new DaoRewardRejector();
         vm.prank(holder);
@@ -132,7 +132,8 @@ contract DaoTokenMatrixTest {
         } catch { }
     }
 
-    function testSevenDayStreamPreventsSameBlockRewardSniping() external {
+    function testOneHourStreamPreventsSameBlockRewardSniping() external {
+        require(token.REWARD_STREAM_DURATION() == 1 hours, "stream duration");
         address newcomer = address(0xA55E7);
         depositor.deposit{ value: 9 ether }(token);
         vm.prank(holder);
@@ -140,21 +141,25 @@ contract DaoTokenMatrixTest {
         require(token.claimableRewardOf(holder) == 0, "same-block holder reward");
         require(token.claimableRewardOf(newcomer) == 0, "same-block newcomer reward");
 
-        vm.warp(block.timestamp + 1 days);
-        uint256 holderDayOne = token.claimableRewardOf(holder);
-        uint256 newcomerDayOne = token.claimableRewardOf(newcomer);
-        require(holderDayOne > 0 && newcomerDayOne > 0, "daily accrual");
+        vm.warp(block.timestamp + 10 minutes);
+        uint256 holderAfterTenMinutes = token.claimableRewardOf(holder);
+        uint256 newcomerAfterTenMinutes = token.claimableRewardOf(newcomer);
+        require(holderAfterTenMinutes > 0 && newcomerAfterTenMinutes > 0, "ten-minute accrual");
         require(
-            holderDayOne > newcomerDayOne - 2 && holderDayOne < newcomerDayOne + 2,
+            holderAfterTenMinutes > newcomerAfterTenMinutes - 2
+                && holderAfterTenMinutes < newcomerAfterTenMinutes + 2,
             "equal balances accrue equally"
         );
 
         vm.prank(newcomer);
         token.transfer(holder, 450_000_000 ether);
         uint256 newcomerAccrued = token.claimableRewardOf(newcomer);
-        vm.warp(block.timestamp + 1 days);
+        vm.warp(block.timestamp + 10 minutes);
         require(token.claimableRewardOf(newcomer) == newcomerAccrued, "former holder gained");
-        require(token.claimableRewardOf(holder) > holderDayOne * 2, "current holder did not accrue");
+        require(
+            token.claimableRewardOf(holder) > holderAfterTenMinutes * 2,
+            "current holder did not accrue"
+        );
     }
 
     function testZeroEligibleSupplyPausesAndPermissionlesslyResumesStream() external {
@@ -170,7 +175,7 @@ contract DaoTokenMatrixTest {
         vm.prank(excluded);
         token.transfer(holder, 900_000_000 ether);
         require(token.eligibleRewardSupply() == 900_000_000 ether, "supply not restored");
-        vm.warp(block.timestamp + 1 days);
+        vm.warp(block.timestamp + 10 minutes);
         require(token.claimableRewardOf(holder) > 0, "queued stream not activated");
     }
 

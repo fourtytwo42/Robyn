@@ -464,6 +464,18 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-27: the next testnet contract candidate changes both launch-token
+  basket rewards and DAO native rewards from seven-day streams to one-hour
+  continuous streams. Claims remain available throughout vesting, transfers
+  preserve already accrued rewards, and same-block capture remains zero. The
+  launch and DAO token contract identities are bumped to `3.1.0`; the deployment
+  manifest and verifier require both immutable durations to equal 3,600 seconds.
+  All 165 Foundry tests pass, including the 512-wallet economic simulation, and
+  both reward-accounting invariant suites pass at 256 runs and depth 128. Web
+  tests, lint, typecheck, formatting, script syntax, and deployment-verifier
+  tests pass. This source change is not live in the current immutable testnet
+  deployment. A fresh deployment, index rebuild, exact release promotion, and
+  browser acceptance are required before claiming the one-hour timing is live.
 - 2026-07-27: the Alchemy compute-unit remediation is implemented and promoted
   on testnet. Canonical filtered-log WebSocket notifications wake the indexer;
   HTTP reconciliation, keeper full scans, and deep protocol audits each run

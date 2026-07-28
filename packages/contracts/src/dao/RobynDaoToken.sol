@@ -7,13 +7,13 @@ import { ERC20Votes } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20
 import { Nonces } from "@openzeppelin/contracts/utils/Nonces.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/// @notice Fixed-supply governance token with transfer-aware seven-day native reward streams.
+/// @notice Fixed-supply governance token with transfer-aware one-hour native reward streams.
 contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
     uint256 public constant FIXED_SUPPLY = 1_000_000_000 ether;
     uint256 private constant MAGNITUDE = 1 << 128;
     uint256 private constant MAX_EXCLUSIONS = 16;
-    uint256 public constant REWARD_STREAM_DURATION = 7 days;
-    string public constant CONTRACT_VERSION = "3.0.0";
+    uint256 public constant REWARD_STREAM_DURATION = 1 hours;
+    string public constant CONTRACT_VERSION = "3.1.0";
 
     error Unauthorized();
     error InvalidConfiguration();

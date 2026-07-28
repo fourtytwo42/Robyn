@@ -206,7 +206,7 @@ contract DaoFeesTest {
 
         uint256 treasuryBefore = address(treasury).balance;
         router.convertPendingToNative(launchToken, 500 ether, 500 ether, block.timestamp + 1);
-        vm.warp(block.timestamp + 7 days);
+        vm.warp(block.timestamp + 1 hours);
         account = router.launchAccount(address(launchToken));
         require(account.claimableCreatorNative == 250 ether, "creator native");
         require(account.cumulativeCreatorNative == 250 ether, "creator lifetime");

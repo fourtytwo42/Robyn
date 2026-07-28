@@ -6,15 +6,15 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/// @notice Fixed-supply token with transfer-aware, multi-asset seven-day reward streams.
+/// @notice Fixed-supply token with transfer-aware, multi-asset one-hour reward streams.
 contract RobynLaunchToken is ERC20, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint8 public constant MAX_REWARD_ASSETS = 5;
     uint8 public constant MAX_EXCLUDED_ACCOUNTS = 16;
     uint256 public constant MAGNITUDE = 2 ** 128;
-    uint256 public constant REWARD_STREAM_DURATION = 7 days;
-    string public constant CONTRACT_VERSION = "3.0.0";
+    uint256 public constant REWARD_STREAM_DURATION = 1 hours;
+    string public constant CONTRACT_VERSION = "3.1.0";
 
     error Unauthorized();
     error InvalidAssetCount();

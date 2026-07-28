@@ -465,7 +465,7 @@ export function DaoView({
               claimable
             </h2>
             <p>
-              Rewards vest continuously over seven days. Accrued rewards remain
+              Rewards vest continuously over one hour. Accrued rewards remain
               yours after transferring governance tokens, while future vesting
               follows current balances.
             </p>
@@ -475,14 +475,8 @@ export function DaoView({
                 <dd>{tokenAmount(overview.rewardStream.streaming, 6)} ETH</dd>
               </div>
               <div>
-                <dt>Estimated daily vesting</dt>
-                <dd>
-                  {tokenAmount(
-                    (BigInt(overview.rewardStream.streaming) / 7n).toString(),
-                    6,
-                  )}{" "}
-                  ETH
-                </dd>
+                <dt>Vesting window</dt>
+                <dd>1 hour</dd>
               </div>
               <div>
                 <dt>Queued</dt>

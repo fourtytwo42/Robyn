@@ -212,7 +212,7 @@ for index in 0 1 2; do
   deadline="$(chain_deadline)"
   conversion_tx="$(send "$vault" 'convertLeg(uint256,uint256,uint256,uint256)' \
     "$index" "$amount" "$minimum" "$deadline")"
-  cast rpc evm_increaseTime 604800 --rpc-url "$rpc_url" >/dev/null
+  cast rpc evm_increaseTime 3600 --rpc-url "$rpc_url" >/dev/null
   cast rpc evm_mine --rpc-url "$rpc_url" >/dev/null
   claimable="$(cast call "$token" 'withdrawableRewardOf(address,uint256)(uint256)' \
     "$account" "$index" --rpc-url "$rpc_url" | quote_first)"

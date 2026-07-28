@@ -131,7 +131,7 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
         assertGt(pendingBasket, 0);
         (uint256 basketQuote,) = assetRouter.quoteNativeToAsset(AAPL, uint128(pendingBasket));
         vault.convertLeg(0, pendingBasket, (basketQuote * 99) / 100, block.timestamp);
-        vm.warp(block.timestamp + 7 days);
+        vm.warp(block.timestamp + 1 hours);
         assertGt(token.claimAll(), 0);
 
         account = feeRouter.launchAccount(address(token));

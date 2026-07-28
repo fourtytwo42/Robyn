@@ -839,12 +839,18 @@ jq -n \
       phases: ["Bonding", "Graduating", "Trading"],
       protocolFeeBps: 100
     },
+    rewardStreams: {
+      launchTokenDurationSeconds: 3600,
+      daoDurationSeconds: 3600,
+      vesting: "continuous-linear",
+      claims: "available-while-vesting"
+    },
     dao: {
       tokenName: "Robyn DAO",
       tokenSymbol: "RDAO",
       fixedSupply: "1000000000000000000000000000",
       initialOwnerShareBps: 10000,
-      rewardStreamDurationSeconds: 604800,
+      rewardStreamDurationSeconds: 3600,
       zeroEligibleSupplyPolicy: "queue-until-eligible-supply-returns",
       feePolicy: {
         basketBps: 5000,

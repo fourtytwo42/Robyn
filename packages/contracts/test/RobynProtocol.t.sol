@@ -238,7 +238,7 @@ contract RobynProtocolTest {
         vault.recordFees(1_000);
 
         uint256 actualOutput = vault.convertLeg(0, 400, 350, block.timestamp);
-        vm.warp(block.timestamp + 7 days);
+        vm.warp(block.timestamp + 1 hours);
 
         require(actualOutput == 360, "vault output delta");
         require(vault.leg(0).rewardsDeposited == 324, "token deposit delta");
@@ -251,7 +251,7 @@ contract RobynProtocolTest {
     function testBuyerCannotEarnPrePurchaseRewardAndSellerKeepsIt() public {
         vault.recordFees(1_000);
         vault.convertLeg(0, 400, 400, block.timestamp);
-        vm.warp(block.timestamp + 7 days);
+        vm.warp(block.timestamp + 1 hours);
         uint256 sellerFirst = token.withdrawableRewardOf(address(this), 0);
         require(sellerFirst >= 399 && sellerFirst <= 400, "initial seller reward");
 
@@ -261,7 +261,7 @@ contract RobynProtocolTest {
 
         vault.recordFees(1_000);
         vault.convertLeg(0, 400, 400, block.timestamp);
-        vm.warp(block.timestamp + 7 days);
+        vm.warp(block.timestamp + 1 hours);
         uint256 sellerSecond = token.withdrawableRewardOf(address(this), 0);
         uint256 buyerSecond = token.withdrawableRewardOf(address(buyer), 0);
         require(sellerSecond >= 199 && sellerSecond <= 200, "seller next reward");
@@ -274,27 +274,33 @@ contract RobynProtocolTest {
     }
 
     function testRollingStreamSettlesTransfersAndBlocksSameBlockCapture() public {
+        require(token.REWARD_STREAM_DURATION() == 1 hours, "stream duration");
         vault.recordFees(1_000);
         vault.convertLeg(0, 400, 400, block.timestamp);
         require(token.transfer(address(buyer), SUPPLY / 2), "transfer");
         require(token.withdrawableRewardOf(address(this), 0) == 0, "sender same-block reward");
         require(token.withdrawableRewardOf(address(buyer), 0) == 0, "buyer same-block reward");
 
-        vm.warp(block.timestamp + 1 days);
-        uint256 senderDayOne = token.withdrawableRewardOf(address(this), 0);
-        uint256 buyerDayOne = token.withdrawableRewardOf(address(buyer), 0);
-        require(senderDayOne > 0 && buyerDayOne > 0, "stream did not vest");
+        vm.warp(block.timestamp + 10 minutes);
+        uint256 senderAfterTenMinutes = token.withdrawableRewardOf(address(this), 0);
+        uint256 buyerAfterTenMinutes = token.withdrawableRewardOf(address(buyer), 0);
+        require(senderAfterTenMinutes > 0 && buyerAfterTenMinutes > 0, "stream did not vest");
         require(
-            senderDayOne > buyerDayOne - 2 && senderDayOne < buyerDayOne + 2, "equal holders differ"
+            senderAfterTenMinutes > buyerAfterTenMinutes - 2
+                && senderAfterTenMinutes < buyerAfterTenMinutes + 2,
+            "equal holders differ"
         );
 
         buyer.transferToken(token, address(this), SUPPLY / 2);
         uint256 buyerAccrued = token.withdrawableRewardOf(address(buyer), 0);
-        vm.warp(block.timestamp + 1 days);
+        vm.warp(block.timestamp + 10 minutes);
         require(
             token.withdrawableRewardOf(address(buyer), 0) == buyerAccrued, "former holder accrued"
         );
-        require(token.withdrawableRewardOf(address(this), 0) > senderDayOne * 2, "owner accrual");
+        require(
+            token.withdrawableRewardOf(address(this), 0) > senderAfterTenMinutes * 2,
+            "owner accrual"
+        );
     }
 
     function testMaliciousRewardTokenCannotReenterClaim() public {
@@ -314,7 +320,7 @@ contract RobynProtocolTest {
         maliciousReward.mint(address(this), 1_000);
         maliciousReward.approve(address(guardedToken), 1_000);
         guardedToken.distributeReward(0, 1_000);
-        vm.warp(block.timestamp + 7 days);
+        vm.warp(block.timestamp + 1 hours);
         maliciousReward.arm(guardedToken, 0);
 
         uint256 claimed = guardedToken.claim(0);
@@ -454,7 +460,7 @@ contract RobynProtocolTest {
         base.approve(address(excludedVault), type(uint256).max);
         excludedVault.recordFees(1_000);
         excludedVault.convertLeg(0, 400, 400, block.timestamp);
-        vm.warp(block.timestamp + 7 days);
+        vm.warp(block.timestamp + 1 hours);
 
         uint256 creatorReward = excludedToken.withdrawableRewardOf(address(this), 0);
         require(creatorReward >= 399 && creatorReward <= 400, "creator diluted");
@@ -498,7 +504,7 @@ contract RobynProtocolTest {
         require(marketVault.leg(0).pendingBase == 0.4 ether, "buy leg 0");
 
         marketVault.convertLeg(0, 0.4 ether, 0.4 ether, block.timestamp);
-        vm.warp(block.timestamp + 7 days);
+        vm.warp(block.timestamp + 1 hours);
         uint256 claimable = marketToken.withdrawableRewardOf(address(trader), 0);
         require(claimable > 0, "trader claimable");
         require(trader.claim(marketToken, 0) == claimable, "trader claim");
@@ -598,7 +604,7 @@ contract RobynProtocolTest {
         vault.convertLeg(0, 400, 400, block.timestamp);
         vault.convertLeg(1, 400, 800, block.timestamp);
         vault.convertLeg(2, 200, 600, block.timestamp);
-        vm.warp(block.timestamp + 7 days);
+        vm.warp(block.timestamp + 1 hours);
 
         uint256 expected0 = token.withdrawableRewardOf(address(this), 0);
         uint256 expected1 = token.withdrawableRewardOf(address(this), 1);
@@ -633,7 +639,7 @@ contract RobynProtocolTest {
             fiveRewards[i].approve(address(five), 100);
             five.distributeReward(i, 100);
         }
-        vm.warp(block.timestamp + 7 days);
+        vm.warp(block.timestamp + 1 hours);
         uint256 claimed = five.claimAll();
         require(claimed >= 495 && claimed <= 500, "five asset claim");
     }
@@ -642,7 +648,7 @@ contract RobynProtocolTest {
         uint256 transferAmount = (uint256(rawTransfer) % (SUPPLY - 1)) + 1;
         vault.recordFees(1_000);
         vault.convertLeg(0, 400, 400, block.timestamp);
-        vm.warp(block.timestamp + 7 days);
+        vm.warp(block.timestamp + 1 hours);
         require(token.transfer(address(buyer), transferAmount), "transfer");
 
         require(token.withdrawableRewardOf(address(buyer), 0) == 0, "buyer prior entitlement");
