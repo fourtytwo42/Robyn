@@ -39,6 +39,7 @@ import {
   transactionAccount,
 } from "./runtime-config.js";
 import {
+  isolateScheduledScan,
   projectedScheduledDailyComputeUnits,
   scanRequestRetryDelayMs,
 } from "./scan-control.js";
@@ -1397,21 +1398,27 @@ async function scanLaunch(launch: LaunchScanRow, timestamp: bigint) {
 }
 
 async function fullScan() {
-  const computeUnitsBeforeScan = estimatedComputeUnits;
-  await auditRedis.ping();
-  const launches = await sql.unsafe<LaunchScanRow[]>(
-    "SELECT token,vault,market,assets FROM launches WHERE chain_id=$1 ORDER BY launch_id",
-    [manifest.chainId],
+  return isolateScheduledScan(
+    () => worker.pause(),
+    async () => {
+      const computeUnitsBeforeScan = estimatedComputeUnits;
+      await auditRedis.ping();
+      const launches = await sql.unsafe<LaunchScanRow[]>(
+        "SELECT token,vault,market,assets FROM launches WHERE chain_id=$1 ORDER BY launch_id",
+        [manifest.chainId],
+      );
+      const block = await publicClient.getBlock();
+      estimatedComputeUnits += 20;
+      await Promise.all(
+        launches.map((launch) => scanLaunch(launch, block.timestamp)),
+      );
+      fullScanEstimatedComputeUnits +=
+        estimatedComputeUnits - computeUnitsBeforeScan;
+      fullScanCount += 1;
+      lastFullReconciliationAt = new Date().toISOString();
+    },
+    () => worker.resume(),
   );
-  const block = await publicClient.getBlock();
-  estimatedComputeUnits += 20;
-  await Promise.all(
-    launches.map((launch) => scanLaunch(launch, block.timestamp)),
-  );
-  fullScanEstimatedComputeUnits +=
-    estimatedComputeUnits - computeUnitsBeforeScan;
-  fullScanCount += 1;
-  lastFullReconciliationAt = new Date().toISOString();
 }
 
 async function claimScanRequest() {

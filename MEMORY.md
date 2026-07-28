@@ -1,5 +1,21 @@
 # Project Memory
 
+### 2026-07-28 - Keeper idle CU measurement is isolated
+
+- Context: After promoting `125e2f8`, the indexed failed-run launch raised the
+  keeper's projected idle cost enough to exceed the 250,000-CU/day aggregate
+  gate. The scheduled-scan meter used a shared cumulative counter while the
+  financial worker could execute concurrently, so activity-dependent RPC calls
+  were attributed to idle reconciliation.
+- Decision: Pause the BullMQ worker and wait for active work to finish before
+  measuring each 15-minute full reconciliation, then resume it in a `finally`
+  block. Event-driven jobs and financial writes remain prompt outside the
+  short reconciliation window, and the 15-minute recovery scan is unchanged.
+- Files: `apps/keeper/src/server.ts`, `apps/keeper/src/scan-control.ts`, and
+  `apps/keeper/test/scan-control.test.ts`.
+- Follow-up: Validate worker resume on scan failure, deploy, and compare the
+  measured idle projection with active-event usage before starting endurance.
+
 ### 2026-07-28 - Pre-graduation rejection accepts redacted revert
 
 - Context: Run `schema11-2h-5baa0cc-10` passed readiness and its first sample,

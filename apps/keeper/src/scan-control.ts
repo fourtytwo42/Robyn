@@ -108,3 +108,16 @@ export function projectedScheduledDailyComputeUnits(
   }
   return Math.round((computeUnits / completedRuns) * (86_400_000 / intervalMs));
 }
+
+export async function isolateScheduledScan<T>(
+  pauseActivity: () => void | Promise<void>,
+  runScan: () => Promise<T>,
+  resumeActivity: () => void | Promise<void>,
+) {
+  await pauseActivity();
+  try {
+    return await runScan();
+  } finally {
+    await resumeActivity();
+  }
+}

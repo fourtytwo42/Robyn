@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   coalesceKeeperScanRequest,
+  isolateScheduledScan,
   projectedDailyComputeUnits,
   projectedScheduledDailyComputeUnits,
   requestCompletionIsCurrent,
@@ -108,5 +109,24 @@ describe("event-driven keeper scan control", () => {
     expect(() => projectedScheduledDailyComputeUnits(1, 0, 900_000)).toThrow(
       "invalid",
     );
+  });
+
+  it("isolates scheduled scans from activity and always resumes", async () => {
+    const calls: string[] = [];
+    await expect(
+      isolateScheduledScan(
+        async () => {
+          calls.push("pause");
+        },
+        async () => {
+          calls.push("scan");
+          throw new Error("scan failed");
+        },
+        async () => {
+          calls.push("resume");
+        },
+      ),
+    ).rejects.toThrow("scan failed");
+    expect(calls).toEqual(["pause", "scan", "resume"]);
   });
 });
