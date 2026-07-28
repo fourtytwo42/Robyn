@@ -1,5 +1,25 @@
 # Project Memory
 
+### 2026-07-28 - Endurance readiness exposed heartbeat lag
+
+- Context: Runs `schema11-2h-5e69a07-02` and
+  `schema11-2h-5e69a07-03` both failed before their clocks and before workload
+  writes. Run 02 sampled during post-promotion warm-up (154-block projection
+  lag and 942 ms endpoint p95). Run 03 independently measured the Alchemy head
+  476 blocks ahead while the ingester caught up.
+- Diagnosis: Robinhood Testnet advances quickly enough that the configured
+  10-second ingester heartbeat can breach the 100-block hard gate between
+  websocket activity. Independent samples then oscillated from 116 blocks to
+  19 blocks without an application failure.
+- Decision: Keep the endurance thresholds unchanged and reduce the shared
+  testnet/mainnet ingester heartbeat to four seconds. The inactive Mainnet
+  topology inherits this for parity but is not started or promoted.
+- Files: `infrastructure/pm2/ecosystem.testnet.config.cjs`,
+  `scripts/validate-pm2-config.mjs`, and
+  `scripts/verify-testnet-release.sh`.
+- Follow-up: Validate cost and PM2 configuration, promote the exact release,
+  require stable independent head samples, and start a fresh run ID from zero.
+
 ### 2026-07-28 - First schema-11 endurance attempt failed before clock start
 
 - Context: Run `schema11-2h-f89feeb-01` completed its funding phase and took
