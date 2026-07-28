@@ -115,14 +115,14 @@ describe("event-driven keeper scan control", () => {
     const calls: string[] = [];
     await expect(
       isolateScheduledScan(
-        async () => {
+        () => {
           calls.push("pause");
         },
-        async () => {
+        () => {
           calls.push("scan");
-          throw new Error("scan failed");
+          return Promise.reject(new Error("scan failed"));
         },
-        async () => {
+        () => {
           calls.push("resume");
         },
       ),
