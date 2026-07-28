@@ -530,6 +530,20 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-28: one-hour reward source commit
+  `162a50ed158d32df2c59b94f66678b5621f4cdd7` passed two clean
+  reproducible builds, the no-broadcast Robinhood Mainnet fork lifecycle, and
+  a complete chain-46630 route-reuse deployment rehearsal with schema-11
+  verification. The rehearsal measured 56 transactions, 61,625,540 gas, and
+  `0.000848011306663320 ETH` required with 25 percent headroom. The deployer
+  holds `0.001964738565447421 ETH`; preserving the mandatory `0.0015 ETH`
+  reserve requires `0.002348011306663320 ETH`, leaving a
+  `0.000383272741215899 ETH` shortfall. No public deployment was attempted.
+  Evidence is checksummed under
+  `/home/hendo420/robyn-evidence/schema11-one-hour-162a50e/preflight/`.
+  After funding, freeze a new clean exact `origin/main` candidate and rerun the
+  reproducible-build and fork/deployment preflight because the hook deployment
+  domain commits to the Git SHA.
 - 2026-07-28: the one-hour pull-claim rewards release is active in isolated VM
   worktree `/home/hendo420/Robyn-one-hour-rewards` on branch
   `codex/one-hour-pull-claims`, based on clean `origin/main` commit
@@ -3828,6 +3842,10 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Add at least `0.000383272741215899 ETH` to the canonical testnet deployer,
+  with a small additional margin recommended, then refreeze and rerun the exact
+  schema-11 reproducibility and deployment preflight. Do not spend the
+  `0.0015 ETH` reserve or deploy with reduced coverage.
 - Complete full validation and fresh testnet deployment of the one-hour
   pull-claim candidate. Any contract correction requires a fresh deployment
   and complete rerun of contract-dependent gates.
