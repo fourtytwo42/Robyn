@@ -1,5 +1,27 @@
 # Project Memory
 
+### 2026-07-27 - Immediate-reward contracts deployed to testnet
+
+- Context: The user authorized a fresh Robinhood Testnet deployment and full
+  lifecycle validation of the immediate holder/DAO reward and configurable
+  creator-split contracts from source commit
+  `721d008c539cdd13564c92c5c5c9e06c2af63be1`.
+- Funding: Recovered `0.003583175969146257 ETH` from the explicitly stopped
+  encrypted software-wallet endurance actors through a new crash-safe journal.
+  The exact fork measured `0.000817917826908 ETH` with 25% headroom. Live
+  preflight reserved `0.002 ETH` for lifecycle actions and preserved the hard
+  `0.0015 ETH` reserve.
+- Result: The fresh chain-46630 stack deployed at block `94184199`. The DAO
+  token is `0xf63b9F324BB907a148A73f7D6253b722A563Ea6a`, fee router is
+  `0x14E99a69A352CA79c54b5F3BB41Cd1776323769d`, and genesis launch token is
+  `0xA10d289d4755C29CAd739503468Fad355C9954d8`. All 536 deployment checks passed
+  with zero failures. The project wallet retained `0.004984634876176204 ETH`.
+- Evidence: `/home/hendo420/robyn-evidence/immediate-rewards-721d008/` and the
+  protected recovery journal under the stopped endurance wallet directory.
+- Follow-up: Rebuild an empty database, promote the exact manifest-bound
+  release, complete software-wallet lifecycle and negative-path acceptance,
+  reconcile accounting, and preserve the `0.0015 ETH` reserve.
+
 ### 2026-07-27 - Alchemy HTTP and filtered-log WebSocket alignment
 
 - Context: The user required testnet and the future mainnet application to use
