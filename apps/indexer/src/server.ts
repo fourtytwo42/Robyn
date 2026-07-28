@@ -1712,7 +1712,8 @@ async function runPipeline(
 }
 
 async function runIngesterPipeline() {
-  let estimatedComputeUnits = 0;
+  let fullSyncEstimatedComputeUnits = 0;
+  let headObservationCount = 0;
   let completedSyncCycles = 0;
   let failures = 0;
   let rpcRetryCount = 0;
@@ -1737,7 +1738,7 @@ async function runIngesterPipeline() {
   while (!stopping) {
     try {
       const result = await syncOnce();
-      estimatedComputeUnits +=
+      fullSyncEstimatedComputeUnits +=
         40 + result.rangeCount * 80 + result.logCount * 20;
       completedSyncCycles += 1;
       failures = 0;
@@ -1753,14 +1754,20 @@ async function runIngesterPipeline() {
           : "reconciliation-only",
         reconciliationMs,
         rpcRequestsByMethod: {
-          eth_blockNumber: Math.ceil(estimatedComputeUnits / 120),
-          eth_getBlockByNumber: Math.ceil(estimatedComputeUnits / 120),
-          eth_getLogs: Math.ceil(estimatedComputeUnits / 120),
+          eth_blockNumber:
+            Math.ceil(fullSyncEstimatedComputeUnits / 120) +
+            headObservationCount,
+          eth_getBlockByNumber: Math.ceil(
+            fullSyncEstimatedComputeUnits / 120,
+          ),
+          eth_getLogs: Math.ceil(fullSyncEstimatedComputeUnits / 120),
         },
-        estimatedCu: estimatedComputeUnits,
+        estimatedCu:
+          fullSyncEstimatedComputeUnits + headObservationCount * 10,
         projectedDailyCu: Math.round(
-          (estimatedComputeUnits / completedSyncCycles) *
-            (86_400_000 / reconciliationMs),
+          (fullSyncEstimatedComputeUnits / completedSyncCycles) *
+            (86_400_000 / reconciliationMs) +
+            10 * (86_400_000 / ingesterHeartbeatMs),
         ),
         webSocket: filteredLogWakeClient?.snapshot() ?? null,
         heartbeatOnly: false,
@@ -1778,8 +1785,25 @@ async function runIngesterPipeline() {
           );
           if (wakeReason === "event") break;
           if (performance.now() >= reconciliationDeadline) break;
+          const observedHead = await client.getBlockNumber();
+          headObservationCount += 1;
           await recordHeartbeat("chain-ingester", "ok", {
             ...heartbeatMetadata,
+            observedHead: observedHead.toString(),
+            observedAt: new Date().toISOString(),
+            rpcRequestsByMethod: {
+              ...heartbeatMetadata.rpcRequestsByMethod,
+              eth_blockNumber:
+                heartbeatMetadata.rpcRequestsByMethod.eth_blockNumber +
+                headObservationCount,
+            },
+            estimatedCu:
+              fullSyncEstimatedComputeUnits + headObservationCount * 10,
+            projectedDailyCu: Math.round(
+              (fullSyncEstimatedComputeUnits / completedSyncCycles) *
+                (86_400_000 / reconciliationMs) +
+                10 * (86_400_000 / ingesterHeartbeatMs),
+            ),
             webSocket: filteredLogWakeClient?.snapshot() ?? null,
             heartbeatOnly: true,
           });

@@ -2102,7 +2102,10 @@ async function sample() {
       failures.push("indexed launch count moved backward");
     }
     state.lastLaunchCount = launchCount;
-    const ingestionLag = Number(rpcBlock) - Number(status.asOfBlock);
+    const observedHeadBlock = Number(
+      status.observedHeadBlock ?? status.asOfBlock,
+    );
+    const ingestionLag = Number(rpcBlock) - observedHeadBlock;
     const projectionLag = Number(status.projectionLagBlocks);
     if (ingestionLag < 0 || ingestionLag > 100) {
       failures.push(`ingestion lag is ${ingestionLag} blocks`);
@@ -2231,8 +2234,12 @@ async function sample() {
     availableDiskPercent: disk.availablePercent,
     endpointP95Ms: p95,
     ingestionLagBlocks:
-      status?.asOfBlock && rpcBlock !== undefined
-        ? Number(rpcBlock) - Number(status.asOfBlock)
+      status?.observedHeadBlock && rpcBlock !== undefined
+        ? Number(rpcBlock) - Number(status.observedHeadBlock)
+        : null,
+    canonicalCheckpointLagBlocks:
+      status?.observedHeadBlock && status?.asOfBlock
+        ? Number(status.observedHeadBlock) - Number(status.asOfBlock)
         : null,
     projectionLagBlocks:
       status?.projectionLagBlocks === undefined

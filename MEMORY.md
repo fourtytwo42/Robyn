@@ -1,5 +1,26 @@
 # Project Memory
 
+### 2026-07-28 - Head liveness separated from canonical reconciliation
+
+- Context: After the four-second heartbeat release, the canonical checkpoint
+  still advanced only on relevant log notifications or the 15-minute recovery
+  reconciliation. The heartbeat merely rewrote stale metadata, so it could not
+  satisfy a sub-100-block liveness gate without restoring expensive full-log
+  polling.
+- Decision: Keep filtered WebSocket events and canonical HTTP reconciliation
+  authoritative for financial state. Each four-second heartbeat now performs
+  only one cheap `eth_blockNumber` observation, persists
+  `observedHeadBlock`, and reports its CU cost. Endurance compares its
+  independent Alchemy head with that observed head, while separately exposing
+  the canonical checkpoint distance.
+- Cost model: A 10-CU head observation every four seconds projects to 216,000
+  CU/day before the existing low-frequency reconciliation allowance, keeping
+  the intended idle budget measurable without full-state scans.
+- Files: `apps/indexer/src/server.ts`, `apps/api/src/server.ts`,
+  `scripts/testnet-endurance.mjs`, and the endurance policy regression test.
+- Follow-up: Compile and test the change, verify live head observations and
+  projected CU, then start a new uninterrupted run from zero.
+
 ### 2026-07-28 - Endurance readiness exposed heartbeat lag
 
 - Context: Runs `schema11-2h-5e69a07-02` and

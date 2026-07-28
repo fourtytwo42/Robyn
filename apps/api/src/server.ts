@@ -978,7 +978,8 @@ async function freshness() {
     (heartbeat) => heartbeat.service === "launch-projector",
   );
   const observedHead = String(
-    ingestionHeartbeat?.metadata.head ??
+    ingestionHeartbeat?.metadata.observedHead ??
+      ingestionHeartbeat?.metadata.head ??
       ingestionHeartbeat?.metadata.checkpoint ??
       ingestion?.last_block ??
       "0",
@@ -994,6 +995,7 @@ async function freshness() {
     .sort();
   return {
     asOfBlock: ingestion?.last_block ?? null,
+    observedHeadBlock: observedHead,
     indexedAt: ingestion?.updated_at ?? null,
     projectionAsOfBlock: projection?.last_block ?? null,
     kingProjectionAsOfBlock: kingProjection?.last_block ?? null,
