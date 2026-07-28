@@ -476,6 +476,10 @@ Durable project context lives here. Update this file whenever information should
   tests pass. This source change is not live in the current immutable testnet
   deployment. A fresh deployment, index rebuild, exact release promotion, and
   browser acceptance are required before claiming the one-hour timing is live.
+  Live pricing estimates `0.0008625872724096 ETH` for a full replacement with
+  25% headroom. The deployer has `0.002020816467029947 ETH`; preserving the
+  required `0.0015 ETH` reserve leaves a `0.000341770805379653 ETH` shortfall.
+  Obtain at least `0.0004 ETH` more testnet funding before deployment.
 - 2026-07-27: the Alchemy compute-unit remediation is implemented and promoted
   on testnet. Canonical filtered-log WebSocket notifications wake the indexer;
   HTTP reconciliation, keeper full scans, and deep protocol audits each run
