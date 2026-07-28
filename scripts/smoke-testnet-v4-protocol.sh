@@ -6,6 +6,8 @@ rpc_url="${ROBYN_TESTNET_RPC_URL:?ROBYN_TESTNET_RPC_URL is required}"
 manifest="${ROBYN_TESTNET_V4_PROTOCOL_MANIFEST:?ROBYN_TESTNET_V4_PROTOCOL_MANIFEST is required}"
 evidence="${ROBYN_TESTNET_V4_SMOKE_EVIDENCE:-$repo_root/evidence/46630-v4-smoke.json}"
 allow_live="${ROBYN_TESTNET_V4_SMOKE_ALLOW_LIVE:-false}"
+minimum_final_balance_wei="${ROBYN_TESTNET_V4_SMOKE_MINIMUM_FINAL_BALANCE_WEI:-1500000000000000}"
+journal="${ROBYN_TESTNET_V4_SMOKE_JOURNAL:-$evidence.journal.jsonl}"
 export PATH="$HOME/.foundry/bin:$PATH"
 cd "$repo_root"
 
@@ -15,23 +17,57 @@ cd "$repo_root"
   exit 1
 }
 
-if [[ ! "$rpc_url" =~ ^http://(127\.0\.0\.1|localhost):[0-9]+$ ]]; then
+umask 077
+live=false
+if [[ "$rpc_url" =~ ^http://(127\.0\.0\.1|localhost):[0-9]+$ ]]; then
+  account="$(
+    if [[ -n "${ROBYN_TESTNET_V4_SMOKE_ACCOUNT:-}" ]]; then
+      cast to-check-sum-address "$ROBYN_TESTNET_V4_SMOKE_ACCOUNT"
+    else
+      cast to-check-sum-address "$(jq -er '.deployer' "$manifest")"
+    fi
+  )"
+  wallet_args=(--from "$account" --unlocked)
+else
+  live=true
   [[ "$allow_live" == "true" ]] || {
     echo "Live smoke requires ROBYN_TESTNET_V4_SMOKE_ALLOW_LIVE=true" >&2
     exit 1
   }
-  echo "This script currently supports only an unlocked isolated rehearsal account" >&2
-  exit 1
+  keystore="${ROBYN_TESTNET_KEYSTORE:-${ROBYN_KEYSTORE:-}}"
+  password_file="${ROBYN_TESTNET_PASSWORD_FILE:-${ROBYN_PASSWORD_FILE:-}}"
+  [[ -f "$keystore" && -f "$password_file" ]] || {
+    echo "Live smoke requires the protected testnet keystore and password file" >&2
+    exit 1
+  }
+  account="$(cast wallet address --keystore "$keystore" --password-file "$password_file")"
+  [[ "${account,,}" == "$(jq -er '.deployer' "$manifest" | tr '[:upper:]' '[:lower:]')" ]] || {
+    echo "Live smoke keystore does not match the deployment creator" >&2
+    exit 1
+  }
+  git fetch origin main >/dev/null
+  [[ -z "$(git status --porcelain)" && "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || {
+    echo "Live smoke requires a clean exact origin/main commit" >&2
+    exit 1
+  }
+  wallet_args=(--keystore "$keystore" --password-file "$password_file")
+  threshold_native="$(jq -er '.market.graduationThresholdNative' "$manifest")"
+  starting_balance="$(cast balance "$account" --rpc-url "$rpc_url")"
+  required_starting_balance="$(node -e \
+    'console.log((BigInt(process.argv[1])+BigInt(process.argv[2])+500000000000000n).toString())' \
+    "$threshold_native" "$minimum_final_balance_wei")"
+  [[ "$starting_balance" -ge "$required_starting_balance" ]] || {
+    echo "Live smoke balance cannot cover graduation, gas headroom, and the final reserve" >&2
+    exit 1
+  }
 fi
 
-account="$(
-  if [[ -n "${ROBYN_TESTNET_V4_SMOKE_ACCOUNT:-}" ]]; then
-    cast to-check-sum-address "$ROBYN_TESTNET_V4_SMOKE_ACCOUNT"
-  else
-    cast to-check-sum-address "$(jq -er '.deployer' "$manifest")"
-  fi
-)"
-wallet_args=(--from "$account" --unlocked)
+[[ ! -e "$journal" ]] || {
+  echo "Smoke journal already exists; reconcile it instead of replaying: $journal" >&2
+  exit 1
+}
+mkdir -p "$(dirname "$journal")"
+: >"$journal"
 router="$(jq -er '.contracts.assetRouter' "$manifest")"
 market="$(jq -er '.genesis.market' "$manifest")"
 token="$(jq -er '.genesis.token' "$manifest")"
@@ -42,17 +78,36 @@ locker="$(jq -er '.genesis.positionLocker' "$manifest")"
 
 declare -a transactions=()
 send() {
-  local receipt
-  receipt="$(cast send --rpc-url "$rpc_url" "${wallet_args[@]}" --json "$@")"
+  local sequence hash receipt status
+  sequence="$(( $(grep -c '"state":"submitted"' "$journal" || true) + 1 ))"
+  hash="$(cast send --rpc-url "$rpc_url" "${wallet_args[@]}" --async "$@")"
+  jq -nc --arg state submitted --argjson sequence "$sequence" --arg hash "$hash" \
+    --arg submittedAt "$(date -u +%FT%TZ)" \
+    '{state:$state,sequence:$sequence,hash:$hash,submittedAt:$submittedAt}' >>"$journal"
+  receipt=''
+  for _ in {1..240}; do
+    if receipt="$(cast receipt "$hash" --rpc-url "$rpc_url" --json 2>/dev/null)"; then
+      break
+    fi
+    sleep 0.5
+  done
+  [[ -n "$receipt" ]] || {
+    echo "Timed out waiting for submitted transaction $hash" >&2
+    exit 1
+  }
   local status
   status="$(jq -r '.status' <<<"$receipt")"
   [[ "$status" == "0x1" || "$status" == "1" ]] || {
-    echo "Transaction failed: $*" >&2
+    echo "Transaction failed: $hash" >&2
     jq . <<<"$receipt" >&2
     exit 1
   }
-  local hash
-  hash="$(jq -er '.transactionHash // .transaction_hash' <<<"$receipt")"
+  jq -nc --arg state confirmed --argjson sequence "$sequence" --arg hash "$hash" \
+    --arg blockNumber "$(jq -er '.blockNumber' <<<"$receipt")" \
+    --arg gasUsed "$(jq -er '.gasUsed' <<<"$receipt")" \
+    --arg confirmedAt "$(date -u +%FT%TZ)" \
+    '{state:$state,sequence:$sequence,hash:$hash,blockNumber:$blockNumber,
+      gasUsed:$gasUsed,confirmedAt:$confirmedAt}' >>"$journal"
   transactions+=("$hash")
   printf '%s\n' "$hash"
 }
@@ -240,6 +295,13 @@ router_balance="$(cast balance "$fee_router" --rpc-url "$rpc_url")"
   echo "Protocol fee router is insolvent" >&2
   exit 1
 }
+if [[ "$live" == "true" ]]; then
+  final_balance="$(cast balance "$account" --rpc-url "$rpc_url")"
+  [[ "$final_balance" -ge "$minimum_final_balance_wei" ]] || {
+    echo "Live smoke breached the protected final balance reserve" >&2
+    exit 1
+  }
+fi
 
 mkdir -p "$(dirname "$evidence")"
 tmp="$(mktemp "$(dirname "$evidence")/.v4-smoke.XXXXXX")"
@@ -276,4 +338,6 @@ jq -n \
   }' >"$tmp"
 mv "$tmp" "$evidence"
 sha256sum "$evidence" >"$evidence.sha256"
+chmod 600 "$journal" "$evidence" "$evidence.sha256"
+sha256sum "$journal" >"$journal.sha256"
 jq . "$evidence"
