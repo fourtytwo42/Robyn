@@ -1915,6 +1915,32 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-27 - Thirty-minute Alchemy activity measurement
+
+- Context: Ran an isolated 1,800-second Robinhood Testnet workload against
+  release `8915542a4acb7720548666210e7922358511e102` while the stopped
+  endurance service remained inactive. The encrypted VM-only actors created
+  token `AC1841`, completed six buys and two sells, and journaled 11 unique
+  confirmed transactions plus 61 health samples with zero errors.
+- Usage: The shared Alchemy app increased from 3,537,238 to a settled
+  3,582,453 CU, a conservative 45,215-CU upper bound that includes background
+  testnet/mainnet reads and dashboard settling. Exact internal deltas were
+  14,840 indexer CU and 7,824 keeper CU. The run produced 24 event scans, two
+  scheduled reconciliations, 46 token inspections, and 270 WebSocket
+  notifications.
+- Health: Ingestion and projection finished at zero lag, WebSocket stayed
+  subscribed without reconnect, keeper queues were empty, router balance
+  exactly matched liabilities, and phase, locker, and reward-stream mismatch
+  counts were zero. No confirmed transaction was replayed.
+- Capacity: Modeled idle use is 147,168 CU/day or 4,415,040 CU/month. One
+  measured session per day projects 5,679,510 CU/month; four project
+  9,472,920; twelve project 19,588,680; and twenty project 29,704,440. A
+  continuous 48-session/day workload projects 65,109,600 CU/month.
+- Evidence: Protected checksummed artifacts are under
+  `/home/hendo420/.local/state/robyn-alchemy-cu-tests/alchemy-cu-30m-20260727/`.
+  Split testnet and mainnet into separate Alchemy apps/keys before the 24-hour
+  observation so usage is attributable by network.
+
 ### 2026-07-27 - Event-driven Alchemy compute-unit remediation
 
 - Context: five-second keeper scans and RPC-backed health checks produced an
