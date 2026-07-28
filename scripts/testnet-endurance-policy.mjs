@@ -12,6 +12,22 @@ export const isApprovedTestnetRpcUrl = (value) => {
   }
 };
 
+export function enduranceRelevantFiringAlerts(alerts) {
+  if (!Array.isArray(alerts)) return [];
+  return alerts
+    .filter((entry) => entry?.state === "firing")
+    .filter((entry) => {
+      const name = String(entry?.labels?.alertname ?? "");
+      const chainId = String(entry?.labels?.chain_id ?? "");
+      return (
+        name.length > 0 &&
+        chainId !== "4663" &&
+        !name.startsWith("RobinhoodMainnet")
+      );
+    })
+    .map((entry) => entry.labels.alertname);
+}
+
 export const ENDURANCE_SAMPLE_INTERVAL_SECONDS = 30;
 export const ENDURANCE_WRITE_INTERVAL_SECONDS = 5 * 60;
 export const ENDURANCE_REVIEW_INTERVAL_SECONDS = 20 * 60;

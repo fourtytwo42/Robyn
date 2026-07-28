@@ -1,5 +1,24 @@
 # Project Memory
 
+### 2026-07-28 - First schema-11 endurance attempt failed before clock start
+
+- Context: Run `schema11-2h-f89feeb-01` completed its funding phase and took
+  its first sample, but failed closed before the two-hour clock began.
+- Result: Testnet health was good (20-block ingestion lag, zero projection lag,
+  clean PM2 continuity, and no workload writes), but the global Prometheus
+  query included the unrelated experimental-node alert
+  `RobinhoodMainnetHeadLagHigh`.
+- Decision: Preserve the failed run and scope the testnet endurance alert gate
+  so it excludes only alerts explicitly labeled for chain `4663` or named
+  `RobinhoodMainnet*`; unscoped application alerts and chain-46630 alerts
+  remain fatal.
+- Files/tests: `scripts/testnet-endurance-policy.mjs`,
+  `scripts/testnet-endurance.mjs`, and
+  `scripts/test/testnet-endurance-policy.test.mjs`; the focused endurance
+  policy suite passes 17/17.
+- Follow-up: Commit, push, rebuild, promote, install a new run ID, and restart
+  the complete uninterrupted two-hour clock from zero.
+
 ### 2026-07-28 - Schema-11 two-hour endurance candidate prepared
 
 - Context: The user authorized one final uninterrupted two-hour Robinhood

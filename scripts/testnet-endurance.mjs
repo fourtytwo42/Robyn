@@ -60,6 +60,7 @@ import {
   ENDURANCE_REVIEW_INTERVAL_SECONDS,
   ENDURANCE_SAMPLE_INTERVAL_SECONDS,
   ENDURANCE_WRITE_INTERVAL_SECONDS,
+  enduranceRelevantFiringAlerts,
   isRetryablePublicRpcError,
   isApprovedTestnetRpcUrl,
   percentile,
@@ -2083,9 +2084,7 @@ async function sample() {
       { signal: AbortSignal.timeout(5_000) },
     );
     const alertPayload = await alertResponse.json();
-    alerts = alertPayload.data.alerts
-      .filter((entry) => entry.state === "firing")
-      .map((entry) => entry.labels.alertname);
+    alerts = enduranceRelevantFiringAlerts(alertPayload.data.alerts);
     if (alerts.length) failures.push(`firing alerts: ${alerts.join(",")}`);
     processes = pm2Processes();
     const baseline = state.baselineProcesses;

@@ -7,6 +7,7 @@ import {
   enduranceCoverageFailures,
   dueCount,
   dueLaunchCount,
+  enduranceRelevantFiringAlerts,
   enduranceSamplePassed,
   isApprovedTestnetRpcUrl,
   isRetryablePublicRpcError,
@@ -90,6 +91,35 @@ test("approved testnet RPC policy requires protected Alchemy HTTPS", () => {
     isApprovedTestnetRpcUrl("https://attacker.invalid/v2/key"),
     false,
   );
+});
+
+test("testnet endurance excludes explicitly mainnet-only alerts", () => {
+  assert.deepEqual(
+    enduranceRelevantFiringAlerts([
+      {
+        state: "firing",
+        labels: { alertname: "RobinhoodMainnetHeadLagHigh" },
+      },
+      {
+        state: "firing",
+        labels: { alertname: "RpcHeadLagHigh", chain_id: "4663" },
+      },
+      {
+        state: "firing",
+        labels: { alertname: "TestnetProjectionLagHigh", chain_id: "46630" },
+      },
+      {
+        state: "firing",
+        labels: { alertname: "RobynApiUnavailable" },
+      },
+      {
+        state: "pending",
+        labels: { alertname: "TestnetPendingAlert", chain_id: "46630" },
+      },
+    ]),
+    ["TestnetProjectionLagHigh", "RobynApiUnavailable"],
+  );
+  assert.deepEqual(enduranceRelevantFiringAlerts(null), []);
 });
 
 test("runner is fixed to one uninterrupted two-hour release gate", () => {
