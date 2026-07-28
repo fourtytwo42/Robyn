@@ -36,6 +36,13 @@
   injection had begun. Both snapshot and final evidence sealing now exclude
   `SHA256SUMS`; partial evidence remains under
   `/var/lib/robyn/testnet-recovery/schema11-25a6082-recovery-2/`.
+- Recovery correction 3: The third attempt verified the encrypted backup and
+  every restored checksum, then stopped before fault injection because the
+  PostgreSQL service account could not traverse the root-only temporary
+  directory. The gate now stages the dump in a separate PostgreSQL-owned
+  mode-0600 temporary file and removes it during cleanup. Partial evidence
+  remains under
+  `/var/lib/robyn/testnet-recovery/schema11-dc94a26-recovery-3/`.
 
 ### 2026-07-28 - Schema-11 one-hour rewards deployed to testnet
 

@@ -10,6 +10,7 @@ database="robyn_testnet_rehearsal"
 evidence="/var/lib/robyn/testnet-recovery/${run_id}"
 backup_root="/var/backups/robyn"
 work="$(mktemp -d /var/tmp/robyn-schema11-recovery.XXXXXX)"
+database_restore_dump="$(mktemp /var/tmp/robyn-schema11-database.XXXXXX)"
 restore_db="robyn_schema11_restore_$(date -u +%Y%m%d%H%M%S)_${RANDOM}"
 redis_pid=""
 minio_pid=""
@@ -30,6 +31,7 @@ cleanup() {
   [[ -z "${ipfs_pid}" ]] || kill "${ipfs_pid}" >/dev/null 2>&1 || true
   wait "${redis_pid:-}" "${minio_pid:-}" "${ipfs_pid:-}" >/dev/null 2>&1 || true
   runuser -u postgres -- dropdb --if-exists "${restore_db}" >/dev/null 2>&1 || true
+  rm -f -- "${database_restore_dump}"
   rm -rf -- "${work}"
 }
 trap cleanup EXIT
@@ -129,8 +131,9 @@ mkdir -p "${restored}"
 age -d -i /etc/robyn/backup-age-identity.txt -o "${work}/restore.tar.zst" "${encrypted}"
 tar --zstd -xf "${work}/restore.tar.zst" -C "${restored}"
 (cd "${restored}" && sha256sum -c SHA256SUMS)
+install -o postgres -g postgres -m 0600 "${restored}/database/database.dump" "${database_restore_dump}"
 runuser -u postgres -- createdb "${restore_db}"
-runuser -u postgres -- pg_restore --no-owner --no-acl -d "${restore_db}" "${restored}/database/database.dump"
+runuser -u postgres -- pg_restore --no-owner --no-acl -d "${restore_db}" "${database_restore_dump}"
 runuser -u postgres -- psql -d "${restore_db}" -c 'GRANT USAGE ON SCHEMA public TO hendo420; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO hendo420;' >/dev/null
 restored_fingerprint="$(database_fingerprint "${restore_db}")"
 [[ "${source_fingerprint}" == "${restored_fingerprint}" ]]
