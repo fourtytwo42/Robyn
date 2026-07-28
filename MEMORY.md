@@ -1,5 +1,19 @@
 # Project Memory
 
+### 2026-07-28 - Pay-As-You-Go log ranges widened
+
+- Context: Run `schema11-2h-11d5490-05` failed before its clock because a
+  fresh catch-up cycle projected 319,936 CU/day. The 200-block log range
+  multiplied the cost of canonical reconciliation on the fast testnet chain.
+- Verification: A protected Alchemy Testnet `eth_getLogs` query covering
+  exactly 10,000 blocks completed successfully in 187 ms.
+- Decision: Increase the shared testnet/mainnet filtered-log range from 200 to
+  10,000 blocks. This changes only request batching; address filters,
+  canonical verification, retry behavior, and the 15-minute recovery
+  reconciliation remain unchanged. Mainnet remains inactive.
+- Follow-up: Rebuild and promote, wait for the expected service-restart alert
+  to resolve, verify live CU and head-lag projections, then start a new run ID.
+
 ### 2026-07-28 - Head liveness separated from canonical reconciliation
 
 - Context: After the four-second heartbeat release, the canonical checkpoint
