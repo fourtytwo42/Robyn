@@ -1,5 +1,16 @@
 # Project Memory
 
+### 2026-07-28 - Idle CU gate receives measured margin
+
+- Context: The promoted `7f0a65b` release passed its full verifier, but a
+  post-warm-up sample projected 250,826 idle CU/day, 826 above the hard
+  250,000-CU limit.
+- Decision: Increase only the cheap head-observation heartbeat from 5.2 to 5.5
+  seconds in the shared testnet/mainnet topology. Mainnet remains inactive.
+  Keep the independent sub-100-block liveness gate unchanged.
+- Follow-up: Rebuild and promote an exact release, then require stable pre-clock
+  CU and head-liveness samples before starting endurance.
+
 ### 2026-07-28 - Release verifier follows event-driven head liveness
 
 - Context: Exact release `450eb5a` was healthy, but promotion exhausted its

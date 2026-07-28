@@ -24,5 +24,5 @@ test("release verification uses event-driven head liveness", () => {
 });
 
 test("release verification pins the deployed heartbeat interval", () => {
-  assert.match(verifier, /INDEXER_HEARTBEAT_MS[\s\S]{0,160}"5200"/);
+  assert.match(verifier, /INDEXER_HEARTBEAT_MS[\s\S]{0,160}"5500"/);
 });
