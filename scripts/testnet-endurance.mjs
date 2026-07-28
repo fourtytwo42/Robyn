@@ -2049,7 +2049,7 @@ function statExists(path) {
   }
 }
 
-async function sample() {
+async function sample({ readiness = false } = {}) {
   const sampledAtMs = Date.now();
   const latencies = [];
   const failures = [];
@@ -2120,10 +2120,12 @@ async function sample() {
       failures.push("indexer pipeline status is degraded");
     }
     failures.push(...protocolHealthFailures(status.protocol));
-    state.ingestionLagSamples = [
-      ...(state.ingestionLagSamples ?? []),
-      ingestionLag,
-    ].slice(-20);
+    if (!readiness) {
+      state.ingestionLagSamples = [
+        ...(state.ingestionLagSamples ?? []),
+        ingestionLag,
+      ].slice(-20);
+    }
     const ingestionLagP95 = percentile(state.ingestionLagSamples, 0.95);
     if (state.ingestionLagSamples.length >= 20 && ingestionLagP95 > 50) {
       failures.push(
@@ -2196,7 +2198,7 @@ async function sample() {
     state.healthySeconds +=
       (sampledAtMs - state.lastSampleAtMs) / 1000;
   }
-  if (!passed) {
+  if (!passed && !readiness) {
     state.paused = true;
     state.failed = true;
     state.terminalFailure = {
@@ -2213,16 +2215,23 @@ async function sample() {
     });
     state.failures = state.failures.slice(-200);
   }
-  state.sampleCount += 1;
-  state.lastSamplePassed = passed;
-  state.lastSampleAtMs = sampledAtMs;
+  if (readiness) {
+    state.readinessSampleCount = (state.readinessSampleCount ?? 0) + 1;
+  } else {
+    state.sampleCount += 1;
+    state.lastSamplePassed = passed;
+    state.lastSampleAtMs = sampledAtMs;
+  }
   const sampleEntry = {
     sampledAt: new Date(sampledAtMs).toISOString(),
+    phase: readiness ? "readiness" : "endurance",
     passed,
     infrastructurePassed,
     failures,
     healthySeconds: state.healthySeconds,
-    sampleCount: state.sampleCount,
+    sampleCount: readiness
+      ? state.readinessSampleCount
+      : state.sampleCount,
     status,
     rpcBlock: rpcBlock?.toString() ?? null,
     firingAlerts: alerts,
@@ -2252,7 +2261,8 @@ async function sample() {
     writeCycleCount: state.writeCycleCount,
     enduranceLaunchCount: state.enduranceLaunches.length,
   };
-  state.lastSample = sampleEntry;
+  if (readiness) state.lastReadinessSample = sampleEntry;
+  else state.lastSample = sampleEntry;
   append(samplesPath, sampleEntry);
   saveState();
   return sampleEntry;
@@ -2320,6 +2330,25 @@ process.on("SIGTERM", () => {
 process.on("SIGINT", () => {
   stopping = true;
 });
+
+let readinessPasses = 0;
+const readinessDeadlineMs = Date.now() + 10 * 60 * 1000;
+while (!stopping && readinessPasses < 2) {
+  const readinessSample = await sample({ readiness: true });
+  readinessPasses = readinessSample.passed ? readinessPasses + 1 : 0;
+  if (readinessPasses >= 2) break;
+  if (Date.now() >= readinessDeadlineMs) {
+    throw new Error(
+      `Endurance readiness did not stabilize: ${readinessSample.failures.join("; ")}`,
+    );
+  }
+  await sleep(sampleIntervalSeconds * 1000);
+}
+state.enduranceStartedAt = new Date().toISOString();
+state.segments = [{ index: 1, startedAt: state.enduranceStartedAt }];
+state.lastSamplePassed = undefined;
+state.lastSampleAtMs = undefined;
+saveState();
 
 function pauseForWorkloadFailure(error) {
   const failure = {

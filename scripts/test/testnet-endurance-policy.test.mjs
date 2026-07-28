@@ -134,6 +134,8 @@ test("runner is fixed to one uninterrupted two-hour release gate", () => {
   assert.doesNotMatch(source, /ROBYN_ENDURANCE_DURATION/);
   assert.doesNotMatch(source, /accumulated healthy/i);
   assert.match(source, /status\.observedHeadBlock \?\? status\.asOfBlock/);
+  assert.match(source, /readinessPasses < 2/);
+  assert.match(source, /phase: readiness \? "readiness" : "endurance"/);
 });
 
 test("advanced fee probes use runnable one-shot maintenance cycles", () => {

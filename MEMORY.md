@@ -1,5 +1,24 @@
 # Project Memory
 
+### 2026-07-28 - Endurance gains a pre-clock readiness phase
+
+- Context: Run `schema11-2h-9ca9726-07` failed before its clock because it
+  sampled immediately after funding-triggered canonical projection and cold
+  page requests. The same sample also proved the total idle budget must include
+  indexer, keeper, and protocol-audit work together.
+- Decision: After funding, require two consecutive passing 30-second readiness
+  samples before setting `enduranceStartedAt`. Readiness samples never accrue
+  healthy time and cannot hide an endurance failure. Keep the 7,200-second
+  uninterrupted clock unchanged.
+- Cost: Use a 5.2-second head-observation heartbeat so the combined projected
+  idle total remains below 250,000 CU/day while retaining a sub-100-block hard
+  liveness gate.
+- Files: `scripts/testnet-endurance.mjs`,
+  `infrastructure/pm2/ecosystem.testnet.config.cjs`,
+  `scripts/validate-pm2-config.mjs`, and the endurance policy regression test.
+- Follow-up: Validate readiness state transitions, exact-build and promote the
+  release, then start a new run ID from zero.
+
 ### 2026-07-28 - Idle CU projection excludes active event cost
 
 - Context: Run `schema11-2h-e4ccd57-06` failed before its clock because the

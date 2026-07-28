@@ -96,7 +96,7 @@ module.exports = {
         ROBYN_MANIFEST: manifest,
         ROBYN_INDEXER_ROLE: "ingester",
         INDEXER_RECONCILIATION_MS: "900000",
-        INDEXER_HEARTBEAT_MS: "4000",
+        INDEXER_HEARTBEAT_MS: "5200",
         INDEXER_WS_DEBOUNCE_MS: "500",
         INDEXER_BLOCK_RANGE: "10000",
         INDEXER_BLOCK_READ_CONCURRENCY: "3",
