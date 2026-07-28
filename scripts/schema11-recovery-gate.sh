@@ -16,13 +16,42 @@ redis_pid=""
 minio_pid=""
 ipfs_pid=""
 blocked_ips=()
+writers_quiesced=false
+writer_processes=(
+  robyn-api-testnet
+  robyn-indexer-testnet
+  robyn-projector-testnet
+  robyn-keeper-testnet
+  robyn-artifacts-testnet
+)
 mkdir -p "${evidence}" "${backup_root}"
-chmod 0700 "${evidence}" "${work}"
+chmod 0700 "${evidence}"
+chmod 0711 "${work}"
 
 pm2="${release}/node_modules/.bin/pm2"
 export PM2_HOME=/home/hendo420/.pm2
 
+resume_writers() {
+  if [[ "${writers_quiesced}" == true ]]; then
+    runuser -u hendo420 -- env PM2_HOME="${PM2_HOME}" "${pm2}" restart "${writer_processes[@]}" >/dev/null
+    writers_quiesced=false
+  fi
+}
+
+restore_application_stack() {
+  systemctl reset-failed pm2-hendo420 nginx
+  if ! systemctl is-active --quiet pm2-hendo420; then
+    if ! systemctl start pm2-hendo420; then
+      runuser -u hendo420 -- env PM2_HOME="${PM2_HOME}" "${pm2}" kill >/dev/null 2>&1 || true
+      systemctl reset-failed pm2-hendo420
+      systemctl start pm2-hendo420
+    fi
+  fi
+  systemctl start nginx
+}
+
 cleanup() {
+  resume_writers || true
   for ip in "${blocked_ips[@]:-}"; do
     iptables -D OUTPUT -p tcp -d "${ip}" --dport 443 -j REJECT >/dev/null 2>&1 || true
   done
@@ -77,13 +106,15 @@ SQL
 wait_healthy baseline
 served_sha="$(jq -er .gitSha "${release}/testnet-release-manifest.json")"
 manifest_sha="$(sha256sum "${release}/deployments/46630-v4.json" | cut -d' ' -f1)"
-source_fingerprint="$(database_fingerprint "${database}")"
 runuser -u hendo420 -- env PM2_HOME="${PM2_HOME}" "${pm2}" jlist >"${evidence}/pm2-before.json"
 status_json >"${evidence}/status-before.json"
 runuser -u hendo420 -- psql -d "${database}" -Atqc "select count(*) from job_audit where state='failed'" >"${evidence}/failed-jobs-before.txt"
 
 snapshot="${work}/snapshot"
 mkdir -p "${snapshot}/database" "${snapshot}/redis" "${snapshot}/artifacts" "${snapshot}/ipfs" "${snapshot}/configuration" "${snapshot}/journals"
+runuser -u hendo420 -- env PM2_HOME="${PM2_HOME}" "${pm2}" stop "${writer_processes[@]}" >/dev/null
+writers_quiesced=true
+source_fingerprint="$(database_fingerprint "${database}")"
 runuser -u hendo420 -- pg_dump --format=custom --no-owner --no-acl "${database}" >"${snapshot}/database/database.dump"
 runuser -u hendo420 -- psql -X -d "${database}" -At <<'SQL' >"${snapshot}/database/table-counts.tsv"
 SELECT format(
@@ -113,6 +144,8 @@ cp "${release}/testnet-release-manifest.json" "${snapshot}/configuration/"
 sed -E 's#=.*#=<redacted>#' /home/hendo420/.config/robyn/testnet/release.env >"${snapshot}/configuration/release-env-inventory.txt"
 systemctl cat pm2-hendo420.service postgresql.service redis-server.service minio.service robyn-ipfs.service nginx.service >"${snapshot}/configuration/systemd-units.txt"
 find /home/hendo420/robyn-evidence/schema11-one-hour-98e94c4 -type f \( -name '*.jsonl' -o -name '*journal*' \) -exec cp --parents {} "${snapshot}/journals" \;
+resume_writers
+wait_healthy backup-resumed
 jq -n --arg createdAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg gitSha "${served_sha}" --arg manifestSha256 "${manifest_sha}" --arg database "${database}" --arg databaseFingerprint "${source_fingerprint}" '{schemaVersion:1,createdAt:$createdAt,gitSha:$gitSha,manifestSha256:$manifestSha256,chainId:46630,database:$database,databaseFingerprint:$databaseFingerprint,secretsIncluded:false}' >"${snapshot}/manifest.json"
 (cd "${snapshot}" && find . -type f -print0 | sort -z | xargs -0 sha256sum >"${work}/snapshot.SHA256SUMS")
 mv "${work}/snapshot.SHA256SUMS" "${snapshot}/SHA256SUMS"
@@ -145,6 +178,7 @@ chown -R hendo420:hendo420 "${redis_dir}"
 runuser -u hendo420 -- redis-server --bind 127.0.0.1 --port 16379 --dir "${redis_dir}" --dbfilename dump.rdb --appendonly no >"${evidence}/redis-restore.log" 2>&1 &
 redis_pid=$!
 for _ in {1..60}; do redis-cli -p 16379 ping 2>/dev/null | grep -q PONG && break; sleep 0.25; done
+redis-cli -p 16379 ping | grep -q PONG
 redis-cli -p 16379 INFO keyspace >"${evidence}/redis-restored-keyspace.txt"
 
 minio_dir="${work}/minio"
@@ -152,13 +186,25 @@ mkdir -p "${minio_dir}"
 chown -R hendo420:hendo420 "${minio_dir}"
 runuser -u hendo420 -- env MINIO_ROOT_USER=restoreuser MINIO_ROOT_PASSWORD=restore-password-isolated minio server "${minio_dir}" --address 127.0.0.1:19000 --console-address 127.0.0.1:19001 >"${evidence}/minio-restore.log" 2>&1 &
 minio_pid=$!
-for _ in {1..60}; do curl -fsS http://127.0.0.1:19000/minio/health/live >/dev/null 2>&1 && break; sleep 0.25; done
-/usr/local/bin/mcli --config-dir "${mc_config}" alias set restored http://127.0.0.1:19000 restoreuser restore-password-isolated >/dev/null
+for _ in {1..120}; do curl -fsS http://127.0.0.1:19000/minio/health/ready >/dev/null 2>&1 && break; sleep 0.25; done
+curl -fsS http://127.0.0.1:19000/minio/health/ready >/dev/null
+for _ in {1..60}; do
+  if /usr/local/bin/mcli --config-dir "${mc_config}" alias set restored http://127.0.0.1:19000 restoreuser restore-password-isolated >/dev/null 2>&1; then
+    break
+  fi
+  sleep 0.25
+done
+/usr/local/bin/mcli --config-dir "${mc_config}" admin info restored >/dev/null
 /usr/local/bin/mcli --config-dir "${mc_config}" mb --ignore-existing restored/robyn-artifacts >/dev/null
 /usr/local/bin/mcli --config-dir "${mc_config}" mirror --overwrite "${restored}/artifacts" restored/robyn-artifacts >/dev/null
 source_count="$(find "${restored}/artifacts" -type f | wc -l)"
-restored_count="$(/usr/local/bin/mcli --config-dir "${mc_config}" find restored/robyn-artifacts --type f | wc -l)"
-[[ "${source_count}" == "${restored_count}" ]]
+restored_count="$(/usr/local/bin/mcli --config-dir "${mc_config}" --json du restored/robyn-artifacts | jq -er '.objects')"
+printf '%s\n' "${source_count}" >"${evidence}/minio-source-object-count.txt"
+printf '%s\n' "${restored_count}" >"${evidence}/minio-restored-object-count.txt"
+if [[ "${source_count}" != "${restored_count}" ]]; then
+  echo "MinIO restored object count mismatch: source=${source_count} restored=${restored_count}" >&2
+  exit 1
+fi
 
 ipfs_dir="${work}/ipfs"
 mkdir -p "${ipfs_dir}"
@@ -170,6 +216,7 @@ runuser -u hendo420 -- env IPFS_PATH="${ipfs_dir}" ipfs config --json Addresses.
 runuser -u hendo420 -- env IPFS_PATH="${ipfs_dir}" ipfs daemon --offline >"${evidence}/ipfs-restore.log" 2>&1 &
 ipfs_pid=$!
 for _ in {1..60}; do curl -fsS -X POST http://127.0.0.1:15001/api/v0/version >/dev/null 2>&1 && break; sleep 0.25; done
+curl -fsS -X POST http://127.0.0.1:15001/api/v0/version >/dev/null
 while IFS=$'\t' read -r cid sha; do
   [[ -n "${cid}" ]] || continue
   object="$(find "${restored}/artifacts" -type f -name "${sha}" -print -quit)"
@@ -181,7 +228,14 @@ done <"${restored}/ipfs/pin-artifacts.tsv"
 if ! runuser -u hendo420 -- env HOME=/home/hendo420 gh release view schema11-recovery-backups -R fourtytwo42/Robyn >/dev/null 2>&1; then
   runuser -u hendo420 -- env HOME=/home/hendo420 gh release create schema11-recovery-backups -R fourtytwo42/Robyn --target main --title 'Schema-11 encrypted recovery backups' --notes 'Encrypted testnet recovery artifacts. No secret or recovery identity is included.' >/dev/null
 fi
-runuser -u hendo420 -- env HOME=/home/hendo420 gh release upload schema11-recovery-backups "${encrypted}" "${encrypted}.sha256" -R fourtytwo42/Robyn --clobber >/dev/null
+upload_encrypted="${work}/$(basename "${encrypted}")"
+install -o hendo420 -g hendo420 -m 0600 "${encrypted}" "${upload_encrypted}"
+(
+  cd "${work}"
+  sha256sum "$(basename "${upload_encrypted}")" >"$(basename "${upload_encrypted}").sha256"
+)
+chown hendo420:hendo420 "${upload_encrypted}.sha256"
+runuser -u hendo420 -- env HOME=/home/hendo420 gh release upload schema11-recovery-backups "${upload_encrypted}" "${upload_encrypted}.sha256" -R fourtytwo42/Robyn --clobber >/dev/null
 
 # Stop isolated restore services before live one-fault drills.
 kill "${redis_pid}" "${minio_pid}" "${ipfs_pid}" >/dev/null 2>&1 || true
@@ -209,6 +263,7 @@ for service in redis-server postgresql minio robyn-ipfs nginx; do
   systemctl start "${service}"
   for _ in {1..60}; do systemctl is-active --quiet "${service}" && break; sleep 1; done
   systemctl is-active --quiet "${service}"
+  restore_application_stack
   wait_healthy "systemd-${service}"
 done
 

@@ -43,6 +43,15 @@
   mode-0600 temporary file and removes it during cleanup. Partial evidence
   remains under
   `/var/lib/robyn/testnet-recovery/schema11-dc94a26-recovery-3/`.
+- Recovery hardening: Diagnostic runs exposed and fixed snapshot drift,
+  unprivileged restore traversal, installed MinIO-client compatibility and
+  readiness races, protected off-VM upload permissions, and systemd dependency
+  closure after Redis interruption. Diagnostic run
+  `schema11-diagnostic-recovery-12` then passed encrypted backup/decrypt,
+  exact database reconciliation, isolated Redis/MinIO/IPFS restore, off-VM
+  upload, PM2/native-service/RPC fault recovery, and duplicate/failed-job
+  checks. An official sealed run remains required from the exact promoted
+  commit before endurance starts.
 
 ### 2026-07-28 - Schema-11 one-hour rewards deployed to testnet
 
