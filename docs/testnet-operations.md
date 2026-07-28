@@ -237,7 +237,7 @@ The protected testnet backend uses Alchemy HTTPS for canonical reads and a
 filtered-log WebSocket only as an ingestion wake signal. Browser RPC remains on
 the public keyless endpoint. Canonical HTTP logs, block hashes, and PostgreSQL
 checkpoints remain authoritative. In quiet periods, the canonical HTTP safety
-reconciliation runs every 90 seconds while heartbeat records continue every 10
+reconciliation runs every 120 seconds while heartbeat records continue every 10
 seconds.
 
 The projector writes coalesced token-specific requests to

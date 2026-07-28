@@ -57,3 +57,21 @@ export function projectedDailyComputeUnits(
   }
   return Math.round((computeUnits / elapsedMs) * 86_400_000);
 }
+
+export function projectedScheduledDailyComputeUnits(
+  computeUnits: number,
+  completedRuns: number,
+  intervalMs: number,
+) {
+  if (
+    !Number.isFinite(computeUnits) ||
+    computeUnits < 0 ||
+    !Number.isInteger(completedRuns) ||
+    completedRuns <= 0 ||
+    !Number.isFinite(intervalMs) ||
+    intervalMs <= 0
+  ) {
+    throw new Error("Scheduled compute-unit projection inputs are invalid");
+  }
+  return Math.round((computeUnits / completedRuns) * (86_400_000 / intervalMs));
+}

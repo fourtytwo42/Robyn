@@ -155,8 +155,8 @@ const multicall3Verified = Boolean(
 if ((chainId === 46630 || chainId === 4663) && !multicall3Verified) {
   throw new Error("API Multicall3 runtime verification failed");
 }
-const protocolAuditStartedAt = Date.now();
 let protocolAuditEstimatedCu = 0;
+let protocolAuditCompletedRuns = 0;
 let protocolAuditMulticallFallbacks = 0;
 
 type BatchRead = {
@@ -1284,6 +1284,11 @@ async function remediationProtocolState() {
   const daoStreamConserved =
     daoDeposited === daoQueued + daoStreaming + daoVested &&
     daoClaimed <= daoVested;
+  protocolAuditCompletedRuns += 1;
+  const projectedDailyCu = Math.round(
+    (protocolAuditEstimatedCu / protocolAuditCompletedRuns) *
+      (86_400_000 / protocolAuditIntervalMs),
+  );
   return {
     status:
       routerSolvent &&
@@ -1296,17 +1301,8 @@ async function remediationProtocolState() {
     asOfBlock: blockNumber.toString(),
     durationMs: Math.round((performance.now() - began) * 100) / 100,
     estimatedCu: protocolAuditEstimatedCu,
-    projectedDailyCu: Math.round(
-      (protocolAuditEstimatedCu /
-        Math.max(1, Date.now() - protocolAuditStartedAt)) *
-        86_400_000,
-    ),
-    projectedMonthlyCu:
-      Math.round(
-        (protocolAuditEstimatedCu /
-          Math.max(1, Date.now() - protocolAuditStartedAt)) *
-          86_400_000,
-      ) * 30,
+    projectedDailyCu,
+    projectedMonthlyCu: projectedDailyCu * 30,
     multicallFallbackCount: protocolAuditMulticallFallbacks,
     routerSolvent,
     routerBalance: routerBalance.toString(),

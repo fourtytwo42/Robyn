@@ -1347,8 +1347,8 @@ async function runPipeline(
 }
 
 async function runIngesterPipeline() {
-  const startedAt = Date.now();
   let estimatedComputeUnits = 0;
+  let completedSyncCycles = 0;
   let failures = 0;
   let rpcRetryCount = 0;
   let lastRpcDegradationAt: string | null = null;
@@ -1374,6 +1374,7 @@ async function runIngesterPipeline() {
       const result = await syncOnce();
       estimatedComputeUnits +=
         40 + result.rangeCount * 80 + result.logCount * 20;
+      completedSyncCycles += 1;
       failures = 0;
       if (filteredLogWakeClient) {
         filteredLogWakeClient.updateAddresses(await currentIndexedAddresses());
@@ -1393,8 +1394,8 @@ async function runIngesterPipeline() {
         },
         estimatedCu: estimatedComputeUnits,
         projectedDailyCu: Math.round(
-          (estimatedComputeUnits / Math.max(1, Date.now() - startedAt)) *
-            86_400_000,
+          (estimatedComputeUnits / completedSyncCycles) *
+            (86_400_000 / reconciliationMs),
         ),
         webSocket: filteredLogWakeClient?.snapshot() ?? null,
         heartbeatOnly: false,

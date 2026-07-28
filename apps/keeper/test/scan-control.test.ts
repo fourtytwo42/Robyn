@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   coalesceKeeperScanRequest,
   projectedDailyComputeUnits,
+  projectedScheduledDailyComputeUnits,
   requestCompletionIsCurrent,
   scanRequestRetryDelayMs,
 } from "../src/scan-control.js";
@@ -46,5 +47,12 @@ describe("event-driven keeper scan control", () => {
   it("projects daily compute units from the measured service window", () => {
     expect(projectedDailyComputeUnits(10_000, 3_600_000)).toBe(240_000);
     expect(() => projectedDailyComputeUnits(1, 0)).toThrow("invalid");
+  });
+
+  it("projects scheduled work without extrapolating the startup burst", () => {
+    expect(projectedScheduledDailyComputeUnits(1_800, 2, 900_000)).toBe(86_400);
+    expect(() => projectedScheduledDailyComputeUnits(1, 0, 900_000)).toThrow(
+      "invalid",
+    );
   });
 });

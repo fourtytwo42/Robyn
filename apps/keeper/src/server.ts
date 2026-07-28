@@ -38,7 +38,7 @@ import {
   transactionAccount,
 } from "./runtime-config.js";
 import {
-  projectedDailyComputeUnits,
+  projectedScheduledDailyComputeUnits,
   scanRequestRetryDelayMs,
 } from "./scan-control.js";
 
@@ -243,11 +243,11 @@ const minimumOperatorBalance = BigInt(
 if (minimumOperatorBalance < 0n)
   throw new Error("Keeper minimum operator balance cannot be negative");
 let stopping = false;
-const keeperStartedAt = Date.now();
 let fullScanCount = 0;
 let eventScanCount = 0;
 let tokensScanned = 0;
 let estimatedComputeUnits = 0;
+let fullScanEstimatedComputeUnits = 0;
 let multicallFallbackCount = 0;
 let lastFullReconciliationAt: string | null = null;
 let lastEventScanAt: string | null = null;
@@ -873,6 +873,14 @@ async function heartbeat() {
   const requestCounts = Object.fromEntries(
     scanRequests.map((row) => [row.status, Number(row.count)]),
   );
+  const projectedDailyIdleCu =
+    fullScanCount === 0
+      ? null
+      : projectedScheduledDailyComputeUnits(
+          fullScanEstimatedComputeUnits,
+          fullScanCount,
+          scanMs,
+        ) + Math.round((20 * 86_400_000) / 60_000);
   await sql.unsafe(
     "INSERT INTO service_heartbeats (service,status,metadata) VALUES ('conversion-keeper',$1,$2::jsonb) ON CONFLICT (service) DO UPDATE SET status=EXCLUDED.status,metadata=EXCLUDED.metadata,updated_at=now()",
     [
@@ -896,20 +904,9 @@ async function heartbeat() {
         tokensScanned,
         lastFullReconciliationAt,
         lastEventScanAt,
-        projectedDailyIdleCu:
-          lastFullReconciliationAt === null
-            ? null
-            : projectedDailyComputeUnits(
-                estimatedComputeUnits,
-                Math.max(1, now - keeperStartedAt),
-              ),
+        projectedDailyIdleCu,
         projectedMonthlyCu:
-          lastFullReconciliationAt === null
-            ? null
-            : projectedDailyComputeUnits(
-                estimatedComputeUnits,
-                Math.max(1, now - keeperStartedAt),
-              ) * 30,
+          projectedDailyIdleCu === null ? null : projectedDailyIdleCu * 30,
       }),
     ],
   );
@@ -1389,6 +1386,7 @@ async function scanLaunch(launch: LaunchScanRow, timestamp: bigint) {
 }
 
 async function fullScan() {
+  const computeUnitsBeforeScan = estimatedComputeUnits;
   await auditRedis.ping();
   const launches = await sql.unsafe<LaunchScanRow[]>(
     "SELECT token,vault,market,assets FROM launches WHERE chain_id=$1 ORDER BY launch_id",
@@ -1399,6 +1397,8 @@ async function fullScan() {
   await Promise.all(
     launches.map((launch) => scanLaunch(launch, block.timestamp)),
   );
+  fullScanEstimatedComputeUnits +=
+    estimatedComputeUnits - computeUnitsBeforeScan;
   fullScanCount += 1;
   lastFullReconciliationAt = new Date().toISOString();
 }
