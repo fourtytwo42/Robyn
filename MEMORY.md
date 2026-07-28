@@ -1,5 +1,31 @@
 # Project Memory
 
+### 2026-07-28 - Schema-11 one-hour rewards deployed to testnet
+
+- Context: Faucet funding removed the final deployment blocker for the exact
+  one-hour pull-claim release.
+- Decision: Keep the release testnet-only and preserve the `0.0015 ETH`
+  operator reserve.
+- Result: Exact source commit `98e94c444664c7f067ffd83b6d68abefdf99c7b2`
+  passed two clean reproducible builds and a route-reuse chain-46630 fork
+  rehearsal with 537/537 verifier checks. The fresh schema-11 deployment began
+  at block `94516447`; coordinator `0xc9d49BD31C12BbDCcA1A2a4b813D07c1806c6A39`,
+  fee router `0x800C88EF2BC5FDD8A3bF1F92Af9360eb06495611`, DAO token
+  `0xfD9FF1b7Ea84C89E6188F6ED2965955537A97027`, hook
+  `0xe5Bbc9451d13a8337CBEb9E997167AE1857898E4`, and genesis token
+  `0xBDD95907f39835AC62F71524896deAD451ff32Ef`. The bounded live smoke
+  journal has 93 submitted and 93 confirmed transactions with holder, creator,
+  and DAO pull claims completed. The script now waits for the first vested unit
+  instead of assuming a same-block one-hour-stream claim.
+- Evidence: Checksummed preflight and deployment evidence is under
+  `/home/hendo420/robyn-evidence/schema11-one-hour-98e94c4/`; the archived
+  schema-10 database and release state is under
+  `/var/backups/robyn/testnet-archives/schema10-before-schema11-20260728T155119Z/`.
+- Follow-up: Commit the live manifest and harness correction, build and promote
+  the exact testnet release, rebuild a fresh schema-11 projection, then run the
+  full lifecycle, browser, recovery, and endurance gates.
+
+
 ### 2026-07-28 - Immediate-reward testnet release accepted
 
 - Context: The user authorized a fresh Robinhood Testnet deployment and broad
@@ -530,20 +556,15 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- 2026-07-28: one-hour reward source commit
-  `162a50ed158d32df2c59b94f66678b5621f4cdd7` passed two clean
-  reproducible builds, the no-broadcast Robinhood Mainnet fork lifecycle, and
-  a complete chain-46630 route-reuse deployment rehearsal with schema-11
-  verification. The rehearsal measured 56 transactions, 61,625,540 gas, and
-  `0.000848011306663320 ETH` required with 25 percent headroom. The deployer
-  holds `0.001964738565447421 ETH`; preserving the mandatory `0.0015 ETH`
-  reserve requires `0.002348011306663320 ETH`, leaving a
-  `0.000383272741215899 ETH` shortfall. No public deployment was attempted.
-  Evidence is checksummed under
-  `/home/hendo420/robyn-evidence/schema11-one-hour-162a50e/preflight/`.
-  After funding, freeze a new clean exact `origin/main` candidate and rerun the
-  reproducible-build and fork/deployment preflight because the hook deployment
-  domain commits to the Git SHA.
+- 2026-07-28: exact source `98e94c444664c7f067ffd83b6d68abefdf99c7b2`
+  passed reproducibility and the schema-11 fork rehearsal before a fresh public
+  testnet deployment at block `94516447`. Pre-deployment verification passed
+  537/537 checks. The bounded live smoke completed 93 submitted and 93 confirmed
+  journaled actions, including holder, creator, and DAO pull claims. The active
+  application still serves schema 10 until the live manifest is committed, a
+  fresh schema-11 database is rebuilt, and the exact release is promoted.
+  Checksummed evidence is under
+  `/home/hendo420/robyn-evidence/schema11-one-hour-98e94c4/`.
 - 2026-07-28: the one-hour pull-claim rewards release is active in isolated VM
   worktree `/home/hendo420/Robyn-one-hour-rewards` on branch
   `codex/one-hour-pull-claims`, based on clean `origin/main` commit

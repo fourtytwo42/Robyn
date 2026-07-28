@@ -267,8 +267,17 @@ for index in 0 1 2; do
   deadline="$(chain_deadline)"
   conversion_tx="$(send "$vault" 'convertLeg(uint256,uint256,uint256,uint256)' \
     "$index" "$amount" "$minimum" "$deadline")"
-  claimable="$(cast call "$token" 'withdrawableRewardOf(address,uint256)(uint256)' \
-    "$account" "$index" --rpc-url "$rpc_url" | quote_first)"
+  if [[ "$live" != "true" ]]; then
+    cast rpc evm_increaseTime 60 --rpc-url "$rpc_url" >/dev/null
+    cast rpc evm_mine --rpc-url "$rpc_url" >/dev/null
+  fi
+  claimable=0
+  for _ in {1..30}; do
+    claimable="$(cast call "$token" 'withdrawableRewardOf(address,uint256)(uint256)' \
+      "$account" "$index" --rpc-url "$rpc_url" | quote_first)"
+    [[ "$claimable" -gt 0 ]] && break
+    sleep 1
+  done
   [[ "$claimable" -gt 0 ]] || { echo "Basket leg $index created no holder reward" >&2; exit 1; }
   claim_tx="$(send "$token" 'claim(uint256)' "$index")"
   conversion_results="$(jq \
@@ -278,13 +287,23 @@ for index in 0 1 2; do
       transactions:{conversion:$conversion,holderClaim:$claim}}]' <<<"$conversion_results")"
 done
 
-creator_claimable="$(cast call "$fee_router" \
-  'launchAccount(address)((address,address,address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,bool))' \
-  "$token" --rpc-url "$rpc_url" --json | jq -er '.[0][12]')"
+creator_claimable=0
+for _ in {1..30}; do
+  creator_claimable="$(cast call "$fee_router" \
+    'claimableCreatorNativeByRecipient(address,address)(uint256)' \
+    "$token" "$account" --rpc-url "$rpc_url" | quote_first)"
+  [[ "$creator_claimable" -gt 0 ]] && break
+  sleep 1
+done
 [[ "$creator_claimable" -gt 0 ]] || { echo "Creator reward was not accrued" >&2; exit 1; }
 creator_claim_tx="$(send "$fee_router" 'claimCreatorFees(address)' "$token")"
-dao_claimable="$(cast call "$dao_token" 'claimableRewardOf(address)(uint256)' \
-  "$account" --rpc-url "$rpc_url" | quote_first)"
+dao_claimable=0
+for _ in {1..30}; do
+  dao_claimable="$(cast call "$dao_token" 'claimableRewardOf(address)(uint256)' \
+    "$account" --rpc-url "$rpc_url" | quote_first)"
+  [[ "$dao_claimable" -gt 0 ]] && break
+  sleep 1
+done
 [[ "$dao_claimable" -gt 0 ]] || { echo "RDAO reward was not accrued" >&2; exit 1; }
 dao_claim_tx="$(send "$dao_token" 'claimRewards()')"
 
