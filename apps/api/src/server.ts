@@ -1243,6 +1243,10 @@ async function remediationProtocolState() {
   let rewardStreamRoundingDust = 0n;
   let bondingPools = 0;
   let tradingPools = 0;
+  const launchAuditPlans: {
+    launch: (typeof launches)[number];
+    calls: BatchRead[];
+  }[] = [];
   for (const launch of launches) {
     if (!launch.pool_id) {
       phaseMismatchCount += 1;
@@ -1300,7 +1304,21 @@ async function remediationProtocolState() {
         });
       }
     }
-    const values = await verifiedBatchRead(calls, blockNumber);
+    launchAuditPlans.push({ launch, calls });
+  }
+  const launchAuditValues = launchAuditPlans.length
+    ? await verifiedBatchRead(
+        launchAuditPlans.flatMap(({ calls }) => calls),
+        blockNumber,
+      )
+    : [];
+  let launchAuditOffset = 0;
+  for (const { launch, calls } of launchAuditPlans) {
+    const values = launchAuditValues.slice(
+      launchAuditOffset,
+      launchAuditOffset + calls.length,
+    );
+    launchAuditOffset += calls.length;
     const graduated = values[0] as boolean;
     const phase = Number(values[1]);
     if (phase === 1) bondingPools += 1;

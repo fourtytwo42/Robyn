@@ -1,5 +1,24 @@
 # Project Memory
 
+### 2026-07-28 - Deep protocol audit batches all launch state
+
+- Context: Promoted release `9bbc237` indexed the preserved failed-run launch,
+  bringing the live database to three launches. Its projected idle total was
+  about 252,419 CU/day because the 15-minute protocol audit issued one
+  Multicall per launch. Eight new endurance launches would increase that cost
+  further.
+- Decision: Build every launch's phase, locker, and holder-stream reads first,
+  execute them through one verified Multicall at a single block, then decode
+  each launch from its recorded slice. Audit frequency and invariant coverage
+  remain unchanged, and a Multicall failure still fails closed when the batch
+  is too large for bounded individual fallback.
+- Files: `apps/api/src/server.ts` and
+  `apps/api/test/protocol-audit-batching.test.ts`.
+- Verification: All 65 API tests, TypeScript build, formatting, and
+  `git diff --check` pass.
+- Follow-up: Rebuild and promote, then require the measured combined idle
+  projection to remain below 250,000 CU/day before installing another run.
+
 ### 2026-07-28 - Endurance deployment reviews allow live lifecycle state
 
 - Context: Run `schema11-2h-50a9402-11` passed readiness and began its clock,
