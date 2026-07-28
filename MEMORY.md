@@ -1,5 +1,18 @@
 # Project Memory
 
+### 2026-07-28 - Idle CU projection excludes active event cost
+
+- Context: Run `schema11-2h-e4ccd57-06` failed before its clock because the
+  field labeled projected idle CU included the six funding-transfer logs,
+  raising it from 234,720 to 306,405 CU/day.
+- Decision: Continue counting all logs in cumulative estimated CU, but exclude
+  event-dependent log processing from the idle-only projection. The idle
+  projection now includes head observations plus range and head work for the
+  15-minute canonical reconciliation.
+- Files: `apps/indexer/src/server.ts`.
+- Follow-up: Verify actual and idle metrics diverge correctly under an event,
+  promote the exact release, and begin a new run ID only after all gates pass.
+
 ### 2026-07-28 - Pay-As-You-Go log ranges widened
 
 - Context: Run `schema11-2h-11d5490-05` failed before its clock because a

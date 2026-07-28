@@ -1713,6 +1713,7 @@ async function runPipeline(
 
 async function runIngesterPipeline() {
   let fullSyncEstimatedComputeUnits = 0;
+  let idleReconciliationEstimatedComputeUnits = 0;
   let headObservationCount = 0;
   let completedSyncCycles = 0;
   let failures = 0;
@@ -1740,6 +1741,7 @@ async function runIngesterPipeline() {
       const result = await syncOnce();
       fullSyncEstimatedComputeUnits +=
         40 + result.rangeCount * 80 + result.logCount * 20;
+      idleReconciliationEstimatedComputeUnits += 40 + result.rangeCount * 80;
       completedSyncCycles += 1;
       failures = 0;
       if (filteredLogWakeClient) {
@@ -1762,7 +1764,7 @@ async function runIngesterPipeline() {
         },
         estimatedCu: fullSyncEstimatedComputeUnits + headObservationCount * 10,
         projectedDailyCu: Math.round(
-          (fullSyncEstimatedComputeUnits / completedSyncCycles) *
+          (idleReconciliationEstimatedComputeUnits / completedSyncCycles) *
             (86_400_000 / reconciliationMs) +
             10 * (86_400_000 / ingesterHeartbeatMs),
         ),
@@ -1797,7 +1799,7 @@ async function runIngesterPipeline() {
             estimatedCu:
               fullSyncEstimatedComputeUnits + headObservationCount * 10,
             projectedDailyCu: Math.round(
-              (fullSyncEstimatedComputeUnits / completedSyncCycles) *
+              (idleReconciliationEstimatedComputeUnits / completedSyncCycles) *
                 (86_400_000 / reconciliationMs) +
                 10 * (86_400_000 / ingesterHeartbeatMs),
             ),
