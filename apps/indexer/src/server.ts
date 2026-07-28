@@ -1757,13 +1757,10 @@ async function runIngesterPipeline() {
           eth_blockNumber:
             Math.ceil(fullSyncEstimatedComputeUnits / 120) +
             headObservationCount,
-          eth_getBlockByNumber: Math.ceil(
-            fullSyncEstimatedComputeUnits / 120,
-          ),
+          eth_getBlockByNumber: Math.ceil(fullSyncEstimatedComputeUnits / 120),
           eth_getLogs: Math.ceil(fullSyncEstimatedComputeUnits / 120),
         },
-        estimatedCu:
-          fullSyncEstimatedComputeUnits + headObservationCount * 10,
+        estimatedCu: fullSyncEstimatedComputeUnits + headObservationCount * 10,
         projectedDailyCu: Math.round(
           (fullSyncEstimatedComputeUnits / completedSyncCycles) *
             (86_400_000 / reconciliationMs) +
