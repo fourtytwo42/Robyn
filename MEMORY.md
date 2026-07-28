@@ -556,15 +556,21 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- 2026-07-28: exact source `98e94c444664c7f067ffd83b6d68abefdf99c7b2`
+- 2026-07-28: active schema-11 source `98e94c444664c7f067ffd83b6d68abefdf99c7b2`
   passed reproducibility and the schema-11 fork rehearsal before a fresh public
   testnet deployment at block `94516447`. Pre-deployment verification passed
   537/537 checks. The bounded live smoke completed 93 submitted and 93 confirmed
   journaled actions, including holder, creator, and DAO pull claims. The active
-  application still serves schema 10 until the live manifest is committed, a
-  fresh schema-11 database is rebuilt, and the exact release is promoted.
+  application now serves schema 11 from rebuilt database
+  `robyn_testnet_rehearsal`; release `a335fb0` was promoted. Commit `7012d45`
+  corrects the health audit for bounded one-unit uncheckpointed stream dust and
+  adds regression tests; build and promote the final exact commit next.
   Checksummed evidence is under
   `/home/hendo420/robyn-evidence/schema11-one-hour-98e94c4/`.
+  The keeper operator was funded above its `0.00025 ETH` minimum. Four failed
+  current-deployment jobs then retried successfully from their existing durable
+  records, producing three basket conversions and one empty harvest without
+  replaying any previously confirmed transaction.
 - 2026-07-28: the one-hour pull-claim rewards release is active in isolated VM
   worktree `/home/hendo420/Robyn-one-hour-rewards` on branch
   `codex/one-hour-pull-claims`, based on clean `origin/main` commit
@@ -2077,12 +2083,12 @@ Durable project context lives here. Update this file whenever information should
   typechecks, production build, contract-size, deployment verifier, campaign
   policy, secret, dependency, license, and Slither gates pass with zero
   unresolved high or medium findings.
-- Result: Source-only candidate in `/home/hendo420/Robyn-one-hour-rewards`;
-  current public testnet contracts remain unchanged.
-- Follow-up: Complete every contract and operational gate, preserve the
-  `0.0015 ETH` deployment reserve, archive the predecessor deployment, deploy a
-  fresh immutable testnet stack, rebuild from canonical logs, and run complete
-  lifecycle and browser acceptance. Do not broadcast to Robinhood Mainnet.
+- Result: Fresh schema-11 contracts and rebuilt projections are active on
+  public testnet. Deployment verification passed 537/537 checks and the live
+  software-wallet lifecycle completed 93/93 journaled actions.
+- Follow-up: Promote the final health-audit correction, finish browser,
+  recovery, observation, and endurance acceptance. Do not broadcast to
+  Robinhood Mainnet.
 
 ### 2026-07-27 - Immediate rewards and configurable creator splits
 
@@ -3863,17 +3869,9 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Add at least `0.000383272741215899 ETH` to the canonical testnet deployer,
-  with a small additional margin recommended, then refreeze and rerun the exact
-  schema-11 reproducibility and deployment preflight. Do not spend the
-  `0.0015 ETH` reserve or deploy with reduced coverage.
-- Complete full validation and fresh testnet deployment of the one-hour
-  pull-claim candidate. Any contract correction requires a fresh deployment
-  and complete rerun of contract-dependent gates.
-- Re-run live deployment gas and funding preflight for the immediate-reward and
-  creator-split candidate. The earlier one-hour candidate estimate is stale.
-  Preserve at least `0.0015 ETH`; do not deploy or reduce validation coverage
-  to fit available funding.
+- Promote the exact post-audit-correction schema-11 release, verify public
+  browser and health acceptance, then complete recovery, 24-hour observation,
+  and endurance gates before considering testnet-production assurance closed.
 - Rotate the Alchemy credentials exposed in chat. Create separate protected
   testnet and mainnet applications/keys, verify both HTTP and WSS, then revoke
   the superseded shared credential without placing any key in Git, logs,
