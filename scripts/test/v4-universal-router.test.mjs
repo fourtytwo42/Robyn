@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { decodeAbiParameters, parseAbiParameters } from "viem";
 import {
+  encodeUniversalV4Donation,
   encodeUniversalV4SingleSwap,
   V4_SWAP_COMMAND,
 } from "../lib/v4-universal-router.mjs";
@@ -97,4 +98,20 @@ test("rejects zero swap amounts and limits", () => {
       }),
     /positive/,
   );
+});
+
+test("encodes a v4 donation followed by pair settlement", () => {
+  const encoded = encodeUniversalV4Donation({
+    poolKey,
+    amount0: 10n,
+    amount1: 20n,
+  });
+  assert.equal(encoded.commands, V4_SWAP_COMMAND);
+  assert.equal(encoded.actions, "0x0a0d");
+  const [actions, params] = decodeAbiParameters(
+    planParameters,
+    encoded.inputs[0],
+  );
+  assert.equal(actions, "0x0a0d");
+  assert.equal(params.length, 2);
 });

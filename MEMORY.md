@@ -1,5 +1,31 @@
 # Project Memory
 
+### 2026-07-28 - Schema-11 two-hour endurance candidate prepared
+
+- Context: The user authorized one final uninterrupted two-hour Robinhood
+  Testnet observation run, using only internal contract audit evidence and no
+  automatic Mainnet deployment.
+- Decision: A failed sample invalidates the entire run. The campaign uses eight
+  new three-asset launches at 15-minute intervals, covers all 24 assets,
+  graduates the first three, writes every five minutes, samples every 30
+  seconds, and reviews every 20 minutes. It uses only the protected Alchemy
+  Testnet endpoint and a fresh journal derived from the encrypted 100-wallet
+  root.
+- Files: `scripts/testnet-endurance.mjs`,
+  `scripts/testnet-endurance-policy.mjs`,
+  `scripts/schema11-recovery-gate.sh`, and
+  `scripts/install-testnet-endurance.sh`.
+- Verification: The focused endurance and Universal Router tests pass 21/21,
+  API tests pass 64/64, and the complete repository test gate passes with 188
+  Foundry tests, the 512-wallet/32-launch/25,000-action simulation, and all
+  invariants. Shell syntax, ShellCheck, formatting, and `git diff --check`
+  pass.
+- Follow-up: Freeze and promote the exact commit, execute the encrypted
+  backup/isolated-restore and one-fault recovery gate, run the funding
+  preflight while preserving `0.0015 ETH`, then begin the fresh two-hour clock.
+  The release remains not independently audited, not penetration-tested, not
+  legally reviewed, and unauthorized for Robinhood Mainnet.
+
 ### 2026-07-28 - Schema-11 one-hour rewards deployed to testnet
 
 - Context: Faucet funding removed the final deployment blocker for the exact

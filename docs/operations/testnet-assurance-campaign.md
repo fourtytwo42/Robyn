@@ -89,15 +89,15 @@ actor a dedicated sweep-gas budget for up to eight launch-token transfers, one
 RDAO transfer, and one native transfer. Every phase remains a release gate and
 must pass an exact-release isolated rehearsal before live use is authorized.
 
-## Schema-v8 promotion endurance
+## Schema-11 final recovery and endurance
 
-The schema-v8 public release has a separate one-shot endurance runner. It uses
+The schema-11 public release has a separate one-shot, uninterrupted endurance runner. It uses
 the same encrypted 100-wallet campaign root without writing private keys to Git,
 logs, status responses, or evidence.
 
 ```bash
 cd /home/hendo420/Robyn
-sudo scripts/install-testnet-endurance.sh schema8-endurance-YYYYMMDD
+sudo scripts/install-testnet-endurance.sh schema11-final-2h-YYYYMMDD
 sudo systemctl start robyn-testnet-endurance.service
 systemctl status robyn-testnet-endurance.service --no-pager
 ```
@@ -110,20 +110,19 @@ The unit is static and is never enabled. The runner:
 - performs operator-grade verifier reviews every 20 minutes;
 - journals transaction hashes before receipt polling so recovery never
   rebroadcasts a known transaction;
-- runs bounded writes every ten minutes and launches four campaign-labeled
-  immutable-IPFS tokens near healthy hours 0, 2, 4, and 6;
-- pauses the healthy clock during a failed sample or remediation and resumes
-  from the durable state file; and
-- seals append-only evidence and SHA-256 checksums after eight accumulated
-  healthy hours.
+- runs bounded writes every five minutes and launches eight campaign-labeled
+  immutable-IPFS tokens near healthy minutes 0, 15, 30, 45, 60, 75, 90, and 105;
+- terminates and invalidates the run on the first failed sample or workload action; and
+- seals append-only evidence and SHA-256 checksums after 7,200 uninterrupted
+  healthy seconds.
 
 The protected status view is `GET /api/operator/endurance` with the existing
 operator bearer token. It returns run identity and health state, never wallet
 keys or credentials.
 
-Evidence lives under `/var/lib/robyn/testnet-endurance/<run-id>/`. A segmented
-run is not described as uninterrupted. Each release SHA and failed/remediated
-segment remains explicit in the evidence.
+Evidence lives under `/var/lib/robyn/testnet-endurance/<run-id>/`. A failed run is permanently retained as failed evidence. A replacement uses a
+new run ID, new launch salts, and a fresh two-hour clock; confirmed transactions
+are never replayed.
 
-This release deliberately waives new backup creation, isolated restore, and
-restore drills. That waiver must remain visible in final acceptance evidence.
+A fresh encrypted backup, isolated restore, and one-fault-at-a-time recovery
+gate must pass before the endurance service is started.

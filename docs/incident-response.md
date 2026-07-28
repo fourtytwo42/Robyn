@@ -89,6 +89,6 @@ Every alert is scoped to chain, component, launch and asset labels and links to 
    failed candidate; preserve the raw sample and checksum evidence.
 2. Do not restart the soak against a dirty tree or changed artifact.
 3. Diagnose and fix the defect, rebuild one immutable candidate, and rerun all
-   affected gates before explicitly starting a new eight-hour clock.
+   affected gates before explicitly starting a new two-hour clock.
 4. Remove the one-shot soak unit after completion; do not leave a recurring
    scheduler or automation behind.

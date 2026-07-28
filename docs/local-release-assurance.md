@@ -14,7 +14,7 @@ recovery.
 5. Run isolated recovery and reproducible-build comparisons.
 6. Complete browser/persona acceptance.
 7. Promote one immutable candidate and explicitly start one uninterrupted
-   eight-hour soak.
+   two-hour uninterrupted endurance observation.
 
 The soak samples every 30 seconds, rotates mixed reads across 100 stable actor
 identities, and executes bounded real trading and eligible claim activity every
@@ -23,7 +23,7 @@ submission and applies a 99% minimum output for both bonding and graduated
 trades. Every 20 minutes a rotating creator also authenticates, sanitizes and
 pins artwork, prepares immutable metadata, atomically launches a token, waits
 for canonical indexing, binds its metadata, and trades it. Every second new
-launch graduates and receives a post-graduation sell. The default eight-hour
+launch graduates and receives a post-graduation sell. The default two-hour
 policy permits at most 23 created launches. It does not advance chain time.
 Preserve the checksummed evidence, then remove the static soak unit with
 `scripts/remove-soak-service.sh`.
@@ -115,7 +115,7 @@ into release evidence.
   still blocked by the unavailable in-app-browser capability in their
   runtimes.
 - Final exact-commit reproducibility, reboot recovery and the uninterrupted
-  eight-hour soak remain promotion gates until their final evidence is
+  two-hour uninterrupted endurance observation remain promotion gates until their final evidence is
   recorded.
 
 To maintain disk headroom before the final build, twelve superseded immutable
@@ -147,5 +147,5 @@ unavailability is recorded as blocked, never as a pass.
 The following remain explicit future gates: public Robinhood Testnet rehearsal
 or broadcast, an external application penetration test, an independent
 professional smart-contract audit, external paging delivery, a soak longer
-than eight hours, mainnet/real Stock Tokens, legal review and production-wallet
+than two hours, mainnet/real Stock Tokens, legal review and production-wallet
 acceptance.

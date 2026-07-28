@@ -61,10 +61,23 @@ describe("campaign operator route", () => {
     await writeFile(
       statusFile,
       JSON.stringify({
-        runId: "schema8-endurance",
+        runId: "schema11-two-hour-endurance",
         releaseSha: "b".repeat(40),
         healthySeconds: 1200,
+        targetHealthySeconds: 7200,
+        remainingHealthySeconds: 6000,
+        mode: "uninterrupted",
         paused: false,
+        terminalFailure: null,
+        coverage: {
+          requiredAssetCount: 24,
+          coveredAssetCount: 6,
+          pendingRequirements: ["graduate at least three launches"],
+        },
+        rpcComputeUnits: {
+          projectedIdleCuPerDay: 120_000,
+          projectedNormalCuPerMonth: 8_000_000,
+        },
       }),
     );
     const app = Fastify();
@@ -87,10 +100,21 @@ describe("campaign operator route", () => {
     });
     expect(visible.statusCode).toBe(200);
     expect(visible.json().data).toMatchObject({
-      runId: "schema8-endurance",
+      runId: "schema11-two-hour-endurance",
       healthySeconds: 1200,
+      targetHealthySeconds: 7200,
+      remainingHealthySeconds: 6000,
+      mode: "uninterrupted",
       chainId: 46630,
       apiReleaseSha: "c".repeat(40),
+      coverage: {
+        requiredAssetCount: 24,
+        coveredAssetCount: 6,
+      },
+      rpcComputeUnits: {
+        projectedIdleCuPerDay: 120_000,
+        projectedNormalCuPerMonth: 8_000_000,
+      },
     });
     await app.close();
   });

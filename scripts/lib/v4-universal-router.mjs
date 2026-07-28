@@ -3,11 +3,19 @@ import { encodeAbiParameters, parseAbiParameters } from "viem";
 export const V4_SWAP_COMMAND = "0x10";
 export const V4_SWAP_EXACT_IN_SINGLE = 0x06;
 export const V4_SWAP_EXACT_OUT_SINGLE = 0x08;
+export const V4_DONATE = 0x0a;
 export const V4_SETTLE_ALL = 0x0c;
+export const V4_SETTLE_PAIR = 0x0d;
 export const V4_TAKE_ALL = 0x0f;
 
 const swapParameters = parseAbiParameters(
   "((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) poolKey,bool zeroForOne,uint128 amount,uint128 limit,bytes hookData) params",
+);
+const donationParameters = parseAbiParameters(
+  "(address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) poolKey,uint256 amount0,uint256 amount1,bytes hookData",
+);
+const currencyPairParameters = parseAbiParameters(
+  "address currency0,address currency1",
 );
 const currencyAmountParameters = parseAbiParameters(
   "address currency,uint256 amount",
@@ -77,5 +85,29 @@ export function encodeUniversalV4SingleSwap({
     actions,
     inputCurrency,
     outputCurrency,
+  };
+}
+
+export function encodeUniversalV4Donation({ poolKey, amount0, amount1 }) {
+  if (amount0 <= 0n && amount1 <= 0n) {
+    throw new Error("Universal v4 donation must be positive");
+  }
+  const actions = `0x${actionByte(V4_DONATE)}${actionByte(V4_SETTLE_PAIR)}`;
+  const donation = encodeAbiParameters(donationParameters, [
+    poolKey,
+    amount0,
+    amount1,
+    "0x",
+  ]);
+  const settle = encodeAbiParameters(currencyPairParameters, [
+    poolKey.currency0,
+    poolKey.currency1,
+  ]);
+  return {
+    commands: V4_SWAP_COMMAND,
+    inputs: [
+      encodeAbiParameters(planParameters, [actions, [donation, settle]]),
+    ],
+    actions,
   };
 }

@@ -60,7 +60,7 @@ sudo find /var/lib/robyn/soak -name "*-summary.json" -type f -print
 ~~~
 
 The static service is installed but cannot be enabled and is started only by the
-explicit command above. Its eight-hour run is bound to the selected release and
+explicit command above. Its two-hour uninterrupted run is bound to the selected release and
 uses 100 stable actor identities for mixed market, portfolio, DAO, asset and
 token reads. Every ten samples it performs bounded real buys/sells and any
 currently eligible holder, creator and RDAO claims; the permissionless keeper
@@ -73,7 +73,7 @@ receipt-derived token identification, indexer confirmation, one-time metadata
 binding, and live bonding trades. Every second generated token is bought
 through graduation and sold again through the graduated venue. New launches
 join subsequent actor reads and ordinary trade/claim rotation. With the default
-timing this creates at most 23 new launches during eight hours, remains within
+timing this creates at most 23 new launches during two hours, remains within
 the per-wallet upload rate limit, and exercises both bonding and graduated
 populations. It does not advance chain time, so multi-day Governor lifecycle
 completion remains covered by deterministic contract/browser tests rather than
@@ -105,7 +105,7 @@ Before identifying a release as a candidate:
 - run LAN edge/security smoke and in-app-browser journeys;
 - reboot and prove PM2 systemd resurrection through `current`;
 - complete a compatible promotion/rollback rehearsal;
-- run the exact release for a real uninterrupted eight-hour soak; and
+- run the exact release for a real uninterrupted two-hour endurance observation; and
 - push the release manifest/evidence and candidate tag.
 
 TLS remains mandatory before access leaves the trusted LAN. Human alert delivery and independent protocol/security review remain separate release gates.

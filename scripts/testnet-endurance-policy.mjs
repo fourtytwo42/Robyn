@@ -1,18 +1,34 @@
-export const ENDURANCE_DURATION_SECONDS = 10 * 60 * 60;
-const APPROVED_TESTNET_RPC_URLS = new Set([
-  "https://rpc.testnet.chain.robinhood.com",
-]);
-
-export const isApprovedTestnetRpcUrl = (url) => APPROVED_TESTNET_RPC_URLS.has(url);
+export const ENDURANCE_DURATION_SECONDS = 2 * 60 * 60;
+export const isApprovedTestnetRpcUrl = (value) => {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === "https:" &&
+      url.hostname === "robinhood-testnet.g.alchemy.com" &&
+      /^\/v2\/[A-Za-z0-9_-]+$/.test(url.pathname)
+    );
+  } catch {
+    return false;
+  }
+};
 
 export const ENDURANCE_SAMPLE_INTERVAL_SECONDS = 30;
-export const ENDURANCE_WRITE_INTERVAL_SECONDS = 10 * 60;
+export const ENDURANCE_WRITE_INTERVAL_SECONDS = 5 * 60;
 export const ENDURANCE_REVIEW_INTERVAL_SECONDS = 20 * 60;
 export const ENDURANCE_LAUNCH_THRESHOLDS_SECONDS = [
   0,
-  2.5 * 60 * 60,
-  5 * 60 * 60,
-  7.5 * 60 * 60,
+  15 * 60,
+  30 * 60,
+  45 * 60,
+  60 * 60,
+  75 * 60,
+  90 * 60,
+  105 * 60,
+];
+export const ENDURANCE_GRADUATION_THRESHOLDS_SECONDS = [
+  20 * 60,
+  50 * 60,
+  80 * 60,
 ];
 export const ENDURANCE_RESERVE_WEI = 1_500_000_000_000_000n;
 export const ENDURANCE_L1_DATA_FEE_RESERVE_WEI = 25_000_000_000_000n;
@@ -126,6 +142,9 @@ export function protocolHealthFailures(protocol) {
   if (protocol.daoStreamConserved !== true) {
     failures.push("DAO reward stream is not conserved");
   }
+  if (protocol.creatorStreamConserved !== true) {
+    failures.push("creator reward stream is not conserved");
+  }
   for (const [field, description] of [
     ["phaseMismatchCount", "pool phase"],
     ["lockerMismatchCount", "locker accounting"],
@@ -146,13 +165,28 @@ export function enduranceCoverageFailures(state) {
   const labels = (state.transactions ?? []).map(({ label }) => label);
   const has = (prefix) => labels.some((label) => label.startsWith(prefix));
   const failures = [];
-  if ((state.enduranceLaunches?.length ?? 0) < 4) {
-    failures.push("fewer than four endurance launches");
+  if ((state.enduranceLaunches?.length ?? 0) < 8) {
+    failures.push("fewer than eight endurance launches");
   }
-  for (const index of [0, 1]) {
+  for (const index of [0, 1, 2]) {
     if (!has(`endurance-graduate-${index}-`)) {
       failures.push(`endurance launch ${index} did not graduate`);
     }
+  }
+  const requiredAssets = new Set(
+    (state.requiredRewardAssets ?? []).map((asset) => asset.toLowerCase()),
+  );
+  const coveredAssets = new Set(
+    (state.enduranceLaunches ?? [])
+      .flatMap((launch) => launch.assets ?? [])
+      .map((asset) => asset.toLowerCase()),
+  );
+  if (
+    requiredAssets.size !== 24 ||
+    coveredAssets.size !== 24 ||
+    [...requiredAssets].some((asset) => !coveredAssets.has(asset))
+  ) {
+    failures.push("the complete 24-asset reward catalog was not covered");
   }
   for (const [prefix, description] of [
     ["endurance-v4-buy-", "post-graduation v4 buy"],
@@ -164,6 +198,25 @@ export function enduranceCoverageFailures(state) {
     ["endurance-creator-claim-", "creator reward claim"],
     ["endurance-rdao-claim-", "governance-holder reward claim"],
     ["endurance-governance-execute", "governance execution"],
+    ["endurance-universal-exact-in-buy-", "Universal Router exact-input buy"],
+    ["endurance-universal-exact-in-sell-", "Universal Router exact-input sell"],
+    ["endurance-universal-exact-out-buy-", "Universal Router exact-output buy"],
+    ["endurance-universal-exact-out-sell-", "Universal Router exact-output sell"],
+    ["endurance-external-liquidity-full-", "external full-range liquidity"],
+    ["endurance-external-liquidity-concentrated-", "external concentrated liquidity"],
+    ["endurance-pregraduation-swap-rejected-", "pre-graduation swap rejection"],
+    ["endurance-pregraduation-liquidity-rejected-", "pre-graduation liquidity rejection"],
+    ["endurance-pregraduation-donation-rejected-", "pre-graduation donation rejection"],
+    ["endurance-stream-claim-10-", "ten-minute stream claim"],
+    ["endurance-stream-claim-30-", "thirty-minute stream claim"],
+    ["endurance-stream-claim-59-", "fifty-nine-minute stream claim"],
+    ["endurance-stream-claim-60-", "completed one-hour stream claim"],
+    ["endurance-creator-split-open-", "open creator split"],
+    ["endurance-creator-split-update-", "future-only creator split update"],
+    ["endurance-creator-split-lock-", "locked creator split"],
+    ["endurance-creator-claim-to-", "creator claim-to"],
+    ["endurance-creator-batch-claim-", "creator batch claim"],
+    ["endurance-creator-batch-claim-to-", "creator batch claim-to"],
   ]) {
     if (!has(prefix)) failures.push(`missing ${description}`);
   }

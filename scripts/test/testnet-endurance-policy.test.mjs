@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   accumulatedHealthySeconds,
@@ -39,12 +40,12 @@ test("healthy duration excludes failed samples", () => {
 });
 
 test("launch and cadence thresholds are deterministic", () => {
-  assert.equal(dueCount(0, 600), 1);
-  assert.equal(dueCount(1_199, 600), 2);
+  assert.equal(dueCount(0, 300), 1);
+  assert.equal(dueCount(599, 300), 2);
   assert.equal(dueLaunchCount(0), 1);
-  assert.equal(dueLaunchCount(8_999), 1);
-  assert.equal(dueLaunchCount(9_000), 2);
-  assert.equal(dueLaunchCount(27_000), 4);
+  assert.equal(dueLaunchCount(899), 1);
+  assert.equal(dueLaunchCount(900), 2);
+  assert.equal(dueLaunchCount(6_300), 8);
 });
 
 test("disk gate requires bytes and percentage", () => {
@@ -73,14 +74,52 @@ test("RPC retry classification and p95 are bounded", () => {
   );
   assert.equal(percentile([10, 20, 30, 40, 50], 0.95), 50);
 });
-test("approved testnet RPC allowlist rejects arbitrary endpoints", () => {
+test("approved testnet RPC policy requires protected Alchemy HTTPS", () => {
   assert.equal(
-    isApprovedTestnetRpcUrl("https://rpc.testnet.chain.robinhood.com"),
+    isApprovedTestnetRpcUrl(
+      "https://robinhood-testnet.g.alchemy.com/v2/protected_key-1",
+    ),
     true,
   );
+  assert.equal(
+    isApprovedTestnetRpcUrl("https://rpc.testnet.chain.robinhood.com"),
+    false,
+  );
   assert.equal(isApprovedTestnetRpcUrl("http://192.168.50.117:8547"), false);
-  assert.equal(isApprovedTestnetRpcUrl("http://127.0.0.1:8545"), false);
-  assert.equal(isApprovedTestnetRpcUrl("https://attacker.invalid"), false);
+  assert.equal(
+    isApprovedTestnetRpcUrl("https://attacker.invalid/v2/key"),
+    false,
+  );
+});
+
+test("runner is fixed to one uninterrupted two-hour release gate", () => {
+  const source = readFileSync(
+    new URL("../testnet-endurance.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /targetHealthySeconds:\s*ENDURANCE_DURATION_SECONDS/);
+  assert.match(source, /mode:\s*"uninterrupted"/);
+  assert.match(source, /terminalFailure/);
+  assert.match(source, /dueLaunchCount\(state\.healthySeconds\)/);
+  assert.doesNotMatch(source, /ROBYN_ENDURANCE_DURATION/);
+  assert.doesNotMatch(source, /accumulated healthy/i);
+});
+
+test("advanced fee probes use runnable one-shot maintenance cycles", () => {
+  const source = readFileSync(
+    new URL("../testnet-endurance.mjs", import.meta.url),
+    "utf8",
+  );
+  for (const cycle of [6000, 6006, 6012]) {
+    assert.equal(cycle % 6, 0);
+    assert.match(
+      source,
+      new RegExp(`maintainGraduatedFees\\([^\\n]+${cycle}\\)`),
+    );
+  }
+  assert.match(source, /firstFeesMaintained/);
+  assert.match(source, /secondFeesMaintained/);
+  assert.match(source, /thirdFeesMaintained/);
 });
 
 test("holder rewards are queried by canonical asset index", () => {
@@ -141,21 +180,51 @@ test("terminal curve buy is bounded by the immutable market cap", () => {
   );
 });
 
-test("final endurance coverage requires every schema-v9 lifecycle action", () => {
+test("final endurance coverage requires the schema-11 two-hour lifecycle", () => {
+  const assets = Array.from(
+    { length: 24 },
+    (_, index) => `0x${index.toString(16).padStart(40, "0")}`,
+  );
+  const requiredLabels = [
+    "endurance-v4-buy-1",
+    "endurance-v4-sell-1",
+    "endurance-lp-harvest-token-1",
+    "endurance-hook-native-token-1",
+    "endurance-hook-token-token-1",
+    "endurance-holder-claim-1",
+    "endurance-creator-claim-token-1",
+    "endurance-rdao-claim-1",
+    "endurance-governance-execute",
+    "endurance-universal-exact-in-buy-1",
+    "endurance-universal-exact-in-sell-1",
+    "endurance-universal-exact-out-buy-1",
+    "endurance-universal-exact-out-sell-1",
+    "endurance-external-liquidity-full-1",
+    "endurance-external-liquidity-concentrated-1",
+    "endurance-pregraduation-swap-rejected-1",
+    "endurance-pregraduation-liquidity-rejected-1",
+    "endurance-pregraduation-donation-rejected-1",
+    "endurance-stream-claim-10-1",
+    "endurance-stream-claim-30-1",
+    "endurance-stream-claim-59-1",
+    "endurance-stream-claim-60-1",
+    "endurance-creator-split-open-1",
+    "endurance-creator-split-update-1",
+    "endurance-creator-split-lock-1",
+    "endurance-creator-claim-to-1",
+    "endurance-creator-batch-claim-1",
+    "endurance-creator-batch-claim-to-1",
+  ];
   const complete = {
-    enduranceLaunches: [{}, {}, {}, {}],
+    requiredRewardAssets: assets,
+    enduranceLaunches: Array.from({ length: 8 }, (_, index) => ({
+      assets: assets.slice(index * 3, index * 3 + 3),
+    })),
     transactions: [
       { label: "endurance-graduate-0-a" },
       { label: "endurance-graduate-1-b" },
-      { label: "endurance-v4-buy-1" },
-      { label: "endurance-v4-sell-1" },
-      { label: "endurance-lp-harvest-token-1" },
-      { label: "endurance-hook-native-token-1" },
-      { label: "endurance-hook-token-token-1" },
-      { label: "endurance-holder-claim-1" },
-      { label: "endurance-creator-claim-token-1" },
-      { label: "endurance-rdao-claim-1" },
-      { label: "endurance-governance-execute" },
+      { label: "endurance-graduate-2-c" },
+      ...requiredLabels.map((label) => ({ label })),
     ],
   };
   assert.deepEqual(enduranceCoverageFailures(complete), []);
@@ -169,7 +238,6 @@ test("final endurance coverage requires every schema-v9 lifecycle action", () =>
     /launch-token hook-fee conversion/,
   );
 });
-
 test("transaction funding includes dynamic EIP-1559 fee headroom", () => {
   assert.equal(
     transactionFundingTarget({
@@ -215,6 +283,7 @@ test("protocol health gate rejects every conservation mismatch", () => {
     status: "ok",
     routerSolvent: true,
     daoStreamConserved: true,
+    creatorStreamConserved: true,
     phaseMismatchCount: 0,
     lockerMismatchCount: 0,
     rewardStreamMismatchCount: 0,
@@ -234,6 +303,7 @@ test("protocol health gate rejects every conservation mismatch", () => {
       ...healthy,
       routerSolvent: false,
       daoStreamConserved: false,
+      creatorStreamConserved: false,
       phaseMismatchCount: 1,
       lockerMismatchCount: 2,
       unattributedNative: "1",

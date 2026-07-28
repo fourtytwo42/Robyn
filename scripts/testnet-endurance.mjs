@@ -28,6 +28,14 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { parseCastDecryptedPrivateKey } from "./lib/campaign-keystore.mjs";
 import {
+  alignedConcentratedTicks,
+  encodeV4MintPosition,
+} from "./lib/v4-position-manager.mjs";
+import {
+  encodeUniversalV4Donation,
+  encodeUniversalV4SingleSwap,
+} from "./lib/v4-universal-router.mjs";
+import {
   decryptCampaignRoot,
   deriveCampaignAccounts,
 } from "./lib/campaign-wallets.mjs";
@@ -44,6 +52,7 @@ import {
   enduranceSamplePassed,
   enduranceCoverageFailures,
   ENDURANCE_DURATION_SECONDS,
+  ENDURANCE_GRADUATION_THRESHOLDS_SECONDS,
   ENDURANCE_L1_DATA_FEE_RESERVE_WEI,
   ENDURANCE_MAXIMUM_API_P95_MS,
   ENDURANCE_MINIMUM_MEMORY_BYTES,
@@ -82,9 +91,7 @@ const manifestPath = resolve(
 const manifest = assertSecurityRemediationManifest(
   JSON.parse(readFileSync(manifestPath, "utf8")),
 );
-const rpcUrl =
-  process.env.ROBYN_TESTNET_RPC_URL ??
-  "https://rpc.testnet.chain.robinhood.com";
+const rpcUrl = process.env.ROBYN_TESTNET_SERVER_RPC_URL;
 if (!isApprovedTestnetRpcUrl(rpcUrl)) {
   throw new Error("Endurance RPC is not an approved Robinhood Testnet endpoint");
 }
@@ -111,22 +118,10 @@ const campaignPassphrasePath = resolve(
 const operatorTokenPath = resolve(
   process.env.ROBYN_ENDURANCE_OPERATOR_TOKEN_FILE ?? "/nonexistent",
 );
-const durationSeconds = Number(
-  process.env.ROBYN_ENDURANCE_DURATION_SECONDS ??
-    String(ENDURANCE_DURATION_SECONDS),
-);
-const sampleIntervalSeconds = Number(
-  process.env.ROBYN_ENDURANCE_SAMPLE_INTERVAL_SECONDS ??
-    String(ENDURANCE_SAMPLE_INTERVAL_SECONDS),
-);
-const writeIntervalSeconds = Number(
-  process.env.ROBYN_ENDURANCE_WRITE_INTERVAL_SECONDS ??
-    String(ENDURANCE_WRITE_INTERVAL_SECONDS),
-);
-const reviewIntervalSeconds = Number(
-  process.env.ROBYN_ENDURANCE_REVIEW_INTERVAL_SECONDS ??
-    String(ENDURANCE_REVIEW_INTERVAL_SECONDS),
-);
+const durationSeconds = ENDURANCE_DURATION_SECONDS;
+const sampleIntervalSeconds = ENDURANCE_SAMPLE_INTERVAL_SECONDS;
+const writeIntervalSeconds = ENDURANCE_WRITE_INTERVAL_SECONDS;
+const reviewIntervalSeconds = ENDURANCE_REVIEW_INTERVAL_SECONDS;
 
 const chain = defineChain({
   id: 46630,
@@ -170,6 +165,11 @@ function protectedText(path, label) {
   }
   return readFileSync(path, "utf8").trim();
 }
+function dependencyArtifactAbi(...parts) {
+  return JSON.parse(
+    readFileSync(join(releaseRoot, "node_modules", ...parts), "utf8"),
+  ).abi;
+}
 function artifactAbi(contract) {
   return JSON.parse(
     readFileSync(
@@ -195,10 +195,8 @@ function sleep(ms) {
 mkdirSync(outputDir, { recursive: true, mode: 0o700 });
 mkdirSync(reviewsDir, { recursive: true, mode: 0o700 });
 const campaignState = JSON.parse(readFileSync(campaignStatePath, "utf8"));
-if (campaignState.walletCount !== 100 || campaignState.launches?.length !== 8) {
-  throw new Error(
-    "Endurance requires the completed 100-wallet security-remediation campaign",
-  );
+if (campaignState.walletCount !== 100) {
+  throw new Error("Endurance requires the encrypted 100-wallet campaign root");
 }
 const campaignPassphrase = protectedText(
   campaignPassphrasePath,
@@ -264,8 +262,14 @@ try {
 } catch (error) {
   if (error.code !== "ENOENT") throw error;
   state = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     runId,
+    mode: "uninterrupted",
+    observationPeriodSeconds: ENDURANCE_DURATION_SECONDS,
+    targetSeconds: ENDURANCE_DURATION_SECONDS,
+    targetHealthySeconds: ENDURANCE_DURATION_SECONDS,
+    remainingHealthySeconds: ENDURANCE_DURATION_SECONDS,
+    requiredRewardAssets: manifest.assetRoutes.map((route) => route.address),
     releaseSha: releaseManifest.gitSha,
     deploymentGitCommit: manifest.gitCommit,
     deploymentManifestSha256: sha256File(manifestPath),
@@ -275,6 +279,7 @@ try {
     writeCycleCount: 0,
     reviewCount: 0,
     completed: false,
+    failed: false,
     paused: false,
     segments: [{ index: 1, startedAt: new Date().toISOString() }],
     transactions: [],
@@ -291,6 +296,33 @@ try {
 
 function saveState() {
   state.updatedAt = new Date().toISOString();
+  state.targetSeconds = durationSeconds;
+  state.remainingSeconds = Math.max(0, durationSeconds - state.healthySeconds);
+  state.targetHealthySeconds = durationSeconds;
+  state.remainingHealthySeconds = state.remainingSeconds;
+  state.mode = "uninterrupted";
+  const coveredAssets = new Set(
+    state.enduranceLaunches.flatMap((launch) => launch.assets ?? []).map((asset) => asset.toLowerCase()),
+  );
+  state.coverage = {
+    requiredRewardAssetCount: 24,
+    coveredRewardAssetCount: coveredAssets.size,
+    launchCount: state.enduranceLaunches.length,
+    graduatedLaunchCount: state.transactions.filter((entry) => entry.label.startsWith("endurance-graduate-")).length,
+    pendingRequirements: enduranceCoverageFailures(state),
+  };
+  const status = state.lastSample?.status;
+  state.rpcCu = status
+    ? {
+        indexerEstimatedCu: status.indexerEstimatedCu ?? null,
+        keeperEstimatedCu: status.keeperEstimatedCu ?? null,
+        keeperProjectedDailyIdleCu: status.keeperProjectedDailyIdleCu ?? null,
+        keeperProjectedMonthlyCu: status.keeperProjectedMonthlyCu ?? null,
+        protocolEstimatedCu: status.protocol?.estimatedCu ?? null,
+        protocolProjectedDailyCu: status.protocol?.projectedDailyCu ?? null,
+        protocolProjectedMonthlyCu: status.protocol?.projectedMonthlyCu ?? null,
+      }
+    : null;
   atomicWrite(statePath, state);
 }
 function append(path, entry) {
@@ -396,6 +428,35 @@ async function contractTransaction(
   });
 }
 
+async function recordExpectedFailure(label, account, request, expectedReason) {
+  if (state.transactions.some((entry) => entry.label === label)) return;
+  try {
+    await publicClient.call({ ...request, account: account.address });
+  } catch (error) {
+    const reason = String(
+      error?.shortMessage ?? error?.message ?? error,
+    ).slice(0, 500);
+    if (expectedReason && !expectedReason.test(reason)) {
+      throw new Error(
+        `Expected ${label} to fail for ${expectedReason}, received: ${reason}`,
+      );
+    }
+    const entry = {
+      label,
+      expectedFailure: true,
+      observedAt: new Date().toISOString(),
+      reason,
+    };
+    state.transactions.push(entry);
+    state.expectedFailures ??= [];
+    state.expectedFailures.push(entry);
+    append(transactionsPath, entry);
+    saveState();
+    return;
+  }
+  throw new Error(`Expected failure unexpectedly succeeded: ${label}`);
+}
+
 async function apiJson(pathname, init = {}) {
   return rpcRetry(`api-${pathname}`, async () => {
     const response = await fetch(`${apiBase}${pathname}`, {
@@ -474,7 +535,7 @@ async function prepareMetadata(account, index) {
       mediaId: media.body.data.media_id,
       name,
       symbol,
-      description: `Automated ten-hour endurance launch ${index + 1}.`,
+      description: `Automated two-hour schema-11 endurance launch ${index + 1}.`,
       campaignId: runId,
       releaseSha: releaseManifest.gitSha,
     }),
@@ -523,6 +584,54 @@ const governorAbi = artifactAbi("RobynTestnetGovernor");
 const assetRouterAbi = artifactAbi("RobynV4AssetRouter");
 const hookAbi = artifactAbi("RobynV4FeeAndPhaseHook");
 const lockerAbi = artifactAbi("RobynV4FeePositionLocker");
+const quoterAbi = dependencyArtifactAbi(
+  "@uniswap",
+  "v4-periphery",
+  "foundry-out",
+  "V4Quoter.sol",
+  "V4Quoter.json",
+);
+const positionManagerAbi = dependencyArtifactAbi(
+  "@uniswap",
+  "v4-periphery",
+  "foundry-out",
+  "PositionManager.sol",
+  "PositionManager.json",
+);
+const stateViewAbi = dependencyArtifactAbi(
+  "@uniswap",
+  "v4-periphery",
+  "foundry-out",
+  "StateView.sol",
+  "StateView.json",
+);
+const universalRouterAbi = [
+  {
+    type: "function",
+    name: "execute",
+    stateMutability: "payable",
+    inputs: [
+      { name: "commands", type: "bytes" },
+      { name: "inputs", type: "bytes[]" },
+      { name: "deadline", type: "uint256" },
+    ],
+    outputs: [],
+  },
+];
+const permit2Abi = [
+  {
+    type: "function",
+    name: "approve",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "token", type: "address" },
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint160" },
+      { name: "expiration", type: "uint48" },
+    ],
+    outputs: [],
+  },
+];
 
 async function createEnduranceLaunch(index) {
   if (state.enduranceLaunches.some((launch) => launch.index === index)) return;
@@ -577,11 +686,31 @@ async function createEnduranceLaunch(index) {
     transactionHash: transaction.hash,
     metadataCid: metadata.metadataCid,
     metadataUri: metadata.metadataUri,
-    shouldGraduate: index < 2,
+    assets: request.assets,
+    shouldGraduate: index < 3,
   };
   state.enduranceLaunches.push(created);
   saveState();
   await waitForLaunchAndBind(created.token, metadata);
+  if (index === 0) {
+    await contractTransaction(
+      `endurance-creator-split-open-${created.token}`,
+      account,
+      manifest.contracts.protocolFeeRouter,
+      feeRouterAbi,
+      "setCreatorFeeSplit",
+      [created.token, [account.address, accounts[60].address], [7000, 3000], false],
+    );
+  } else if (index === 1) {
+    await contractTransaction(
+      `endurance-creator-split-lock-${created.token}`,
+      account,
+      manifest.contracts.protocolFeeRouter,
+      feeRouterAbi,
+      "setCreatorFeeSplit",
+      [created.token, [account.address, accounts[61].address], [5000, 5000], true],
+    );
+  }
 }
 
 async function fundingPreflight() {
@@ -589,11 +718,15 @@ async function fundingPreflight() {
   for (let index = 0; index < 20; index += 1) {
     targetByIndex.set(index, 100_000_000_000_000n);
   }
-  for (let index = 40; index < 44; index += 1) {
+  for (let index = 40; index < 48; index += 1) {
     targetByIndex.set(index, 500_000_000_000_000n);
   }
   targetByIndex.set(96, 700_000_000_000_000n);
   targetByIndex.set(97, 700_000_000_000_000n);
+  targetByIndex.set(98, 700_000_000_000_000n);
+  targetByIndex.set(99, 500_000_000_000_000n);
+  targetByIndex.set(99, 500_000_000_000_000n);
+  targetByIndex.set(98, 700_000_000_000_000n);
   const balances = await Promise.all(
     [...targetByIndex.keys()].map((index) =>
       publicClient.getBalance({ address: accounts[index].address }),
@@ -633,7 +766,7 @@ async function ensureFunding() {
   for (let index = 0; index < 20; index += 1) {
     targetByIndex.set(index, 100_000_000_000_000n);
   }
-  for (let index = 40; index < 44; index += 1) {
+  for (let index = 40; index < 48; index += 1) {
     targetByIndex.set(index, 500_000_000_000_000n);
   }
   targetByIndex.set(96, 700_000_000_000_000n);
@@ -709,13 +842,17 @@ async function ensureFunding() {
 }
 
 function activeLaunches() {
-  return [...campaignState.launches, ...state.enduranceLaunches];
+  return [...state.enduranceLaunches];
 }
 
 async function maybeGraduate() {
-  for (let index = 0; index < Math.min(2, state.enduranceLaunches.length); index += 1) {
+  for (
+    let index = 0;
+    index < Math.min(3, state.enduranceLaunches.length);
+    index += 1
+  ) {
     const launch = state.enduranceLaunches[index];
-    const threshold = index * 2 * 60 * 60 + 20 * 60;
+    const threshold = ENDURANCE_GRADUATION_THRESHOLDS_SECONDS[index];
     if (state.healthySeconds < threshold) continue;
     const graduated = await publicClient.readContract({
       address: launch.market,
@@ -1105,7 +1242,8 @@ async function runGraduatedTrade(account, launch, cycle, value) {
 
 async function runWriteCycle(cycle) {
   const launches = activeLaunches();
-  const launch = launches[cycle % launches.length];
+  const eligible = state.streamProbe && launches.length > 1 ? launches.slice(1) : launches;
+  const launch = eligible[cycle % eligible.length];
   const account = accounts[cycle % 20];
   const value = 10_000_000_000_000n;
   const graduated = await publicClient.readContract({
@@ -1183,6 +1321,525 @@ async function runWriteCycle(cycle) {
   saveState();
 }
 
+function endurancePoolKey(launch) {
+  return {
+    currency0: "0x0000000000000000000000000000000000000000",
+    currency1: launch.token,
+    fee: manifest.market.poolFeePips,
+    tickSpacing: manifest.market.tickSpacing,
+    hooks: manifest.contracts.oracleHook,
+  };
+}
+
+async function maybePreGraduationCoverage() {
+  if (state.preGraduationCoverageComplete) return;
+  const launch = state.enduranceLaunches[0];
+  if (!launch || state.healthySeconds >= ENDURANCE_GRADUATION_THRESHOLDS_SECONDS[0]) return;
+  const account = accounts[0];
+  const tokenBalance = await publicClient.readContract({
+    address: launch.token,
+    abi: tokenAbi,
+    functionName: "balanceOf",
+    args: [account.address],
+  });
+  if (tokenBalance === 0n) return;
+  const deadline = BigInt(Math.floor(Date.now() / 1_000) + 600);
+  await recordExpectedFailure(
+    `endurance-pregraduation-swap-rejected-${launch.token}`,
+    account,
+    {
+      to: manifest.contracts.assetRouter,
+      value: 100_000_000n,
+      data: encodeFunctionData({
+        abi: assetRouterAbi,
+        functionName: "swapExactNativeForAsset",
+        args: [launch.token, 1n, account.address, deadline],
+      }),
+    },
+    /InvalidPhase|PoolNotTrading|bonding|98d23bb0/i,
+  );
+  const amount1Max = tokenBalance / 1_000n || 1n;
+  const liquidityPlan = encodeV4MintPosition({
+    poolKey: endurancePoolKey(launch),
+    tickLower: -887_200,
+    tickUpper: 887_200,
+    liquidity: 1n,
+    amount0Max: 1_000_000n,
+    amount1Max,
+    owner: account.address,
+  });
+  await recordExpectedFailure(
+    `endurance-pregraduation-liquidity-rejected-${launch.token}`,
+    account,
+    {
+      to: manifest.contracts.positionManager,
+      value: 1_000_000n,
+      data: encodeFunctionData({
+        abi: positionManagerAbi,
+        functionName: "modifyLiquidities",
+        args: [liquidityPlan, deadline],
+      }),
+    },
+    /InvalidPhase|PoolNotTrading|bonding|98d23bb0/i,
+  );
+  const donation = encodeUniversalV4Donation({
+    poolKey: endurancePoolKey(launch),
+    amount0: 1_000_000n,
+    amount1: 0n,
+  });
+  await recordExpectedFailure(
+    `endurance-pregraduation-donation-rejected-${launch.token}`,
+    account,
+    {
+      to: manifest.contracts.universalRouter,
+      value: 1_000_000n,
+      data: encodeFunctionData({
+        abi: universalRouterAbi,
+        functionName: "execute",
+        args: [donation.commands, donation.inputs, deadline],
+      }),
+    },
+    /InvalidPhase|PoolNotTrading|bonding|98d23bb0/i,
+  );
+  state.preGraduationCoverageComplete = true;
+  saveState();
+}
+
+async function executeUniversalCoverage(launch) {
+  state.advancedCoverage ??= {};
+  if (state.advancedCoverage.universalComplete) return;
+  const account = accounts[99];
+  const poolKey = endurancePoolKey(launch);
+  const deadline = BigInt(Math.floor(Date.now() / 1_000) + 600);
+  const execute = async ({ label, zeroForOne, exactOutput, amount, limit, value }) => {
+    const plan = encodeUniversalV4SingleSwap({
+      poolKey,
+      zeroForOne,
+      exactOutput,
+      amount,
+      limit,
+      refundRecipient: account.address,
+    });
+    await contractTransaction(
+      label,
+      account,
+      manifest.contracts.universalRouter,
+      universalRouterAbi,
+      "execute",
+      [plan.commands, plan.inputs, deadline],
+      value,
+    );
+  };
+  const nativeInput = 100_000_000_000n;
+  const [tokenOutput] = await publicClient.readContract({
+    address: manifest.contracts.quoter,
+    abi: quoterAbi,
+    functionName: "quoteExactInputSingle",
+    args: [{ poolKey, zeroForOne: true, exactAmount: nativeInput, hookData: "0x" }],
+  });
+  await execute({
+    label: `endurance-universal-exact-in-buy-${launch.token}`,
+    zeroForOne: true,
+    exactOutput: false,
+    amount: nativeInput,
+    limit: (tokenOutput * 98n) / 100n || 1n,
+    value: nativeInput,
+  });
+  await contractTransaction(
+    `endurance-universal-token-approve-${launch.token}`,
+    account,
+    launch.token,
+    tokenAbi,
+    "approve",
+    [manifest.contracts.permit2, (1n << 256n) - 1n],
+  );
+  await contractTransaction(
+    `endurance-universal-permit2-approve-${launch.token}`,
+    account,
+    manifest.contracts.permit2,
+    permit2Abi,
+    "approve",
+    [
+      launch.token,
+      manifest.contracts.universalRouter,
+      (1n << 160n) - 1n,
+      BigInt(Math.floor(Date.now() / 1_000) + 86_400),
+    ],
+  );
+  const balance = await publicClient.readContract({
+    address: launch.token,
+    abi: tokenAbi,
+    functionName: "balanceOf",
+    args: [account.address],
+  });
+  const tokenInput = balance / 8n;
+  const [nativeOutput] = await publicClient.readContract({
+    address: manifest.contracts.quoter,
+    abi: quoterAbi,
+    functionName: "quoteExactInputSingle",
+    args: [{ poolKey, zeroForOne: false, exactAmount: tokenInput, hookData: "0x" }],
+  });
+  await execute({
+    label: `endurance-universal-exact-in-sell-${launch.token}`,
+    zeroForOne: false,
+    exactOutput: false,
+    amount: tokenInput,
+    limit: (nativeOutput * 98n) / 100n || 1n,
+  });
+  const exactTokenOutput = 10n ** 18n;
+  const [maximumNativeQuote] = await publicClient.readContract({
+    address: manifest.contracts.quoter,
+    abi: quoterAbi,
+    functionName: "quoteExactOutputSingle",
+    args: [{ poolKey, zeroForOne: true, exactAmount: exactTokenOutput, hookData: "0x" }],
+  });
+  const maximumNativeInput = (maximumNativeQuote * 102n) / 100n + 1n;
+  await execute({
+    label: `endurance-universal-exact-out-buy-${launch.token}`,
+    zeroForOne: true,
+    exactOutput: true,
+    amount: exactTokenOutput,
+    limit: maximumNativeInput,
+    value: maximumNativeInput,
+  });
+  const exactNativeOutput = 10_000_000n;
+  const [maximumTokenQuote] = await publicClient.readContract({
+    address: manifest.contracts.quoter,
+    abi: quoterAbi,
+    functionName: "quoteExactOutputSingle",
+    args: [{ poolKey, zeroForOne: false, exactAmount: exactNativeOutput, hookData: "0x" }],
+  });
+  await execute({
+    label: `endurance-universal-exact-out-sell-${launch.token}`,
+    zeroForOne: false,
+    exactOutput: true,
+    amount: exactNativeOutput,
+    limit: (maximumTokenQuote * 102n) / 100n + 1n,
+  });
+  state.advancedCoverage.universalComplete = true;
+  saveState();
+}
+
+async function addExternalLiquidity(launch, positionIndex) {
+  state.advancedCoverage ??= {};
+  state.advancedCoverage.externalLiquidity ??= [];
+  if (state.advancedCoverage.externalLiquidity.some((entry) => entry.positionIndex === positionIndex)) return;
+  const account = accounts[96 + positionIndex];
+  const poolKey = endurancePoolKey(launch);
+  const lockedTokenId = await publicClient.readContract({
+    address: launch.locker,
+    abi: lockerAbi,
+    functionName: "positionTokenId",
+  });
+  const lockedLiquidity = await publicClient.readContract({
+    address: manifest.contracts.positionManager,
+    abi: positionManagerAbi,
+    functionName: "getPositionLiquidity",
+    args: [lockedTokenId],
+  });
+  const [, currentTick] = await publicClient.readContract({
+    address: manifest.contracts.stateView,
+    abi: stateViewAbi,
+    functionName: "getSlot0",
+    args: [launch.poolId],
+  });
+  const ticks = positionIndex === 0
+    ? { tickLower: -887_200, tickUpper: 887_200 }
+    : alignedConcentratedTicks(currentTick, manifest.market.tickSpacing);
+  const tokenBalance = await publicClient.readContract({
+    address: launch.token,
+    abi: tokenAbi,
+    functionName: "balanceOf",
+    args: [account.address],
+  });
+  const amount0Max = 20_000_000_000n;
+  const amount1Max = tokenBalance / 4n;
+  let liquidity = lockedLiquidity / 100n;
+  if (liquidity === 0n || amount1Max === 0n) throw new Error("External liquidity has no capacity");
+  await contractTransaction(
+    `endurance-external-token-approve-${positionIndex}-${launch.token}`,
+    account,
+    launch.token,
+    tokenAbi,
+    "approve",
+    [manifest.contracts.permit2, (1n << 256n) - 1n],
+  );
+  await contractTransaction(
+    `endurance-external-permit2-approve-${positionIndex}-${launch.token}`,
+    account,
+    manifest.contracts.permit2,
+    permit2Abi,
+    "approve",
+    [
+      launch.token,
+      manifest.contracts.positionManager,
+      (1n << 160n) - 1n,
+      BigInt(Math.floor(Date.now() / 1_000) + 86_400),
+    ],
+  );
+  let calldata;
+  for (let attempt = 0; attempt < 16; attempt += 1) {
+    calldata = encodeV4MintPosition({
+      poolKey,
+      ...ticks,
+      liquidity,
+      amount0Max,
+      amount1Max,
+      owner: account.address,
+    });
+    try {
+      await publicClient.call({
+        account: account.address,
+        to: manifest.contracts.positionManager,
+        value: amount0Max,
+        data: encodeFunctionData({
+          abi: positionManagerAbi,
+          functionName: "modifyLiquidities",
+          args: [calldata, BigInt(Math.floor(Date.now() / 1_000) + 600)],
+        }),
+      });
+      break;
+    } catch (error) {
+      if (liquidity <= 1n || attempt === 15) throw error;
+      liquidity /= 2n;
+    }
+  }
+  const nextTokenId = await publicClient.readContract({
+    address: manifest.contracts.positionManager,
+    abi: positionManagerAbi,
+    functionName: "nextTokenId",
+  });
+  const kind = positionIndex === 0 ? "full" : "concentrated";
+  const transaction = await contractTransaction(
+    `endurance-external-liquidity-${kind}-${launch.token}`,
+    account,
+    manifest.contracts.positionManager,
+    positionManagerAbi,
+    "modifyLiquidities",
+    [calldata, BigInt(Math.floor(Date.now() / 1_000) + 600)],
+    amount0Max,
+  );
+  const minted = await publicClient.readContract({
+    address: manifest.contracts.positionManager,
+    abi: positionManagerAbi,
+    functionName: "getPositionLiquidity",
+    args: [nextTokenId],
+  });
+  if (minted !== liquidity) throw new Error("External liquidity mint mismatch");
+  state.advancedCoverage.externalLiquidity.push({
+    positionIndex,
+    token: launch.token,
+    tokenId: nextTokenId.toString(),
+    liquidity: liquidity.toString(),
+    lockedLiquidity: lockedLiquidity.toString(),
+    transactionHash: transaction.hash,
+  });
+  saveState();
+}
+
+async function maybeCreatorSplitUpdate() {
+  if (state.creatorSplitUpdated || state.healthySeconds < 45 * 60) return;
+  const launch = state.enduranceLaunches[0];
+  if (!launch) return;
+  await contractTransaction(
+    `endurance-creator-split-update-${launch.token}`,
+    accounts[40],
+    manifest.contracts.protocolFeeRouter,
+    feeRouterAbi,
+    "setCreatorFeeSplit",
+    [launch.token, [accounts[40].address, accounts[60].address], [6000, 4000], false],
+  );
+  const locked = state.enduranceLaunches[1];
+  if (locked) {
+    await recordExpectedFailure(
+      `endurance-creator-split-locked-rejected-${locked.token}`,
+      accounts[41],
+      {
+        to: manifest.contracts.protocolFeeRouter,
+        data: encodeFunctionData({
+          abi: feeRouterAbi,
+          functionName: "setCreatorFeeSplit",
+          args: [locked.token, [accounts[41].address], [10000], false],
+        }),
+      },
+    );
+  }
+  state.creatorSplitUpdated = true;
+  saveState();
+}
+
+async function maybeCreatorClaimCoverage() {
+  if (state.creatorClaimCoverageComplete || state.healthySeconds < 110 * 60) return;
+  const [open, locked, direct] = state.enduranceLaunches;
+  if (!open || !locked || !direct) return;
+  const checks = await Promise.all([
+    publicClient.readContract({ address: manifest.contracts.protocolFeeRouter, abi: feeRouterAbi, functionName: "claimableCreatorNativeByRecipient", args: [open.token, accounts[60].address] }),
+    publicClient.readContract({ address: manifest.contracts.protocolFeeRouter, abi: feeRouterAbi, functionName: "claimableCreatorNativeByRecipient", args: [locked.token, accounts[61].address] }),
+    publicClient.readContract({ address: manifest.contracts.protocolFeeRouter, abi: feeRouterAbi, functionName: "claimableCreatorNativeByRecipient", args: [direct.token, accounts[42].address] }),
+  ]);
+  if (checks.some((amount) => amount === 0n)) return;
+  await contractTransaction(
+    `endurance-creator-claim-to-${open.token}`,
+    accounts[60],
+    manifest.contracts.protocolFeeRouter,
+    feeRouterAbi,
+    "claimCreatorFeesTo",
+    [open.token, accounts[62].address],
+  );
+  await contractTransaction(
+    `endurance-creator-batch-claim-to-${locked.token}`,
+    accounts[61],
+    manifest.contracts.protocolFeeRouter,
+    feeRouterAbi,
+    "claimCreatorFeesBatchTo",
+    [[locked.token], accounts[63].address],
+  );
+  await contractTransaction(
+    `endurance-creator-batch-claim-${direct.token}`,
+    accounts[42],
+    manifest.contracts.protocolFeeRouter,
+    feeRouterAbi,
+    "claimCreatorFeesBatch",
+    [[direct.token]],
+  );
+  state.creatorClaimCoverageComplete = true;
+  saveState();
+}
+
+async function maybeStreamProbe() {
+  const launch = state.enduranceLaunches[0];
+  if (!launch || !state.advancedCoverage?.universalComplete) return;
+  const holder = accounts[0];
+  const creator = accounts[40];
+  const dao = accounts[0];
+  const rewardCount = Number(await publicClient.readContract({
+    address: launch.token,
+    abi: tokenAbi,
+    functionName: "rewardAssetCount",
+  }));
+  const holderAmounts = await Promise.all(
+    rewardClaimIndexes(rewardCount).map((index) =>
+      publicClient.readContract({
+        address: launch.token,
+        abi: tokenAbi,
+        functionName: "withdrawableRewardOf",
+        args: [holder.address, index],
+      }),
+    ),
+  );
+  const holderClaimable = holderAmounts.reduce((total, amount) => total + amount, 0n);
+  const creatorClaimable = await publicClient.readContract({
+    address: manifest.contracts.protocolFeeRouter,
+    abi: feeRouterAbi,
+    functionName: "claimableCreatorNativeByRecipient",
+    args: [launch.token, creator.address],
+  });
+  const daoClaimable = await publicClient.readContract({
+    address: manifest.contracts.daoToken,
+    abi: daoAbi,
+    functionName: "claimableRewardOf",
+    args: [dao.address],
+  });
+  if (!state.streamProbe) {
+    if (holderClaimable === 0n || creatorClaimable === 0n || daoClaimable === 0n) {
+      if (state.healthySeconds >= 55 * 60) {
+        throw new Error("One-hour stream probe did not start by healthy minute 55");
+      }
+      return;
+    }
+    state.streamProbe = {
+      startedHealthySeconds: state.healthySeconds,
+      startedAt: new Date().toISOString(),
+      claims: [],
+    };
+    saveState();
+  }
+  for (const minute of [10, 30, 59, 60]) {
+    if (state.streamProbe.claims.includes(minute)) continue;
+    if (state.healthySeconds - state.streamProbe.startedHealthySeconds < minute * 60) continue;
+    const currentHolder = await Promise.all(
+      rewardClaimIndexes(rewardCount).map((index) =>
+        publicClient.readContract({
+          address: launch.token,
+          abi: tokenAbi,
+          functionName: "withdrawableRewardOf",
+          args: [holder.address, index],
+        }),
+      ),
+    );
+    if (currentHolder.every((amount) => amount === 0n)) return;
+    const currentCreator = await publicClient.readContract({
+      address: manifest.contracts.protocolFeeRouter,
+      abi: feeRouterAbi,
+      functionName: "claimableCreatorNativeByRecipient",
+      args: [launch.token, creator.address],
+    });
+    const currentDao = await publicClient.readContract({
+      address: manifest.contracts.daoToken,
+      abi: daoAbi,
+      functionName: "claimableRewardOf",
+      args: [dao.address],
+    });
+    if (currentCreator === 0n || currentDao === 0n) return;
+    await contractTransaction(
+      `endurance-stream-claim-${minute}-holder`,
+      holder,
+      launch.token,
+      tokenAbi,
+      "claimAll",
+    );
+    await contractTransaction(
+      `endurance-stream-claim-${minute}-creator`,
+      creator,
+      manifest.contracts.protocolFeeRouter,
+      feeRouterAbi,
+      "claimCreatorFees",
+      [launch.token],
+    );
+    await contractTransaction(
+      `endurance-stream-claim-${minute}-dao`,
+      dao,
+      manifest.contracts.daoToken,
+      daoAbi,
+      "claimRewards",
+    );
+    state.streamProbe.claims.push(minute);
+    saveState();
+  }
+}
+
+async function maybeAdvancedCoverage() {
+  const first = state.enduranceLaunches[0];
+  if (first && state.healthySeconds >= 25 * 60) {
+    await executeUniversalCoverage(first);
+    await addExternalLiquidity(first, 0);
+    if (!state.advancedCoverage.firstFeesMaintained) {
+      await maintainGraduatedFees(accounts[96], first, 6000);
+      state.advancedCoverage.firstFeesMaintained = true;
+      saveState();
+    }
+  }
+  const second = state.enduranceLaunches[1];
+  if (second && state.healthySeconds >= 55 * 60) {
+    await addExternalLiquidity(second, 1);
+    if (!state.advancedCoverage.secondFeesMaintained) {
+      await maintainGraduatedFees(accounts[97], second, 6006);
+      state.advancedCoverage.secondFeesMaintained = true;
+      saveState();
+    }
+  }
+  const third = state.enduranceLaunches[2];
+  if (third && state.healthySeconds >= 85 * 60) {
+    if (!state.advancedCoverage.thirdFeesMaintained) {
+      await maintainGraduatedFees(accounts[98], third, 6012);
+      state.advancedCoverage.thirdFeesMaintained = true;
+      saveState();
+    }
+  }
+  await maybeCreatorSplitUpdate();
+  await maybeStreamProbe();
+  await maybeCreatorClaimCoverage();
+}
 async function advanceGovernance() {
   const governor = manifest.contracts.governor;
   if (!state.governance.proposalId) {
@@ -1367,6 +2024,10 @@ async function runReview(reviewIndex) {
     verifierChecks: verification.checks?.length ?? null,
     verifierFailures: 0,
     healthySeconds: state.healthySeconds,
+    targetSeconds: durationSeconds,
+    remainingSeconds: Math.max(0, durationSeconds - state.healthySeconds),
+    mode: "uninterrupted",
+    observationPeriodSeconds: durationSeconds,
     transactionCount: state.transactions.length,
     writeCycleCount: state.writeCycleCount,
     enduranceLaunchCount: state.enduranceLaunches.length,
@@ -1408,6 +2069,14 @@ async function sample() {
     await timedFetch("web-home", `${publicBase}/`, latencies);
     await timedFetch("web-markets", `${publicBase}/discover`, latencies);
     await timedFetch("web-dao", `${publicBase}/dao`, latencies);
+    await timedFetch("web-admin-health", `${publicBase}/admin/health`, latencies);
+    if (state.enduranceLaunches[0]) {
+      await timedFetch(
+        "web-token",
+        `${publicBase}/launches/${state.enduranceLaunches[0].token}`,
+        latencies,
+      );
+    }
     rpcBlock = await rpcRetry("rpc-block", () => publicClient.getBlockNumber());
     const alertResponse = await fetch(
       "http://127.0.0.1:9090/api/v1/alerts",
@@ -1458,6 +2127,20 @@ async function sample() {
       failures.push(
         `ingestion lag p95 ${ingestionLagP95} blocks exceeds threshold`,
       );
+    }
+    const projectedDailyCu =
+      Number(status.indexerProjectedDailyCu ?? 0) +
+      Number(status.keeperProjectedDailyIdleCu ?? 0) +
+      Number(status.protocol?.projectedDailyCu ?? 0);
+    const projectedMonthlyCu =
+      Number(status.indexerProjectedDailyCu ?? 0) * 30 +
+      Number(status.keeperProjectedMonthlyCu ?? 0) +
+      Number(status.protocol?.projectedMonthlyCu ?? 0);
+    if (!Number.isFinite(projectedDailyCu) || projectedDailyCu > 250_000) {
+      failures.push(`projected idle RPC use is ${projectedDailyCu} CU/day`);
+    }
+    if (!Number.isFinite(projectedMonthlyCu) || projectedMonthlyCu > 30_000_000) {
+      failures.push(`projected normal RPC use is ${projectedMonthlyCu} CU/month`);
     }
     if (status.keeperStatus !== "ok") failures.push("keeper status is not ok");
     const keeperFailed = Number(status.keeperQueueCounts?.failed ?? 0);
@@ -1511,18 +2194,16 @@ async function sample() {
     state.healthySeconds +=
       (sampledAtMs - state.lastSampleAtMs) / 1000;
   }
-  if (!passed && !state.paused) {
-    state.paused = true;
-    state.segments.at(-1).finishedAt = new Date().toISOString();
-    state.segments.at(-1).healthySeconds = state.healthySeconds;
-  } else if (passed && state.paused) {
-    state.paused = false;
-    state.segments.push({
-      index: state.segments.length + 1,
-      startedAt: new Date().toISOString(),
-    });
-  }
   if (!passed) {
+    state.paused = true;
+    state.failed = true;
+    state.terminalFailure = {
+      sampledAt: new Date(sampledAtMs).toISOString(),
+      failures,
+      releaseSha: releaseManifest.gitSha,
+    };
+    state.segments.at(-1).finishedAt ??= new Date(sampledAtMs).toISOString();
+    state.segments.at(-1).healthySeconds = state.healthySeconds;
     state.failures.push({
       sampledAt: new Date(sampledAtMs).toISOString(),
       failures,
@@ -1581,6 +2262,8 @@ async function runDueWork() {
   while (state.writeCycleCount < writeDue) {
     await runWriteCycle(state.writeCycleCount);
   }
+  await maybePreGraduationCoverage();
+  await maybeAdvancedCoverage();
   await advanceGovernance();
   const reviewDue = dueCount(state.healthySeconds, reviewIntervalSeconds);
   while (state.reviewCount < reviewDue) {
@@ -1648,6 +2331,8 @@ function pauseForWorkloadFailure(error) {
   }
   state.lastSamplePassed = false;
   state.workloadFailure = failure;
+  state.failed = true;
+  state.terminalFailure = failure;
   state.failures.push({
     sampledAt: failure.sampledAt,
     failures: [failure.message],
@@ -1658,10 +2343,10 @@ function pauseForWorkloadFailure(error) {
   saveState();
 }
 
-while (!stopping && !state.completed) {
+while (!stopping && !state.completed && !state.failed) {
   const began = Date.now();
   const sampleEntry = await sample();
-  if (sampleEntry.infrastructurePassed) {
+  if (sampleEntry.passed) {
     try {
       await runDueWork();
       if (state.workloadFailure) {
@@ -1670,7 +2355,10 @@ while (!stopping && !state.completed) {
       }
     } catch (error) {
       pauseForWorkloadFailure(error);
+      break;
     }
+  } else {
+    break;
   }
   if (
     state.healthySeconds >= durationSeconds &&
