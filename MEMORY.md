@@ -7,7 +7,7 @@
 - Decision: Protected backend traffic uses separate Alchemy HTTPS and WSS
   endpoints for each network. Filtered log subscriptions are wake signals;
   canonical HTTP logs, block hashes, and durable checkpoints remain
-  authoritative with 30-second reconciliation. Browser RPC stays keyless so a
+  authoritative with 15-minute reconciliation. Browser RPC stays keyless so a
   provider credential is never compiled into public JavaScript.
 - Result: Exact release `53bcf10` was promoted on testnet. Six PM2 services are
   online, ingestion and projection lag were zero, 531 deployment checks passed,
@@ -464,6 +464,18 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-27: the Alchemy compute-unit remediation is implemented and promoted
+  on testnet. Canonical filtered-log WebSocket notifications wake the indexer;
+  HTTP reconciliation, keeper full scans, and deep protocol audits each run
+  every 15 minutes. Projected steady-state backend use is 158,016 CU/day and
+  4,740,480 CU/month. `/status` is database-only, Prometheus has explicit CU
+  budget alerts, and the stopped endurance service remains inactive/static.
+  A live trade proved token-targeted keeper processing, and also exposed that
+  a later same-token event could replace the earlier durable trigger identity.
+  Migration `0012_keeper_trigger_log_identities` and the projector now retain
+  up to 64 distinct triggering log identities per token. Repeat the live proof
+  after promoting that final identity-journal change; never replay the already
+  confirmed transaction.
 - 2026-07-27: Sherwood testnet server and operator traffic no longer depend on
   the old LAN RPC. The public-RPC cutover first passed a 61-sample, 60-minute
   observation with zero bad statuses, ingestion lag 0, projection lag at most
@@ -1903,6 +1915,29 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-27 - Event-driven Alchemy compute-unit remediation
+
+- Context: five-second keeper scans and RPC-backed health checks produced an
+  unsustainable Alchemy compute-unit burn.
+- Decision: canonical events create durable token-specific keeper requests;
+  WebSockets are wake signals only; HTTP logs and checkpoints remain
+  authoritative. Full reconciliation and deep audits run every 15 minutes.
+- Result: `/status` performs no RPC, Multicall3 is hash-pinned on testnet and
+  future mainnet, immutable reads are cached, dynamic reads are batched, and
+  retries/concurrency are bounded. Prometheus reports per-service requests,
+  estimated CU, queue state, WebSocket state, audits, and daily/monthly budget
+  projections. Current modeled idle use is 158,016 CU/day and 4,740,480
+  CU/month.
+- Validation: full repository and contract release gates passed; the live
+  release had zero lag and zero PM2 restarts. A bounded encrypted
+  software-wallet buy confirmed promptly and initiated token-targeted keeper
+  work. That proof found a coalescing evidence gap, now closed by retaining a
+  bounded set of distinct canonical log identities.
+- Follow-up: promote and repeat the trigger-identity proof, rotate the
+  chat-exposed Alchemy credentials into separate testnet/mainnet applications,
+  then complete the idle-hour, activity-hour, burst, and 24-hour dashboard
+  observations before restarting endurance.
+
 ### 2026-07-27 - Public-testnet RPC cutover and Docker mainnet-node conversion
 
 - Context: the user approved moving all Sherwood testnet backend traffic to
@@ -2983,6 +3018,17 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-27: the event-driven Alchemy keeper release passed repository lint,
+  typecheck, package tests, Anvil smoke, 165 Foundry tests with one
+  environment-gated fork skip, deployment verifier tests, security scans, and
+  531 live deployment checks. PM2 services had zero restarts, ingestion and
+  projection lag were zero, the router was solvent, reward streams conserved,
+  and no Prometheus alert fired. Five repeated `/status` calls completed in
+  about 3.2 to 3.5 ms without changing any RPC or audit counters. A live
+  encrypted software-wallet buy was confirmed at transaction
+  `0x02ecbb319cf6cea1df7572c557d3bb7b14395b7cf2c68d92e8d43520ddc7096b`;
+  its first targeted scan exposed the trigger-identity replacement defect that
+  migration `0012_keeper_trigger_log_identities` closes.
 - 2026-07-26: compact opt-in launch flow checkpoint
   `a490107411ddd9a3363da3ca110a6c9d139df1ad` passed all 57 web tests, strict
   typecheck, lint, the immutable testnet builder, and all 494 deployment checks.
@@ -3595,6 +3641,14 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Rotate the Alchemy credentials exposed in chat. Create separate protected
+  testnet and mainnet applications/keys, verify both HTTP and WSS, then revoke
+  the superseded shared credential without placing any key in Git, logs,
+  browser bundles, health responses, or evidence.
+- Complete one idle-hour, one representative activity-hour, one controlled
+  burst, and the 24-hour testnet observation against the final CU-remediated
+  release. Compare the Alchemy dashboard with the pre-remediation baseline
+  before any endurance program is restarted.
 - Complete the experimental mainnet RPC node's initial synchronization and
   read-only verification, then run its static 48-hour capacity trial. Do not
   treat it as a production dependency before all acceptance gates pass.

@@ -1219,7 +1219,162 @@ async function projectOnce() {
             [manifest.chainId, ingested.last_block, ingested.last_hash],
           );
           await tx.unsafe(
-            "WITH relevant AS (SELECT DISTINCT ON (x.token) x.token,l.block_number,l.transaction_hash,l.log_index,CASE WHEN lower(l.address) IN (lower(x.token),lower(x.vault),lower(x.market),lower(coalesce(x.adapter,'')),lower(coalesce(x.locker,''))) THEN 'launch-address' WHEN x.pool_id IS NOT NULL AND lower(l.topics->>1)=lower(x.pool_id) THEN 'pool-event' ELSE 'indexed-token' END reason FROM raw_logs l JOIN launches x ON x.chain_id=l.chain_id WHERE l.chain_id=$1 AND l.block_number BETWEEN $2 AND $3 AND (lower(l.address) IN (lower(x.token),lower(x.vault),lower(x.market),lower(coalesce(x.adapter,'')),lower(coalesce(x.locker,''))) OR (x.pool_id IS NOT NULL AND lower(l.topics->>1)=lower(x.pool_id)) OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(l.topics) topic(value) WHERE lower(topic.value)=lower('0x'||repeat('0',24)||substr(x.token,3)))) ORDER BY x.token,l.block_number DESC,l.transaction_index DESC,l.log_index DESC) INSERT INTO keeper_scan_requests (chain_id,token,status,first_block,highest_block,last_transaction_hash,last_log_index,reasons) SELECT $1,token,'pending',block_number,block_number,transaction_hash,log_index,jsonb_build_array(reason) FROM relevant ON CONFLICT (chain_id,token) DO UPDATE SET status='pending',first_block=least(keeper_scan_requests.first_block,EXCLUDED.first_block),highest_block=greatest(keeper_scan_requests.highest_block,EXCLUDED.highest_block),last_transaction_hash=EXCLUDED.last_transaction_hash,last_log_index=EXCLUDED.last_log_index,trigger_count=keeper_scan_requests.trigger_count+1,reasons=EXCLUDED.reasons,retry_after=now(),last_error=NULL,completed_at=NULL,updated_at=now()",
+            `WITH relevant_events AS (
+              SELECT
+                x.token,
+                l.block_number,
+                l.transaction_hash,
+                l.transaction_index,
+                l.log_index,
+                CASE
+                  WHEN lower(l.address) IN (
+                    lower(x.token),
+                    lower(x.vault),
+                    lower(x.market),
+                    lower(coalesce(x.adapter, '')),
+                    lower(coalesce(x.locker, ''))
+                  ) THEN 'launch-address'
+                  WHEN x.pool_id IS NOT NULL
+                    AND lower(l.topics->>1) = lower(x.pool_id) THEN 'pool-event'
+                  ELSE 'indexed-token'
+                END reason
+              FROM raw_logs l
+              JOIN launches x ON x.chain_id = l.chain_id
+              WHERE l.chain_id = $1
+                AND l.block_number BETWEEN $2 AND $3
+                AND (
+                  lower(l.address) IN (
+                    lower(x.token),
+                    lower(x.vault),
+                    lower(x.market),
+                    lower(coalesce(x.adapter, '')),
+                    lower(coalesce(x.locker, ''))
+                  )
+                  OR (
+                    x.pool_id IS NOT NULL
+                    AND lower(l.topics->>1) = lower(x.pool_id)
+                  )
+                  OR EXISTS (
+                    SELECT 1
+                    FROM jsonb_array_elements_text(l.topics) topic(value)
+                    WHERE lower(topic.value) =
+                      lower('0x' || repeat('0', 24) || substr(x.token, 3))
+                  )
+                )
+            ),
+            latest AS (
+              SELECT DISTINCT ON (token)
+                token,
+                block_number,
+                transaction_hash,
+                log_index
+              FROM relevant_events
+              ORDER BY
+                token,
+                block_number DESC,
+                transaction_index DESC,
+                log_index DESC
+            ),
+            aggregated AS (
+              SELECT
+                token,
+                count(*)::bigint trigger_count,
+                to_jsonb(array_agg(DISTINCT reason)) reasons,
+                jsonb_agg(
+                  jsonb_build_object(
+                    'blockNumber', block_number::text,
+                    'transactionHash', transaction_hash,
+                    'logIndex', log_index
+                  )
+                  ORDER BY block_number, transaction_index, log_index
+                ) trigger_log_identities
+              FROM relevant_events
+              GROUP BY token
+            )
+            INSERT INTO keeper_scan_requests (
+              chain_id,
+              token,
+              status,
+              first_block,
+              highest_block,
+              last_transaction_hash,
+              last_log_index,
+              trigger_count,
+              reasons,
+              trigger_log_identities
+            )
+            SELECT
+              $1,
+              latest.token,
+              'pending',
+              latest.block_number,
+              latest.block_number,
+              latest.transaction_hash,
+              latest.log_index,
+              aggregated.trigger_count,
+              aggregated.reasons,
+              aggregated.trigger_log_identities
+            FROM latest
+            JOIN aggregated USING (token)
+            ON CONFLICT (chain_id, token) DO UPDATE SET
+              status = 'pending',
+              first_block = least(
+                keeper_scan_requests.first_block,
+                EXCLUDED.first_block
+              ),
+              highest_block = greatest(
+                keeper_scan_requests.highest_block,
+                EXCLUDED.highest_block
+              ),
+              last_transaction_hash = CASE
+                WHEN EXCLUDED.highest_block >
+                  keeper_scan_requests.highest_block
+                  OR (
+                    EXCLUDED.highest_block =
+                      keeper_scan_requests.highest_block
+                    AND EXCLUDED.last_log_index >=
+                      keeper_scan_requests.last_log_index
+                  )
+                  THEN EXCLUDED.last_transaction_hash
+                ELSE keeper_scan_requests.last_transaction_hash
+              END,
+              last_log_index = CASE
+                WHEN EXCLUDED.highest_block >
+                  keeper_scan_requests.highest_block
+                  OR (
+                    EXCLUDED.highest_block =
+                      keeper_scan_requests.highest_block
+                    AND EXCLUDED.last_log_index >=
+                      keeper_scan_requests.last_log_index
+                  )
+                  THEN EXCLUDED.last_log_index
+                ELSE keeper_scan_requests.last_log_index
+              END,
+              trigger_count =
+                keeper_scan_requests.trigger_count + EXCLUDED.trigger_count,
+              reasons = (
+                SELECT coalesce(jsonb_agg(DISTINCT value), '[]'::jsonb)
+                FROM jsonb_array_elements(
+                  keeper_scan_requests.reasons || EXCLUDED.reasons
+                ) reason(value)
+              ),
+              trigger_log_identities = (
+                SELECT coalesce(jsonb_agg(value ORDER BY ord), '[]'::jsonb)
+                FROM (
+                  SELECT value, max(ord) ord
+                  FROM jsonb_array_elements(
+                    keeper_scan_requests.trigger_log_identities ||
+                      EXCLUDED.trigger_log_identities
+                  ) WITH ORDINALITY identity(value, ord)
+                  GROUP BY value
+                  ORDER BY max(ord) DESC
+                  LIMIT 64
+                ) bounded
+              ),
+              retry_after = now(),
+              last_error = NULL,
+              completed_at = NULL,
+              updated_at = now()`,
             [
               manifest.chainId,
               window.fromBlock.toString(),

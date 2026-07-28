@@ -16,12 +16,26 @@ describe("event-driven keeper scan control", () => {
           transactionHash: "0xold",
           logIndex: 2,
           triggerCount: 3,
+          logIdentities: [
+            {
+              blockNumber: 100n,
+              transactionHash: "0xold",
+              logIndex: 2,
+            },
+          ],
         },
         {
           highestBlock: 101n,
           transactionHash: "0xnew",
           logIndex: 1,
           triggerCount: 1,
+          logIdentities: [
+            {
+              blockNumber: 101n,
+              transactionHash: "0xnew",
+              logIndex: 1,
+            },
+          ],
         },
       ),
     ).toEqual({
@@ -29,7 +43,47 @@ describe("event-driven keeper scan control", () => {
       transactionHash: "0xnew",
       logIndex: 1,
       triggerCount: 4,
+      logIdentities: [
+        {
+          blockNumber: 100n,
+          transactionHash: "0xold",
+          logIndex: 2,
+        },
+        {
+          blockNumber: 101n,
+          transactionHash: "0xnew",
+          logIndex: 1,
+        },
+      ],
     });
+  });
+
+  it("deduplicates and bounds retained trigger log identities", () => {
+    const identities = Array.from({ length: 70 }, (_, index) => ({
+      blockNumber: BigInt(index),
+      transactionHash: `0x${index.toString(16)}`,
+      logIndex: index,
+    }));
+    const result = coalesceKeeperScanRequest(
+      {
+        highestBlock: 68n,
+        transactionHash: "0x44",
+        logIndex: 68,
+        triggerCount: 69,
+        logIdentities: identities.slice(0, 69),
+      },
+      {
+        highestBlock: 69n,
+        transactionHash: "0x45",
+        logIndex: 69,
+        triggerCount: 2,
+        logIdentities: [identities[68]!, identities[69]!],
+      },
+    );
+    expect(result.triggerCount).toBe(71);
+    expect(result.logIdentities).toHaveLength(64);
+    expect(result.logIdentities[0]?.blockNumber).toBe(6n);
+    expect(result.logIdentities.at(-1)?.blockNumber).toBe(69n);
   });
 
   it("does not complete a request that received a newer canonical event", () => {

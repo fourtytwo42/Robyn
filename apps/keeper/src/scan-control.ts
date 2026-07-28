@@ -1,9 +1,38 @@
+export type KeeperLogIdentity = {
+  blockNumber: bigint;
+  transactionHash: string;
+  logIndex: number;
+};
+
 export type KeeperScanRequestState = {
   highestBlock: bigint;
   transactionHash: string;
   logIndex: number;
   triggerCount: number;
+  logIdentities: KeeperLogIdentity[];
 };
+
+const MAXIMUM_TRIGGER_LOG_IDENTITIES = 64;
+
+function boundedLogIdentities(
+  current: KeeperLogIdentity[],
+  incoming: KeeperLogIdentity[],
+) {
+  const identities = new Map<string, KeeperLogIdentity>();
+  for (const identity of [...current, ...incoming]) {
+    identities.set(
+      `${identity.blockNumber}:${identity.transactionHash.toLowerCase()}:${identity.logIndex}`,
+      identity,
+    );
+  }
+  return [...identities.values()]
+    .sort(
+      (left, right) =>
+        Number(left.blockNumber - right.blockNumber) ||
+        left.logIndex - right.logIndex,
+    )
+    .slice(-MAXIMUM_TRIGGER_LOG_IDENTITIES);
+}
 
 export function coalesceKeeperScanRequest(
   current: KeeperScanRequestState,
@@ -23,6 +52,10 @@ export function coalesceKeeperScanRequest(
       : current.transactionHash,
     logIndex: incomingIsNewer ? incoming.logIndex : current.logIndex,
     triggerCount: current.triggerCount + incoming.triggerCount,
+    logIdentities: boundedLogIdentities(
+      current.logIdentities,
+      incoming.logIdentities,
+    ),
   };
 }
 
