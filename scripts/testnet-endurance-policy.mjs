@@ -90,12 +90,13 @@ export function transactionFundingTarget({
     throw new Error("Transaction funding values are invalid");
   }
   const bps = 10_000n;
-  const headroomBps = 2_500n;
+  const executionHeadroomBps = 10_000n;
+  const feeHeadroomBps = 2_500n;
   const gasLimit =
-    estimatedGas + ceilDiv(estimatedGas * headroomBps, bps);
+    estimatedGas + ceilDiv(estimatedGas * executionHeadroomBps, bps);
   const feeReserve = gasLimit * maxFeePerGas;
   const bufferedFeeReserve =
-    feeReserve + ceilDiv(feeReserve * headroomBps, bps);
+    feeReserve + ceilDiv(feeReserve * feeHeadroomBps, bps);
   return valueWei + bufferedFeeReserve + additionalFeeReserveWei;
 }
 

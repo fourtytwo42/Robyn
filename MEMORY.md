@@ -931,6 +931,15 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: run `schema11-2h-fcc8359-18` is preserved as failed after
+  1,200.404 healthy seconds and 51 confirmed transactions. Creator funding,
+  launch creation, stream claims, buy/transfer, governance proposal, and the
+  graduation top-up transaction succeeded. The graduation itself was never
+  submitted because its funding target still modeled 25 percent execution
+  headroom while the send used 100 percent, leaving the buyer short by
+  0.000010402214 ETH. Align graduation funding with the doubled gas limit plus
+  25 percent fee-price buffer, preserve all hashes, and start a new run ID.
+
 - 2026-07-29: pre-clock run `schema11-2h-4028308-17` is preserved with seven
   confirmed setup transfers and no submitted launch. The first creator wallet
   retained the old 0.0005 ETH funding floor, but the new 100 percent execution
@@ -2543,6 +2552,19 @@ Durable project context lives here. Update this file whenever information should
   submitted and no contract or application state changed.
 - Follow-up: rerun funding tests and protected preflight, promote an exact
   release, and start a new run ID.
+
+### 2026-07-29 - Graduation funding must match the submitted gas limit
+
+- Run `schema11-2h-fcc8359-18` passed 1,200.404 uninterrupted healthy seconds,
+  41 samples, four write cycles, two launches, and the hardened transfer path.
+- Its graduation top-up confirmed, but the planner used a 1.5625x effective
+  execution-fee allowance while `recordTransaction` submitted a 2x gas limit.
+  The buyer had 0.000284768030104009 ETH and required
+  0.000295170244104009 ETH, so Viem rejected the graduation before broadcast.
+- Decision: calculate graduation funding with the same 2x execution gas limit,
+  then add the existing 25 percent maximum-fee buffer and L1 data reserve.
+- Follow-up: rerun policy and protected preflight tests, promote an exact
+  release, and begin a new uninterrupted run without replaying run 18.
 
 ### 2026-07-28 - Final endurance retry requires an exact rebuilt runner
 
@@ -4392,6 +4414,9 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Align graduation funding with the 2x submitted gas limit and 25 percent fee
+  buffer. Never replay the 51 confirmed hashes from
+  `schema11-2h-fcc8359-18`; no graduation transaction was submitted.
 - Promote targeted 0.00075 ETH funding for creator indices 40 through 47, then
   start a new run ID. Never reuse pre-clock run
   `schema11-2h-4028308-17` or its seven setup hashes.

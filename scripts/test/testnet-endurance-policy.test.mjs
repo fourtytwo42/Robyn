@@ -317,7 +317,15 @@ test("transaction funding includes dynamic EIP-1559 fee headroom", () => {
       maxFeePerGas: 12n,
       additionalFeeReserveWei: 500n,
     }),
-    3_375n,
+    4_500n,
+  );
+  assert.ok(
+    transactionFundingTarget({
+      valueWei: 235_202_500_104_009n,
+      estimatedGas: 1_249_328n,
+      maxFeePerGas: 10_000_000n,
+      additionalFeeReserveWei: 30_044_780_000_000n,
+    }) >= 295_170_244_104_009n,
   );
   assert.throws(
     () =>
