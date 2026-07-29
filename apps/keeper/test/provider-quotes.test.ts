@@ -39,10 +39,15 @@ describe("schema-12 provider quotes", () => {
   it("builds a bounded server-side firm quote request", async () => {
     let capturedUrl = "";
     let capturedInit: RequestInit | undefined;
-    const fetcher: typeof fetch = async (input, init) => {
-      capturedUrl = String(input);
+    const fetcher: typeof fetch = (input, init) => {
+      capturedUrl =
+        input instanceof URL
+          ? input.toString()
+          : typeof input === "string"
+            ? input
+            : input.url;
       capturedInit = init;
-      return response();
+      return Promise.resolve(response());
     };
     const quote = await requestZeroExAllowanceHolderQuote(request, fetcher);
     expect(quote.buyAmount).toBe(200n);
@@ -59,37 +64,38 @@ describe("schema-12 provider quotes", () => {
 
   it("rejects target substitution and amount drift", async () => {
     await expect(
-      requestZeroExAllowanceHolderQuote(request, async () =>
-        response({
-          transaction: {
-            to: "0x5555555555555555555555555555555555555555",
-            data: "0x12345678",
-          },
-        }),
+      requestZeroExAllowanceHolderQuote(request, () =>
+        Promise.resolve(
+          response({
+            transaction: {
+              to: "0x5555555555555555555555555555555555555555",
+              data: "0x12345678",
+            },
+          }),
+        ),
       ),
     ).rejects.toThrow("allowance target");
     await expect(
-      requestZeroExAllowanceHolderQuote(request, async () =>
-        response({ sellAmount: "99" }),
+      requestZeroExAllowanceHolderQuote(request, () =>
+        Promise.resolve(response({ sellAmount: "99" })),
       ),
     ).rejects.toThrow("sell amount");
   });
 
   it("rejects missing liquidity, malformed output, and unsafe slippage", async () => {
     await expect(
-      requestZeroExAllowanceHolderQuote(request, async () =>
-        response({ liquidityAvailable: false }),
+      requestZeroExAllowanceHolderQuote(request, () =>
+        Promise.resolve(response({ liquidityAvailable: false })),
       ),
     ).rejects.toThrow("no available liquidity");
     await expect(
-      requestZeroExAllowanceHolderQuote(request, async () =>
-        response({ minBuyAmount: "201" }),
+      requestZeroExAllowanceHolderQuote(request, () =>
+        Promise.resolve(response({ minBuyAmount: "201" })),
       ),
     ).rejects.toThrow("exceeds");
     await expect(
-      requestZeroExAllowanceHolderQuote(
-        { ...request, slippageBps: 101 },
-        async () => response(),
+      requestZeroExAllowanceHolderQuote({ ...request, slippageBps: 101 }, () =>
+        Promise.resolve(response()),
       ),
     ).rejects.toThrow("slippage");
   });
