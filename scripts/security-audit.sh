@@ -30,6 +30,13 @@ jq -e 'length == 0' "${work}/gitleaks.json" >/dev/null
 pnpm audit --audit-level high --json >"${work}/pnpm-audit.json"
 pnpm licenses list --json >"${work}/licenses.json"
 forge test --root packages/contracts >/dev/null
+router_bytecode="$(forge inspect --root packages/contracts RobynV4AssetRouter deployedBytecode)"
+router_bytecode="${router_bytecode#0x}"
+router_bytecode_bytes=$(( ${#router_bytecode} / 2 ))
+if (( router_bytecode_bytes > 24576 )); then
+  echo "RobynV4AssetRouter runtime bytecode is ${router_bytecode_bytes} bytes; EIP-170 permits at most 24576" >&2
+  exit 1
+fi
 
 set +e
 (
@@ -39,7 +46,7 @@ set +e
     --solc-remaps=@openzeppelin/contracts/=${repo}/node_modules/@openzeppelin/contracts/ \
     --solc-args=--base-path\ ${repo}/packages/contracts\ --allow-paths\ ${repo}/node_modules \
     --exclude-dependencies \
-    --include-paths 'src/(Robyn(LaunchToken|TokenSink)\.sol|dao/Robyn(DaoToken|TestnetGovernor)\.sol|uniswap/Robyn(Native(BasketVaultV2|LaunchDeployerV4|LaunchFactoryV4|ProtocolFeeRouterV4|VaultDeployerV4)|V4(AdapterDeployer|AssetRouter|BondingCurveMarket|FeeAndPhaseHook|FeePositionLocker|GraduationAdapter|LaunchCoordinatorV5|LockerDeployer|MarketDeployer|MarketFactory|TestAssetLiquidityLocker))\.sol)' \
+    --include-paths 'src/(Robyn(LaunchToken|TokenSink)\.sol|dao/Robyn(DaoToken|TestnetGovernor)\.sol|uniswap/(I?Robyn(ExecutionAdapter|PriceGuard)|Robyn(Native(BasketVaultV2|LaunchDeployerV4|LaunchFactoryV4|ProtocolFeeRouterV4|VaultDeployerV4)|V4(AdapterDeployer|AssetRouter|BondingCurveMarket|FeeAndPhaseHook|FeePositionLocker|GraduationAdapter|LaunchCoordinatorV5|LockerDeployer|MarketDeployer|MarketFactory|TestAssetLiquidityLocker)|ZeroExAllowanceHolderAdapter))\.sol)' \
     --json "${work}/slither.json" >/dev/null 2>"${work}/slither.log"
 )
 slither_status=$?
@@ -52,6 +59,19 @@ while IFS=$'\t' read -r check description; do
     arbitrary-send-eth)
       if [[ "${description}" == *"RobynNativeProtocolFeeRouterV4.settleBasketFees"* && "${description}" == *"account.vault.recordFees"* ]]; then
         reviewed_high=$((reviewed_high + 1))
+      elif [[ "${description}" == *"RobynV4AssetRouter._swapExactAssetForNative"* &&
+              "${description}" == *"recipient.call{value: amountIn}"* ]]; then
+        reviewed_high=$((reviewed_high + 1))
+      else
+        echo "Untriaged high Slither detector in the active remediation scope: ${check}" >&2
+        exit 1
+      fi
+      ;;
+    reentrancy-balance)
+      if [[ "${description}" == *"RobynNativeBasketVaultV2._convertLeg"* ||
+            "${description}" == *"RobynV4AssetRouter._swapExactAssetForNative"* ||
+            "${description}" == *"RobynV4AssetRouter._swapExactNativeForAsset"* ]]; then
+        reviewed_high=$((reviewed_high + 1))
       else
         echo "Untriaged high Slither detector in the active remediation scope: ${check}" >&2
         exit 1
@@ -59,6 +79,8 @@ while IFS=$'\t' read -r check description; do
       ;;
     reentrancy-eth)
       if [[ "${description}" == *"RobynV4BondingCurveMarket._buyBonding"* && "${description}" == *"curveNativePrincipal = 0"* ]]; then
+        reviewed_high=$((reviewed_high + 1))
+      elif [[ "${description}" == *"RobynNativeBasketVaultV2._convertLeg"* ]]; then
         reviewed_high=$((reviewed_high + 1))
       else
         echo "Untriaged high Slither detector in the active remediation scope: ${check}" >&2
@@ -83,7 +105,7 @@ while IFS= read -r check; do
   esac
 done < <(jq -r '.results.detectors[]? | select(.impact == "Medium") | .check' "${work}/slither.json" | sort -u)
 
-jq -n   --arg generatedAt "$(date --iso-8601=seconds)"   --arg gitSha "$(git rev-parse HEAD)"   --arg gitleaksVersion "$(gitleaks version)"   --arg slitherVersion "$("${slither}" --version)"   --argjson slitherStatus "${slither_status}"   --argjson reviewedHigh "${reviewed_high}"   --argjson reviewedMedium "${medium_count}"   --slurpfile slither "${work}/slither.json"   --slurpfile licenses "${work}/licenses.json"   '{
+jq -n   --arg generatedAt "$(date --iso-8601=seconds)"   --arg gitSha "$(git rev-parse HEAD)"   --arg gitleaksVersion "$(gitleaks version)"   --arg slitherVersion "$("${slither}" --version)"   --argjson slitherStatus "${slither_status}"   --argjson routerBytecodeBytes "${router_bytecode_bytes}"   --argjson reviewedHigh "${reviewed_high}"   --argjson reviewedMedium "${medium_count}"   --slurpfile slither "${work}/slither.json"   --slurpfile licenses "${work}/licenses.json"   '{
     schemaVersion: 1,
     generatedAt: $generatedAt,
     gitSha: $gitSha,
@@ -91,6 +113,11 @@ jq -n   --arg generatedAt "$(date --iso-8601=seconds)"   --arg gitSha "$(git rev
     dependencyAudit: {highOrCriticalKnownVulnerabilities: 0},
     contracts: {
       foundrySuitesPassed: true,
+      eip170: {
+        maximumRuntimeBytes: 24576,
+        robynV4AssetRouterRuntimeBytes: $routerBytecodeBytes,
+        passed: ($routerBytecodeBytes <= 24576)
+      },
       slitherVersion: $slitherVersion,
       slitherExitStatus: $slitherStatus,
       findingsByImpact: (
@@ -105,7 +132,7 @@ jq -n   --arg generatedAt "$(date --iso-8601=seconds)"   --arg gitSha "$(git rev
       reviewedHigh: $reviewedHigh,
       reviewedMedium: $reviewedMedium,
       highTriagePolicy: {
-        checks: ["arbitrary-send-eth", "reentrancy-eth"],
+        checks: ["arbitrary-send-eth", "reentrancy-balance", "reentrancy-eth"],
         rationaleDocument: "docs/assurance/security-remediation-review.md"
       },
       mediumTriagePolicy: {

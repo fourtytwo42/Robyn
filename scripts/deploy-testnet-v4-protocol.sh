@@ -11,6 +11,7 @@ rehearsal="${ROBYN_TESTNET_REHEARSAL:-false}"
 create2_deployer="0x4e59b44847b379578588920cA78FbF26c0B4956C"
 expected_deployer="0xecc5d6d032ADc9ca9E0F4042128067b8366da17A"
 zero="0x0000000000000000000000000000000000000000"
+zero_bytes32="0x0000000000000000000000000000000000000000000000000000000000000000"
 export PATH="$HOME/.foundry/bin:$PATH"
 cd "$repo_root"
 source "$repo_root/scripts/lib/transaction-nonce.sh"
@@ -25,7 +26,7 @@ source "$repo_root/scripts/lib/transaction-nonce.sh"
 }
 [[ -f "$venue_manifest" ]] || { echo "The reviewed shared-v4 manifest is required" >&2; exit 1; }
 [[ -f "$legacy_asset_manifest" ]] || {
-  echo "The reviewed v3 asset manifest is required to preserve disclosed mock-asset addresses" >&2
+  echo "The reviewed predecessor manifest is required for WETH identity and catalog metadata" >&2
   exit 1
 }
 [[ -z "$reuse_routes_manifest" ]] || {
@@ -219,44 +220,8 @@ else
   test_asset_liquidity_locker="${addresses[testAssetLiquidityLocker]}"
 fi
 
-verification_class="$(cast keccak 'ROBINHOOD_TESTNET_FAUCET_STOCK')"
 maximum_reference_tick_deviation=198
 mock_reference_tick_deviation=0
-if [[ -z "$reuse_routes_manifest" ]]; then
-while IFS=$'\t' read -r symbol asset pool_id; do
-  slot0="$(
-    cast call "$state_view" 'getSlot0(bytes32)(uint160,int24,uint24,uint24)' \
-      "$pool_id" --rpc-url "$rpc_url" --json
-  )"
-  reference_tick="$(jq -r '.[1]' <<<"$slot0")"
-  route="(10000,200,$zero,1,10000000000,$reference_tick,$maximum_reference_tick_deviation,true,$verification_class,true)"
-  send_transaction "$asset_router" \
-    'configureRoute(address,(uint24,int24,address,uint128,uint128,int24,uint24,bool,bytes32,bool))' \
-    "$asset" "$route" >/dev/null
-  ready="$(cast call "$asset_router" \
-    'routeStatus(address)((bytes32,uint128,uint128,uint128,int24,int24,uint24,bool,bytes32,uint24,int24,address,bool,bytes32))' \
-    "$asset" --rpc-url "$rpc_url")"
-  [[ "$ready" == *"true"* ]] || { echo "$symbol route is not ready after bootstrap" >&2; exit 1; }
-  jq -nc \
-    --arg symbol "$symbol" \
-    --argjson referenceTick "$reference_tick" \
-    --argjson maximumReferenceTickDeviation "$maximum_reference_tick_deviation" \
-    '{
-      symbol:$symbol,
-      referenceTick:$referenceTick,
-      maximumReferenceTickDeviation:$maximumReferenceTickDeviation,
-      enforceReferencePrice:true,
-      maximumProtectedRouteSlippageBps:100
-    }' >>"$route_safety_log"
-done < <(
-  jq -r '
-    .faucetStockRoutes[]
-    | . as $route
-    | select(["GOOGL","MSFT","NVDA","SPY"] | index($route.symbol))
-    | [$route.symbol,$route.address,$route.poolId] | @tsv
-  ' "$venue_manifest"
-)
-fi
 
 mock_native_seed="100000000000000"
 mock_token_seed_max="100000000000000"
@@ -304,27 +269,19 @@ fi
       routeKind:"wrapped-native"
     }' >>"$route_safety_log"
 if [[ -z "$reuse_routes_manifest" ]]; then
-while IFS=$'\t' read -r symbol asset verification; do
-  if [[ "$verification" == "robyn-controlled-testnet-dex" ]]; then
-    send_transaction --value "$mock_token_seed_max" "$asset" 'deposit()' >/dev/null
-    route_verification_class="$(cast keccak 'ROBYN_CONTROLLED_TESTNET_WETH')"
-  else
-    owner="$(
-      cast call "$asset" 'owner()(address)' --rpc-url "$rpc_url" | tr '[:upper:]' '[:lower:]'
-    )"
-    [[ "$owner" == "${deployer,,}" ]] || {
-      echo "$symbol mock owner does not match the reviewed deployer" >&2
-      exit 1
-    }
-    send_transaction "$asset" 'mint(address,uint256)' "$deployer" "$mock_token_seed_max" >/dev/null
-    route_verification_class="$(cast keccak 'ROBYN_TESTNET_MOCK_V4_ROUTE')"
-  fi
+while IFS=$'\t' read -r symbol name category; do
+  asset_key="schema12Asset${symbol}"
+  deploy_contract "$asset_key" \
+    src/testnet/TestnetMockERC20.sol:TestnetMockERC20 \
+    "Robyn Testnet Mock $name" "tm$symbol" "$deployer" "0"
+  asset="${addresses[$asset_key]}"
+  send_transaction "$asset" 'mint(address,uint256)' "$deployer" "$mock_token_seed_max" >/dev/null
+  route_verification_class="$(cast keccak 'ROBYN_TESTNET_MOCK_V4_ROUTE')"
   send_transaction "$asset" 'approve(address,uint256)' \
     "$test_asset_liquidity_locker" "$mock_token_seed_max" >/dev/null
-  seed_tx="$(
-    send_transaction --value "$mock_native_seed" "$test_asset_liquidity_locker" \
-      'seed(address,uint128,uint256)' "$asset" "$mock_liquidity" "$mock_token_seed_max"
-  )"
+  send_transaction --value "$mock_native_seed" "$test_asset_liquidity_locker" \
+    'seed(address,uint128,uint256)' "$asset" "$mock_liquidity" "$mock_token_seed_max" >/dev/null
+  seed_tx="$LAST_TRANSACTION_HASH"
   route="(10000,200,$zero,1,$mock_maximum_native_input,0,$mock_reference_tick_deviation,false,$route_verification_class,true)"
   send_transaction "$asset_router" \
     'configureRoute(address,(uint24,int24,address,uint128,uint128,int24,uint24,bool,bytes32,bool))' \
@@ -350,31 +307,35 @@ while IFS=$'\t' read -r symbol asset verification; do
     }' >>"$route_safety_log"
   jq -nc \
     --arg symbol "$symbol" \
+    --arg name "$name" \
+    --arg category "$category" \
     --arg address "$asset" \
     --arg poolId "$(jq -r '.[0][0]' <<<"$status")" \
-    --arg verification "$verification" \
     --arg liquidityLocker "$test_asset_liquidity_locker" \
     --arg seedTransaction "$seed_tx" \
+    --arg assetCreationTransaction "${txs[$asset_key]}" \
     '{
       symbol:$symbol,
+      mockSymbol:("tm" + $symbol),
+      name:$name,
+      category:$category,
       address:$address,
       poolId:$poolId,
       fee:10000,
       tickSpacing:200,
       hook:"0x0000000000000000000000000000000000000000",
-      verification:$verification,
-      provenance:"robyn-controlled-mock-v4-pool",
+      verification:"robyn-testnet-mock",
+      provenance:"schema12-fresh-mock-v4-pool",
       liquidityLocker:$liquidityLocker,
-      seedTransaction:$seedTransaction
+      seedTransaction:$seedTransaction,
+      assetCreationTransaction:$assetCreationTransaction
     }' >>"$mock_route_log"
-done < <(
-  jq -r '
-    .assetCatalog.assets[]
-    | . as $asset
-    | select(["GOOGL","MSFT","NVDA","SPY"] | index($asset.symbol))
-    | [.symbol,.address,.verification] | @tsv
-  ' "$legacy_asset_manifest"
-)
+done <<'SCHEMA12_V4_ASSETS'
+GOOGL	Alphabet	stock
+MSFT	Microsoft	stock
+NVDA	NVIDIA	stock
+SPY	SPDR S&P 500 ETF	etf
+SCHEMA12_V4_ASSETS
 
 provider_maximum_native_input="1000000000000"
 provider_maximum_asset_input="1000000000000000000"
@@ -407,7 +368,7 @@ while IFS=$'\t' read -r symbol name category; do
     "$provider_adapter" "$provider_wrapped_inventory" >/dev/null
   provider_adapter_hash="$(runtime_code_hash "$provider_adapter")"
   provider_guard_hash="$(runtime_code_hash "$provider_guard")"
-  provider_route="(3,$provider_adapter,$provider_guard,$provider_maximum_native_input,$provider_maximum_asset_input,$provider_class,$provider_adapter_hash,$provider_guard_hash,$zero,true)"
+  provider_route="(3,$provider_adapter,$provider_guard,$provider_maximum_native_input,$provider_maximum_asset_input,$provider_class,$provider_adapter_hash,$provider_guard_hash,$zero_bytes32,true)"
   send_transaction "$asset_router" \
     'configureAdapterRoute(address,(uint8,address,address,uint128,uint128,bytes32,bytes32,bytes32,bytes32,bool))' \
     "$provider_asset" "$provider_route" >/dev/null
@@ -654,9 +615,9 @@ send_transaction "$timelock" 'grantRole(bytes32,address)' "$canceller_role" "$gu
 send_transaction "$timelock" 'grantRole(bytes32,address)' "$executor_role" "$zero" >/dev/null
 send_transaction "$timelock" 'renounceRole(bytes32,address)' "$admin_role" "$deployer" >/dev/null
 
-googl="$(jq -er '.assetCatalog.assets[] | select(.symbol=="GOOGL") | .address' "$legacy_asset_manifest")"
-msft="$(jq -er '.assetCatalog.assets[] | select(.symbol=="MSFT") | .address' "$legacy_asset_manifest")"
-nvda="$(jq -er '.assetCatalog.assets[] | select(.symbol=="NVDA") | .address' "$legacy_asset_manifest")"
+googl="${addresses[schema12AssetGOOGL]}"
+msft="${addresses[schema12AssetMSFT]}"
+nvda="${addresses[schema12AssetNVDA]}"
 metadata_uri="ipfs://bafkreibys2cv4ijpoedcl7qdbi5u66wuwedwg3lsc6pios3wcyaoyz7cau"
 genesis_salt="$(cast keccak "robyn-v4-chain-46630-genesis-$(git rev-parse HEAD)")"
 transaction_nonce_allocate
@@ -695,16 +656,7 @@ factory_genesis_token="$(
 }
 
 venue_hash="$(sha256sum "$venue_manifest" | awk '{print $1}')"
-official_asset_routes="$(
-  jq -c '
-    .faucetStockRoutes
-    | map(. as $route | select(["GOOGL","MSFT","NVDA","SPY"] | index($route.symbol)))
-    | map(. + {
-        verification:"robinhood-testnet-faucet-stock",
-        provenance:"shared-unlisted-robinhood-testnet-uniswap-v4-mirror"
-      })
-  ' "$venue_manifest"
-)"
+official_asset_routes='[]'
 mock_asset_routes="$(jq -sc '.' "$mock_route_log")"
 if [[ -n "$reuse_routes_manifest" ]]; then
   asset_routes="$(jq -c '.assetRoutes' "$reuse_routes_manifest")"

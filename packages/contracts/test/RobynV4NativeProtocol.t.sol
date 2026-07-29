@@ -640,7 +640,7 @@ contract RobynV4NativeProtocolTest is Test {
         }
         RobynV4AssetRouter.RouteStatus memory status = assetRouter.routeStatus(address(basketAsset));
         assertFalse(status.ready);
-        assertEq(status.reason, assetRouter.REASON_REFERENCE_PRICE_DEVIATION());
+        assertEq(status.reason, keccak256("REFERENCE_PRICE_DEVIATION"));
     }
 
     function testProtectedBasketImpactAllowanceIsAppliedAfterPoolFee() public view {

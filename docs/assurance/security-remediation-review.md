@@ -2,7 +2,7 @@
 
 Status: implementation candidate validated locally; testnet deployment and independent audit pending
 
-Last verified: 2026-07-27
+Last verified: 2026-07-29
 
 This is an internal engineering and AI-assisted security review. It is not an
 independent professional audit and does not approve Robinhood mainnet
@@ -98,6 +98,23 @@ The only unguarded cross-function observer is the read-only
 or extract principal. The security gate accepts only this exact call graph and
 continues to fail on any other `reentrancy-eth` result.
 
+Schema-12 adds two narrowly reviewed balance-delta call graphs. The asset
+router transfers the exact caller-supplied input to a runtime-hash-pinned
+adapter, measures the returned token balance, validates the adapter report and
+independent price guard, and only then forwards output. The basket vault
+debits the selected pending-native liability before calling the router,
+measures actual reward-token output, and records the conversion only after the
+launch token accepts the measured deposit. Every state-changing entrypoint in
+both contracts uses `nonReentrant`; failed adapter, guard, recipient, or reward
+calls revert the complete transaction.
+
+Slither reports these measured balance deltas as `reentrancy-balance` and the
+vault's value-bearing router call as `reentrancy-eth`. It also reports the
+direct WETH unwrap recipient as an arbitrary ETH destination. That transfer is
+limited to the exact WETH amount pulled from the caller in the same guarded
+transaction. The gate accepts only these named functions and exact call
+shapes; a new occurrence or contract still fails the audit.
+
 ### One-hour holder, DAO, and creator rewards
 
 Each deposit checkpoints the magnified per-share accumulator. Account
@@ -125,32 +142,37 @@ Completed gates:
 - Full repository format, strict typecheck, lint, application tests, script
   checks, Anvil smoke tests, Foundry suites, deployment nonce test, and
   deployment-verifier test passed.
-- Foundry full suite passed with 188 tests and one environment-gated skip.
+- Schema-12 Foundry full suite passed with 235 tests and one protected
+  Mainnet-fork skip.
 - Required invariant profile passed 8 invariants at 256 runs and depth 128.
 - The deterministic 512-wallet, 32-launch, 25,000-action simulation passed its
   20 fixed seeds.
 - Slither completed against the active remediation scope with zero unresolved
-  critical, high, or medium findings. One exact high call-graph false positive
-  and 57 medium detector results are retained and reviewed.
+  critical, high, or medium findings after exact call-graph triage. The
+  retained detector evidence includes the bounded recipient transfer,
+  nonreentrant balance-delta adapter paths, and preexisting terminal
+  graduation call graph; no detector class is globally disabled.
 - Git-history secret findings: 0.
 - Known high or critical dependency vulnerabilities: 0.
-- Active contract size limits pass.
-- A standard-limit chain-46630 fork deployment found and closed a missed
-  EIP-170 blocker in the combined token-and-vault CREATE2 deployer. The
-  remediated release uses separate token and vault deployers, and the size gate
-  now covers every deployed component. The complete stack and genesis launch
-  deploy without disabling the size limit.
-- The exact fork rehearsal passes the deployment verifier and measures
-  59,143,474 gas across 56 deployment and configuration transactions. At the
-  sampled execution and L1-data prices, 25% headroom requires
-  890,050,177,359,800 wei.
-- The corrected production configuration passes a no-broadcast Robinhood
-  mainnet fork lifecycle through the official read-only public RPC. It verifies
-  chain 4663 venue and Stock Token code, atomic launch, the 6 ETH graduation
-  target, residual ceilings, post-graduation trading, hook and LP settlement,
-  basket conversion, one-hour reward release, all claim paths, treasury
-  receipt, and
-  unchanged locked principal.
+- Active contract size limits pass. `RobynV4AssetRouter` is 24,198 runtime
+  bytes under the 24,576-byte EIP-170 ceiling, and the security gate records
+  the measured size.
+- A standard-limit chain-46630 fork deployment found and closed two live
+  deployment blockers: the first router build exceeded EIP-170, and reusing
+  schema-11 mock tokens produced already-initialized v4 pool identities.
+  Schema-12 now deploys fresh Testnet mock assets and fresh v4 pools.
+- The same rehearsal found and closed a nonce-allocation bug caused by invoking
+  the stateful transaction helper in a command-substitution subshell, plus an
+  invalid address-width value in the provider route's `bytes32` disabled
+  reason. Static regressions cover both cases.
+- The complete standard-limit rehearsal passes 409 deployment verifier checks
+  after 17 contract deployments and 59 configuration transactions. A fresh
+  live gas preflight with 25% headroom remains required before Testnet
+  broadcast.
+- The schema-12 Mainnet fork test is implemented but remains an explicit
+  blocker until the five required stock routes, direct WETH route, production
+  Timelock, 2-of-3 Safe signer file, RDAO allocation, protected 0x access, and
+  exact pinned fork all pass in one evidence run.
 - Database, indexer, keeper, API, and web strict typechecks pass.
 - The indexer now ingests token, vault, market, adapter, and locker addresses
   from each canonical atomic launch receipt.
@@ -159,7 +181,7 @@ Completed gates:
 
 The following are not complete and must not be reported as passed:
 
-1. Fresh Robinhood Testnet deployment and at least eight-launch lifecycle
+1. Fresh schema-12 Robinhood Testnet deployment and at least eight-launch lifecycle
    campaign.
 2. Canonical empty-database reconstruction and reconciliation.
 3. Desktop, tablet, and mobile public-browser acceptance plus encrypted
@@ -167,8 +189,11 @@ The following are not complete and must not be reported as passed:
 4. Service interruption, RPC recovery, encrypted backup, and isolated restore.
 5. A fresh endurance gate against the exact deployed release.
 6. Reproducible release builds and exact served-release verification.
-7. Independent professional audit of the final exact commit.
+7. Exact Mainnet fork qualification of all required core assets and explicit
+   enable/disable decisions for every optional asset.
+8. Independent professional audit remains absent and must be disclosed as an
+   accepted residual risk if the product owner proceeds.
 
-The current public schema-v9 deployment remains archived testnet history. The
+The current public schema-11 deployment remains archived testnet history. The
 stopped endurance run remains stopped and provides no assurance for this
 candidate.

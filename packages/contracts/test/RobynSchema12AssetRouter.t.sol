@@ -314,7 +314,7 @@ contract RobynSchema12AssetRouterTest is RobynV4NativeProtocolTest {
         RobynV4AssetRouter.ExecutionRouteStatus memory status =
             assetRouter.executionRouteStatus(address(testWrappedNative));
         assertFalse(status.ready);
-        assertEq(status.reason, assetRouter.REASON_RUNTIME_HASH_MISMATCH());
+        assertEq(status.reason, keccak256("RUNTIME_HASH_MISMATCH"));
     }
 
     function testIndependentGuardRevertsProviderSwapAtomically() public {

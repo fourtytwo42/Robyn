@@ -1018,6 +1018,20 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: schema-12 contract and deployment remediation is implemented on
+  branch `codex/schema12-mainnet-go`. A standard-limit chain-46630 fork exposed
+  and closed four pre-deployment blockers: the asset router exceeded EIP-170,
+  the deployer reused schema-11 mock-token pool identities, a transaction
+  helper lost its nonce increment inside command substitution, and the pinned
+  route encoded an address-width zero where `bytes32` was required. The router
+  is now 24,198 bytes, schema-12 deploys fresh Testnet mock assets and pools,
+  and the complete rehearsal passes 409 verifier checks after 17 deployments
+  and 59 configuration transactions. Full Foundry, 256-run/depth-128
+  invariants, 64 script tests, and the internal security audit pass with zero
+  unresolved high or medium findings. No live schema-12 deployment has
+  occurred; gas preflight, clean exact release freeze, Testnet deployment, all
+  recovery/endurance gates, and exact Mainnet qualification remain pending.
+
 - 2026-07-29: Mainnet RPC configuration now designates
   `192.168.50.173:8547` as chain-4663 LAN primary with protected Alchemy as
   comparison and automatic fallback through loopback gateway
@@ -2647,6 +2661,23 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-29 - Schema-12 standard-limit deployment rehearsal passes
+
+- Result: the fresh schema-12 stack deploys on a standard-limit chain-46630
+  fork and passes 409 verifier checks with all 11 route identities.
+- Safety corrections: `RobynV4AssetRouter` runtime is 24,198 bytes under
+  EIP-170; four v4 Testnet assets are newly deployed so schema-11 pools cannot
+  collide; provider fixtures use a correctly sized zero `bytes32`; transaction
+  nonce state no longer advances in a discarded subshell.
+- Validation: 47 focused router tests, the complete 235-test Foundry campaign,
+  explicit assurance invariants at 256 runs and depth 128, the 512-wallet
+  economic simulation, 64 script tests, and security analysis pass. Slither
+  retained 10 reviewed high and 59 reviewed medium detector records with zero
+  unresolved high or medium finding; secret and high/critical dependency scans
+  are clean.
+- Boundary: this is local/fork evidence only. Schema-12 is not deployed to
+  Robinhood Testnet or Mainnet, and no Mainnet transaction is authorized.
 
 ### 2026-07-29 - LAN-primary Mainnet RPC with paid failover
 

@@ -31,7 +31,6 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
     using PoolIdLibrary for PoolKey;
     using SafeERC20 for IERC20;
 
-    string public constant CONTRACT_VERSION = "2.0.0";
     uint16 public constant BPS = 10_000;
     uint24 public constant FEE_DENOMINATOR = 1_000_000;
     uint16 public constant MAX_PROTECTED_ROUTE_SLIPPAGE_BPS = 100;
@@ -119,14 +118,14 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         bytes32 reason;
     }
 
-    bytes32 public constant REASON_NOT_CONFIGURED = keccak256("ROUTE_NOT_CONFIGURED");
-    bytes32 public constant REASON_DISABLED = keccak256("ROUTE_DISABLED");
-    bytes32 public constant REASON_UNINITIALIZED = keccak256("POOL_UNINITIALIZED");
-    bytes32 public constant REASON_THIN_LIQUIDITY = keccak256("INSUFFICIENT_LIQUIDITY");
-    bytes32 public constant REASON_REFERENCE_PRICE_DEVIATION = keccak256("REFERENCE_PRICE_DEVIATION");
-    bytes32 public constant REASON_CONVERSIONS_PAUSED = keccak256("CONVERSIONS_PAUSED");
-    bytes32 public constant REASON_RUNTIME_HASH_MISMATCH = keccak256("RUNTIME_HASH_MISMATCH");
-    bytes32 public constant REASON_PRICE_GUARD_MISSING = keccak256("PRICE_GUARD_MISSING");
+    bytes32 private constant REASON_NOT_CONFIGURED = keccak256("ROUTE_NOT_CONFIGURED");
+    bytes32 private constant REASON_DISABLED = keccak256("ROUTE_DISABLED");
+    bytes32 private constant REASON_UNINITIALIZED = keccak256("POOL_UNINITIALIZED");
+    bytes32 private constant REASON_THIN_LIQUIDITY = keccak256("INSUFFICIENT_LIQUIDITY");
+    bytes32 private constant REASON_REFERENCE_PRICE_DEVIATION = keccak256("REFERENCE_PRICE_DEVIATION");
+    bytes32 private constant REASON_CONVERSIONS_PAUSED = keccak256("CONVERSIONS_PAUSED");
+    bytes32 private constant REASON_RUNTIME_HASH_MISMATCH = keccak256("RUNTIME_HASH_MISMATCH");
+    bytes32 private constant REASON_PRICE_GUARD_MISSING = keccak256("PRICE_GUARD_MISSING");
 
     address public immutable governor;
     address public immutable guardian;
