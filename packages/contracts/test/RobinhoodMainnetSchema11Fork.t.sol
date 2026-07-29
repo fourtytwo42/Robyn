@@ -6,11 +6,9 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 import { IPoolManager } from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import { IHooks } from "@uniswap/v4-core/src/interfaces/IHooks.sol";
 import { Hooks } from "@uniswap/v4-core/src/libraries/Hooks.sol";
-import { SqrtPriceMath } from "@uniswap/v4-core/src/libraries/SqrtPriceMath.sol";
-import { TickMath } from "@uniswap/v4-core/src/libraries/TickMath.sol";
+import { PoolIdLibrary } from "@uniswap/v4-core/src/types/PoolId.sol";
 import { Currency } from "@uniswap/v4-core/src/types/Currency.sol";
 import { PoolKey } from "@uniswap/v4-core/src/types/PoolKey.sol";
-import { ModifyLiquidityParams } from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import { IStateView } from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
 import { IV4Quoter } from "@uniswap/v4-periphery/src/interfaces/IV4Quoter.sol";
 import { HookMiner } from "@uniswap/v4-periphery/src/utils/HookMiner.sol";
@@ -32,25 +30,24 @@ import { RobynV4LockerDeployer } from "../src/uniswap/RobynV4LockerDeployer.sol"
 import { RobynV4MarketDeployer } from "../src/uniswap/RobynV4MarketDeployer.sol";
 import { RobynV4MarketFactory } from "../src/uniswap/RobynV4MarketFactory.sol";
 import { RobynV4FeeAndPhaseHook } from "../src/uniswap/RobynV4FeeAndPhaseHook.sol";
-import {
-    IPoolModifyLiquidityFixture,
-    ITestPositionManager,
-    V4TestAsset
-} from "./RobynV4NativeProtocol.t.sol";
+import { ITestPositionManager } from "./RobynV4NativeProtocol.t.sol";
 
 /// @notice No-broadcast security-remediated rehearsal on a Robinhood mainnet fork.
-/// @dev Uses canonical chain-4663 v4 contracts and the current production AAPL Stock Token.
-contract RobinhoodMainnetSchema9ForkTest is Test {
+/// @dev Uses canonical chain-4663 v4 contracts and rejects synthetic production routes.
+contract RobinhoodMainnetSchema11ForkTest is Test {
+    using PoolIdLibrary for PoolKey;
+
     IPoolManager private constant POOL_MANAGER =
         IPoolManager(0x8366a39CC670B4001A1121B8F6A443A643e40951);
     ITestPositionManager private constant POSITION_MANAGER =
         ITestPositionManager(0x58daec3116aae6D93017bAAea7749052E8a04fA7);
     IV4Quoter private constant QUOTER = IV4Quoter(0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94);
+    IStateView private constant STATE_VIEW = IStateView(0xF3334192D15450CdD385c8B70e03f9A6bD9E673b);
     IAllowanceTransfer private constant PERMIT2 =
         IAllowanceTransfer(0x000000000022D473030F116dDEE9F6B43aC78BA3);
     address private constant AAPL = 0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9;
-    address payable private constant TREASURY = payable(address(0xBEEF));
-    address private constant GUARDIAN = address(0xCAFE);
+    address payable private treasury;
+    address private guardian;
     string private constant METADATA_URI =
         "ipfs://bafkreif2akiscaildcwr6zeux4w6i2s5kmibuf6j4jvcrbozme2q";
 
@@ -59,7 +56,6 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
     RobynNativeProtocolFeeRouterV4 private feeRouter;
     RobynV4LaunchCoordinatorV5 private coordinator;
     RobynDaoToken private daoToken;
-    IStateView private stateView;
 
     receive() external payable { }
 
@@ -72,10 +68,14 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
         vm.createSelectFork(rpcUrl);
         assertEq(block.chainid, 4663);
         _verifyCanonicalVenueAndStock();
+        treasury = payable(vm.envAddress("ROBYN_MAINNET_TREASURY"));
+        guardian = vm.envAddress("ROBYN_MAINNET_GUARDIAN");
+        require(treasury != address(0) && guardian != address(0), "production roles required");
+        require(treasury != address(0xBEEF) && guardian != address(0xCAFE), "placeholder roles");
         vm.deal(address(this), 100 ether);
         _deployProductionProtocol();
 
-        uint256 treasuryBefore = TREASURY.balance;
+        uint256 treasuryBefore = treasury.balance;
         (RobynLaunchToken token, RobynNativeBasketVaultV2 vault, RobynV4BondingCurveMarket market) =
             coordinator.createLaunch{ value: 0.5 ether }(_request(bytes32(uint256(4663))));
         assertEq(market.maximumCurvePurchase(), 0.5 ether);
@@ -143,7 +143,7 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
         assertGt(account.claimableCreatorNative, 0);
         feeRouter.claimCreatorFees(address(token));
         assertGt(daoToken.claimRewards(), 0);
-        assertGt(TREASURY.balance, treasuryBefore);
+        assertGt(treasury.balance, treasuryBefore);
     }
 
     function _verifyCanonicalVenueAndStock() private view {
@@ -165,16 +165,8 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
     }
 
     function _deployProductionProtocol() private {
-        stateView = IStateView(
-            _deployPinned(
-                "../../node_modules/@uniswap/v4-periphery/foundry-out/StateView.sol/StateView.json",
-                abi.encode(POOL_MANAGER)
-            )
-        );
-        assetRouter = new RobynV4AssetRouter(POOL_MANAGER, QUOTER, stateView, address(this));
-        V4TestAsset stock = V4TestAsset(AAPL);
-        deal(AAPL, address(this), 10_000_000 ether, true);
-        _seedStockPool(stock);
+        assetRouter = new RobynV4AssetRouter(POOL_MANAGER, QUOTER, STATE_VIEW, address(this));
+        _configureProductionAaplRoute();
 
         RobynNativeLaunchDeployerV4 launchDeployer = new RobynNativeLaunchDeployerV4();
         RobynNativeVaultDeployerV4 vaultDeployer = new RobynNativeVaultDeployerV4();
@@ -188,7 +180,7 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1_000_000_000 ether;
         daoToken = new RobynDaoToken(recipients, allocations);
-        feeRouter = new RobynNativeProtocolFeeRouterV4(daoToken, assetRouter, TREASURY, GUARDIAN);
+        feeRouter = new RobynNativeProtocolFeeRouterV4(daoToken, assetRouter, treasury, guardian);
         hook = _deployHook();
 
         RobynV4BondingCurveMarket.CurveConfig memory curve = RobynV4BondingCurveMarket.CurveConfig({
@@ -212,7 +204,7 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
                 poolManager: POOL_MANAGER,
                 positionManager: POSITION_MANAGER,
                 permit2: PERMIT2,
-                stateView: stateView,
+                stateView: STATE_VIEW,
                 adapterDeployer: adapterDeployer,
                 lockerDeployer: lockerDeployer,
                 marketDeployer: marketDeployer,
@@ -234,50 +226,33 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
         marketFactory.bindCoordinator(address(coordinator));
         feeRouter.bindCoordinator(address(coordinator));
         address[] memory exclusions = new address[](1);
-        exclusions[0] = TREASURY;
+        exclusions[0] = treasury;
         daoToken.sealRewardExclusions(exclusions);
         daoToken.bindRewardDepositor(address(feeRouter));
     }
 
-    function _seedStockPool(V4TestAsset stock) private {
+    function _configureProductionAaplRoute() private {
         PoolKey memory key = PoolKey({
             currency0: Currency.wrap(address(0)),
             currency1: Currency.wrap(AAPL),
-            fee: 3_000,
-            tickSpacing: 60,
+            fee: 10_000,
+            tickSpacing: 200,
             hooks: IHooks(address(0))
         });
-        POOL_MANAGER.initialize(key, uint160(1 << 96));
-        IPoolModifyLiquidityFixture liquidityRouter = IPoolModifyLiquidityFixture(
-            _deployPinned(
-                "../../node_modules/@uniswap/v4-periphery/foundry-out/PoolModifyLiquidityTest.sol/PoolModifyLiquidityTest.default.json",
-                abi.encode(POOL_MANAGER)
-            )
-        );
-        stock.approve(address(liquidityRouter), type(uint256).max);
-        uint128 liquidity = 100 ether;
-        uint160 upper = TickMath.getSqrtPriceAtTick(600);
-        uint256 nativeAmount =
-            SqrtPriceMath.getAmount0Delta(uint160(1 << 96), upper, liquidity, true);
-        liquidityRouter.modifyLiquidity{ value: nativeAmount }(
-            key,
-            ModifyLiquidityParams({
-                tickLower: -600,
-                tickUpper: 600,
-                liquidityDelta: int256(uint256(liquidity)),
-                salt: keccak256("sherwood-mainnet-fork-stock-route")
-            }),
-            bytes("")
+        (uint160 sqrtPriceX96, int24 tick,,) = STATE_VIEW.getSlot0(key.toId());
+        require(
+            sqrtPriceX96 != 0 && STATE_VIEW.getLiquidity(key.toId()) != 0,
+            "AAPL production route unavailable"
         );
         assetRouter.configureRoute(
             AAPL,
             RobynV4AssetRouter.Route({
-                fee: 3_000,
-                tickSpacing: 60,
+                fee: 10_000,
+                tickSpacing: 200,
                 hooks: IHooks(address(0)),
                 minimumLiquidity: 1,
                 maximumNativeInput: 0.5 ether,
-                referenceTick: 0,
+                referenceTick: tick,
                 maximumReferenceTickDeviation: 198,
                 enforceReferencePrice: true,
                 verificationClass: keccak256("ROBINHOOD_MAINNET_STOCK_TOKEN"),
@@ -291,7 +266,7 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
         uint160 flags = Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_SWAP_FLAG
             | Hooks.BEFORE_DONATE_FLAG | Hooks.AFTER_INITIALIZE_FLAG | Hooks.AFTER_SWAP_FLAG
             | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
-        bytes32 domain = keccak256("sherwood-schema9-mainnet-fork");
+        bytes32 domain = keccak256("sherwood-schema11-mainnet-fork");
         (address predicted, bytes32 salt) = HookMiner.find(
             address(this),
             flags,
@@ -321,17 +296,5 @@ contract RobinhoodMainnetSchema9ForkTest is Test {
             metadataUri: METADATA_URI,
             userSalt: salt
         });
-    }
-
-    function _deployPinned(string memory artifact, bytes memory constructorArgs)
-        private
-        returns (address deployed)
-    {
-        bytes memory creationCode = vm.getCode(artifact);
-        bytes memory initCode = abi.encodePacked(creationCode, constructorArgs);
-        assembly {
-            deployed := create(0, add(initCode, 0x20), mload(initCode))
-        }
-        require(deployed != address(0) && deployed.code.length != 0, "pinned deploy failed");
     }
 }

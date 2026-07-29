@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "environment": "robinhood-mainnet-fork-rehearsal",
+  "chainId": 4663,
+  "sources": {
+    "uniswapRegistry": "https://raw.githubusercontent.com/Uniswap/contracts/main/deployments/json/4663.json",
+    "robinhoodContracts": "https://docs.robinhood.com/chain/contracts/",
+    "robinhoodAssetApi": "https://api.robinhood.com/rhj/assets"
+  },
+  "venue": {
+    "poolManager": {
+      "address": "0x8366a39cc670b4001a1121b8f6a443a643e40951",
+      "runtimeCodeHash": "0xbd3881180b547f5fe817545743cfb4343e96b1bc6640dcd70c106b0066e95626"
+    },
+    "positionManager": {
+      "address": "0x58daec3116aae6d93017baaea7749052e8a04fa7",
+      "runtimeCodeHash": "0xc873e135dc9aaec88489cfbad146b4cb49d6a32e0d80326377784b7ba17670b2"
+    },
+    "stateView": {
+      "address": "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b",
+      "runtimeCodeHash": "0x7d9c591e0956fd89d98feb4ffcfe8bf1f7a62bd485edd979fa21d104b49878a6"
+    },
+    "quoter": {
+      "address": "0x8dc178efb8111bb0973dd9d722ebeff267c98f94",
+      "runtimeCodeHash": "0xd707b1da8cb165e5ea35a3b4450d971eb562ec171e23492aa117036b78a868f6"
+    },
+    "universalRouter": {
+      "address": "0x06afBA43fd06227fA663b0dAeCF536F6eaA6BF99",
+      "runtimeCodeHash": "0xbe8e8191bb42d843c2e948a5a55772eaab864ce01e54dcd47c9d089170b302d5"
+    },
+    "permit2": {
+      "address": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+      "runtimeCodeHash": "0x5208783f52488f7d3493e5e38311ab707c1d75457fe472a19b0b4d57d66a7fca"
+    },
+    "weth": {
+      "address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+      "runtimeCodeHash": "0x5706be52f64875fee65a2cec0d80e47a23d8793cbe85d214b48445e2d05f5353"
+    }
+  },
+  "route": {
+    "fee": 10000,
+    "tickSpacing": 200,
+    "hooks": "0x0000000000000000000000000000000000000000",
+    "minimumLiquidity": "1",
+    "maximumNativeInput": "500000000000000000",
+    "maximumReferenceTickDeviation": 198,
+    "maximumProtectedRouteSlippageBps": 100,
+    "nativeQuoteProbe": "1000000000000",
+    "assetQuoteProbe": "1000000000000"
+  },
+  "market": {
+    "curveTokenAllocation": "800000000000000000000000000",
+    "graduationTokenAllocation": "200000000000000000000000000",
+    "initialVirtualTokenReserve": "1066666666666666666666666666",
+    "initialVirtualNativeReserve": "2000000000000000000",
+    "graduationThresholdNative": "6000000000000000001",
+    "maximumCurvePurchase": "500000000000000000",
+    "curveFeeBps": 100,
+    "hookFeeBps": 100,
+    "maximumNativeResidual": "1000000000",
+    "maximumTokenResidual": "1000000000000"
+  },
+  "governance": {
+    "votingDelaySeconds": 86400,
+    "votingPeriodSeconds": 259200,
+    "timelockSeconds": 172800,
+    "quorumBps": 1000,
+    "proposalThreshold": "10000000000000000000000000"
+  },
+  "roles": {
+    "treasuryPolicy": "newly-deployed-production-timelock",
+    "treasuryEnvironmentVariable": "ROBYN_MAINNET_TREASURY",
+    "guardianEnvironmentVariable": "ROBYN_MAINNET_GUARDIAN",
+    "daoAllocationFileEnvironmentVariable": "ROBYN_MAINNET_RDAO_ALLOCATION"
+  },
+  "assetCatalog": "config/assets/robinhood-testnet-curated.json",
+  "expectedStockAssetCount": 23,
+  "includeWethRoute": true
+}

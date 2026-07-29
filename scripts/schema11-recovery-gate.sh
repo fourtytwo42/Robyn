@@ -15,7 +15,7 @@ restore_db="robyn_schema11_restore_$(date -u +%Y%m%d%H%M%S)_${RANDOM}"
 redis_pid=""
 minio_pid=""
 ipfs_pid=""
-blocked_ips=()
+blocked_rules=()
 writers_quiesced=false
 writer_processes=(
   robyn-rpc-gateway-testnet
@@ -53,8 +53,10 @@ restore_application_stack() {
 
 cleanup() {
   resume_writers || true
-  for ip in "${blocked_ips[@]:-}"; do
-    iptables -D OUTPUT -p tcp -d "${ip}" --dport 443 -j REJECT >/dev/null 2>&1 || true
+  for rule in "${blocked_rules[@]:-}"; do
+    ip="${rule%%:*}"
+    port="${rule##*:}"
+    iptables -D OUTPUT -p tcp -d "${ip}" --dport "${port}" -j REJECT >/dev/null 2>&1 || true
   done
   [[ -z "${redis_pid}" ]] || kill "${redis_pid}" >/dev/null 2>&1 || true
   [[ -z "${minio_pid}" ]] || kill "${minio_pid}" >/dev/null 2>&1 || true
@@ -76,6 +78,47 @@ for tool in age curl getent gh iptables jq pg_dump pg_restore psql redis-cli sha
 status_json() {
   curl -skf --max-time 10 https://testnet.sherwoodforest.trade/admin/health/status
 }
+gateway_json() {
+  curl -s --max-time 10 http://127.0.0.1:18548/health
+}
+
+wait_gateway() {
+  local label="$1"
+  local expression="$2"
+  for _ in {1..150}; do
+    if gateway_json >"${evidence}/gateway-${label}.json.tmp" 2>/dev/null ||
+      [[ -s "${evidence}/gateway-${label}.json.tmp" ]]; then
+      if jq -e "${expression}" "${evidence}/gateway-${label}.json.tmp" >/dev/null 2>&1; then
+        mv "${evidence}/gateway-${label}.json.tmp" "${evidence}/gateway-${label}.json"
+        return 0
+      fi
+    fi
+    sleep 1
+  done
+  return 1
+}
+
+block_endpoint() {
+  local host="$1"
+  local port="$2"
+  local ips=()
+  mapfile -t ips < <(getent ahostsv4 "${host}" | awk '{print $1}' | sort -u)
+  [[ "${#ips[@]}" -gt 0 ]]
+  for ip in "${ips[@]}"; do
+    iptables -I OUTPUT -p tcp -d "${ip}" --dport "${port}" -j REJECT
+    blocked_rules+=("${ip}:${port}")
+  done
+}
+
+unblock_endpoints() {
+  for rule in "${blocked_rules[@]:-}"; do
+    ip="${rule%%:*}"
+    port="${rule##*:}"
+    iptables -D OUTPUT -p tcp -d "${ip}" --dport "${port}" -j REJECT
+  done
+  blocked_rules=()
+}
+
 wait_healthy() {
   local label="$1"
   for _ in {1..120}; do
@@ -243,7 +286,7 @@ kill "${redis_pid}" "${minio_pid}" "${ipfs_pid}" >/dev/null 2>&1 || true
 wait "${redis_pid}" "${minio_pid}" "${ipfs_pid}" >/dev/null 2>&1 || true
 redis_pid=""; minio_pid=""; ipfs_pid=""
 
-for process in robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet; do
+for process in robyn-rpc-gateway-testnet robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet; do
   before="$(runuser -u hendo420 -- env PM2_HOME="${PM2_HOME}" "${pm2}" jlist | jq -r --arg n "${process}" '.[]|select(.name==$n)|.pid')"
   kill -9 "${before}"
   for _ in {1..60}; do
@@ -268,13 +311,26 @@ for service in redis-server postgresql minio robyn-ipfs nginx; do
   wait_healthy "systemd-${service}"
 done
 
-mapfile -t blocked_ips < <(getent ahostsv4 robinhood-testnet.g.alchemy.com | awk '{print $1}' | sort -u)
-[[ "${#blocked_ips[@]}" -gt 0 ]]
-for ip in "${blocked_ips[@]}"; do iptables -I OUTPUT -p tcp -d "${ip}" --dport 443 -j REJECT; done
-sleep 12
-status_json >"${evidence}/rpc-interruption-status.json" || true
-for ip in "${blocked_ips[@]}"; do iptables -D OUTPUT -p tcp -d "${ip}" --dport 443 -j REJECT; done
-blocked_ips=()
+(cd "${release}" && runuser -u hendo420 -- env PATH="/opt/node-v24.18.0-linux-x64/bin:${PATH}" pnpm --filter @robyn/rpc-gateway test) >"${evidence}/rpc-gateway-integration-fixture.txt"
+
+block_endpoint 192.168.50.117 8547
+wait_gateway lan-interrupted '.status=="degraded" and .activeProvider=="fallback" and .primary.healthy==false and .fallback.healthy==true'
+status_json >"${evidence}/lan-interruption-status.json"
+unblock_endpoints
+wait_gateway lan-recovered '.status=="ok" and .activeProvider=="primary" and .primary.healthy==true and .fallback.healthy==true'
+
+block_endpoint robinhood-testnet.g.alchemy.com 443
+wait_gateway alchemy-interrupted '.status=="degraded" and .activeProvider=="primary" and .primary.healthy==true and .fallback.healthy==false'
+status_json >"${evidence}/alchemy-interruption-status.json"
+
+block_endpoint 192.168.50.117 8547
+wait_gateway both-interrupted '.status=="unavailable" and .primary.healthy==false and .fallback.healthy==false'
+status_json >"${evidence}/both-rpc-interruption-status.json" || true
+curl -sS --max-time 10 -o "${evidence}/both-rpc-response.json" -w '%{http_code}\n' -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' http://127.0.0.1:18548/ >"${evidence}/both-rpc-http-status.txt" || true
+[[ "$(cat "${evidence}/both-rpc-http-status.txt")" == "503" ]]
+
+unblock_endpoints
+wait_gateway rpc-recovered '.status=="ok" and .activeProvider=="primary" and .primary.healthy==true and .fallback.healthy==true'
 wait_healthy rpc-recovered
 
 runuser -u hendo420 -- psql -d "${database}" -Atqc "select count(*) from job_audit where state='failed'" >"${evidence}/failed-jobs-after.txt"

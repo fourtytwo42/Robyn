@@ -956,6 +956,14 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: schema-11 final readiness is blocked at the exact Robinhood
+  Mainnet route preflight. At block 22,181,098, all seven pinned venue/runtime
+  hashes matched, but only 12 of 24 intended native v4 basket routes had active
+  liquidity and quoted in both directions. AAPL, AMD, META, MSTR, RDDT, RIVN,
+  TSLA, SGOV, SOXX, USO, XLK, and WETH failed. Production treasury, guardian,
+  and RDAO allocation inputs are also unset. Recovery and endurance remain
+  stopped; do not bypass the gate with seeded or synthetic fork liquidity.
+
 - 2026-07-29: the product owner changed the testnet RPC policy before the
   two-hour run. Backend HTTP must use the synchronized LAN testnet node at
   `192.168.50.117:8547` as primary and protected Alchemy as comparison and
@@ -2557,6 +2565,25 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-29 - Exact Mainnet rehearsal fails closed on real route availability
+
+- Context: the final-readiness plan requires an exact chain-4663 rehearsal
+  before recovery or endurance.
+- Decision: replace the schema-9-named fork with schema-11 tooling, pin current
+  Uniswap v4 and WETH runtime hashes, verify the live Robinhood registry, and
+  reject synthetic pools, placeholder roles, missing liquidity, or failed
+  quotes.
+- Files: `config/protocol/robinhood-mainnet-rehearsal.json`,
+  `scripts/verify-mainnet-production-routes.mjs`,
+  `packages/contracts/test/RobinhoodMainnetSchema11Fork.t.sol`, and
+  `scripts/schema11-recovery-gate.sh`.
+- Verification: all repository tests pass; explicit invariant campaigns pass
+  at 256 runs and depth 128; Foundry compiles the schema-11 fork; ShellCheck
+  passes; security audit reports no unresolved high or medium finding.
+- Result: 12 routes pass and 12 fail at block 22,181,098. The machine report is
+  `/home/hendo420/robyn-evidence/schema11-final-readiness/mainnet-production-routes.json`.
+- Follow-up: obtain real production roles and viable live routes for every one
 
 ### 2026-07-29 - LAN-primary testnet RPC with paid failover
 
@@ -4501,6 +4528,10 @@ When sources conflict, use this order:
 - Follow-up: Build and promote the exact pushed documentation commit, complete automated browser and real-wallet acceptance, then start the ten-hour endurance gate.
 
 ## Open Follow-ups
+
+- Resolve the exact Mainnet rehearsal blocker: configure non-placeholder
+  treasury, guardian, and RDAO allocation inputs and provide live, executable
+  native v4 routes for all 24 assets without synthetic fork liquidity.
 
 - Align graduation funding with the 2x submitted gas limit and 25 percent fee
   buffer. Never replay the 51 confirmed hashes from
