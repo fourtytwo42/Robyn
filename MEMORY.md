@@ -931,6 +931,16 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: run `schema11-2h-518f2b6-15` is preserved as failed after
+  567.437 healthy seconds and 22 confirmed transactions. The corrected 50
+  percent execution-gas headroom succeeded for holder, creator, and DAO claims.
+  The sole failure was the `RobynTestnetIngestionLag` alert treating 106 blocks
+  since the last relevant canonical event as pipeline lag while the runner
+  independently measured 29 blocks to the observed head and zero projection
+  lag. Never replay its confirmed hashes. Replace this event-distance alert
+  with persisted head-observation freshness, promote an exact new release, and
+  start a new run ID from zero.
+
 - 2026-07-29: pre-clock run ID `schema11-2h-d232080-14` is inert with zero
   submitted transactions; the incorrect gas-helper import was caught before
   readiness. The corrected module graph and real protected source-runner
@@ -2473,6 +2483,20 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-29 - Endurance alert now measures head freshness
+
+- Exact release `518f2b680b1a4d49c4815febe2d83b5650501864` passed
+  reproducibility, promotion, all 537 deployment checks, and live idle CU
+  preflight at about 228,515 CU/day with five indexed launches.
+- Run `schema11-2h-518f2b6-15` proved the stream-claim gas correction, then
+  failed closed solely because a quiet event interval tripped a mislabeled
+  ingestion alert. All 22 confirmed hashes are preserved and will not replay.
+- Monitoring now gates the age of the database-persisted observed head and
+  projection progress. Distance from the head to the last relevant canonical
+  event remains informational and cannot independently fail endurance.
+- Follow-up: commit, push, reproducibly build, promote, install the exact
+  monitoring files, verify alerts and CU gates, then start a new full-clock run.
 
 ### 2026-07-28 - Final endurance retry requires an exact rebuilt runner
 
@@ -4322,9 +4346,12 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Promote the 50 percent endurance transaction gas-limit correction and start
-  only a new full-clock run ID; never reuse
-  `schema11-2h-8b38674-13` or its 19 hashes.
+- Commit and promote the head-observation freshness monitoring correction,
+  install the exact collector and rules from the immutable release, and start
+  only a new full-clock run ID. Never reuse `schema11-2h-518f2b6-15` or its 22
+  confirmed hashes.
+- Preserve the 50 percent endurance transaction gas-limit correction proven by
+  successful holder, creator, and DAO claims in run 15.
 - Keep the activity-aware keeper balance polling regression and health fields
   in subsequent releases; the four-launch live total passed below 250,000
   CU/day on `8b38674`.

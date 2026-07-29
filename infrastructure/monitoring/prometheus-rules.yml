@@ -33,9 +33,9 @@ groups:
           summary: "Robyn indexer is more than five blocks behind"
           description: 'Lag is {{ $value }} blocks. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
-      - alert: RobynTestnetIngestionLag
-        expr: robyn_testnet_ingestion_lag_blocks > 100
-        for: 2m
+      - alert: RobynTestnetHeadObservationStale
+        expr: robyn_testnet_head_observation_age_seconds > 120
+        for: 1m
         labels:
           {
             severity: critical,
@@ -46,8 +46,8 @@ groups:
             runbook: indexer-lag,
           }
         annotations:
-          summary: "Sherwood Forest canonical ingestion is behind"
-          description: "Robinhood Testnet ingestion lag is {{ $value }} blocks."
+          summary: "Sherwood Forest chain-head observation is stale"
+          description: "The latest persisted Robinhood Testnet head observation is {{ $value }} seconds old."
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
       - alert: RobynTestnetProjectionLag
         expr: robyn_testnet_projection_lag_blocks > 100
@@ -81,7 +81,7 @@ groups:
           description: "The {{ $labels.component }} heartbeat is missing, stale, or degraded."
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
       - alert: RobynTestnetCheckpointStalled
-        expr: changes(robyn_testnet_checkpoint_block[2m]) == 0 and (robyn_testnet_ingestion_lag_blocks > 8 or robyn_testnet_projection_lag_blocks > 8)
+        expr: changes(robyn_testnet_checkpoint_block{component="projector"}[2m]) == 0 and robyn_testnet_projection_lag_blocks > 8
         for: 1m
         labels:
           {

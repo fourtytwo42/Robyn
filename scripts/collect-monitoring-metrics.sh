@@ -116,6 +116,12 @@ metric "robyn_rpc_divergence_blocks{chain_id=\"31337\",component=\"rpc\",launch=
 
 testnet_status_json="$(curl -fsS --max-time 3 http://127.0.0.1:3111/status 2>/dev/null || printf '{}')"
 testnet_ingestion_lag="$(json_get "${testnet_status_json}" '.ingestionLagBlocks')"; [[ "${testnet_ingestion_lag}" =~ ^[0-9]+$ ]] || testnet_ingestion_lag=0
+testnet_indexed_at="$(json_get "${testnet_status_json}" '.indexedAt')"
+testnet_head_observation_age=0
+if testnet_indexed_epoch="$(date -u -d "${testnet_indexed_at}" +%s 2>/dev/null)"; then
+  testnet_head_observation_age=$(( $(date -u +%s) - testnet_indexed_epoch ))
+  ((testnet_head_observation_age < 0)) && testnet_head_observation_age=0
+fi
 testnet_projection_lag="$(json_get "${testnet_status_json}" '.projectionLagBlocks')"; [[ "${testnet_projection_lag}" =~ ^[0-9]+$ ]] || testnet_projection_lag=0
 testnet_ingestion_cycle="$(json_get "${testnet_status_json}" '.ingestionCycleMs')"; [[ "${testnet_ingestion_cycle}" =~ ^[0-9]+([.][0-9]+)?$ ]] || testnet_ingestion_cycle=0
 testnet_projection_cycle="$(json_get "${testnet_status_json}" '.projectionCycleMs')"; [[ "${testnet_projection_cycle}" =~ ^[0-9]+([.][0-9]+)?$ ]] || testnet_projection_cycle=0
@@ -124,8 +130,10 @@ testnet_ingestion_checkpoint="$(json_get "${testnet_status_json}" '.asOfBlock')"
 testnet_projection_checkpoint="$(json_get "${testnet_status_json}" '.projectionAsOfBlock')"; [[ "${testnet_projection_checkpoint}" =~ ^[0-9]+$ ]] || testnet_projection_checkpoint=0
 [[ "$(json_get "${testnet_status_json}" '.ingestionStatus')" == "ok" ]] && testnet_ingestion_up=1 || testnet_ingestion_up=0
 [[ "$(json_get "${testnet_status_json}" '.projectionStatus')" == "ok" ]] && testnet_projection_up=1 || testnet_projection_up=0
-printf '# HELP robyn_testnet_ingestion_lag_blocks Difference between the observed Robinhood Testnet head and canonical ingestion checkpoint.\n# TYPE robyn_testnet_ingestion_lag_blocks gauge\n' >>"${tmp}"
+printf '# HELP robyn_testnet_ingestion_lag_blocks Distance between the observed Robinhood Testnet head and the last relevant canonical event.\n# TYPE robyn_testnet_ingestion_lag_blocks gauge\n' >>"${tmp}"
 metric "robyn_testnet_ingestion_lag_blocks{chain_id=\"46630\",component=\"indexer\"}" "${testnet_ingestion_lag}"
+printf '# HELP robyn_testnet_head_observation_age_seconds Age of the latest persisted Robinhood Testnet head observation.\n# TYPE robyn_testnet_head_observation_age_seconds gauge\n' >>"${tmp}"
+metric "robyn_testnet_head_observation_age_seconds{chain_id=\"46630\",component=\"indexer\"}" "${testnet_head_observation_age}"
 printf '# HELP robyn_testnet_projection_lag_blocks Difference between canonical ingestion and launch projection checkpoints.\n# TYPE robyn_testnet_projection_lag_blocks gauge\n' >>"${tmp}"
 metric "robyn_testnet_projection_lag_blocks{chain_id=\"46630\",component=\"projector\"}" "${testnet_projection_lag}"
 printf '# HELP robyn_testnet_checkpoint_block Last durable pipeline checkpoint.\n# TYPE robyn_testnet_checkpoint_block gauge\n' >>"${tmp}"
