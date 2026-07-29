@@ -1035,8 +1035,15 @@ Durable project context lives here. Update this file whenever information should
   Testnet as schema 12 from block `94968004`. All 97 deployment/configuration
   transactions succeeded, actual gas was 78,422,903, and the 409-check live
   verifier has zero failures. The deployer retains 3,542,081,773,782,525 wei,
-  above the 0.0015 ETH reserve. Campaign funding is separate. Promotion,
-  index rebuild, recovery, endurance, and exact Mainnet qualification remain
+  above the 0.0015 ETH reserve. Immutable application release
+  `ad5b991181eb80ce601a1eeb2eef8e5984aca995` was built reproducibly and
+  promoted against the fresh `robyn_testnet_schema12_ad5b991` database. The
+  empty rebuild indexed one genesis launch and 140 canonical logs with zero
+  lag, clean queues, healthy LAN/Alchemy routing, and protocol solvency. The
+  fixed 100-wallet assurance campaign is funding-blocked before any campaign
+  transaction: 0.0173551944792 ETH is required and only
+  0.003542081773782525 ETH is available. Do not reduce coverage or spend the
+  reserve. Recovery, endurance, and exact Mainnet qualification remain
   pending; Mainnet deployment remains unauthorized.
 
 - 2026-07-29: Mainnet RPC configuration now designates
@@ -2669,6 +2676,28 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-29 - Schema-12 application promoted; campaign funding blocked
+
+- Release: immutable `ad5b991181eb80ce601a1eeb2eef8e5984aca995`
+  passed full release gates and two-archive reproducibility, then promoted to
+  `testnet.sherwoodforest.trade`.
+- Index: fresh database `robyn_testnet_schema12_ad5b991` rebuilt exclusively
+  from deployment block 94,968,004 and reached the chain head with one genesis
+  launch, 140 raw logs, and zero ingestion/projection lag.
+- Live health: all seven Testnet processes are online with zero new restarts,
+  LAN and Alchemy agree at zero lag, paid RPC projects 57,600 CU/day, queues
+  are empty, and the protocol audit is healthy and solvent.
+- Funding blocker: campaign `schema12-assurance-ad5b991` was initialized with
+  a fresh encrypted 100-wallet root, but preflight sent no transaction and
+  stopped because 0.0173551944792 ETH is required versus
+  0.003542081773782525 ETH available. At least 0.013813112705417475
+  additional Testnet ETH is required before the fixed workload can proceed.
+- Recovery tooling: `scripts/schema12-recovery-gate.sh` now discovers and
+  rejects anything except the active schema-12 database, uses schema-12 backup
+  identities, and archives only public campaign/endurance transaction journals.
+  Its shell and source-policy tests pass; run it only after the lifecycle
+  campaign supplies final state.
+
 ### 2026-07-29 - Fresh schema-12 Testnet deployment verified
 
 - Result: exact clean commit
@@ -4090,6 +4119,12 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-29: exact schema-12 application release `ad5b991` passed formatting,
+  lint, typecheck, repository tests, 235 Foundry tests, the 512-wallet
+  simulation, 22 endurance-policy tests, gitleaks, static analysis, immutable
+  packaging, and two independent reproducible builds. Promotion rebuilt the
+  new schema-12 database from canonical logs and passed the 409-check live
+  verifier with zero failures.
 - 2026-07-29: schema-12 exact commit `e4ba3ed` deployed to Robinhood Testnet
   from block 94,968,004. All 97 receipts succeeded, actual gas was 78,422,903,
   the 409-check live verifier reported zero failures, the post-deployment
@@ -4739,6 +4774,11 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Fund schema-12 deployer `0xecc5d6d032ADc9ca9E0F4042128067b8366da17A`
+  with at least 0.013813112705417475 additional Robinhood Testnet ETH, then
+  rerun the unchanged `schema12-assurance-ad5b991` preflight. No campaign
+  transaction has been sent and coverage or the 0.0015 ETH reserve must not
+  be reduced.
 - Observe `192.168.50.173:8547` through the planned capacity window. Its
   temporary execution stall self-recovered and the gateway now qualifies it as
   primary, but administrative SSH access is still needed for root-cause
