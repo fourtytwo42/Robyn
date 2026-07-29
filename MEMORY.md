@@ -2566,6 +2566,29 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-29 - Live Mainnet stock-route discovery
+
+- Context: Robinhood's official RHJ registry is now live and broader than the
+  frozen 23-stock catalog, so Mainnet support was rediscovered from the
+  official registry and chain-4663 state rather than inferred from symbols.
+- Verification: At block 22,195,210, 96 official assets were active on chain
+  4663. Forty-three canonical native Uniswap v4 pools at fee 1 percent and
+  tick spacing 200 had active liquidity and bidirectional micro-quotes. All 43
+  also had a current Robinhood underlying bid/ask and no reported trading halt.
+- Qualification: A supportable route must pass exact-input and exact-output
+  simulations in both directions, remain within 100 bps native-to-asset impact
+  versus the 0.000001 ETH probe, and remain within 500 bps round-trip loss at
+  its configured maximum input.
+- Result: Recommend GOOGL, MSFT, NVDA, and SPCX with a 0.5 ETH maximum native
+  input; SPY with 0.1 ETH; and GME with 0.001 ETH. Do not treat the other 37
+  initialized pools or the other 53 active registry assets as production-ready.
+- Evidence:
+  `/home/hendo420/robyn-evidence/schema11-final-readiness/mainnet-stock-support-matrix.json`
+  and its sibling discovery, depth, market-metadata, and SHA-256 files.
+- Follow-up: Requery the registry and repeat the complete route simulation at
+  the deployment block, encode the per-route caps, then execute the qualified
+  routes through the exact schema-11 fork lifecycle before enabling them.
+
 ### 2026-07-29 - Exact Mainnet rehearsal fails closed on real route availability
 
 - Context: the final-readiness plan requires an exact chain-4663 rehearsal
