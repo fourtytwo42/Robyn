@@ -7,6 +7,11 @@ export const PLANNED_SWEEP_GAS_UNITS_PER_ACTOR = 1_600_000n;
 export const REQUIRED_RESERVE_WEI = 1_500_000_000_000_000n;
 export const REQUIRED_DISK_HEADROOM_BYTES = 5n * 1024n * 1024n * 1024n;
 export const REQUIRED_HEADROOM_BPS = 2_500n;
+export const KEEPER_MINIMUM_OPERATOR_BALANCE_WEI = 250_000_000_000_000n;
+export const KEEPER_MINIMUM_CAMPAIGN_TARGET_WEI = 1_000_000_000_000_000n;
+export const KEEPER_PRICED_TRANSACTION_COUNT = 900;
+export const KEEPER_AVERAGE_GAS_PER_TRANSACTION = 150_000n;
+export const KEEPER_AVERAGE_CALLDATA_BYTES = 256n;
 export const V4_FEE_COLLECTION_MINIMUMS = [0n, 0n];
 export const V4_ORACLE_WINDOW_MATURITY_SECONDS = 301;
 export const MAXIMUM_GRADUATION_TOPUP_WEI = 100_000_000_000_000n;
@@ -292,6 +297,42 @@ export function nativeSweepReserveWei(gasPriceWei, estimatedGasUnits) {
     throw new Error("Sweep fee inputs cannot be negative");
   }
   return transactionGasLimit(estimatedGasUnits) * gasPriceWei;
+}
+
+export function projectKeeperFunding({
+  gasPriceWei,
+  l1BaseFeeWei,
+  currentBalanceWei,
+}) {
+  for (const value of [gasPriceWei, l1BaseFeeWei, currentBalanceWei]) {
+    if (value < 0n) throw new Error("Keeper funding inputs cannot be negative");
+  }
+  const count = BigInt(KEEPER_PRICED_TRANSACTION_COUNT);
+  const executionWei = count * KEEPER_AVERAGE_GAS_PER_TRANSACTION * gasPriceWei;
+  const l1DataWei = count * KEEPER_AVERAGE_CALLDATA_BYTES * 16n * l1BaseFeeWei;
+  const workloadWithHeadroomWei = applyHeadroom(executionWei + l1DataWei);
+  const safetyBufferWei = 2n * KEEPER_MINIMUM_OPERATOR_BALANCE_WEI;
+  const calculatedTargetWei = safetyBufferWei + workloadWithHeadroomWei;
+  const targetBalanceWei =
+    calculatedTargetWei > KEEPER_MINIMUM_CAMPAIGN_TARGET_WEI
+      ? calculatedTargetWei
+      : KEEPER_MINIMUM_CAMPAIGN_TARGET_WEI;
+  return {
+    pricedTransactions: KEEPER_PRICED_TRANSACTION_COUNT,
+    averageGasPerTransaction: KEEPER_AVERAGE_GAS_PER_TRANSACTION,
+    averageCalldataBytes: KEEPER_AVERAGE_CALLDATA_BYTES,
+    executionWei,
+    l1DataWei,
+    workloadWithHeadroomWei,
+    safetyBufferWei,
+    minimumTargetWei: KEEPER_MINIMUM_CAMPAIGN_TARGET_WEI,
+    targetBalanceWei,
+    currentBalanceWei,
+    deficitWei:
+      currentBalanceWei < targetBalanceWei
+        ? targetBalanceWei - currentBalanceWei
+        : 0n,
+  };
 }
 
 export function projectCampaignCost({

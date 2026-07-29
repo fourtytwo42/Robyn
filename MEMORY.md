@@ -1,5 +1,39 @@
 # Project Memory
 
+### 2026-07-29 - Schema-12 campaign paused for keeper funding-budget correction
+
+- Context: Fresh campaign `schema12-assurance-0bad303-03` completed actor
+  funding, eight launches, and the complete trading phase with 1,535 confirmed
+  campaign receipts, three graduations, and no campaign transaction failure.
+  The conversion phase was stopped before its first conversion transaction when
+  public health exposed 27 keeper jobs failing the `0.00025 ETH` operator floor.
+- Diagnosis: The prior campaign preflight funded only the project and 100 actor
+  workloads. It did not reserve the separate keeper's gas. From the keeper's
+  last top-up through the pause, the operator sent 841 zero-value protocol
+  transactions and spent exactly 1,223,257,040,000,000 wei. The current 27
+  failed attempts have null results and no current transaction hashes. Reused
+  protocol-native idempotency keys retain older completed receipts, but each
+  new attempt must re-read current onchain pending state before any write.
+- Decision: Keep campaign submissions paused. Price 900 keeper transactions at
+  150,000 gas and 256 calldata bytes, apply 25 percent headroom, add twice the
+  safety floor, and require at least 0.001 ETH. Preflight now includes the
+  keeper deficit and actor funding cannot begin until the keeper target is
+  covered. A durable `fund-keeper` phase tops up through the encrypted project
+  wallet while preserving the 0.0015 ETH reserve.
+- Files: `scripts/lib/campaign-plan.mjs`,
+  `scripts/testnet-assurance-campaign.mjs`, and
+  `scripts/test/testnet-assurance-campaign.test.mjs`.
+- Verification: All 24 focused campaign tests pass, campaign syntax checks,
+  formatting passes, and `git diff --check` passes. At the frozen campaign gas
+  inputs the keeper target is 2,278,415,526,656,000 wei, requiring a
+  2,264,627,546,656,000 wei top-up from the current balance. The deployer has
+  4,318,734,445,185,821 wei before the top-up.
+- Evidence: Paused state is checksummed at
+  `/home/hendo420/robyn-evidence/schema12-mainnet-go/fresh-6aeb889/campaign-0bad303-state-paused-keeper-failure.json`.
+- Follow-up: Commit and push the budget correction, fund the keeper through the
+  new durable phase, retry only the audited BullMQ failures, verify health and
+  accounting, then decide whether policy requires a new lifecycle campaign ID.
+
 ### 2026-07-29 - RPC failover now rejects actively syncing upstreams
 
 - Context: The schema-12 Mainnet read-only preflight found the LAN node close
@@ -1040,18 +1074,16 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- 2026-07-29: immutable application release
-  `231161530bbfe3485d86bb573bbf18b701d7cafd` is live against fresh database
-  `robyn_testnet_schema12_2311615` and corrected deployment block `94989079`.
-  Two clean builds reproduce, all 409 deployment checks pass, LAN Testnet RPC
-  is primary at zero lag, protocol accounting is healthy, and the keeper was
-  topped up to 1,237,045,020,000,000 wei. New campaign
-  `schema12-assurance-2311615-02` is initialized but sent no transaction:
-  after separately recovering the invalidated actors through 404 token and 100
-  native sweep transactions, 0.010166349410518705 ETH is available versus
-  0.0173642429592 ETH required. Fund the deployer with at least
-  0.007197893548681295 Testnet ETH and rerun preflight without reducing
-  coverage or the reserve.
+- 2026-07-29: exact release `0bad30389d3a919823d80a8eebecf7a690df5eab`
+  remains live against database `robyn_testnet_schema12_2311615` and corrected
+  deployment block `94989079`. Campaign `schema12-assurance-0bad303-03` has
+  1,535 confirmed receipts through trading and is paused before conversion.
+  Its keeper executed 841 protocol transactions and exhausted the separately
+  underfunded operator wallet, leaving 27 current balance-floor failures. No
+  current failed attempt has a transaction hash. The preflight correction is
+  implemented and focused tests pass; commit/push it, fund the keeper to
+  2,278,415,526,656,000 wei, recover only audited jobs, and do not resume broad
+  writes until health and accounting reconcile.
 
 - 2026-07-29: the app-side Mainnet LAN observer acceptance baseline restarted
   at `2026-07-29T18:05:25Z` after the user repaired the node's throttled
@@ -2758,6 +2790,19 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-29 - Campaign paused after keeper budget omission
+
+- Campaign `schema12-assurance-0bad303-03` completed funding, eight launches,
+  and trading with 1,535 confirmed receipts. Conversion was stopped during its
+  oracle-maturity wait before it broadcast a conversion transaction.
+- Keeper balance is 13,787,980,000,000 wei. Twenty-seven current jobs failed
+  only at the pre-transaction balance-floor check; their current audit results
+  are null. The operator's 841 transactions since its top-up cost
+  1,223,257,040,000,000 wei.
+- The corrected fixed-workload target is 2,278,415,526,656,000 wei. The project
+  wallet holds 4,318,734,445,185,821 wei before the durable keeper top-up and
+  can preserve the required 0.0015 ETH reserve.
 
 ### 2026-07-29 - Corrected schema-12 release live; campaign funding blocked
 
@@ -4901,10 +4946,11 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Fund schema-12 deployer `0xecc5d6d032ADc9ca9E0F4042128067b8366da17A`
-  with at least 0.007197893548681295 additional Robinhood Testnet ETH, then
-  rerun unchanged campaign `schema12-assurance-2311615-02` preflight. It has
-  submitted no transaction; do not reduce coverage or the 0.0015 ETH reserve.
+- Complete the schema-12 keeper funding recovery: commit and push the corrected
+  preflight, top the operator to 2,278,415,526,656,000 wei through the campaign
+  journal, retry only the 27 audited BullMQ failures, and require zero failed
+  financial jobs plus exact protocol accounting before any broad write resumes.
+  Never replay a confirmed hash.
 - Grant the project key SSH access to Mainnet RPC host `192.168.50.173` or have
   an operator start the pinned `robinhood-mainnet-trial.service`. App-side
   observer time began at `2026-07-29T18:05:25Z`, but it cannot substitute for

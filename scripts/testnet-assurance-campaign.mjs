@@ -54,6 +54,7 @@ import {
   PRICED_TRANSACTION_COUNT,
   PLANNED_SWEEP_GAS_UNITS_PER_ACTOR,
   projectCampaignCost,
+  projectKeeperFunding,
   REQUIRED_HEADROOM_BPS,
   REQUIRED_DISK_HEADROOM_BYTES,
   REQUIRED_RESERVE_WEI,
@@ -115,6 +116,26 @@ const chain = defineChain({
   rpcUrls: { default: { http: [rpcUrl] } },
 });
 const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
+
+function keeperOperatorAddress() {
+  const configured = option(
+    "keeper-address",
+    process.env.ROBYN_KEEPER_OPERATOR_ADDRESS,
+  );
+  const address =
+    configured ??
+    readFileSync(
+      join(
+        process.env.HOME,
+        ".config",
+        "robyn",
+        "testnet",
+        "operator.address",
+      ),
+      "utf8",
+    ).trim();
+  return getAddress(address);
+}
 
 function json(value) {
   return JSON.stringify(
@@ -658,6 +679,17 @@ async function preflight() {
     )
   ).reduce((total, value) => total + value, 0n);
   const combinedBalanceWei = projectBalanceWei + actorBalanceWei;
+  const keeperAddress = keeperOperatorAddress();
+  const keeperBalanceWei = await publicClient.getBalance({
+    address: keeperAddress,
+  });
+  const keeperFunding = projectKeeperFunding({
+    gasPriceWei,
+    l1BaseFeeWei,
+    currentBalanceWei: keeperBalanceWei,
+  });
+  const totalRequiredWeiIncludingKeeper =
+    cost.totalRequiredWei + keeperFunding.deficitWei;
   const filesystem = statfsSync(stateDir, { bigint: true });
   const diskAvailableBytes = filesystem.bavail * filesystem.bsize;
   if (diskAvailableBytes < REQUIRED_DISK_HEADROOM_BYTES) {
@@ -666,10 +698,11 @@ async function preflight() {
         `${REQUIRED_DISK_HEADROOM_BYTES} required`,
     );
   }
-  if (combinedBalanceWei < cost.totalRequiredWei) {
+  if (combinedBalanceWei < totalRequiredWeiIncludingKeeper) {
     throw new Error(
       `Insufficient combined balance: ${formatEther(combinedBalanceWei)} ETH; ` +
-        `${formatEther(cost.totalRequiredWei)} ETH required`,
+        `${formatEther(totalRequiredWeiIncludingKeeper)} ETH required ` +
+        `including keeper funding`,
     );
   }
   state.preflight = {
@@ -685,6 +718,10 @@ async function preflight() {
     projectBalanceWei: projectBalanceWei.toString(),
     actorBalanceWei: actorBalanceWei.toString(),
     combinedBalanceWei: combinedBalanceWei.toString(),
+    keeperAddress,
+    keeperFunding,
+    totalRequiredWeiIncludingKeeper:
+      totalRequiredWeiIncludingKeeper.toString(),
     diskAvailableBytes: diskAvailableBytes.toString(),
     requiredDiskHeadroomBytes: REQUIRED_DISK_HEADROOM_BYTES.toString(),
     cost,
@@ -693,6 +730,67 @@ async function preflight() {
   state.phases.preflight = state.preflight.checkedAt;
   saveState(state);
   console.log(json(state.preflight));
+}
+
+async function ensureKeeperFunding(state, manifest, project, projectClient) {
+  const keeperAddress = keeperOperatorAddress();
+  const currentBalanceWei = await publicClient.getBalance({
+    address: keeperAddress,
+  });
+  const projection = projectKeeperFunding({
+    gasPriceWei: BigInt(state.preflight.gasPriceWei),
+    l1BaseFeeWei: BigInt(state.preflight.l1BaseFeeWei),
+    currentBalanceWei,
+  });
+  if (projection.deficitWei > 0n) {
+    const projectBalanceWei = await publicClient.getBalance({
+      address: project.address,
+    });
+    if (projectBalanceWei < projection.deficitWei + REQUIRED_RESERVE_WEI) {
+      throw new Error(
+        "Project wallet cannot fund the keeper while preserving the reserve",
+      );
+    }
+    await recordTransaction(state, "fund-keeper", projectClient, {
+      account: project,
+      to: keeperAddress,
+      value: projection.deficitWei,
+    });
+  }
+  const fundedBalanceWei = await publicClient.getBalance({
+    address: keeperAddress,
+  });
+  if (fundedBalanceWei < projection.targetBalanceWei) {
+    throw new Error("Keeper campaign funding did not reach its target");
+  }
+  state.keeperFunding = {
+    fundedAt: new Date().toISOString(),
+    keeperAddress,
+    balanceBeforeWei: currentBalanceWei.toString(),
+    balanceAfterWei: fundedBalanceWei.toString(),
+    targetBalanceWei: projection.targetBalanceWei.toString(),
+    transferredWei: projection.deficitWei.toString(),
+    pricedTransactions: projection.pricedTransactions,
+    workloadWithHeadroomWei: projection.workloadWithHeadroomWei.toString(),
+    safetyBufferWei: projection.safetyBufferWei.toString(),
+  };
+  saveState(state);
+  return state.keeperFunding;
+}
+
+async function fundKeeper() {
+  const manifest = loadManifest();
+  const state = loadState();
+  if (!state.preflight?.passed) throw new Error("Run a passing preflight first");
+  const project = privateKeyToAccount(projectPrivateKey(manifest));
+  const projectClient = createWalletClient({
+    account: project,
+    chain,
+    transport: http(rpcUrl),
+  });
+  console.log(
+    json(await ensureKeeperFunding(state, manifest, project, projectClient)),
+  );
 }
 
 async function fund() {
@@ -706,6 +804,7 @@ async function fund() {
     chain,
     transport: http(rpcUrl),
   });
+  await ensureKeeperFunding(state, manifest, project, projectClient);
   const gasPriceWei = BigInt(state.preflight.gasPriceWei);
   const l1BaseFeeWei = BigInt(state.preflight.l1BaseFeeWei);
   const transferCostWei =
@@ -2296,6 +2395,7 @@ async function all() {
   }
   const phases = loadState().phases;
   if (!phases.preflight) await preflight();
+  await fundKeeper();
   if (!loadState().phases.funded) await fund();
   if (!loadState().phases.launched) await launches();
   if (!loadState().phases.trading) await trading();
@@ -2345,9 +2445,9 @@ async function status() {
   );
 }
 
-if (!["init", "preflight", "fund", "launches", "trading", "conversions", "governance", "claims", "fill", "sweep", "all", "status"].includes(command)) {
+if (!["init", "preflight", "fund-keeper", "fund", "launches", "trading", "conversions", "governance", "claims", "fill", "sweep", "all", "status"].includes(command)) {
   throw new Error(
-    "Usage: testnet-assurance-campaign.mjs <init|preflight|fund|launches|trading|conversions|governance|claims|fill|sweep|all|status> --campaign ID",
+    "Usage: testnet-assurance-campaign.mjs <init|preflight|fund-keeper|fund|launches|trading|conversions|governance|claims|fill|sweep|all|status> --campaign ID",
   );
 }
-await { init, preflight, fund, launches, trading, conversions, governance, claims, fill, sweep, all, status }[command]();
+await { init, preflight, "fund-keeper": fundKeeper, fund, launches, trading, conversions, governance, claims, fill, sweep, all, status }[command]();

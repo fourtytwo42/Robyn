@@ -25,6 +25,10 @@ import {
   PRICED_TRANSACTION_COUNT,
   weightedWalletFunding,
   projectCampaignCost,
+  projectKeeperFunding,
+  KEEPER_MINIMUM_OPERATOR_BALANCE_WEI,
+  KEEPER_MINIMUM_CAMPAIGN_TARGET_WEI,
+  KEEPER_PRICED_TRANSACTION_COUNT,
   REQUIRED_RESERVE_WEI,
   REQUIRED_DISK_HEADROOM_BYTES,
   transactionGasLimit,
@@ -169,6 +173,51 @@ test("cost projection includes Nitro L1 data, 25 percent headroom, and hard rese
   assert.equal(cost.baseWei, 1_365n);
   assert.equal(cost.withHeadroomWei, 1_707n);
   assert.equal(cost.totalRequiredWei, 1_707n + REQUIRED_RESERVE_WEI);
+});
+
+test("keeper funding covers the fixed workload, headroom, and safety buffer", () => {
+  const funding = projectKeeperFunding({
+    gasPriceWei: 10_000_000n,
+    l1BaseFeeWei: 20_000_000n,
+    currentBalanceWei: 13_000_000_000_000n,
+  });
+  assert.equal(KEEPER_PRICED_TRANSACTION_COUNT, 900);
+  assert.equal(funding.executionWei, 1_350_000_000_000_000n);
+  assert.equal(funding.l1DataWei, 73_728_000_000_000n);
+  assert.equal(
+    funding.safetyBufferWei,
+    2n * KEEPER_MINIMUM_OPERATOR_BALANCE_WEI,
+  );
+  assert.ok(funding.targetBalanceWei > KEEPER_MINIMUM_CAMPAIGN_TARGET_WEI);
+  assert.equal(
+    funding.deficitWei,
+    funding.targetBalanceWei - funding.currentBalanceWei,
+  );
+  assert.throws(
+    () =>
+      projectKeeperFunding({
+        gasPriceWei: -1n,
+        l1BaseFeeWei: 0n,
+        currentBalanceWei: 0n,
+      }),
+    /cannot be negative/,
+  );
+});
+
+test("campaign funds the keeper before distributing actor funds", () => {
+  const source = readFileSync(
+    new URL("../testnet-assurance-campaign.mjs", import.meta.url),
+    "utf8",
+  );
+  const keeperFunding = source.indexOf(
+    "await ensureKeeperFunding(state, manifest, project, projectClient)",
+  );
+  const rootFunding = source.indexOf(
+    'await recordTransaction(state, "fund-root"',
+  );
+  assert.ok(keeperFunding >= 0);
+  assert.ok(rootFunding > keeperFunding);
+  assert.match(source, /totalRequiredWeiIncludingKeeper/);
 });
 
 test("native sweep reserve uses the live gas estimate with headroom", () => {
