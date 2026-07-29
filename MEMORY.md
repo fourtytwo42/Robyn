@@ -956,6 +956,26 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: Mainnet RPC configuration now designates
+  `192.168.50.173:8547` as chain-4663 LAN primary with protected Alchemy as
+  comparison and automatic fallback through loopback gateway
+  `127.0.0.1:18549`. The gateway fails over above 50 blocks of lag and returns
+  only after two consecutive probes within 10 blocks. The node temporarily
+  stalled at block 22,497,213 and the gateway correctly selected Alchemy. A
+  later live sample found `eth_syncing=false` and 0 to 5 blocks of lag across
+  three comparisons; an isolated gateway smoke completed the recovery probes,
+  selected LAN, and served chain ID 4663. The Mainnet application remains
+  inactive and no Mainnet transaction was signed or broadcast.
+
+- 2026-07-29: the recommended expanded Mainnet asset universe is encoded as a
+  fail-closed candidate policy, not active routes. Direct v4 candidates are
+  GOOGL, MSFT, NVDA, SPCX, SPY, and conditional GME with measured input caps.
+  WETH, USDG, USDe, DEGEN, and ARROW remain disabled because wrapped-native or
+  aggregator support requires a fresh asset router, dependent contracts,
+  deployment, and renewed security/rehearsal gates. APE, ENA, sUSDe, CHZ,
+  weETH, PEPPER, and WBTC are rejected from the observed candidate set. No
+  schema-11 contract, active testnet route, or Mainnet deployment changed.
+
 - 2026-07-29: schema-11 final readiness is blocked at the exact Robinhood
   Mainnet route preflight. At block 22,181,098, all seven pinned venue/runtime
   hashes matched, but only 12 of 24 intended native v4 basket routes had active
@@ -2565,6 +2585,45 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-29 - LAN-primary Mainnet RPC with paid failover
+
+- Decision: the inactive Mainnet PM2 topology uses
+  `http://127.0.0.1:18549`; its chain-4663 gateway designates
+  `http://192.168.50.173:8547` as primary and protected Alchemy as fallback.
+  Application services never connect directly to either upstream.
+- Policy: probe both providers every 30 seconds, fail over for transport
+  failure, wrong chain, or more than 50 blocks of LAN lag, and require two
+  consecutive comparisons within 10 blocks before returning to LAN.
+- Verification: the LAN endpoint returned chain ID 4663 and matched Alchemy at
+  a common historical block. A later 30-second sample found its execution head
+  fixed at 22,497,213 while Alchemy advanced and the gap grew from 688 to 992
+  blocks. `eth_syncing` reported a higher feed and execution target, confirming
+  that the node was not caught up at that time. A subsequent sample observed
+  heads 22,503,539 through 22,503,745, lag of 5, 0, and 1 blocks, and
+  `eth_syncing=false`. A live isolated gateway smoke completed two recovery
+  probes, selected the LAN primary with zero lag, and served chain 4663 while
+  keeping Alchemy healthy as fallback.
+- Operations: protected Mainnet variables are separated, gateway state and
+  metrics use Mainnet-only paths and labels, and alerts are inactive until a
+  valid Mainnet gateway status exists. The Mainnet application remains stopped
+  and no Mainnet transaction was signed or broadcast.
+
+### 2026-07-29 - Fail-closed expanded Mainnet asset policy
+
+- Decision: accept the recommended asset set as candidates while refusing to
+  enable any route that the current schema-11 router cannot safely execute.
+- Files: `config/protocol/robinhood-mainnet-support-policy.json`,
+  `scripts/validate-mainnet-support-policy.mjs`, and
+  `config/protocol/robinhood-mainnet-rehearsal.json`.
+- Direct v4 candidates: GOOGL, MSFT, NVDA, SPCX, SPY, and conditional GME.
+  Each carries the maximum native-input cap proven during discovery.
+- Fresh-contract candidates: WETH requires an explicit native-wrap adapter;
+  USDG, USDe, DEGEN, and ARROW require aggregator routing. All remain disabled
+  until fresh contracts, deployment, internal audit, exact fork rehearsal, and
+  testnet lifecycle gates pass.
+- Result: the policy is machine-validated and candidate-only. It changes no
+  active schema-11 route or contract.
 
 ### 2026-07-29 - Live Mainnet stock-route discovery
 
@@ -4552,6 +4611,16 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Observe `192.168.50.173:8547` through the planned capacity window. Its
+  temporary execution stall self-recovered and the gateway now qualifies it as
+  primary, but administrative SSH access is still needed for root-cause
+  diagnosis if the stall recurs. Keep Alchemy configured and monitored as the
+  automatic fallback.
+- Requery and execute every candidate asset at the pinned deployment block.
+  Direct v4 candidates still require the exact schema-11 fork lifecycle.
+  WETH and aggregator candidates require a fresh router design, dependent
+  contract deployment, renewed internal audit, and complete rehearsal before
+  they can move from disabled candidate status.
 - Resolve the exact Mainnet rehearsal blocker: configure non-placeholder
   treasury, guardian, and RDAO allocation inputs and provide live, executable
   native v4 routes for all 24 assets without synthetic fork liquidity.

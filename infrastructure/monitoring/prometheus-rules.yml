@@ -244,6 +244,54 @@ groups:
           summary: "Sherwood Forest protocol audit is stale or degraded"
           description: "The persisted 15-minute protocol audit is not healthy."
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#accounting-drift"
+      - alert: RobynMainnetLanRpcUnavailable
+        expr: robyn_mainnet_rpc_gateway_configured == 1 and robyn_mainnet_rpc_up{provider="lan"} == 0
+        for: 1m
+        labels:
+          {
+            severity: warning,
+            chain_id: "4663",
+            component: rpc-gateway,
+            launch: all,
+            asset: all,
+            runbook: indexer-lag,
+          }
+        annotations:
+          summary: "Sherwood Forest Mainnet gateway is using Alchemy fallback"
+          description: "The LAN Mainnet RPC is unreachable, on the wrong chain, or outside the accepted head-lag boundary."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
+      - alert: RobynMainnetPaidRpcUnavailable
+        expr: robyn_mainnet_rpc_gateway_configured == 1 and robyn_mainnet_rpc_up{provider="alchemy"} == 0
+        for: 1m
+        labels:
+          {
+            severity: critical,
+            chain_id: "4663",
+            component: rpc-gateway,
+            launch: all,
+            asset: all,
+            runbook: indexer-lag,
+          }
+        annotations:
+          summary: "Sherwood Forest paid Mainnet RPC fallback is unavailable"
+          description: "The Alchemy comparison and failover endpoint failed its chain or head probe."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
+      - alert: RobynMainnetLanRpcBehind
+        expr: robyn_mainnet_rpc_gateway_configured == 1 and robyn_mainnet_rpc_head_lag_blocks > 50
+        for: 1m
+        labels:
+          {
+            severity: warning,
+            chain_id: "4663",
+            component: rpc-gateway,
+            launch: all,
+            asset: all,
+            runbook: indexer-lag,
+          }
+        annotations:
+          summary: "Sherwood Forest LAN Mainnet RPC is behind"
+          description: "The LAN node is {{ $value }} blocks behind the paid comparison endpoint."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
       - alert: RobynRpcDivergence
         expr: robyn_rpc_divergence_blocks > 2 or robyn_assurance_drill{alert="RobynRpcDivergence"} == 1
         for: 1m

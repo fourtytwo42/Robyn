@@ -30,7 +30,7 @@ type PublicUpstreamState = Omit<UpstreamState, "head"> & {
 
 export type FailoverSnapshot = {
   schemaVersion: 1;
-  service: "robyn-testnet-rpc-failover";
+  service: string;
   status: "ok" | "degraded" | "unavailable";
   expectedChainId: number;
   activeProvider: Provider;
@@ -65,6 +65,7 @@ export type FailoverOptions = {
   request?: UpstreamRequest;
   now?: () => number;
   statusFile?: string | null;
+  serviceName?: string;
 };
 
 function parseQuantity(value: unknown, label: string): bigint {
@@ -161,6 +162,7 @@ export class TestnetRpcFailover {
   private readonly upstreamRequest: UpstreamRequest;
   private readonly now: () => number;
   private readonly statusFile: string | null;
+  private readonly serviceName: string;
   private readonly startedAtMs: number;
   private activeProvider: Provider = "fallback";
   private primary: UpstreamState = {
@@ -197,6 +199,7 @@ export class TestnetRpcFailover {
     this.upstreamRequest = options.request ?? createHttpUpstreamRequest(15_000);
     this.now = options.now ?? Date.now;
     this.statusFile = options.statusFile ?? null;
+    this.serviceName = options.serviceName ?? "robyn-testnet-rpc-failover";
     this.startedAtMs = this.now();
     this.lastProviderChangeAtMs = this.startedAtMs;
   }
@@ -407,7 +410,7 @@ export class TestnetRpcFailover {
         : null;
     return {
       schemaVersion: 1,
-      service: "robyn-testnet-rpc-failover",
+      service: this.serviceName,
       status,
       expectedChainId: this.expectedChainId,
       activeProvider: this.activeProvider,

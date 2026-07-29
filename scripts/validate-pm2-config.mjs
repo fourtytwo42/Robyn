@@ -144,8 +144,9 @@ delete require.cache[
 ];
 const mainnetHttpRpc = "https://example.invalid/mainnet";
 const mainnetWebSocketRpc = "wss://example.invalid/mainnet";
+const mainnetPrimaryRpc = "http://192.0.2.30:8547";
 const mainnet = loadConfig("infrastructure/pm2/ecosystem.mainnet.config.cjs", {
-  ROBYN_TESTNET_PRIMARY_RPC_URL: "",
+  ROBYN_MAINNET_PRIMARY_RPC_URL: mainnetPrimaryRpc,
   ROBYN_MAINNET_RELEASE_ROOT: "/opt/robyn/mainnet-releases/validation",
   ROBYN_MAINNET_MANIFEST: "/etc/robyn/mainnet-validation.json",
   ROBYN_MAINNET_SERVER_RPC_URL: mainnetHttpRpc,
@@ -156,7 +157,7 @@ const mainnetIndexer = mainnet.apps.find(
   (app) => app.name === "robyn-indexer-mainnet",
 );
 if (
-  mainnetIndexer?.env?.ROBYN_OPERATOR_RPC_URL !== mainnetHttpRpc ||
+  mainnetIndexer?.env?.ROBYN_OPERATOR_RPC_URL !== "http://127.0.0.1:18549" ||
   mainnetIndexer?.env?.ROBYN_OPERATOR_WS_RPC_URL !== mainnetWebSocketRpc ||
   mainnetIndexer?.env?.INDEXER_RECONCILIATION_MS !== "900000" ||
   mainnetIndexer?.env?.INDEXER_HEARTBEAT_MS !== "30000"
@@ -173,6 +174,35 @@ if (
   )
 ) {
   throw new Error("mainnet WebSocket credentials must be indexer-only");
+}
+
+const mainnetGateway = mainnet.apps.find(
+  (app) => app.name === "robyn-rpc-gateway-mainnet",
+);
+if (
+  mainnetGateway?.env?.HOST !== "127.0.0.1" ||
+  mainnetGateway?.env?.PORT !== "18549" ||
+  mainnetGateway?.env?.EXPECTED_CHAIN_ID !== "4663" ||
+  mainnetGateway?.env?.PRIMARY_RPC_URL !== mainnetPrimaryRpc ||
+  mainnetGateway?.env?.FALLBACK_RPC_URL !== mainnetHttpRpc ||
+  mainnetGateway?.env?.RPC_SERVICE_NAME !== "robyn-mainnet-rpc-failover" ||
+  mainnetGateway?.env?.RPC_STATUS_FILE !==
+    "/var/lib/robyn/mainnet-rpc-gateway/status.json"
+) {
+  throw new Error(
+    "robyn-rpc-gateway-mainnet must use the isolated LAN-primary mainnet policy",
+  );
+}
+for (const name of [
+  "robyn-api-mainnet",
+  "robyn-indexer-mainnet",
+  "robyn-projector-mainnet",
+  "robyn-keeper-mainnet",
+]) {
+  const app = mainnet.apps.find((candidate) => candidate.name === name);
+  if (app?.env?.ROBYN_OPERATOR_RPC_URL !== "http://127.0.0.1:18549") {
+    throw new Error(`${name} must use the server-only mainnet RPC gateway`);
+  }
 }
 
 process.stdout.write(

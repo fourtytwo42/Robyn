@@ -25,6 +25,7 @@
     "test:scripts": "find scripts -name '*.mjs' -print0 | xargs -0 -n1 node --check",
     "typecheck": "turbo run typecheck",
     "validate:mainnet-curve": "node scripts/validate-mainnet-curve.mjs",
+    "validate:mainnet-support": "node scripts/validate-mainnet-support-policy.mjs",
     "verify:mainnet-rehearsal": "node scripts/verify-mainnet-production-routes.mjs"
   },
   "devDependencies": {

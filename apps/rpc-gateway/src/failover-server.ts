@@ -39,6 +39,7 @@ const controller = new TestnetRpcFailover({
   request: createHttpUpstreamRequest(
     positiveInteger("RPC_UPSTREAM_TIMEOUT_MS", "15000"),
   ),
+  serviceName: process.env.RPC_SERVICE_NAME ?? "robyn-rpc-failover",
   statusFile:
     process.env.RPC_STATUS_FILE ??
     "/var/lib/robyn/testnet-rpc-gateway/status.json",

@@ -73,6 +73,7 @@
     "guardianEnvironmentVariable": "ROBYN_MAINNET_GUARDIAN",
     "daoAllocationFileEnvironmentVariable": "ROBYN_MAINNET_RDAO_ALLOCATION"
   },
+  "supportPolicy": "config/protocol/robinhood-mainnet-support-policy.json",
   "assetCatalog": "config/assets/robinhood-testnet-curated.json",
   "expectedStockAssetCount": 23,
   "includeWethRoute": true

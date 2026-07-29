@@ -6,7 +6,9 @@ function required(name) {
 
 const releaseRoot = required("ROBYN_MAINNET_RELEASE_ROOT");
 const manifest = required("ROBYN_MAINNET_MANIFEST");
-const rpcUrl = required("ROBYN_MAINNET_SERVER_RPC_URL");
+const primaryRpcUrl = required("ROBYN_MAINNET_PRIMARY_RPC_URL");
+const fallbackRpcUrl = required("ROBYN_MAINNET_SERVER_RPC_URL");
+const backendRpcUrl = "http://127.0.0.1:18549";
 const wsRpcUrl = required("ROBYN_MAINNET_WS_RPC_URL");
 const operatorKeyFile = required("ROBYN_MAINNET_OPERATOR_KEY_FILE");
 const database = process.env.ROBYN_MAINNET_DATABASE || "robyn_mainnet";
@@ -17,7 +19,8 @@ const authOrigins =
 // environment identity, port, queue and datastore namespace before export.
 process.env.ROBYN_TESTNET_RELEASE_ROOT = releaseRoot;
 process.env.ROBYN_TESTNET_MANIFEST = manifest;
-process.env.ROBYN_TESTNET_SERVER_RPC_URL = rpcUrl;
+process.env.ROBYN_TESTNET_PRIMARY_RPC_URL = primaryRpcUrl;
+process.env.ROBYN_TESTNET_SERVER_RPC_URL = fallbackRpcUrl;
 process.env.ROBYN_TESTNET_WS_RPC_URL = wsRpcUrl;
 process.env.ROBYN_OPERATOR_KEY_FILE = operatorKeyFile;
 process.env.ROBYN_TESTNET_DATABASE = database;
@@ -44,10 +47,12 @@ module.exports = {
       ROBYN_NETWORK_MODE: "mainnet",
       CHAIN_ID: "4663",
       ROBYN_RELEASE_SHA: app.env.ROBYN_RELEASE_SHA,
-      ROBYN_OPERATOR_RPC_URL: rpcUrl,
+      ROBYN_OPERATOR_RPC_URL: backendRpcUrl,
       ROBYN_OPERATOR_WS_RPC_URL:
         name === "robyn-indexer-mainnet" ? wsRpcUrl : "",
-      RPC_GATEWAY_HEALTH_URL: rpcUrl,
+      RPC_GATEWAY_HEALTH_URL: backendRpcUrl,
+      ROBYN_RPC_FAILOVER_STATUS_FILE:
+        "/var/lib/robyn/mainnet-rpc-gateway/status.json",
       ROBYN_MANIFEST: manifest,
       PGDATABASE: database,
       REDIS_URL: "redis://127.0.0.1:6379/2",
@@ -65,6 +70,20 @@ module.exports = {
       ROBYN_TESTNET_REQUIRE_REMOTE_PIN:
         process.env.ROBYN_MAINNET_REQUIRE_REMOTE_PIN || "true",
     };
+
+    if (name === "robyn-rpc-gateway-mainnet") {
+      Object.assign(env, {
+        ROBYN_ENV: "robinhood-mainnet",
+        CHAIN_ID: "4663",
+        HOST: "127.0.0.1",
+        PORT: "18549",
+        EXPECTED_CHAIN_ID: "4663",
+        PRIMARY_RPC_URL: primaryRpcUrl,
+        FALLBACK_RPC_URL: fallbackRpcUrl,
+        RPC_SERVICE_NAME: "robyn-mainnet-rpc-failover",
+        RPC_STATUS_FILE: "/var/lib/robyn/mainnet-rpc-gateway/status.json",
+      });
+    }
 
     if (name === "robyn-web-mainnet") env.PORT = ports.web;
     if (name === "robyn-api-mainnet") env.PORT = ports.api;

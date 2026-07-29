@@ -282,6 +282,22 @@ describe("testnet RPC failover", () => {
     });
   });
 
+  it("uses a network-specific service identity in persisted health state", () => {
+    const upstream = createUpstream();
+    const failover = new TestnetRpcFailover({
+      primaryUrl,
+      fallbackUrl,
+      expectedChainId: 4_663,
+      request: upstream.request,
+      serviceName: "robyn-mainnet-rpc-failover",
+    });
+
+    expect(failover.snapshot()).toMatchObject({
+      service: "robyn-mainnet-rpc-failover",
+      expectedChainId: 4_663,
+    });
+  });
+
   it("reports unavailable when both request paths fail", async () => {
     const upstream = createUpstream();
     const failover = controller(upstream.request);
