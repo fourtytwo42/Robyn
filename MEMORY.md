@@ -16,8 +16,14 @@
   projection, keeper, and artifacts are healthy. All 21 gateway tests, the
   PM2 validator, 26 release/endurance tests, shell syntax, formatting, and
   `git diff --check` pass.
-- Follow-up: Commit and build a new immutable release, promote it, prove live
-  LAN failover and recovery, and keep endurance stopped.
+- Result: Exact release `d4bc67555057ce80f971280aec2ea35c152418b8`
+  is live and passed all 537 checks. The outage drill moved from LAN to
+  Alchemy, served chain `46630`, removed its exact firewall rule, then returned
+  to LAN after two healthy probes. Post-drill paid usage projects to 62,280
+  CU/day and 1,868,400/month. All seven testnet processes have zero restarts,
+  lag and queues are zero, no chain-46630 alerts are firing, and the public
+  page renders without errors.
+- Follow-up: Keep endurance stopped until separately resumed.
 
 ### 2026-07-29 - Runner preflight now loads the real module graph
 
@@ -2565,11 +2571,12 @@ Durable project context lives here. Update this file whenever information should
 - Accounting: service RPC estimates remain request-volume diagnostics. Paid CU
   is the gateway's Alchemy comparison-probe plus actual fallback traffic.
   Healthy LAN-primary smoke projected 57,600 paid CU/day and 1,728,000/month.
-- Verification: 19 gateway tests, 65 API tests, 22 indexer tests, 26 release
+- Verification: 21 gateway tests, 65 API tests, 22 indexer tests, 26 release
   and endurance policy tests, Prometheus rule validation, and the complete
   repository suite pass. A real primary smoke saw both providers at block
-  94,795,073 with zero lag. A separate unreachable-primary smoke served chain
-  `46630` from Alchemy.
+  94,795,073 with zero lag. Live release `d4bc675` passed all 537 checks, an
+  actual blocked-LAN drill served chain `46630` through Alchemy, and recovery
+  returned to LAN after two probes with zero head lag.
 - Run `schema11-2h-802ab77-19` remains inert with zero submitted
   transactions. No endurance run may start until an exact promoted release
   passes live failover and recovery plus paid-CU preflight.
