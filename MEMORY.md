@@ -1104,6 +1104,15 @@ Durable project context lives here. Update this file whenever information should
 - 2026-07-29: exact release
   `60b88549dee05cd3466d1a0fa5a062865d294767` is live and healthy after the
   keeper gas-margin repair. Campaign `schema12-assurance-0bad303-03` retains
+  1,541 confirmed receipts after a second launch-0 oracle refresh. No
+  transaction failed, but the locker retained 13,251,118,073,959 token units
+  whose current native quote was only 96 wei; conversion correctly reverted
+  the price-impact check because integer resolution made the quote unsafe.
+  Earlier successful canonical locker conversions are verified by fee-router
+  events and transactions addressed to the immutable locker. The campaign now
+  records this fully attributed amount as queued locker fee dust only when the
+  quote is at most 1,000 wei and prior canonical locker-conversion evidence
+  exists. Larger or unproven failures remain fatal.
   1,540 confirmed receipts after exact release `174de54` refreshed launch 0's
   oracle, converted its hook-token fee, and settled the generated native fee.
   The next locker conversion did not broadcast: the event-driven keeper
@@ -2853,6 +2862,12 @@ Durable project context lives here. Update this file whenever information should
   oracle refresh, hook conversion, and follow-up native settlement. Its locker
   conversion was consumed by the keeper before campaign estimation and did not
   broadcast.
+- A later refresh caused the keeper to collect another
+  13,251,118,073,959 launch-token fee units. Their 96-wei native quote is below
+  safe price-impact resolution, so they remain tracked in
+  `pendingCollectedTokenFees`. This is fee dust, not principal or unattributed
+  inventory. The campaign requires a prior successful locker conversion before
+  accepting this bounded queued state.
   `locker-collect-0` succeeded; its following conversion did not broadcast
   because the latest pool observation was 1,108 seconds old.
 - Canonical `LegConverted` evidence exists for all 24 current-campaign vault

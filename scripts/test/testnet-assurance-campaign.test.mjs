@@ -331,6 +331,21 @@ test("campaign recognizes a keeper conversion that wins before submission", () =
   assert.match(source, /if \(pendingAfterRace !== 0n\) throw error/g);
 });
 
+test("tracked locker fee dust requires prior canonical conversion evidence", () => {
+  const source = readFileSync(
+    new URL("../testnet-assurance-campaign.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /if \(quoted > 1_000n\) throw error/);
+  assert.match(source, /eventName: "LaunchFeesConverted"/);
+  assert.match(
+    source,
+    /getAddress\(transaction\.to\) === getAddress\(launch\.locker\)/,
+  );
+  assert.match(source, /state\.conversions\.queuedLockerDust/);
+  assert.match(source, /state\.failedTransactions\.some/g);
+});
+
 test("basket conversions are balanced across the three funded keeper actors", () => {
   const actors = Array.from({ length: 8 }, (_, launchIndex) =>
     Array.from({ length: 3 }, (_, legIndex) =>

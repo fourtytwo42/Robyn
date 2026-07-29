@@ -1793,6 +1793,11 @@ async function conversions() {
           functionName: "pendingTokenFees",
           args: [launch.token],
         });
+        if (
+          state.failedTransactions.some(
+            (entry) => entry.label === `hook-convert-token-${launchIndex}`,
+          )
+        ) throw error;
         if (pendingAfterRace !== 0n) throw error;
         state.conversions.batchAdjustments.push({
           label: `hook-convert-token-${launchIndex}`,
@@ -1859,11 +1864,50 @@ async function conversions() {
           abi: lockerAbi,
           functionName: "pendingCollectedTokenFees",
         });
-        if (pendingAfterRace !== 0n) throw error;
+        if (
+          state.failedTransactions.some(
+            (entry) => entry.label === `locker-convert-token-${launchIndex}`,
+          )
+        ) throw error;
+        if (pendingAfterRace !== 0n) {
+          if (quoted > 1_000n) throw error;
+          const conversionLogs = await publicClient.getContractEvents({
+            address: manifest.contracts.protocolFeeRouter,
+            abi: feeRouterAbi,
+            eventName: "LaunchFeesConverted",
+            args: { token: launch.token },
+            fromBlock: BigInt(manifest.deploymentBlock),
+            toBlock: "latest",
+          });
+          let canonical;
+          for (const log of conversionLogs.toReversed()) {
+            const transaction = await publicClient.getTransaction({
+              hash: log.transactionHash,
+            });
+            if (getAddress(transaction.to) === getAddress(launch.locker)) {
+              canonical = log;
+              break;
+            }
+          }
+          if (!canonical) throw error;
+          state.conversions.queuedLockerDust ??= [];
+          state.conversions.queuedLockerDust.push({
+            launchIndex,
+            amount: pendingAfterRace.toString(),
+            quotedNative: quoted.toString(),
+            reason: "tracked fee dust is below safe conversion resolution",
+            priorConversionHash: canonical.transactionHash,
+            priorConversionBlock: canonical.blockNumber.toString(),
+          });
+          saveState(state);
+        }
         state.conversions.batchAdjustments.push({
           label: `locker-convert-token-${launchIndex}`,
           rejectedAmount: amount.toString(),
-          reason: "canonical keeper conversion won the pre-submission race",
+          reason:
+            pendingAfterRace === 0n
+              ? "canonical keeper conversion won the pre-submission race"
+              : "tracked fee dust remains queued below safe conversion resolution",
           source: "canonical-keeper",
         });
         saveState(state);
