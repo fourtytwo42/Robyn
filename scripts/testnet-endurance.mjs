@@ -42,6 +42,7 @@ import {
 import {
   applyHeadroom,
   assertSecurityRemediationManifest,
+  transactionGasLimit,
   V4_FEE_COLLECTION_MINIMUMS,
 } from "./lib/campaign-plan.mjs";
 import {
@@ -68,7 +69,6 @@ import {
   protocolHealthFailures,
   reconcileReleaseIdentity,
   rewardClaimIndexes,
-  transactionGasLimit,
   transactionFundingTarget,
 } from "./testnet-endurance-policy.mjs";
 

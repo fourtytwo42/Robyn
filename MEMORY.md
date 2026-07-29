@@ -1,5 +1,18 @@
 # Project Memory
 
+### 2026-07-29 - Runner preflight now loads the real module graph
+
+- Context: Static run `schema11-2h-d232080-14` submitted no transactions and
+  never reached readiness because preflight found `transactionGasLimit`
+  imported from the policy module instead of its campaign-plan module.
+- Decision: Import the helper from `scripts/lib/campaign-plan.mjs`, assert that
+  source relationship in the endurance regression, and execute the real
+  working-tree runner in preflight-only mode before promotion.
+- Verification: All 21 endurance tests and a real protected preflight pass;
+  funding remains sufficient with the 0.0015 ETH reserve preserved.
+- Follow-up: Rebuild and promote the exact corrected module graph, then use a
+  new run ID.
+
 ### 2026-07-29 - Stream claims require execution gas headroom
 
 - Context: Run `schema11-2h-8b38674-13` passed funding, two readiness samples,
@@ -918,6 +931,10 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: pre-clock run ID `schema11-2h-d232080-14` is inert with zero
+  submitted transactions; the incorrect gas-helper import was caught before
+  readiness. The corrected module graph and real protected source-runner
+  preflight pass, but require a new exact release and run ID.
 - 2026-07-29: run `schema11-2h-8b38674-13` is preserved as failed after 300
   healthy seconds and 19 submitted hashes. The sole failure was an
   out-of-gas holder claim caused by using 25 percent value-cost headroom for a
