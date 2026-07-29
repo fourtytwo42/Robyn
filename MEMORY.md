@@ -1,5 +1,25 @@
 # Project Memory
 
+### 2026-07-29 - Stream claims require execution gas headroom
+
+- Context: Run `schema11-2h-8b38674-13` passed funding, two readiness samples,
+  11 health samples, its first launch and deployment review, and accumulated
+  300 healthy seconds before `endurance-holder-claim-1` reverted. Receipt
+  `0x7baeae3869d900834a05be2f6ec393d60036a10428c9db264efd08e2e5e2dd9a`
+  used exactly its 507,117 gas limit. The runner estimated 405,693 gas and
+  applied value-cost headroom of 25 percent; stream accrual advanced before
+  inclusion and the same claim then estimated 514,595 gas.
+- Decision: Use the existing `transactionGasLimit()` helper, which provides
+  50 percent execution gas headroom, for endurance transaction gas limits.
+  Continue using `applyHeadroom()` for funding/value estimates. Preserve all
+  19 submitted hashes and never replay them.
+- Files: `scripts/testnet-endurance.mjs` and
+  `scripts/test/testnet-endurance-policy.test.mjs`.
+- Commands/tests: The 21 endurance tests, all runner-script syntax checks,
+  formatting, and `git diff --check` pass.
+- Follow-up: Commit, push, reproducibly rebuild, promote, and use a new run ID,
+  salts, launches, and full uninterrupted clock.
+
 ### 2026-07-29 - Keeper balance safety uses activity-aware polling
 
 - Context: Exact promoted release `9c17b77` passed all 537 checks, but its
@@ -898,12 +918,16 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- 2026-07-29: promoted `9c17b77` passed all 537 checks but remains ineligible
-  for endurance because four-launch idle usage projected about 253,091 CU/day.
-  The keeper fix reduces idle operator-balance polling from one minute to five
-  minutes while retaining a forced balance refresh no older than one minute
-  before financial jobs. Tests pass, but this fix is not yet committed,
-  rebuilt, or promoted. Endurance remains stopped.
+- 2026-07-29: run `schema11-2h-8b38674-13` is preserved as failed after 300
+  healthy seconds and 19 submitted hashes. The sole failure was an
+  out-of-gas holder claim caused by using 25 percent value-cost headroom for a
+  timestamp-sensitive execution gas limit. The 50 percent transaction gas
+  helper correction passes focused and adjacent runner tests but is not yet
+  committed or promoted. Never replay the failed run's hashes.
+- 2026-07-29: exact release `8b38674` promoted activity-aware keeper balance
+  polling, passed all 537 checks, and reduced the live four-launch aggregate
+  from about 253,091 to about 215,000 CU/day. It remains the active release
+  while the transaction gas-limit correction is rebuilt. Endurance is stopped.
 - 2026-07-28: run `schema11-2h-b28b2db-12` is preserved as a zero-credit
   failed run with 18 confirmed transactions and one fresh launch. The
   deployment, workload, accounting, process, lag, resource, and CU checks
@@ -2448,6 +2472,10 @@ Durable project context lives here. Update this file whenever information should
   but its four-launch aggregate idle CU projection exceeds the hard gate.
   Activity-aware keeper balance polling is implemented and tested but not yet
   promoted.
+- Exact release `8b38674` subsequently promoted activity-aware polling and
+  reduced the live aggregate to about 215,000 CU/day. Run
+  `schema11-2h-8b38674-13` then exposed the execution-gas headroom defect at
+  300 healthy seconds; its evidence is preserved and the service is stopped.
 
 ### 2026-07-28 - One-hour pull-claim rewards candidate
 
@@ -3633,6 +3661,12 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-29: run `schema11-2h-8b38674-13` passed readiness and accumulated
+  300 healthy seconds with healthy API, lag, CU, accounting, process, and
+  keeper gates. Its first holder claim exhausted its 507,117 gas limit exactly
+  after stream accrual changed between estimation and inclusion. The 50
+  percent execution gas correction passes all 21 endurance tests and complete
+  runner-script syntax validation.
 - 2026-07-29: `9c17b77` passed reproducibility, immutable build, promotion, and
   all 537 deployment checks. Live four-launch status remained fully solvent
   with zero conservation mismatches and Multicall fallback, but projected
@@ -4271,9 +4305,12 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Promote and measure the activity-aware keeper balance polling correction;
-  do not install a fresh endurance run unless the four-launch live total is
-  below 250,000 CU/day.
+- Promote the 50 percent endurance transaction gas-limit correction and start
+  only a new full-clock run ID; never reuse
+  `schema11-2h-8b38674-13` or its 19 hashes.
+- Keep the activity-aware keeper balance polling regression and health fields
+  in subsequent releases; the four-launch live total passed below 250,000
+  CU/day on `8b38674`.
 - Commit and promote the API-only endurance latency correction, then run a
   fresh two-hour attempt under a new run ID without replaying any transaction
   from `schema11-2h-b28b2db-12`.

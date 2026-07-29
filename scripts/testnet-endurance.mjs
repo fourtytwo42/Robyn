@@ -68,6 +68,7 @@ import {
   protocolHealthFailures,
   reconcileReleaseIdentity,
   rewardClaimIndexes,
+  transactionGasLimit,
   transactionFundingTarget,
 } from "./testnet-endurance-policy.mjs";
 
@@ -384,7 +385,7 @@ async function recordTransaction(label, account, request) {
     hash = await writer(account).sendTransaction({
       ...request,
       account,
-      gas: applyHeadroom(estimated),
+      gas: transactionGasLimit(estimated),
     });
     state.submittedTransactions[label] = {
       hash,

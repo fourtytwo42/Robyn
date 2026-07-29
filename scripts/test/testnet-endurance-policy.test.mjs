@@ -135,6 +135,7 @@ test("runner is fixed to one uninterrupted two-hour release gate", () => {
   );
   assert.match(source, /publicPageP95Ms:\s*publicPageP95/);
   assert.doesNotMatch(source, /endpoint p95 .* exceeds threshold/);
+  assert.match(source, /gas:\s*transactionGasLimit\(estimated\)/);
   assert.match(source, /mode:\s*"uninterrupted"/);
   assert.match(source, /terminalFailure/);
   assert.match(source, /dueLaunchCount\(state\.healthySeconds\)/);
