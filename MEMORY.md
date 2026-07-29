@@ -26,6 +26,11 @@
   adapter quotes on Testnet and protected 0x AllowanceHolder quotes only on
   Mainnet, then simulates `convertLegWithData` before writing. It bounds provider
   replanning to four attempts. All 35 keeper tests, typecheck, and build pass.
+- API/UI validation: Asset responses expose schema-12 route kind, provider ID,
+  independent-guard state, both input caps, adapter runtime hash, disabled
+  reason, and placeholders for quote expiry and last execution. The basket
+  picker distinguishes direct WETH, protected provider, and Uniswap routes.
+  All 66 API tests and 57 web tests pass with typechecks and API build.
   The full contract package builds.
 - Result: The Mainnet candidate policy now names exactly 11 individually
   qualified assets under schema version 12. GOOGL, MSFT, NVDA, SPCX, SPY, and

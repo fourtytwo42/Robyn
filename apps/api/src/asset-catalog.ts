@@ -20,12 +20,26 @@ export type AssetVerification =
   | "unverified-erc20";
 
 export type AssetRoute = {
-  kind: "none" | "fixed-testnet" | "uniswap-v3" | "uniswap-v4";
+  kind:
+    | "none"
+    | "fixed-testnet"
+    | "uniswap-v3"
+    | "uniswap-v4"
+    | "wrapped-native"
+    | "pinned-adapter";
   ready: boolean;
   venue: Address | null;
   poolFee: number | null;
   liquidity: string | null;
   reason: string | null;
+  provider?: `0x${string}` | null;
+  maximumNativeInput?: string | null;
+  maximumAssetInput?: string | null;
+  priceGuardState?: "not-required" | "verified" | "unavailable";
+  adapterRuntimeHash?: `0x${string}` | null;
+  quoteExpiry?: string | null;
+  lastSuccessfulExecution?: string | null;
+  disabledReason?: string | null;
 };
 
 export type CatalogAsset = {
@@ -149,6 +163,32 @@ const routeRegistryAbi = [
 const v4AssetRouterAbi = [
   {
     type: "function",
+    name: "executionRouteStatus",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "kind", type: "uint8" },
+          { name: "adapter", type: "address" },
+          { name: "priceGuard", type: "address" },
+          { name: "maximumNativeInput", type: "uint128" },
+          { name: "maximumAssetInput", type: "uint128" },
+          { name: "provider", type: "bytes32" },
+          { name: "adapterRuntimeHash", type: "bytes32" },
+          { name: "priceGuardRuntimeHash", type: "bytes32" },
+          { name: "disabledReason", type: "bytes32" },
+          { name: "enabled", type: "bool" },
+          { name: "runtimeVerified", type: "bool" },
+          { name: "ready", type: "bool" },
+          { name: "reason", type: "bytes32" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
     name: "routeStatus",
     stateMutability: "view",
     inputs: [{ type: "address" }],
@@ -216,6 +256,9 @@ const routeReasonLabels = new Map(
   [
     ["ROUTE_NOT_CONFIGURED", "No funded conversion route"],
     ["ROUTE_DISABLED", "Conversion route is disabled"],
+    ["CONVERSIONS_PAUSED", "Basket conversions are paused"],
+    ["RUNTIME_HASH_MISMATCH", "Route runtime verification failed"],
+    ["PRICE_GUARD_MISSING", "Independent price guard is unavailable"],
     ["POOL_UNINITIALIZED", "Conversion pool is not initialized"],
     ["INSUFFICIENT_LIQUIDITY", "Conversion pool has insufficient liquidity"],
     [
@@ -230,6 +273,16 @@ const routeReasonLabels = new Map(
 
 function routeKind(value: number): AssetRoute["kind"] {
   return value === 1 ? "fixed-testnet" : value === 2 ? "uniswap-v3" : "none";
+}
+
+function v4ExecutionKind(value: number): AssetRoute["kind"] {
+  return value === 1
+    ? "uniswap-v4"
+    : value === 2
+      ? "wrapped-native"
+      : value === 3
+        ? "pinned-adapter"
+        : "none";
 }
 
 export class AssetCatalogService {
@@ -415,6 +468,12 @@ export class AssetCatalogService {
     }
     if (this.baseAsset === zeroAddress) {
       try {
+        const execution = await this.rpcClient.readContract({
+          address: this.routeRegistry,
+          abi: v4AssetRouterAbi,
+          functionName: "executionRouteStatus",
+          args: [outputToken],
+        });
         const status = await this.rpcClient.readContract({
           address: this.routeRegistry,
           abi: v4AssetRouterAbi,
@@ -422,12 +481,30 @@ export class AssetCatalogService {
           args: [outputToken],
         });
         return {
-          kind: "uniswap-v4",
-          ready: status.ready,
-          venue: this.routeRegistry,
+          kind: v4ExecutionKind(execution.kind),
+          ready: execution.ready,
+          venue: execution.kind === 3 ? execution.adapter : this.routeRegistry,
           poolFee: status.fee === 0 ? null : status.fee,
-          liquidity: status.liquidity.toString(),
-          reason: status.ready ? null : reasonText(status.reason),
+          liquidity: execution.kind === 1 ? status.liquidity.toString() : null,
+          reason: execution.ready ? null : reasonText(execution.reason),
+          provider: /^0x0+$/.test(execution.provider)
+            ? null
+            : execution.provider,
+          maximumNativeInput: execution.maximumNativeInput.toString(),
+          maximumAssetInput: execution.maximumAssetInput.toString(),
+          priceGuardState:
+            execution.kind !== 3
+              ? "not-required"
+              : execution.priceGuard !== zeroAddress &&
+                  execution.runtimeVerified
+                ? "verified"
+                : "unavailable",
+          adapterRuntimeHash: /^0x0+$/.test(execution.adapterRuntimeHash)
+            ? null
+            : execution.adapterRuntimeHash,
+          quoteExpiry: null,
+          lastSuccessfulExecution: null,
+          disabledReason: reasonText(execution.disabledReason),
         };
       } catch {
         const ready = fallback?.ready === true;
