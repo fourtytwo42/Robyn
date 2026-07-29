@@ -1040,6 +1040,16 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: corrected schema-12 contracts from source commit `6aeb889` are
+  freshly deployed on Robinhood Testnet from block `94989079`. The deployment
+  preflight covered 112 transactions, 25 percent headroom, and the 0.0015 ETH
+  reserve; the live deployment completed and the independent verifier passed
+  409 checks with zero failures. The deployer retains
+  6,013,769,276,274,349 wei. Commit the new manifest, rebuild the application
+  against a fresh database from this block, and start a wholly new campaign ID.
+  Never replay the 1,569 confirmed hashes from invalidated campaign
+  `schema12-assurance-360744d-01`.
+
 - 2026-07-29: schema-12 campaign `schema12-assurance-360744d-01` is
   invalidated after exposing a deterministic Testnet pinned-adapter defect.
   Funding, eight launches, the full trading phase, and part of conversion
@@ -2726,6 +2736,23 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-29 - Corrected schema-12 Testnet deployment verified
+
+- Result: source commit `6aeb889efa14163e50cbbca54989bdeb0068bbcd`
+  deployed a fresh schema-12 stack at block `94989079`.
+- Preflight: the exact-commit rehearsal covered 112 transactions and
+  92,339,027 execution gas. The conservative cost with 25 percent headroom plus
+  the 0.0015 ETH reserve was 2,782,234,207,591,120 wei against
+  7,595,252,746,274,349 wei available.
+- Verification: the independent live verifier passed 409 runtime, role, route,
+  phase, stream, accounting, and manifest checks with zero failures. The
+  deployer balance after deployment is 6,013,769,276,274,349 wei.
+- Evidence:
+  `/home/hendo420/robyn-evidence/schema12-mainnet-go/fresh-6aeb889/`.
+- Follow-up: commit the generated manifest, build and promote an immutable
+  application release backed by a fresh canonical-log database, then initialize
+  a new campaign. Do not import the invalidated campaign journal.
 
 ### 2026-07-29 - Schema-12 application promoted; campaign funding blocked
 
@@ -4825,11 +4852,10 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Fund schema-12 deployer `0xecc5d6d032ADc9ca9E0F4042128067b8366da17A`
-  with at least 0.013813112705417475 additional Robinhood Testnet ETH, then
-  rerun the unchanged `schema12-assurance-ad5b991` preflight. No campaign
-  transaction has been sent and coverage or the 0.0015 ETH reserve must not
-  be reduced.
+- Commit and promote the corrected schema-12 deployment manifest from block
+  `94989079`, rebuild an empty database from that block, and start a new
+  campaign ID. Recalculate the fixed workload funding requirement after
+  deployment; do not reduce coverage or the 0.0015 ETH reserve.
 - Observe `192.168.50.173:8547` through the planned capacity window. Its
   temporary execution stall self-recovered and the gateway now qualifies it as
   primary, but administrative SSH access is still needed for root-cause
