@@ -141,6 +141,57 @@ contract RobynSchema12AssetRouterTest is RobynV4NativeProtocolTest {
         assertEq(testWrappedNative.balanceOf(address(0xCAFE)), 1 ether);
     }
 
+    function testDeterministicTestnetProviderRouteSupportsPrefundedBidirectionalInventory() public {
+        TestnetPinnedExecutionAdapter deterministicAdapter = new TestnetPinnedExecutionAdapter(
+            address(assetRouter), address(basketAsset), address(testWrappedNative), address(0xCAFE), 2 ether
+        );
+        TestnetFixedRatePriceGuard deterministicGuard =
+            new TestnetFixedRatePriceGuard(address(basketAsset), address(testWrappedNative), 2 ether);
+        assetRouter.configureAdapterRoute(
+            address(basketAsset),
+            RobynV4AssetRouter.ExecutionRoute({
+                kind: RobynV4AssetRouter.RouteKind.PinnedAdapter,
+                adapter: address(deterministicAdapter),
+                priceGuard: address(deterministicGuard),
+                maximumNativeInput: 2 ether,
+                maximumAssetInput: 4 ether,
+                provider: keccak256("SCHEMA12_TESTNET_DETERMINISTIC"),
+                adapterRuntimeHash: address(deterministicAdapter).codehash,
+                priceGuardRuntimeHash: address(deterministicGuard).codehash,
+                disabledReason: bytes32(0),
+                enabled: true
+            })
+        );
+        basketAsset.transfer(address(deterministicAdapter), 10 ether);
+        testWrappedNative.deposit{value: 10 ether}();
+        testWrappedNative.transfer(address(deterministicAdapter), 10 ether);
+
+        (, bytes memory buyData) =
+            deterministicAdapter.quote(address(testWrappedNative), address(basketAsset), 1 ether, keccak256("buy"));
+        uint256 assetBefore = basketAsset.balanceOf(address(this));
+        uint256 assetOutput = assetRouter.swapExactNativeForAssetWithData{value: 1 ether}(
+            address(basketAsset), 2 ether, address(this), block.timestamp, buyData
+        );
+        assertEq(assetOutput, 2 ether);
+        assertEq(basketAsset.balanceOf(address(this)), assetBefore + 2 ether);
+        assertEq(testWrappedNative.balanceOf(address(deterministicAdapter)), 10 ether);
+        assertEq(basketAsset.balanceOf(address(deterministicAdapter)), 8 ether);
+
+        basketAsset.approve(address(assetRouter), 2 ether);
+        (, bytes memory sellData) =
+            deterministicAdapter.quote(address(basketAsset), address(testWrappedNative), 2 ether, keccak256("sell"));
+        uint256 nativeBefore = address(this).balance;
+        uint256 nativeOutput = assetRouter.swapExactAssetForNativeWithData(
+            address(basketAsset), 2 ether, 1 ether, payable(address(this)), block.timestamp, sellData
+        );
+        assertEq(nativeOutput, 1 ether);
+        assertEq(address(this).balance, nativeBefore + 1 ether);
+        assertEq(testWrappedNative.balanceOf(address(deterministicAdapter)), 9 ether);
+        assertEq(basketAsset.balanceOf(address(deterministicAdapter)), 8 ether);
+        assertEq(testWrappedNative.balanceOf(address(0xCAFE)), 1 ether);
+        assertEq(basketAsset.balanceOf(address(0xCAFE)), 2 ether);
+    }
+
     function testPinnedAdapterExecutesBothDirectionsAndClearsAllowance() public {
         _configureAdapterRoute();
         basketAsset.transfer(address(allowanceHolder), 4 ether);

@@ -1040,6 +1040,19 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: schema-12 campaign `schema12-assurance-360744d-01` is
+  invalidated after exposing a deterministic Testnet pinned-adapter defect.
+  Funding, eight launches, the full trading phase, and part of conversion
+  completed with 1,569 confirmed transactions and zero failed onchain
+  transactions. Launch 1 leg 2 then stopped before broadcast because the
+  prefunded adapter required its entire sell-token balance to equal the
+  current input, making bidirectional inventory unusable. The Testnet-only
+  adapter now requires at least the input and consumes exactly that input; a
+  focused bidirectional regression passes. Because contract bytecode changed,
+  archive every campaign hash, deploy a fresh schema-12 stack, and restart all
+  contract-dependent gates from zero. Never replay the preserved hashes.
+  Mainnet deployment remains unauthorized.
+
 - 2026-07-29: fresh schema-12 contracts from source commit `e4ba3ed7` remain
   active on Robinhood Testnet from block `94968004`. Exact application release
   `6d809660af9f1eaeb379e2e5183bf85a19006abd` is live, reproducible, and

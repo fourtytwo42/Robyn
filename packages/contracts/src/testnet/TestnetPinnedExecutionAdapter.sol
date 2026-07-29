@@ -88,7 +88,11 @@ contract TestnetPinnedExecutionAdapter is IRobynExecutionAdapter, ReentrancyGuar
 
         IERC20 sell = IERC20(sellToken);
         IERC20 buy = IERC20(buyToken);
-        if (sell.balanceOf(address(this)) != amountIn) revert InvalidAmount();
+        // The deterministic fixture is pre-funded with both sides so it can
+        // exercise the same adapter in both directions. Require the router's
+        // input to be present, consume exactly that input, and leave the
+        // remaining test inventory available for the opposite direction.
+        if (sell.balanceOf(address(this)) < amountIn) revert InvalidAmount();
         if (buy.balanceOf(address(this)) < amountOut) revert InsufficientInventory();
         sell.safeTransfer(inventorySink, amountIn);
         buy.safeTransfer(recipient, amountOut);
