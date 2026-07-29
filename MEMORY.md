@@ -931,6 +931,16 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: exact release `802ab77663f3dbb53ef0e850633a2c2d24860994`
+  is live and passes all 537 deployment checks, but inert run
+  `schema11-2h-802ab77-19` remains stopped because the warmed nine-launch idle
+  projection is about 253,800 CU/day, above the 250,000 limit. The dominant
+  source is the 5.5-second persisted head-observation poll, about 157,000
+  CU/day by itself. Change testnet and inherited mainnet PM2 policy to a
+  30-second observation interval while retaining filtered WebSocket wakes and
+  15-minute authoritative reconciliation. Promote and measure an exact release
+  before creating a new run ID. Run 19 submitted no transactions.
+
 - 2026-07-29: run `schema11-2h-fcc8359-18` is preserved as failed after
   1,200.404 healthy seconds and 51 confirmed transactions. Creator funding,
   launch creation, stream claims, buy/transfer, governance proposal, and the
@@ -2510,6 +2520,24 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-29 - Thirty-second head observation is the CU correction
+
+- The warmed nine-launch aggregate on exact release `802ab776` is about
+  253,800 CU/day: indexer about 165,600, keeper 78,816, and protocol audit
+  9,408. Queues are empty, the deep audit is fresh, and no Multicall fallback
+  occurred.
+- The explicit testnet PM2 `INDEXER_HEARTBEAT_MS=5500` generates roughly
+  157,000 CU/day from `eth_blockNumber` alone. This is redundant for prompt
+  processing because filtered WebSocket events remain the wake signal and a
+  full HTTP reconciliation still runs every 15 minutes.
+- Decision: use a 30-second persisted head observation for both the testnet
+  topology and the mainnet topology inherited from it. Keep the 120-second
+  stale-head alert unchanged. This changes liveness sampling only, not event
+  processing, canonical authority, financial jobs, or reconciliation coverage.
+- Run `schema11-2h-802ab77-19` remains static and stopped with no submitted
+  transactions. A new exact release and run ID are required after the CU gate
+  passes.
 
 ### 2026-07-29 - Endurance alert now measures head freshness
 
