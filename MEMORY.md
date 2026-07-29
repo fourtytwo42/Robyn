@@ -1,5 +1,22 @@
 # Project Memory
 
+### 2026-07-29 - Lifecycle complete; recovery fixture corrected
+
+- Context: Campaign `schema12-assurance-0bad303-03` completed all ten phases
+  with 2,173 confirmed transactions and zero failed transactions. Claims, fill,
+  and sweep completed through the LAN-primary loopback gateway. The
+  post-campaign live verifier passed 409 checks with zero lag and empty keeper
+  queues. Exact release `7815cf9713658f8d09f1a1f0e67ba95e34788ecf` is live.
+- Result: Recovery run `schema12-7815cf9-final-01` proved encrypted backup,
+  isolated PostgreSQL, Redis, MinIO, and IPFS restore, plus PM2 and native
+  service recovery. It stopped before RPC interruption drills because pnpm
+  attempted a write inside the immutable release.
+- Decision: `scripts/schema12-recovery-gate.sh` invokes the installed Vitest
+  binary directly. Focused recovery and gateway tests pass.
+- Follow-up: Commit, push, rebuild, promote, rerun recovery under a new ID,
+  then start a new uninterrupted two-hour endurance run only after every
+  preflight gate passes.
+
 ### 2026-07-29 - Campaign claims reconcile canonical keeper settlement races
 
 - Context: Resuming `schema12-assurance-0bad303-03` after governance reached

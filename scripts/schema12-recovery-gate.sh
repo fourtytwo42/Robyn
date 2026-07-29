@@ -328,7 +328,10 @@ for service in redis-server postgresql minio robyn-ipfs nginx; do
   wait_healthy "systemd-${service}"
 done
 
-(cd "${release}" && runuser -u hendo420 -- env PATH="/opt/node-v24.18.0-linux-x64/bin:${PATH}" pnpm --filter @robyn/rpc-gateway test) >"${evidence}/rpc-gateway-integration-fixture.txt"
+(cd "${release}" && runuser -u hendo420 -- \
+  ./apps/rpc-gateway/node_modules/.bin/vitest run \
+  apps/rpc-gateway/test --no-file-parallelism) \
+  >"${evidence}/rpc-gateway-integration-fixture.txt"
 
 block_endpoint 192.168.50.117 8547
 wait_gateway lan-interrupted '.status=="degraded" and .activeProvider=="fallback" and .primary.healthy==false and .fallback.healthy==true'
