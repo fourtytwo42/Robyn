@@ -42,7 +42,7 @@ export const robinhoodTestnet = defineChain({
       url: publicEnvironment.explorerUrl,
     },
   },
-  iconUrl: "/assets/brand/sherwood-crest.webp",
+  iconUrl: "/assets/brand/sherwood-hood.webp",
   testnet: publicEnvironment.isTestnet,
 });
 

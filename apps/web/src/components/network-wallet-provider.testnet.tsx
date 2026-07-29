@@ -36,7 +36,7 @@ const config = getDefaultConfig({
   appName: "Sherwood Forest",
   appDescription: "Launch tokens with holder-selected reward baskets.",
   appUrl,
-  appIcon: `${appUrl.replace(/\/$/, "")}/assets/brand/sherwood-crest.webp`,
+  appIcon: `${appUrl.replace(/\/$/, "")}/assets/brand/sherwood-hood.webp`,
   projectId,
   chains: [robinhoodTestnet],
   transports: {

@@ -1,5 +1,26 @@
 # Project Memory
 
+### 2026-07-29 - Ceremonial hood is the canonical site and RDAO artwork
+
+- Context: The user selected the first Ironwood variation, the faceless
+  ceremonial green hood with a round gold clasp, as the Sherwood Forest icon.
+- Decision: Use one canonical source for the header mark, wallet application
+  icon, Next.js icon and Apple icon, multi-size favicon, and RDAO token
+  presentation. RDAO has no onchain image field, so its stable public image is
+  `/assets/brand/rdao-token.png` with a WebP UI derivative.
+- Files: `apps/web/public/assets/brand/sherwood-hood.{png,webp}`,
+  `apps/web/public/assets/brand/rdao-token.{png,webp}`,
+  `apps/web/src/app/{icon.png,apple-icon.png,favicon.ico}`,
+  `apps/web/src/app/layout.tsx`, `apps/web/src/app/dao/page.tsx`,
+  `apps/web/src/app/dao.css`, `apps/web/src/components/site-header.tsx`,
+  `network-wallet-provider.testnet.tsx`, and `robyn-testnet-wallet.ts`.
+- Verification: The favicon contains PNG-backed 16, 32, 48, and 64 pixel
+  entries. All 57 web tests, lint, strict typecheck, and the production Next.js
+  build pass.
+- Follow-up: Commit and push the exact source, build and promote an immutable
+  Testnet release, then verify the public header, favicon, DAO token image, and
+  responsive DAO layout in the in-app browser.
+
 ### 2026-07-29 - Keeper writes require a post-simulation gas margin
 
 - Context: After the keeper was funded and its 27 audited jobs returned to the

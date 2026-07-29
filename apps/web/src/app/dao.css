@@ -5,6 +5,16 @@
 .dao-hero {
   max-width: 920px;
   margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: 144px minmax(0, 1fr);
+  align-items: center;
+  gap: 1.5rem;
+}
+.dao-token-image {
+  width: 144px;
+  height: 144px;
+  border-radius: 28px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.32);
 }
 .dao-hero h1 {
   max-width: 820px;
@@ -315,6 +325,13 @@
   }
   .dao-hero {
     margin-bottom: 1.1rem;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 0.9rem;
+  }
+  .dao-token-image {
+    width: 88px;
+    height: 88px;
+    border-radius: 19px;
   }
   .dao-hero h1 {
     font-size: clamp(2rem, 10vw, 3rem);
