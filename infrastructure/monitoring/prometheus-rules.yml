@@ -126,6 +126,54 @@ groups:
           summary: "Sherwood Forest public RPC required retries"
           description: "{{ $value }} degraded pipeline cycles were recorded in two minutes."
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
+      - alert: RobynTestnetLanRpcUnavailable
+        expr: robyn_testnet_rpc_up{provider="lan"} == 0
+        for: 1m
+        labels:
+          {
+            severity: warning,
+            chain_id: "46630",
+            component: rpc-gateway,
+            launch: all,
+            asset: all,
+            runbook: indexer-lag,
+          }
+        annotations:
+          summary: "Sherwood Forest is using the paid testnet RPC fallback"
+          description: "The LAN testnet RPC is unreachable, on the wrong chain, or outside the accepted head-lag boundary."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
+      - alert: RobynTestnetPaidRpcUnavailable
+        expr: robyn_testnet_rpc_up{provider="alchemy"} == 0
+        for: 1m
+        labels:
+          {
+            severity: critical,
+            chain_id: "46630",
+            component: rpc-gateway,
+            launch: all,
+            asset: all,
+            runbook: indexer-lag,
+          }
+        annotations:
+          summary: "Sherwood Forest paid testnet RPC fallback is unavailable"
+          description: "The Alchemy comparison and failover endpoint failed its chain or head probe."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
+      - alert: RobynTestnetLanRpcBehind
+        expr: robyn_testnet_rpc_head_lag_blocks > 50
+        for: 1m
+        labels:
+          {
+            severity: warning,
+            chain_id: "46630",
+            component: rpc-gateway,
+            launch: all,
+            asset: all,
+            runbook: indexer-lag,
+          }
+        annotations:
+          summary: "Sherwood Forest LAN testnet RPC is behind"
+          description: "The LAN node is {{ $value }} blocks behind the paid comparison endpoint."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#indexer-lag"
       - alert: RobynTestnetAlchemyIdleBudget
         expr: robyn_testnet_rpc_projected_daily_cu > 250000
         for: 15m

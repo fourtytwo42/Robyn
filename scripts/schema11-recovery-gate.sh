@@ -18,6 +18,7 @@ ipfs_pid=""
 blocked_ips=()
 writers_quiesced=false
 writer_processes=(
+  robyn-rpc-gateway-testnet
   robyn-api-testnet
   robyn-indexer-testnet
   robyn-projector-testnet

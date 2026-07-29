@@ -192,19 +192,23 @@ cutover. Rotate credentials disclosed through chat and apply least-privilege
 provider restrictions before production activation.
 
 The canonical ingester uses a filtered `logs` WebSocket only as a low-latency
-wake signal. Testnet and future mainnet use separate protected Alchemy HTTP and
-WebSocket endpoints so the same provider behavior is exercised before
-production. `ROBYN_TESTNET_SERVER_RPC_URL`, `ROBYN_TESTNET_WS_RPC_URL`,
+wake signal. Testnet backend HTTP traffic enters a loopback failover gateway
+that prefers the LAN node at `192.168.50.117:8547`. The gateway compares the LAN
+head and chain ID with the protected Alchemy endpoint every 30 seconds and uses
+Alchemy when the LAN node is unreachable, on the wrong chain, or more than 50
+blocks behind. Two healthy probes within 10 blocks are required before traffic
+returns to LAN. `ROBYN_TESTNET_PRIMARY_RPC_URL`,
+`ROBYN_TESTNET_SERVER_RPC_URL`, `ROBYN_TESTNET_WS_RPC_URL`,
 `ROBYN_MAINNET_SERVER_RPC_URL` and `ROBYN_MAINNET_WS_RPC_URL` are server-only
 values and must never enter the web bundle. Every notification is debounced,
 and canonical ingestion still reads from the durable checkpoint through the
-observed head with HTTP `eth_getLogs`. A 30-second HTTP reconciliation runs even
-when the WebSocket is healthy, so disconnects, missed notifications, provider
-restarts and reorgs cannot create an index gap. After a WebSocket reconnect or
-address-filter change, the same checkpoint catch-up is authoritative. The
-current launch addresses are included in the filter and the subscription is
-rebuilt when a launch adds new addresses. If the WebSocket is unavailable, the
-ingester remains correct through reconciliation-only mode.
+observed head with HTTP `eth_getLogs`. A full HTTP reconciliation runs every 15
+minutes even when the WebSocket is healthy, while a 30-second head observation
+keeps liveness current. After a WebSocket reconnect or address-filter change,
+the same checkpoint catch-up is authoritative. The current launch addresses
+are included in the filter and the subscription is rebuilt when a launch adds
+new addresses. If the WebSocket is unavailable, the ingester remains correct
+through reconciliation-only mode.
 
 When mainnet is eventually authorized, load
 `infrastructure/pm2/ecosystem.mainnet.config.cjs`. It reuses the reviewed public

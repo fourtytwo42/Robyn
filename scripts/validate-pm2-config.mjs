@@ -19,6 +19,7 @@ const testnet = loadConfig("infrastructure/pm2/ecosystem.testnet.config.cjs", {
   ROBYN_TESTNET_MANIFEST: "/etc/robyn/testnet-validation.json",
   ROBYN_OPERATOR_KEY_FILE: "/etc/robyn/testnet-operator-key",
   ROBYN_TESTNET_AUTH_ORIGINS: "https://testnet.sherwoodforest.trade",
+  ROBYN_TESTNET_PRIMARY_RPC_URL: "http://192.0.2.20:8547",
   ROBYN_TESTNET_SERVER_RPC_URL: "http://192.0.2.10:8547",
   ROBYN_TESTNET_WS_RPC_URL: "wss://example.invalid/testnet",
 });
@@ -31,6 +32,7 @@ const minimums = new Map([
   ["robyn-keeper", 256],
   ["robyn-artifacts", 384],
   ["robyn-web-testnet", 512],
+  ["robyn-rpc-gateway-testnet", 256],
   ["robyn-api-testnet", 384],
   ["robyn-indexer-testnet", 384],
   ["robyn-projector-testnet", 384],
@@ -101,7 +103,7 @@ for (const name of minimums.keys()) {
   if (!names.has(name)) throw new Error(`reviewed PM2 app is missing: ${name}`);
 }
 
-const privateTestnetRpc = "http://192.0.2.10:8547";
+const privateTestnetRpc = "http://127.0.0.1:18547";
 for (const name of [
   "robyn-api-testnet",
   "robyn-indexer-testnet",
@@ -117,6 +119,22 @@ const testnetWeb = testnet.apps.find((app) => app.name === "robyn-web-testnet");
 if (testnetWeb?.env?.RPC_GATEWAY_HEALTH_URL !== privateTestnetRpc) {
   throw new Error("robyn-web-testnet health checks must use the server-only testnet RPC");
 }
+const testnetGateway = testnet.apps.find(
+  (app) => app.name === "robyn-rpc-gateway-testnet",
+);
+if (
+  testnetGateway?.env?.PRIMARY_RPC_URL !== "http://192.0.2.20:8547" ||
+  testnetGateway?.env?.FALLBACK_RPC_URL !== "http://192.0.2.10:8547" ||
+  testnetGateway?.env?.EXPECTED_CHAIN_ID !== "46630" ||
+  testnetGateway?.env?.RPC_PROBE_INTERVAL_MS !== "30000" ||
+  testnetGateway?.env?.RPC_MAX_HEAD_LAG_BLOCKS !== "50" ||
+  testnetGateway?.env?.RPC_RECOVERY_HEAD_LAG_BLOCKS !== "10" ||
+  testnetGateway?.env?.RPC_RECOVERY_CONSECUTIVE_PROBES !== "2"
+) {
+  throw new Error(
+    "robyn-rpc-gateway-testnet must use the reviewed LAN-primary failover policy",
+  );
+}
 
 delete require.cache[
   require.resolve(
@@ -126,6 +144,7 @@ delete require.cache[
 const mainnetHttpRpc = "https://example.invalid/mainnet";
 const mainnetWebSocketRpc = "wss://example.invalid/mainnet";
 const mainnet = loadConfig("infrastructure/pm2/ecosystem.mainnet.config.cjs", {
+  ROBYN_TESTNET_PRIMARY_RPC_URL: "",
   ROBYN_MAINNET_RELEASE_ROOT: "/opt/robyn/mainnet-releases/validation",
   ROBYN_MAINNET_MANIFEST: "/etc/robyn/mainnet-validation.json",
   ROBYN_MAINNET_SERVER_RPC_URL: mainnetHttpRpc,

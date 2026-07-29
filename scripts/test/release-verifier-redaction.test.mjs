@@ -26,3 +26,10 @@ test("release verification uses event-driven head liveness", () => {
 test("release verification pins the deployed heartbeat interval", () => {
   assert.match(verifier, /INDEXER_HEARTBEAT_MS[\s\S]{0,160}"30000"/);
 });
+
+test("release verification requires LAN primary with redacted Alchemy fallback", () => {
+  assert.match(verifier, /192\.168\.50\.117:8547/);
+  assert.match(verifier, /activeProvider/);
+  assert.match(verifier, /lan-primary-alchemy-failover/);
+  assert.doesNotMatch(verifier, /--arg fallbackRpcUrl/);
+});

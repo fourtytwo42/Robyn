@@ -10,6 +10,7 @@ Group=hendo420
 WorkingDirectory=/opt/robyn/testnet-current
 EnvironmentFile=/home/hendo420/.config/robyn/testnet/release.env
 EnvironmentFile=/etc/robyn/testnet-endurance.env
+Environment=ROBYN_TESTNET_BACKEND_RPC_URL=http://127.0.0.1:18547
 ExecStart=/opt/node-v24.18.0-linux-x64/bin/node /opt/robyn/testnet-current/scripts/testnet-endurance.mjs
 Restart=no
 NoNewPrivileges=true

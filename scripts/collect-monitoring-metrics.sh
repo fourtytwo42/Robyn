@@ -73,7 +73,7 @@ for process in robyn-web robyn-rpc-gateway robyn-api robyn-indexer robyn-keeper 
   metric "robyn_pm2_process_up{chain_id=\"31337\",component=\"${process}\",launch=\"all\",asset=\"all\"}" "${up}"
   metric "robyn_pm2_process_restarts{chain_id=\"31337\",component=\"${process}\"}" "${restarts}"
 done
-for process in robyn-web-testnet robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet robyn-artifacts-testnet; do
+for process in robyn-web-testnet robyn-rpc-gateway-testnet robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet robyn-artifacts-testnet; do
   status="$(jq -r --arg name "${process}" '.[] | select(.name==$name) | .pm2_env.status' <<<"${pm2_json}" 2>/dev/null | head -1)"
   restarts="$(jq -r --arg name "${process}" '.[] | select(.name==$name) | .pm2_env.restart_time' <<<"${pm2_json}" 2>/dev/null | head -1)"
   [[ "${status}" == "online" ]] && up=1 || up=0
@@ -155,8 +155,20 @@ testnet_protocol_daily_cu="$(json_get "${testnet_status_json}" '.protocol.projec
 testnet_protocol_monthly_cu="$(json_get "${testnet_status_json}" '.protocol.projectedMonthlyCu')"; [[ "${testnet_protocol_monthly_cu}" =~ ^[0-9]+$ ]] || testnet_protocol_monthly_cu=0
 testnet_indexer_daily_cu="$(json_get "${testnet_status_json}" '.indexerProjectedDailyCu')"; [[ "${testnet_indexer_daily_cu}" =~ ^[0-9]+$ ]] || testnet_indexer_daily_cu=0
 testnet_indexer_monthly_cu=$((testnet_indexer_daily_cu * 30))
-testnet_total_daily_cu=$((testnet_keeper_daily_cu + testnet_protocol_daily_cu + testnet_indexer_daily_cu))
-testnet_total_monthly_cu=$((testnet_keeper_monthly_cu + testnet_protocol_monthly_cu + testnet_indexer_monthly_cu))
+testnet_paid_daily_cu="$(json_get "${testnet_status_json}" '.rpcGateway.paidProjectedDailyCu')"
+testnet_paid_monthly_cu="$(json_get "${testnet_status_json}" '.rpcGateway.paidProjectedMonthlyCu')"
+if [[ "${testnet_paid_daily_cu}" =~ ^[0-9]+$ && "${testnet_paid_monthly_cu}" =~ ^[0-9]+$ ]]; then
+  testnet_total_daily_cu="${testnet_paid_daily_cu}"
+  testnet_total_monthly_cu="${testnet_paid_monthly_cu}"
+else
+  testnet_total_daily_cu=$((testnet_keeper_daily_cu + testnet_protocol_daily_cu + testnet_indexer_daily_cu))
+  testnet_total_monthly_cu=$((testnet_keeper_monthly_cu + testnet_protocol_monthly_cu + testnet_indexer_monthly_cu))
+fi
+[[ "$(json_get "${testnet_status_json}" '.rpcGateway.primary.healthy')" == "true" ]] && testnet_rpc_primary_up=1 || testnet_rpc_primary_up=0
+[[ "$(json_get "${testnet_status_json}" '.rpcGateway.fallback.healthy')" == "true" ]] && testnet_rpc_fallback_up=1 || testnet_rpc_fallback_up=0
+testnet_rpc_active="$(json_get "${testnet_status_json}" '.rpcGateway.activeProvider')"
+[[ "${testnet_rpc_active}" == "primary" ]] && testnet_rpc_primary_active=1 || testnet_rpc_primary_active=0
+testnet_rpc_head_lag="$(json_get "${testnet_status_json}" '.rpcGateway.headLagBlocks')"; [[ "${testnet_rpc_head_lag}" =~ ^[0-9]+$ ]] || testnet_rpc_head_lag=0
 testnet_ws_state="$(json_get "${testnet_status_json}" '.webSocketWake.state')"
 [[ "${testnet_ws_state}" == "subscribed" ]] && testnet_ws_up=1 || testnet_ws_up=0
 [[ "$(json_get "${testnet_status_json}" '.protocol.auditStatus')" == "ok" ]] && testnet_protocol_audit_up=1 || testnet_protocol_audit_up=0
@@ -168,6 +180,13 @@ printf '# HELP robyn_testnet_rpc_projected_daily_cu Combined projected daily Alc
 metric "robyn_testnet_rpc_projected_daily_cu{chain_id=\"46630\",component=\"backend\"}" "${testnet_total_daily_cu}"
 printf '# HELP robyn_testnet_rpc_projected_monthly_cu Combined projected monthly Alchemy compute units.\n# TYPE robyn_testnet_rpc_projected_monthly_cu gauge\n' >>"${tmp}"
 metric "robyn_testnet_rpc_projected_monthly_cu{chain_id=\"46630\",component=\"backend\"}" "${testnet_total_monthly_cu}"
+printf '# HELP robyn_testnet_rpc_up Whether each configured testnet RPC provider passed its latest chain and head probe.\n# TYPE robyn_testnet_rpc_up gauge\n' >>"${tmp}"
+metric "robyn_testnet_rpc_up{chain_id=\"46630\",component=\"rpc-gateway\",provider=\"lan\"}" "${testnet_rpc_primary_up}"
+metric "robyn_testnet_rpc_up{chain_id=\"46630\",component=\"rpc-gateway\",provider=\"alchemy\"}" "${testnet_rpc_fallback_up}"
+printf '# HELP robyn_testnet_rpc_primary_active Whether backend traffic is currently routed to the LAN primary.\n# TYPE robyn_testnet_rpc_primary_active gauge\n' >>"${tmp}"
+metric "robyn_testnet_rpc_primary_active{chain_id=\"46630\",component=\"rpc-gateway\"}" "${testnet_rpc_primary_active}"
+printf '# HELP robyn_testnet_rpc_head_lag_blocks LAN testnet RPC lag behind the paid comparison endpoint.\n# TYPE robyn_testnet_rpc_head_lag_blocks gauge\n' >>"${tmp}"
+metric "robyn_testnet_rpc_head_lag_blocks{chain_id=\"46630\",component=\"rpc-gateway\"}" "${testnet_rpc_head_lag}"
 printf '# HELP robyn_testnet_keeper_pending_scans Pending canonical token scan requests.\n# TYPE robyn_testnet_keeper_pending_scans gauge\n' >>"${tmp}"
 metric "robyn_testnet_keeper_pending_scans{chain_id=\"46630\",component=\"keeper\"}" "${testnet_keeper_pending_scans}"
 printf '# HELP robyn_testnet_websocket_wake_up Whether the filtered log WebSocket subscription is active.\n# TYPE robyn_testnet_websocket_wake_up gauge\n' >>"${tmp}"

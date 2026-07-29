@@ -2,6 +2,14 @@ export const ENDURANCE_DURATION_SECONDS = 2 * 60 * 60;
 export const isApprovedTestnetRpcUrl = (value) => {
   try {
     const url = new URL(value);
+    if (
+      url.protocol === "http:" &&
+      url.hostname === "127.0.0.1" &&
+      url.port === "18547" &&
+      url.pathname === "/"
+    ) {
+      return true;
+    }
     return (
       url.protocol === "https:" &&
       url.hostname === "robinhood-testnet.g.alchemy.com" &&

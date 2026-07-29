@@ -93,7 +93,9 @@ const manifestPath = resolve(
 const manifest = assertSecurityRemediationManifest(
   JSON.parse(readFileSync(manifestPath, "utf8")),
 );
-const rpcUrl = process.env.ROBYN_TESTNET_SERVER_RPC_URL;
+const rpcUrl =
+  process.env.ROBYN_TESTNET_BACKEND_RPC_URL ??
+  process.env.ROBYN_TESTNET_SERVER_RPC_URL;
 if (!isApprovedTestnetRpcUrl(rpcUrl)) {
   throw new Error("Endurance RPC is not an approved Robinhood Testnet endpoint");
 }
@@ -323,6 +325,12 @@ function saveState() {
         protocolEstimatedCu: status.protocol?.estimatedCu ?? null,
         protocolProjectedDailyCu: status.protocol?.projectedDailyCu ?? null,
         protocolProjectedMonthlyCu: status.protocol?.projectedMonthlyCu ?? null,
+        paidRpcProvider: status.rpcGateway?.activeProvider ?? null,
+        paidRpcActualCu: status.rpcGateway?.paidActualCu ?? null,
+        paidRpcProjectedDailyCu:
+          status.rpcGateway?.paidProjectedDailyCu ?? null,
+        paidRpcProjectedMonthlyCu:
+          status.rpcGateway?.paidProjectedMonthlyCu ?? null,
       }
     : null;
   atomicWrite(statePath, state);
@@ -2140,14 +2148,23 @@ async function sample({ readiness = false } = {}) {
         `ingestion lag p95 ${ingestionLagP95} blocks exceeds threshold`,
       );
     }
+    if (
+      status.rpcGateway &&
+      (status.rpcGateway.fresh !== true ||
+        status.rpcGateway.status === "unavailable")
+    ) {
+      failures.push("testnet RPC failover gateway is unavailable or stale");
+    }
     const projectedDailyCu =
-      Number(status.indexerProjectedDailyCu ?? 0) +
-      Number(status.keeperProjectedDailyIdleCu ?? 0) +
-      Number(status.protocol?.projectedDailyCu ?? 0);
+      status.rpcGateway?.paidProjectedDailyCu ??
+      (Number(status.indexerProjectedDailyCu ?? 0) +
+        Number(status.keeperProjectedDailyIdleCu ?? 0) +
+        Number(status.protocol?.projectedDailyCu ?? 0));
     const projectedMonthlyCu =
-      Number(status.indexerProjectedDailyCu ?? 0) * 30 +
-      Number(status.keeperProjectedMonthlyCu ?? 0) +
-      Number(status.protocol?.projectedMonthlyCu ?? 0);
+      status.rpcGateway?.paidProjectedMonthlyCu ??
+      (Number(status.indexerProjectedDailyCu ?? 0) * 30 +
+        Number(status.keeperProjectedMonthlyCu ?? 0) +
+        Number(status.protocol?.projectedMonthlyCu ?? 0));
     if (!Number.isFinite(projectedDailyCu) || projectedDailyCu > 250_000) {
       failures.push(`projected idle RPC use is ${projectedDailyCu} CU/day`);
     }

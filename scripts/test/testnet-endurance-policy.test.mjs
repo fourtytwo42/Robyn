@@ -87,10 +87,23 @@ test("approved testnet RPC policy requires protected Alchemy HTTPS", () => {
     false,
   );
   assert.equal(isApprovedTestnetRpcUrl("http://192.168.50.117:8547"), false);
+  assert.equal(isApprovedTestnetRpcUrl("http://127.0.0.1:18547"), true);
   assert.equal(
     isApprovedTestnetRpcUrl("https://attacker.invalid/v2/key"),
     false,
   );
+});
+
+test("endurance uses paid failover CU instead of LAN request-volume estimates", () => {
+  const source = readFileSync(
+    new URL("../testnet-endurance.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    source,
+    /status\.rpcGateway\?\.paidProjectedDailyCu[\s\S]{0,240}status\.indexerProjectedDailyCu/,
+  );
+  assert.match(source, /testnet RPC failover gateway is unavailable or stale/);
 });
 
 test("testnet endurance excludes explicitly mainnet-only alerts", () => {

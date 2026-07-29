@@ -233,12 +233,17 @@ rehearsal and is intentionally not repeatable against the same genesis market.
 
 ## Alchemy compute budget
 
-The protected testnet backend uses Alchemy HTTPS for canonical reads and a
-filtered-log WebSocket only as an ingestion wake signal. Browser RPC remains on
-the public keyless endpoint. Canonical HTTP logs, block hashes, and PostgreSQL
-checkpoints remain authoritative. In quiet periods, the canonical HTTP safety
-reconciliation runs every 15 minutes while heartbeat records continue every 10
-seconds. Canonical WebSocket notifications still wake ingestion immediately.
+The protected testnet backend uses a loopback failover gateway. The LAN node at
+`192.168.50.117:8547` is primary; protected Alchemy HTTPS is the paid comparison
+and fallback. The gateway compares chain ID and head every 30 seconds, fails
+over when LAN is unreachable, on the wrong chain, or more than 50 blocks
+behind, and requires two healthy comparisons within 10 blocks before recovery.
+The filtered Alchemy WebSocket remains only an ingestion wake signal. Browser
+RPC remains on the public keyless endpoint. Canonical HTTP logs, block hashes,
+and PostgreSQL checkpoints remain authoritative. In quiet periods, the
+canonical HTTP safety reconciliation runs every 15 minutes while persisted head
+observations run every 30 seconds. Canonical WebSocket notifications still wake
+ingestion immediately.
 
 The projector writes coalesced token-specific requests to
 `keeper_scan_requests` only when its canonical checkpoint commits. The keeper
@@ -256,9 +261,12 @@ keeper verify the standard Multicall3 runtime at
 `2756d7c52baee85cacb504f6ee1df7aad6809ac8d94a4a111d76991f90d36d6e`.
 A bounded individual-call fallback is allowed only after that runtime check.
 
-Operational budgets are 250,000 idle compute units per day and 30 million
-compute units per normal month. Prometheus alerts on either projection, a
-15-minute scan backlog, a stale protocol audit, or simultaneous WebSocket and
-HTTP-ingestion degradation. Provider keys are network-specific protected
-secrets and must never appear in Git, release evidence, logs, status responses,
-or browser bundles.
+Operational budgets are 250,000 paid compute units per idle day and 30 million
+paid compute units per normal month. The gateway reports comparison-probe and
+actual fallback CU separately; service-level request estimates remain
+diagnostic workload volume and are not counted as paid usage while LAN serves
+them. Prometheus alerts on either paid projection, LAN failure or lag, paid
+fallback failure, a 15-minute scan backlog, a stale protocol audit, or
+simultaneous WebSocket and HTTP-ingestion degradation. Provider keys are
+network-specific protected secrets and must never appear in Git, release
+evidence, logs, status responses, or browser bundles.

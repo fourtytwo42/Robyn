@@ -13,6 +13,9 @@ const rpcUrl =
   process.env.ROBYN_TESTNET_SERVER_RPC_URL ||
   process.env.ROBYN_TESTNET_RPC_URL ||
   "https://rpc.testnet.chain.robinhood.com";
+const primaryRpcUrl = process.env.ROBYN_TESTNET_PRIMARY_RPC_URL || "";
+const failoverEnabled = primaryRpcUrl.length > 0;
+const backendRpcUrl = failoverEnabled ? "http://127.0.0.1:18547" : rpcUrl;
 const wsRpcUrl = process.env.ROBYN_TESTNET_WS_RPC_URL || "";
 const operatorKeyFile = required("ROBYN_OPERATOR_KEY_FILE");
 const nodeBinary = "/opt/node-v24.18.0-linux-x64/bin/node";
@@ -22,6 +25,36 @@ const authOrigins =
 
 module.exports = {
   apps: [
+    ...(failoverEnabled
+      ? [
+          {
+            name: "robyn-rpc-gateway-testnet",
+            cwd: releaseRoot,
+            script: nodeBinary,
+            args: path.join(
+              releaseRoot,
+              "apps/rpc-gateway/dist/failover-server.js",
+            ),
+            env: {
+              NODE_ENV: "production",
+              HOST: "127.0.0.1",
+              PORT: "18547",
+              EXPECTED_CHAIN_ID: "46630",
+              PRIMARY_RPC_URL: primaryRpcUrl,
+              FALLBACK_RPC_URL: rpcUrl,
+              RPC_PROBE_INTERVAL_MS: "30000",
+              RPC_MAX_HEAD_LAG_BLOCKS: "50",
+              RPC_RECOVERY_HEAD_LAG_BLOCKS: "10",
+              RPC_RECOVERY_CONSECUTIVE_PROBES: "2",
+              RPC_UPSTREAM_TIMEOUT_MS: "15000",
+              RPC_STATUS_FILE: "/var/lib/robyn/testnet-rpc-gateway/status.json",
+            },
+            autorestart: true,
+            max_memory_restart: "256M",
+            time: true,
+          },
+        ]
+      : []),
     {
       name: "robyn-web-testnet",
       cwd: path.join(releaseRoot, "apps/web"),
@@ -34,7 +67,7 @@ module.exports = {
         CHAIN_ID: "46630",
         HOSTNAME: "127.0.0.1",
         ROBYN_RELEASE_SHA: releaseSha,
-        RPC_GATEWAY_HEALTH_URL: rpcUrl,
+        RPC_GATEWAY_HEALTH_URL: backendRpcUrl,
         DATA_API_STATUS_URL: "http://127.0.0.1:3111/status",
         DATA_API_URL: "http://127.0.0.1:3111",
         PORT: "3012",
@@ -60,7 +93,9 @@ module.exports = {
         ROBYN_AUTH_ORIGINS: authOrigins,
         API_CORS_ORIGIN: authOrigins,
         ROBYN_ARTIFACT_SERVICE_URL: "http://127.0.0.1:3210",
-        ROBYN_OPERATOR_RPC_URL: rpcUrl,
+        ROBYN_OPERATOR_RPC_URL: backendRpcUrl,
+        ROBYN_RPC_FAILOVER_STATUS_FILE:
+          "/var/lib/robyn/testnet-rpc-gateway/status.json",
         ROBYN_MANIFEST: manifest,
         ROBYN_RELEASE_SHA: releaseSha,
         ROBYN_PROTOCOL_AUDIT_INTERVAL_MS: "900000",
@@ -91,7 +126,7 @@ module.exports = {
       args: path.join(releaseRoot, "apps/indexer/dist/server.js"),
       env: {
         NODE_ENV: "production",
-        ROBYN_OPERATOR_RPC_URL: rpcUrl,
+        ROBYN_OPERATOR_RPC_URL: backendRpcUrl,
         ROBYN_OPERATOR_WS_RPC_URL: wsRpcUrl,
         ROBYN_MANIFEST: manifest,
         ROBYN_INDEXER_ROLE: "ingester",
@@ -119,7 +154,7 @@ module.exports = {
       args: path.join(releaseRoot, "apps/indexer/dist/server.js"),
       env: {
         NODE_ENV: "production",
-        ROBYN_OPERATOR_RPC_URL: rpcUrl,
+        ROBYN_OPERATOR_RPC_URL: backendRpcUrl,
         ROBYN_MANIFEST: manifest,
         ROBYN_INDEXER_ROLE: "projector",
         PROJECTOR_POLL_MS: "1000",
@@ -143,7 +178,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         ROBYN_ENV: "robinhood-testnet",
-        ROBYN_OPERATOR_RPC_URL: rpcUrl,
+        ROBYN_OPERATOR_RPC_URL: backendRpcUrl,
         ROBYN_OPERATOR_KEY_FILE: operatorKeyFile,
         ROBYN_MANIFEST: manifest,
         ROBYN_QUEUE_NAME: "robyn-conversions-testnet",

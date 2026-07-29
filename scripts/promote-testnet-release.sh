@@ -58,14 +58,17 @@ start_stack() {
   local selected="$1"
   local selected_database="$2"
   local pm2="$selected/node_modules/.bin/pm2"
-  for name in robyn-web-testnet robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet robyn-artifacts-testnet; do
+  for name in robyn-web-testnet robyn-rpc-gateway-testnet robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet robyn-artifacts-testnet; do
     as_operator "$pm2" delete "$name" >/dev/null 2>&1 || true
   done
   set -a
   # shellcheck disable=SC1090
   source "$release_env"
   set +a
+  install -d -o "$operator" -g "$operator" -m 0750 \
+    /var/lib/robyn/testnet-rpc-gateway
   as_operator env \
+    ROBYN_TESTNET_PRIMARY_RPC_URL="${ROBYN_TESTNET_PRIMARY_RPC_URL:-http://192.168.50.117:8547}" \
     ROBYN_TESTNET_SERVER_RPC_URL="${ROBYN_TESTNET_SERVER_RPC_URL:-https://rpc.testnet.chain.robinhood.com}" \
     ROBYN_TESTNET_WS_RPC_URL="${ROBYN_TESTNET_WS_RPC_URL:-}" \
     ROBYN_TESTNET_RELEASE_ROOT="$selected" \

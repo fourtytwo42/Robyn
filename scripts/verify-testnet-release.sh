@@ -12,8 +12,8 @@ jq -e '.schemaVersion == 11 and .chainId == 46630' "$manifest" >/dev/null
 
 pm2_json="$(PM2_HOME=/home/hendo420/.pm2 "$release_real/node_modules/.bin/pm2" jlist)"
 testnet="$(jq '[.[]|select(.name|endswith("-testnet"))]' <<<"$pm2_json")"
-[[ "$(jq length <<<"$testnet")" -eq 6 ]]
-[[ "$(jq '[.[]|select(.pm2_env.status=="online")]|length' <<<"$testnet")" -eq 6 ]]
+[[ "$(jq length <<<"$testnet")" -eq 7 ]]
+[[ "$(jq '[.[]|select(.pm2_env.status=="online")]|length' <<<"$testnet")" -eq 7 ]]
 [[ "$(jq --arg root "$release_real" '[.[]|select((.name=="robyn-web-testnet" and .pm2_env.pm_cwd!=($root+"/apps/web")) or (.name!="robyn-web-testnet" and .pm2_env.pm_cwd!=$root))]|length' <<<"$testnet")" -eq 0 ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_INDEXER_ROLE' <<<"$testnet")" == "ingester" ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-projector-testnet")|.pm2_env.env.ROBYN_INDEXER_ROLE' <<<"$testnet")" == "projector" ]]
@@ -24,10 +24,23 @@ indexer_ws_url="$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env
 [[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_WS_DEBOUNCE_MS' <<<"$testnet")" == "500" ]]
 
 server_rpc_url="$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_OPERATOR_RPC_URL' <<<"$testnet")"
-[[ "$server_rpc_url" == https://robinhood-testnet.g.alchemy.com/v2/* ]]
+[[ "$server_rpc_url" == "http://127.0.0.1:18547" ]]
 for process_name in robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet; do
   [[ "$(jq -r --arg name "$process_name" '.[]|select(.name==$name)|.pm2_env.env.ROBYN_OPERATOR_RPC_URL' <<<"$testnet")" == "$server_rpc_url" ]]
 done
+primary_rpc_url="$(jq -r '.[]|select(.name=="robyn-rpc-gateway-testnet")|.pm2_env.env.PRIMARY_RPC_URL' <<<"$testnet")"
+fallback_rpc_url="$(jq -r '.[]|select(.name=="robyn-rpc-gateway-testnet")|.pm2_env.env.FALLBACK_RPC_URL' <<<"$testnet")"
+[[ "$primary_rpc_url" == "http://192.168.50.117:8547" ]]
+[[ "$fallback_rpc_url" == https://robinhood-testnet.g.alchemy.com/v2/* ]]
+[[ "$(jq -r '.[]|select(.name=="robyn-rpc-gateway-testnet")|.pm2_env.env.EXPECTED_CHAIN_ID' <<<"$testnet")" == "46630" ]]
+[[ "$(jq -r '.[]|select(.name=="robyn-rpc-gateway-testnet")|.pm2_env.env.RPC_PROBE_INTERVAL_MS' <<<"$testnet")" == "30000" ]]
+gateway_health="$(curl -fsS http://127.0.0.1:18547/health)"
+[[ "$(jq -r .expectedChainId <<<"$gateway_health")" -eq 46630 ]]
+[[ "$(jq -r .activeProvider <<<"$gateway_health")" == "primary" ]]
+[[ "$(jq -r .primary.healthy <<<"$gateway_health")" == "true" ]]
+[[ "$(jq -r .fallback.healthy <<<"$gateway_health")" == "true" ]]
+[[ "$(jq -r .headLagBlocks <<<"$gateway_health")" -le 50 ]]
+[[ "$(jq -r .paidProjectedDailyCu <<<"$gateway_health")" -le 250000 ]]
 
 database="$(
   jq -r \
@@ -93,14 +106,15 @@ jq -n \
   --arg verifiedAt "$(date -u +%FT%TZ)" \
   --arg releasePath "$release_real" \
   --arg gitSha "$git_sha" \
-  --arg serverRpcProvider "alchemy-robinhood-testnet" \
+  --arg serverRpcProvider "lan-primary-alchemy-failover" \
   --arg database "$database" \
   --argjson activeDatabaseIndexers "$(
     printf '%s\n' "${active_database_indexers[@]}" |
       jq -Rsc 'split("\n")|map(select(length>0))'
   )" \
+  --argjson gatewayHealth "$gateway_health" \
   --argjson status "$status" \
   --argjson publicStatus "$public_status" \
   --argjson verifierChecks "$(jq '.checks|length' /tmp/robyn-testnet-deployment-verify.json)" \
-  '{verifiedAt:$verifiedAt,releasePath:$releasePath,gitSha:$gitSha,serverRpcProvider:$serverRpcProvider,database:$database,activeDatabaseIndexers:$activeDatabaseIndexers,status:$status,publicStatus:$publicStatus,verifierChecks:$verifierChecks}'
+  '{verifiedAt:$verifiedAt,releasePath:$releasePath,gitSha:$gitSha,serverRpcProvider:$serverRpcProvider,database:$database,activeDatabaseIndexers:$activeDatabaseIndexers,gatewayHealth:$gatewayHealth,status:$status,publicStatus:$publicStatus,verifierChecks:$verifierChecks}'
 rm -f /tmp/robyn-testnet-deployment-verify.json

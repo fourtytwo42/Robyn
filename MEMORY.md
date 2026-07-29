@@ -931,6 +931,18 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: the product owner changed the testnet RPC policy before the
+  two-hour run. Backend HTTP must use the synchronized LAN testnet node at
+  `192.168.50.117:8547` as primary and protected Alchemy as comparison and
+  failover. The new loopback gateway verifies chain `46630` and both heads every
+  30 seconds, fails over for transport failure, wrong chain, or more than 50
+  blocks of LAN lag, and returns after two probes within 10 blocks. Filtered
+  Alchemy WebSocket wakes and 15-minute canonical reconciliation remain.
+  Focused tests, the complete repository suite, a real LAN-primary smoke, and a
+  forced-unreachable-primary Alchemy smoke pass. Endurance remains stopped;
+  commit, reproduce, promote, perform live failover/recovery, and measure paid
+  CU before creating a new run ID.
+
 - 2026-07-29: exact release `802ab77663f3dbb53ef0e850633a2c2d24860994`
   is live and passes all 537 deployment checks, but inert run
   `schema11-2h-802ab77-19` remains stopped because the warmed nine-launch idle
@@ -2520,6 +2532,28 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-29 - LAN-primary testnet RPC with paid failover
+
+- Decision: all protected testnet HTTP consumers and the endurance runner use
+  `http://127.0.0.1:18547`. The loopback-only gateway uses
+  `ROBYN_TESTNET_PRIMARY_RPC_URL` for `192.168.50.117:8547` and
+  `ROBYN_TESTNET_SERVER_RPC_URL` for protected Alchemy. Browser RPC remains
+  keyless and the canonical ingester retains its filtered Alchemy WebSocket.
+- Policy: compare chain ID and head every 30 seconds; select Alchemy when LAN is
+  unreachable, returns another chain, or trails by more than 50 blocks; require
+  two consecutive comparisons within 10 blocks before returning to LAN.
+- Accounting: service RPC estimates remain request-volume diagnostics. Paid CU
+  is the gateway's Alchemy comparison-probe plus actual fallback traffic.
+  Healthy LAN-primary smoke projected 57,600 paid CU/day and 1,728,000/month.
+- Verification: 19 gateway tests, 65 API tests, 22 indexer tests, 26 release
+  and endurance policy tests, Prometheus rule validation, and the complete
+  repository suite pass. A real primary smoke saw both providers at block
+  94,795,073 with zero lag. A separate unreachable-primary smoke served chain
+  `46630` from Alchemy.
+- Run `schema11-2h-802ab77-19` remains inert with zero submitted
+  transactions. No endurance run may start until an exact promoted release
+  passes live failover and recovery plus paid-CU preflight.
 
 ### 2026-07-29 - Thirty-second head observation is the CU correction
 

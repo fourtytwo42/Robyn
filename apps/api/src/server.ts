@@ -75,6 +75,8 @@ if (allowedOrigins.size === 0)
 const artifactServiceUrl =
   process.env.ROBYN_ARTIFACT_SERVICE_URL ?? "http://127.0.0.1:3200";
 const ipfsApiUrl = process.env.ROBYN_IPFS_API_URL ?? "http://127.0.0.1:5001";
+const rpcFailoverStatusFile =
+  process.env.ROBYN_RPC_FAILOVER_STATUS_FILE?.trim() || null;
 const rpcClient = createPublicClient({
   transport: http(
     process.env.ROBYN_OPERATOR_RPC_URL ?? "http://127.0.0.1:8545",
@@ -1494,24 +1496,75 @@ async function persistedProtocolState() {
   };
 }
 
+async function rpcFailoverState() {
+  if (!rpcFailoverStatusFile) return null;
+  try {
+    const snapshot = JSON.parse(
+      await readFile(rpcFailoverStatusFile, "utf8"),
+    ) as {
+      expectedChainId?: number;
+      activeProvider?: "primary" | "fallback";
+      status?: "ok" | "degraded" | "unavailable";
+      headLagBlocks?: string | null;
+      paidActualCu?: number;
+      paidProbeCu?: number;
+      paidFallbackCu?: number;
+      paidProjectedDailyCu?: number;
+      paidProjectedMonthlyCu?: number;
+      updatedAt?: string;
+      primary?: { healthy?: boolean; head?: string | null };
+      fallback?: { healthy?: boolean; head?: string | null };
+    };
+    const updatedAtMs = Date.parse(snapshot.updatedAt ?? "");
+    const fresh =
+      Number.isFinite(updatedAtMs) && Date.now() - updatedAtMs <= 120_000;
+    return {
+      ...snapshot,
+      fresh,
+      status:
+        fresh && snapshot.expectedChainId === chainId
+          ? snapshot.status
+          : "unavailable",
+    };
+  } catch {
+    return {
+      expectedChainId: chainId,
+      activeProvider: null,
+      status: "unavailable",
+      fresh: false,
+      headLagBlocks: null,
+      paidActualCu: null,
+      paidProbeCu: null,
+      paidFallbackCu: null,
+      paidProjectedDailyCu: null,
+      paidProjectedMonthlyCu: null,
+      updatedAt: null,
+      primary: { healthy: false, head: null },
+      fallback: { healthy: false, head: null },
+    };
+  }
+}
+
 app.get("/status", async () => {
-  const [state, counts, keeper, artifact, protocol] = await Promise.all([
-    freshness(),
-    sql.unsafe<
-      {
-        launches: string;
-        logs: string;
-        king_awards: string;
-        current_king: string | null;
-      }[]
-    >(
-      "SELECT (SELECT count(*)::text FROM launches WHERE chain_id=$1) launches,(SELECT count(*)::text FROM raw_logs WHERE chain_id=$1) logs,(SELECT count(*)::text FROM king_of_forest_awards WHERE chain_id=$1) king_awards,(SELECT token FROM king_of_forest_awards WHERE chain_id=$1 ORDER BY awarded_block DESC,awarded_transaction_index DESC,awarded_log_index DESC,token DESC LIMIT 1) current_king",
-      [chainId],
-    ),
-    keeperState(),
-    artifactState(),
-    persistedProtocolState(),
-  ]);
+  const [state, counts, keeper, artifact, protocol, rpcGateway] =
+    await Promise.all([
+      freshness(),
+      sql.unsafe<
+        {
+          launches: string;
+          logs: string;
+          king_awards: string;
+          current_king: string | null;
+        }[]
+      >(
+        "SELECT (SELECT count(*)::text FROM launches WHERE chain_id=$1) launches,(SELECT count(*)::text FROM raw_logs WHERE chain_id=$1) logs,(SELECT count(*)::text FROM king_of_forest_awards WHERE chain_id=$1) king_awards,(SELECT token FROM king_of_forest_awards WHERE chain_id=$1 ORDER BY awarded_block DESC,awarded_transaction_index DESC,awarded_log_index DESC,token DESC LIMIT 1) current_king",
+        [chainId],
+      ),
+      keeperState(),
+      artifactState(),
+      persistedProtocolState(),
+      rpcFailoverState(),
+    ]);
   return {
     service: "robyn-api",
     chainId,
@@ -1521,6 +1574,7 @@ app.get("/status", async () => {
     kingOfForestAwardCount: counts[0]?.king_awards ?? "0",
     currentKingOfForest: counts[0]?.current_king ?? null,
     formulaVersion: "native-v1",
+    rpcGateway,
     protocol,
     ...keeper,
     ...artifact,
