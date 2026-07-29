@@ -56,3 +56,12 @@ export function keeperHeartbeatHealthy(input: {
     input.operatorBalance >= input.minimumOperatorBalance
   );
 }
+
+export function operatorBalanceProjectedDailyCu(refreshMs: number): number {
+  if (!Number.isFinite(refreshMs) || refreshMs < 60_000) {
+    throw new Error(
+      "Keeper operator balance refresh must be at least 60 seconds",
+    );
+  }
+  return Math.round((20 * 86_400_000) / refreshMs);
+}

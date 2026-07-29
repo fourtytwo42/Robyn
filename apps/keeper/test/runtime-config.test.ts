@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   databaseText,
   keeperHeartbeatHealthy,
+  operatorBalanceProjectedDailyCu,
   redisConnectionOptions,
   transactionAccount,
 } from "../src/runtime-config.js";
@@ -70,5 +71,13 @@ describe("keeper runtime configuration", () => {
         minimumOperatorBalance: 250n,
       }),
     ).toBe(false);
+  });
+
+  it("projects bounded operator-balance polling cost", () => {
+    expect(operatorBalanceProjectedDailyCu(60_000)).toBe(28_800);
+    expect(operatorBalanceProjectedDailyCu(300_000)).toBe(5_760);
+    expect(() => operatorBalanceProjectedDailyCu(59_999)).toThrow(
+      "at least 60 seconds",
+    );
   });
 });

@@ -35,6 +35,7 @@ import {
 import {
   databaseText,
   keeperHeartbeatHealthy,
+  operatorBalanceProjectedDailyCu,
   redisConnectionOptions,
   transactionAccount,
 } from "./runtime-config.js";
@@ -225,6 +226,11 @@ const scanMs = Number(
 );
 const requestPollMs = Number(process.env.KEEPER_REQUEST_POLL_MS ?? "1000");
 const heartbeatMs = Number(process.env.KEEPER_HEARTBEAT_MS ?? "10000");
+const operatorBalanceRefreshMs = Number(
+  process.env.KEEPER_OPERATOR_BALANCE_REFRESH_MS ??
+    (isRemoteChain ? "300000" : "60000"),
+);
+operatorBalanceProjectedDailyCu(operatorBalanceRefreshMs);
 if (isRemoteChain && scanMs < 60_000) {
   throw new Error(
     "Remote-chain keeper reconciliation must be at least 60 seconds",
@@ -256,6 +262,21 @@ let lastFullReconciliationAt: string | null = null;
 let lastEventScanAt: string | null = null;
 let cachedOperatorBalance = 0n;
 let operatorBalanceReadAt = 0;
+
+async function refreshOperatorBalance(maximumAgeMs: number) {
+  const now = Date.now();
+  if (
+    operatorBalanceReadAt !== 0 &&
+    now - operatorBalanceReadAt < maximumAgeMs
+  ) {
+    return;
+  }
+  cachedOperatorBalance = await publicClient.getBalance({
+    address: operator as Address,
+  });
+  estimatedComputeUnits += 20;
+  operatorBalanceReadAt = now;
+}
 
 const multicall3Abi = [
   {
@@ -853,7 +874,6 @@ async function audit(
 }
 
 async function heartbeat() {
-  const now = Date.now();
   const [counts, scanRequests] = await Promise.all([
     queue.getJobCounts("waiting", "active", "delayed", "failed"),
     sql.unsafe<{ status: string; count: string }[]>(
@@ -861,13 +881,7 @@ async function heartbeat() {
       [manifest.chainId],
     ),
   ]);
-  if (now - operatorBalanceReadAt >= 60_000 || operatorBalanceReadAt === 0) {
-    cachedOperatorBalance = await publicClient.getBalance({
-      address: operator as Address,
-    });
-    estimatedComputeUnits += 20;
-    operatorBalanceReadAt = now;
-  }
+  await refreshOperatorBalance(operatorBalanceRefreshMs);
   const healthy = keeperHeartbeatHealthy({
     failedJobs: counts.failed ?? 0,
     operatorBalance: cachedOperatorBalance,
@@ -883,7 +897,7 @@ async function heartbeat() {
           fullScanEstimatedComputeUnits,
           fullScanCount,
           scanMs,
-        ) + Math.round((20 * 86_400_000) / 60_000);
+        ) + operatorBalanceProjectedDailyCu(operatorBalanceRefreshMs);
   await sql.unsafe(
     "INSERT INTO service_heartbeats (service,status,metadata) VALUES ('conversion-keeper',$1,$2::jsonb) ON CONFLICT (service) DO UPDATE SET status=EXCLUDED.status,metadata=EXCLUDED.metadata,updated_at=now()",
     [
@@ -896,6 +910,11 @@ async function heartbeat() {
         operator,
         operatorBalanceWei: cachedOperatorBalance.toString(),
         minimumOperatorBalanceWei: minimumOperatorBalance.toString(),
+        operatorBalanceRefreshMs,
+        operatorBalanceReadAt:
+          operatorBalanceReadAt === 0
+            ? null
+            : new Date(operatorBalanceReadAt).toISOString(),
         rpcProvider: isRemoteChain ? "alchemy" : "local",
         rpcRequestsByMethod: {
           eth_call: Math.floor(estimatedComputeUnits / 26),
@@ -2629,6 +2648,10 @@ async function processProtocolConversion(
 async function processKeeperJob(
   job: Job<KeeperJob, KeeperResult>,
 ): Promise<KeeperResult> {
+  await refreshOperatorBalance(60_000);
+  if (cachedOperatorBalance < minimumOperatorBalance) {
+    throw new Error("Keeper operator balance is below its safety floor");
+  }
   const activeTokens = await activeLaunchTokens();
   if (!jobBelongsToActiveDeployment(job.data.token, activeTokens)) {
     return {

@@ -1,5 +1,25 @@
 # Project Memory
 
+### 2026-07-29 - Keeper balance safety uses activity-aware polling
+
+- Context: Exact promoted release `9c17b77` passed all 537 checks, but its
+  first four-launch scheduled reconciliation projected 78,144 keeper idle
+  CU/day. Combined with indexer and protocol audit usage, the live total was
+  about 253,091 CU/day, above the 250,000 hard gate. The keeper spent 28,800
+  CU/day polling an unchanged operator balance every minute while idle.
+- Decision: Refresh the cached operator balance every five minutes while idle,
+  but force a refresh no older than one minute before processing any financial
+  job and fail closed below the safety floor. Include refresh interval and
+  timestamp in protected health metadata and calculate idle CU from the actual
+  interval.
+- Files: `apps/keeper/src/server.ts`,
+  `apps/keeper/src/runtime-config.ts`, and
+  `apps/keeper/test/runtime-config.test.ts`.
+- Commands/tests: Keeper lint, TypeScript build, all 31 keeper tests, formatting,
+  and `git diff --check` pass.
+- Follow-up: Commit, reproducibly rebuild, promote, and measure the live
+  four-launch aggregate below 250,000 CU/day before starting endurance.
+
 ### 2026-07-28 - Endurance API latency gate excludes page-render latency
 
 - Context: Fresh run `schema11-2h-b28b2db-12` passed funding and readiness,
@@ -878,6 +898,12 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: promoted `9c17b77` passed all 537 checks but remains ineligible
+  for endurance because four-launch idle usage projected about 253,091 CU/day.
+  The keeper fix reduces idle operator-balance polling from one minute to five
+  minutes while retaining a forced balance refresh no older than one minute
+  before financial jobs. Tests pass, but this fix is not yet committed,
+  rebuilt, or promoted. Endurance remains stopped.
 - 2026-07-28: run `schema11-2h-b28b2db-12` is preserved as a zero-credit
   failed run with 18 confirmed transactions and one fresh launch. The
   deployment, workload, accounting, process, lag, resource, and CU checks
@@ -2415,9 +2441,13 @@ Durable project context lives here. Update this file whenever information should
 - Run `schema11-2h-b28b2db-12` failed closed at zero credited time after 18
   confirmed transactions because page and API timings were incorrectly
   combined. The static service is stopped and the evidence remains durable.
-- The corrected runner has focused tests passing but is not yet committed,
-  pushed, built, or promoted. A replacement run must use a new ID, salts,
-  launches, and full two-hour clock.
+- The corrected runner is committed, reproducibly built, pushed, and promoted
+  as exact application release `9c17b77`. A replacement run must use a new ID,
+  salts, launches, and full two-hour clock.
+- Exact application release `9c17b77` now serves the corrected latency runner,
+  but its four-launch aggregate idle CU projection exceeds the hard gate.
+  Activity-aware keeper balance polling is implemented and tested but not yet
+  promoted.
 
 ### 2026-07-28 - One-hour pull-claim rewards candidate
 
@@ -3603,6 +3633,12 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-29: `9c17b77` passed reproducibility, immutable build, promotion, and
+  all 537 deployment checks. Live four-launch status remained fully solvent
+  with zero conservation mismatches and Multicall fallback, but projected
+  about 253,091 CU/day. The activity-aware keeper-balance polling correction
+  passes keeper lint, build, formatting, `git diff --check`, and all 31 keeper
+  tests.
 - 2026-07-28: exact release `b28b2db` passed reproducibility, promotion, all
   537 live deployment checks, router and reward conservation, zero Multicall
   fallback, and a measured aggregate idle projection of 241,187 CU/day.
@@ -4235,6 +4271,9 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Promote and measure the activity-aware keeper balance polling correction;
+  do not install a fresh endurance run unless the four-launch live total is
+  below 250,000 CU/day.
 - Commit and promote the API-only endurance latency correction, then run a
   fresh two-hour attempt under a new run ID without replaying any transaction
   from `schema11-2h-b28b2db-12`.
