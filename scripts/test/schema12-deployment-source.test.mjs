@@ -15,6 +15,12 @@ test("schema-12 deployment creates fresh v4 mock assets and preserves nonce stat
   assert.match(source, /official_asset_routes='\[\]'/);
   assert.doesNotMatch(source, /seed_tx="\$\(\s*send_transaction/);
   assert.match(source, /seed_tx="\$LAST_TRANSACTION_HASH"/);
+  assert.ok(
+    source.includes(
+      `"$(jq -r '.gitCommit' "$gas_evidence")" == "$(git rev-parse HEAD)"`,
+    ),
+  );
+  assert.match(source, /'\.transactionCount' "\$gas_evidence"\)" -ge 97/);
 });
 
 test("schema-12 provider route encodes a bytes32 disabled reason", () => {

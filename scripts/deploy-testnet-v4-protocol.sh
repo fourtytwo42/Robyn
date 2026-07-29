@@ -68,9 +68,12 @@ else
   }
   gas_evidence="${ROBYN_TESTNET_V4_GAS_EVIDENCE:-}"
   [[ -f "$gas_evidence" && "$(jq -r '.chainId' "$gas_evidence")" == "46630" &&
+     "$(jq -r '.gitCommit' "$gas_evidence")" == "$(git rev-parse HEAD)" &&
      "$(jq -r '.headroomBps' "$gas_evidence")" -ge 2500 &&
+     "$(jq -r '.reserveWei' "$gas_evidence")" -ge 1500000000000000 &&
+     "$(jq -r '.transactionCount' "$gas_evidence")" -ge 97 &&
      "$(jq -r '.sufficientBalance' "$gas_evidence")" == "true" ]] || {
-    echo "Reviewed chain-46630 gas evidence with 25% headroom is required" >&2
+    echo "Exact-commit chain-46630 gas evidence covering all transactions, 25% headroom, and the reserve is required" >&2
     exit 1
   }
   deployer="$(cast wallet address --keystore "$keystore" --password-file "$password_file")"
