@@ -721,7 +721,7 @@ function campaignFundingTargets() {
     targetByIndex.set(index, 100_000_000_000_000n);
   }
   for (let index = 40; index < 48; index += 1) {
-    targetByIndex.set(index, 500_000_000_000_000n);
+    targetByIndex.set(index, 750_000_000_000_000n);
   }
   targetByIndex.set(96, 700_000_000_000_000n);
   targetByIndex.set(97, 700_000_000_000_000n);

@@ -346,6 +346,10 @@ test("funding preflight and execution share all required campaign wallet targets
     "utf8",
   );
   assert.equal(source.match(/campaignFundingTargets\(\)/g)?.length, 3);
+  assert.match(
+    source,
+    /for \(let index = 40; index < 48; index \+= 1\) \{\s*targetByIndex\.set\(index, 750_000_000_000_000n\);/,
+  );
   for (const [index, amount] of [
     [96, "700_000_000_000_000n"],
     [97, "700_000_000_000_000n"],

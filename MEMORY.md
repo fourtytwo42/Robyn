@@ -931,6 +931,15 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: pre-clock run `schema11-2h-4028308-17` is preserved with seven
+  confirmed setup transfers and no submitted launch. The first creator wallet
+  retained the old 0.0005 ETH funding floor, but the new 100 percent execution
+  gas limit required 0.000649634496 ETH for launch submission. Viem rejected
+  the transaction locally for insufficient funds, so no failed onchain launch
+  exists. Raise only endurance creator indices 40 through 47 to a 0.00075 ETH
+  target, preserve the global reserve, promote an exact release, and use a new
+  run ID.
+
 - 2026-07-29: run `schema11-2h-7a69457-16` is preserved as failed after
   600.226 healthy seconds, 23 confirmed transactions, and one submitted failed
   transfer. The transfer receipt used exactly its 308,301 gas limit; repeating
@@ -2520,6 +2529,20 @@ Durable project context lives here. Update this file whenever information should
   fixed campaign plus 0.0015 ETH reserve.
 - Follow-up: test, commit, push, reproducibly build and promote the exact
   runner, then create a new run ID, salts, launches, and uninterrupted clock.
+
+### 2026-07-29 - Endurance creator funding follows the hardened gas limit
+
+- Run `schema11-2h-4028308-17` passed funding and readiness but stopped before
+  its first launch submission because creator index 40 had exactly 0.0005 ETH
+  while the doubled launch gas limit required 0.000649634496 ETH.
+- Decision: fund only the eight scheduled creator wallets, indices 40 through
+  47, to 0.00075 ETH. Do not increase all 100 actor balances. The protected
+  project wallet must still preserve the fixed workload value and 0.0015 ETH
+  reserve.
+- Result: seven confirmed setup transfers are preserved; no launch hash was
+  submitted and no contract or application state changed.
+- Follow-up: rerun funding tests and protected preflight, promote an exact
+  release, and start a new run ID.
 
 ### 2026-07-28 - Final endurance retry requires an exact rebuilt runner
 
@@ -4369,6 +4392,9 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Promote targeted 0.00075 ETH funding for creator indices 40 through 47, then
+  start a new run ID. Never reuse pre-clock run
+  `schema11-2h-4028308-17` or its seven setup hashes.
 - Promote the 100 percent transaction execution-gas headroom correction and
   start only a fresh run ID. Never replay the 23 confirmed hashes or submitted
   failed transfer from `schema11-2h-7a69457-16`.
