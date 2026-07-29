@@ -35,7 +35,7 @@ import {ITestPositionManager} from "./RobynV4NativeProtocol.t.sol";
 
 /// @notice No-broadcast security-remediated rehearsal on a Robinhood mainnet fork.
 /// @dev Uses canonical chain-4663 v4 contracts and rejects synthetic production routes.
-contract RobinhoodMainnetSchema11ForkTest is Test {
+contract RobinhoodMainnetSchema12ForkTest is Test {
     using PoolIdLibrary for PoolKey;
 
     IPoolManager private constant POOL_MANAGER = IPoolManager(0x8366a39CC670B4001A1121B8F6A443A643e40951);
@@ -44,7 +44,11 @@ contract RobinhoodMainnetSchema11ForkTest is Test {
     IV4Quoter private constant QUOTER = IV4Quoter(0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94);
     IStateView private constant STATE_VIEW = IStateView(0xF3334192D15450CdD385c8B70e03f9A6bD9E673b);
     IAllowanceTransfer private constant PERMIT2 = IAllowanceTransfer(0x000000000022D473030F116dDEE9F6B43aC78BA3);
-    address private constant AAPL = 0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9;
+    address private constant GOOGL = 0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3;
+    address private constant MSFT = 0xe93237C50D904957Cf27E7B1133b510C669c2e74;
+    address private constant NVDA = 0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC;
+    address private constant SPCX = 0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa;
+    address private constant SPY = 0x117cc2133c37B721F49dE2A7a74833232B3B4C0C;
     IWrappedNative private constant WETH = IWrappedNative(0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73);
     address payable private treasury;
     address private guardian;
@@ -73,6 +77,7 @@ contract RobinhoodMainnetSchema11ForkTest is Test {
         require(treasury != address(0xBEEF) && guardian != address(0xCAFE), "placeholder roles");
         vm.deal(address(this), 100 ether);
         _deployProductionProtocol();
+        _exerciseRequiredCoreRoutes();
 
         uint256 treasuryBefore = treasury.balance;
         (RobynLaunchToken token, RobynNativeBasketVaultV2 vault, RobynV4BondingCurveMarket market) =
@@ -120,10 +125,14 @@ contract RobinhoodMainnetSchema11ForkTest is Test {
         feeRouter.settleDaoFees(feeRouter.totalDaoNativeLiability());
         feeRouter.settleTreasuryFees(feeRouter.totalTreasuryNativeLiability());
 
-        uint256 pendingBasket = vault.totalPendingNative();
-        assertGt(pendingBasket, 0);
-        (uint256 basketQuote,) = assetRouter.quoteNativeToAsset(AAPL, uint128(pendingBasket));
-        vault.convertLeg(0, pendingBasket, (basketQuote * 99) / 100, block.timestamp);
+        for (uint256 index; index < 3; ++index) {
+            RobynNativeBasketVaultV2.BasketLeg memory leg = vault.leg(index);
+            assertGt(leg.pendingNative, 0);
+            RobynV4AssetRouter.RouteStatus memory status = assetRouter.routeStatus(address(leg.asset));
+            uint256 amount = leg.pendingNative > status.maximumNativeInput ? status.maximumNativeInput : leg.pendingNative;
+            (uint256 basketQuote,) = assetRouter.quoteNativeToAsset(address(leg.asset), uint128(amount));
+            vault.convertLeg(index, amount, (basketQuote * 99) / 100, block.timestamp);
+        }
         vm.warp(block.timestamp + 1 hours);
         assertGt(token.claimAll(), 0);
 
@@ -148,14 +157,21 @@ contract RobinhoodMainnetSchema11ForkTest is Test {
             0xc873e135dc9aaec88489cfbad146b4cb49d6a32e0d80326377784b7ba17670b2
         );
         assertEq(keccak256(address(QUOTER).code), 0xd707b1da8cb165e5ea35a3b4450d971eb562ec171e23492aa117036b78a868f6);
-        assertGt(AAPL.code.length, 0);
-        assertEq(IERC20Metadata(AAPL).decimals(), 18);
-        assertEq(keccak256(bytes(IERC20Metadata(AAPL).symbol())), keccak256(bytes("AAPL")));
+        assertGt(GOOGL.code.length, 0);
+        assertEq(IERC20Metadata(GOOGL).decimals(), 18);
+        assertEq(keccak256(bytes(IERC20Metadata(GOOGL).symbol())), keccak256(bytes("GOOGL")));
+        assertEq(keccak256(bytes(IERC20Metadata(MSFT).symbol())), keccak256(bytes("MSFT")));
+        assertEq(keccak256(bytes(IERC20Metadata(NVDA).symbol())), keccak256(bytes("NVDA")));
+        assertEq(keccak256(bytes(IERC20Metadata(SPCX).symbol())), keccak256(bytes("SPCX")));
+        assertEq(keccak256(bytes(IERC20Metadata(SPY).symbol())), keccak256(bytes("SPY")));
     }
 
     function _deployProductionProtocol() private {
         assetRouter = new RobynV4AssetRouter(POOL_MANAGER, QUOTER, STATE_VIEW, address(this), guardian, WETH);
-        _configureProductionAaplRoute();
+        _configureRequiredCoreRoutes();
+        assetRouter.configureWrappedNativeRoute(
+            0.5 ether, keccak256("ROBINHOOD_MAINNET_DIRECT_WETH"), true
+        );
 
         RobynNativeLaunchDeployerV4 launchDeployer = new RobynNativeLaunchDeployerV4();
         RobynNativeVaultDeployerV4 vaultDeployer = new RobynNativeVaultDeployerV4();
@@ -219,24 +235,35 @@ contract RobinhoodMainnetSchema11ForkTest is Test {
         daoToken.bindRewardDepositor(address(feeRouter));
     }
 
-    function _configureProductionAaplRoute() private {
+    function _configureRequiredCoreRoutes() private {
+        _configureProductionStockRoute(GOOGL, 0.5 ether);
+        _configureProductionStockRoute(MSFT, 0.5 ether);
+        _configureProductionStockRoute(NVDA, 0.5 ether);
+        _configureProductionStockRoute(SPCX, 0.5 ether);
+        _configureProductionStockRoute(SPY, 0.1 ether);
+    }
+
+    function _configureProductionStockRoute(address asset, uint128 maximumNativeInput) private {
         PoolKey memory key = PoolKey({
             currency0: Currency.wrap(address(0)),
-            currency1: Currency.wrap(AAPL),
+            currency1: Currency.wrap(asset),
             fee: 10_000,
             tickSpacing: 200,
             hooks: IHooks(address(0))
         });
         (uint160 sqrtPriceX96, int24 tick,,) = STATE_VIEW.getSlot0(key.toId());
-        require(sqrtPriceX96 != 0 && STATE_VIEW.getLiquidity(key.toId()) != 0, "AAPL production route unavailable");
+        require(
+            sqrtPriceX96 != 0 && STATE_VIEW.getLiquidity(key.toId()) != 0,
+            "GOOGL production route unavailable"
+        );
         assetRouter.configureRoute(
-            AAPL,
+            asset,
             RobynV4AssetRouter.Route({
                 fee: 10_000,
                 tickSpacing: 200,
                 hooks: IHooks(address(0)),
                 minimumLiquidity: 1,
-                maximumNativeInput: 0.5 ether,
+                maximumNativeInput: maximumNativeInput,
                 referenceTick: tick,
                 maximumReferenceTickDeviation: 198,
                 enforceReferencePrice: true,
@@ -244,13 +271,46 @@ contract RobinhoodMainnetSchema11ForkTest is Test {
                 enabled: true
             })
         );
-        assertTrue(assetRouter.routeStatus(AAPL).ready);
+        assertTrue(assetRouter.routeStatus(asset).ready);
+    }
+
+    function _exerciseRequiredCoreRoutes() private {
+        address[5] memory stocks = [GOOGL, MSFT, NVDA, SPCX, SPY];
+        for (uint256 index; index < stocks.length; ++index) {
+            address asset = stocks[index];
+            uint128 nativeInput = 0.000001 ether;
+            (uint256 quoted,) = assetRouter.quoteNativeToAsset(asset, nativeInput);
+            uint256 before = IERC20Metadata(asset).balanceOf(address(this));
+            uint256 received = assetRouter.swapExactNativeForAsset{value: nativeInput}(
+                asset, (quoted * 99) / 100, address(this), block.timestamp
+            );
+            assertEq(IERC20Metadata(asset).balanceOf(address(this)) - before, received);
+            uint128 sellAmount = uint128(received / 2);
+            IERC20Metadata(asset).approve(address(assetRouter), sellAmount);
+            (uint256 nativeQuote,) = assetRouter.quoteAssetToNative(asset, sellAmount);
+            assertGt(
+                assetRouter.swapExactAssetForNative(
+                    asset, sellAmount, (nativeQuote * 99) / 100, payable(address(this)), block.timestamp
+                ),
+                0
+            );
+        }
+        uint256 wrapped = assetRouter.swapExactNativeForAsset{value: 0.000001 ether}(
+            address(WETH), 0.000001 ether, address(this), block.timestamp
+        );
+        WETH.approve(address(assetRouter), wrapped);
+        assertEq(
+            assetRouter.swapExactAssetForNative(
+                address(WETH), uint128(wrapped), wrapped, payable(address(this)), block.timestamp
+            ),
+            wrapped
+        );
     }
 
     function _deployHook() private returns (RobynV4FeeAndPhaseHook deployed) {
         uint160 flags = Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_DONATE_FLAG
             | Hooks.AFTER_INITIALIZE_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
-        bytes32 domain = keccak256("sherwood-schema11-mainnet-fork");
+        bytes32 domain = keccak256("sherwood-schema12-mainnet-fork");
         (address predicted, bytes32 salt) = HookMiner.find(
             address(this),
             flags,
@@ -264,10 +324,14 @@ contract RobinhoodMainnetSchema11ForkTest is Test {
     }
 
     function _request(bytes32 salt) private pure returns (RobynNativeLaunchFactoryV4.LaunchRequest memory request) {
-        address[] memory assets = new address[](1);
-        assets[0] = AAPL;
-        uint16[] memory weights = new uint16[](1);
-        weights[0] = 10_000;
+        address[] memory assets = new address[](3);
+        assets[0] = GOOGL;
+        assets[1] = MSFT;
+        assets[2] = NVDA;
+        uint16[] memory weights = new uint16[](3);
+        weights[0] = 3_334;
+        weights[1] = 3_333;
+        weights[2] = 3_333;
         request = RobynNativeLaunchFactoryV4.LaunchRequest({
             name: "Sherwood Mainnet Fork",
             symbol: "SMF",

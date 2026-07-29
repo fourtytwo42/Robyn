@@ -4777,6 +4777,36 @@ When sources conflict, use this order:
   with 25 percent headroom and preserve the 0.0015 ETH reserve before any fresh
   schema-12 deployment.
 
+### 2026-07-29 - Schema-12 release, endurance, and Mainnet rehearsal tooling
+
+- Context: The remaining active assurance tools still assumed schema 11 and a
+  24-asset catalog after the schema-12 router implementation.
+- Decision: Release verification, live smoke, the two-hour endurance runner,
+  and the Mainnet rehearsal now use the 11-candidate policy. Optional Mainnet
+  assets fail closed without blocking required-core qualification.
+- Files: `scripts/verify-testnet-release.sh`,
+  `scripts/smoke-testnet-v4-protocol.sh`,
+  `scripts/testnet-endurance*.mjs`,
+  `config/protocol/robinhood-mainnet-rehearsal.json`,
+  `scripts/lib/mainnet-rehearsal.mjs`,
+  `scripts/verify-mainnet-production-routes.mjs`, and
+  `packages/contracts/test/RobinhoodMainnetSchema12Fork.t.sol`.
+- Commands/tests: All 62 script tests pass. Full Foundry run passes 235 tests
+  with zero failures and one intentionally skipped protected Mainnet fork test.
+  Smoke and release scripts pass syntax and ShellCheck.
+- Result: The rehearsal requires the five required stock pools plus direct
+  WETH, production Timelock, exact 2-of-3 Safe owners, valid RDAO allocation,
+  protected 0x commercial credentials, and deployment-block runtime
+  verification. The fork lifecycle deploys schema-12 locally, executes all
+  required core routes bidirectionally, graduates a three-asset launch, converts
+  all three basket legs, settles fees, and claims one-hour rewards. Provider
+  candidates remain disabled until both live provider quotes and a pinned
+  independent onchain guard pass.
+- Follow-up: Run the explicit 256-run/depth-128 invariant campaign and remaining
+  static/security gates. The protected Mainnet fork cannot pass until production
+  Safe signers, Timelock, RDAO allocation, provider credentials, and a pinned
+  fork RPC are supplied. No Mainnet deployment is authorized.
+
 ## Do Not Forget
 
 - Read `AGENTS.md` and `MEMORY.md` before making future changes in this workspace.

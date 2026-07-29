@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 12,
   "environment": "robinhood-mainnet-fork-rehearsal",
   "chainId": 4663,
   "sources": {
@@ -71,10 +71,19 @@
     "treasuryPolicy": "newly-deployed-production-timelock",
     "treasuryEnvironmentVariable": "ROBYN_MAINNET_TREASURY",
     "guardianEnvironmentVariable": "ROBYN_MAINNET_GUARDIAN",
+    "guardianSignersFileEnvironmentVariable": "ROBYN_MAINNET_GUARDIAN_SIGNERS",
     "daoAllocationFileEnvironmentVariable": "ROBYN_MAINNET_RDAO_ALLOCATION"
   },
   "supportPolicy": "config/protocol/robinhood-mainnet-support-policy.json",
-  "assetCatalog": "config/assets/robinhood-testnet-curated.json",
-  "expectedStockAssetCount": 23,
-  "includeWethRoute": true
+  "expectedCandidateCount": 11,
+  "requiredSymbols": ["GOOGL", "MSFT", "NVDA", "SPCX", "SPY", "WETH"],
+  "optionalSymbols": ["GME", "USDG", "USDe", "DEGEN", "ARROW"],
+  "provider": {
+    "id": "0x-allowance-holder",
+    "chainId": 4663,
+    "quoteEndpoint": "https://api.0x.org/swap/allowance-holder/quote",
+    "apiVersion": "v2",
+    "maximumSlippageBps": 100,
+    "requireIndependentOnchainPriceGuard": true
+  }
 }

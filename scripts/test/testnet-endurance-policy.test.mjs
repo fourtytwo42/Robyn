@@ -264,9 +264,9 @@ test("terminal curve buy is bounded by the immutable market cap", () => {
   );
 });
 
-test("final endurance coverage requires the schema-11 two-hour lifecycle", () => {
+test("final endurance coverage requires the schema-12 two-hour lifecycle", () => {
   const assets = Array.from(
-    { length: 24 },
+    { length: 11 },
     (_, index) => `0x${index.toString(16).padStart(40, "0")}`,
   );
   const requiredLabels = [
@@ -302,7 +302,10 @@ test("final endurance coverage requires the schema-11 two-hour lifecycle", () =>
   const complete = {
     requiredRewardAssets: assets,
     enduranceLaunches: Array.from({ length: 8 }, (_, index) => ({
-      assets: assets.slice(index * 3, index * 3 + 3),
+      assets: Array.from(
+        { length: 3 },
+        (_, offset) => assets[(index * 3 + offset) % assets.length],
+      ),
     })),
     transactions: [
       { label: "endurance-graduate-0-a" },

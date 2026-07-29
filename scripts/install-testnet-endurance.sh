@@ -5,9 +5,9 @@ run_id="${1:?usage: install-testnet-endurance.sh RUN_ID}"
 [[ "$run_id" =~ ^[a-z0-9][a-z0-9-]{2,63}$ ]]
 repo="${ROBYN_REPO:-/opt/robyn/testnet-current}"
 campaign_root="${ROBYN_CAMPAIGN_ROOT:?set ROBYN_CAMPAIGN_ROOT to the protected remediation campaign directory}"
-campaign_state="${ROBYN_CAMPAIGN_STATE:?set ROBYN_CAMPAIGN_STATE to the schema-11 endurance identity directory}"
+campaign_state="${ROBYN_CAMPAIGN_STATE:?set ROBYN_CAMPAIGN_STATE to the schema-12 endurance identity directory}"
 [[ "$(realpath "$repo")" == /opt/robyn/testnet-releases/* ]] || { echo "repo must resolve to an immutable testnet release" >&2; exit 1; }
-[[ -f "$campaign_state/state.json" && -f "$campaign_state/encrypted-root.json" ]] || { echo "schema-11 endurance identity is incomplete" >&2; exit 1; }
+[[ -f "$campaign_state/state.json" && -f "$campaign_state/encrypted-root.json" ]] || { echo "schema-12 endurance identity is incomplete" >&2; exit 1; }
 output=/var/lib/robyn/testnet-endurance
 run_dir="$output/$run_id"
 install -d -o hendo420 -g hendo420 -m 0700 "$output" "$run_dir"

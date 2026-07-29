@@ -309,7 +309,7 @@ function saveState() {
     state.enduranceLaunches.flatMap((launch) => launch.assets ?? []).map((asset) => asset.toLowerCase()),
   );
   state.coverage = {
-    requiredRewardAssetCount: 24,
+    requiredRewardAssetCount: 11,
     coveredRewardAssetCount: coveredAssets.size,
     launchCount: state.enduranceLaunches.length,
     graduatedLaunchCount: state.transactions.filter((entry) => entry.label.startsWith("endurance-graduate-")).length,
@@ -545,7 +545,7 @@ async function prepareMetadata(account, index) {
       mediaId: media.body.data.media_id,
       name,
       symbol,
-      description: `Automated two-hour schema-11 endurance launch ${index + 1}.`,
+      description: `Automated two-hour schema-12 endurance launch ${index + 1}.`,
       campaignId: runId,
       releaseSha: releaseManifest.gitSha,
     }),
@@ -647,7 +647,11 @@ async function createEnduranceLaunch(index) {
   if (state.enduranceLaunches.some((launch) => launch.index === index)) return;
   const account = accounts[40 + index];
   const metadata = await prepareMetadata(account, index);
-  const routes = manifest.assetRoutes.slice(index * 3, index * 3 + 3);
+  const routes = Array.from(
+    { length: 3 },
+    (_, offset) =>
+      manifest.assetRoutes[(index * 3 + offset) % manifest.assetRoutes.length],
+  );
   const request = {
     name: metadata.name,
     symbol: metadata.symbol,

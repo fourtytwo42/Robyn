@@ -207,11 +207,11 @@ export function enduranceCoverageFailures(state) {
       .map((asset) => asset.toLowerCase()),
   );
   if (
-    requiredAssets.size !== 24 ||
-    coveredAssets.size !== 24 ||
+    requiredAssets.size !== 11 ||
+    coveredAssets.size !== 11 ||
     [...requiredAssets].some((asset) => !coveredAssets.has(asset))
   ) {
-    failures.push("the complete 24-asset reward catalog was not covered");
+    failures.push("the complete 11-asset schema-12 reward catalog was not covered");
   }
   for (const [prefix, description] of [
     ["endurance-v4-buy-", "post-graduation v4 buy"],

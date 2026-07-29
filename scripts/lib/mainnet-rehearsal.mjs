@@ -27,9 +27,9 @@ export function poolIdForRoute(asset, route) {
   );
 }
 
-export function validateMainnetRehearsalConfig(config, curatedCatalog) {
+export function validateMainnetRehearsalConfig(config, supportPolicy) {
   const failures = [];
-  if (config?.schemaVersion !== 1)
+  if (config?.schemaVersion !== 12)
     failures.push("unsupported rehearsal schema");
   if (config?.chainId !== 4663)
     failures.push("rehearsal chain ID must be 4663");
@@ -53,11 +53,12 @@ export function validateMainnetRehearsalConfig(config, curatedCatalog) {
       failures.push(`invalid ${name} runtime hash`);
     }
   }
-  const assets = curatedCatalog?.assets ?? [];
-  if (assets.length !== config?.expectedStockAssetCount) {
-    failures.push(
-      "the frozen Stock Token catalog must contain exactly 23 assets",
-    );
+  if (supportPolicy?.schemaVersion !== 12 || supportPolicy?.chainId !== 4663) {
+    failures.push("support policy must be schema 12 on chain 4663");
+  }
+  const assets = supportPolicy?.candidates ?? [];
+  if (assets.length !== config?.expectedCandidateCount || assets.length !== 11) {
+    failures.push("the support policy must contain exactly 11 candidates");
   }
   const symbols = new Set();
   const addresses = new Set();
@@ -67,7 +68,7 @@ export function validateMainnetRehearsalConfig(config, curatedCatalog) {
     }
     symbols.add(asset.symbol);
     try {
-      const address = getAddress(asset.mainnetAddress);
+      const address = getAddress(asset.address);
       const normalized = address.toLowerCase();
       if (addresses.has(normalized))
         failures.push("duplicate mainnet asset address");
@@ -76,8 +77,42 @@ export function validateMainnetRehearsalConfig(config, curatedCatalog) {
       failures.push(`invalid mainnet address for ${asset.symbol ?? "unknown"}`);
     }
   }
-  if (!config?.includeWethRoute)
-    failures.push("the production WETH route is missing");
+  const requiredSymbols = assets.filter((asset) => asset.required).map((asset) => asset.symbol);
+  const optionalSymbols = assets.filter((asset) => !asset.required).map((asset) => asset.symbol);
+  if (JSON.stringify(requiredSymbols) !== JSON.stringify(config?.requiredSymbols)) {
+    failures.push("required asset symbols do not match the support policy");
+  }
+  if (JSON.stringify(optionalSymbols) !== JSON.stringify(config?.optionalSymbols)) {
+    failures.push("optional asset symbols do not match the support policy");
+  }
+  const executionClasses = new Set(
+    assets.map((asset) => asset.executionClass),
+  );
+  for (const requiredClass of [
+    "canonical-v4-single-hop",
+    "direct-native-wrap",
+    "pinned-execution-adapter",
+  ]) {
+    if (!executionClasses.has(requiredClass)) {
+      failures.push(`missing ${requiredClass} candidate`);
+    }
+  }
+  const weth = assets.find((asset) => asset.symbol === "WETH");
+  if (
+    !weth ||
+    weth.executionClass !== "direct-native-wrap" ||
+    getAddress(weth.address) !== getAddress(config?.venue?.weth?.address ?? zeroAddress)
+  ) {
+    failures.push("the production WETH route is missing or inconsistent");
+  }
+  if (
+    config?.provider?.id !== "0x-allowance-holder" ||
+    config?.provider?.chainId !== 4663 ||
+    config?.provider?.apiVersion !== "v2" ||
+    config?.provider?.requireIndependentOnchainPriceGuard !== true
+  ) {
+    failures.push("the pinned-adapter provider policy is incomplete");
+  }
   if (Number(config?.route?.fee) !== 10_000) {
     failures.push("route fee must be 1 percent");
   }
@@ -102,17 +137,15 @@ export function validateMainnetRehearsalConfig(config, curatedCatalog) {
   return failures;
 }
 
-export function intendedMainnetAssets(config, curatedCatalog) {
-  return [
-    ...(curatedCatalog.assets ?? []).map((asset) => ({
-      symbol: asset.symbol,
-      address: getAddress(asset.mainnetAddress),
-      kind: "robinhood-stock-token",
-    })),
-    {
-      symbol: "WETH",
-      address: getAddress(config.venue.weth.address),
-      kind: "canonical-weth",
-    },
-  ];
+export function intendedMainnetAssets(config, supportPolicy) {
+  validateMainnetRehearsalConfig(config, supportPolicy);
+  return (supportPolicy.candidates ?? []).map((asset) => ({
+    symbol: asset.symbol,
+    address: getAddress(asset.address),
+    kind: asset.kind,
+    required: Boolean(asset.required),
+    executionClass: asset.executionClass,
+    maximumNativeInputWei: BigInt(asset.maximumNativeInputWei),
+    activation: asset.activation,
+  }));
 }

@@ -14,26 +14,34 @@ const config = JSON.parse(
     "utf8",
   ),
 );
-const catalog = JSON.parse(
+const supportPolicy = JSON.parse(
   await readFile(
-    resolve("config/assets/robinhood-testnet-curated.json"),
+    resolve("config/protocol/robinhood-mainnet-support-policy.json"),
     "utf8",
   ),
 );
 
-test("the production rehearsal config freezes 23 Stock Tokens and WETH", () => {
-  assert.deepEqual(validateMainnetRehearsalConfig(config, catalog), []);
-  const assets = intendedMainnetAssets(config, catalog);
-  assert.equal(assets.length, 24);
+test("the production rehearsal config freezes the schema-12 candidate universe", () => {
+  assert.deepEqual(validateMainnetRehearsalConfig(config, supportPolicy), []);
+  const assets = intendedMainnetAssets(config, supportPolicy);
+  assert.equal(assets.length, 11);
   assert.equal(
     new Set(assets.map(({ address }) => address.toLowerCase())).size,
-    24,
+    11,
   );
-  assert.equal(assets.at(-1).symbol, "WETH");
+  assert.deepEqual(
+    assets.filter(({ required }) => required).map(({ symbol }) => symbol),
+    config.requiredSymbols,
+  );
+  assert.equal(
+    assets.filter(({ executionClass }) => executionClass === "pinned-execution-adapter")
+      .length,
+    4,
+  );
 });
 
 test("pool IDs are deterministic and sensitive to route configuration", () => {
-  const asset = catalog.assets[0].mainnetAddress;
+  const asset = supportPolicy.candidates[0].address;
   const first = poolIdForRoute(asset, config.route);
   const second = poolIdForRoute(asset, config.route);
   const changed = poolIdForRoute(asset, {
