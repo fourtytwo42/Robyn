@@ -24,7 +24,7 @@ const host = process.env.HOST ?? "127.0.0.1";
 if (host !== "127.0.0.1") {
   throw new Error("The backend RPC failover gateway must bind to loopback");
 }
-const port = positiveInteger("PORT", "18547");
+const port = positiveInteger("PORT", "18548");
 const controller = new TestnetRpcFailover({
   primaryUrl: required("PRIMARY_RPC_URL"),
   fallbackUrl: required("FALLBACK_RPC_URL"),

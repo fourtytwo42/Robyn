@@ -15,7 +15,7 @@ const rpcUrl =
   "https://rpc.testnet.chain.robinhood.com";
 const primaryRpcUrl = process.env.ROBYN_TESTNET_PRIMARY_RPC_URL || "";
 const failoverEnabled = primaryRpcUrl.length > 0;
-const backendRpcUrl = failoverEnabled ? "http://127.0.0.1:18547" : rpcUrl;
+const backendRpcUrl = failoverEnabled ? "http://127.0.0.1:18548" : rpcUrl;
 const wsRpcUrl = process.env.ROBYN_TESTNET_WS_RPC_URL || "";
 const operatorKeyFile = required("ROBYN_OPERATOR_KEY_FILE");
 const nodeBinary = "/opt/node-v24.18.0-linux-x64/bin/node";
@@ -38,7 +38,7 @@ module.exports = {
             env: {
               NODE_ENV: "production",
               HOST: "127.0.0.1",
-              PORT: "18547",
+              PORT: "18548",
               EXPECTED_CHAIN_ID: "46630",
               PRIMARY_RPC_URL: primaryRpcUrl,
               FALLBACK_RPC_URL: rpcUrl,

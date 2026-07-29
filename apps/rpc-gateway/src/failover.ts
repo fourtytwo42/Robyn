@@ -107,6 +107,34 @@ function bodyComputeUnits(body: RpcBody): number {
   );
 }
 
+function isReadOnlyBody(body: RpcBody): boolean {
+  const entries = Array.isArray(body) ? body : [body];
+  return entries.every(
+    (entry) =>
+      entry.method !== "eth_sendRawTransaction" &&
+      entry.method !== "eth_sendTransaction",
+  );
+}
+
+function hasUnavailableStateError(response: unknown): boolean {
+  const entries = Array.isArray(response) ? response : [response];
+  return entries.some((entry) => {
+    if (!entry || typeof entry !== "object" || !("error" in entry)) {
+      return false;
+    }
+    const error = (entry as { error?: unknown }).error;
+    if (!error || typeof error !== "object") return false;
+    const code = (error as { code?: unknown }).code;
+    const message = (error as { message?: unknown }).message;
+    return (
+      (code === -32_000 || code === -32_603) &&
+      typeof message === "string" &&
+      (/missing trie node/i.test(message) ||
+        /state .* is not available/i.test(message))
+    );
+  });
+}
+
 export function createHttpUpstreamRequest(timeoutMs = 15_000): UpstreamRequest {
   return async (url, payload) => {
     const response = await fetch(url, {
@@ -283,7 +311,11 @@ export class TestnetRpcFailover {
     }
     if (this.activeProvider === "primary") {
       try {
-        return await this.upstreamRequest(this.primaryUrl, payload);
+        const response = await this.upstreamRequest(this.primaryUrl, payload);
+        if (isReadOnlyBody(payload) && hasUnavailableStateError(response)) {
+          throw new Error("primary state unavailable");
+        }
+        return response;
       } catch {
         this.primaryRequestFailures += 1;
         this.primary = {

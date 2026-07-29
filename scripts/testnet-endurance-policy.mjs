@@ -5,7 +5,7 @@ export const isApprovedTestnetRpcUrl = (value) => {
     if (
       url.protocol === "http:" &&
       url.hostname === "127.0.0.1" &&
-      url.port === "18547" &&
+      url.port === "18548" &&
       url.pathname === "/"
     ) {
       return true;

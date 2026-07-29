@@ -38,7 +38,7 @@ as_operator() { runuser -u "$operator" -- env PM2_HOME="$pm2_home" "$@"; }
 if [[ -n "$old" ]]; then
   old_database="$(
     as_operator "$old/node_modules/.bin/pm2" jlist |
-      jq -r '.[] | select(.name=="robyn-indexer-testnet") | .pm2_env.env.PGDATABASE' |
+      jq -r '.[] | select(.name=="robyn-indexer-testnet") | (.pm2_env.PGDATABASE // .pm2_env.env.PGDATABASE // empty)' |
       head -n 1
   )"
 fi

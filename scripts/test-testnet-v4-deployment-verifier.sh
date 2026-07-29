@@ -3,7 +3,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 source_manifest="${1:-/tmp/robyn-v4-fork-rehearsal/46630-v4.json}"
-rpc_url="${ROBYN_TESTNET_RPC_URL:-http://127.0.0.1:18547}"
+rpc_url="${ROBYN_TESTNET_RPC_URL:-http://127.0.0.1:18548}"
 [[ -f "$source_manifest" ]] || { echo "missing rehearsal manifest" >&2; exit 1; }
 
 tmp_dir="$(mktemp -d)"

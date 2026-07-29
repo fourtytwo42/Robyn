@@ -185,6 +185,90 @@ describe("testnet RPC failover", () => {
     expect(upstream.request).toHaveBeenLastCalledWith(fallbackUrl, payload);
   });
 
+  it("falls back for read-only requests when the LAN node cannot serve state", async () => {
+    const request = vi.fn<UpstreamRequest>((url, payload) => {
+      const entry = (Array.isArray(payload) ? payload[0] : payload) as {
+        id?: unknown;
+        method: string;
+      };
+      if (entry.method === "eth_chainId") {
+        return Promise.resolve(result(entry.id, "0xb626"));
+      }
+      if (entry.method === "eth_blockNumber") {
+        return Promise.resolve(result(entry.id, "0x3e8"));
+      }
+      if (url === primaryUrl && entry.method === "eth_getCode") {
+        return Promise.resolve({
+          jsonrpc: "2.0",
+          id: entry.id,
+          error: {
+            code: -32_603,
+            message: "missing trie node: state is not available",
+          },
+        });
+      }
+      return Promise.resolve(result(entry.id, "0x6000"));
+    });
+    const failover = controller(request);
+    await failover.probe();
+    const payload = {
+      jsonrpc: "2.0" as const,
+      id: 10,
+      method: "eth_getCode",
+      params: ["0x0000000000000000000000000000000000000001", "latest"],
+    };
+
+    await expect(failover.request(payload)).resolves.toEqual(
+      result(10, "0x6000"),
+    );
+    expect(failover.snapshot()).toMatchObject({
+      activeProvider: "fallback",
+      primaryRequestFailures: 1,
+      paidFallbackCu: 10,
+    });
+    expect(request).toHaveBeenLastCalledWith(fallbackUrl, payload);
+  });
+
+  it("does not replay a signed transaction after a primary JSON-RPC rejection", async () => {
+    const rejection = {
+      jsonrpc: "2.0",
+      id: 11,
+      error: { code: -32_000, message: "nonce too low" },
+    };
+    const request = vi.fn<UpstreamRequest>((url, payload) => {
+      const entry = (Array.isArray(payload) ? payload[0] : payload) as {
+        id?: unknown;
+        method: string;
+      };
+      if (entry.method === "eth_chainId") {
+        return Promise.resolve(result(entry.id, "0xb626"));
+      }
+      if (entry.method === "eth_blockNumber") {
+        return Promise.resolve(result(entry.id, "0x3e8"));
+      }
+      if (url === primaryUrl && entry.method === "eth_sendRawTransaction") {
+        return Promise.resolve(rejection);
+      }
+      return Promise.resolve(result(entry.id, "0xfeed"));
+    });
+    const failover = controller(request);
+    await failover.probe();
+
+    await expect(
+      failover.request({
+        jsonrpc: "2.0",
+        id: 11,
+        method: "eth_sendRawTransaction",
+        params: ["0x1234"],
+      }),
+    ).resolves.toEqual(rejection);
+    expect(request).not.toHaveBeenCalledWith(
+      fallbackUrl,
+      expect.objectContaining({ method: "eth_sendRawTransaction" }),
+    );
+    expect(failover.snapshot().activeProvider).toBe("primary");
+  });
+
   it("projects only paid probes while LAN serves application traffic", async () => {
     const upstream = createUpstream();
     const failover = controller(upstream.request);

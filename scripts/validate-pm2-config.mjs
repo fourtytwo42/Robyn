@@ -103,7 +103,7 @@ for (const name of minimums.keys()) {
   if (!names.has(name)) throw new Error(`reviewed PM2 app is missing: ${name}`);
 }
 
-const privateTestnetRpc = "http://127.0.0.1:18547";
+const privateTestnetRpc = "http://127.0.0.1:18548";
 for (const name of [
   "robyn-api-testnet",
   "robyn-indexer-testnet",
@@ -126,13 +126,14 @@ if (
   testnetGateway?.env?.PRIMARY_RPC_URL !== "http://192.0.2.20:8547" ||
   testnetGateway?.env?.FALLBACK_RPC_URL !== "http://192.0.2.10:8547" ||
   testnetGateway?.env?.EXPECTED_CHAIN_ID !== "46630" ||
+  testnetGateway?.env?.PORT !== "18548" ||
   testnetGateway?.env?.RPC_PROBE_INTERVAL_MS !== "30000" ||
   testnetGateway?.env?.RPC_MAX_HEAD_LAG_BLOCKS !== "50" ||
   testnetGateway?.env?.RPC_RECOVERY_HEAD_LAG_BLOCKS !== "10" ||
   testnetGateway?.env?.RPC_RECOVERY_CONSECUTIVE_PROBES !== "2"
 ) {
   throw new Error(
-    "robyn-rpc-gateway-testnet must use the reviewed LAN-primary failover policy",
+    "robyn-rpc-gateway-testnet must use the reviewed isolated-port LAN-primary failover policy",
   );
 }
 

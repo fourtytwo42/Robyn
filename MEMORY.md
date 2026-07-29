@@ -1,5 +1,24 @@
 # Project Memory
 
+### 2026-07-29 - Testnet RPC gateway port collision and safe read fallback
+
+- Context: The first LAN-primary promotion bound the testnet gateway to
+  `127.0.0.1:18547`, already occupied by the separate backend gateway. The
+  testnet gateway crash-looped, the API became unavailable, and the public
+  homepage returned Next.js digest `3227098399`.
+- Decision: Restore exact release `802ab776` immediately, isolate the testnet
+  gateway on `127.0.0.1:18548`, and make PM2 validation assert that port.
+  Read-only LAN responses containing a missing-trie/state-unavailable error
+  retry through Alchemy; signed transaction JSON-RPC rejections are never
+  replayed.
+- Verification: The restored homepage returns HTTP 200 and renders in the
+  in-app browser with no application error or console error. API, ingestion,
+  projection, keeper, and artifacts are healthy. All 21 gateway tests, the
+  PM2 validator, 26 release/endurance tests, shell syntax, formatting, and
+  `git diff --check` pass.
+- Follow-up: Commit and build a new immutable release, promote it, prove live
+  LAN failover and recovery, and keep endurance stopped.
+
 ### 2026-07-29 - Runner preflight now loads the real module graph
 
 - Context: Static run `schema11-2h-d232080-14` submitted no transactions and
@@ -2536,7 +2555,7 @@ Durable project context lives here. Update this file whenever information should
 ### 2026-07-29 - LAN-primary testnet RPC with paid failover
 
 - Decision: all protected testnet HTTP consumers and the endurance runner use
-  `http://127.0.0.1:18547`. The loopback-only gateway uses
+  `http://127.0.0.1:18548`. The loopback-only gateway uses
   `ROBYN_TESTNET_PRIMARY_RPC_URL` for `192.168.50.117:8547` and
   `ROBYN_TESTNET_SERVER_RPC_URL` for protected Alchemy. Browser RPC remains
   keyless and the canonical ingester retains its filtered Alchemy WebSocket.

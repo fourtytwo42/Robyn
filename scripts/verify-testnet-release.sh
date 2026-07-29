@@ -24,7 +24,7 @@ indexer_ws_url="$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env
 [[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_WS_DEBOUNCE_MS' <<<"$testnet")" == "500" ]]
 
 server_rpc_url="$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_OPERATOR_RPC_URL' <<<"$testnet")"
-[[ "$server_rpc_url" == "http://127.0.0.1:18547" ]]
+[[ "$server_rpc_url" == "http://127.0.0.1:18548" ]]
 for process_name in robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet; do
   [[ "$(jq -r --arg name "$process_name" '.[]|select(.name==$name)|.pm2_env.env.ROBYN_OPERATOR_RPC_URL' <<<"$testnet")" == "$server_rpc_url" ]]
 done
@@ -34,7 +34,7 @@ fallback_rpc_url="$(jq -r '.[]|select(.name=="robyn-rpc-gateway-testnet")|.pm2_e
 [[ "$fallback_rpc_url" == https://robinhood-testnet.g.alchemy.com/v2/* ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-rpc-gateway-testnet")|.pm2_env.env.EXPECTED_CHAIN_ID' <<<"$testnet")" == "46630" ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-rpc-gateway-testnet")|.pm2_env.env.RPC_PROBE_INTERVAL_MS' <<<"$testnet")" == "30000" ]]
-gateway_health="$(curl -fsS http://127.0.0.1:18547/health)"
+gateway_health="$(curl -fsS http://127.0.0.1:18548/health)"
 [[ "$(jq -r .expectedChainId <<<"$gateway_health")" -eq 46630 ]]
 [[ "$(jq -r .activeProvider <<<"$gateway_health")" == "primary" ]]
 [[ "$(jq -r .primary.healthy <<<"$gateway_health")" == "true" ]]

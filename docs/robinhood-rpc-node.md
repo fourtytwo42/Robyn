@@ -11,7 +11,7 @@ signal. Browser configuration never contains an Alchemy credential.
 
 - Application VM: `192.168.50.250`
 - Testnet LAN JSON-RPC edge: `http://192.168.50.117:8547`
-- Application loopback failover gateway: `http://127.0.0.1:18547`
+- Application loopback failover gateway: `http://127.0.0.1:18548`
 - Paid comparison and fallback: protected Alchemy Robinhood Testnet HTTPS
 - Host node-exporter: `http://192.168.50.117:9100/metrics`
 
@@ -34,7 +34,7 @@ Useful application-side checks:
 curl -sS -H 'content-type: application/json' \
   --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' \
   http://192.168.50.117:8547
-curl -sS http://127.0.0.1:18547/health | jq \
+curl -sS http://127.0.0.1:18548/health | jq \
   '{status,activeProvider,headLagBlocks,primary,fallback,paidProjectedDailyCu}'
 ```
 
@@ -51,7 +51,7 @@ gateway outage is also visible through PM2 and application health checks.
 
 ## Testnet continuity and recovery
 
-All protected testnet processes use `http://127.0.0.1:18547` for
+All protected testnet processes use `http://127.0.0.1:18548` for
 `ROBYN_OPERATOR_RPC_URL`. The gateway receives the LAN primary through
 `ROBYN_TESTNET_PRIMARY_RPC_URL` and the paid fallback through
 `ROBYN_TESTNET_SERVER_RPC_URL`. The canonical ingester additionally uses the

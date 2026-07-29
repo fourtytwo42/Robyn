@@ -87,7 +87,7 @@ test("approved testnet RPC policy requires protected Alchemy HTTPS", () => {
     false,
   );
   assert.equal(isApprovedTestnetRpcUrl("http://192.168.50.117:8547"), false);
-  assert.equal(isApprovedTestnetRpcUrl("http://127.0.0.1:18547"), true);
+  assert.equal(isApprovedTestnetRpcUrl("http://127.0.0.1:18548"), true);
   assert.equal(
     isApprovedTestnetRpcUrl("https://attacker.invalid/v2/key"),
     false,
