@@ -1,5 +1,32 @@
 # Project Memory
 
+### 2026-07-29 - Keeper writes require a post-simulation gas margin
+
+- Context: After the keeper was funded and its 27 audited jobs returned to the
+  queue, 25 cleared. Three writes that had simulated successfully were mined
+  with status zero because the keeper submitted the RPC estimate without a gas
+  margin. The failed receipts consumed their full or effectively full limits.
+- Evidence: Harvest hook settlement
+  `0x3f911735ff6a03b9df2c08f571b5bc6baf9459d66aaaa7e61a969a7c1d9f9321`
+  and hook-token conversion
+  `0x64960709879ed1e353d760ab71563ddf76448cc0b73fd3d353d3f1ad43ccf43f`
+  remain terminal failed jobs. Basket conversion
+  `0x1e894f5fa5897ec7b795141d15223d0aab3cb6182e7d8d867b7f17303cc09e50`
+  failed once and then succeeded through the existing retry path. All three
+  failed receipts have status zero; no fee or reward state moved.
+- Decision: Every keeper contract write now re-estimates the encoded
+  transaction immediately before submission and sets a 100 percent execution
+  gas margin. Writes remain transport-non-retried and the durable worker still
+  reconciles onchain state before any subsequent attempt.
+- Files: `apps/keeper/src/server.ts`,
+  `apps/keeper/src/transaction-gas.ts`, and
+  `apps/keeper/test/transaction-gas.test.ts`.
+- Verification: Keeper lint, strict typecheck, build, all 37 keeper tests, all
+  script syntax checks, and `git diff --check` pass.
+- Follow-up: Commit and push, reproducibly build/promote the exact application
+  release, then retry only the two terminal jobs and require health, lag,
+  solvency, and accounting to reconcile before resuming campaign writes.
+
 ### 2026-07-29 - Schema-12 campaign paused for keeper funding-budget correction
 
 - Context: Fresh campaign `schema12-assurance-0bad303-03` completed actor
@@ -1082,8 +1109,11 @@ Durable project context lives here. Update this file whenever information should
   underfunded operator wallet, leaving 27 current balance-floor failures. No
   current failed attempt has a transaction hash. The preflight correction is
   implemented and focused tests pass; commit/push it, fund the keeper to
-  2,278,415,526,656,000 wei, recover only audited jobs, and do not resume broad
-  writes until health and accounting reconcile.
+  2,278,415,526,656,000 wei. Twenty-five jobs cleared after funding; two
+  terminal jobs exposed missing gas headroom in keeper writes. The 100 percent
+  margin correction passes all focused gates. Commit/push and promote it, then
+  retry only those two jobs and do not resume broad writes until health and
+  accounting reconcile.
 
 - 2026-07-29: the app-side Mainnet LAN observer acceptance baseline restarted
   at `2026-07-29T18:05:25Z` after the user repaired the node's throttled
@@ -2800,9 +2830,10 @@ Durable project context lives here. Update this file whenever information should
   only at the pre-transaction balance-floor check; their current audit results
   are null. The operator's 841 transactions since its top-up cost
   1,223,257,040,000,000 wei.
-- The corrected fixed-workload target is 2,278,415,526,656,000 wei. The project
-  wallet holds 4,318,734,445,185,821 wei before the durable keeper top-up and
-  can preserve the required 0.0015 ETH reserve.
+- The keeper was funded to 2,278,415,526,656,000 wei and 25 jobs cleared. Two
+  terminal jobs then exposed raw-estimate gas exhaustion; their receipts are
+  status zero. The keeper gas-margin correction is implemented and tested.
+  Current keeper and project balances remain above their required floors.
 
 ### 2026-07-29 - Corrected schema-12 release live; campaign funding blocked
 
@@ -4946,11 +4977,11 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Complete the schema-12 keeper funding recovery: commit and push the corrected
-  preflight, top the operator to 2,278,415,526,656,000 wei through the campaign
-  journal, retry only the 27 audited BullMQ failures, and require zero failed
-  financial jobs plus exact protocol accounting before any broad write resumes.
-  Never replay a confirmed hash.
+- Complete the schema-12 keeper recovery: promote the exact gas-margin release,
+  retry only the two remaining terminal BullMQ jobs after verifying their
+  status-zero receipts, and require zero failed financial jobs plus exact
+  protocol accounting before any broad write resumes. Never replay a confirmed
+  successful hash.
 - Grant the project key SSH access to Mainnet RPC host `192.168.50.173` or have
   an operator start the pinned `robinhood-mainnet-trial.service`. App-side
   observer time began at `2026-07-29T18:05:25Z`, but it cannot substitute for

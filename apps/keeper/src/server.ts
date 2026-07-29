@@ -49,6 +49,7 @@ import {
   requestZeroExAllowanceHolderQuote,
   schema12QuoteId,
 } from "./provider-quotes.js";
+import { keeperTransactionGasLimit } from "./transaction-gas.js";
 
 type Manifest = {
   chainId: number;
@@ -187,6 +188,25 @@ const writeAccount = transactionAccount(
   operatorAccount,
   operator,
 );
+async function writeSimulatedContract(
+  request: Parameters<typeof walletClient.writeContract>[0],
+): Promise<Hash> {
+  const data = encodeFunctionData({
+    abi: request.abi,
+    functionName: request.functionName,
+    args: request.args,
+  });
+  const estimatedGas = await publicClient.estimateGas({
+    account: request.account ?? writeAccount,
+    to: request.address,
+    data,
+    ...(request.value === undefined ? {} : { value: request.value }),
+  });
+  return walletClient.writeContract({
+    ...request,
+    gas: keeperTransactionGasLimit(estimatedGas),
+  });
+}
 if ((await publicClient.getChainId()) !== manifest.chainId) {
   throw new Error("Keeper RPC chain mismatch");
 }
@@ -2259,7 +2279,7 @@ async function processConversion(
           args: [legIndex, input, minimumOutput, deadline, executionData],
           account: writeAccount,
         });
-        return () => walletClient.writeContract(simulation.request);
+        return () => writeSimulatedContract(simulation.request);
       }
       const simulation = await publicClient.simulateContract({
         address: job.data.vault,
@@ -2268,7 +2288,7 @@ async function processConversion(
         args: [legIndex, input, minimumOutput, deadline],
         account: writeAccount,
       });
-      return () => walletClient.writeContract(simulation.request);
+      return () => writeSimulatedContract(simulation.request);
     };
     let executePlannedConversion: (() => Promise<Hash>) | undefined;
     let lastPlanningError;
@@ -2345,7 +2365,7 @@ async function processConversion(
     args: [legIndex, current.leg.pendingBase, minimumOutput, deadline],
     account: writeAccount,
   });
-  const transactionHash = await walletClient.writeContract(simulation.request);
+  const transactionHash = await writeSimulatedContract(simulation.request);
   const receipt = await publicClient.waitForTransactionReceipt({
     hash: transactionHash,
     timeout: 30_000,
@@ -2421,7 +2441,7 @@ async function processHarvest(
       collection &&
       (collection.result[0] > 0n || collection.result[1] > 0n)
     ) {
-      transactionHash = await walletClient.writeContract(collection.request);
+      transactionHash = await writeSimulatedContract(collection.request);
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: transactionHash,
         timeout: 30_000,
@@ -2443,7 +2463,7 @@ async function processHarvest(
         args: [nativeBalance],
         account: writeAccount,
       });
-      transactionHash = await walletClient.writeContract(routing.request);
+      transactionHash = await writeSimulatedContract(routing.request);
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: transactionHash,
         timeout: 30_000,
@@ -2466,7 +2486,7 @@ async function processHarvest(
         args: [job.data.token, hookNative],
         account: writeAccount,
       });
-      transactionHash = await walletClient.writeContract(settlement.request);
+      transactionHash = await writeSimulatedContract(settlement.request);
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: transactionHash,
         timeout: 30_000,
@@ -2498,7 +2518,7 @@ async function processHarvest(
       launchTokenFees: "0",
     };
   }
-  const transactionHash = await walletClient.writeContract(simulation.request);
+  const transactionHash = await writeSimulatedContract(simulation.request);
   const receipt = await publicClient.waitForTransactionReceipt({
     hash: transactionHash,
     timeout: 30_000,
@@ -2545,7 +2565,7 @@ async function processProtocolConversion(
           args: [job.data.token, account.pendingBasketNative],
           account: writeAccount,
         });
-        transactionHash = await walletClient.writeContract(simulation.request);
+        transactionHash = await writeSimulatedContract(simulation.request);
         const receipt = await publicClient.waitForTransactionReceipt({
           hash: transactionHash,
           timeout: 30_000,
@@ -2574,7 +2594,7 @@ async function processProtocolConversion(
           args: [daoPending],
           account: writeAccount,
         });
-        transactionHash = await walletClient.writeContract(simulation.request);
+        transactionHash = await writeSimulatedContract(simulation.request);
         const receipt = await publicClient.waitForTransactionReceipt({
           hash: transactionHash,
           timeout: 30_000,
@@ -2596,7 +2616,7 @@ async function processProtocolConversion(
           args: [treasuryPending],
           account: writeAccount,
         });
-        transactionHash = await walletClient.writeContract(simulation.request);
+        transactionHash = await writeSimulatedContract(simulation.request);
         const receipt = await publicClient.waitForTransactionReceipt({
           hash: transactionHash,
           timeout: 30_000,
@@ -2648,7 +2668,7 @@ async function processProtocolConversion(
         args: [plan.input, plan.minimumNative, plan.deadline],
         account: writeAccount,
       });
-      transactionHash = await walletClient.writeContract(simulation.request);
+      transactionHash = await writeSimulatedContract(simulation.request);
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: transactionHash,
         timeout: 30_000,
@@ -2670,7 +2690,7 @@ async function processProtocolConversion(
         args: [job.data.token, plan.input, plan.minimumNative, plan.deadline],
         account: writeAccount,
       });
-      transactionHash = await walletClient.writeContract(simulation.request);
+      transactionHash = await writeSimulatedContract(simulation.request);
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: transactionHash,
         timeout: 30_000,
@@ -2713,9 +2733,7 @@ async function processProtocolConversion(
       args: [pending, minimum, deadline],
       account: writeAccount,
     });
-    const transactionHash = await walletClient.writeContract(
-      simulation.request,
-    );
+    const transactionHash = await writeSimulatedContract(simulation.request);
     const receipt = await publicClient.waitForTransactionReceipt({
       hash: transactionHash,
       timeout: 30_000,
@@ -2753,7 +2771,7 @@ async function processProtocolConversion(
     args: [job.data.token, input, minimum, deadline],
     account: writeAccount,
   });
-  const transactionHash = await walletClient.writeContract(simulation.request);
+  const transactionHash = await writeSimulatedContract(simulation.request);
   const receipt = await publicClient.waitForTransactionReceipt({
     hash: transactionHash,
     timeout: 30_000,
