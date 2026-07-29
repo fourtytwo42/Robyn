@@ -1040,6 +1040,28 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: immutable application release
+  `231161530bbfe3485d86bb573bbf18b701d7cafd` is live against fresh database
+  `robyn_testnet_schema12_2311615` and corrected deployment block `94989079`.
+  Two clean builds reproduce, all 409 deployment checks pass, LAN Testnet RPC
+  is primary at zero lag, protocol accounting is healthy, and the keeper was
+  topped up to 1,237,045,020,000,000 wei. New campaign
+  `schema12-assurance-2311615-02` is initialized but sent no transaction:
+  after separately recovering the invalidated actors through 404 token and 100
+  native sweep transactions, 0.010166349410518705 ETH is available versus
+  0.0173642429592 ETH required. Fund the deployer with at least
+  0.007197893548681295 Testnet ETH and rerun preflight without reducing
+  coverage or the reserve.
+
+- 2026-07-29: the app-side Mainnet LAN observer acceptance baseline restarted
+  at `2026-07-29T18:05:25Z` after the user repaired the node's throttled
+  Ethereum L1 provider. The gateway sees chain 4663, `eth_syncing=false`, LAN
+  primary healthy, three blocks of lag, and zero request failures. Full
+  host-level 48-hour acceptance is not yet independently started because SSH
+  to `192.168.50.173` still rejects the project key; host access or an operator
+  start of `robinhood-mainnet-trial.service` is required for restart, OOM,
+  memory, swap, database-growth, and disk evidence.
+
 - 2026-07-29: corrected schema-12 contracts from source commit `6aeb889` are
   freshly deployed on Robinhood Testnet from block `94989079`. The deployment
   preflight covered 112 transactions, 25 percent headroom, and the 0.0015 ETH
@@ -2736,6 +2758,33 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-29 - Corrected schema-12 release live; campaign funding blocked
+
+- Release: exact pushed commit
+  `231161530bbfe3485d86bb573bbf18b701d7cafd` passed two-clean-build
+  reproducibility and the complete protected release gate, then promoted as
+  immutable release `/opt/robyn/testnet-releases/2311615-schema12`.
+- Index: empty database `robyn_testnet_schema12_2311615` applied all 13
+  migrations and rebuilt exclusively from corrected deployment block
+  `94989079`. Live verification reports zero ingestion and projection lag,
+  protocol accounting healthy, LAN primary active, and 409 verifier checks.
+- Keeper: transaction
+  `0x5b4b1a073879e376e60f9b2b30ac17f0ab84abe1c3454fe335fa7c3ac0128edc`
+  raised its balance from 237,045,020,000,000 wei to
+  1,237,045,020,000,000 wei. The keeper heartbeat is now `ok`.
+- Invalidated-fund recovery: a copied, explicitly recovery-only journal swept
+  404 old launch-token balances and 100 native balances without replaying any
+  of the preserved 1,569 hashes. The original invalidated archive remains
+  unchanged.
+- Funding blocker: new campaign `schema12-assurance-2311615-02` is initialized
+  with 100 fresh encrypted identities but has submitted no transaction.
+  Available balance is 0.010166349410518705 ETH; the fixed campaign requires
+  0.0173642429592 ETH, leaving an exact
+  0.007197893548681295 ETH shortfall.
+- Evidence:
+  `/home/hendo420/robyn-evidence/schema12-mainnet-go/fresh-6aeb889/` and
+  `/home/hendo420/.local/state/robyn-testnet-campaign-recovery/schema12-assurance-360744d-01-abort/`.
 
 ### 2026-07-29 - Corrected schema-12 Testnet deployment verified
 
@@ -4852,10 +4901,14 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Commit and promote the corrected schema-12 deployment manifest from block
-  `94989079`, rebuild an empty database from that block, and start a new
-  campaign ID. Recalculate the fixed workload funding requirement after
-  deployment; do not reduce coverage or the 0.0015 ETH reserve.
+- Fund schema-12 deployer `0xecc5d6d032ADc9ca9E0F4042128067b8366da17A`
+  with at least 0.007197893548681295 additional Robinhood Testnet ETH, then
+  rerun unchanged campaign `schema12-assurance-2311615-02` preflight. It has
+  submitted no transaction; do not reduce coverage or the 0.0015 ETH reserve.
+- Grant the project key SSH access to Mainnet RPC host `192.168.50.173` or have
+  an operator start the pinned `robinhood-mainnet-trial.service`. App-side
+  observer time began at `2026-07-29T18:05:25Z`, but it cannot substitute for
+  host restart, OOM, memory, swap, disk, and database-growth evidence.
 - Observe `192.168.50.173:8547` through the planned capacity window. Its
   temporary execution stall self-recovered and the gateway now qualifies it as
   primary, but administrative SSH access is still needed for root-cause
