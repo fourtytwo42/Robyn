@@ -1030,10 +1030,14 @@ Durable project context lives here. Update this file whenever information should
   invariants, 65 script tests, and the internal security audit pass with zero
   unresolved high or medium findings. No live schema-12 deployment has
   occurred. The full 97-transaction gas preflight measured 72,971,616 gas and
-  1,018,030,300,405,660 wei required with 25% execution/L1 headroom; the
-  5,118,644,183,782,525-wei deployer balance preserves the 0.0015 ETH reserve.
-  Campaign funding is separate. Clean exact release freeze, Testnet deployment,
-  all recovery/endurance gates, and exact Mainnet qualification remain pending.
+  1,018,030,300,405,660 wei required with 25% execution/L1 headroom. Exact
+  commit `e4ba3ed7dc0c3d5c78316e5cac063c10c7be8c10` is now deployed to Robinhood
+  Testnet as schema 12 from block `94968004`. All 97 deployment/configuration
+  transactions succeeded, actual gas was 78,422,903, and the 409-check live
+  verifier has zero failures. The deployer retains 3,542,081,773,782,525 wei,
+  above the 0.0015 ETH reserve. Campaign funding is separate. Promotion,
+  index rebuild, recovery, endurance, and exact Mainnet qualification remain
+  pending; Mainnet deployment remains unauthorized.
 
 - 2026-07-29: Mainnet RPC configuration now designates
   `192.168.50.173:8547` as chain-4663 LAN primary with protected Alchemy as
@@ -2665,6 +2669,24 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-29 - Fresh schema-12 Testnet deployment verified
+
+- Result: exact clean commit
+  `e4ba3ed7dc0c3d5c78316e5cac063c10c7be8c10` deployed a fresh schema-12
+  contract set at deployment block `94968004`; schema-11 remains archived.
+- Verification: all 97 unique deployment/configuration receipts succeeded and
+  the independent live verifier passed 409 runtime, role, route, phase,
+  stream, accounting, and manifest checks with zero failures.
+- Funding: actual gas was 78,422,903 and the deployer retains
+  3,542,081,773,782,525 wei, preserving the 0.0015 ETH reserve.
+- Evidence:
+  `/home/hendo420/robyn-evidence/schema12-mainnet-go/live-testnet-20260729-e4ba3ed/`.
+  The manifest records the archived schema-11 manifest SHA-256
+  `a93b64c6d708a20e7176e0fa30253fda85f563584d156d613a0961b9bc7217c8`.
+- Boundary: the application has not yet been promoted to this address set and
+  the schema-12 index rebuild, lifecycle, recovery, endurance, reconciliation,
+  browser, exact Mainnet fork, and 48-hour Mainnet RPC gates remain pending.
+
 ### 2026-07-29 - Schema-12 standard-limit deployment rehearsal passes
 
 - Result: the fresh schema-12 stack deploys on a standard-limit chain-46630
@@ -4068,6 +4090,11 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-29: schema-12 exact commit `e4ba3ed` deployed to Robinhood Testnet
+  from block 94,968,004. All 97 receipts succeeded, actual gas was 78,422,903,
+  the 409-check live verifier reported zero failures, the post-deployment
+  balance preserved the 0.0015 ETH reserve, and the sealed evidence manifest
+  verifies.
 - 2026-07-29: run `schema11-2h-8b38674-13` passed readiness and accumulated
   300 healthy seconds with healthy API, lag, CU, accounting, process, and
   keeper gates. Its first holder claim exhausted its 507,117 gas limit exactly
