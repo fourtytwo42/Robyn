@@ -19,6 +19,7 @@ type Provider = "primary" | "fallback";
 type UpstreamState = {
   chainId: number | null;
   head: bigint | null;
+  syncing: boolean | null;
   healthy: boolean;
   checkedAt: string | null;
   error: string | null;
@@ -168,6 +169,7 @@ export class TestnetRpcFailover {
   private primary: UpstreamState = {
     chainId: null,
     head: null,
+    syncing: null,
     healthy: false,
     checkedAt: null,
     error: "not checked",
@@ -175,6 +177,7 @@ export class TestnetRpcFailover {
   private fallback: UpstreamState = {
     chainId: null,
     head: null,
+    syncing: null,
     healthy: false,
     checkedAt: null,
     error: "not checked",
@@ -206,8 +209,9 @@ export class TestnetRpcFailover {
 
   private async inspect(url: string, paid: boolean): Promise<UpstreamState> {
     const checkedAt = new Date(this.now()).toISOString();
+    let syncing: boolean | null = null;
     try {
-      const [chainResponse, headResponse] = await Promise.all([
+      const [chainResponse, headResponse, syncingResponse] = await Promise.all([
         this.upstreamRequest(url, {
           jsonrpc: "2.0",
           id: "health-chain",
@@ -220,8 +224,14 @@ export class TestnetRpcFailover {
           method: "eth_blockNumber",
           params: [],
         }),
+        this.upstreamRequest(url, {
+          jsonrpc: "2.0",
+          id: "health-syncing",
+          method: "eth_syncing",
+          params: [],
+        }),
       ]);
-      if (paid) this.paidProbeCu += 20;
+      if (paid) this.paidProbeCu += 30;
       const chainId = Number(
         parseQuantity(rpcResult(chainResponse, "eth_chainId"), "eth_chainId"),
       );
@@ -229,15 +239,28 @@ export class TestnetRpcFailover {
         rpcResult(headResponse, "eth_blockNumber"),
         "eth_blockNumber",
       );
+      const syncingResult = rpcResult(syncingResponse, "eth_syncing");
+      syncing = syncingResult === false ? false : true;
       if (chainId !== this.expectedChainId) {
         throw new Error(`wrong chain ${chainId}`);
       }
-      return { chainId, head, healthy: true, checkedAt, error: null };
+      if (syncing) {
+        return {
+          chainId,
+          head,
+          syncing,
+          healthy: false,
+          checkedAt,
+          error: "upstream is still syncing",
+        };
+      }
+      return { chainId, head, syncing, healthy: true, checkedAt, error: null };
     } catch (error) {
-      if (paid) this.paidProbeCu += 20;
+      if (paid) this.paidProbeCu += 30;
       return {
         chainId: null,
         head: null,
+        syncing,
         healthy: false,
         checkedAt,
         error: error instanceof Error ? error.message : String(error),
@@ -386,7 +409,7 @@ export class TestnetRpcFailover {
     const nowMs = this.now();
     const elapsedMs = Math.max(3_600_000, nowMs - this.startedAtMs);
     const probeProjectedDailyCu = Math.ceil(
-      20 * (86_400_000 / this.probeIntervalMs),
+      30 * (86_400_000 / this.probeIntervalMs),
     );
     const fallbackProjectedDailyCu = Math.ceil(
       this.paidFallbackCu * (86_400_000 / elapsedMs),

@@ -1,5 +1,27 @@
 # Project Memory
 
+### 2026-07-29 - RPC failover now rejects actively syncing upstreams
+
+- Context: The schema-12 Mainnet read-only preflight found the LAN node close
+  to head while `eth_syncing` still returned an active sync object. The
+  loopback failover gateway previously checked only chain ID and block height,
+  so it incorrectly classified that upstream as healthy.
+- Decision: Probe `eth_syncing` alongside chain ID and head on both providers.
+  An upstream is healthy only when the result is exactly `false`; active sync,
+  malformed responses, wrong chain, excessive lag, and transport failures all
+  fail closed. Expose the sync state in the persisted gateway snapshot.
+- Files: `apps/rpc-gateway/src/failover.ts` and
+  `apps/rpc-gateway/test/failover.test.ts`.
+- Commands/tests: All 23 gateway tests, lint, typecheck, and build pass. A live
+  chain-4663 smoke marked the LAN node unhealthy with `syncing=true` and moved
+  traffic to the protected Alchemy fallback. Paid comparison probes now
+  project 86,400 CU/day and 2,592,000 CU/month.
+- Result: The Mainnet gateway can no longer return a still-syncing LAN node to
+  service merely because its reported head is close.
+- Follow-up: Commit, push, reproducibly rebuild, promote the exact application
+  release, recheck Testnet primary selection, and begin the 48-hour Mainnet
+  observation only after `eth_syncing=false`.
+
 ### 2026-07-29 - Schema-12 bounded route execution foundation
 
 - Context: Schema 12 replaces the single-hop-only basket router with
@@ -1017,6 +1039,22 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-07-29: fresh schema-12 contracts from source commit `e4ba3ed7` remain
+  active on Robinhood Testnet from block `94968004`. Exact application release
+  `6d809660af9f1eaeb379e2e5183bf85a19006abd` is live, reproducible, and
+  healthy against database `robyn_testnet_schema12_ad5b991`; the live verifier
+  passes 409 checks, queues and lag are zero, and protocol accounting is
+  conserved. Mainnet read-only route qualification at block `22603660` passed
+  bidirectional quote probes for required GOOGL, MSFT, NVDA, SPCX, SPY, WETH
+  and optional GME. USDG, USDe, DEGEN, and ARROW remain disabled because no
+  independent onchain price guard is pinned. Production Safe, Timelock, RDAO
+  allocation, and 0x commercial inputs remain absent. A newly found gateway
+  defect is being fixed: `eth_syncing` must be exactly false before an upstream
+  is healthy. The 100-wallet lifecycle and endurance campaign remains blocked
+  before submission by a 0.013813112705417475 ETH Testnet funding shortfall;
+  do not reduce coverage or the 0.0015 ETH reserve. No Mainnet transaction or
+  deployment is authorized.
 
 - 2026-07-29: schema-12 contract and deployment remediation is implemented on
   branch `codex/schema12-mainnet-go`. A standard-limit chain-46630 fork exposed

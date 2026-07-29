@@ -18,12 +18,14 @@ function createUpstream(options?: {
   fallbackHead?: bigint;
   primaryOnline?: boolean;
   primaryChainId?: number;
+  primarySyncing?: boolean;
 }) {
   let primaryHead = options?.primaryHead ?? 1_000n;
   let fallbackHead = options?.fallbackHead ?? 1_000n;
   let primaryOnline = options?.primaryOnline ?? true;
   let fallbackOnline = true;
   let primaryChainId = options?.primaryChainId ?? 46_630;
+  let primarySyncing = options?.primarySyncing ?? false;
   const request = vi.fn<UpstreamRequest>((url, payload) => {
     if (url === primaryUrl && !primaryOnline) {
       return Promise.reject(new Error("primary offline"));
@@ -43,6 +45,16 @@ function createUpstream(options?: {
       const head = url === primaryUrl ? primaryHead : fallbackHead;
       return Promise.resolve(result(entry.id, `0x${head.toString(16)}`));
     }
+    if (entry.method === "eth_syncing") {
+      return Promise.resolve(
+        result(
+          entry.id,
+          url === primaryUrl && primarySyncing
+            ? { currentBlock: "0x3e8" }
+            : false,
+        ),
+      );
+    }
     return Promise.resolve(result(entry.id, "0xfeed"));
   });
   return {
@@ -58,6 +70,9 @@ function createUpstream(options?: {
     },
     setPrimaryChainId: (value: number) => {
       primaryChainId = value;
+    },
+    setPrimarySyncing: (value: boolean) => {
+      primarySyncing = value;
     },
     setFallbackOnline: (value: boolean) => {
       fallbackOnline = value;
@@ -147,6 +162,24 @@ describe("testnet RPC failover", () => {
     });
   });
 
+  it("fails over while the LAN provider reports active synchronization", async () => {
+    const upstream = createUpstream({ primarySyncing: true });
+    const failover = controller(upstream.request);
+
+    await failover.probe();
+
+    expect(failover.snapshot()).toMatchObject({
+      status: "degraded",
+      activeProvider: "fallback",
+      primary: {
+        syncing: true,
+        healthy: false,
+        error: "upstream is still syncing",
+      },
+      fallback: { syncing: false, healthy: true },
+    });
+  });
+
   it("returns to LAN only after two recovery probes", async () => {
     const upstream = createUpstream({
       primaryHead: 900n,
@@ -197,6 +230,9 @@ describe("testnet RPC failover", () => {
       if (entry.method === "eth_blockNumber") {
         return Promise.resolve(result(entry.id, "0x3e8"));
       }
+      if (entry.method === "eth_syncing") {
+        return Promise.resolve(result(entry.id, false));
+      }
       if (url === primaryUrl && entry.method === "eth_getCode") {
         return Promise.resolve({
           jsonrpc: "2.0",
@@ -246,6 +282,9 @@ describe("testnet RPC failover", () => {
       if (entry.method === "eth_blockNumber") {
         return Promise.resolve(result(entry.id, "0x3e8"));
       }
+      if (entry.method === "eth_syncing") {
+        return Promise.resolve(result(entry.id, false));
+      }
       if (url === primaryUrl && entry.method === "eth_sendRawTransaction") {
         return Promise.resolve(rejection);
       }
@@ -277,8 +316,8 @@ describe("testnet RPC failover", () => {
 
     expect(failover.snapshot()).toMatchObject({
       activeProvider: "primary",
-      paidProjectedDailyCu: 57_600,
-      paidProjectedMonthlyCu: 1_728_000,
+      paidProjectedDailyCu: 86_400,
+      paidProjectedMonthlyCu: 2_592_000,
     });
   });
 
