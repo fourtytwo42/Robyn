@@ -8,6 +8,7 @@ manifest="${ROBYN_TESTNET_V4_PROTOCOL_MANIFEST:?ROBYN_TESTNET_V4_PROTOCOL_MANIFE
 output="${ROBYN_TESTNET_V4_GAS_EVIDENCE:-$repo_root/evidence/46630-v4-gas.json}"
 deployer="${ROBYN_TESTNET_DEPLOYER_ADDRESS:-0xecc5d6d032ADc9ca9E0F4042128067b8366da17A}"
 headroom_bps="${ROBYN_TESTNET_V4_GAS_HEADROOM_BPS:-2500}"
+reserve_wei="${ROBYN_TESTNET_V4_RESERVE_WEI:-1500000000000000}"
 export PATH="$HOME/.foundry/bin:$PATH"
 cd "$repo_root"
 
@@ -21,7 +22,18 @@ cd "$repo_root"
 [[ "$headroom_bps" -ge 2500 ]] || { echo "At least 25% headroom is required" >&2; exit 1; }
 
 transactions="$(
-  jq -r '[.deploymentTransactions[], .configurationTransactions[]?]
+  jq -r '[
+      .deploymentTransactions[]?,
+      .configurationTransactions[]?,
+      (
+        .assetRoutes[]?
+        | .seedTransaction?,
+          .assetCreationTransaction?,
+          .adapterCreationTransaction?,
+          .priceGuardCreationTransaction?
+      ),
+      .genesis.transactionHash?
+    ]
     | map(select(type == "string" and length > 0)) | unique[]' "$manifest"
 )"
 [[ -n "$transactions" ]] || { echo "No deployment transactions in manifest" >&2; exit 1; }
@@ -66,8 +78,10 @@ required_wei="$(node -e \
   'console.log((BigInt(process.argv[1])+BigInt(process.argv[2])).toString())' \
   "$execution_with_headroom" "$l1_with_headroom")"
 balance="$(cast balance "$deployer" --rpc-url "$pricing_rpc_url")"
+required_with_reserve_wei="$(node -e \
+  'console.log((BigInt(process.argv[1])+BigInt(process.argv[2])).toString())' "$required_wei" "$reserve_wei")"
 sufficient="$(node -e \
-  'console.log(BigInt(process.argv[1])>=BigInt(process.argv[2]))' "$balance" "$required_wei")"
+  'console.log(BigInt(process.argv[1])>=BigInt(process.argv[2]))' "$balance" "$required_with_reserve_wei")"
 
 mkdir -p "$(dirname "$output")"
 tmp="$(mktemp "$(dirname "$output")/.v4-gas.XXXXXX")"
@@ -88,6 +102,8 @@ jq -n \
   --arg l1DataWei "$l1_data_wei" \
   --arg l1DataWithHeadroomWei "$l1_with_headroom" \
   --arg requiredWei "$required_wei" \
+  --arg reserveWei "$reserve_wei" \
+  --arg requiredWithReserveWei "$required_with_reserve_wei" \
   --arg balanceWei "$balance" \
   --argjson sufficientBalance "$sufficient" \
   --argjson transactions "$receipts" \
@@ -99,7 +115,8 @@ jq -n \
     l1DataGasUpperBound:$l1DataGasUpperBound,
     executionWei:$executionWei,executionWithHeadroomWei:$executionWithHeadroomWei,
     l1DataWei:$l1DataWei,l1DataWithHeadroomWei:$l1DataWithHeadroomWei,
-    requiredWei:$requiredWei,balanceWei:$balanceWei,
+    requiredWei:$requiredWei,reserveWei:$reserveWei,
+    requiredWithReserveWei:$requiredWithReserveWei,balanceWei:$balanceWei,
     sufficientBalance:$sufficientBalance,transactions:$transactions
   }' >"$tmp"
 mv "$tmp" "$output"

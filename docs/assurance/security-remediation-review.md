@@ -166,9 +166,13 @@ Completed gates:
   invalid address-width value in the provider route's `bytes32` disabled
   reason. Static regressions cover both cases.
 - The complete standard-limit rehearsal passes 409 deployment verifier checks
-  after 17 contract deployments and 59 configuration transactions. A fresh
-  live gas preflight with 25% headroom remains required before Testnet
-  broadcast.
+  after 17 core contract deployments and 59 configuration transactions. The
+  complete 97-transaction manifest, including route assets, adapters, guards,
+  liquidity seeding, and genesis launch, consumes 72,971,616 gas in rehearsal.
+  At the sampled Testnet execution and L1-data prices, 25% headroom requires
+  1,018,030,300,405,660 wei; the protected deployer can preserve the required
+  0.0015 ETH reserve after this deployment estimate. Campaign funding remains
+  a separate preflight.
 - The schema-12 Mainnet fork test is implemented but remains an explicit
   blocker until the five required stock routes, direct WETH route, production
   Timelock, 2-of-3 Safe signer file, RDAO allocation, protected 0x access, and

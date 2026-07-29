@@ -1027,10 +1027,13 @@ Durable project context lives here. Update this file whenever information should
   is now 24,198 bytes, schema-12 deploys fresh Testnet mock assets and pools,
   and the complete rehearsal passes 409 verifier checks after 17 deployments
   and 59 configuration transactions. Full Foundry, 256-run/depth-128
-  invariants, 64 script tests, and the internal security audit pass with zero
+  invariants, 65 script tests, and the internal security audit pass with zero
   unresolved high or medium findings. No live schema-12 deployment has
-  occurred; gas preflight, clean exact release freeze, Testnet deployment, all
-  recovery/endurance gates, and exact Mainnet qualification remain pending.
+  occurred. The full 97-transaction gas preflight measured 72,971,616 gas and
+  1,018,030,300,405,660 wei required with 25% execution/L1 headroom; the
+  5,118,644,183,782,525-wei deployer balance preserves the 0.0015 ETH reserve.
+  Campaign funding is separate. Clean exact release freeze, Testnet deployment,
+  all recovery/endurance gates, and exact Mainnet qualification remain pending.
 
 - 2026-07-29: Mainnet RPC configuration now designates
   `192.168.50.173:8547` as chain-4663 LAN primary with protected Alchemy as
@@ -2672,10 +2675,15 @@ Durable project context lives here. Update this file whenever information should
   nonce state no longer advances in a discarded subshell.
 - Validation: 47 focused router tests, the complete 235-test Foundry campaign,
   explicit assurance invariants at 256 runs and depth 128, the 512-wallet
-  economic simulation, 64 script tests, and security analysis pass. Slither
+  economic simulation, 65 script tests, and security analysis pass. Slither
   retained 10 reviewed high and 59 reviewed medium detector records with zero
   unresolved high or medium finding; secret and high/critical dependency scans
   are clean.
+- Funding: the corrected estimator includes every embedded route transaction,
+  not only the core deployment and configuration arrays, and requires the
+  0.0015 ETH post-deployment reserve. The sampled preflight covers 97 unique
+  transactions and reports sufficient deployment funding. It does not yet
+  prove funding for the full lifecycle and endurance workload.
 - Boundary: this is local/fork evidence only. Schema-12 is not deployed to
   Robinhood Testnet or Mainnet, and no Mainnet transaction is authorized.
 
