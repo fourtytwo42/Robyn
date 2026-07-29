@@ -186,15 +186,15 @@ test("cost projection includes Nitro L1 data, 25 percent headroom, and hard rese
 });
 
 test("native sweep reserve uses the live gas estimate with headroom", () => {
-  assert.equal(nativeSweepReserveWei(10n, 21_000n), 315_000n);
-  assert.equal(nativeSweepReserveWei(10n, 28_239n), 423_590n);
+  assert.equal(nativeSweepReserveWei(10n, 21_000n), 420_000n);
+  assert.equal(nativeSweepReserveWei(10n, 28_239n), 564_780n);
   assert.throws(() => nativeSweepReserveWei(-1n, 0n), /cannot be negative/);
 });
 
-test("submitted transactions use a 50 percent execution-gas margin", () => {
+test("submitted transactions use a 100 percent execution-gas margin", () => {
   assert.equal(transactionGasLimit(0n), 0n);
-  assert.equal(transactionGasLimit(21_000n), 31_500n);
-  assert.equal(transactionGasLimit(21_001n), 31_502n);
+  assert.equal(transactionGasLimit(21_000n), 42_000n);
+  assert.equal(transactionGasLimit(21_001n), 42_002n);
   assert.throws(() => transactionGasLimit(-1n), /cannot be negative/);
 });
 

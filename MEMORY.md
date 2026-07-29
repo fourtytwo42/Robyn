@@ -931,6 +931,15 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: run `schema11-2h-7a69457-16` is preserved as failed after
+  600.226 healthy seconds, 23 confirmed transactions, and one submitted failed
+  transfer. The transfer receipt used exactly its 308,301 gas limit; repeating
+  the same estimate after the reward-stream state advanced required 360,070
+  gas. The failed transfer changed no state and must never be replayed. Increase
+  runner execution gas headroom from 50 to 100 percent, rerun focused and
+  adjacent tests plus protected funding preflight, promote an exact release,
+  and start a new run ID from zero.
+
 - 2026-07-29: run `schema11-2h-518f2b6-15` is preserved as failed after
   567.437 healthy seconds and 22 confirmed transactions. The corrected 50
   percent execution-gas headroom succeeded for holder, creator, and DAO claims.
@@ -2497,6 +2506,20 @@ Durable project context lives here. Update this file whenever information should
   event remains informational and cannot independently fail endurance.
 - Follow-up: commit, push, reproducibly build, promote, install the exact
   monitoring files, verify alerts and CU gates, then start a new full-clock run.
+
+### 2026-07-29 - Transfer-aware stream writes require 100 percent gas headroom
+
+- Run `schema11-2h-7a69457-16` passed promotion, 537 deployment checks,
+  steady-state CU preflight, funding, readiness, 21 endurance samples, and two
+  write cycles before `endurance-transfer-2` exhausted its 308,301 gas limit.
+- The immediately preceding buy succeeded. Between estimation and inclusion,
+  reward-stream state advanced; the same unchanged transfer then estimated at
+  360,070 gas. The failed receipt emitted no logs and changed no state.
+- Decision: use 100 percent execution gas headroom for journaled endurance
+  transactions. Funding and value estimates remain separate and preserve the
+  fixed campaign plus 0.0015 ETH reserve.
+- Follow-up: test, commit, push, reproducibly build and promote the exact
+  runner, then create a new run ID, salts, launches, and uninterrupted clock.
 
 ### 2026-07-28 - Final endurance retry requires an exact rebuilt runner
 
@@ -4346,6 +4369,9 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Promote the 100 percent transaction execution-gas headroom correction and
+  start only a fresh run ID. Never replay the 23 confirmed hashes or submitted
+  failed transfer from `schema11-2h-7a69457-16`.
 - Commit and promote the head-observation freshness monitoring correction,
   install the exact collector and rules from the immutable release, and start
   only a new full-clock run ID. Never reuse `schema11-2h-518f2b6-15` or its 22

@@ -282,7 +282,7 @@ export function transactionGasLimit(estimatedGasUnits) {
   if (estimatedGasUnits < 0n) {
     throw new Error("Estimated transaction gas cannot be negative");
   }
-  return (estimatedGasUnits * 3n + 1n) / 2n;
+  return estimatedGasUnits * 2n;
 }
 
 export function nativeSweepReserveWei(gasPriceWei, estimatedGasUnits) {
