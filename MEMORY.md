@@ -14,11 +14,18 @@
   `RobynZeroExAllowanceHolderAdapter.sol`, `IRobynExecutionAdapter.sol`,
   `IRobynPriceGuard.sol`, `RobynNativeBasketVaultV2.sol`, and
   `packages/contracts/src/testnet/TestnetPinnedExecutionAdapter.sol`.
+  Keeper support is in `apps/keeper/src/provider-quotes.ts` and
+  `apps/keeper/src/server.ts`.
 - Commands/tests: The focused schema-12 suite has 47 passing tests, including
   target/calldata substitution, expired quotes, partial fills, output
   diversion, separate caps, runtime mutation, atomic price-guard rejection,
   allowance cleanup, direct WETH, forced-token recovery, and deterministic
   Testnet provider execution.
+- Keeper validation: Provider quote tests validate chain, target, amount,
+  liquidity, output, slippage, and key isolation. The keeper uses deterministic
+  adapter quotes on Testnet and protected 0x AllowanceHolder quotes only on
+  Mainnet, then simulates `convertLegWithData` before writing. It bounds provider
+  replanning to four attempts. All 35 keeper tests, typecheck, and build pass.
   The full contract package builds.
 - Result: The Mainnet candidate policy now names exactly 11 individually
   qualified assets under schema version 12. GOOGL, MSFT, NVDA, SPCX, SPY, and
