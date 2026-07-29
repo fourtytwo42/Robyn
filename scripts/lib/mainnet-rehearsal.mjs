@@ -57,7 +57,10 @@ export function validateMainnetRehearsalConfig(config, supportPolicy) {
     failures.push("support policy must be schema 12 on chain 4663");
   }
   const assets = supportPolicy?.candidates ?? [];
-  if (assets.length !== config?.expectedCandidateCount || assets.length !== 11) {
+  if (
+    assets.length !== config?.expectedCandidateCount ||
+    assets.length !== 11
+  ) {
     failures.push("the support policy must contain exactly 11 candidates");
   }
   const symbols = new Set();
@@ -77,17 +80,23 @@ export function validateMainnetRehearsalConfig(config, supportPolicy) {
       failures.push(`invalid mainnet address for ${asset.symbol ?? "unknown"}`);
     }
   }
-  const requiredSymbols = assets.filter((asset) => asset.required).map((asset) => asset.symbol);
-  const optionalSymbols = assets.filter((asset) => !asset.required).map((asset) => asset.symbol);
-  if (JSON.stringify(requiredSymbols) !== JSON.stringify(config?.requiredSymbols)) {
+  const requiredSymbols = assets
+    .filter((asset) => asset.required)
+    .map((asset) => asset.symbol);
+  const optionalSymbols = assets
+    .filter((asset) => !asset.required)
+    .map((asset) => asset.symbol);
+  if (
+    JSON.stringify(requiredSymbols) !== JSON.stringify(config?.requiredSymbols)
+  ) {
     failures.push("required asset symbols do not match the support policy");
   }
-  if (JSON.stringify(optionalSymbols) !== JSON.stringify(config?.optionalSymbols)) {
+  if (
+    JSON.stringify(optionalSymbols) !== JSON.stringify(config?.optionalSymbols)
+  ) {
     failures.push("optional asset symbols do not match the support policy");
   }
-  const executionClasses = new Set(
-    assets.map((asset) => asset.executionClass),
-  );
+  const executionClasses = new Set(assets.map((asset) => asset.executionClass));
   for (const requiredClass of [
     "canonical-v4-single-hop",
     "direct-native-wrap",
@@ -101,7 +110,8 @@ export function validateMainnetRehearsalConfig(config, supportPolicy) {
   if (
     !weth ||
     weth.executionClass !== "direct-native-wrap" ||
-    getAddress(weth.address) !== getAddress(config?.venue?.weth?.address ?? zeroAddress)
+    getAddress(weth.address) !==
+      getAddress(config?.venue?.weth?.address ?? zeroAddress)
   ) {
     failures.push("the production WETH route is missing or inconsistent");
   }

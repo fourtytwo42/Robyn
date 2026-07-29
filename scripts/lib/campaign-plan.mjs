@@ -123,7 +123,8 @@ export function launchBasketPlan(manifest) {
     (route) => route.routeKind ?? "canonical-v4-single-hop",
   );
   if (
-    routeKinds.filter((kind) => kind === "canonical-v4-single-hop").length !== 4 ||
+    routeKinds.filter((kind) => kind === "canonical-v4-single-hop").length !==
+      4 ||
     routeKinds.filter((kind) => kind === "wrapped-native").length !== 1 ||
     routeKinds.filter((kind) => kind === "pinned-adapter").length !== 6
   ) {

@@ -34,8 +34,9 @@ test("the production rehearsal config freezes the schema-12 candidate universe",
     config.requiredSymbols,
   );
   assert.equal(
-    assets.filter(({ executionClass }) => executionClass === "pinned-execution-adapter")
-      .length,
+    assets.filter(
+      ({ executionClass }) => executionClass === "pinned-execution-adapter",
+    ).length,
     4,
   );
 });

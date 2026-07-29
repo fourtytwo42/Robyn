@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const source = readFileSync("scripts/deploy-testnet-v4-protocol.sh", "utf8");
-const gasSource = readFileSync("scripts/measure-testnet-v4-deployment-gas.sh", "utf8");
+const gasSource = readFileSync(
+  "scripts/measure-testnet-v4-deployment-gas.sh",
+  "utf8",
+);
 
 test("schema-12 deployment creates fresh v4 mock assets and preserves nonce state", () => {
   for (const symbol of ["GOOGL", "MSFT", "NVDA", "SPY"]) {
