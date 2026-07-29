@@ -33,6 +33,7 @@ import {
   REQUIRED_DISK_HEADROOM_BYTES,
   transactionGasLimit,
   V4_FEE_COLLECTION_MINIMUMS,
+  ORACLE_REFRESH_NATIVE_INPUT_WEI,
   V4_ORACLE_WINDOW_MATURITY_SECONDS,
 } from "../lib/campaign-plan.mjs";
 
@@ -294,8 +295,28 @@ test("graduation rounding dust uses a separate resumable transaction", () => {
   assert.ok(topup >= 0 && dust > topup && finalClassification > dust);
 });
 
-test("launch-fee conversion waits beyond the complete five-minute oracle window", () => {
+test("launch-fee conversion refreshes stale observations after history matures", () => {
   assert.equal(V4_ORACLE_WINDOW_MATURITY_SECONDS, 301);
+  assert.equal(ORACLE_REFRESH_NATIVE_INPUT_WEI, 100_000_000n);
+  const source = readFileSync(
+    new URL("../testnet-assurance-campaign.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /async function ensureConversionOracle/);
+  assert.match(source, /latestAge <= 600n/);
+  assert.match(source, /`oracle-refresh-\$\{launch\.index\}-\$\{attempt\}`/);
+  assert.match(source, /Oracle refresh did not record/);
+  assert.doesNotMatch(source, /oracleWindowTargetTimestamp/);
+});
+
+test("canonical keeper conversions satisfy current-campaign leg coverage without replay", () => {
+  const source = readFileSync(
+    new URL("../testnet-assurance-campaign.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /eventName: "LegConverted"/);
+  assert.match(source, /source: "canonical-keeper"/);
+  assert.match(source, /getTransactionReceipt/);
 });
 
 test("basket conversions are balanced across the three funded keeper actors", () => {
@@ -323,6 +344,7 @@ test("campaign value projection includes every planned payable user action", () 
   }
   expected += 3n * MAXIMUM_GRADUATION_TOPUP_WEI;
   expected += 3n * 250_000_000_000n;
+  expected += 3n * ORACLE_REFRESH_NATIVE_INPUT_WEI;
   expected += 2n * 20_000_000_000n;
   expected += 100_000_000_000n + 250_000_000_000_000n;
   expected += 10n * 200_000_000_000n;

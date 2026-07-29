@@ -59,6 +59,7 @@ import {
   REQUIRED_DISK_HEADROOM_BYTES,
   REQUIRED_RESERVE_WEI,
   V4_FEE_COLLECTION_MINIMUMS,
+  ORACLE_REFRESH_NATIVE_INPUT_WEI,
   V4_ORACLE_WINDOW_MATURITY_SECONDS,
   REQUIRED_SUCCESSFUL_WRITES,
   REQUIRED_WALLET_COUNT,
@@ -1585,6 +1586,102 @@ async function advanceOrWait(seconds, label) {
   }
 }
 
+async function ensureConversionOracle({
+  state,
+  manifest,
+  launch,
+  account,
+  hookAbi,
+  assetRouterAbi,
+}) {
+  state.conversions.oracleRefreshes ??= [];
+  try {
+    await publicClient.readContract({
+      address: manifest.contracts.oracleHook,
+      abi: hookAbi,
+      functionName: "consult",
+      args: [launch.poolId, BigInt(V4_ORACLE_WINDOW_MATURITY_SECONDS - 1)],
+    });
+  } catch {
+    await advanceOrWait(
+      V4_ORACLE_WINDOW_MATURITY_SECONDS,
+      `launch-${launch.index} oracle history`,
+    );
+  }
+
+  const current = await publicClient.getBlock();
+  const latest = await publicClient.readContract({
+    address: manifest.contracts.oracleHook,
+    abi: hookAbi,
+    functionName: "latestObservation",
+    args: [launch.poolId],
+  });
+  const latestAge = current.timestamp - BigInt(latest.timestamp);
+  if (latestAge <= 600n) return;
+
+  const transactionAttempts = state.transactions.filter((entry) =>
+    entry.label.startsWith(`oracle-refresh-${launch.index}-`),
+  ).length;
+  const refreshAttempts = state.conversions.oracleRefreshes.filter(
+    (entry) => entry.launchIndex === launch.index,
+  ).length;
+  const attempt = Math.max(transactionAttempts, refreshAttempts);
+  if (attempt >= 8) {
+    throw new Error(`Oracle refresh attempt limit reached for ${launch.index}`);
+  }
+  const [quoted] = await publicClient.readContract({
+    address: manifest.contracts.assetRouter,
+    abi: assetRouterAbi,
+    functionName: "quoteNativeToAsset",
+    args: [launch.token, ORACLE_REFRESH_NATIVE_INPUT_WEI],
+    account: account.address,
+  });
+  const confirmed = await contractTransaction(
+    state,
+    `oracle-refresh-${launch.index}-${attempt}`,
+    account,
+    manifest.contracts.assetRouter,
+    assetRouterAbi,
+    "swapExactNativeForAsset",
+    [
+      launch.token,
+      (quoted * 98n) / 100n || 1n,
+      account.address,
+      BigInt(Math.floor(Date.now() / 1000) + 600),
+    ],
+    ORACLE_REFRESH_NATIVE_INPUT_WEI,
+  );
+  const refreshedBlock = await publicClient.getBlock({
+    blockNumber: BigInt(confirmed.blockNumber),
+  });
+  const refreshed = await publicClient.readContract({
+    address: manifest.contracts.oracleHook,
+    abi: hookAbi,
+    functionName: "latestObservation",
+    args: [launch.poolId],
+    blockNumber: BigInt(confirmed.blockNumber),
+  });
+  if (BigInt(refreshed.timestamp) !== refreshedBlock.timestamp) {
+    throw new Error(`Oracle refresh did not record for launch ${launch.index}`);
+  }
+  await publicClient.readContract({
+    address: manifest.contracts.oracleHook,
+    abi: hookAbi,
+    functionName: "consult",
+    args: [launch.poolId, BigInt(V4_ORACLE_WINDOW_MATURITY_SECONDS - 1)],
+    blockNumber: BigInt(confirmed.blockNumber),
+  });
+  state.conversions.oracleRefreshes.push({
+    launchIndex: launch.index,
+    attempt,
+    priorAgeSeconds: latestAge.toString(),
+    observationTimestamp: refreshed.timestamp.toString(),
+    transactionHash: confirmed.hash,
+    blockNumber: confirmed.blockNumber,
+  });
+  saveState(state);
+}
+
 async function conversions() {
   const manifest = loadManifest();
   const state = loadState();
@@ -1601,26 +1698,10 @@ async function conversions() {
   state.conversions.harvests ??= [];
   state.conversions.hookSettlements ??= [];
   state.conversions.batchAdjustments ??= [];
-  if (!state.conversions.oracleWindowTargetTimestamp) {
-    const current = await publicClient.getBlock();
-    state.conversions.oracleWindowTargetTimestamp = (
-      current.timestamp + BigInt(V4_ORACLE_WINDOW_MATURITY_SECONDS)
-    ).toString();
-    saveState(state);
-  }
-  const current = await publicClient.getBlock();
-  const remaining =
-    BigInt(state.conversions.oracleWindowTargetTimestamp) > current.timestamp
-      ? Number(BigInt(state.conversions.oracleWindowTargetTimestamp) - current.timestamp)
-      : 0;
-  if (remaining > 0) {
-    await advanceOrWait(remaining, "launch-fee oracle maturity");
-  }
-  state.conversions.oracleWindowReadyAt = new Date().toISOString();
-  saveState(state);
   for (const launchIndex of state.trading.graduatedLaunches) {
     const launch = state.launches[launchIndex];
     const account = privateKeyToAccount(accounts[graduationActorIndex(launchIndex)].privateKey);
+    await ensureConversionOracle({ state, manifest, launch, account, hookAbi, assetRouterAbi });
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
     const pendingNativeBefore = await publicClient.readContract({
       address: manifest.contracts.oracleHook,
@@ -1662,6 +1743,7 @@ async function conversions() {
         });
         minimum = (quoted * 99n) / 100n || 1n;
         try {
+          await ensureConversionOracle({ state, manifest, launch, account, hookAbi, assetRouterAbi });
           await publicClient.call({
             account: account.address,
             to: manifest.contracts.oracleHook,
@@ -1746,6 +1828,7 @@ async function conversions() {
     });
     if (tokenBalance > 0n) {
       const amount = tokenBalance > (1n << 128n) - 1n ? (1n << 128n) - 1n : tokenBalance;
+      await ensureConversionOracle({ state, manifest, launch, account, hookAbi, assetRouterAbi });
       const [quoted] = await publicClient.readContract({ address: manifest.contracts.assetRouter, abi: assetRouterAbi, functionName: "quoteAssetToNative", args: [launch.token, amount] });
       await contractTransaction(state, `locker-convert-token-${launchIndex}`, account, launch.locker, lockerAbi, "convertCollectedToken", [amount, (quoted * 99n) / 100n || 1n, deadline]);
     }
@@ -1845,7 +1928,39 @@ async function conversions() {
         continue;
       }
       const before = await publicClient.readContract({ address: launch.vault, abi: vaultAbi, functionName: "leg", args: [BigInt(legIndex)] });
-      if (before.pendingNative === 0n) throw new Error(`No pending basket fees for ${label}`);
+      if (before.pendingNative === 0n) {
+        const logs = await publicClient.getContractEvents({
+          address: launch.vault,
+          abi: vaultAbi,
+          eventName: "LegConverted",
+          args: { legIndex: BigInt(legIndex) },
+          fromBlock: BigInt(manifest.deploymentBlock),
+          toBlock: "latest",
+        });
+        const canonical = logs.at(-1);
+        if (!canonical) {
+          throw new Error(`No pending or canonical basket conversion for ${label}`);
+        }
+        const receipt = await publicClient.getTransactionReceipt({
+          hash: canonical.transactionHash,
+        });
+        if (receipt.status !== "success") {
+          throw new Error(`Canonical basket conversion failed for ${label}`);
+        }
+        state.conversions.legs.push({
+          launchIndex: launch.index,
+          legIndex,
+          asset: canonical.args.asset,
+          nativeInput: canonical.args.inputAmount.toString(),
+          minimumOutput: canonical.args.minimumOutput.toString(),
+          rewardDelta: canonical.args.rewardDeposited.toString(),
+          source: "canonical-keeper",
+          transactionHash: canonical.transactionHash,
+          blockNumber: canonical.blockNumber.toString(),
+        });
+        saveState(state);
+        continue;
+      }
       const route = manifest.assetRoutes.find(
         (candidate) => getAddress(candidate.address) === getAddress(before.asset),
       );
@@ -1977,6 +2092,9 @@ async function conversions() {
         nativeInput: amount.toString(),
         minimumOutput: minimumOutput.toString(),
         rewardDelta: (after.rewardsDeposited - confirmedBefore.rewardsDeposited).toString(),
+        source: "campaign",
+        transactionHash: confirmed.hash,
+        blockNumber: confirmed.blockNumber,
       });
       saveState(state);
     }

@@ -1101,6 +1101,22 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-29: exact release
+  `60b88549dee05cd3466d1a0fa5a062865d294767` is live and healthy after the
+  keeper gas-margin repair. Campaign `schema12-assurance-0bad303-03` retains
+  1,537 confirmed receipts with no failed campaign transaction. Conversion
+  stopped before broadcast when locker conversion exposed a stale v4 oracle
+  observation: the runner's one global five-minute target remained persisted
+  after a long repair/promotion interval, while contracts require the latest
+  observation to be at most fifteen minutes old. A resumable correction now
+  refreshes each graduated pool through a small real swap when its observation
+  is older than ten minutes, verifies five-minute history at the confirmed
+  block, and refreshes again if a later conversion retry ages out. It also
+  recognizes successful canonical `LegConverted` events produced by the
+  current campaign's keeper jobs, without importing or replaying their
+  transaction hashes. Focused tests pass; commit, push, reproducibly build,
+  promote, and resume conversions only from the durable journal.
+
 - 2026-07-29: exact release `0bad30389d3a919823d80a8eebecf7a690df5eab`
   remains live against database `robyn_testnet_schema12_2311615` and corrected
   deployment block `94989079`. Campaign `schema12-assurance-0bad303-03` has
@@ -2820,6 +2836,19 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-29 - Conversion recovery preserves canonical keeper work
+
+- The campaign has 1,537 successful receipts and no failed campaign receipt.
+  `locker-collect-0` succeeded; its following conversion did not broadcast
+  because the latest pool observation was 1,108 seconds old.
+- Canonical `LegConverted` evidence exists for all 24 current-campaign vault
+  legs. Launches 1 and 2 still have bounded pending leg amounts; all other legs
+  are fully consumed. The recovery records successful keeper conversions as
+  canonical coverage and submits only still-pending work.
+- The campaign now budgets three deterministic oracle-refresh swaps, verifies
+  that each refresh writes an observation in its receipt block, and never
+  reuses a stale global readiness timestamp.
 
 ### 2026-07-29 - Campaign paused after keeper budget omission
 
@@ -4977,6 +5006,10 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Commit, push, reproducibly build, and promote the per-launch oracle-refresh
+  and canonical keeper-conversion recovery. Resume
+  `schema12-assurance-0bad303-03` from its durable journal; do not replay any
+  of its 1,537 confirmed receipts or any successful keeper receipt.
 - Complete the schema-12 keeper recovery: promote the exact gas-margin release,
   retry only the two remaining terminal BullMQ jobs after verifying their
   status-zero receipts, and require zero failed financial jobs plus exact

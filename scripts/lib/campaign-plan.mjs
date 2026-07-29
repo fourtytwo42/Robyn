@@ -15,6 +15,7 @@ export const KEEPER_AVERAGE_CALLDATA_BYTES = 256n;
 export const V4_FEE_COLLECTION_MINIMUMS = [0n, 0n];
 export const V4_ORACLE_WINDOW_MATURITY_SECONDS = 301;
 export const MAXIMUM_GRADUATION_TOPUP_WEI = 100_000_000_000_000n;
+export const ORACLE_REFRESH_NATIVE_INPUT_WEI = 100_000_000n;
 
 export function graduationActorIndex(launchIndex) {
   if (
@@ -166,6 +167,7 @@ export function minimumActionInventory() {
     sells: 150,
     externalLiquidity: 6,
     universalRouterSwaps: 4,
+    oracleRefreshSwaps: 3,
     hookSettlements: 6,
     basketConversions: 24,
     holderClaims: 20,
@@ -190,6 +192,7 @@ export function plannedTransactionValueWei() {
   }
   value += 3n * MAXIMUM_GRADUATION_TOPUP_WEI;
   value += 3n * 250_000_000_000n;
+  value += 3n * ORACLE_REFRESH_NATIVE_INPUT_WEI;
   value += 2n * 20_000_000_000n;
   value += 100_000_000_000n + 250_000_000_000_000n;
   value += 10n * 200_000_000_000n;
@@ -212,6 +215,8 @@ export function plannedWalletValueWei(actorIndex) {
     value += MAXIMUM_GRADUATION_TOPUP_WEI;
   }
   if (actorIndex >= 90 && actorIndex <= 92) value += 250_000_000_000n;
+  if (actorIndex >= 96 && actorIndex <= 98)
+    value += ORACLE_REFRESH_NATIVE_INPUT_WEI;
   if (actorIndex === 96 || actorIndex === 97) value += 20_000_000_000n;
   if (actorIndex === 99) {
     value += 100_000_000_000n + 250_000_000_000_000n;
