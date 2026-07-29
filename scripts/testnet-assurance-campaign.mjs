@@ -1702,6 +1702,9 @@ async function conversions() {
     const launch = state.launches[launchIndex];
     const account = privateKeyToAccount(accounts[graduationActorIndex(launchIndex)].privateKey);
     await ensureConversionOracle({ state, manifest, launch, account, hookAbi, assetRouterAbi });
+    // Give the event-driven keeper a bounded opportunity to consume work
+    // awakened by the refresh before this campaign submits the same action.
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 3_000));
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
     const pendingNativeBefore = await publicClient.readContract({
       address: manifest.contracts.oracleHook,
@@ -1773,15 +1776,33 @@ async function conversions() {
           convertedTokenAmount /= 2n;
         }
       }
-      await contractTransaction(
-        state,
-        `hook-convert-token-${launchIndex}`,
-        account,
-        manifest.contracts.oracleHook,
-        hookAbi,
-        "convertTokenFees",
-        [launch.token, convertedTokenAmount, minimum, deadline],
-      );
+      try {
+        await contractTransaction(
+          state,
+          `hook-convert-token-${launchIndex}`,
+          account,
+          manifest.contracts.oracleHook,
+          hookAbi,
+          "convertTokenFees",
+          [launch.token, convertedTokenAmount, minimum, deadline],
+        );
+      } catch (error) {
+        const pendingAfterRace = await publicClient.readContract({
+          address: manifest.contracts.oracleHook,
+          abi: hookAbi,
+          functionName: "pendingTokenFees",
+          args: [launch.token],
+        });
+        if (pendingAfterRace !== 0n) throw error;
+        state.conversions.batchAdjustments.push({
+          label: `hook-convert-token-${launchIndex}`,
+          rejectedAmount: convertedTokenAmount.toString(),
+          reason: "canonical keeper conversion won the pre-submission race",
+          source: "canonical-keeper",
+        });
+        convertedTokenAmount = 0n;
+        saveState(state);
+      }
     }
     const conversionGeneratedNative = await publicClient.readContract({
       address: manifest.contracts.oracleHook,
@@ -1821,6 +1842,7 @@ async function conversions() {
       functionName: "pendingCollectedNativeFees",
     });
     if (nativeBalance > 0n) await contractTransaction(state, `locker-route-native-${launchIndex}`, account, launch.locker, lockerAbi, "routeCollectedNative", [nativeBalance]);
+    await ensureConversionOracle({ state, manifest, launch, account, hookAbi, assetRouterAbi });
     const tokenBalance = await publicClient.readContract({
       address: launch.locker,
       abi: lockerAbi,
@@ -1828,9 +1850,24 @@ async function conversions() {
     });
     if (tokenBalance > 0n) {
       const amount = tokenBalance > (1n << 128n) - 1n ? (1n << 128n) - 1n : tokenBalance;
-      await ensureConversionOracle({ state, manifest, launch, account, hookAbi, assetRouterAbi });
       const [quoted] = await publicClient.readContract({ address: manifest.contracts.assetRouter, abi: assetRouterAbi, functionName: "quoteAssetToNative", args: [launch.token, amount] });
-      await contractTransaction(state, `locker-convert-token-${launchIndex}`, account, launch.locker, lockerAbi, "convertCollectedToken", [amount, (quoted * 99n) / 100n || 1n, deadline]);
+      try {
+        await contractTransaction(state, `locker-convert-token-${launchIndex}`, account, launch.locker, lockerAbi, "convertCollectedToken", [amount, (quoted * 99n) / 100n || 1n, deadline]);
+      } catch (error) {
+        const pendingAfterRace = await publicClient.readContract({
+          address: launch.locker,
+          abi: lockerAbi,
+          functionName: "pendingCollectedTokenFees",
+        });
+        if (pendingAfterRace !== 0n) throw error;
+        state.conversions.batchAdjustments.push({
+          label: `locker-convert-token-${launchIndex}`,
+          rejectedAmount: amount.toString(),
+          reason: "canonical keeper conversion won the pre-submission race",
+          source: "canonical-keeper",
+        });
+        saveState(state);
+      }
     }
     const postHarvestPendingNative = await publicClient.readContract({
       address: manifest.contracts.oracleHook,

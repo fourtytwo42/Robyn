@@ -1104,6 +1104,15 @@ Durable project context lives here. Update this file whenever information should
 - 2026-07-29: exact release
   `60b88549dee05cd3466d1a0fa5a062865d294767` is live and healthy after the
   keeper gas-margin repair. Campaign `schema12-assurance-0bad303-03` retains
+  1,540 confirmed receipts after exact release `174de54` refreshed launch 0's
+  oracle, converted its hook-token fee, and settled the generated native fee.
+  The next locker conversion did not broadcast: the event-driven keeper
+  consumed the pending locker tokens between the campaign read and gas
+  estimation. The runner now gives the keeper a bounded first opportunity and
+  treats an estimate-time conflict as canonical keeper completion only when
+  the authoritative pending balance reached zero. No confirmed transaction is
+  replayed and no campaign transaction has failed.
+  Previously, the campaign retained
   1,537 confirmed receipts with no failed campaign transaction. Conversion
   stopped before broadcast when locker conversion exposed a stale v4 oracle
   observation: the runner's one global five-minute target remained persisted
@@ -2840,6 +2849,10 @@ Durable project context lives here. Update this file whenever information should
 ### 2026-07-29 - Conversion recovery preserves canonical keeper work
 
 - The campaign has 1,537 successful receipts and no failed campaign receipt.
+  Exact release `174de54` added three more successful receipts: the launch-0
+  oracle refresh, hook conversion, and follow-up native settlement. Its locker
+  conversion was consumed by the keeper before campaign estimation and did not
+  broadcast.
   `locker-collect-0` succeeded; its following conversion did not broadcast
   because the latest pool observation was 1,108 seconds old.
 - Canonical `LegConverted` evidence exists for all 24 current-campaign vault

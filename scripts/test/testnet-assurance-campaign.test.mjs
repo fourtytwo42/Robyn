@@ -319,6 +319,18 @@ test("canonical keeper conversions satisfy current-campaign leg coverage without
   assert.match(source, /getTransactionReceipt/);
 });
 
+test("campaign recognizes a keeper conversion that wins before submission", () => {
+  const source = readFileSync(
+    new URL("../testnet-assurance-campaign.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    source,
+    /canonical keeper conversion won the pre-submission race/g,
+  );
+  assert.match(source, /if \(pendingAfterRace !== 0n\) throw error/g);
+});
+
 test("basket conversions are balanced across the three funded keeper actors", () => {
   const actors = Array.from({ length: 8 }, (_, launchIndex) =>
     Array.from({ length: 3 }, (_, legIndex) =>
