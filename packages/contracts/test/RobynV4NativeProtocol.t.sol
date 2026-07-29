@@ -22,12 +22,14 @@ import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol"
 import {RobynLaunchToken} from "../src/RobynLaunchToken.sol";
 import {RobynTokenSink} from "../src/RobynTokenSink.sol";
 import {RobynDaoToken} from "../src/dao/RobynDaoToken.sol";
+import {TestnetWETH9} from "../src/testnet/TestnetWETH9.sol";
 import {RobynNativeBasketVaultV2} from "../src/uniswap/RobynNativeBasketVaultV2.sol";
 import {RobynNativeLaunchDeployerV4} from "../src/uniswap/RobynNativeLaunchDeployerV4.sol";
 import {RobynNativeLaunchFactoryV4} from "../src/uniswap/RobynNativeLaunchFactoryV4.sol";
 import {RobynNativeVaultDeployerV4} from "../src/uniswap/RobynNativeVaultDeployerV4.sol";
 import {RobynNativeProtocolFeeRouterV4} from "../src/uniswap/RobynNativeProtocolFeeRouterV4.sol";
 import {RobynV4AssetRouter} from "../src/uniswap/RobynV4AssetRouter.sol";
+import {IWrappedNative} from "../src/uniswap/RobynV4AssetRouter.sol";
 import {RobynV4AdapterDeployer} from "../src/uniswap/RobynV4AdapterDeployer.sol";
 import {RobynV4BondingCurveMarket} from "../src/uniswap/RobynV4BondingCurveMarket.sol";
 import {RobynV4FeePositionLocker} from "../src/uniswap/RobynV4FeePositionLocker.sol";
@@ -104,6 +106,7 @@ contract RobynV4NativeProtocolTest is Test {
     RobynV4LaunchCoordinatorV5 internal coordinator;
     RobynDaoToken internal daoToken;
     V4TestAsset internal basketAsset;
+    TestnetWETH9 internal testWrappedNative;
 
     address internal constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
     address payable internal constant TREASURY = payable(address(0xBEEF));
@@ -140,7 +143,10 @@ contract RobynV4NativeProtocolTest is Test {
                 abi.encode(poolManager)
             )
         );
-        assetRouter = new RobynV4AssetRouter(poolManager, quoter, stateView, address(this));
+        testWrappedNative = new TestnetWETH9();
+        assetRouter = new RobynV4AssetRouter(
+            poolManager, quoter, stateView, address(this), GUARDIAN, IWrappedNative(address(testWrappedNative))
+        );
         basketAsset = new V4TestAsset();
         _seedBasketPool();
 
@@ -280,7 +286,9 @@ contract RobynV4NativeProtocolTest is Test {
     }
 
     function testAssetRouterBootstrapConfigurationClosesWhenRegistrarBinds() public {
-        RobynV4AssetRouter bootstrapRouter = new RobynV4AssetRouter(poolManager, quoter, stateView, address(0xF00D));
+        RobynV4AssetRouter bootstrapRouter = new RobynV4AssetRouter(
+            poolManager, quoter, stateView, address(0xF00D), GUARDIAN, IWrappedNative(address(testWrappedNative))
+        );
         RobynV4AssetRouter.Route memory configured = RobynV4AssetRouter.Route({
             fee: 3_000,
             tickSpacing: 60,
@@ -426,8 +434,7 @@ contract RobynV4NativeProtocolTest is Test {
         vm.warp(block.timestamp + 30 minutes);
         uint256 expectedTailVested = (state.unvested * 30 minutes) / 1 hours;
         assertEq(
-            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)),
-            vestedAtTen + expectedTailVested
+            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), vestedAtTen + expectedTailVested
         );
 
         uint256 balanceBefore = address(this).balance;
@@ -462,8 +469,7 @@ contract RobynV4NativeProtocolTest is Test {
         claimed += feeRouter.claimCreatorFees(address(token));
 
         vm.warp(started + 59 minutes);
-        uint256 atFiftyNine =
-            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
+        uint256 atFiftyNine = feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
         assertEq(atFiftyNine, (assigned * 59 minutes) / 1 hours - claimed);
         claimed += feeRouter.claimCreatorFees(address(token));
 
@@ -495,8 +501,7 @@ contract RobynV4NativeProtocolTest is Test {
 
         firstMarket.buy{value: 0.1 ether}(1);
         vm.warp(block.timestamp + 1 hours);
-        uint256 claimable =
-            feeRouter.claimableCreatorNativeByRecipient(address(first), address(this));
+        uint256 claimable = feeRouter.claimableCreatorNativeByRecipient(address(first), address(this));
         uint256 liabilityBefore = feeRouter.totalCreatorNativeLiability();
         RejectNative rejector = new RejectNative();
         vm.expectRevert(RobynNativeProtocolFeeRouterV4.NativeTransferFailed.selector);

@@ -166,6 +166,11 @@ state_view_pool_manager="$(
 }
 
 guardian="${ROBYN_GUARDIAN_ADDRESS:-$deployer}"
+wrapped_native="$(jq -er '.contracts.wrappedNative' "$legacy_asset_manifest")"
+[[ "$(cast code "$wrapped_native" --rpc-url "$rpc_url")" != "0x" ]] || {
+  echo "The reviewed testnet wrapped-native contract has no runtime code" >&2
+  exit 1
+}
 deploy_contract timelock \
   ../../node_modules/@openzeppelin/contracts/governance/TimelockController.sol:TimelockController \
   600 "[]" "[]" "$deployer"
@@ -177,7 +182,7 @@ deploy_contract governor \
   src/dao/RobynTestnetGovernor.sol:RobynTestnetGovernor "$dao_token" "$timelock"
 governor="${addresses[governor]}"
 deploy_contract assetRouter src/uniswap/RobynV4AssetRouter.sol:RobynV4AssetRouter \
-  "$pool_manager" "$quoter" "$state_view" "$timelock"
+  "$pool_manager" "$quoter" "$state_view" "$timelock" "$guardian" "$wrapped_native"
 asset_router="${addresses[assetRouter]}"
 
 if [[ -n "$reuse_routes_manifest" ]]; then
@@ -246,6 +251,47 @@ mock_native_seed="100000000000000"
 mock_token_seed_max="100000000000000"
 mock_liquidity="50000000000000"
 mock_maximum_native_input="1000000000000"
+wrapped_native_maximum_input="500000000000000000"
+wrapped_native_verification_class="$(cast keccak 'ROBYN_SCHEMA12_DIRECT_WETH')"
+send_transaction "$asset_router" \
+  'configureWrappedNativeRoute(uint128,bytes32,bool)' \
+  "$wrapped_native_maximum_input" "$wrapped_native_verification_class" true >/dev/null
+wrapped_native_status="$(
+  cast call "$asset_router" \
+    'executionRouteStatus(address)((uint8,address,address,uint128,uint128,bytes32,bytes32,bytes32,bytes32,bool,bool,bool,bytes32))' \
+    "$wrapped_native" --rpc-url "$rpc_url" --json
+)"
+[[ "$(jq -r '.[0][11]' <<<"$wrapped_native_status")" == "true" ]] || {
+  echo "The schema-12 direct WETH route is not ready" >&2
+  exit 1
+}
+wrapped_native_runtime_hash="$(runtime_code_hash "$wrapped_native")"
+if [[ -z "$reuse_routes_manifest" ]]; then
+  jq -nc \
+    --arg address "$wrapped_native" \
+    --arg runtimeCodeHash "$wrapped_native_runtime_hash" \
+    '{
+      symbol:"WETH",
+      address:$address,
+      poolId:null,
+      fee:0,
+      tickSpacing:0,
+      hook:"0x0000000000000000000000000000000000000000",
+      verification:"robyn-controlled-testnet-dex",
+      provenance:"schema12-direct-wrap",
+      routeKind:"wrapped-native",
+      runtimeCodeHash:$runtimeCodeHash
+    }' >>"$mock_route_log"
+fi
+  jq -nc \
+    '{
+      symbol:"WETH",
+      referenceTick:0,
+      maximumReferenceTickDeviation:0,
+      enforceReferencePrice:false,
+      maximumProtectedRouteSlippageBps:0,
+      routeKind:"wrapped-native"
+    }' >>"$route_safety_log"
 if [[ -z "$reuse_routes_manifest" ]]; then
 while IFS=$'\t' read -r symbol asset verification; do
   if [[ "$verification" == "robyn-controlled-testnet-dex" ]]; then
@@ -319,6 +365,7 @@ done < <(
         (.verification == "robyn-testnet-mock" and ($official | index($asset.symbol) | not))
         or .verification == "robyn-controlled-testnet-dex"
       )
+    | select(.symbol != "WETH")
     | [.symbol,.address,.verification] | @tsv
   ' "$legacy_asset_manifest"
 )

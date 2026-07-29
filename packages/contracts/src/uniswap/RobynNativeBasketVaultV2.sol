@@ -13,7 +13,7 @@ contract RobynNativeBasketVaultV2 is ReentrancyGuard {
 
     uint16 public constant BPS = 10_000;
     uint8 public constant MAX_ASSETS = 3;
-    string public constant CONTRACT_VERSION = "2.0.0";
+    string public constant CONTRACT_VERSION = "3.0.0";
 
     error Unauthorized();
     error AlreadyBound();
@@ -145,6 +145,26 @@ contract RobynNativeBasketVaultV2 is ReentrancyGuard {
         nonReentrant
         returns (uint256 actualOutput)
     {
+        return _convertLeg(index, amount, minimumOutput, deadline, bytes(""));
+    }
+
+    function convertLegWithData(
+        uint256 index,
+        uint256 amount,
+        uint256 minimumOutput,
+        uint256 deadline,
+        bytes calldata executionData
+    ) external nonReentrant returns (uint256 actualOutput) {
+        return _convertLeg(index, amount, minimumOutput, deadline, executionData);
+    }
+
+    function _convertLeg(
+        uint256 index,
+        uint256 amount,
+        uint256 minimumOutput,
+        uint256 deadline,
+        bytes memory executionData
+    ) private returns (uint256 actualOutput) {
         if (address(launchToken) == address(0)) revert NotBound();
         _validateLeg(index);
         if (amount == 0 || amount > type(uint128).max || minimumOutput == 0) {
@@ -162,9 +182,16 @@ contract RobynNativeBasketVaultV2 is ReentrancyGuard {
         if (selected.pendingNative == 0) selected.pendingSince = 0;
         totalNativeConsumed += amount;
         uint256 rewardBefore = selected.asset.balanceOf(address(this));
-        uint256 reported = assetRouter.swapExactNativeForAsset{ value: amount }(
-            address(selected.asset), minimumOutput, address(this), deadline
-        );
+        uint256 reported;
+        if (executionData.length == 0) {
+            reported = assetRouter.swapExactNativeForAsset{ value: amount }(
+                address(selected.asset), minimumOutput, address(this), deadline
+            );
+        } else {
+            reported = assetRouter.swapExactNativeForAssetWithData{ value: amount }(
+                address(selected.asset), minimumOutput, address(this), deadline, executionData
+            );
+        }
         actualOutput = selected.asset.balanceOf(address(this)) - rewardBefore;
         if (reported != actualOutput || actualOutput < minimumOutput) {
             revert InsufficientOutput(minimumOutput, actualOutput);
@@ -173,6 +200,21 @@ contract RobynNativeBasketVaultV2 is ReentrancyGuard {
         selected.asset.forceApprove(address(launchToken), actualOutput);
         uint256 rewardDeposited = launchToken.distributeReward(index, actualOutput);
         selected.asset.forceApprove(address(launchToken), 0);
+        _recordConversion(
+            index, amount, minimumOutput, actualOutput, rewardDeposited, deadline
+        );
+        assert(totalPendingNative() + totalNativeConsumed == totalFeesReceived);
+    }
+
+    function _recordConversion(
+        uint256 index,
+        uint256 amount,
+        uint256 minimumOutput,
+        uint256 actualOutput,
+        uint256 rewardDeposited,
+        uint256 deadline
+    ) private {
+        BasketLeg storage selected = _legs[index];
         selected.rewardsDeposited += rewardDeposited;
         emit LegConverted(
             index,
@@ -184,7 +226,6 @@ contract RobynNativeBasketVaultV2 is ReentrancyGuard {
             rewardDeposited,
             deadline
         );
-        assert(totalPendingNative() + totalNativeConsumed == totalFeesReceived);
     }
 
     function _fundLeg(uint256 index, uint256 amount) private {

@@ -1,30 +1,37 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import { IPoolManager } from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
-import { IHooks } from "@uniswap/v4-core/src/interfaces/IHooks.sol";
-import { TickMath } from "@uniswap/v4-core/src/libraries/TickMath.sol";
-import { BalanceDelta, BalanceDeltaLibrary } from "@uniswap/v4-core/src/types/BalanceDelta.sol";
-import { Currency, CurrencyLibrary } from "@uniswap/v4-core/src/types/Currency.sol";
-import { PoolId, PoolIdLibrary } from "@uniswap/v4-core/src/types/PoolId.sol";
-import { PoolKey } from "@uniswap/v4-core/src/types/PoolKey.sol";
-import { SwapParams } from "@uniswap/v4-core/src/types/PoolOperation.sol";
-import { SafeCallback } from "@uniswap/v4-periphery/src/base/SafeCallback.sol";
-import { IStateView } from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
-import { IV4Quoter } from "@uniswap/v4-periphery/src/interfaces/IV4Quoter.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
+import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
+import {Currency, CurrencyLibrary} from "@uniswap/v4-core/src/types/Currency.sol";
+import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
+import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
+import {SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
+import {SafeCallback} from "@uniswap/v4-periphery/src/base/SafeCallback.sol";
+import {IStateView} from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
+import {IV4Quoter} from "@uniswap/v4-periphery/src/interfaces/IV4Quoter.sol";
+import {IRobynExecutionAdapter} from "./IRobynExecutionAdapter.sol";
+import {IRobynPriceGuard} from "./IRobynPriceGuard.sol";
 
-/// @notice Governance-controlled registry and bounded single-hop v4 executor for ETH basket routes.
+interface IWrappedNative is IERC20 {
+    function deposit() external payable;
+    function withdraw(uint256 amount) external;
+}
+
+/// @notice Governance-controlled registry and bounded multi-provider executor for ETH basket routes.
 contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
     using BalanceDeltaLibrary for BalanceDelta;
     using CurrencyLibrary for Currency;
     using PoolIdLibrary for PoolKey;
     using SafeERC20 for IERC20;
 
-    string public constant CONTRACT_VERSION = "1.3.0";
+    string public constant CONTRACT_VERSION = "2.0.0";
     uint16 public constant BPS = 10_000;
     uint24 public constant FEE_DENOMINATOR = 1_000_000;
     uint16 public constant MAX_PROTECTED_ROUTE_SLIPPAGE_BPS = 100;
@@ -40,6 +47,18 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
     error NativeTransferFailed();
     error DirectNativeTransferRejected();
     error NothingPending();
+    error ConversionsPaused();
+    error InvalidExecutionData();
+    error RuntimeHashMismatch(address target);
+    error PriceGuardRejected();
+    error UnsupportedQuoteKind();
+
+    enum RouteKind {
+        None,
+        V4SingleHop,
+        WrappedNative,
+        PinnedAdapter
+    }
 
     struct Route {
         uint24 fee;
@@ -71,19 +90,55 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         bytes32 reason;
     }
 
+    struct ExecutionRoute {
+        RouteKind kind;
+        address adapter;
+        address priceGuard;
+        uint128 maximumNativeInput;
+        uint128 maximumAssetInput;
+        bytes32 provider;
+        bytes32 adapterRuntimeHash;
+        bytes32 priceGuardRuntimeHash;
+        bytes32 disabledReason;
+        bool enabled;
+    }
+
+    struct ExecutionRouteStatus {
+        RouteKind kind;
+        address adapter;
+        address priceGuard;
+        uint128 maximumNativeInput;
+        uint128 maximumAssetInput;
+        bytes32 provider;
+        bytes32 adapterRuntimeHash;
+        bytes32 priceGuardRuntimeHash;
+        bytes32 disabledReason;
+        bool enabled;
+        bool runtimeVerified;
+        bool ready;
+        bytes32 reason;
+    }
+
     bytes32 public constant REASON_NOT_CONFIGURED = keccak256("ROUTE_NOT_CONFIGURED");
     bytes32 public constant REASON_DISABLED = keccak256("ROUTE_DISABLED");
     bytes32 public constant REASON_UNINITIALIZED = keccak256("POOL_UNINITIALIZED");
     bytes32 public constant REASON_THIN_LIQUIDITY = keccak256("INSUFFICIENT_LIQUIDITY");
-    bytes32 public constant REASON_REFERENCE_PRICE_DEVIATION =
-        keccak256("REFERENCE_PRICE_DEVIATION");
+    bytes32 public constant REASON_REFERENCE_PRICE_DEVIATION = keccak256("REFERENCE_PRICE_DEVIATION");
+    bytes32 public constant REASON_CONVERSIONS_PAUSED = keccak256("CONVERSIONS_PAUSED");
+    bytes32 public constant REASON_RUNTIME_HASH_MISMATCH = keccak256("RUNTIME_HASH_MISMATCH");
+    bytes32 public constant REASON_PRICE_GUARD_MISSING = keccak256("PRICE_GUARD_MISSING");
 
     address public immutable governor;
+    address public immutable guardian;
     address public immutable initializer;
+    IWrappedNative public immutable wrappedNative;
+    bytes32 public immutable wrappedNativeRuntimeHash;
     address public launchRegistrar;
     IV4Quoter public immutable quoter;
     IStateView public immutable stateView;
     mapping(address asset => Route route) private _routes;
+    mapping(address asset => ExecutionRoute route) private _executionRoutes;
+    bool public conversionsPaused;
     uint256 public cumulativeUnattributedNativeSwept;
 
     event LaunchRegistrarBound(address indexed registrar);
@@ -110,22 +165,42 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         uint256 outputAmount
     );
     event UnattributedNativeSwept(address indexed timelockTreasury, uint256 amount);
+    event UnattributedTokenSwept(address indexed token, address indexed timelockTreasury, uint256 amount);
+    event ExecutionRouteConfigured(
+        address indexed asset,
+        RouteKind indexed kind,
+        bytes32 indexed provider,
+        address adapter,
+        address priceGuard,
+        uint128 maximumNativeInput,
+        uint128 maximumAssetInput,
+        bytes32 adapterRuntimeHash,
+        bytes32 priceGuardRuntimeHash,
+        bool enabled
+    );
+    event RouteDisabled(address indexed asset, address indexed caller, bytes32 reason);
+    event ConversionsPauseChanged(bool paused, address indexed caller);
 
     constructor(
         IPoolManager poolManager_,
         IV4Quoter quoter_,
         IStateView stateView_,
-        address governor_
+        address governor_,
+        address guardian_,
+        IWrappedNative wrappedNative_
     ) SafeCallback(poolManager_) {
         if (
-            address(poolManager_) == address(0) || address(quoter_) == address(0)
-                || address(stateView_) == address(0) || governor_ == address(0)
+            address(poolManager_) == address(0) || address(quoter_) == address(0) || address(stateView_) == address(0)
+                || governor_ == address(0) || guardian_ == address(0) || address(wrappedNative_) == address(0)
                 || address(poolManager_).code.length == 0 || address(quoter_).code.length == 0
-                || address(stateView_).code.length == 0
+                || address(stateView_).code.length == 0 || address(wrappedNative_).code.length == 0
         ) revert InvalidConfiguration();
         quoter = quoter_;
         stateView = stateView_;
         governor = governor_;
+        guardian = guardian_;
+        wrappedNative = wrappedNative_;
+        wrappedNativeRuntimeHash = address(wrappedNative_).codehash;
         initializer = msg.sender;
     }
 
@@ -133,7 +208,7 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
     /// output is sent directly to the requested recipient, so no fallback
     /// transfer is required by the canonical swap path.
     receive() external payable {
-        revert DirectNativeTransferRejected();
+        if (msg.sender != address(wrappedNative)) revert DirectNativeTransferRejected();
     }
 
     /// @notice Returns ETH forced into the router outside an explicit swap.
@@ -148,9 +223,20 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         amount = unattributedNative();
         if (amount == 0) revert NothingPending();
         cumulativeUnattributedNativeSwept += amount;
-        (bool sent,) = payable(governor).call{ value: amount }("");
+        (bool sent,) = payable(governor).call{value: amount}("");
         if (!sent) revert NativeTransferFailed();
         emit UnattributedNativeSwept(governor, amount);
+    }
+
+    /// @notice Permissionlessly forwards ERC20 balances sent outside an active swap.
+    /// @dev The router has no persistent ERC20 liability, and nonReentrant prevents
+    /// sweeping a transient provider or wrapped-native balance.
+    function sweepUnattributedToken(address token) external nonReentrant returns (uint256 amount) {
+        if (token == address(0) || token.code.length == 0) revert InvalidConfiguration();
+        amount = IERC20(token).balanceOf(address(this));
+        if (amount == 0) revert NothingPending();
+        IERC20(token).safeTransfer(governor, amount);
+        emit UnattributedTokenSwept(token, governor, amount);
     }
 
     function bindLaunchRegistrar(address registrar) external {
@@ -162,8 +248,7 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
     }
 
     function configureRoute(address asset, Route calldata route_) external {
-        if (msg.sender != governor && (msg.sender != initializer || launchRegistrar != address(0)))
-        {
+        if (msg.sender != governor && (msg.sender != initializer || launchRegistrar != address(0))) {
             revert Unauthorized();
         }
         _configureRoute(asset, route_);
@@ -171,14 +256,25 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
 
     function _configureRoute(address asset, Route calldata route_) private {
         if (
-            asset == address(0) || asset.code.length == 0 || route_.fee == 0
-                || route_.tickSpacing <= 0 || route_.minimumLiquidity == 0
-                || route_.maximumNativeInput == 0 || route_.fee >= FEE_DENOMINATOR
+            asset == address(0) || asset.code.length == 0 || route_.fee == 0 || route_.tickSpacing <= 0
+                || route_.minimumLiquidity == 0 || route_.maximumNativeInput == 0 || route_.fee >= FEE_DENOMINATOR
                 || (route_.enforceReferencePrice && route_.maximumReferenceTickDeviation == 0)
                 || (!route_.enforceReferencePrice
                     && (route_.referenceTick != 0 || route_.maximumReferenceTickDeviation != 0))
         ) revert InvalidConfiguration();
         _routes[asset] = route_;
+        _executionRoutes[asset] = ExecutionRoute({
+            kind: RouteKind.V4SingleHop,
+            adapter: address(0),
+            priceGuard: address(0),
+            maximumNativeInput: route_.maximumNativeInput,
+            maximumAssetInput: type(uint128).max,
+            provider: keccak256("UNISWAP_V4"),
+            adapterRuntimeHash: bytes32(0),
+            priceGuardRuntimeHash: bytes32(0),
+            disabledReason: bytes32(0),
+            enabled: route_.enabled
+        });
         emit RouteConfigured(
             asset,
             PoolId.unwrap(_poolKey(asset, route_).toId()),
@@ -193,6 +289,18 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
             route_.verificationClass,
             route_.enabled
         );
+        emit ExecutionRouteConfigured(
+            asset,
+            RouteKind.V4SingleHop,
+            keccak256("UNISWAP_V4"),
+            address(0),
+            address(0),
+            route_.maximumNativeInput,
+            type(uint128).max,
+            bytes32(0),
+            bytes32(0),
+            route_.enabled
+        );
     }
 
     function configureLaunchRoute(address asset, Route calldata route_) external {
@@ -204,6 +312,98 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         return _routes[asset];
     }
 
+    function executionRoute(address asset) external view returns (ExecutionRoute memory) {
+        return _executionRoutes[asset];
+    }
+
+    function configureWrappedNativeRoute(uint128 maximumNativeInput, bytes32 verificationClass, bool enabled) external {
+        _requireGovernorOrBootstrap();
+        if (maximumNativeInput == 0 || verificationClass == bytes32(0)) {
+            revert InvalidConfiguration();
+        }
+        address asset = address(wrappedNative);
+        delete _routes[asset];
+        _executionRoutes[asset] = ExecutionRoute({
+            kind: RouteKind.WrappedNative,
+            adapter: address(0),
+            priceGuard: address(0),
+            maximumNativeInput: maximumNativeInput,
+            maximumAssetInput: maximumNativeInput,
+            provider: verificationClass,
+            adapterRuntimeHash: bytes32(0),
+            priceGuardRuntimeHash: bytes32(0),
+            disabledReason: bytes32(0),
+            enabled: enabled
+        });
+        emit ExecutionRouteConfigured(
+            asset,
+            RouteKind.WrappedNative,
+            verificationClass,
+            address(0),
+            address(0),
+            maximumNativeInput,
+            maximumNativeInput,
+            bytes32(0),
+            bytes32(0),
+            enabled
+        );
+    }
+
+    function configureAdapterRoute(address asset, ExecutionRoute calldata route_) external {
+        _requireGovernorOrBootstrap();
+        if (
+            asset == address(0) || asset == address(wrappedNative) || asset.code.length == 0
+                || route_.kind != RouteKind.PinnedAdapter || route_.adapter == address(0)
+                || route_.priceGuard == address(0) || route_.maximumNativeInput == 0 || route_.provider == bytes32(0)
+                || route_.maximumAssetInput == 0 || route_.adapterRuntimeHash == bytes32(0)
+                || route_.priceGuardRuntimeHash == bytes32(0) || route_.disabledReason != bytes32(0)
+                || route_.adapter.code.length == 0 || route_.priceGuard.code.length == 0
+                || route_.adapter.codehash != route_.adapterRuntimeHash
+                || route_.priceGuard.codehash != route_.priceGuardRuntimeHash
+                || IRobynExecutionAdapter(route_.adapter).asset() != asset
+                || IRobynExecutionAdapter(route_.adapter).wrappedNative() != address(wrappedNative)
+        ) revert InvalidConfiguration();
+        delete _routes[asset];
+        _executionRoutes[asset] = route_;
+        emit ExecutionRouteConfigured(
+            asset,
+            route_.kind,
+            route_.provider,
+            route_.adapter,
+            route_.priceGuard,
+            route_.maximumNativeInput,
+            route_.maximumAssetInput,
+            route_.adapterRuntimeHash,
+            route_.priceGuardRuntimeHash,
+            route_.enabled
+        );
+    }
+
+    function disableRoute(address asset, bytes32 reason) external {
+        if (msg.sender != governor && msg.sender != guardian) revert Unauthorized();
+        if (reason == bytes32(0) || _executionRoutes[asset].kind == RouteKind.None) {
+            revert InvalidConfiguration();
+        }
+        _executionRoutes[asset].enabled = false;
+        _executionRoutes[asset].disabledReason = reason;
+        if (_executionRoutes[asset].kind == RouteKind.V4SingleHop) {
+            _routes[asset].enabled = false;
+        }
+        emit RouteDisabled(asset, msg.sender, reason);
+    }
+
+    function pauseConversions() external {
+        if (msg.sender != governor && msg.sender != guardian) revert Unauthorized();
+        conversionsPaused = true;
+        emit ConversionsPauseChanged(true, msg.sender);
+    }
+
+    function resumeConversions() external {
+        if (msg.sender != governor) revert Unauthorized();
+        conversionsPaused = false;
+        emit ConversionsPauseChanged(false, msg.sender);
+    }
+
     function poolKey(address asset) external view returns (PoolKey memory) {
         Route memory configured = _routes[asset];
         if (configured.fee == 0) revert RouteUnavailable(asset);
@@ -211,6 +411,14 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
     }
 
     function routeStatus(address asset) public view returns (RouteStatus memory status) {
+        ExecutionRouteStatus memory execution = executionRouteStatus(asset);
+        if (execution.kind != RouteKind.V4SingleHop) {
+            status.maximumNativeInput = execution.maximumNativeInput;
+            status.verificationClass = execution.provider;
+            status.ready = execution.ready;
+            status.reason = execution.reason;
+            return status;
+        }
         Route memory configured = _routes[asset];
         status.fee = configured.fee;
         status.tickSpacing = configured.tickSpacing;
@@ -223,6 +431,10 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         status.verificationClass = configured.verificationClass;
         if (configured.fee == 0) {
             status.reason = REASON_NOT_CONFIGURED;
+            return status;
+        }
+        if (conversionsPaused) {
+            status.reason = REASON_CONVERSIONS_PAUSED;
             return status;
         }
         PoolId id = _poolKey(asset, configured).toId();
@@ -253,17 +465,88 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         status.ready = true;
     }
 
+    function executionRouteStatus(address asset) public view returns (ExecutionRouteStatus memory status) {
+        ExecutionRoute memory configured = _executionRoutes[asset];
+        status.kind = configured.kind;
+        status.adapter = configured.adapter;
+        status.priceGuard = configured.priceGuard;
+        status.maximumNativeInput = configured.maximumNativeInput;
+        status.maximumAssetInput = configured.maximumAssetInput;
+        status.provider = configured.provider;
+        status.adapterRuntimeHash = configured.adapterRuntimeHash;
+        status.priceGuardRuntimeHash = configured.priceGuardRuntimeHash;
+        status.disabledReason = configured.disabledReason;
+        status.enabled = configured.enabled;
+        if (configured.kind == RouteKind.None) {
+            status.reason = REASON_NOT_CONFIGURED;
+            return status;
+        }
+        if (conversionsPaused) {
+            status.reason = REASON_CONVERSIONS_PAUSED;
+            return status;
+        }
+        if (!configured.enabled) {
+            status.reason = configured.disabledReason == bytes32(0) ? REASON_DISABLED : configured.disabledReason;
+            return status;
+        }
+        if (configured.kind == RouteKind.V4SingleHop) {
+            Route memory legacy = _routes[asset];
+            if (legacy.fee == 0) {
+                status.reason = REASON_NOT_CONFIGURED;
+                return status;
+            }
+            PoolId id = _poolKey(asset, legacy).toId();
+            (uint160 sqrtPriceX96, int24 spotTick,,) = stateView.getSlot0(id);
+            if (sqrtPriceX96 == 0) {
+                status.reason = REASON_UNINITIALIZED;
+                return status;
+            }
+            uint128 liquidity = stateView.getLiquidity(id);
+            if (liquidity < legacy.minimumLiquidity) {
+                status.reason = REASON_THIN_LIQUIDITY;
+                return status;
+            }
+            if (
+                legacy.enforceReferencePrice
+                    && _absoluteTickDifference(spotTick, legacy.referenceTick) > legacy.maximumReferenceTickDeviation
+            ) {
+                status.reason = REASON_REFERENCE_PRICE_DEVIATION;
+                return status;
+            }
+            status.runtimeVerified = true;
+            status.ready = true;
+            return status;
+        }
+        if (configured.kind == RouteKind.WrappedNative) {
+            status.runtimeVerified = address(wrappedNative).codehash == wrappedNativeRuntimeHash;
+            status.ready = status.runtimeVerified;
+            if (!status.ready) status.reason = REASON_RUNTIME_HASH_MISMATCH;
+            return status;
+        }
+        if (configured.priceGuard == address(0)) {
+            status.reason = REASON_PRICE_GUARD_MISSING;
+            return status;
+        }
+        status.runtimeVerified = configured.adapter.codehash == configured.adapterRuntimeHash
+            && configured.priceGuard.codehash == configured.priceGuardRuntimeHash;
+        if (!status.runtimeVerified) {
+            status.reason = REASON_RUNTIME_HASH_MISMATCH;
+            return status;
+        }
+        status.ready = true;
+    }
+
     function quoteNativeToAsset(address asset, uint128 amountIn)
         external
         returns (uint256 amountOut, uint256 gasEstimate)
     {
-        Route memory configured = _requireReady(asset, amountIn);
+        ExecutionRoute memory execution = _requireExecutionReady(asset, amountIn, 0);
+        if (execution.kind == RouteKind.WrappedNative) return (amountIn, 0);
+        if (execution.kind != RouteKind.V4SingleHop) revert UnsupportedQuoteKind();
+        Route memory configured = _routes[asset];
         return quoter.quoteExactInputSingle(
             IV4Quoter.QuoteExactSingleParams({
-                poolKey: _poolKey(asset, configured),
-                zeroForOne: true,
-                exactAmount: amountIn,
-                hookData: bytes("")
+                poolKey: _poolKey(asset, configured), zeroForOne: true, exactAmount: amountIn, hookData: bytes("")
             })
         );
     }
@@ -272,28 +555,78 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         external
         returns (uint256 amountOut, uint256 gasEstimate)
     {
-        Route memory configured = _requireReady(asset, 0);
+        ExecutionRoute memory execution = _requireExecutionReady(asset, 0, amountIn);
+        if (execution.kind == RouteKind.WrappedNative) return (amountIn, 0);
+        if (execution.kind != RouteKind.V4SingleHop) revert UnsupportedQuoteKind();
+        Route memory configured = _routes[asset];
         return quoter.quoteExactInputSingle(
             IV4Quoter.QuoteExactSingleParams({
-                poolKey: _poolKey(asset, configured),
-                zeroForOne: false,
-                exactAmount: amountIn,
-                hookData: bytes("")
+                poolKey: _poolKey(asset, configured), zeroForOne: false, exactAmount: amountIn, hookData: bytes("")
             })
         );
     }
 
-    function swapExactNativeForAsset(
+    function swapExactNativeForAsset(address asset, uint256 minimumOutput, address recipient, uint256 deadline)
+        external
+        payable
+        nonReentrant
+        returns (uint256 amountOut)
+    {
+        return _swapExactNativeForAsset(asset, minimumOutput, recipient, deadline, bytes(""));
+    }
+
+    function swapExactNativeForAssetWithData(
         address asset,
         uint256 minimumOutput,
         address recipient,
-        uint256 deadline
+        uint256 deadline,
+        bytes calldata executionData
     ) external payable nonReentrant returns (uint256 amountOut) {
+        return _swapExactNativeForAsset(asset, minimumOutput, recipient, deadline, executionData);
+    }
+
+    function _swapExactNativeForAsset(
+        address asset,
+        uint256 minimumOutput,
+        address recipient,
+        uint256 deadline,
+        bytes memory executionData
+    ) private returns (uint256 amountOut) {
         _checkDeadline(deadline);
-        if (msg.value == 0 || msg.value > type(uint128).max || minimumOutput == 0) {
+        if (msg.value == 0 || msg.value > type(uint128).max || minimumOutput == 0 || recipient == address(0)) {
             revert InvalidAmount();
         }
-        Route memory configured = _requireReady(asset, uint128(msg.value));
+        ExecutionRoute memory execution = _requireExecutionReady(asset, uint128(msg.value), 0);
+        if (execution.kind == RouteKind.WrappedNative) {
+            if (executionData.length != 0 || minimumOutput > msg.value) {
+                revert InvalidExecutionData();
+            }
+            wrappedNative.deposit{value: msg.value}();
+            IERC20(asset).safeTransfer(recipient, msg.value);
+            amountOut = msg.value;
+            emit AssetSwap(msg.sender, asset, recipient, true, msg.value, amountOut);
+            return amountOut;
+        }
+        if (execution.kind == RouteKind.PinnedAdapter) {
+            if (executionData.length == 0) revert InvalidExecutionData();
+            wrappedNative.deposit{value: msg.value}();
+            IERC20(address(wrappedNative)).safeTransfer(execution.adapter, msg.value);
+            uint256 outputBefore = IERC20(asset).balanceOf(address(this));
+            uint256 reported = IRobynExecutionAdapter(execution.adapter)
+                .execute(
+                    address(wrappedNative), asset, msg.value, minimumOutput, address(this), deadline, executionData
+                );
+            amountOut = IERC20(asset).balanceOf(address(this)) - outputBefore;
+            if (reported != amountOut || amountOut < minimumOutput) revert InvalidAmount();
+            if (!IRobynPriceGuard(execution.priceGuard).validate(address(wrappedNative), asset, msg.value, amountOut)) {
+                revert PriceGuardRejected();
+            }
+            IERC20(asset).safeTransfer(recipient, amountOut);
+            emit AssetSwap(msg.sender, asset, recipient, true, msg.value, amountOut);
+            return amountOut;
+        }
+        if (executionData.length != 0) revert InvalidExecutionData();
+        Route memory configured = _routes[asset];
         if (configured.enforceReferencePrice) {
             (uint256 currentQuote,) = quoter.quoteExactInputSingle(
                 IV4Quoter.QuoteExactSingleParams({
@@ -308,15 +641,12 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
             if (currentQuote < protectedQuoteFloor(idealOutput, configured.fee)) {
                 revert ExcessivePriceImpact(idealOutput, currentQuote);
             }
-            uint256 requiredMinimum =
-                Math.mulDiv(currentQuote, BPS - MAX_PROTECTED_ROUTE_SLIPPAGE_BPS, BPS);
+            uint256 requiredMinimum = Math.mulDiv(currentQuote, BPS - MAX_PROTECTED_ROUTE_SLIPPAGE_BPS, BPS);
             if (minimumOutput < requiredMinimum) {
                 revert WeakMinimumOutput(minimumOutput, requiredMinimum);
             }
         }
-        amountOut = _executeSwap(
-            _poolKey(asset, configured), true, uint128(msg.value), minimumOutput, recipient
-        );
+        amountOut = _executeSwap(_poolKey(asset, configured), true, uint128(msg.value), minimumOutput, recipient);
         emit AssetSwap(msg.sender, asset, recipient, true, msg.value, amountOut);
     }
 
@@ -333,11 +663,63 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         address payable recipient,
         uint256 deadline
     ) external nonReentrant returns (uint256 amountOut) {
+        return _swapExactAssetForNative(asset, amountIn, minimumOutput, recipient, deadline, bytes(""));
+    }
+
+    function swapExactAssetForNativeWithData(
+        address asset,
+        uint128 amountIn,
+        uint256 minimumOutput,
+        address payable recipient,
+        uint256 deadline,
+        bytes calldata executionData
+    ) external nonReentrant returns (uint256 amountOut) {
+        return _swapExactAssetForNative(asset, amountIn, minimumOutput, recipient, deadline, executionData);
+    }
+
+    function _swapExactAssetForNative(
+        address asset,
+        uint128 amountIn,
+        uint256 minimumOutput,
+        address payable recipient,
+        uint256 deadline,
+        bytes memory executionData
+    ) private returns (uint256 amountOut) {
         _checkDeadline(deadline);
         if (amountIn == 0 || minimumOutput == 0 || recipient == address(0)) revert InvalidAmount();
-        Route memory configured = _requireReady(asset, 0);
-        amountOut =
-            _executeSwap(_poolKey(asset, configured), false, amountIn, minimumOutput, recipient);
+        ExecutionRoute memory execution = _requireExecutionReady(asset, 0, amountIn);
+        if (execution.kind == RouteKind.WrappedNative) {
+            if (executionData.length != 0 || minimumOutput > amountIn) {
+                revert InvalidExecutionData();
+            }
+            IERC20(asset).safeTransferFrom(msg.sender, address(this), amountIn);
+            wrappedNative.withdraw(amountIn);
+            (bool sent,) = recipient.call{value: amountIn}("");
+            if (!sent) revert NativeTransferFailed();
+            amountOut = amountIn;
+            emit AssetSwap(msg.sender, asset, recipient, false, amountIn, amountOut);
+            return amountOut;
+        }
+        if (execution.kind == RouteKind.PinnedAdapter) {
+            if (executionData.length == 0) revert InvalidExecutionData();
+            IERC20(asset).safeTransferFrom(msg.sender, execution.adapter, amountIn);
+            uint256 outputBefore = wrappedNative.balanceOf(address(this));
+            uint256 reported = IRobynExecutionAdapter(execution.adapter)
+                .execute(asset, address(wrappedNative), amountIn, minimumOutput, address(this), deadline, executionData);
+            amountOut = wrappedNative.balanceOf(address(this)) - outputBefore;
+            if (reported != amountOut || amountOut < minimumOutput) revert InvalidAmount();
+            if (!IRobynPriceGuard(execution.priceGuard).validate(asset, address(wrappedNative), amountIn, amountOut)) {
+                revert PriceGuardRejected();
+            }
+            wrappedNative.withdraw(amountOut);
+            (bool sent,) = recipient.call{value: amountOut}("");
+            if (!sent) revert NativeTransferFailed();
+            emit AssetSwap(msg.sender, asset, recipient, false, amountIn, amountOut);
+            return amountOut;
+        }
+        if (executionData.length != 0) revert InvalidExecutionData();
+        Route memory configured = _routes[asset];
+        amountOut = _executeSwap(_poolKey(asset, configured), false, amountIn, minimumOutput, recipient);
         emit AssetSwap(msg.sender, asset, recipient, false, amountIn, amountOut);
     }
 
@@ -352,13 +734,12 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
             revert InvalidConfiguration();
         }
         uint256 nativeBefore = address(this).balance - msg.value;
-        bytes memory result = poolManager.unlock(
-            abi.encode(key, zeroForOne, amountIn, minimumOutput, recipient, msg.sender)
-        );
+        bytes memory result =
+            poolManager.unlock(abi.encode(key, zeroForOne, amountIn, minimumOutput, recipient, msg.sender));
         amountOut = abi.decode(result, (uint256));
         uint256 refund = address(this).balance - nativeBefore;
         if (refund != 0) {
-            (bool refunded,) = payable(msg.sender).call{ value: refund }("");
+            (bool refunded,) = payable(msg.sender).call{value: refund}("");
             if (!refunded) revert NativeTransferFailed();
         }
     }
@@ -377,9 +758,7 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
             SwapParams({
                 zeroForOne: zeroForOne,
                 amountSpecified: -int256(uint256(amountIn)),
-                sqrtPriceLimitX96: zeroForOne
-                    ? TickMath.MIN_SQRT_PRICE + 1
-                    : TickMath.MAX_SQRT_PRICE - 1
+                sqrtPriceLimitX96: zeroForOne ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1
             }),
             bytes("")
         );
@@ -392,25 +771,20 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         Currency input = zeroForOne ? key.currency0 : key.currency1;
         Currency output = zeroForOne ? key.currency1 : key.currency0;
         if (input.isAddressZero()) {
-            poolManager.settle{ value: inputAmount }();
+            poolManager.settle{value: inputAmount}();
         } else {
             poolManager.sync(input);
             // `payer` is the external swap caller encoded by this contract, and
             // SafeCallback admits only the immutable PoolManager callback.
             // slither-disable-next-line arbitrary-send-erc20
-            IERC20(Currency.unwrap(input))
-                .safeTransferFrom(payer, address(poolManager), inputAmount);
+            IERC20(Currency.unwrap(input)).safeTransferFrom(payer, address(poolManager), inputAmount);
             poolManager.settle();
         }
         poolManager.take(output, recipient, amountOut);
         return abi.encode(amountOut);
     }
 
-    function _poolKey(address asset, Route memory configured)
-        private
-        pure
-        returns (PoolKey memory)
-    {
+    function _poolKey(address asset, Route memory configured) private pure returns (PoolKey memory) {
         return PoolKey({
             currency0: Currency.wrap(address(0)),
             currency1: Currency.wrap(asset),
@@ -420,16 +794,25 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         });
     }
 
-    function _requireReady(address asset, uint128 nativeInput)
+    function _requireExecutionReady(address asset, uint128 nativeInput, uint128 assetInput)
         private
         view
-        returns (Route memory configured)
+        returns (ExecutionRoute memory configured)
     {
-        RouteStatus memory status = routeStatus(asset);
+        ExecutionRouteStatus memory status = executionRouteStatus(asset);
         if (!status.ready) revert RouteUnavailable(asset);
-        configured = _routes[asset];
+        configured = _executionRoutes[asset];
         if (nativeInput != 0 && nativeInput > configured.maximumNativeInput) {
             revert InvalidAmount();
+        }
+        if (assetInput != 0 && assetInput > configured.maximumAssetInput) {
+            revert InvalidAmount();
+        }
+    }
+
+    function _requireGovernorOrBootstrap() private view {
+        if (msg.sender != governor && (msg.sender != initializer || launchRegistrar != address(0))) {
+            revert Unauthorized();
         }
     }
 
@@ -442,11 +825,7 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
         return uint24(uint256(difference < 0 ? -difference : difference));
     }
 
-    function _idealAssetOutput(uint128 nativeInput, uint160 sqrtPriceX96)
-        private
-        pure
-        returns (uint256)
-    {
+    function _idealAssetOutput(uint128 nativeInput, uint160 sqrtPriceX96) private pure returns (uint256) {
         uint256 scaled = Math.mulDiv(nativeInput, sqrtPriceX96, 1 << 96);
         return Math.mulDiv(scaled, sqrtPriceX96, 1 << 96);
     }

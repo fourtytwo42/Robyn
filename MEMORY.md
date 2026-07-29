@@ -1,5 +1,55 @@
 # Project Memory
 
+### 2026-07-29 - Schema-12 bounded route execution foundation
+
+- Context: Schema 12 replaces the single-hop-only basket router with
+  canonical V4, direct WETH, and code-hash-pinned provider route classes.
+- Decision: Keep legacy no-data entrypoints for V4 and WETH, add explicit
+  provider-data entrypoints, pin adapter, price-guard, AllowanceHolder,
+  settlement-operator, settlement-target, WETH runtime hashes, and the inner
+  settlement selector. Enforce separate native and asset input caps, exact
+  balance deltas, allowance cleanup, deadline, recipient-by-delta, and an
+  independent price guard. Guardian authority is disable/pause only.
+- Files: `packages/contracts/src/uniswap/RobynV4AssetRouter.sol`,
+  `RobynZeroExAllowanceHolderAdapter.sol`, `IRobynExecutionAdapter.sol`,
+  `IRobynPriceGuard.sol`, `RobynNativeBasketVaultV2.sol`, and
+  `packages/contracts/src/testnet/TestnetPinnedExecutionAdapter.sol`.
+- Commands/tests: The focused schema-12 suite has 47 passing tests, including
+  target/calldata substitution, expired quotes, partial fills, output
+  diversion, separate caps, runtime mutation, atomic price-guard rejection,
+  allowance cleanup, direct WETH, forced-token recovery, and deterministic
+  Testnet provider execution.
+  The full contract package builds.
+- Result: The Mainnet candidate policy now names exactly 11 individually
+  qualified assets under schema version 12. GOOGL, MSFT, NVDA, SPCX, SPY, and
+  WETH are required; GME, USDG, USDe, DEGEN, and ARROW remain optional and
+  fail closed pending execution-block qualification.
+- Follow-up: Finish fresh Testnet deployment tooling, server-side provider
+  quote execution, API/indexer/UI route metadata, and the complete security,
+  recovery, endurance, reconciliation, fork, and RPC gates. Mainnet remains
+  inactive and unauthorized.
+
+### 2026-07-29 - Testnet keeper funding and dead-letter recovery
+
+- Context: Public Testnet health retained seven dead-letter financial jobs
+  after the keeper fell below its `0.00025 ETH` safety floor. Each current
+  attempt had a null result and the exact funding-floor error; historical
+  results remained preserved in the append-only event log.
+- Decision: Fund the keeper from the encrypted project deployer, verify the
+  confirmed funding receipt and live balance, then retry exactly those seven
+  failed queue entries through BullMQ only after validating their audit rows.
+  The worker re-read authoritative onchain state before each action.
+- Evidence: Funding transaction
+  `0xedc97c301c051c6fe5e90ba07fbdbc72805181201fc0feb6d755b09deb53582f`
+  succeeded at block `94951992`. Keeper balance became
+  `1242646510000000 wei`; deployer retained `5118644183782525 wei`, above the
+  `0.0015 ETH` reserve.
+- Result: Six required conversions completed with new confirmed hashes, the
+  empty harvest completed without broadcasting, the queue has zero failed,
+  waiting, delayed, paused, or active jobs, and keeper health is `ok`.
+- Follow-up: Schema-12 work proceeds on branch
+  `codex/schema12-mainnet-go`; do not reuse schema-11 deployment evidence.
+
 ### 2026-07-29 - Testnet RPC gateway port collision and safe read fallback
 
 - Context: The first LAN-primary promotion bound the testnet gateway to

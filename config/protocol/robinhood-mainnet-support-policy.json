@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 12,
   "chainId": 4663,
   "status": "candidate-only",
   "lastVerifiedAt": "2026-07-29",
@@ -17,107 +17,121 @@
     "requireFreshContractDeploymentForNewAdapter": true
   },
   "executionClasses": {
-    "uniswap-v4-single-hop": {
-      "supportedBySchema11": true,
+    "canonical-v4-single-hop": {
+      "supportedBySchema12": true,
       "requiresFreshContracts": false
     },
-    "native-wrap": {
-      "supportedBySchema11": false,
-      "requiresFreshContracts": true
+    "direct-native-wrap": {
+      "supportedBySchema12": true,
+      "requiresFreshContracts": false
     },
-    "aggregated-exact-input": {
-      "supportedBySchema11": false,
-      "requiresFreshContracts": true
+    "pinned-execution-adapter": {
+      "supportedBySchema12": true,
+      "requiresFreshContracts": false,
+      "provider": "0x-allowance-holder",
+      "requiresIndependentOnchainPriceGuard": true,
+      "defaultEnabled": false
     }
   },
   "candidates": [
     {
       "symbol": "GOOGL",
+      "required": true,
       "kind": "robinhood-stock-token",
       "address": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
-      "executionClass": "uniswap-v4-single-hop",
+      "executionClass": "canonical-v4-single-hop",
       "maximumNativeInputWei": "500000000000000000",
       "activation": "blocked-pending-exact-fork-rehearsal"
     },
     {
       "symbol": "MSFT",
+      "required": true,
       "kind": "robinhood-stock-token",
       "address": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
-      "executionClass": "uniswap-v4-single-hop",
+      "executionClass": "canonical-v4-single-hop",
       "maximumNativeInputWei": "500000000000000000",
       "activation": "blocked-pending-exact-fork-rehearsal"
     },
     {
       "symbol": "NVDA",
+      "required": true,
       "kind": "robinhood-stock-token",
       "address": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
-      "executionClass": "uniswap-v4-single-hop",
+      "executionClass": "canonical-v4-single-hop",
       "maximumNativeInputWei": "500000000000000000",
       "activation": "blocked-pending-exact-fork-rehearsal"
     },
     {
       "symbol": "SPCX",
+      "required": true,
       "kind": "robinhood-stock-token",
       "address": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
-      "executionClass": "uniswap-v4-single-hop",
+      "executionClass": "canonical-v4-single-hop",
       "maximumNativeInputWei": "500000000000000000",
       "activation": "blocked-pending-exact-fork-rehearsal"
     },
     {
       "symbol": "SPY",
+      "required": true,
       "kind": "robinhood-stock-token",
       "address": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
-      "executionClass": "uniswap-v4-single-hop",
+      "executionClass": "canonical-v4-single-hop",
       "maximumNativeInputWei": "100000000000000000",
       "activation": "blocked-pending-exact-fork-rehearsal"
     },
     {
       "symbol": "GME",
+      "required": false,
       "kind": "robinhood-stock-token",
       "address": "0x1b0E319c6A659F002271B69dB8A7df2F911c153E",
-      "executionClass": "uniswap-v4-single-hop",
+      "executionClass": "canonical-v4-single-hop",
       "maximumNativeInputWei": "1000000000000000",
       "activation": "conditional-pending-deployment-block-depth"
     },
     {
       "symbol": "WETH",
+      "required": true,
       "kind": "canonical-wrapped-native",
       "address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
-      "executionClass": "native-wrap",
+      "executionClass": "direct-native-wrap",
       "maximumNativeInputWei": "500000000000000000",
-      "activation": "blocked-pending-router-upgrade"
+      "activation": "blocked-pending-exact-fork-rehearsal"
     },
     {
       "symbol": "USDG",
+      "required": false,
       "kind": "canonical-stablecoin",
       "address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
-      "executionClass": "aggregated-exact-input",
+      "executionClass": "pinned-execution-adapter",
       "maximumNativeInputWei": "50000000000000000",
-      "activation": "blocked-pending-router-upgrade"
+      "activation": "blocked-pending-price-guard-and-exact-fork-rehearsal"
     },
     {
       "symbol": "USDe",
+      "required": false,
       "kind": "layerzero-verified-token",
       "address": "0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34",
-      "executionClass": "aggregated-exact-input",
+      "executionClass": "pinned-execution-adapter",
       "maximumNativeInputWei": "50000000000000000",
-      "activation": "blocked-pending-router-upgrade"
+      "activation": "blocked-pending-price-guard-and-exact-fork-rehearsal"
     },
     {
       "symbol": "DEGEN",
+      "required": false,
       "kind": "layerzero-verified-token",
       "address": "0x0830A9Dd26a04e959657AB6788d45f5725590c32",
-      "executionClass": "aggregated-exact-input",
+      "executionClass": "pinned-execution-adapter",
       "maximumNativeInputWei": "50000000000000000",
-      "activation": "blocked-pending-router-upgrade"
+      "activation": "blocked-pending-price-guard-and-exact-fork-rehearsal"
     },
     {
       "symbol": "ARROW",
+      "required": false,
       "kind": "layerzero-verified-token",
       "address": "0xf2915d1e3C1B0c769d0c756Ec43F1c1f6c99cD03",
-      "executionClass": "aggregated-exact-input",
+      "executionClass": "pinned-execution-adapter",
       "maximumNativeInputWei": "50000000000000000",
-      "activation": "blocked-pending-router-upgrade"
+      "activation": "blocked-pending-price-guard-and-exact-fork-rehearsal"
     }
   ],
   "observedButRejected": [

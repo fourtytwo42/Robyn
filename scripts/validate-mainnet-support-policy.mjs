@@ -11,7 +11,7 @@ const policyPath = resolve(
 const policy = JSON.parse(await readFile(policyPath, "utf8"));
 const failures = [];
 
-if (policy.schemaVersion !== 1) failures.push("schemaVersion must be 1");
+if (policy.schemaVersion !== 12) failures.push("schemaVersion must be 12");
 if (policy.chainId !== 4663) failures.push("chainId must be 4663");
 if (policy.status !== "candidate-only") {
   failures.push("support policy must remain candidate-only before deployment");
@@ -37,6 +37,9 @@ for (const candidate of policy.candidates ?? []) {
   if (!candidate.activation || !candidate.activation.includes("pending")) {
     failures.push(`${candidate.symbol} must remain pending`);
   }
+  if (typeof candidate.required !== "boolean") {
+    failures.push(`${candidate.symbol} must declare required true or false`);
+  }
   if (candidate.address) {
     try {
       getAddress(candidate.address);
@@ -45,10 +48,10 @@ for (const candidate of policy.candidates ?? []) {
     }
   }
   if (
-    execution?.requiresFreshContracts &&
-    candidate.activation !== "blocked-pending-router-upgrade"
+    candidate.executionClass === "pinned-execution-adapter" &&
+    execution?.requiresIndependentOnchainPriceGuard !== true
   ) {
-    failures.push(`${candidate.symbol} requires the fresh router gate`);
+    failures.push(`${candidate.symbol} is missing the independent price guard gate`);
   }
 }
 
@@ -58,14 +61,17 @@ for (const required of [
   "NVDA",
   "SPCX",
   "SPY",
-  "GME",
   "WETH",
-  "USDG",
-  "USDe",
-  "DEGEN",
-  "ARROW",
 ]) {
-  if (!seen.has(required)) failures.push(`missing recommended candidate ${required}`);
+  const candidate = policy.candidates.find((item) => item.symbol === required);
+  if (!candidate) failures.push(`missing required candidate ${required}`);
+  else if (!candidate.required) failures.push(`${required} must be required`);
+}
+
+for (const optional of ["GME", "USDG", "USDe", "DEGEN", "ARROW"]) {
+  const candidate = policy.candidates.find((item) => item.symbol === optional);
+  if (!candidate) failures.push(`missing optional candidate ${optional}`);
+  else if (candidate.required) failures.push(`${optional} must remain individually optional`);
 }
 
 if (failures.length > 0) {
@@ -75,7 +81,7 @@ if (failures.length > 0) {
 
 process.stdout.write(
   `${JSON.stringify({
-    schemaVersion: 1,
+    schemaVersion: 12,
     chainId: policy.chainId,
     candidateCount: seen.size,
     defaultEnabled: policy.activationPolicy.defaultEnabled,
