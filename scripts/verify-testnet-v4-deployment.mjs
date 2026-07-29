@@ -77,7 +77,7 @@ check(
   manifest.venueProvenance === "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
   "unlisted venue disclosure is exact",
 );
-check(manifest.schemaVersion === 11, "deployment manifest schema is v11");
+check(manifest.schemaVersion === 12, "deployment manifest schema is v12");
 check(
   manifest.kingOfForestPolicy?.version === "forest-v1" &&
     manifest.kingOfForestPolicy?.activationBlock === manifest.deploymentBlock &&
@@ -170,53 +170,115 @@ async function read(address, abi, functionName, args = []) {
 }
 
 const assetRoutes = manifest.assetRoutes ?? [];
-const faucetRoutes = assetRoutes.filter(
-  (route) => route.verification === "robinhood-testnet-faucet-stock",
-);
 const mockRoutes = assetRoutes.filter(
   (route) =>
     route.verification === "robyn-testnet-mock" ||
     route.verification === "robyn-controlled-testnet-dex",
 );
-check(assetRoutes.length === 24, "all 24 catalog routes are frozen");
-check(faucetRoutes.length === 5, "five exact faucet-stock routes are frozen");
-check(mockRoutes.length === 19, "18 mock routes and WETH route are frozen");
+const v4Routes = assetRoutes.filter(
+  (route) => (route.routeKind ?? "canonical-v4-single-hop") === "canonical-v4-single-hop",
+);
+const wrappedNativeRoutes = assetRoutes.filter(
+  (route) => route.routeKind === "wrapped-native",
+);
+const pinnedAdapterRoutes = assetRoutes.filter(
+  (route) => route.routeKind === "pinned-adapter",
+);
+check(assetRoutes.length === 11, "all 11 schema-12 candidate routes are frozen");
+check(mockRoutes.length === 11, "all schema-12 Testnet routes are explicitly synthetic");
+check(v4Routes.length === 4, "four canonical-v4 Testnet routes are frozen");
+check(wrappedNativeRoutes.length === 1, "the direct WETH route is frozen");
+check(pinnedAdapterRoutes.length === 6, "six deterministic pinned-adapter fixtures are frozen");
 check(
-  new Set(assetRoutes.map((route) => route.address.toLowerCase())).size === 24,
+  new Set(assetRoutes.map((route) => route.address.toLowerCase())).size === 11,
   "route assets are unique by address",
 );
 for (const route of assetRoutes) {
   const asset = getAddress(route.address);
-  const status = await read(contracts.assetRouter, abis.assetRouter, "routeStatus", [asset]);
-  check(status.ready, `${route.symbol} route is ready`);
-  check(status.fee === 10_000, `${route.symbol} route uses the 1% fee tier`);
-  check(status.tickSpacing === 200, `${route.symbol} route uses tick spacing 200`);
-  check(
-    status.hooks === getAddress(route.hook ?? route.hooks),
-    `${route.symbol} route hook matches manifest`,
+  const execution = await read(
+    contracts.assetRouter,
+    abis.assetRouter,
+    "executionRouteStatus",
+    [asset],
   );
-  check(status.poolId === route.poolId, `${route.symbol} pool ID matches frozen provenance`);
-  const expectedReferenceEnforcement =
-    route.verification === "robinhood-testnet-faucet-stock";
-  check(
-    route.enforceReferencePrice === expectedReferenceEnforcement &&
-      status.enforceReferencePrice === expectedReferenceEnforcement,
-    expectedReferenceEnforcement
-      ? `${route.symbol} enforces its frozen faucet-stock reference price`
-      : `${route.symbol} disables fixed reference pricing for its controlled synthetic route`,
-  );
-  check(
-    status.referenceTick === route.referenceTick,
-    `${route.symbol} reference tick matches the manifest`,
-  );
-  check(
-    status.maximumReferenceTickDeviation === route.maximumReferenceTickDeviation,
-    `${route.symbol} reference deviation matches the manifest`,
-  );
-  check(
-    route.maximumProtectedRouteSlippageBps === 100,
-    `${route.symbol} freezes the 1% protected-route slippage ceiling`,
-  );
+  check(execution.ready, `${route.symbol} execution route is ready`);
+  check(execution.enabled, `${route.symbol} execution route is enabled`);
+  check(execution.runtimeVerified, `${route.symbol} route runtime is verified`);
+
+  if ((route.routeKind ?? "canonical-v4-single-hop") === "canonical-v4-single-hop") {
+    const status = await read(contracts.assetRouter, abis.assetRouter, "routeStatus", [asset]);
+    check(execution.kind === 1, `${route.symbol} is a canonical-v4 route`);
+    check(status.ready, `${route.symbol} v4 route is ready`);
+    check(status.fee === 10_000, `${route.symbol} route uses the 1% fee tier`);
+    check(status.tickSpacing === 200, `${route.symbol} route uses tick spacing 200`);
+    check(
+      status.hooks === getAddress(route.hook ?? route.hooks),
+      `${route.symbol} route hook matches manifest`,
+    );
+    check(status.poolId === route.poolId, `${route.symbol} pool ID matches frozen provenance`);
+    check(
+      route.enforceReferencePrice === false && status.enforceReferencePrice === false,
+      `${route.symbol} synthetic v4 route disables fixed reference pricing`,
+    );
+    check(
+      status.referenceTick === route.referenceTick,
+      `${route.symbol} reference tick matches the manifest`,
+    );
+    check(
+      status.maximumReferenceTickDeviation === route.maximumReferenceTickDeviation,
+      `${route.symbol} reference deviation matches the manifest`,
+    );
+    check(
+      route.maximumProtectedRouteSlippageBps === 100,
+      `${route.symbol} freezes the 1% protected-route slippage ceiling`,
+    );
+  } else if (route.routeKind === "wrapped-native") {
+    check(execution.kind === 2, `${route.symbol} is a direct wrapped-native route`);
+    check(
+      getAddress(route.address) === getAddress(manifest.contracts.wrappedNative),
+      `${route.symbol} is the manifest WETH contract`,
+    );
+    check(
+      route.runtimeCodeHash === keccak256(await client.getCode({ address: asset })),
+      `${route.symbol} runtime hash matches the manifest`,
+    );
+  } else if (route.routeKind === "pinned-adapter") {
+    check(execution.kind === 3, `${route.symbol} is a pinned-adapter route`);
+    check(
+      getAddress(execution.adapter) === getAddress(route.adapter),
+      `${route.symbol} adapter matches the manifest`,
+    );
+    check(
+      getAddress(execution.priceGuard) === getAddress(route.priceGuard),
+      `${route.symbol} price guard matches the manifest`,
+    );
+    check(
+      execution.adapterRuntimeHash === route.adapterRuntimeHash,
+      `${route.symbol} adapter runtime hash is pinned`,
+    );
+    check(
+      execution.priceGuardRuntimeHash === route.priceGuardRuntimeHash,
+      `${route.symbol} price-guard runtime hash is pinned`,
+    );
+    check(
+      execution.maximumNativeInput === BigInt(route.maximumNativeInput),
+      `${route.symbol} native input cap matches the manifest`,
+    );
+    check(
+      execution.maximumAssetInput === BigInt(route.maximumAssetInput),
+      `${route.symbol} asset input cap matches the manifest`,
+    );
+    for (const [label, address, frozenHash] of [
+      ["adapter", getAddress(route.adapter), route.adapterRuntimeHash],
+      ["price guard", getAddress(route.priceGuard), route.priceGuardRuntimeHash],
+    ]) {
+      const code = await client.getCode({ address });
+      check(code && code !== "0x", `${route.symbol} ${label} has runtime code`);
+      check(keccak256(code) === frozenHash, `${route.symbol} ${label} runtime hash matches`);
+    }
+  } else {
+    check(false, `${route.symbol} has a recognized schema-12 route kind`);
+  }
 }
 check(
   await read(
@@ -234,7 +296,7 @@ check(
   ),
   "test-asset liquidity locker configuration is sealed",
 );
-for (const route of mockRoutes) {
+for (const route of v4Routes) {
   check(
     getAddress(route.liquidityLocker) === contracts.testAssetLiquidityLocker,
     `${route.symbol} names the immutable test-asset liquidity locker`,
@@ -251,20 +313,15 @@ for (const route of mockRoutes) {
   check(position.tokenAmount > 0n, `${route.symbol} locked token principal is nonzero`);
 }
 const catalogAssets = manifest.assetCatalog?.assets ?? [];
-check(catalogAssets.length === 24, "asset catalog contains 24 entries");
+check(catalogAssets.length === 11, "asset catalog contains 11 entries");
 check(
-  catalogAssets.filter((asset) => asset.verification === "robinhood-testnet-faucet-stock")
-    .length === 5,
-  "asset catalog distinguishes the five faucet stocks",
-);
-check(
-  catalogAssets.filter((asset) => asset.verification === "robyn-testnet-mock").length === 18,
-  "asset catalog distinguishes 18 Robyn mocks",
+  catalogAssets.filter((asset) => asset.verification === "robyn-testnet-mock").length === 10,
+  "asset catalog distinguishes ten Robyn mocks",
 );
 check(
   catalogAssets.filter((asset) => asset.verification === "robyn-controlled-testnet-dex")
     .length === 1,
-  "asset catalog distinguishes the Robyn-controlled WETH route",
+  "asset catalog distinguishes the direct WETH route",
 );
 
 check(

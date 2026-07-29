@@ -4752,6 +4752,31 @@ When sources conflict, use this order:
 - Confirm 0x or UniswapX commercial/API access and quote reliability for selected Stock Tokens.
 - Continue legal advice for the operating entity, target jurisdictions, issuer restrictions, and reward-token classification in parallel; do not add active user restrictions unless the product decision changes.
 
+### 2026-07-29 - Schema-12 deployment and campaign tooling checkpoint
+
+- Context: Schema-12 replaces the former 24-route Testnet catalog with 11
+  individually qualified candidates and three route classes.
+- Decision: Fresh Testnet deployment tooling now creates four controlled v4
+  routes (GOOGL, MSFT, NVDA, SPY), one direct WETH route, and six deterministic
+  pinned-adapter fixtures (SPCX, GME, USDG, USDe, DEGEN, ARROW). Route reuse is
+  forbidden because the asset router and coupled contracts changed.
+- Files: `scripts/deploy-testnet-v4-protocol.sh`,
+  `scripts/verify-testnet-v4-deployment.mjs`,
+  `scripts/lib/campaign-plan.mjs`, and
+  `scripts/testnet-assurance-campaign.mjs`.
+- Commands/tests: Deployment script passes `bash -n` and `git diff --check`;
+  deployment-verifier unit test passes; all 22 assurance-campaign unit tests
+  pass.
+- Result: The verifier checks each route class, caps, price-guard and adapter
+  runtime hashes. Eight campaign launches retain 24 conversion actions while
+  covering all 11 unique assets; pinned routes use `convertLegWithData`, and
+  durable confirmed-transaction recovery recognizes both conversion
+  entrypoints.
+- Follow-up: Update the remaining release, endurance, smoke, and Mainnet fork
+  tooling that still assumes schema 11 or 24 assets. Run a funding preflight
+  with 25 percent headroom and preserve the 0.0015 ETH reserve before any fresh
+  schema-12 deployment.
+
 ## Do Not Forget
 
 - Read `AGENTS.md` and `MEMORY.md` before making future changes in this workspace.

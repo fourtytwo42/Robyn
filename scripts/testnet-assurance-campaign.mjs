@@ -1493,6 +1493,7 @@ async function conversions() {
   const accounts = loadAccounts();
   const vaultAbi = artifactAbi("RobynNativeBasketVaultV2");
   const assetRouterAbi = artifactAbi("RobynV4AssetRouter");
+  const testnetProviderAdapterAbi = artifactAbi("TestnetPinnedExecutionAdapter");
   const lockerAbi = artifactAbi("RobynV4FeePositionLocker");
   const tokenAbi = artifactAbi("RobynLaunchToken");
   const hookAbi = artifactAbi("RobynV4FeeAndPhaseHook");
@@ -1709,7 +1710,11 @@ async function conversions() {
         const blockNumber = BigInt(existingTransaction.blockNumber);
         const transaction = await publicClient.getTransaction({ hash: existingTransaction.hash });
         const decoded = decodeFunctionData({ abi: vaultAbi, data: transaction.input });
-        if (decoded.functionName !== "convertLeg" || !decoded.args || decoded.args.length < 3) {
+        if (
+          !["convertLeg", "convertLegWithData"].includes(decoded.functionName) ||
+          !decoded.args ||
+          decoded.args.length < 3
+        ) {
           throw new Error(`Cannot reconstruct confirmed basket conversion ${label}`);
         }
         const confirmedBefore = await publicClient.readContract({
@@ -1742,7 +1747,16 @@ async function conversions() {
       }
       const before = await publicClient.readContract({ address: launch.vault, abi: vaultAbi, functionName: "leg", args: [BigInt(legIndex)] });
       if (before.pendingNative === 0n) throw new Error(`No pending basket fees for ${label}`);
-      const status = await publicClient.readContract({ address: manifest.contracts.assetRouter, abi: assetRouterAbi, functionName: "routeStatus", args: [before.asset] });
+      const route = manifest.assetRoutes.find(
+        (candidate) => getAddress(candidate.address) === getAddress(before.asset),
+      );
+      if (!route) throw new Error(`Basket route is not frozen for ${before.asset}`);
+      const status = await publicClient.readContract({
+        address: manifest.contracts.assetRouter,
+        abi: assetRouterAbi,
+        functionName: "executionRouteStatus",
+        args: [before.asset],
+      });
       if (!status.ready) throw new Error(`Basket route is not ready for ${before.asset}`);
       const account = privateKeyToAccount(
         accounts[basketConversionActorIndex(launch.index, legIndex)].privateKey,
@@ -1751,22 +1765,45 @@ async function conversions() {
       let amount = before.pendingNative < status.maximumNativeInput ? before.pendingNative : status.maximumNativeInput;
       let quoted;
       let minimumOutput;
+      let executionData = "0x";
+      let conversionFunctionName =
+        route.routeKind === "pinned-adapter" ? "convertLegWithData" : "convertLeg";
+      let conversionArgs;
       for (let attempt = 0; attempt < 16; attempt += 1) {
-        [quoted] = await publicClient.readContract({
-          address: manifest.contracts.assetRouter,
-          abi: assetRouterAbi,
-          functionName: "quoteNativeToAsset",
-          args: [before.asset, amount],
-        });
+        if (route.routeKind === "pinned-adapter") {
+          [quoted, executionData] = await publicClient.readContract({
+            address: route.adapter,
+            abi: testnetProviderAdapterAbi,
+            functionName: "quote",
+            args: [
+              manifest.contracts.wrappedNative,
+              before.asset,
+              amount,
+              keccak256(stringToHex(`${label}-${attempt}-${amount}`)),
+            ],
+          });
+        } else {
+          [quoted] = await publicClient.readContract({
+            address: manifest.contracts.assetRouter,
+            abi: assetRouterAbi,
+            functionName: "quoteNativeToAsset",
+            args: [before.asset, amount],
+          });
+          executionData = "0x";
+        }
         if (quoted === 0n) throw new Error(`Zero basket quote for ${label}`);
-        minimumOutput = (quoted * 99n) / 100n;
+        minimumOutput = (quoted * 99n) / 100n || 1n;
+        conversionArgs =
+          conversionFunctionName === "convertLegWithData"
+            ? [BigInt(legIndex), amount, minimumOutput, deadline, executionData]
+            : [BigInt(legIndex), amount, minimumOutput, deadline];
         const request = {
           account: account.address,
           to: launch.vault,
           data: encodeFunctionData({
             abi: vaultAbi,
-            functionName: "convertLeg",
-            args: [BigInt(legIndex), amount, minimumOutput, deadline],
+            functionName: conversionFunctionName,
+            args: conversionArgs,
           }),
         };
         try {
@@ -1788,18 +1825,34 @@ async function conversions() {
         }
       }
       if (launch.index === 0 && legIndex === 0) {
+        const rejectionArgs =
+          conversionFunctionName === "convertLegWithData"
+            ? [0n, amount, quoted + 1n, deadline, executionData]
+            : [0n, amount, quoted + 1n, deadline];
         await expectSimulationFailure(
           state,
           "basket-minimum-output-rejection",
           {
             account: account.address,
             to: launch.vault,
-            data: encodeFunctionData({ abi: vaultAbi, functionName: "convertLeg", args: [0n, amount, quoted + 1n, deadline] }),
+            data: encodeFunctionData({
+              abi: vaultAbi,
+              functionName: conversionFunctionName,
+              args: rejectionArgs,
+            }),
           },
           /revert|execution/i,
         );
       }
-      const confirmed = await contractTransaction(state, label, account, launch.vault, vaultAbi, "convertLeg", [BigInt(legIndex), amount, minimumOutput, deadline]);
+      const confirmed = await contractTransaction(
+        state,
+        label,
+        account,
+        launch.vault,
+        vaultAbi,
+        conversionFunctionName,
+        conversionArgs,
+      );
       const confirmedBlock = BigInt(confirmed.blockNumber);
       const confirmedBefore = await publicClient.readContract({
         address: launch.vault,
@@ -1829,22 +1882,25 @@ async function conversions() {
       saveState(state);
     }
   }
-  if (state.conversions.legs.length !== 24 || new Set(state.conversions.legs.map((entry) => entry.asset.toLowerCase())).size !== 24) {
-    throw new Error("Conversions did not exercise all 24 unique basket assets");
+  if (
+    state.conversions.legs.length !== 24 ||
+    new Set(state.conversions.legs.map((entry) => entry.asset.toLowerCase())).size !== 11
+  ) {
+    throw new Error("Conversions did not exercise all 11 schema-12 basket assets");
   }
   const routeReadiness = [];
   for (const route of manifest.assetRoutes) {
     const status = await publicClient.readContract({
       address: manifest.contracts.assetRouter,
       abi: assetRouterAbi,
-      functionName: "routeStatus",
+      functionName: "executionRouteStatus",
       args: [route.address],
     });
     routeReadiness.push({
       asset: route.address,
+      routeKind: route.routeKind,
       ready: status.ready,
-      spotTick: status.spotTick.toString(),
-      referenceTick: status.referenceTick.toString(),
+      runtimeVerified: status.runtimeVerified,
       reason: status.reason,
     });
   }

@@ -28,6 +28,10 @@ source "$repo_root/scripts/lib/transaction-nonce.sh"
   echo "The reviewed v3 asset manifest is required to preserve disclosed mock-asset addresses" >&2
   exit 1
 }
+[[ -z "$reuse_routes_manifest" ]] || {
+  echo "Schema-12 requires fresh route contracts and forbids route reuse" >&2
+  exit 1
+}
 
 wallet_args=()
 if [[ "$rehearsal" == "true" ]]; then
@@ -192,8 +196,8 @@ if [[ -n "$reuse_routes_manifest" ]]; then
   }
   [[ "$(jq -r '.chainId' "$reuse_routes_manifest")" == "46630" &&
      "$(jq -r '.liquidityVenue' "$reuse_routes_manifest")" == "uniswap-v4" &&
-     "$(jq -r '.assetRoutes | length' "$reuse_routes_manifest")" == "24" ]] || {
-    echo "The route-reuse manifest is not a complete chain-46630 v4 manifest" >&2
+     "$(jq -r '.assetRoutes | length' "$reuse_routes_manifest")" == "11" ]] || {
+    echo "The route-reuse manifest is not a complete schema-12 chain-46630 manifest" >&2
     exit 1
   }
   test_asset_liquidity_locker="$(
@@ -244,7 +248,14 @@ while IFS=$'\t' read -r symbol asset pool_id; do
       enforceReferencePrice:true,
       maximumProtectedRouteSlippageBps:100
     }' >>"$route_safety_log"
-done < <(jq -r '.faucetStockRoutes[] | [.symbol,.address,.poolId] | @tsv' "$venue_manifest")
+done < <(
+  jq -r '
+    .faucetStockRoutes[]
+    | . as $route
+    | select(["GOOGL","MSFT","NVDA","SPY"] | index($route.symbol))
+    | [$route.symbol,$route.address,$route.poolId] | @tsv
+  ' "$venue_manifest"
+)
 fi
 
 mock_native_seed="100000000000000"
@@ -358,17 +369,113 @@ while IFS=$'\t' read -r symbol asset verification; do
     }' >>"$mock_route_log"
 done < <(
   jq -r '
-    ["AMD","AMZN","NFLX","PLTR","TSLA"] as $official
-    | .assetCatalog.assets[]
+    .assetCatalog.assets[]
     | . as $asset
-    | select(
-        (.verification == "robyn-testnet-mock" and ($official | index($asset.symbol) | not))
-        or .verification == "robyn-controlled-testnet-dex"
-      )
-    | select(.symbol != "WETH")
+    | select(["GOOGL","MSFT","NVDA","SPY"] | index($asset.symbol))
     | [.symbol,.address,.verification] | @tsv
   ' "$legacy_asset_manifest"
 )
+
+provider_maximum_native_input="1000000000000"
+provider_maximum_asset_input="1000000000000000000"
+provider_asset_inventory="1000000000000000000000000"
+provider_wrapped_inventory="100000000000000"
+provider_rate_x18="1000000000000000000"
+provider_class="$(cast keccak 'SCHEMA12_TESTNET_DETERMINISTIC')"
+provider_sink="$timelock"
+while IFS=$'\t' read -r symbol name category; do
+  asset_key="schema12Asset${symbol}"
+  guard_key="schema12Guard${symbol}"
+  adapter_key="schema12Adapter${symbol}"
+  deploy_contract "$asset_key" \
+    src/testnet/TestnetMockERC20.sol:TestnetMockERC20 \
+    "$name" "tm$symbol" "$deployer" "1000000000000000000000"
+  provider_asset="${addresses[$asset_key]}"
+  deploy_contract "$guard_key" \
+    src/testnet/TestnetPinnedExecutionAdapter.sol:TestnetFixedRatePriceGuard \
+    "$provider_asset" "$wrapped_native" "$provider_rate_x18"
+  provider_guard="${addresses[$guard_key]}"
+  deploy_contract "$adapter_key" \
+    src/testnet/TestnetPinnedExecutionAdapter.sol:TestnetPinnedExecutionAdapter \
+    "$asset_router" "$provider_asset" "$wrapped_native" "$provider_sink" "$provider_rate_x18"
+  provider_adapter="${addresses[$adapter_key]}"
+  send_transaction "$provider_asset" 'mint(address,uint256)' \
+    "$provider_adapter" "$provider_asset_inventory" >/dev/null
+  send_transaction --value "$provider_wrapped_inventory" \
+    "$wrapped_native" 'deposit()' >/dev/null
+  send_transaction "$wrapped_native" 'transfer(address,uint256)' \
+    "$provider_adapter" "$provider_wrapped_inventory" >/dev/null
+  provider_adapter_hash="$(runtime_code_hash "$provider_adapter")"
+  provider_guard_hash="$(runtime_code_hash "$provider_guard")"
+  provider_route="(3,$provider_adapter,$provider_guard,$provider_maximum_native_input,$provider_maximum_asset_input,$provider_class,$provider_adapter_hash,$provider_guard_hash,$zero,true)"
+  send_transaction "$asset_router" \
+    'configureAdapterRoute(address,(uint8,address,address,uint128,uint128,bytes32,bytes32,bytes32,bytes32,bool))' \
+    "$provider_asset" "$provider_route" >/dev/null
+  provider_status="$(
+    cast call "$asset_router" \
+      'executionRouteStatus(address)((uint8,address,address,uint128,uint128,bytes32,bytes32,bytes32,bytes32,bool,bool,bool,bytes32))' \
+      "$provider_asset" --rpc-url "$rpc_url" --json
+  )"
+  [[ "$(jq -r '.[0][11]' <<<"$provider_status")" == "true" ]] || {
+    echo "$symbol deterministic provider route is not ready" >&2
+    exit 1
+  }
+  jq -nc \
+    --arg symbol "$symbol" \
+    --arg name "$name" \
+    --arg category "$category" \
+    --arg address "$provider_asset" \
+    --arg adapter "$provider_adapter" \
+    --arg priceGuard "$provider_guard" \
+    --arg adapterRuntimeHash "$provider_adapter_hash" \
+    --arg priceGuardRuntimeHash "$provider_guard_hash" \
+    --arg assetCreationTransaction "${txs[$asset_key]}" \
+    --arg adapterCreationTransaction "${txs[$adapter_key]}" \
+    --arg priceGuardCreationTransaction "${txs[$guard_key]}" \
+    --arg maximumNativeInput "$provider_maximum_native_input" \
+    --arg maximumAssetInput "$provider_maximum_asset_input" \
+    '{
+      symbol:$symbol,
+      mockSymbol:("tm" + $symbol),
+      name:$name,
+      category:$category,
+      address:$address,
+      poolId:null,
+      fee:0,
+      tickSpacing:0,
+      hook:"0x0000000000000000000000000000000000000000",
+      verification:"robyn-testnet-mock",
+      provenance:"schema12-deterministic-provider-fixture",
+      routeKind:"pinned-adapter",
+      provider:"schema12-testnet-deterministic",
+      adapter:$adapter,
+      priceGuard:$priceGuard,
+      adapterRuntimeHash:$adapterRuntimeHash,
+      priceGuardRuntimeHash:$priceGuardRuntimeHash,
+      maximumNativeInput:$maximumNativeInput,
+      maximumAssetInput:$maximumAssetInput,
+      assetCreationTransaction:$assetCreationTransaction,
+      adapterCreationTransaction:$adapterCreationTransaction,
+      priceGuardCreationTransaction:$priceGuardCreationTransaction
+    }' >>"$mock_route_log"
+  jq -nc \
+    --arg symbol "$symbol" \
+    '{
+      symbol:$symbol,
+      referenceTick:0,
+      maximumReferenceTickDeviation:0,
+      enforceReferencePrice:false,
+      maximumProtectedRouteSlippageBps:50,
+      routeKind:"pinned-adapter"
+    }' >>"$route_safety_log"
+done <<'SCHEMA12_PROVIDER_ASSETS'
+SPCX	SpaceX	stock
+GME	GameStop	stock
+USDG	Global Dollar	crypto
+USDe	Ethena USDe	crypto
+DEGEN	Degen	crypto
+ARROW	Arrow	crypto
+SCHEMA12_PROVIDER_ASSETS
 send_transaction "$test_asset_liquidity_locker" 'seal()' >/dev/null
 else
   while IFS=$'\t' read -r symbol asset pool_id verification provenance locker; do
@@ -547,16 +654,16 @@ send_transaction "$timelock" 'grantRole(bytes32,address)' "$canceller_role" "$gu
 send_transaction "$timelock" 'grantRole(bytes32,address)' "$executor_role" "$zero" >/dev/null
 send_transaction "$timelock" 'renounceRole(bytes32,address)' "$admin_role" "$deployer" >/dev/null
 
-tsla="$(jq -er '.faucetStockRoutes[] | select(.symbol=="TSLA") | .address' "$venue_manifest")"
-amd="$(jq -er '.faucetStockRoutes[] | select(.symbol=="AMD") | .address' "$venue_manifest")"
-amzn="$(jq -er '.faucetStockRoutes[] | select(.symbol=="AMZN") | .address' "$venue_manifest")"
+googl="$(jq -er '.assetCatalog.assets[] | select(.symbol=="GOOGL") | .address' "$legacy_asset_manifest")"
+msft="$(jq -er '.assetCatalog.assets[] | select(.symbol=="MSFT") | .address' "$legacy_asset_manifest")"
+nvda="$(jq -er '.assetCatalog.assets[] | select(.symbol=="NVDA") | .address' "$legacy_asset_manifest")"
 metadata_uri="ipfs://bafkreibys2cv4ijpoedcl7qdbi5u66wuwedwg3lsc6pios3wcyaoyz7cau"
 genesis_salt="$(cast keccak "robyn-v4-chain-46630-genesis-$(git rev-parse HEAD)")"
 transaction_nonce_allocate
 genesis_nonce="$TRANSACTION_NONCE_ALLOCATED"
 launch_receipt="$(cast send --rpc-url "$rpc_url" "${wallet_args[@]}" --nonce "$genesis_nonce" --json "$coordinator" \
   'createLaunch((string,string,address[],uint16[],string,bytes32))' \
-  "(\"Robyn V4 Testnet Genesis\",\"tRV4\",[$tsla,$amd,$amzn],[4000,4000,2000],\"$metadata_uri\",$genesis_salt)")"
+  "(\"Robyn Schema-12 Testnet Genesis\",\"tR12\",[$googl,$msft,$nvda],[4000,4000,2000],\"$metadata_uri\",$genesis_salt)")"
 [[ "$(jq -r '.status' <<<"$launch_receipt")" == "0x1" ||
    "$(jq -r '.status' <<<"$launch_receipt")" == "1" ]] || {
   echo "Atomic v4 genesis launch failed" >&2
@@ -566,10 +673,10 @@ launch_tx="$(jq -er '.transactionHash // .transaction_hash' <<<"$launch_receipt"
 launch="$(ROBYN_TESTNET_RPC_URL="$rpc_url" node scripts/decode-v4-launch-receipt.mjs "$launch_tx")"
 launch="$(
   jq -c \
-    --arg tsla "$tsla" \
-    --arg amd "$amd" \
-    --arg amzn "$amzn" \
-    '. + {assets: [$tsla, $amd, $amzn], weightsBps: [4000, 4000, 2000]}' \
+    --arg googl "$googl" \
+    --arg msft "$msft" \
+    --arg nvda "$nvda" \
+    '. + {assets: [$googl, $msft, $nvda], weightsBps: [4000, 4000, 2000]}' \
     <<<"$launch"
 )"
 launch_coordinator="$(jq -r '.coordinator' <<<"$launch" | tr '[:upper:]' '[:lower:]')"
@@ -591,6 +698,7 @@ venue_hash="$(sha256sum "$venue_manifest" | awk '{print $1}')"
 official_asset_routes="$(
   jq -c '
     .faucetStockRoutes
+    | map(. as $route | select(["GOOGL","MSFT","NVDA","SPY"] | index($route.symbol)))
     | map(. + {
         verification:"robinhood-testnet-faucet-stock",
         provenance:"shared-unlisted-robinhood-testnet-uniswap-v4-mirror"
@@ -623,9 +731,17 @@ deployment_block_raw="$(
 deployment_block="$((deployment_block_raw))"
 asset_catalog="$(
   jq -c --argjson routes "$asset_routes" '
-    [.assetCatalog.assets[] as $catalog
-      | $routes[] as $route
-      | select($route.symbol == $catalog.symbol)
+    [$routes[] as $route
+      | ([.assetCatalog.assets[] | select(.symbol == $route.symbol)][0]
+          // {
+            symbol:$route.symbol,
+            mockSymbol:($route.mockSymbol // ("tm" + $route.symbol)),
+            name:$route.name,
+            category:$route.category,
+            logoUrl:null,
+            mainnetAddress:null,
+            referencePriceUsd:null
+          }) as $catalog
       | $catalog
         + {
             name: (
@@ -647,7 +763,7 @@ asset_catalog="$(
               else "Robyn testnet mock. Not an official Robinhood Stock Token, backed share, or redeemable security."
               end
             ),
-            route: {kind:"uniswap-v4",ready:true},
+            route: {kind:($route.routeKind // "uniswap-v4"),ready:true},
             poolId: $route.poolId,
             poolFee: $route.fee,
             tickSpacing: $route.tickSpacing,
@@ -759,7 +875,7 @@ archived_predecessor_sha="$(
   fi
 )"
 jq -n \
-  --argjson schemaVersion 11 \
+  --argjson schemaVersion 12 \
   --arg environment "$([[ "$rehearsal" == "true" ]] && echo robinhood-testnet-fork-rehearsal || echo robinhood-testnet)" \
   --argjson chainId 46630 \
   --argjson deploymentBlock "$deployment_block" \
@@ -776,6 +892,7 @@ jq -n \
   --arg universalRouter "$universal_router" \
   --arg permit2 "$permit2" \
   --arg stateView "$state_view" \
+  --arg wrappedNative "$wrapped_native" \
   --arg timelock "$timelock" \
   --arg daoToken "$dao_token" \
   --arg governor "$governor" \
@@ -833,9 +950,9 @@ jq -n \
     venueManifestSha256: $venueManifestSha256,
     assetRoutes: $assetRoutes,
     assetCatalog: {
-      schemaVersion: 2,
+      schemaVersion: 3,
       snapshotAt: (now | todateiso8601),
-      disclosure: "Faucet assets and Robyn mock assets are test-only and are not production Stock Tokens, backed shares, or redeemable securities.",
+      disclosure: "Schema-12 Testnet uses individually selected mock, direct-WETH, and deterministic provider routes. Test assets are not production Stock Tokens, backed shares, or redeemable securities.",
       assets: $assetCatalog
     },
     contracts: {
@@ -845,6 +962,7 @@ jq -n \
       universalRouter: $universalRouter,
       permit2: $permit2,
       stateView: $stateView,
+      wrappedNative: $wrappedNative,
       baseAsset: "0x0000000000000000000000000000000000000000",
       rewardAssets: [$assetRoutes[].address],
       conversionRouter: $assetRouter,

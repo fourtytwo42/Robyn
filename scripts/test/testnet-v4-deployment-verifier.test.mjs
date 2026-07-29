@@ -12,7 +12,7 @@ test("deployment verifier reports missing contract addresses without an RPC call
     manifest,
     JSON.stringify({
       chainId: 46630,
-      schemaVersion: 11,
+      schemaVersion: 12,
       liquidityVenue: "uniswap-v4",
       contracts: {},
     }),

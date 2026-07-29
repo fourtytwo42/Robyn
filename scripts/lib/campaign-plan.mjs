@@ -67,9 +67,9 @@ export function basketConversionActorIndex(launchIndex, legIndex) {
 }
 
 export function assertSecurityRemediationManifest(manifest) {
-  if (manifest?.schemaVersion !== 11 || manifest?.chainId !== 46630) {
+  if (manifest?.schemaVersion !== 12 || manifest?.chainId !== 46630) {
     throw new Error(
-      "Campaign requires a schema-10 security-remediated chain-46630 manifest",
+      "Campaign requires a schema-12 security-remediated chain-46630 manifest",
     );
   }
   if (
@@ -84,10 +84,10 @@ export function assertSecurityRemediationManifest(manifest) {
   }
   if (
     !Array.isArray(manifest.assetRoutes) ||
-    manifest.assetRoutes.length !== 24
+    manifest.assetRoutes.length !== 11
   ) {
     throw new Error(
-      "Campaign requires exactly 24 verified and ready basket routes",
+      "Campaign requires exactly 11 individually qualified basket routes",
     );
   }
   const requiredContracts = [
@@ -116,28 +116,29 @@ export function assertSecurityRemediationManifest(manifest) {
 export function launchBasketPlan(manifest) {
   assertSecurityRemediationManifest(manifest);
   const addresses = manifest.assetRoutes.map((route) => route.address);
-  if (new Set(addresses.map((address) => address.toLowerCase())).size !== 24) {
+  if (new Set(addresses.map((address) => address.toLowerCase())).size !== 11) {
     throw new Error("Campaign route catalog contains duplicate addresses");
   }
-  const faucetRoutes = manifest.assetRoutes.filter(
-    (route) => route.verification === "robinhood-testnet-faucet-stock",
+  const routeKinds = manifest.assetRoutes.map(
+    (route) => route.routeKind ?? "canonical-v4-single-hop",
   );
-  const controlledRoutes = manifest.assetRoutes.filter(
-    (route) => route.verification !== "robinhood-testnet-faucet-stock",
-  );
-  if (faucetRoutes.length !== 5 || controlledRoutes.length !== 19) {
+  if (
+    routeKinds.filter((kind) => kind === "canonical-v4-single-hop").length !== 4 ||
+    routeKinds.filter((kind) => kind === "wrapped-native").length !== 1 ||
+    routeKinds.filter((kind) => kind === "pinned-adapter").length !== 6
+  ) {
     throw new Error(
-      "Campaign requires five faucet-stock routes and nineteen controlled routes",
+      "Campaign requires four v4, one WETH, and six pinned-adapter routes",
     );
   }
-  // Keep the five shallow shared faucet-stock routes in the final two,
-  // non-graduated launches. The first six baskets therefore use controlled
-  // liquidity, while every route remains covered exactly once.
-  const orderedRoutes = [
-    ...controlledRoutes.slice(0, 18),
-    ...faucetRoutes,
-    controlledRoutes[18],
-  ];
+  // Eight three-leg launches still exercise 24 conversions, but schema-12 has
+  // eleven individually qualified assets. Cycle deterministically after every
+  // asset has appeared once so every route class is covered without inventing
+  // extra assets.
+  const orderedRoutes = Array.from(
+    { length: REQUIRED_LAUNCH_COUNT * 3 },
+    (_, index) => manifest.assetRoutes[index % manifest.assetRoutes.length],
+  );
   return Array.from({ length: REQUIRED_LAUNCH_COUNT }, (_, index) => ({
     index,
     name: `Sherwood Automated Test ${index + 1}`,

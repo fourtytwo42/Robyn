@@ -100,9 +100,9 @@ test("weighted funding tree preserves distinct wallet budgets and edge costs", (
   );
 });
 
-test("eight baskets cover every route exactly once", () => {
+test("eight baskets cover every schema-12 route and all route classes", () => {
   const manifest = {
-    schemaVersion: 11,
+    schemaVersion: 12,
     chainId: 46630,
     governanceProfile: "robinhood-testnet-short-assurance",
     dao: {
@@ -129,41 +129,27 @@ test("eight baskets cover every route exactly once", () => {
         "guardian",
       ].map((key, index) => [key, `0x${String(index + 1).padStart(40, "0")}`]),
     ),
-    assetRoutes: Array.from({ length: 24 }, (_, index) => ({
+    assetRoutes: Array.from({ length: 11 }, (_, index) => ({
       address: `0x${String(index + 101).padStart(40, "0")}`,
-      verification:
-        index < 5 ? "robinhood-testnet-faucet-stock" : "robyn-testnet-mock",
+      verification: "robyn-testnet-mock",
+      routeKind:
+        index < 4
+          ? "canonical-v4-single-hop"
+          : index === 4
+            ? "wrapped-native"
+            : "pinned-adapter",
     })),
   };
   const baskets = launchBasketPlan(manifest);
   assert.equal(baskets.length, 8);
   assert.equal(baskets.filter((basket) => basket.shouldGraduate).length, 3);
-  assert.equal(new Set(baskets.flatMap((basket) => basket.assets)).size, 24);
+  assert.equal(new Set(baskets.flatMap((basket) => basket.assets)).size, 11);
   assert.deepEqual(
-    baskets.map((basket) => basket.assets),
-    [
-      ...Array.from({ length: 6 }, (_, index) =>
-        manifest.assetRoutes
-          .slice(index * 3 + 5, index * 3 + 8)
-          .map((route) => route.address),
-      ),
-      manifest.assetRoutes.slice(0, 3).map((route) => route.address),
-      [
-        ...manifest.assetRoutes.slice(3, 5).map((route) => route.address),
-        manifest.assetRoutes[23].address,
-      ],
-    ],
-  );
-  assert.ok(
-    baskets
-      .slice(0, 3)
-      .every((basket) =>
-        basket.assets.every((address) =>
-          manifest.assetRoutes
-            .slice(5)
-            .some((route) => route.address === address),
-        ),
-      ),
+    baskets.flatMap((basket) => basket.assets),
+    Array.from(
+      { length: 24 },
+      (_, index) => manifest.assetRoutes[index % 11].address,
+    ),
   );
 });
 
