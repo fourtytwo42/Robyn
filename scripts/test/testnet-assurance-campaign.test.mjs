@@ -473,3 +473,17 @@ test("failed transactions are journaled and cleared for a safe retry", () => {
   assert.match(source, /delete state\.submittedTransactions\[label\]/);
   assert.match(source, /gas: transactionGasLimit\(estimatedGas\)/);
 });
+
+test("claims reconcile pre-submission settlements won by the canonical keeper", () => {
+  const source = readFileSync(
+    new URL("../testnet-assurance-campaign.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /async function settleGlobalNativeLiability/);
+  assert.match(source, /if \(remaining >= liability\) throw error/);
+  assert.match(source, /state\.claims\.settlementRaces/);
+  assert.match(
+    source,
+    /canonical keeper settlement won the pre-submission race/,
+  );
+});

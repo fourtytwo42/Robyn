@@ -2331,6 +2331,60 @@ async function governance() {
   console.log(json(state.governance));
 }
 
+async function settleGlobalNativeLiability({
+  state,
+  label,
+  account,
+  router,
+  abi,
+  liabilityFunction,
+  settlementFunction,
+}) {
+  let observed = 0n;
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const liability = await publicClient.readContract({
+      address: router,
+      abi,
+      functionName: liabilityFunction,
+    });
+    if (attempt === 0) observed = liability;
+    if (liability === 0n) return { observed, remaining: 0n };
+    try {
+      await contractTransaction(
+        state,
+        label,
+        account,
+        router,
+        abi,
+        settlementFunction,
+        [liability],
+      );
+      return { observed, remaining: 0n };
+    } catch (error) {
+      if (state.failedTransactions.some((entry) => entry.label === label)) {
+        throw error;
+      }
+      const remaining = await publicClient.readContract({
+        address: router,
+        abi,
+        functionName: liabilityFunction,
+      });
+      if (remaining >= liability) throw error;
+      state.claims.settlementRaces ??= [];
+      state.claims.settlementRaces.push({
+        label,
+        attempt,
+        requestedAmount: liability.toString(),
+        remainingAmount: remaining.toString(),
+        reason: "canonical keeper settlement won the pre-submission race",
+        source: "canonical-keeper",
+      });
+      saveState(state);
+    }
+  }
+  throw new Error(`Could not settle ${label} after canonical keeper races`);
+}
+
 async function claims() {
   const manifest = loadManifest();
   const state = loadState();
@@ -2351,41 +2405,27 @@ async function claims() {
   }
 
   const settlementAccount = privateKeyToAccount(accounts[0].privateKey);
-  const daoLiability = await publicClient.readContract({
-    address: manifest.contracts.protocolFeeRouter,
+  const daoSettlement = await settleGlobalNativeLiability({
+    state,
+    label: "dao-fee-settlement",
+    account: settlementAccount,
+    router: manifest.contracts.protocolFeeRouter,
     abi: feeRouterAbi,
-    functionName: "totalDaoNativeLiability",
+    liabilityFunction: "totalDaoNativeLiability",
+    settlementFunction: "settleDaoFees",
   });
-  if (daoLiability > 0n) {
-    await contractTransaction(
-      state,
-      "dao-fee-settlement",
-      settlementAccount,
-      manifest.contracts.protocolFeeRouter,
-      feeRouterAbi,
-      "settleDaoFees",
-      [daoLiability],
-    );
-  }
-  const treasuryLiability = await publicClient.readContract({
-    address: manifest.contracts.protocolFeeRouter,
+  const treasurySettlement = await settleGlobalNativeLiability({
+    state,
+    label: "treasury-fee-settlement",
+    account: settlementAccount,
+    router: manifest.contracts.protocolFeeRouter,
     abi: feeRouterAbi,
-    functionName: "totalTreasuryNativeLiability",
+    liabilityFunction: "totalTreasuryNativeLiability",
+    settlementFunction: "settleTreasuryFees",
   });
-  if (treasuryLiability > 0n) {
-    await contractTransaction(
-      state,
-      "treasury-fee-settlement",
-      settlementAccount,
-      manifest.contracts.protocolFeeRouter,
-      feeRouterAbi,
-      "settleTreasuryFees",
-      [treasuryLiability],
-    );
-  }
   state.claims.settlements = {
-    daoNative: daoLiability.toString(),
-    treasuryNative: treasuryLiability.toString(),
+    daoNative: daoSettlement.observed.toString(),
+    treasuryNative: treasurySettlement.observed.toString(),
   };
   saveState(state);
   await advanceOrWait(10 * 60, "one-hour reward stream accrual");

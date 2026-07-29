@@ -1,5 +1,26 @@
 # Project Memory
 
+### 2026-07-29 - Campaign claims reconcile canonical keeper settlement races
+
+- Context: Resuming `schema12-assurance-0bad303-03` after governance reached
+  terminal states exposed a pre-submission race. The campaign read the full DAO
+  liability, while the canonical keeper settled part of it before gas
+  estimation. `settleDaoFees` correctly rejected the now-stale amount. No
+  transaction was broadcast and no campaign failure was journaled.
+- Decision: Global DAO and treasury settlement actions now re-read their
+  liabilities after any pre-submission failure. A retry is permitted only when
+  the liability strictly decreased and no status-zero campaign receipt exists.
+  Each race is recorded as canonical-keeper evidence; an unchanged liability
+  or a mined failure still fails closed.
+- Files: `scripts/testnet-assurance-campaign.mjs` and
+  `scripts/test/testnet-assurance-campaign.test.mjs`.
+- Verification: Campaign status retained 1,606 successful transactions, 1,505
+  product writes, zero failed transactions, and its reserve. Formatting,
+  script syntax, all 28 campaign tests, repository lint, and diff checks pass.
+- Follow-up: Commit, push, build, and promote the exact correction. Resume only
+  the missing claims, fill, and sweep phases from the durable journal, then run
+  reconciliation, recovery, and a fresh uninterrupted two-hour endurance gate.
+
 ### 2026-07-29 - Ceremonial hood is the canonical site and RDAO artwork
 
 - Context: The user selected the first Ironwood variation, the faceless
