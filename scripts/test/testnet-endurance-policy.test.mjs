@@ -507,3 +507,21 @@ test("PM2 continuity preserves each process-specific working directory", () => {
     ["PM2 continuity failed for robyn-api-testnet"],
   );
 });
+
+test("pre-clock activation uses normal governance before readiness", async () => {
+  const source = readFileSync("scripts/testnet-endurance.mjs", "utf8");
+  assert.match(source, /async function ensurePublicLaunchMode\(\)/);
+  assert.match(source, /functionName: "setPublicMode"/);
+  assert.match(source, /"endurance-activation-propose"/);
+  assert.match(source, /"endurance-activation-vote"/);
+  assert.match(source, /"endurance-activation-queue"/);
+  assert.match(source, /"endurance-activation-execute"/);
+  assert.match(
+    source,
+    /await ensureFunding\(\);\nawait ensurePublicLaunchMode\(\);/,
+  );
+  assert.ok(
+    source.indexOf("await ensurePublicLaunchMode();") <
+      source.indexOf("let readinessPasses = 0"),
+  );
+});

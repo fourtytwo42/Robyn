@@ -1860,6 +1860,154 @@ async function maybeAdvancedCoverage() {
   await maybeStreamProbe();
   await maybeCreatorClaimCoverage();
 }
+async function ensurePublicLaunchMode() {
+  const coordinator = manifest.contracts.atomicLaunchCoordinator;
+  const currentMode = Number(
+    await publicClient.readContract({
+      address: coordinator,
+      abi: coordinatorAbi,
+      functionName: "launchMode",
+    }),
+  );
+  if (currentMode === 2) {
+    state.launchActivation ??= {};
+    state.launchActivation.completedAt ??= new Date().toISOString();
+    state.launchActivation.mode = "Public";
+    saveState();
+    return;
+  }
+  if (currentMode !== 0) {
+    throw new Error(
+      `Endurance pre-clock activation expected Paused or Public mode, found ${currentMode}`,
+    );
+  }
+
+  const description = `Sherwood endurance public activation ${runId}`;
+  const targets = [coordinator];
+  const values = [0n];
+  const calldatas = [
+    encodeFunctionData({
+      abi: coordinatorAbi,
+      functionName: "setPublicMode",
+    }),
+  ];
+  const descriptionHash = keccak256(stringToHex(description));
+  state.launchActivation ??= {
+    description,
+    descriptionHash,
+    targets,
+    values: values.map(String),
+    calldatas,
+  };
+  if (!state.launchActivation.proposalId) {
+    await contractTransaction(
+      "endurance-activation-propose",
+      accounts[0],
+      manifest.contracts.governor,
+      governorAbi,
+      "propose",
+      [targets, values, calldatas, description],
+    );
+    state.launchActivation.proposalId = (
+      await publicClient.readContract({
+        address: manifest.contracts.governor,
+        abi: governorAbi,
+        functionName: "hashProposal",
+        args: [targets, values, calldatas, descriptionHash],
+      })
+    ).toString();
+    saveState();
+  }
+
+  const deadline = Date.now() + 15 * 60 * 1000;
+  while (Date.now() < deadline) {
+    const proposalId = BigInt(state.launchActivation.proposalId);
+    const proposalState = Number(
+      await publicClient.readContract({
+        address: manifest.contracts.governor,
+        abi: governorAbi,
+        functionName: "state",
+        args: [proposalId],
+      }),
+    );
+    state.launchActivation.lastState = proposalState;
+    saveState();
+    if (proposalState === 0) {
+      await sleep(5_000);
+      continue;
+    }
+    if (proposalState === 1) {
+      await contractTransaction(
+        "endurance-activation-vote",
+        accounts[0],
+        manifest.contracts.governor,
+        governorAbi,
+        "castVote",
+        [proposalId, 1],
+      );
+      await sleep(5_000);
+      continue;
+    }
+    if (proposalState === 4) {
+      await contractTransaction(
+        "endurance-activation-queue",
+        accounts[0],
+        manifest.contracts.governor,
+        governorAbi,
+        "queue",
+        [targets, values, calldatas, descriptionHash],
+      );
+      await sleep(5_000);
+      continue;
+    }
+    if (proposalState === 5) {
+      const eta = await publicClient.readContract({
+        address: manifest.contracts.governor,
+        abi: governorAbi,
+        functionName: "proposalEta",
+        args: [proposalId],
+      });
+      const block = await publicClient.getBlock();
+      if (block.timestamp < eta) {
+        await sleep(5_000);
+        continue;
+      }
+      await contractTransaction(
+        "endurance-activation-execute",
+        accounts[0],
+        manifest.contracts.governor,
+        governorAbi,
+        "execute",
+        [targets, values, calldatas, descriptionHash],
+      );
+      await sleep(2_000);
+      continue;
+    }
+    if (proposalState === 7) {
+      const activatedMode = Number(
+        await publicClient.readContract({
+          address: coordinator,
+          abi: coordinatorAbi,
+          functionName: "launchMode",
+        }),
+      );
+      if (activatedMode !== 2) {
+        throw new Error(
+          `Endurance activation executed without Public mode: ${activatedMode}`,
+        );
+      }
+      state.launchActivation.mode = "Public";
+      state.launchActivation.completedAt = new Date().toISOString();
+      saveState();
+      return;
+    }
+    throw new Error(
+      `Endurance activation entered terminal proposal state ${proposalState}`,
+    );
+  }
+  throw new Error("Endurance pre-clock activation timed out");
+}
+
 async function advanceGovernance() {
   const governor = manifest.contracts.governor;
   if (!state.governance.proposalId) {
@@ -2386,6 +2534,7 @@ if (process.env.ROBYN_ENDURANCE_PREFLIGHT_ONLY === "1") {
   process.exit(0);
 }
 await ensureFunding();
+await ensurePublicLaunchMode();
 let stopping = false;
 process.on("SIGTERM", () => {
   stopping = true;

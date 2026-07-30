@@ -1532,16 +1532,16 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- 2026-07-30: Schema-15 exact release `f66c4e1` is live and healthy on
-  fresh database `robyn_testnet_schema15_95386964`; contracts remain Paused
-  from block 95,386,964 and the 177-check verifier passes. Full recovery run 03
-  passed. Fresh encrypted 100-wallet identity
-  `schema15-accelerated-f66c4e1-01` and its static one-shot service are
-  installed but inactive. Funding preflight requires 0.0149 ETH and the
-  deployer has 0.011035905930106913 ETH, a 0.003864094069893087 ETH shortfall.
-  Do not start or reduce coverage/reserves. Prior invalidated receipts remain
-  sealed and unreplayed. Production clocks remain one hour; no Mainnet action
-  occurred.
+- 2026-07-30: Schema-15 exact release `f66c4e1` remains live and
+  healthy. Fresh run `schema15-accelerated-f66c4e1-01` received faucet
+  funding, completed 38 setup transactions, and passed two readiness samples,
+  but its first launch reverted during estimation because the coordinator was
+  still Paused. Zero healthy seconds accumulated and no launch transaction was
+  submitted. The run is failed and sealed. The runner now performs a normal
+  pre-clock Governor/Timelock proposal to enter Public mode, and a journaled
+  fail-closed tool recovers the failed identity's RDAO and native funding before
+  a new salted run. Do not reuse any of the 38 hashes. Production clocks remain
+  one hour; no Mainnet action occurred.
 
 - 2026-07-30: Fresh Schema-14 contracts are live on Testnet from block
   95,295,401 and remain Paused. The 84 deployment receipts succeeded, the
@@ -4902,6 +4902,14 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-30: Accelerated run `schema15-accelerated-f66c4e1-01`
+  completed 38 funding/RDAO setup transactions and two readiness samples, then
+  failed before its first launch transaction because launch mode remained
+  Paused. Healthy time is zero. The runner now uses the real Governor and
+  Timelock to enter Public mode before readiness. A new idempotent recovery tool
+  returns only the failed zero-launch run's RDAO and native balances with a
+  separate submitted/confirmed journal.
+
 - 2026-07-30: Exact served release `f66c4e1` passed recovery run
   `schema15-recovery-f66c4e1-04` with matching database fingerprints, 117
   restored artifacts, Redis/MinIO/IPFS recovery, all PM2 and native-service
@@ -5627,10 +5635,11 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Fund the Schema-15 deployer with at least 0.003864094069893087 ETH more
-  Testnet ETH, rerun the no-write funding preflight, and start static run
-  `schema15-accelerated-f66c4e1-01` only when sufficient. Recovery passed and
-  the exact runner is installed; never reuse an earlier transaction journal.
+- Commit, build, and promote the governed pre-clock activation fix. Recover
+  only the 38 setup transactions from failed run
+  `schema15-accelerated-f66c4e1-01` through its new durable recovery journal,
+  create a new salted 100-wallet identity, rerun funding/readiness, and start a
+  fresh two-hour run. Never reuse a confirmed hash from run 01.
   Keep the old runner masked and never replay its 47 confirmed transactions or
   the 12 transactions from the invalidated partial deployment. Repeat final
   reconciliation and browser acceptance from zero.
