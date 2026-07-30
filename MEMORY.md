@@ -3070,7 +3070,7 @@ Durable project context lives here. Update this file whenever information should
 - Real 0.01 ETH/0.001 ETH canary and 6 ETH/0.5 ETH production profiles both graduate in focused Foundry tests. Existing launch snapshots remain unchanged after governance, stale expected versions revert, and 37/37 focused protocol tests pass.
 - Profile identity now flows through launch salts/configuration hashes, events, index projection, migration 0014, API responses, launch UI, and the persisted background protocol audit. All seven TypeScript packages typecheck.
 - The canonical rollout runbook is `docs/operations/mainnet-staged-rollout.md`. `scripts/mainnet-transaction-journal.mjs` provides protected append-only intent/receipt recording and rejects duplicate idempotency keys; its focused tests pass.
-- No Schema-13 Testnet or Mainnet deployment, bridge, route activation, canary transaction, or public activation has occurred or is authorized. Preserve the active Schema-12 endurance run unchanged.
+- Schema-13 is deployed fresh to Robinhood Testnet from block 95,152,900 and remains Paused. No Schema-13 launch, Mainnet deployment, bridge, route activation, canary transaction, or public activation has occurred. The Schema-12 endurance service remains static and stopped.
 - V5 and V6 now both pass the request's expected profile version into the market factory; the unversioned compatibility overload was removed. A 256-case profile fuzz property proves every allowed 0.01-100 ETH target derives an actual threshold at or above the requested target with bounded rounding.
 - The Schema-13 Mainnet fork fixture now requires deployed production Timelock and Safe addresses, then exercises Canary, the 6 ETH / 0.5 ETH profile transition, and Public mode through a real `RobynGovernor` proposal, 1-day voting delay, 3-day voting period, and 2-day Timelock execution. It remains a no-broadcast fixture and skips without protected Mainnet inputs.
 - Complete repository validation passes: Prettier, zero-warning lint, all seven TypeScript typechecks, service tests, Anvil smoke, 256 Foundry tests with zero failures and two protected Mainnet fork skips, deployment nonce/verifier checks, and the 512-wallet/32-launch/25,000-action/20-seed simulation.
@@ -3079,7 +3079,9 @@ Durable project context lives here. Update this file whenever information should
 - No public Testnet transaction occurred during the rehearsal. The Schema-12 endurance service is static and stopped.
 - Exact pushed commit `d2b882c782ec2d85042bc485566495123c5ebdad` passed the isolated chain-46630 rehearsal at fork block 95,150,428: 162/162 verifier checks, all 96 intentional Paused-deployment transactions, 62,285,289 gas, 25% headroom, and the 0.0015 ETH reserve. The protected deployer held 8,615,568,990,401,747 wei versus 2,374,340,224,224,500 wei required. Evidence checksums pass under `/home/hendo420/robyn-evidence/schema13-mainnet-go/testnet-rehearsal/d2b882c-20260730/`.
 - Schema-13 has 96 deployment transactions because it intentionally omits Schema-12's genesis-launch transaction and must finish Paused. This is a lifecycle safety difference, not reduced deployment coverage.
-- The protected exact Mainnet fork has not run because production Safe, Timelock, RDAO allocation, and other protected production inputs are not configured. The fresh Schema-13 Testnet deployment, renewed exact-candidate security audit, recovery, uninterrupted endurance, reconciliation, browser acceptance, 48-hour Mainnet RPC gate, and Mainnet funding preflight remain pending.
+- The live Testnet deployment is exact release `61225c539aa4d5c69c3cd20acf87ed0fdd31bfe3`, coordinator `0xD7842F68030B5ACE75454841A978BD8d689a5903`, market factory `0x827eb2fa1aD59164aBB59a5fFfA804b593eCdd8D`, asset router `0x612400293BDFd231de3B076F56e807bED187e2cF`, and fee router `0x5F76AA3E5B917B15CBACB621Ee9AA1990FA51C1A`. All 162 verifier checks pass.
+- All 96 live deployment receipts succeeded using 66,891,884 gas. The deployer retained 7,154,331,710,401,747 wei, above the 1,500,000,000,000,000 wei reserve. Checksummed evidence is under `/home/hendo420/robyn-evidence/schema13-mainnet-go/live-testnet-20260730-61225c5/`.
+- The protected exact Mainnet fork has not run because production Safe, Timelock, RDAO allocation, and other protected production inputs are not configured. Schema-13 index rebuild and application promotion, recovery, uninterrupted endurance, reconciliation, browser acceptance, 48-hour Mainnet RPC gate, and Mainnet funding preflight remain pending.
 
 ### 2026-07-29 - Conversion recovery preserves canonical keeper work
 
@@ -4606,6 +4608,8 @@ When sources conflict, use this order:
 ## Verification Ledger
 
 - 2026-07-30: Schema-13 exact commit `d2b882c` passed the disposable Testnet fork rehearsal with 162/162 live deployment checks, 96/96 deployment transactions measured, 62,285,289 total gas, sufficient protected-deployer balance, and verified evidence checksums. No public-chain transaction was broadcast.
+- 2026-07-30: Schema-13 exact release `61225c5` deployed fresh to Testnet from block 95,152,900 in Paused mode. The 96 deployment receipts succeeded using 66,891,884 gas, 162/162 checks passed, the 0.0015 ETH reserve remained intact, and evidence checksums verify.
+
 
 - 2026-07-29: exact schema-12 application release `ad5b991` passed formatting,
   lint, typecheck, repository tests, 235 Foundry tests, the 512-wallet
