@@ -1,5 +1,26 @@
 # Project Memory
 
+### 2026-07-30 - Schema-15 accelerated run 04 started
+
+- State: Exact immutable release
+  `b74dbc89bd7e5b37617094ce7dcc623deced52a4` is live on Testnet.
+  Campaign `schema15-accelerated-b74dbc8-04` uses a fresh encrypted
+  100-wallet identity and journal.
+- Pre-clock: 38 setup transactions, proposal, vote, queue, and Timelock
+  execution all confirmed. The proposer checkpoint matured at 120 million
+  RDAO against the 10 million threshold. Two readiness samples passed.
+- Endurance: The uninterrupted two-hour clock started at
+  `2026-07-30T22:37:40.385Z`. The first launch and initial lifecycle actions
+  confirmed. At the first durable checkpoint, six samples passed, 75 healthy
+  seconds accumulated, API p95 was about 131 ms, lag remained within policy,
+  and disk remained above 12 GiB.
+- Evidence: Runs 01 through 03 remain failed and sealed; none of their
+  confirmed hashes may be replayed. Run 03 retained one Bonding launch as
+  Testnet history and recovered only RDAO and native wallet funding.
+- Follow-up: Monitor run 04 without combining prior healthy segments. Any
+  unexpected failure invalidates the complete clock. Production clocks remain
+  unchanged. No Mainnet transaction occurred.
+
 ### 2026-07-30 - Schema-15 run 03 lifecycle-verifier failure
 
 - Context: Faucet funding was sufficient and exact release `743153c` promoted
