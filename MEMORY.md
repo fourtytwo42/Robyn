@@ -76,8 +76,12 @@
 - Endurance preflight: The static installer and runner default still referenced
   the archived generic Schema-14 manifest. They now bind explicitly to
   `46630-v4-schema15.json`, and regression coverage forbids the generic alias.
-- Follow-up: Commit, push, build and promote this final runner-manifest binding,
-  then install a fresh Schema-15 run ID. Never reuse prior journals.
+- Endurance: Fresh run `schema15-accelerated-f66c4e1-01` is installed
+  static and inactive with 100 newly derived encrypted software wallets. The
+  no-write funding preflight reports 0.0149 ETH required versus
+  0.011035905930106913 ETH available. Obtain at least
+  0.003864094069893087 ETH more Testnet ETH before starting; preserve coverage
+  and the 0.0015 ETH reserve. Never reuse prior journals.
 
 ### 2026-07-30 - Fresh Schema-14 Testnet deployment completed Paused
 
@@ -1527,15 +1531,16 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- 2026-07-30: Schema-15 accelerated clocks are deployed fresh on Testnet from
-  block 95,386,964 and exact release `7607f1f` is promoted against fresh
-  database `robyn_testnet_schema15_95386964`. The stack remains Paused; all
-  seven PM2 services are online with zero restarts, both RPC providers agree,
-  LAN is primary, queues are empty, and the 177-check verifier passes. The first
-  partial attempt and accidentally resumed Schema-14 run remain invalidated and
-  sealed. The old endurance unit is runtime-masked. Next: complete recovery,
-  then install a new run ID. Production clocks remain one hour and no Mainnet
-  transaction occurred.
+- 2026-07-30: Schema-15 exact release `f66c4e1` is live and healthy on
+  fresh database `robyn_testnet_schema15_95386964`; contracts remain Paused
+  from block 95,386,964 and the 177-check verifier passes. Full recovery run 03
+  passed. Fresh encrypted 100-wallet identity
+  `schema15-accelerated-f66c4e1-01` and its static one-shot service are
+  installed but inactive. Funding preflight requires 0.0149 ETH and the
+  deployer has 0.011035905930106913 ETH, a 0.003864094069893087 ETH shortfall.
+  Do not start or reduce coverage/reserves. Prior invalidated receipts remain
+  sealed and unreplayed. Production clocks remain one hour; no Mainnet action
+  occurred.
 
 - 2026-07-30: Fresh Schema-14 contracts are live on Testnet from block
   95,295,401 and remain Paused. The 84 deployment receipts succeeded, the
@@ -3315,7 +3320,7 @@ Durable project context lives here. Update this file whenever information should
 - Testnet-only contract clocks are 600-second holder, creator, and DAO reward
   streams, 60-second voting delay, 300-second voting period, and 60-second
   Timelock. Production defaults remain unchanged.
-- Exact application release `7607f1f10c274f9dac659f3fa92a67daf974cf0a`
+- Exact application release `f66c4e18b2ff4ca450e5016c5a4ca2b6fb1a9f4d`
   passed the complete immutable build gate and is served publicly from the
   fresh `robyn_testnet_schema15_95386964` database.
 - Fresh Paused Schema-15 contracts are live from block 95,386,964. The clean
@@ -4896,6 +4901,12 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-30: Exact accelerated endurance release `f66c4e1` is live.
+  Fresh run `schema15-accelerated-f66c4e1-01` has a new encrypted 100-wallet
+  identity and static inactive systemd unit. Its no-write preflight requires
+  0.0149 ETH and found 0.011035905930106913 ETH, so the clock correctly remains
+  stopped with a 0.003864094069893087 ETH shortfall.
+
 - 2026-07-30: Recovery run `schema15-recovery-1a1425c-03` passed.
   The database fingerprints matched; 117 artifacts restored; Redis, MinIO, and
   IPFS recovery passed; every PM2 and native-service fault drill passed; LAN,
@@ -5609,9 +5620,10 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Build and promote the final explicit Schema-15 endurance-manifest binding,
-  then install and start a fresh two-hour run ID. Recovery has passed; never
-  reuse any earlier transaction journal.
+- Fund the Schema-15 deployer with at least 0.003864094069893087 ETH more
+  Testnet ETH, rerun the no-write funding preflight, and start static run
+  `schema15-accelerated-f66c4e1-01` only when sufficient. Recovery passed and
+  the exact runner is installed; never reuse an earlier transaction journal.
   Keep the old runner masked and never replay its 47 confirmed transactions or
   the 12 transactions from the invalidated partial deployment. Repeat final
   reconciliation and browser acceptance from zero.
