@@ -27,9 +27,16 @@
   Mainnet fork skipped, 90 script tests passed, all workspace application tests
   passed, and the new timing/authority/CREATE2/UI type checks pass. This remains
   internal assurance only.
-- Follow-up: Commit and push the clean candidate, then run the isolated Schema-15
-  chain-46630 rehearsal. Only after it passes may a fresh Paused Schema-15
-  Testnet deployment, recovery gate, and new endurance run be considered.
+- Rehearsal: Exact pushed commit `4933056bd41a59eccc9bb10dcb3afa647c11c0e0`
+  passed an isolated chain-46630 deployment rehearsal at block 95,383,265. All
+  84 transactions succeeded using 57,587,205 gas; the dedicated verifier had
+  zero failures. Required balance including 25% headroom and the 0.0015 ETH
+  reserve was 0.002326266364361520 ETH. Evidence is under
+  `/home/hendo420/robyn-evidence/schema15-mainnet-go/testnet-rehearsal/4933056-20260730T203244Z/`.
+- Follow-up: Commit this documentation checkpoint and rerun the isolated
+  rehearsal against the resulting exact SHA. Only after that passes may a
+  fresh Paused Schema-15 Testnet deployment, recovery gate, and new endurance
+  run be considered.
 
 ### 2026-07-30 - Fresh Schema-14 Testnet deployment completed Paused
 
@@ -4834,6 +4841,9 @@ When sources conflict, use this order:
   `pnpm test`: 252 Foundry tests passed, one protected Mainnet fork skipped,
   90 script tests passed, all application tests and typechecks passed, and
   `git diff --check` was clean. No deployment or public-chain write occurred.
+  Exact commit `4933056` then passed an isolated chain-46630 rehearsal with
+  84 successful transactions, 57,587,205 gas, zero verification failures, and
+  a 0.002326266364361520 ETH requirement including reserve.
 
 - 2026-07-30: Fresh Schema-14 Testnet deployment completed at block 95,295,401
   with 84 successful receipts and 177/177 dedicated live checks. Exact
