@@ -1,9 +1,21 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
+
+test("shared verifier handles a paused Schema-14 deployment without a genesis launch", () => {
+  const source = readFileSync(
+    "scripts/verify-testnet-v4-deployment.mjs",
+    "utf8",
+  );
+  assert.match(source, /isSchema14 = manifest.schemaVersion === 14/);
+  assert.match(source, /manifest.genesis == null/);
+  assert.match(source, /Schema-14 launch coordinator is Paused/);
+  assert.match(source, /RobynV4LaunchCoordinatorV6/);
+  assert.match(source, /currentGraduationProfileHash/);
+});
 
 test("deployment verifier reports missing contract addresses without an RPC call", () => {
   const directory = mkdtempSync(join(tmpdir(), "robyn-v4-verifier-"));

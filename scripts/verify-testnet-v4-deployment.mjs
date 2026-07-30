@@ -11,6 +11,7 @@ const venueManifest = JSON.parse(
 );
 const rpcUrl = process.env.ROBYN_TESTNET_RPC_URL ?? "https://rpc.testnet.chain.robinhood.com";
 const client = createPublicClient({ transport: http(rpcUrl) });
+const isSchema14 = manifest.schemaVersion === 14;
 const checks = [];
 const failures = [];
 
@@ -77,7 +78,7 @@ check(
   manifest.venueProvenance === "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
   "unlisted venue disclosure is exact",
 );
-check(manifest.schemaVersion === 12, "deployment manifest schema is v12");
+check(isSchema14, "deployment manifest schema is v14");
 check(
   manifest.kingOfForestPolicy?.version === "forest-v1" &&
     manifest.kingOfForestPolicy?.activationBlock === manifest.deploymentBlock &&
@@ -136,10 +137,17 @@ for (const [index, transactionHash] of configurationTransactions.entries()) {
   const receipt = await client.getTransactionReceipt({ hash: transactionHash });
   check(receipt.status === "success", `configuration transaction ${index + 1} succeeded`);
 }
-check(
-  manifest.deploymentTransactions?.genesis === manifest.genesis.transactionHash,
-  "genesis transaction is frozen consistently",
-);
+if (isSchema14) {
+  check(
+    !manifest.deploymentTransactions?.genesis && manifest.genesis == null,
+    "Schema-14 paused deployment contains no genesis launch transaction",
+  );
+} else {
+  check(
+    manifest.deploymentTransactions?.genesis === manifest.genesis?.transactionHash,
+    "genesis transaction is frozen consistently",
+  );
+}
 
 const abis = {
   stateView: await artifactAbi("StateView", true),
@@ -158,7 +166,7 @@ const abis = {
   lockerDeployer: await artifactAbi("RobynV4LockerDeployer"),
   marketDeployer: await artifactAbi("RobynV4MarketDeployer"),
   marketFactory: await artifactAbi("RobynV4MarketFactory"),
-  coordinator: await artifactAbi("RobynV4LaunchCoordinatorV5"),
+  coordinator: await artifactAbi("RobynV4LaunchCoordinatorV6"),
   market: await artifactAbi("RobynV4BondingCurveMarket"),
   adapter: await artifactAbi("RobynV4GraduationAdapter"),
   token: await artifactAbi("RobynLaunchToken"),
@@ -411,10 +419,12 @@ check(
   (await read(contracts.daoToken, abis.daoToken, "REWARD_STREAM_DURATION")) === 3600n,
   "RDAO rewards unlock over one hour",
 );
-check(
-  (await read(contracts.genesisToken, abis.token, "REWARD_STREAM_DURATION")) === 3600n,
-  "launch-token rewards unlock over one hour",
-);
+if (!isSchema14) {
+  check(
+    (await read(contracts.genesisToken, abis.token, "REWARD_STREAM_DURATION")) === 3600n,
+    "launch-token rewards unlock over one hour",
+  );
+}
 check(
   (await read(
     contracts.protocolFeeRouter,
@@ -428,7 +438,8 @@ check(
     8,
   "creator reward splits support at most eight recipients",
 );
-const genesisCreatorSplit = await read(
+if (!isSchema14) {
+  const genesisCreatorSplit = await read(
   contracts.protocolFeeRouter,
   abis.feeRouter,
   "creatorFeeSplit",
@@ -447,6 +458,7 @@ check(
     genesisCreatorSplit[2] === false,
   "genesis creator rewards default to one editable 100% recipient",
 );
+}
 check(
   getAddress(await read(contracts.daoToken, abis.daoToken, "rewardDepositor")) ===
     contracts.protocolFeeRouter,
@@ -530,6 +542,7 @@ check(
   "deployer renounced timelock administration",
 );
 
+if (!isSchema14) {
 const genesis = manifest.genesis;
 check(genesis.assets?.length === 3, "genesis freezes its three basket assets");
 check(
@@ -634,6 +647,48 @@ check(
     "ipfs://bafkreibys2cv4ijpoedcl7qdbi5u66wuwedwg3lsc6pios3wcyaoyz7cau",
   "genesis token exposes immutable ERC-1046 metadata",
 );
+} else {
+  check(
+    (await read(contracts.atomicLaunchCoordinator, abis.coordinator, "launchMode")) === 0,
+    "Schema-14 launch coordinator is Paused",
+  );
+  check(
+    getAddress(await read(contracts.atomicLaunchCoordinator, abis.coordinator, "canaryLauncher")) ===
+      getAddress("0x0000000000000000000000000000000000000000"),
+    "Schema-14 canary launcher is unset while Paused",
+  );
+  check(
+    getAddress(await read(contracts.atomicLaunchCoordinator, abis.coordinator, "governor")) ===
+      contracts.timelock,
+    "Schema-14 launch mode authority is the Timelock",
+  );
+  check(
+    getAddress(await read(contracts.atomicLaunchCoordinator, abis.coordinator, "guardian")) ===
+      getAddress(manifest.guardian),
+    "Schema-14 guardian matches the manifest",
+  );
+  const currentProfile = await read(
+    contracts.marketFactory,
+    abis.marketFactory,
+    "currentGraduationProfile",
+  );
+  const frozenProfile = manifest.graduationProfiles?.current;
+  check(
+    currentProfile.version.toString() === frozenProfile?.version &&
+      currentProfile.targetGraduationNative.toString() === frozenProfile?.targetGraduationNative &&
+      currentProfile.actualGraduationNative.toString() === frozenProfile?.actualGraduationNative &&
+      currentProfile.maximumCurvePurchase.toString() === frozenProfile?.maximumCurvePurchase &&
+      currentProfile.initialVirtualNativeReserve.toString() === frozenProfile?.initialVirtualNativeReserve &&
+      currentProfile.terminalNativePerTokenX18.toString() === frozenProfile?.terminalNativePerTokenX18 &&
+      currentProfile.terminalSqrtPriceX96.toString() === frozenProfile?.terminalSqrtPriceX96,
+    "Schema-14 current graduation profile matches the manifest",
+  );
+  check(
+    (await read(contracts.marketFactory, abis.marketFactory, "currentGraduationProfileHash")) ===
+      frozenProfile?.hash,
+    "Schema-14 current graduation profile hash matches the manifest",
+  );
+}
 
 console.log(
   JSON.stringify(

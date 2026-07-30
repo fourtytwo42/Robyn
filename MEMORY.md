@@ -1,5 +1,41 @@
 # Project Memory
 
+### 2026-07-30 - Fresh Schema-14 Testnet deployment completed Paused
+
+- Context: Exact contract candidate `6f0b1ec25abeaf936dcaf200028b738cdae25b4c`
+  passed the final isolated chain-46630 rehearsal at block 95,292,865 with 84
+  transactions, 57,444,060 gas, 25% headroom, and the 0.0015 ETH reserve.
+- Deployment: A fresh Schema-14 stack was deployed on Robinhood Testnet at
+  deployment block 95,295,401. Deployer nonce advanced exactly from 1,646 to
+  1,730 and its balance remains 0.006048872780401747 ETH. The deployment
+  finished with launch mode Paused, no genesis launch, and no Mainnet action.
+- Identity: Coordinator `0x8AE2Ce038cb0aba0a4bCF2dFfa94D73Be77deF1E`,
+  market factory `0x1373f54786c0238C79423050519bb4a0F2ac475b`, and
+  v4-only asset router `0x26dD5c47FF51bC8A89Acdd3141B8a0C9390AD505`.
+  Active manifest hash is
+  `ff48afabc1baae8af21b6e137634f3b27089cc30bf4985f1365ba5b0b2a6e8d0`.
+- Verification: The dedicated Schema-14 verifier passed 177 live checks with
+  zero failures. The shared verifier was repaired to understand paused
+  Schema-14 deployments and now also passes. Full typecheck, application tests,
+  Anvil smoke, script tests, and 247 Foundry tests pass with only the protected
+  Mainnet fork skipped.
+- RPC issue: Testnet Nitro at `192.168.50.117:8547` is stopped by a feed-hash
+  mismatch even though its locally executed hashes for blocks 95,175,696 through
+  95,175,700 exactly match Alchemy canonical hashes. The old loopback gateway
+  has no transient fallback retry and intermittently returns both-upstreams
+  unavailable while LAN is down. Deployment therefore used the protected
+  Alchemy Testnet endpoint directly after three consecutive full venue checks.
+  Repair the root-owned Nitro unit and rerun LAN/Alchemy recovery before
+  endurance; do not treat this degraded state as acceptance.
+- Evidence: Protected deployment and verification evidence is under
+  `/home/hendo420/robyn-evidence/schema14-mainnet-go/testnet-live/6f0b1ec/`.
+- Follow-up: Commit and push the manifest/verifier checkpoint, build and promote
+  the exact application release, rebuild the active database from block
+  95,295,401, then complete recovery, uninterrupted two-hour endurance,
+  reconciliation, and browser gates. Production Safe/RDAO validation and the
+  exact Mainnet fork/funding ledger remain blocked on the four real recipient
+  addresses and three protected control proofs.
+
 ### 2026-07-30 - Schema-14 V4-only candidate implementation checkpoint
 
 - Context: The product owner replaced Schema-13 with Schema-14 because removing
