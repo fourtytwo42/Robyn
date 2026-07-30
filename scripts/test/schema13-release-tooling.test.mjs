@@ -44,3 +44,20 @@ test("launch receipt decoder supports both archived and Schema-13 events", async
   assert.match(source, /RobynV4LaunchCoordinatorV\[56\]/);
   assert.match(source, /graduationProfileHash/);
 });
+
+test("Schema-13 rehearsal is isolated and emits exact-commit gas evidence", async () => {
+  const source = await readFile(
+    "scripts/rehearse-testnet-schema13-protocol.sh",
+    "utf8",
+  );
+  assert.match(source, /--fork-url "\$upstream_rpc"/);
+  assert.match(source, /--host 127\.0\.0\.1/);
+  assert.match(source, /ROBYN_ALLOW_UNLOCKED_REHEARSAL=true/);
+  assert.match(source, /ROBYN_TESTNET_SCHEMA13_BROADCAST=true/);
+  assert.match(source, /measure-testnet-v4-deployment-gas\.sh/);
+  assert.match(source, /headroomBps >= 2500/);
+  assert.match(source, /reserveWei >= "1500000000000000"/);
+  assert.match(source, /transactionCount >= "97"/);
+  assert.match(source, /liveBroadcast:false/);
+  assert.match(source, /rm -rf -- "\$work"/);
+});
