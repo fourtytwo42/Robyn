@@ -5,14 +5,14 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 
-test("shared verifier handles a paused Schema-14 deployment without a genesis launch", () => {
+test("shared verifier handles paused Schema-14 and Schema-15 deployments without a genesis launch", () => {
   const source = readFileSync(
     "scripts/verify-testnet-v4-deployment.mjs",
     "utf8",
   );
-  assert.match(source, /isSchema14 = manifest.schemaVersion === 14/);
+  assert.match(source, /isPausedSchema = manifest.schemaVersion >= 14/);
   assert.match(source, /manifest.genesis == null/);
-  assert.match(source, /Schema-14 launch coordinator is Paused/);
+  assert.match(source, /schemaLabel/);
   assert.match(source, /RobynV4LaunchCoordinatorV6/);
   assert.match(source, /currentGraduationProfileHash/);
 });

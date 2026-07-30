@@ -48,7 +48,7 @@ contract DaoTokenMatrixTest {
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = 900_000_000 ether;
         amounts[1] = 100_000_000 ether;
-        token = new RobynDaoToken(recipients, amounts);
+        token = new RobynDaoToken(recipients, amounts, 1 hours);
         depositor = new DaoRewardDepositor();
         address[] memory exclusions = new address[](1);
         exclusions[0] = excluded;
@@ -182,8 +182,7 @@ contract DaoTokenMatrixTest {
         vm.warp(started + 59 minutes);
         uint256 atFiftyNine = token.claimableRewardOf(holder);
         require(
-            atFiftyNine >= 4.35 ether - 1 && atFiftyNine <= 4.35 ether,
-            "fifty-nine-minute amount"
+            atFiftyNine >= 4.35 ether - 1 && atFiftyNine <= 4.35 ether, "fifty-nine-minute amount"
         );
         vm.prank(holder);
         require(token.claimRewards() == atFiftyNine, "fifty-nine-minute claim");
@@ -226,7 +225,7 @@ contract DaoTokenMatrixTest {
         invalidRecipients[0] = address(this);
         uint256[] memory invalidAmounts = new uint256[](1);
         invalidAmounts[0] = 999_999_999 ether;
-        try new RobynDaoToken(invalidRecipients, invalidAmounts) {
+        try new RobynDaoToken(invalidRecipients, invalidAmounts, 1 hours) {
             revert("invalid supply accepted");
         } catch { }
     }

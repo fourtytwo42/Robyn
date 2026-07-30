@@ -1,5 +1,36 @@
 # Project Memory
 
+### 2026-07-30 - Schema-15 accelerated Testnet clocks
+
+- Context: The product owner requested shorter Testnet clocks so the fixed
+  two-hour endurance observation exercises failures and recovery paths earlier
+  and more often. This changes contract bytecode and invalidates Schema-14
+  contract-dependent evidence.
+- Decision: Production reward streams remain one hour and production governance
+  remains unchanged. Schema-15 Testnet uses ten-minute holder, creator, and DAO
+  reward streams, one-minute Governor delay, five-minute voting, and a one-minute
+  Timelock. Endurance remains two uninterrupted hours, samples every 15 seconds,
+  offers writes every two minutes, reviews every five minutes, creates launches
+  through minute 21, graduates through minute 28, and probes streams at minutes
+  1, 3, 5, 9, and 10.
+- State: Work is on branch `codex/schema15-accelerated-testnet`. Live Schema-14
+  remains Paused. Its endurance supervisor and governance executor are stopped.
+  Proposal `schema14-public-b53217e-01` is Active and voted but has never been
+  queued; it cannot be canceled after voting and remains inert unless explicitly
+  queued later. No Mainnet transaction occurred.
+- Files: Reward-duration configuration is authority-bound and sealed in
+  `RobynLaunchToken.sol`, immutable in `RobynDaoToken.sol` and
+  `RobynNativeProtocolFeeRouterV4.sol`, and injected by
+  `RobynNativeLaunchDeployerV4.sol`. Separate Schema-15 deployment, verifier,
+  rehearsal, recovery, release, API, UI, and endurance tooling is present.
+- Verification: Full `pnpm test` passes: 252 Foundry tests passed, one protected
+  Mainnet fork skipped, 90 script tests passed, all workspace application tests
+  passed, and the new timing/authority/CREATE2/UI type checks pass. This remains
+  internal assurance only.
+- Follow-up: Commit and push the clean candidate, then run the isolated Schema-15
+  chain-46630 rehearsal. Only after it passes may a fresh Paused Schema-15
+  Testnet deployment, recovery gate, and new endurance run be considered.
+
 ### 2026-07-30 - Fresh Schema-14 Testnet deployment completed Paused
 
 - Context: Exact contract candidate `6f0b1ec25abeaf936dcaf200028b738cdae25b4c`
@@ -19,34 +50,55 @@
   Schema-14 deployments and now also passes. Full typecheck, application tests,
   Anvil smoke, script tests, and 247 Foundry tests pass with only the protected
   Mainnet fork skipped.
-- RPC issue: Testnet Nitro at `192.168.50.117:8547` is stopped by a feed-hash
-  mismatch even though its locally executed hashes for blocks 95,175,696 through
-  95,175,700 exactly match Alchemy canonical hashes. The old loopback gateway
-  has no transient fallback retry and intermittently returns both-upstreams
-  unavailable while LAN is down. Deployment therefore used the protected
-  Alchemy Testnet endpoint directly after three consecutive full venue checks.
-  Repair the root-owned Nitro unit and rerun LAN/Alchemy recovery before
-  endurance; do not treat this degraded state as acceptance.
+- RPC recovery: Testnet Nitro at `192.168.50.117:8547` was repaired on
+  2026-07-30. The unit retains its archive-capable Sepolia dRPC endpoint and
+  now uses `--node.transaction-streamer.shutdown-on-blockhash-mismatch=false`;
+  after catch-up, `eth_syncing=false`, the LAN/public recent block hash matched,
+  and the promotion gateway measured zero head lag with both LAN and Alchemy
+  healthy. The complete recovery gate subsequently passed.
 - Evidence: Protected deployment and verification evidence is under
   `/home/hendo420/robyn-evidence/schema14-mainnet-go/testnet-live/6f0b1ec/`.
 - Release: Exact application code commit
-  `3673d313b5989723de118d9e9618a206a33526a2`
-  passed the complete immutable release gate and checksum verification. Its
-  promotion tooling now creates and migrates a guaranteed-empty database when
-  explicitly requested and isolates BullMQ financial jobs by database name, so
-  Schema-13 projections and queue entries cannot leak into Schema-14. Read-only
-  RPC traffic receives three bounded transient retries, while an ambiguous
-  signed-transaction transport failure is never replayed across providers and
-  instead requires transaction-journal reconciliation.
-- Promotion blocker: `/opt/robyn/testnet-current` still serves archived
-  Schema-13 release `5c552fe-schema13`. Root must promote the frozen Schema-14
-  release with fresh database `robyn_testnet_schema14_95295401`; this SSH session
-  has no noninteractive sudo authorization.
-- Follow-up: Promote the final release, rebuild from block 95,295,401, repair
-  the root-owned LAN Nitro unit, then complete recovery, uninterrupted two-hour
-  endurance, reconciliation, and browser gates. Production Safe/RDAO
-  validation and the exact Mainnet fork/funding ledger remain blocked on the
-  four real recipient addresses and three protected control proofs.
+  `b53217e50459813717f078cb4b16c0650d7eae63` is live from immutable path
+  `/opt/robyn/testnet-releases/b53217e50459813717f078cb4b16c0650d7eae63`
+  and passed the complete release gate and checksum verification. Its
+  promotion tooling creates and migrates a guaranteed-empty database when
+  explicitly requested and isolates BullMQ financial jobs by database name.
+  Read-only RPC traffic receives three bounded transient retries, while an
+  ambiguous signed-transaction transport failure is never replayed across
+  providers and instead requires transaction-journal reconciliation.
+- Promotion: Fresh database `robyn_testnet_schema14_95295401` has 14 migrations,
+  zero launches, 125 canonical deployment logs, and zero ingestion/projection
+  lag. All seven Testnet PM2 processes are online with zero restarts; the keeper
+  queue is empty and uses the BullMQ-safe database-specific name. The live
+  verifier passed 177 checks and protocol accounting is solvent in Paused mode.
+- Capacity: Thirteen superseded immutable application copies were removed only
+  after their release manifests and checksum ledgers were archived under
+  `/home/hendo420/robyn-evidence/release-manifests-archive-20260730/`. The active
+  Schema-14 and prior Schema-13 rollback releases remain. Root free space rose
+  from 2.1 GiB to 21 GiB; removed releases are reproducible from pushed Git.
+- Recovery: Run `schema14-b53217e-recovery-01` passed on 2026-07-30. The
+  encrypted backup was checksummed and copied off-VM; the isolated PostgreSQL
+  fingerprint matched exactly, Redis restored, all 116 MinIO objects and IPFS
+  CIDs reproduced, every PM2 and native service recovered, LAN/Alchemy fault
+  drills passed, and final checks found zero failed financial jobs or duplicate
+  canonical logs. Evidence is under
+  `/var/lib/robyn/testnet-recovery/schema14-b53217e-recovery-01/`.
+- Endurance preflight: Static run `schema14-2h-b53217e-01` is installed but
+  stopped. A faucet credit raised the protected deployer to
+  0.016048872780401747 testnet ETH; the exact preflight now passes with
+  0.008383150450106913 ETH surplus while preserving the 0.0015 ETH reserve.
+- Governance: RDAO delegation confirmed once. A pending Canary-only proposal
+  was canceled before voting because the endurance runner correctly uses eight
+  distinct launch creators. Replacement proposal `schema14-public-b53217e-01`
+  was confirmed and will execute Canary then Public through the real 10-minute
+  delay, 30-minute voting period, and 10-minute Timelock. A guarded supervisor
+  starts endurance only after Public mode and a fresh sufficient preflight.
+- Follow-up: Complete the pending Testnet governance lifecycle and automatically
+  start the fresh uninterrupted two-hour endurance run. Then perform exact
+  reconciliation and browser gates. Production Safe/RDAO validation and the
+  exact Mainnet fork/funding ledger remain blocked on four real recipient
+  addresses and three protected control proofs.
 
 ### 2026-07-30 - Schema-14 V4-only candidate implementation checkpoint
 
@@ -1426,6 +1478,13 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-07-30: Schema-15 accelerated-Testnet candidate is implemented on
+  `codex/schema15-accelerated-testnet`; full repository tests pass. Live
+  Schema-14 remains Paused, its runner/supervisor are stopped, and its voted
+  replacement proposal remains unqueued and inert. Production clocks remain
+  one hour; only Testnet is accelerated. Next gate is a clean pushed commit and
+  isolated Schema-15 rehearsal. No Mainnet transaction occurred.
 
 - 2026-07-30: Fresh Schema-14 contracts are live on Testnet from block
   95,295,401 and remain Paused. The 84 deployment receipts succeeded, the
@@ -4771,6 +4830,11 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-30: Schema-15 accelerated timing implementation passed full
+  `pnpm test`: 252 Foundry tests passed, one protected Mainnet fork skipped,
+  90 script tests passed, all application tests and typechecks passed, and
+  `git diff --check` was clean. No deployment or public-chain write occurred.
+
 - 2026-07-30: Fresh Schema-14 Testnet deployment completed at block 95,295,401
   with 84 successful receipts and 177/177 dedicated live checks. Exact
   application code commit `3673d31` passed format, lint, typecheck, all
@@ -5447,10 +5511,11 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Promote the frozen Schema-14 application onto fresh database
-  `robyn_testnet_schema14_95295401`, rebuild from deployment block 95,295,401,
-  then repeat recovery, two-hour endurance, reconciliation, and browser
-  acceptance. Any contract change restarts these gates.
+- Freeze, commit, and push Schema-15, run its isolated chain-46630 rehearsal,
+  then deploy a fresh Paused Schema-15 stack only after rehearsal and funding
+  pass. Schema-14 remains archived live history and must not resume endurance.
+  Repeat recovery, two-hour endurance, reconciliation, and browser acceptance
+  from zero because contract bytecode changed.
 - Supply protected `guardian-signers.json` and `rdao-allocation.json` with four
   recipient addresses, three unique Safe owners including the deployer, and
   domain-separated address-control signatures. Complete a two-owner Safe

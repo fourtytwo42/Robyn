@@ -50,6 +50,7 @@ type DaoOverview = {
   totalRewardsDeposited: string;
   totalRewardsClaimed: string;
   rewardStream: {
+    durationSeconds: number;
     queued: string;
     streaming: string;
     vested: string;
@@ -470,14 +471,22 @@ export function DaoView({
               claimable
             </h2>
             <p>
-              Settled platform fees unlock linearly over one hour according to
-              the balance held while they unlock. Accrued rewards remain yours
-              after a transfer.
+              Settled platform fees unlock linearly over{" "}
+              {governanceDuration(
+                String(overview.rewardStream.durationSeconds),
+              )}{" "}
+              according to the balance held while they unlock. Accrued rewards
+              remain yours after a transfer.
             </p>
             <dl className="dao-definition-list">
               <div>
                 <dt>Release</dt>
-                <dd>Unlocking over 1 hour</dd>
+                <dd>
+                  Unlocking over{" "}
+                  {governanceDuration(
+                    String(overview.rewardStream.durationSeconds),
+                  )}
+                </dd>
               </div>
               <div>
                 <dt>Queued</dt>

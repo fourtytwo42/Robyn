@@ -105,10 +105,7 @@ contract RobynV4LaunchCoordinatorV5 is ReentrancyGuard {
         artifacts.launchSaltHash = created.launchSaltHash;
         artifacts.metadataUriHash = keccak256(bytes(request.metadataUri));
         artifacts.market = marketFactory.createMarketFor(
-            artifacts.token,
-            msg.sender,
-            address(this),
-            request.expectedGraduationProfileVersion
+            artifacts.token, msg.sender, address(this), request.expectedGraduationProfileVersion
         );
         artifacts.adapter = artifacts.market.graduationAdapter();
         artifacts.poolId = artifacts.adapter.poolId();

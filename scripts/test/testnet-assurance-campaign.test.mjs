@@ -105,9 +105,9 @@ test("weighted funding tree preserves distinct wallet budgets and edge costs", (
   );
 });
 
-test("eight baskets cover every schema-14 route and all route classes", () => {
+test("eight baskets cover every schema-15 route and all route classes", () => {
   const manifest = {
-    schemaVersion: 14,
+    schemaVersion: 15,
     chainId: 46630,
     launchControl: { initialMode: "Paused" },
     graduationProfiles: {
@@ -119,9 +119,9 @@ test("eight baskets cover every schema-14 route and all route classes", () => {
     governanceProfile: "robinhood-testnet-short-assurance",
     dao: {
       governance: {
-        votingDelaySeconds: 600,
-        votingPeriodSeconds: 1800,
-        timelockSeconds: 600,
+        votingDelaySeconds: 60,
+        votingPeriodSeconds: 300,
+        timelockSeconds: 60,
       },
     },
     contracts: Object.fromEntries(

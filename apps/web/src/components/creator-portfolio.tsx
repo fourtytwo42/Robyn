@@ -13,6 +13,7 @@ import {
   type WalletClient,
 } from "viem";
 import { TokenCardArt } from "@/components/launchpad-visuals";
+import { governanceDuration } from "@/lib/display-format";
 import { CreatorProfileEditor } from "@/components/creator-profile-editor";
 import type { LaunchList, LaunchRecord } from "@/lib/data-api";
 import type { CreatorRewardState } from "./creator-rewards-panel";
@@ -62,6 +63,9 @@ export function CreatorPortfolio({
   const [status, setStatus] = useState("");
   const [working, setWorking] = useState(false);
   const [profileEditorOpen, setProfileEditorOpen] = useState(false);
+  const rewardDuration = governanceDuration(
+    String(launches?.[0]?.rewards.rewardStreamDurationSeconds ?? 3_600),
+  );
 
   const refresh = useCallback(async () => {
     if (!account) {
@@ -218,7 +222,7 @@ export function CreatorPortfolio({
           <strong>{amount(totals.claimable.toString())} ETH</strong>
         </article>
         <article>
-          <span>Unlocking over 1 hour</span>
+          <span>Unlocking over {rewardDuration}</span>
           <strong>{amount(totals.unlocking.toString())} ETH</strong>
         </article>
         <article>
@@ -281,7 +285,12 @@ export function CreatorPortfolio({
                   <dd>{amount(rewards.claimableNative)} ETH</dd>
                 </div>
                 <div>
-                  <dt>Unlocking over 1 hour</dt>
+                  <dt>
+                    Unlocking over{" "}
+                    {governanceDuration(
+                      String(rewards.rewardStreamDurationSeconds),
+                    )}
+                  </dt>
                   <dd>{amount(rewards.unlockingNative)} ETH</dd>
                 </div>
                 <div>

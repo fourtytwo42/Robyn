@@ -156,7 +156,7 @@ contract DaoFeesTest {
         uint256[] memory allocations = new uint256[](2);
         allocations[0] = 600_000_000 ether;
         allocations[1] = 400_000_000 ether;
-        daoToken = new RobynDaoToken(recipients, allocations);
+        daoToken = new RobynDaoToken(recipients, allocations, 1 hours);
         base = new DaoFeeMockERC20("Mock USD", "mUSD");
         DaoFeeMockERC20 reward = new DaoFeeMockERC20("Reward", "RWD");
         DaoFeeBasketConverter basketConverter = new DaoFeeBasketConverter();

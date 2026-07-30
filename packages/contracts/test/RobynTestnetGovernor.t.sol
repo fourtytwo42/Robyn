@@ -26,12 +26,12 @@ contract RobynTestnetGovernorTest {
         recipients[0] = address(this);
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 1_000_000_000 ether;
-        token = new RobynDaoToken(recipients, amounts);
+        token = new RobynDaoToken(recipients, amounts, 1 hours);
         token.delegate(address(this));
         vm.warp(block.timestamp + 1);
 
         address[] memory empty = new address[](0);
-        timelock = new TimelockController(10 minutes, empty, empty, address(this));
+        timelock = new TimelockController(1 minutes, empty, empty, address(this));
         governor = new RobynTestnetGovernor(token, timelock);
         timelock.grantRole(timelock.PROPOSER_ROLE(), address(governor));
         timelock.grantRole(timelock.CANCELLER_ROLE(), GUARDIAN);
@@ -41,21 +41,21 @@ contract RobynTestnetGovernorTest {
     }
 
     function testTestnetProfileAndCompleteLifecycle() external {
-        require(governor.votingDelay() == 10 minutes, "delay");
-        require(governor.votingPeriod() == 30 minutes, "period");
+        require(governor.votingDelay() == 1 minutes, "delay");
+        require(governor.votingPeriod() == 5 minutes, "period");
         require(governor.proposalThreshold() == 10_000_000 ether, "threshold");
         require(governor.quorumNumerator() == 10, "quorum");
-        require(timelock.getMinDelay() == 10 minutes, "timelock");
+        require(timelock.getMinDelay() == 1 minutes, "timelock");
 
         (address[] memory targets, uint256[] memory values, bytes[] memory calldatas) =
             _proposal(42);
         string memory description = "Testnet assurance execution";
         uint256 proposalId = governor.propose(targets, values, calldatas, description);
         require(uint8(governor.state(proposalId)) == 0, "pending");
-        vm.warp(block.timestamp + 10 minutes + 1);
+        vm.warp(block.timestamp + 1 minutes + 1);
         governor.castVoteWithReason(proposalId, 1, "assurance");
         require(uint8(governor.state(proposalId)) == 1, "active");
-        vm.warp(block.timestamp + 30 minutes + 1);
+        vm.warp(block.timestamp + 5 minutes + 1);
         require(uint8(governor.state(proposalId)) == 4, "succeeded");
         bytes32 descriptionHash = keccak256(bytes(description));
         governor.queue(targets, values, calldatas, descriptionHash);
@@ -63,7 +63,7 @@ contract RobynTestnetGovernorTest {
         try governor.execute(targets, values, calldatas, descriptionHash) {
             revert("early execution accepted");
         } catch { }
-        vm.warp(block.timestamp + 10 minutes + 1);
+        vm.warp(block.timestamp + 1 minutes + 1);
         governor.execute(targets, values, calldatas, descriptionHash);
         require(target.value() == 42, "not executed");
         require(uint8(governor.state(proposalId)) == 7, "not complete");
@@ -74,9 +74,9 @@ contract RobynTestnetGovernorTest {
         string memory description = "Testnet assurance cancellation";
         bytes32 descriptionHash = keccak256(bytes(description));
         uint256 proposalId = governor.propose(targets, values, calldatas, description);
-        vm.warp(block.timestamp + 10 minutes + 1);
+        vm.warp(block.timestamp + 1 minutes + 1);
         governor.castVote(proposalId, 1);
-        vm.warp(block.timestamp + 30 minutes + 1);
+        vm.warp(block.timestamp + 5 minutes + 1);
         governor.queue(targets, values, calldatas, descriptionHash);
 
         bytes32 operationSalt = bytes20(address(governor)) ^ descriptionHash;

@@ -545,7 +545,7 @@ async function prepareMetadata(account, index) {
       mediaId: media.body.data.media_id,
       name,
       symbol,
-      description: `Automated two-hour schema-14 endurance launch ${index + 1}.`,
+      description: `Automated two-hour schema-15 accelerated endurance launch ${index + 1}.`,
       campaignId: runId,
       releaseSha: releaseManifest.gitSha,
     }),
@@ -1658,7 +1658,7 @@ async function addExternalLiquidity(launch, positionIndex) {
 }
 
 async function maybeCreatorSplitUpdate() {
-  if (state.creatorSplitUpdated || state.healthySeconds < 45 * 60) return;
+  if (state.creatorSplitUpdated || state.healthySeconds < 15 * 60) return;
   const launch = state.enduranceLaunches[0];
   if (!launch) return;
   await contractTransaction(
@@ -1689,7 +1689,7 @@ async function maybeCreatorSplitUpdate() {
 }
 
 async function maybeCreatorClaimCoverage() {
-  if (state.creatorClaimCoverageComplete || state.healthySeconds < 110 * 60) return;
+  if (state.creatorClaimCoverageComplete || state.healthySeconds < 35 * 60) return;
   const [open, locked, direct] = state.enduranceLaunches;
   if (!open || !locked || !direct) return;
   const checks = await Promise.all([
@@ -1762,8 +1762,8 @@ async function maybeStreamProbe() {
   });
   if (!state.streamProbe) {
     if (holderClaimable === 0n || creatorClaimable === 0n || daoClaimable === 0n) {
-      if (state.healthySeconds >= 55 * 60) {
-        throw new Error("One-hour stream probe did not start by healthy minute 55");
+      if (state.healthySeconds >= 20 * 60) {
+        throw new Error("Accelerated stream probe did not start by healthy minute 20");
       }
       return;
     }
@@ -1774,7 +1774,7 @@ async function maybeStreamProbe() {
     };
     saveState();
   }
-  for (const minute of [10, 30, 59, 60]) {
+  for (const minute of [1, 3, 5, 9, 10]) {
     if (state.streamProbe.claims.includes(minute)) continue;
     if (state.healthySeconds - state.streamProbe.startedHealthySeconds < minute * 60) continue;
     const currentHolder = await Promise.all(
@@ -1830,7 +1830,7 @@ async function maybeStreamProbe() {
 
 async function maybeAdvancedCoverage() {
   const first = state.enduranceLaunches[0];
-  if (first && state.healthySeconds >= 25 * 60) {
+  if (first && state.healthySeconds >= 12 * 60) {
     await executeUniversalCoverage(first);
     await addExternalLiquidity(first, 0);
     if (!state.advancedCoverage.firstFeesMaintained) {
@@ -1840,7 +1840,7 @@ async function maybeAdvancedCoverage() {
     }
   }
   const second = state.enduranceLaunches[1];
-  if (second && state.healthySeconds >= 55 * 60) {
+  if (second && state.healthySeconds >= 22 * 60) {
     await addExternalLiquidity(second, 1);
     if (!state.advancedCoverage.secondFeesMaintained) {
       await maintainGraduatedFees(accounts[97], second, 6006);
@@ -1849,7 +1849,7 @@ async function maybeAdvancedCoverage() {
     }
   }
   const third = state.enduranceLaunches[2];
-  if (third && state.healthySeconds >= 85 * 60) {
+  if (third && state.healthySeconds >= 32 * 60) {
     if (!state.advancedCoverage.thirdFeesMaintained) {
       await maintainGraduatedFees(accounts[98], third, 6012);
       state.advancedCoverage.thirdFeesMaintained = true;
@@ -1863,7 +1863,7 @@ async function maybeAdvancedCoverage() {
 async function advanceGovernance() {
   const governor = manifest.contracts.governor;
   if (!state.governance.proposalId) {
-    if (!state.funding?.completedAt || state.healthySeconds < 10 * 60) return;
+    if (!state.funding?.completedAt || state.healthySeconds < 1 * 60) return;
     const threshold = await publicClient.readContract({
       address: governor,
       abi: governorAbi,

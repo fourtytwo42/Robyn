@@ -36,23 +36,23 @@ export function enduranceRelevantFiringAlerts(alerts) {
     .map((entry) => entry.labels.alertname);
 }
 
-export const ENDURANCE_SAMPLE_INTERVAL_SECONDS = 30;
-export const ENDURANCE_WRITE_INTERVAL_SECONDS = 5 * 60;
-export const ENDURANCE_REVIEW_INTERVAL_SECONDS = 20 * 60;
+export const ENDURANCE_SAMPLE_INTERVAL_SECONDS = 15;
+export const ENDURANCE_WRITE_INTERVAL_SECONDS = 2 * 60;
+export const ENDURANCE_REVIEW_INTERVAL_SECONDS = 5 * 60;
 export const ENDURANCE_LAUNCH_THRESHOLDS_SECONDS = [
   0,
+  3 * 60,
+  6 * 60,
+  9 * 60,
+  12 * 60,
   15 * 60,
-  30 * 60,
-  45 * 60,
-  60 * 60,
-  75 * 60,
-  90 * 60,
-  105 * 60,
+  18 * 60,
+  21 * 60,
 ];
 export const ENDURANCE_GRADUATION_THRESHOLDS_SECONDS = [
-  20 * 60,
-  50 * 60,
-  80 * 60,
+  8 * 60,
+  18 * 60,
+  28 * 60,
 ];
 export const ENDURANCE_RESERVE_WEI = 1_500_000_000_000_000n;
 export const ENDURANCE_L1_DATA_FEE_RESERVE_WEI = 25_000_000_000_000n;
@@ -211,7 +211,7 @@ export function enduranceCoverageFailures(state) {
     coveredAssets.size !== 11 ||
     [...requiredAssets].some((asset) => !coveredAssets.has(asset))
   ) {
-    failures.push("the complete 11-asset schema-14 reward catalog was not covered");
+    failures.push("the complete 11-asset schema-15 reward catalog was not covered");
   }
   for (const [prefix, description] of [
     ["endurance-v4-buy-", "post-graduation v4 buy"],
@@ -232,10 +232,11 @@ export function enduranceCoverageFailures(state) {
     ["endurance-pregraduation-swap-rejected-", "pre-graduation swap rejection"],
     ["endurance-pregraduation-liquidity-rejected-", "pre-graduation liquidity rejection"],
     ["endurance-pregraduation-donation-rejected-", "pre-graduation donation rejection"],
-    ["endurance-stream-claim-10-", "ten-minute stream claim"],
-    ["endurance-stream-claim-30-", "thirty-minute stream claim"],
-    ["endurance-stream-claim-59-", "fifty-nine-minute stream claim"],
-    ["endurance-stream-claim-60-", "completed one-hour stream claim"],
+    ["endurance-stream-claim-1-", "one-minute stream claim"],
+    ["endurance-stream-claim-3-", "three-minute stream claim"],
+    ["endurance-stream-claim-5-", "five-minute stream claim"],
+    ["endurance-stream-claim-9-", "nine-minute stream claim"],
+    ["endurance-stream-claim-10-", "completed accelerated stream claim"],
     ["endurance-creator-split-open-", "open creator split"],
     ["endurance-creator-split-update-", "future-only creator split update"],
     ["endurance-creator-split-lock-", "locked creator split"],

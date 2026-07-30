@@ -28,8 +28,8 @@ contract RobynTestnetGovernor is
     GovernorVotesQuorumFraction,
     GovernorTimelockControl
 {
-    uint48 public constant TESTNET_VOTING_DELAY = 10 minutes;
-    uint32 public constant TESTNET_VOTING_PERIOD = 30 minutes;
+    uint48 public constant TESTNET_VOTING_DELAY = 1 minutes;
+    uint32 public constant TESTNET_VOTING_PERIOD = 5 minutes;
 
     constructor(IVotes token, TimelockController timelock)
         Governor("Robyn Testnet Governor")

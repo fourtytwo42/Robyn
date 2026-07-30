@@ -150,6 +150,10 @@ contract ProtocolActor {
         return token.claimAll();
     }
 
+    function configureRewardStreamDuration(RobynLaunchToken token, uint256 duration) external {
+        token.configureRewardStreamDuration(duration);
+    }
+
     function approveToken(IERC20 asset, address spender, uint256 amount) external {
         asset.approve(spender, amount);
     }
@@ -205,6 +209,38 @@ contract RobynProtocolTest {
         }
         base.mint(address(this), 10_000_000 ether);
         base.approve(address(vault), type(uint256).max);
+    }
+
+    function testRewardDurationConfigurationIsAuthorityBoundAndSealed() public {
+        address[] memory assets = new address[](1);
+        assets[0] = address(rewards[0]);
+        RobynLaunchToken configured = new RobynLaunchToken(
+            "Accelerated",
+            "FAST",
+            address(this),
+            SUPPLY,
+            address(this),
+            assets,
+            "ipfs://bafkreif2akiscaildcwr6zeux4w6i2s5kmibuf6j4jvcrbozme2q"
+        );
+        require(configured.REWARD_STREAM_DURATION() == 1 hours, "production default");
+        configured.configureRewardStreamDuration(10 minutes);
+        require(configured.REWARD_STREAM_DURATION() == 10 minutes, "accelerated duration");
+
+        try buyer.configureRewardStreamDuration(configured, 20 minutes) {
+            revert("unauthorized duration change accepted");
+        } catch { }
+        try configured.configureRewardStreamDuration(0) {
+            revert("zero duration accepted");
+        } catch { }
+        try configured.configureRewardStreamDuration(7 days + 1) {
+            revert("oversized duration accepted");
+        } catch { }
+
+        configured.sealExclusions(new address[](0));
+        try configured.configureRewardStreamDuration(20 minutes) {
+            revert("sealed duration change accepted");
+        } catch { }
     }
 
     function testFactoryPublishesImmutableLaunchComponents() public view {

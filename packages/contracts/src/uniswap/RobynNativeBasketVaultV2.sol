@@ -180,9 +180,7 @@ contract RobynNativeBasketVaultV2 is ReentrancyGuard {
         selected.asset.forceApprove(address(launchToken), actualOutput);
         uint256 rewardDeposited = launchToken.distributeReward(index, actualOutput);
         selected.asset.forceApprove(address(launchToken), 0);
-        _recordConversion(
-            index, amount, minimumOutput, actualOutput, rewardDeposited, deadline
-        );
+        _recordConversion(index, amount, minimumOutput, actualOutput, rewardDeposited, deadline);
         assert(totalPendingNative() + totalNativeConsumed == totalFeesReceived);
     }
 

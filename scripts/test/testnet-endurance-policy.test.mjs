@@ -44,9 +44,9 @@ test("launch and cadence thresholds are deterministic", () => {
   assert.equal(dueCount(0, 300), 1);
   assert.equal(dueCount(599, 300), 2);
   assert.equal(dueLaunchCount(0), 1);
-  assert.equal(dueLaunchCount(899), 1);
-  assert.equal(dueLaunchCount(900), 2);
-  assert.equal(dueLaunchCount(6_300), 8);
+  assert.equal(dueLaunchCount(179), 1);
+  assert.equal(dueLaunchCount(180), 2);
+  assert.equal(dueLaunchCount(1_260), 8);
 });
 
 test("disk gate requires bytes and percentage", () => {
@@ -264,7 +264,7 @@ test("terminal curve buy is bounded by the immutable market cap", () => {
   );
 });
 
-test("final endurance coverage requires the schema-14 two-hour lifecycle", () => {
+test("final endurance coverage requires the schema-15 accelerated two-hour lifecycle", () => {
   const assets = Array.from(
     { length: 11 },
     (_, index) => `0x${index.toString(16).padStart(40, "0")}`,
@@ -288,10 +288,11 @@ test("final endurance coverage requires the schema-14 two-hour lifecycle", () =>
     "endurance-pregraduation-swap-rejected-1",
     "endurance-pregraduation-liquidity-rejected-1",
     "endurance-pregraduation-donation-rejected-1",
+    "endurance-stream-claim-1-1",
+    "endurance-stream-claim-3-1",
+    "endurance-stream-claim-5-1",
+    "endurance-stream-claim-9-1",
     "endurance-stream-claim-10-1",
-    "endurance-stream-claim-30-1",
-    "endurance-stream-claim-59-1",
-    "endurance-stream-claim-60-1",
     "endurance-creator-split-open-1",
     "endurance-creator-split-update-1",
     "endurance-creator-split-lock-1",

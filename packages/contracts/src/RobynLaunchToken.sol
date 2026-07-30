@@ -14,7 +14,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     uint8 public constant MAX_REWARD_ASSETS = 5;
     uint8 public constant MAX_EXCLUDED_ACCOUNTS = 16;
     uint256 public constant MAGNITUDE = 2 ** 128;
-    uint256 public constant REWARD_STREAM_DURATION = 1 hours;
+    uint256 public REWARD_STREAM_DURATION = 1 hours;
     string public constant CONTRACT_VERSION = "5.0.0";
 
     error Unauthorized();
@@ -78,6 +78,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         address indexed account, uint256 indexed assetIndex, address indexed asset, uint256 amount
     );
     event ExclusionsSealed(address[] accounts, uint256 eligibleSupply);
+    event RewardStreamDurationConfigured(uint256 duration);
 
     constructor(
         string memory name_,
@@ -113,6 +114,13 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         rewardAssetCount = count;
         _tokenUri = tokenUri_;
         _mint(creator_, initialSupply_);
+    }
+
+    function configureRewardStreamDuration(uint256 duration) external {
+        if (msg.sender != initializationAuthority || exclusionsSealed) revert Unauthorized();
+        if (duration == 0 || duration > 7 days) revert InvalidAmount();
+        REWARD_STREAM_DURATION = duration;
+        emit RewardStreamDurationConfigured(duration);
     }
 
     function tokenURI() external view returns (string memory) {
@@ -157,8 +165,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         uint256 supply = eligibleSupply;
         if (supply == 0) return magnifiedRewardPerShare[index];
         uint256 newlyVested = _newlyVestedRewards(index);
-        return magnifiedRewardPerShare[index]
-            + Math.mulDiv(newlyVested, MAGNITUDE, supply);
+        return magnifiedRewardPerShare[index] + Math.mulDiv(newlyVested, MAGNITUDE, supply);
     }
 
     function streamingRewards(uint256 index) public view returns (uint256) {
@@ -223,10 +230,10 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         if (isExcluded[account]) return 0;
         return _accruedRewards[account][index]
             + Math.mulDiv(
-                balanceOf(account),
-                currentRewardPerToken(index) - userRewardPerTokenPaid[account][index],
-                MAGNITUDE
-            );
+            balanceOf(account),
+            currentRewardPerToken(index) - userRewardPerTokenPaid[account][index],
+            MAGNITUDE
+        );
     }
 
     function claim(uint256 index) public nonReentrant returns (uint256 amount) {
@@ -284,7 +291,11 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     function _updateAccount(address account, uint256 index) private {
         _updateStream(index);
         if (account != address(0) && !isExcluded[account]) {
-            _accruedRewards[account][index] += Math.mulDiv(
+            _accruedRewards[
+                account
+            ][
+                index
+            ] += Math.mulDiv(
                 balanceOf(account),
                 magnifiedRewardPerShare[index] - userRewardPerTokenPaid[account][index],
                 MAGNITUDE

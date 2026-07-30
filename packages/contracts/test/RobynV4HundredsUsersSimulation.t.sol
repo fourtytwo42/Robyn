@@ -184,8 +184,7 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
 
     function _runShortenedGovernance() private {
         address[] memory empty = new address[](0);
-        TimelockController timelock =
-            new TimelockController(10 minutes, empty, empty, address(this));
+        TimelockController timelock = new TimelockController(1 minutes, empty, empty, address(this));
         RobynTestnetGovernor governor = new RobynTestnetGovernor(daoToken, timelock);
         timelock.grantRole(timelock.PROPOSER_ROLE(), address(governor));
         timelock.grantRole(timelock.CANCELLER_ROLE(), address(0xCAFE));
@@ -201,7 +200,7 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
         string memory description = "Sherwood Forest deterministic assurance";
         uint256 proposalId = governor.propose(targets, values, calldatas, description);
 
-        vm.warp(block.timestamp + 10 minutes + 1);
+        vm.warp(block.timestamp + 1 minutes + 1);
         for (uint256 index; index < 120; ++index) {
             vm.prank(_actor(index));
             governor.castVote(proposalId, index % 10 == 0 ? 0 : index % 10 == 1 ? 2 : 1);
@@ -210,11 +209,11 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
         vm.prank(_actor(0));
         governor.castVote(proposalId, 1);
 
-        vm.warp(block.timestamp + 30 minutes + 1);
+        vm.warp(block.timestamp + 5 minutes + 1);
         assertEq(uint8(governor.state(proposalId)), 4);
         bytes32 descriptionHash = keccak256(bytes(description));
         governor.queue(targets, values, calldatas, descriptionHash);
-        vm.warp(block.timestamp + 10 minutes + 1);
+        vm.warp(block.timestamp + 1 minutes + 1);
         governor.execute(targets, values, calldatas, descriptionHash);
         assertEq(target.value(), 512);
     }

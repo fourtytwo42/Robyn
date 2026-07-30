@@ -159,7 +159,7 @@ contract RobynV4NativeProtocolTest is Test {
         basketAsset = new V4TestAsset();
         _seedBasketPool();
 
-        RobynNativeLaunchDeployerV4 launchDeployer = new RobynNativeLaunchDeployerV4();
+        RobynNativeLaunchDeployerV4 launchDeployer = new RobynNativeLaunchDeployerV4(1 hours);
         RobynNativeVaultDeployerV4 vaultDeployer = new RobynNativeVaultDeployerV4();
         launchFactory = new RobynNativeLaunchFactoryV4(
             assetRouter, launchDeployer, vaultDeployer, 1 wei, 1 hours
@@ -171,8 +171,11 @@ contract RobynV4NativeProtocolTest is Test {
         recipients[0] = address(this);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1_000_000_000 ether;
-        daoToken = new RobynDaoToken(recipients, allocations);
-        feeRouter = new RobynNativeProtocolFeeRouterV4(daoToken, assetRouter, TREASURY, GUARDIAN);
+        daoToken = new RobynDaoToken(recipients, allocations, 1 hours);
+        feeRouter =
+            new RobynNativeProtocolFeeRouterV4(daoToken, assetRouter, TREASURY, GUARDIAN, 1 hours);
+        assertEq(daoToken.REWARD_STREAM_DURATION(), 1 hours, "DAO production duration");
+        assertEq(feeRouter.CREATOR_REWARD_STREAM_DURATION(), 1 hours, "creator production duration");
         hook = _deployHook();
 
         RobynV4BondingCurveMarket.CurveConfig memory curve = RobynV4BondingCurveMarket.CurveConfig({
@@ -225,6 +228,32 @@ contract RobynV4NativeProtocolTest is Test {
         exclusions[0] = TREASURY;
         daoToken.sealRewardExclusions(exclusions);
         daoToken.bindRewardDepositor(address(feeRouter));
+    }
+
+    function testConfiguredLaunchDeployerPreservesPredictionAndDuration() public {
+        RobynNativeLaunchDeployerV4 accelerated = new RobynNativeLaunchDeployerV4(10 minutes);
+        accelerated.bindController(address(this));
+        address[] memory assets = new address[](1);
+        assets[0] = address(basketAsset);
+        RobynNativeLaunchDeployerV4.TokenRequest memory request =
+            RobynNativeLaunchDeployerV4.TokenRequest({
+                name: "Accelerated",
+                symbol: "FAST",
+                supplyRecipient: address(this),
+                initialSupply: 1_000_000_000 ether,
+                vault: address(this),
+                assets: assets,
+                tokenUri: METADATA_URI
+            });
+        bytes32 salt = keccak256("accelerated-testnet-duration");
+        address predicted = accelerated.predictToken(salt, request);
+        RobynLaunchToken deployed = accelerated.deployToken(salt, request);
+        require(address(deployed) == predicted, "prediction mismatch");
+        require(deployed.REWARD_STREAM_DURATION() == 10 minutes, "configured duration");
+        accelerated.sealExclusions(deployed, new address[](0));
+        try deployed.configureRewardStreamDuration(1 hours) {
+            revert("deployer duration remained mutable");
+        } catch { }
     }
 
     function testAtomicLaunchInitializesPoolAndSeedsSupply() public {
@@ -1233,13 +1262,11 @@ contract RobynV4NativeProtocolTest is Test {
         uint256 targetGraduationNative,
         uint256 maximumPurchase
     ) public {
-        targetGraduationNative =
-            bound(targetGraduationNative, 0.01 ether, 100 ether);
+        targetGraduationNative = bound(targetGraduationNative, 0.01 ether, 100 ether);
         maximumPurchase = bound(maximumPurchase, 1, targetGraduationNative / 2);
 
         vm.prank(TREASURY);
-        uint64 version =
-            marketFactory.setGraduationProfile(targetGraduationNative, maximumPurchase);
+        uint64 version = marketFactory.setGraduationProfile(targetGraduationNative, maximumPurchase);
         RobynV4MarketFactory.GraduationProfile memory profile =
             marketFactory.currentGraduationProfile();
 
@@ -1250,8 +1277,8 @@ contract RobynV4NativeProtocolTest is Test {
         assertLt(
             profile.actualGraduationNative - targetGraduationNative,
             marketFactory.initialVirtualTokenReserve()
-                / (marketFactory.initialVirtualTokenReserve() - marketFactory.curveTokenAllocation())
-                + 1
+                / (marketFactory.initialVirtualTokenReserve()
+                    - marketFactory.curveTokenAllocation()) + 1
         );
         assertGt(profile.initialVirtualNativeReserve, 0);
         assertGt(profile.terminalNativePerTokenX18, 0);

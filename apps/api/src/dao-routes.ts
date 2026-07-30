@@ -12,6 +12,11 @@ import { SingleFlightTtlCache } from "./single-flight-cache.js";
 type DaoDeployment = {
   deploymentBlock: number;
   liquidityVenue?: "uniswap-v4" | "uniswap-v3";
+  rewardStreams?: {
+    launchTokenDurationSeconds?: number;
+    daoDurationSeconds?: number;
+    creatorDurationSeconds?: number;
+  };
   contracts: {
     daoToken: Address;
     governor: Address;
@@ -560,6 +565,8 @@ export function registerDaoRoutes(
         totalRewardsDeposited: totalRewardsDeposited.toString(),
         totalRewardsClaimed: totalRewardsClaimed.toString(),
         rewardStream: {
+          durationSeconds:
+            deployment.rewardStreams?.daoDurationSeconds ?? 3_600,
           queued: queuedRewards.toString(),
           streaming: streamingRewards.toString(),
           vested: vestedRewards.toString(),
@@ -758,6 +765,8 @@ export function registerDaoRoutes(
         lifetimeAccruedNative: lifetimeAccruedNative.toString(),
         lifetimeClaimedNative: lifetimeClaimedNative.toString(),
         unlockingNative: rewardStream.unvested,
+        rewardStreamDurationSeconds:
+          deployment.rewardStreams?.creatorDurationSeconds ?? 3_600,
         rewardStream,
         creatorSplit,
       },

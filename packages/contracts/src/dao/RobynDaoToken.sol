@@ -13,7 +13,7 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
     uint256 public constant FIXED_SUPPLY = 1_000_000_000 ether;
     uint256 private constant MAGNITUDE = 1 << 128;
     uint256 private constant MAX_EXCLUSIONS = 16;
-    uint256 public constant REWARD_STREAM_DURATION = 1 hours;
+    uint256 public immutable REWARD_STREAM_DURATION;
     string public constant CONTRACT_VERSION = "5.0.0";
 
     error Unauthorized();
@@ -54,14 +54,19 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
     );
     event RewardStreamPaused(uint256 queuedRewards);
 
-    constructor(address[] memory recipients, uint256[] memory amounts)
-        ERC20("Robyn DAO", "RDAO")
-        ERC20Permit("Robyn DAO")
-    {
+    constructor(
+        address[] memory recipients,
+        uint256[] memory amounts,
+        uint256 rewardStreamDuration_
+    ) ERC20("Robyn DAO", "RDAO") ERC20Permit("Robyn DAO") {
+        if (rewardStreamDuration_ == 0 || rewardStreamDuration_ > 7 days) {
+            revert InvalidConfiguration();
+        }
         if (recipients.length == 0 || recipients.length != amounts.length) {
             revert InvalidConfiguration();
         }
         initializer = msg.sender;
+        REWARD_STREAM_DURATION = rewardStreamDuration_;
         uint256 allocated;
         for (uint256 i; i < recipients.length; ++i) {
             if (recipients[i] == address(0) || amounts[i] == 0) revert InvalidConfiguration();
@@ -166,10 +171,8 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
         if (isRewardExcluded[account]) return 0;
         return _accruedRewards[account]
             + Math.mulDiv(
-                balanceOf(account),
-                currentRewardPerToken() - userRewardPerTokenPaid[account],
-                MAGNITUDE
-            );
+            balanceOf(account), currentRewardPerToken() - userRewardPerTokenPaid[account], MAGNITUDE
+        );
     }
 
     function claimRewards() external returns (uint256 amount) {
@@ -225,10 +228,10 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
         streamReleased += newlyVested;
         lastUpdateTime = lastTimeRewardApplicable();
         if (account != address(0) && !isRewardExcluded[account]) {
-            _accruedRewards[account] += Math.mulDiv(
-                balanceOf(account),
-                nextRewardPerToken - userRewardPerTokenPaid[account],
-                MAGNITUDE
+            _accruedRewards[
+                account
+            ] += Math.mulDiv(
+                balanceOf(account), nextRewardPerToken - userRewardPerTokenPaid[account], MAGNITUDE
             );
             userRewardPerTokenPaid[account] = nextRewardPerToken;
         }

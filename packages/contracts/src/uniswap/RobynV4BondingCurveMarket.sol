@@ -346,7 +346,8 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
             graduationAdapter.graduate{ value: nativeLiquidity }(tokenLiquidity);
         IERC20(address(launchToken)).forceApprove(address(graduationAdapter), 0);
         uint256 balanceAfter = address(this).balance;
-        uint256 graduationSurplus = balanceAfter > unattributedBefore ? balanceAfter - unattributedBefore : 0;
+        uint256 graduationSurplus =
+            balanceAfter > unattributedBefore ? balanceAfter - unattributedBefore : 0;
         if (graduationSurplus != 0) {
             feeRouter.routeNativeFees{ value: graduationSurplus }(launchToken);
             emit GraduationSurplusRouted(graduationSurplus);

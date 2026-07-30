@@ -271,7 +271,7 @@ contract RobinhoodMainnetSchema14ForkTest is Test {
         _configureRequiredCoreRoutes();
         assetRouter.configureWrappedNativeRoute(0.5 ether, true);
 
-        RobynNativeLaunchDeployerV4 launchDeployer = new RobynNativeLaunchDeployerV4();
+        RobynNativeLaunchDeployerV4 launchDeployer = new RobynNativeLaunchDeployerV4(1 hours);
         RobynNativeVaultDeployerV4 vaultDeployer = new RobynNativeVaultDeployerV4();
         RobynNativeLaunchFactoryV4 launchFactory = new RobynNativeLaunchFactoryV4(
             assetRouter, launchDeployer, vaultDeployer, 1 wei, 1 days
@@ -282,7 +282,7 @@ contract RobinhoodMainnetSchema14ForkTest is Test {
         recipients[0] = address(this);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1_000_000_000 ether;
-        daoToken = new RobynDaoToken(recipients, allocations);
+        daoToken = new RobynDaoToken(recipients, allocations, 1 hours);
         daoToken.delegate(address(this));
         vm.warp(block.timestamp + 1);
 
@@ -295,7 +295,8 @@ contract RobinhoodMainnetSchema14ForkTest is Test {
         timelock.renounceRole(timelock.DEFAULT_ADMIN_ROLE(), address(this));
         treasury = payable(address(timelock));
 
-        feeRouter = new RobynNativeProtocolFeeRouterV4(daoToken, assetRouter, treasury, guardian);
+        feeRouter =
+            new RobynNativeProtocolFeeRouterV4(daoToken, assetRouter, treasury, guardian, 1 hours);
         hook = _deployHook();
 
         RobynV4BondingCurveMarket.CurveConfig memory curve = RobynV4BondingCurveMarket.CurveConfig({

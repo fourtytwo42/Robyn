@@ -2171,7 +2171,7 @@ async function conversions() {
     state.conversions.legs.length !== 24 ||
     new Set(state.conversions.legs.map((entry) => entry.asset.toLowerCase())).size !== 11
   ) {
-    throw new Error("Conversions did not exercise all 11 schema-14 basket assets");
+    throw new Error("Conversions did not exercise all 11 schema-15 basket assets");
   }
   const routeReadiness = [];
   for (const route of manifest.assetRoutes) {

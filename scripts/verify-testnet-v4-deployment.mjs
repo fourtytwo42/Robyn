@@ -11,7 +11,8 @@ const venueManifest = JSON.parse(
 );
 const rpcUrl = process.env.ROBYN_TESTNET_RPC_URL ?? "https://rpc.testnet.chain.robinhood.com";
 const client = createPublicClient({ transport: http(rpcUrl) });
-const isSchema14 = manifest.schemaVersion === 14;
+const isPausedSchema = manifest.schemaVersion >= 14;
+const schemaLabel = `Schema-${manifest.schemaVersion}`;
 const checks = [];
 const failures = [];
 
@@ -78,7 +79,7 @@ check(
   manifest.venueProvenance === "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
   "unlisted venue disclosure is exact",
 );
-check(isSchema14, "deployment manifest schema is v14");
+check(isPausedSchema, "deployment manifest is a paused launch-control schema");
 check(
   manifest.kingOfForestPolicy?.version === "forest-v1" &&
     manifest.kingOfForestPolicy?.activationBlock === manifest.deploymentBlock &&
@@ -137,10 +138,10 @@ for (const [index, transactionHash] of configurationTransactions.entries()) {
   const receipt = await client.getTransactionReceipt({ hash: transactionHash });
   check(receipt.status === "success", `configuration transaction ${index + 1} succeeded`);
 }
-if (isSchema14) {
+if (isPausedSchema) {
   check(
     !manifest.deploymentTransactions?.genesis && manifest.genesis == null,
-    "Schema-14 paused deployment contains no genesis launch transaction",
+    `${schemaLabel} paused deployment contains no genesis launch transaction`,
   );
 } else {
   check(
@@ -407,22 +408,28 @@ check(
     manifest.dao.initialOwnerShareBps === 10_000,
   "manifest records the fixed 100% bootstrap RDAO allocation",
 );
+const launchRewardDuration = BigInt(manifest.rewardStreams?.launchTokenDurationSeconds ?? 0);
+const daoRewardDuration = BigInt(manifest.rewardStreams?.daoDurationSeconds ?? 0);
+const creatorRewardDuration = BigInt(manifest.rewardStreams?.creatorDurationSeconds ?? 0);
 check(
-  manifest.rewardStreams?.launchTokenDurationSeconds === 3600 &&
-    manifest.rewardStreams?.daoDurationSeconds === 3600 &&
-    manifest.rewardStreams?.creatorDurationSeconds === 3600 &&
-    manifest.rewardStreams?.release === "rolling-linear-one-hour" &&
-    manifest.dao.rewardStreamDurationSeconds === 3600,
-  "manifest records one-hour holder, DAO, and creator reward release",
+  launchRewardDuration > 0n &&
+    daoRewardDuration > 0n &&
+    creatorRewardDuration > 0n &&
+    launchRewardDuration === daoRewardDuration &&
+    launchRewardDuration === creatorRewardDuration &&
+    BigInt(manifest.dao.rewardStreamDurationSeconds) === daoRewardDuration,
+  "manifest records one common holder, DAO, and creator reward release",
 );
 check(
-  (await read(contracts.daoToken, abis.daoToken, "REWARD_STREAM_DURATION")) === 3600n,
-  "RDAO rewards unlock over one hour",
+  (await read(contracts.daoToken, abis.daoToken, "REWARD_STREAM_DURATION")) ===
+    daoRewardDuration,
+  "RDAO reward duration matches the manifest",
 );
-if (!isSchema14) {
+if (!isPausedSchema) {
   check(
-    (await read(contracts.genesisToken, abis.token, "REWARD_STREAM_DURATION")) === 3600n,
-    "launch-token rewards unlock over one hour",
+    (await read(contracts.genesisToken, abis.token, "REWARD_STREAM_DURATION")) ===
+      launchRewardDuration,
+    "launch-token reward duration matches the manifest",
   );
 }
 check(
@@ -430,15 +437,15 @@ check(
     contracts.protocolFeeRouter,
     abis.feeRouter,
     "CREATOR_REWARD_STREAM_DURATION",
-  )) === 3600n,
-  "creator rewards unlock over one hour",
+  )) === creatorRewardDuration,
+  "creator reward duration matches the manifest",
 );
 check(
   (await read(contracts.protocolFeeRouter, abis.feeRouter, "MAX_CREATOR_RECIPIENTS")) ===
     8,
   "creator reward splits support at most eight recipients",
 );
-if (!isSchema14) {
+if (!isPausedSchema) {
   const genesisCreatorSplit = await read(
   contracts.protocolFeeRouter,
   abis.feeRouter,
@@ -487,13 +494,16 @@ for (const key of [
   );
 }
 
+const governanceManifest = manifest.dao?.governance;
 check(
-  await read(contracts.governor, abis.governor, "votingDelay") === 600n,
-  "testnet Governor voting delay is 10 minutes",
+  await read(contracts.governor, abis.governor, "votingDelay") ===
+    BigInt(governanceManifest?.votingDelaySeconds ?? 0),
+  "testnet Governor voting delay matches the manifest",
 );
 check(
-  await read(contracts.governor, abis.governor, "votingPeriod") === 1_800n,
-  "testnet Governor voting period is 30 minutes",
+  await read(contracts.governor, abis.governor, "votingPeriod") ===
+    BigInt(governanceManifest?.votingPeriodSeconds ?? 0),
+  "testnet Governor voting period matches the manifest",
 );
 check(
   await read(contracts.governor, abis.governor, "proposalThreshold") ===
@@ -501,15 +511,16 @@ check(
   "testnet Governor proposal threshold is one percent",
 );
 check(
-  await read(contracts.timelock, abis.timelock, "getMinDelay") === 600n,
-  "testnet Timelock delay is 10 minutes",
+  await read(contracts.timelock, abis.timelock, "getMinDelay") ===
+    BigInt(governanceManifest?.timelockSeconds ?? 0),
+  "testnet Timelock delay matches the manifest",
 );
 check(
-  manifest.dao?.governance?.profile === "robinhood-testnet-short-assurance" &&
-    manifest.dao.governance.votingDelaySeconds === 600 &&
-    manifest.dao.governance.votingPeriodSeconds === 1_800 &&
-    manifest.dao.governance.timelockSeconds === 600,
-  "manifest governance timing matches live contracts",
+  governanceManifest?.profile === "robinhood-testnet-short-assurance" &&
+    governanceManifest.votingDelaySeconds > 0 &&
+    governanceManifest.votingPeriodSeconds > 0 &&
+    governanceManifest.timelockSeconds > 0,
+  "manifest governance timing is explicit and positive",
 );
 
 const proposerRole = await read(contracts.timelock, abis.timelock, "PROPOSER_ROLE");
@@ -542,7 +553,7 @@ check(
   "deployer renounced timelock administration",
 );
 
-if (!isSchema14) {
+if (!isPausedSchema) {
 const genesis = manifest.genesis;
 check(genesis.assets?.length === 3, "genesis freezes its three basket assets");
 check(
@@ -650,22 +661,22 @@ check(
 } else {
   check(
     (await read(contracts.atomicLaunchCoordinator, abis.coordinator, "launchMode")) === 0,
-    "Schema-14 launch coordinator is Paused",
+    `${schemaLabel} launch coordinator is Paused`,
   );
   check(
     getAddress(await read(contracts.atomicLaunchCoordinator, abis.coordinator, "canaryLauncher")) ===
       getAddress("0x0000000000000000000000000000000000000000"),
-    "Schema-14 canary launcher is unset while Paused",
+    `${schemaLabel} canary launcher is unset while Paused`,
   );
   check(
     getAddress(await read(contracts.atomicLaunchCoordinator, abis.coordinator, "governor")) ===
       contracts.timelock,
-    "Schema-14 launch mode authority is the Timelock",
+    `${schemaLabel} launch mode authority is the Timelock`,
   );
   check(
     getAddress(await read(contracts.atomicLaunchCoordinator, abis.coordinator, "guardian")) ===
       getAddress(manifest.guardian),
-    "Schema-14 guardian matches the manifest",
+    `${schemaLabel} guardian matches the manifest`,
   );
   const currentProfile = await read(
     contracts.marketFactory,
@@ -681,12 +692,12 @@ check(
       currentProfile.initialVirtualNativeReserve.toString() === frozenProfile?.initialVirtualNativeReserve &&
       currentProfile.terminalNativePerTokenX18.toString() === frozenProfile?.terminalNativePerTokenX18 &&
       currentProfile.terminalSqrtPriceX96.toString() === frozenProfile?.terminalSqrtPriceX96,
-    "Schema-14 current graduation profile matches the manifest",
+    `${schemaLabel} current graduation profile matches the manifest`,
   );
   check(
     (await read(contracts.marketFactory, abis.marketFactory, "currentGraduationProfileHash")) ===
       frozenProfile?.hash,
-    "Schema-14 current graduation profile hash matches the manifest",
+    `${schemaLabel} current graduation profile hash matches the manifest`,
   );
 }
 

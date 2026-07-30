@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { governanceDuration } from "@/lib/display-format";
 import {
   BaseError,
   formatEther,
@@ -47,6 +48,7 @@ export type CreatorRewardState = {
   pendingCreatorBase: string;
   claimableNative: string;
   unlockingNative: string;
+  rewardStreamDurationSeconds: number;
   lifetimeAccruedNative: string;
   lifetimeClaimedNative: string;
   rewardStream: CreatorRewardStream;
@@ -248,8 +250,9 @@ export function CreatorRewardsPanel({
           {amount(data.claimableNative)} ETH claimable
         </h2>
         <p>
-          Assigned fees unlock linearly over one hour. You can claim any
-          unlocked amount now, and the remainder keeps unlocking.
+          Assigned fees unlock linearly over{" "}
+          {governanceDuration(String(data.rewardStreamDurationSeconds))}. You
+          can claim any unlocked amount now, and the remainder keeps unlocking.
         </p>
       </div>
       <dl className="creator-earnings-metrics">
@@ -258,7 +261,10 @@ export function CreatorRewardsPanel({
           <dd>{amount(data.pendingCreatorBase)} mUSD</dd>
         </div>
         <div>
-          <dt>Unlocking over 1 hour</dt>
+          <dt>
+            Unlocking over{" "}
+            {governanceDuration(String(data.rewardStreamDurationSeconds))}
+          </dt>
           <dd>{amount(data.unlockingNative)} ETH</dd>
         </div>
         <div>

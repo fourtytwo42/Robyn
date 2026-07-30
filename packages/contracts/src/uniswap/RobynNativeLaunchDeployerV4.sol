@@ -20,10 +20,15 @@ contract RobynNativeLaunchDeployerV4 {
     }
 
     address public immutable initializer;
+    uint256 public immutable rewardStreamDuration;
     address public controller;
 
-    constructor() {
+    constructor(uint256 rewardStreamDuration_) {
+        if (rewardStreamDuration_ == 0 || rewardStreamDuration_ > 7 days) {
+            revert InvalidController();
+        }
         initializer = msg.sender;
+        rewardStreamDuration = rewardStreamDuration_;
     }
 
     function bindController(address controller_) external {
@@ -49,6 +54,7 @@ contract RobynNativeLaunchDeployerV4 {
             request.assets,
             request.tokenUri
         );
+        token.configureRewardStreamDuration(rewardStreamDuration);
     }
 
     function sealExclusions(RobynLaunchToken token, address[] calldata accounts) external {

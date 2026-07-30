@@ -73,9 +73,9 @@ export function basketConversionActorIndex(launchIndex, legIndex) {
 }
 
 export function assertSecurityRemediationManifest(manifest) {
-  if (manifest?.schemaVersion !== 14 || manifest?.chainId !== 46630) {
+  if (manifest?.schemaVersion !== 15 || manifest?.chainId !== 46630) {
     throw new Error(
-      "Campaign requires a schema-14 v4-only chain-46630 manifest",
+      "Campaign requires a schema-15 accelerated-testnet v4-only chain-46630 manifest",
     );
   }
   if (
@@ -86,14 +86,14 @@ export function assertSecurityRemediationManifest(manifest) {
       "1000000000000000"
   ) {
     throw new Error(
-      "Schema-14 campaign manifest must freeze the Paused canary profile",
+      "Schema-15 campaign manifest must freeze the Paused canary profile",
     );
   }
   if (
     manifest.governanceProfile !== "robinhood-testnet-short-assurance" ||
-    manifest.dao?.governance?.votingDelaySeconds !== 600 ||
-    manifest.dao?.governance?.votingPeriodSeconds !== 1800 ||
-    manifest.dao?.governance?.timelockSeconds !== 600
+    manifest.dao?.governance?.votingDelaySeconds !== 60 ||
+    manifest.dao?.governance?.votingPeriodSeconds !== 300 ||
+    manifest.dao?.governance?.timelockSeconds !== 60
   ) {
     throw new Error(
       "Campaign requires the reviewed shortened testnet governance profile",
@@ -147,7 +147,7 @@ export function launchBasketPlan(manifest) {
   ) {
     throw new Error("Campaign requires ten v4 routes and one WETH route");
   }
-  // Eight three-leg launches still exercise 24 conversions, but schema-14 has
+  // Eight three-leg launches still exercise 24 conversions, but schema-15 has
   // eleven individually qualified assets. Cycle deterministically after every
   // asset has appeared once so every route class is covered without inventing
   // extra assets.

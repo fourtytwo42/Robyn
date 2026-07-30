@@ -80,7 +80,7 @@ contract SchemaV4HundredsUsersSimulationTest {
         uint256[] memory allocations = new uint256[](2);
         allocations[0] = 800_000_000 ether;
         allocations[1] = 200_000_000 ether;
-        daoToken = new RobynDaoToken(recipients, allocations);
+        daoToken = new RobynDaoToken(recipients, allocations, 1 hours);
         feeRouter =
             new RobynProtocolFeeRouterV2(base, daoToken, payable(address(treasury)), address(this));
 

@@ -99,6 +99,12 @@ const deployment = JSON.parse(
   liquidityVenue?: "uniswap-v4" | "uniswap-v3";
   venueProvenance?: string;
   venueManifestSha256?: string;
+  rewardStreams?: {
+    launchTokenDurationSeconds?: number;
+    daoDurationSeconds?: number;
+    creatorDurationSeconds?: number;
+    release?: string;
+  };
   assetRoutes?: Array<{
     symbol: string;
     address: Address;

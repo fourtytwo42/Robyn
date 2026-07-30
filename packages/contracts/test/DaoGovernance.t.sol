@@ -34,7 +34,7 @@ contract DaoGovernanceTest {
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = 900_000_000 ether;
         amounts[1] = 100_000_000 ether;
-        RobynDaoToken token = new RobynDaoToken(recipients, amounts);
+        RobynDaoToken token = new RobynDaoToken(recipients, amounts, 1 hours);
         token.delegate(address(this));
         vm.warp(block.timestamp + 1);
 
