@@ -98,7 +98,7 @@ test("Schema-14 runtime isolates keeper queues by database", async () => {
     "infrastructure/pm2/ecosystem.testnet.config.cjs",
     "utf8",
   );
-  assert.match(ecosystem, /robyn-conversions-testnet:\$\{database\}/);
+  assert.ok(ecosystem.includes("`robyn-conversions-testnet-${database}`"));
   assert.equal(
     (ecosystem.match(/ROBYN_QUEUE_NAME: queueName/g) ?? []).length,
     2,
