@@ -4,6 +4,18 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Last verified 2026-07-30: both LAN Robinhood RPC nodes are synchronized and
+  hardened against sequencer-feed hash incidents. Testnet
+  `192.168.50.117:8547` and mainnet `192.168.50.173:8547` run Nitro with
+  `shutdown-on-blockhash-mismatch=false`, trusting their independently sourced
+  L1 execution over the optional feed. The shared two-minute watchdog validates
+  a common block 1,000 blocks deep against Robinhood's public RPC; Alchemy is
+  queried only to adjudicate a mismatch. Two public-plus-Alchemy-confirmed
+  local mismatches create a persistent quarantine and stop the node rather
+  than serving or restart-looping on a wrong chain. The watchdog's empty or
+  malformed `eth_syncing` JSON bug is fixed. Both nodes returned
+  `eth_syncing=false`, zero lag, identical canonical hashes, active watchdog
+  timers, and no quarantine after deployment.
 - Token creation UX and atomic creator purchase work is implemented but not yet live. The launch modal no longer exposes separate wallet-proof, artwork-sanitization, wallet-refresh, or faucet controls. Artwork is optional, reward assets use the catalog/custom-address picker with icon controls, creators may add immutable website/X links, and a payable coordinator can atomically launch plus buy for the creator. Portfolio now has a dedicated profile editor with avatar/name/bio/links, token pages use creator identity and project links, sell balance fills the exact sell amount, and manual onchain-refresh buttons are removed. Migration `0009_token_launch_links.sql` is additive. Full repository tests pass with 132 Foundry tests; lint, format, typecheck, API/web tests, clean devnet build, and protected testnet build pass. Existing public contracts are incompatible with the payable launch call, so do not promote this UI onto schema v8. Carry the checkpoint into `codex/schema9-guaranteed-fee`, deploy fresh contracts, migrate/reindex, then perform browser acceptance.
 - King of the Forest release `101bb38a543ad41f15520b1cfda458c6ecbec2b4` is live at `https://testnet.sherwoodforest.trade`. The manifest policy activates at testnet block `93576793`, requires 5,000 bps bonding progress plus 10 distinct lifetime traders, and only awards on fresh post-activation activity. The newest canonical award reigns; former winners retain their badge and history. Migration `0008_king_of_forest.sql`, projector/API/status work, homepage spotlight, Markets history, token progress, card badges, admin health, tests, and documentation are deployed. The release passed the immutable builder and all 490 promotion checks. At promotion, all six PM2 processes were online with zero restarts, all three projection lags were zero, no Prometheus alert was firing, and root disk had 21 GiB free. The initial state correctly has no winner because historical launches are not awarded retroactively. In-app-browser acceptance remains pending because the desktop browser runtime listed the IAB backend but returned no bindable session; do not substitute another browser and claim this gate. The same implementation is pushed on schema9 commit `db48086`.
 - Exact public testnet release
@@ -1333,6 +1345,37 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Complete desktop/mobile Codex in-app-browser acceptance when the listed IAB backend returns a bindable session. The browser runtime failure is tooling-side and is not counted as a passed UI gate.
 
 ## Current State
+
+### 2026-07-30 - Canonical-safe RPC watchdog hardening
+
+- Context: Robinhood Testnet's sequencer feed supplied hashes that conflicted
+  with the canonical L1-derived chain, and Nitro's default safety shutdown
+  caused a restart loop. The prior watchdog also passed an empty
+  `eth_syncing` value to `jq --argjson`.
+- Decision: both testnet and mainnet trust local L1-derived execution over the
+  optional feed while independently checking canonical agreement. Every
+  watchdog run compares a common block 1,000 blocks deep with Robinhood's
+  public RPC. Alchemy is contacted only following a hash disagreement. If the
+  public RPC and Alchemy agree against local execution twice, the watchdog
+  writes `/var/lib/robinhood/<network>-watchdog.quarantine` and stops the node;
+  the timer will not restart a quarantined node.
+- Files: `/usr/local/sbin/robinhood-nitro-watchdog`,
+  `/etc/robinhood/{testnet,mainnet}/watchdog.env`,
+  `/etc/systemd/system/robinhood-mainnet-node.service`. Timestamped rollback
+  copies use stamp `20260730T165426Z`. Protected environment files remain mode
+  0600 and credentials are not stored in Git.
+- Verification: malformed/unavailable `eth_syncing` produced a valid state
+  with `syncing:null` instead of a `jq` failure. A deliberate reference-RPC
+  disagreement caused one Alchemy confirmation; Alchemy agreed with local and
+  no quarantine or restart occurred. Normal checks used no Alchemy. At
+  `16:57Z`, both nodes returned `eth_syncing=false`, zero lag,
+  `canonicalOk:true`, matching local/public hashes, active node services and
+  timers, and absent quarantine files. The deployed watchdog SHA-256 on both
+  hosts is
+  `135ea82e65538e9d04d2e57874cf2dd244df3bc05c0eba930f7c57f7e277e411`.
+- Follow-up: monitor normal timer executions and alert on `action=quarantine`,
+  `unconfirmed_hash_mismatch`, or `reference_rpc_disagreement`; quarantine
+  removal must remain a deliberate operator action after diagnosis.
 
 ### 2026-07-24 - Automated campaign identity is immutable and indexed
 
