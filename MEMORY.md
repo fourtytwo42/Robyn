@@ -3081,7 +3081,9 @@ Durable project context lives here. Update this file whenever information should
 - Schema-13 has 96 deployment transactions because it intentionally omits Schema-12's genesis-launch transaction and must finish Paused. This is a lifecycle safety difference, not reduced deployment coverage.
 - The live Testnet deployment is exact release `61225c539aa4d5c69c3cd20acf87ed0fdd31bfe3`, coordinator `0xD7842F68030B5ACE75454841A978BD8d689a5903`, market factory `0x827eb2fa1aD59164aBB59a5fFfA804b593eCdd8D`, asset router `0x612400293BDFd231de3B076F56e807bED187e2cF`, and fee router `0x5F76AA3E5B917B15CBACB621Ee9AA1990FA51C1A`. All 162 verifier checks pass.
 - All 96 live deployment receipts succeeded using 66,891,884 gas. The deployer retained 7,154,331,710,401,747 wei, above the 1,500,000,000,000,000 wei reserve. Checksummed evidence is under `/home/hendo420/robyn-evidence/schema13-mainnet-go/live-testnet-20260730-61225c5/`.
-- The protected exact Mainnet fork has not run because production Safe, Timelock, RDAO allocation, and other protected production inputs are not configured. Schema-13 index rebuild and application promotion, recovery, uninterrupted endurance, reconciliation, browser acceptance, 48-hour Mainnet RPC gate, and Mainnet funding preflight remain pending.
+- Immutable application release `5c552fe4a5fea5c96fb90351c8c2eec4603341cf` passed the full protected release build and is served from `/opt/robyn/testnet-releases/5c552fe-schema13`. Fresh database `robyn_testnet_schema13_5c552fe` applied migrations 0001 through 0014 and rebuilt from deployment block 95,152,900.
+- Post-promotion status is healthy: chain 46630, zero ingestion/projection lag, zero launches as required while Paused, zero failed keeper jobs, protocol audit OK, LAN RPC primary and Alchemy fallback both healthy, and paid RPC projection 86,400 CU/day. All seven Testnet PM2 processes were saved.
+- The protected exact Mainnet fork has not run because production Safe, Timelock, RDAO allocation, and other protected production inputs are not configured. Recovery, uninterrupted endurance, reconciliation, browser acceptance, 48-hour Mainnet RPC gate, and Mainnet funding preflight remain pending.
 
 ### 2026-07-29 - Conversion recovery preserves canonical keeper work
 
@@ -4609,6 +4611,8 @@ When sources conflict, use this order:
 
 - 2026-07-30: Schema-13 exact commit `d2b882c` passed the disposable Testnet fork rehearsal with 162/162 live deployment checks, 96/96 deployment transactions measured, 62,285,289 total gas, sufficient protected-deployer balance, and verified evidence checksums. No public-chain transaction was broadcast.
 - 2026-07-30: Schema-13 exact release `61225c5` deployed fresh to Testnet from block 95,152,900 in Paused mode. The 96 deployment receipts succeeded using 66,891,884 gas, 162/162 checks passed, the 0.0015 ETH reserve remained intact, and evidence checksums verify.
+- 2026-07-30: Schema-13 application release `5c552fe` passed the complete immutable release gate and promoted onto fresh database `robyn_testnet_schema13_5c552fe`. The public Testnet status is healthy and Paused with zero lag, zero failed jobs, and 162 live deployment checks.
+
 
 
 - 2026-07-29: exact schema-12 application release `ad5b991` passed formatting,
