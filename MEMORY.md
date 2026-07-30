@@ -3077,6 +3077,8 @@ Durable project context lives here. Update this file whenever information should
 - Exact commit `343f3a2a621809c3c01532d633634cd83f409bea` passed the internal security audit with zero unresolved critical, high, or medium findings and passed two-clean-archive reproducibility. Slither exited 255 with 10 high and 59 medium reviewed findings accepted under the repository policy; this is internal assurance only.
 - The first isolated chain-46630 fork rehearsal deployed the full Schema-13 stack and passed 161 of 162 live checks. Its sole failure was evidence formatting: annotated `cast` integers were copied into the profile manifest. The deployment now normalizes profile integers to canonical decimals, and rehearsal gas gates compare numeric values.
 - No public Testnet transaction occurred during the rehearsal. The Schema-12 endurance service is static and stopped.
+- Exact pushed commit `d2b882c782ec2d85042bc485566495123c5ebdad` passed the isolated chain-46630 rehearsal at fork block 95,150,428: 162/162 verifier checks, all 96 intentional Paused-deployment transactions, 62,285,289 gas, 25% headroom, and the 0.0015 ETH reserve. The protected deployer held 8,615,568,990,401,747 wei versus 2,374,340,224,224,500 wei required. Evidence checksums pass under `/home/hendo420/robyn-evidence/schema13-mainnet-go/testnet-rehearsal/d2b882c-20260730/`.
+- Schema-13 has 96 deployment transactions because it intentionally omits Schema-12's genesis-launch transaction and must finish Paused. This is a lifecycle safety difference, not reduced deployment coverage.
 - The protected exact Mainnet fork has not run because production Safe, Timelock, RDAO allocation, and other protected production inputs are not configured. The fresh Schema-13 Testnet deployment, renewed exact-candidate security audit, recovery, uninterrupted endurance, reconciliation, browser acceptance, 48-hour Mainnet RPC gate, and Mainnet funding preflight remain pending.
 
 ### 2026-07-29 - Conversion recovery preserves canonical keeper work
@@ -4602,6 +4604,8 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-30: Schema-13 exact commit `d2b882c` passed the disposable Testnet fork rehearsal with 162/162 live deployment checks, 96/96 deployment transactions measured, 62,285,289 total gas, sufficient protected-deployer balance, and verified evidence checksums. No public-chain transaction was broadcast.
 
 - 2026-07-29: exact schema-12 application release `ad5b991` passed formatting,
   lint, typecheck, repository tests, 235 Foundry tests, the 512-wallet
