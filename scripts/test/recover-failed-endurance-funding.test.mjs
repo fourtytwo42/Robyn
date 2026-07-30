@@ -10,7 +10,11 @@ const source = readFileSync(
 test("failed endurance funding recovery is fail-closed and journaled", () => {
   assert.match(source, /failedRun\.failed !== true/);
   assert.match(source, /Number\(failedRun\.healthySeconds \?\? 0\) !== 0/);
-  assert.match(source, /failedRun\.enduranceLaunches\?\.length \?\? 0/);
+  assert.match(source, /failedRun\.enduranceLaunches \?\? \[\]/);
+  assert.match(source, /allow-bonding-history/);
+  assert.match(source, /hasGraduationHistory/);
+  assert.match(source, /bondingHistoryRecovery/);
+  assert.match(source, /retainedLaunches/);
   assert.match(source, /failedRunStateSha256/);
   assert.match(source, /status: "submitted"/);
   assert.match(source, /status = "confirmed"/);

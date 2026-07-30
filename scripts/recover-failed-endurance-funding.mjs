@@ -30,6 +30,7 @@ const option = (name, fallback) => {
 };
 const stateDir = resolve(option("state-dir", "/nonexistent"));
 const passphrasePath = resolve(option("passphrase-file", "/nonexistent"));
+const allowBondingHistory = option("allow-bonding-history", "false") === "true";
 const manifestPath = resolve(
   option("manifest", "deployments/46630-v4-schema15.json"),
 );
@@ -78,14 +79,19 @@ if (manifest.schemaVersion !== 15 || manifest.chainId !== 46630) {
 }
 const campaignState = readJson(join(stateDir, "state.json"));
 const failedRun = readJson(runStatePath);
+const retainedLaunches = failedRun.enduranceLaunches ?? [];
+const hasGraduationHistory = (failedRun.transactions ?? []).some((entry) =>
+  entry.label?.startsWith("endurance-graduate-"),
+);
 if (
   failedRun.runId !== option("run-id") ||
   failedRun.failed !== true ||
   Number(failedRun.healthySeconds ?? 0) !== 0 ||
-  (failedRun.enduranceLaunches?.length ?? 0) !== 0
+  (retainedLaunches.length !== 0 && !allowBondingHistory) ||
+  hasGraduationHistory
 ) {
   throw new Error(
-    "Funding recovery is limited to a zero-healthy-second failed run with no launches",
+    "Funding recovery requires a zero-healthy-second failed run without graduation history",
   );
 }
 if (campaignState.walletCount !== 100) {
@@ -163,6 +169,12 @@ try {
       .update(readFileSync(runStatePath))
       .digest("hex"),
     recipient: manifest.deployer,
+    bondingHistoryRecovery: retainedLaunches.length > 0,
+    retainedLaunches: retainedLaunches.map((launch) => ({
+      index: launch.index,
+      token: launch.token,
+      transactionHash: launch.transactionHash,
+    })),
     transactions: [],
     completed: false,
     createdAt: new Date().toISOString(),

@@ -12,6 +12,7 @@ const venueManifest = JSON.parse(
 const rpcUrl = process.env.ROBYN_TESTNET_RPC_URL ?? "https://rpc.testnet.chain.robinhood.com";
 const client = createPublicClient({ transport: http(rpcUrl) });
 const isPausedSchema = manifest.schemaVersion >= 14;
+const allowLifecycleProgress = process.env.ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS === "true";
 const schemaLabel = `Schema-${manifest.schemaVersion}`;
 const checks = [];
 const failures = [];
@@ -604,7 +605,6 @@ check(
   "receipt-derived pool ID matches market factory",
 );
 check(await read(market, abis.market, "seeded"), "genesis bonding market is seeded");
-const allowLifecycleProgress = process.env.ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS === "true";
 const genesisGraduated = await read(market, abis.market, "graduated");
 check(
   !genesisGraduated || allowLifecycleProgress,
@@ -659,9 +659,16 @@ check(
   "genesis token exposes immutable ERC-1046 metadata",
 );
 } else {
+  const launchMode = await read(
+    contracts.atomicLaunchCoordinator,
+    abis.coordinator,
+    "launchMode",
+  );
   check(
-    (await read(contracts.atomicLaunchCoordinator, abis.coordinator, "launchMode")) === 0,
-    `${schemaLabel} launch coordinator is Paused`,
+    launchMode === 0 || (allowLifecycleProgress && launchMode === 2),
+    allowLifecycleProgress
+      ? `${schemaLabel} launch coordinator is Paused or Public`
+      : `${schemaLabel} launch coordinator is Paused`,
   );
   check(
     getAddress(await read(contracts.atomicLaunchCoordinator, abis.coordinator, "canaryLauncher")) ===

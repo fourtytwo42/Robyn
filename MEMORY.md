@@ -1,5 +1,29 @@
 # Project Memory
 
+### 2026-07-30 - Schema-15 run 03 lifecycle-verifier failure
+
+- Context: Faucet funding was sufficient and exact release `743153c` promoted
+  successfully. Run `schema15-accelerated-743153c-03` completed 38 setup
+  transactions, the full pre-clock Governor and Timelock activation, two clean
+  readiness samples, and one launch cycle.
+- Result: The first post-launch review failed because the deployment verifier
+  still required the coordinator to be Paused even when the endurance runner
+  explicitly enabled canonical lifecycle progression. The run stopped with
+  zero accumulated healthy seconds, 52 journal entries, one Bonding launch,
+  and no graduation. All hashes are sealed and must not be replayed.
+- Fix: Lifecycle reviews now accept only Paused or Public mode; ordinary
+  deployment verification still requires Paused. The verifier passes 407
+  checks in Public mode. The recovery tool has an explicit fail-closed
+  `--allow-bonding-history true` path for zero-healthy-second failures with no
+  graduation; it records retained launch identity while recovering only RDAO
+  and native wallet funding.
+- Operations: Removed only `/tmp/node-compile-cache` after resolving the exact
+  path, restoring root-disk headroom above the fixed 12 GiB gate. No database,
+  evidence, journal, backup, or immutable release was removed.
+- Follow-up: Commit, push, build, promote, recover run 03 funding, and start a
+  fresh run 04 identity. Production clocks remain unchanged. No Mainnet action
+  occurred.
+
 ### 2026-07-30 - Schema-15 accelerated Testnet clocks
 
 - Context: The product owner requested shorter Testnet clocks so the fixed

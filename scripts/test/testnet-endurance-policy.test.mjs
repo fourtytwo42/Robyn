@@ -394,6 +394,12 @@ test("endurance deployment reviews permit canonical lifecycle progression", () =
     "utf8",
   );
   assert.match(source, /ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS: "true"/);
+  const verifier = readFileSync(
+    new URL("../verify-testnet-v4-deployment.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(verifier, /allowLifecycleProgress && launchMode === 2/);
+  assert.match(verifier, /launch coordinator is Paused or Public/);
 });
 
 test("unresolved workload failures keep passing infrastructure paused", () => {
