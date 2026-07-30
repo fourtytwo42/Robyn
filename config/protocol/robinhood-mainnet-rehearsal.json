@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 14,
   "environment": "robinhood-mainnet-fork-rehearsal",
   "chainId": 4663,
   "sources": {
@@ -95,21 +95,27 @@
   },
   "roles": {
     "treasuryPolicy": "newly-deployed-production-timelock",
-    "treasuryEnvironmentVariable": "ROBYN_MAINNET_TREASURY",
-    "guardianEnvironmentVariable": "ROBYN_MAINNET_GUARDIAN",
     "guardianSignersFileEnvironmentVariable": "ROBYN_MAINNET_GUARDIAN_SIGNERS",
     "daoAllocationFileEnvironmentVariable": "ROBYN_MAINNET_RDAO_ALLOCATION"
+  },
+  "safe": {
+    "version": "1.4.1",
+    "threshold": 2,
+    "proxyFactory": {
+      "address": "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67",
+      "runtimeCodeHash": "0x50c3cdc4074750a7a974204a716c999edd37482f907608d960b2b025ee0b3317"
+    },
+    "singleton": {
+      "address": "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762",
+      "runtimeCodeHash": "0xb1f926978a0f44a2c0ec8fe822418ae969bd8c3f18d61e5103100339894f81ff"
+    },
+    "fallbackHandler": {
+      "address": "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99",
+      "runtimeCodeHash": "0x7c6007a5d711cea8dfd5d91f5940ec29c7f200fe511eb1fc1397b367af3c42f9"
+    }
   },
   "supportPolicy": "config/protocol/robinhood-mainnet-support-policy.json",
   "expectedCandidateCount": 11,
   "requiredSymbols": ["GOOGL", "MSFT", "NVDA", "SPCX", "SPY", "WETH"],
-  "optionalSymbols": ["GME", "USDG", "USDe", "DEGEN", "ARROW"],
-  "provider": {
-    "id": "0x-allowance-holder",
-    "chainId": 4663,
-    "quoteEndpoint": "https://api.0x.org/swap/allowance-holder/quote",
-    "apiVersion": "v2",
-    "maximumSlippageBps": 100,
-    "requireIndependentOnchainPriceGuard": true
-  }
+  "optionalSymbols": ["GME", "USDG", "USDe", "DEGEN", "ARROW"]
 }

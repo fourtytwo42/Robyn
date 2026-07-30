@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 14,
   "chainId": 4663,
   "status": "candidate-only",
   "lastVerifiedAt": "2026-07-29",
@@ -14,23 +14,16 @@
     "maximumRoundTripLossBps": 500,
     "requireDeploymentBlockRequalification": true,
     "requireExactForkLifecycle": true,
-    "requireFreshContractDeploymentForNewAdapter": true
+    "requireFreshContractDeploymentForRouteChanges": true
   },
   "executionClasses": {
     "canonical-v4-single-hop": {
-      "supportedBySchema12": true,
+      "supportedBySchema14": true,
       "requiresFreshContracts": false
     },
     "direct-native-wrap": {
-      "supportedBySchema12": true,
+      "supportedBySchema14": true,
       "requiresFreshContracts": false
-    },
-    "pinned-execution-adapter": {
-      "supportedBySchema12": true,
-      "requiresFreshContracts": false,
-      "provider": "0x-allowance-holder",
-      "requiresIndependentOnchainPriceGuard": true,
-      "defaultEnabled": false
     }
   },
   "candidates": [
@@ -102,36 +95,36 @@
       "required": false,
       "kind": "canonical-stablecoin",
       "address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
-      "executionClass": "pinned-execution-adapter",
+      "executionClass": "canonical-v4-single-hop",
       "maximumNativeInputWei": "50000000000000000",
-      "activation": "blocked-pending-price-guard-and-exact-fork-rehearsal"
+      "activation": "conditional-pending-direct-v4-pool-qualification"
     },
     {
       "symbol": "USDe",
       "required": false,
       "kind": "layerzero-verified-token",
       "address": "0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34",
-      "executionClass": "pinned-execution-adapter",
+      "executionClass": "canonical-v4-single-hop",
       "maximumNativeInputWei": "50000000000000000",
-      "activation": "blocked-pending-price-guard-and-exact-fork-rehearsal"
+      "activation": "conditional-pending-direct-v4-pool-qualification"
     },
     {
       "symbol": "DEGEN",
       "required": false,
       "kind": "layerzero-verified-token",
       "address": "0x0830A9Dd26a04e959657AB6788d45f5725590c32",
-      "executionClass": "pinned-execution-adapter",
+      "executionClass": "canonical-v4-single-hop",
       "maximumNativeInputWei": "50000000000000000",
-      "activation": "blocked-pending-price-guard-and-exact-fork-rehearsal"
+      "activation": "conditional-pending-direct-v4-pool-qualification"
     },
     {
       "symbol": "ARROW",
       "required": false,
       "kind": "layerzero-verified-token",
       "address": "0xf2915d1e3C1B0c769d0c756Ec43F1c1f6c99cD03",
-      "executionClass": "pinned-execution-adapter",
+      "executionClass": "canonical-v4-single-hop",
       "maximumNativeInputWei": "50000000000000000",
-      "activation": "blocked-pending-price-guard-and-exact-fork-rehearsal"
+      "activation": "conditional-pending-direct-v4-pool-qualification"
     }
   ],
   "observedButRejected": [
@@ -157,7 +150,7 @@
     },
     {
       "symbol": "PEPPER",
-      "reason": "aggregator token resolution failed"
+      "reason": "no qualifying direct Uniswap v4 route"
     },
     {
       "symbol": "WBTC",

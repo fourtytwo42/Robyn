@@ -45,10 +45,6 @@ import {
   runScanStages,
   scanRequestRetryDelayMs,
 } from "./scan-control.js";
-import {
-  requestZeroExAllowanceHolderQuote,
-  schema12QuoteId,
-} from "./provider-quotes.js";
 import { keeperTransactionGasLimit } from "./transaction-gas.js";
 
 type Manifest = {
@@ -535,19 +531,6 @@ const nativeVaultAbi = [
     ],
     outputs: [{ type: "uint256" }],
   },
-  {
-    type: "function",
-    name: "convertLegWithData",
-    stateMutability: "nonpayable",
-    inputs: [
-      { type: "uint256" },
-      { type: "uint256" },
-      { type: "uint256" },
-      { type: "uint256" },
-      { type: "bytes" },
-    ],
-    outputs: [{ type: "uint256" }],
-  },
 ] as const;
 const routerAbi = [
   {
@@ -599,13 +582,8 @@ const v4AssetRouterAbi = [
         type: "tuple",
         components: [
           { name: "kind", type: "uint8" },
-          { name: "adapter", type: "address" },
-          { name: "priceGuard", type: "address" },
           { name: "maximumNativeInput", type: "uint128" },
           { name: "maximumAssetInput", type: "uint128" },
-          { name: "provider", type: "bytes32" },
-          { name: "adapterRuntimeHash", type: "bytes32" },
-          { name: "priceGuardRuntimeHash", type: "bytes32" },
           { name: "disabledReason", type: "bytes32" },
           { name: "enabled", type: "bool" },
         ],
@@ -625,27 +603,6 @@ const v4AssetRouterAbi = [
     stateMutability: "nonpayable",
     inputs: [{ type: "address" }, { type: "uint128" }],
     outputs: [{ type: "uint256" }, { type: "uint256" }],
-  },
-] as const;
-const schema12AdapterAbi = [
-  {
-    type: "function",
-    name: "allowanceHolder",
-    stateMutability: "view",
-    inputs: [],
-    outputs: [{ type: "address" }],
-  },
-  {
-    type: "function",
-    name: "quote",
-    stateMutability: "view",
-    inputs: [
-      { type: "address" },
-      { type: "address" },
-      { type: "uint256" },
-      { type: "bytes32" },
-    ],
-    outputs: [{ type: "uint256" }, { type: "bytes" }],
   },
 ] as const;
 const uniswapMarketAbi = [
@@ -1441,19 +1398,15 @@ async function scanLaunch(
             ? route.maximumNativeInput
             : current.leg.pendingBase;
         if (conversionInput > 0n) {
-          if (route.kind === 3 && route.enabled) {
-            routeIsUsable = true;
-          } else {
-            const quote = await publicClient.simulateContract({
-              address: settings.assetRouter,
-              abi: v4AssetRouterAbi,
-              functionName: "quoteNativeToAsset",
-              args: [current.leg.asset, conversionInput],
-              account: writeAccount,
-            });
-            estimatedComputeUnits += 26;
-            routeIsUsable = conversionQuoteIsUsable(quote.result[0]);
-          }
+          const quote = await publicClient.simulateContract({
+            address: settings.assetRouter,
+            abi: v4AssetRouterAbi,
+            functionName: "quoteNativeToAsset",
+            args: [current.leg.asset, conversionInput],
+            account: writeAccount,
+          });
+          estimatedComputeUnits += 26;
+          routeIsUsable = conversionQuoteIsUsable(quote.result[0]);
         }
       } catch {
         // Unsafe oracle, impact, liquidity, or dust remains queued onchain.
@@ -2210,76 +2163,19 @@ async function processConversion(
     if (conversionInput === 0n) {
       throw new Error("Native conversion route has a zero input limit");
     }
-    const wrappedNative = manifest.contracts.wrappedNative;
-    if (!wrappedNative) throw new Error("Wrapped native token is missing");
-    const adapterAllowanceHolder =
-      route.kind === 3 && isMainnet
-        ? await publicClient.readContract({
-            address: route.adapter,
-            abi: schema12AdapterAbi,
-            functionName: "allowanceHolder",
-          })
-        : undefined;
     const simulateBatch = async (input: bigint) => {
       const deadline = (await publicClient.getBlock()).timestamp + 120n;
-      let expected: bigint;
-      let minimumOutput: bigint;
-      let executionData: Hex = "0x";
-      if (route.kind === 3 && isTestnet) {
-        const quote = await publicClient.readContract({
-          address: route.adapter,
-          abi: schema12AdapterAbi,
-          functionName: "quote",
-          args: [
-            wrappedNative,
-            current.leg.asset,
-            input,
-            schema12QuoteId(job.data.idempotencyKey),
-          ],
-        });
-        [expected, executionData] = quote;
-        minimumOutput = expected;
-      } else if (route.kind === 3 && isMainnet) {
-        if (!adapterAllowanceHolder) {
-          throw new Error("Pinned adapter AllowanceHolder is unavailable");
-        }
-        const quote = await requestZeroExAllowanceHolderQuote({
-          apiKey: process.env.ROBYN_ZERO_EX_API_KEY ?? "",
-          chainId: expectedChainId,
-          sellToken: wrappedNative,
-          buyToken: current.leg.asset,
-          sellAmount: input,
-          taker: route.adapter,
-          expectedAllowanceHolder: adapterAllowanceHolder,
-          slippageBps: 50,
-          idempotencyKey: job.data.idempotencyKey,
-        });
-        expected = quote.buyAmount;
-        minimumOutput = quote.minimumBuyAmount;
-        executionData = quote.executionData;
-      } else {
-        const quote = await publicClient.simulateContract({
-          address: assetRouter,
-          abi: v4AssetRouterAbi,
-          functionName: "quoteNativeToAsset",
-          args: [current.leg.asset, input],
-          account: writeAccount,
-        });
-        expected = quote.result[0];
-        minimumOutput = (expected * 9_950n) / 10_000n;
-      }
+      const quote = await publicClient.simulateContract({
+        address: assetRouter,
+        abi: v4AssetRouterAbi,
+        functionName: "quoteNativeToAsset",
+        args: [current.leg.asset, input],
+        account: writeAccount,
+      });
+      const expected = quote.result[0];
+      const minimumOutput = (expected * 9_950n) / 10_000n;
       if (!conversionQuoteIsUsable(expected)) {
         throw new Error("Native conversion route is unavailable");
-      }
-      if (route.kind === 3) {
-        const simulation = await publicClient.simulateContract({
-          address: job.data.vault,
-          abi: nativeVaultAbi,
-          functionName: "convertLegWithData",
-          args: [legIndex, input, minimumOutput, deadline, executionData],
-          account: writeAccount,
-        });
-        return () => writeSimulatedContract(simulation.request);
       }
       const simulation = await publicClient.simulateContract({
         address: job.data.vault,
@@ -2292,7 +2188,7 @@ async function processConversion(
     };
     let executePlannedConversion: (() => Promise<Hash>) | undefined;
     let lastPlanningError;
-    const maximumPlanningAttempts = route.kind === 3 ? 4 : 16;
+    const maximumPlanningAttempts = 16;
     for (let attempt = 0; attempt < maximumPlanningAttempts; attempt += 1) {
       try {
         executePlannedConversion = await simulateBatch(conversionInput);

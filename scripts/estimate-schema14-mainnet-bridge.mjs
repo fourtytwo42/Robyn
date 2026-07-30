@@ -69,7 +69,7 @@ if (senderBalanceWei < amountWei + estimatedCostWei) {
 }
 
 const report = {
-  schemaVersion: 1,
+  schemaVersion: 14,
   generatedAt: new Date().toISOString(),
   chainId,
   sourceBlock: blockNumber.toString(),

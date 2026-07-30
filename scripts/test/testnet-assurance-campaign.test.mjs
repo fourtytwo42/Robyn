@@ -105,10 +105,17 @@ test("weighted funding tree preserves distinct wallet budgets and edge costs", (
   );
 });
 
-test("eight baskets cover every schema-12 route and all route classes", () => {
+test("eight baskets cover every schema-14 route and all route classes", () => {
   const manifest = {
-    schemaVersion: 12,
+    schemaVersion: 14,
     chainId: 46630,
+    launchControl: { initialMode: "Paused" },
+    graduationProfiles: {
+      current: {
+        targetGraduationNative: "10000000000000000",
+        maximumCurvePurchase: "1000000000000000",
+      },
+    },
     governanceProfile: "robinhood-testnet-short-assurance",
     dao: {
       governance: {
@@ -137,12 +144,7 @@ test("eight baskets cover every schema-12 route and all route classes", () => {
     assetRoutes: Array.from({ length: 11 }, (_, index) => ({
       address: `0x${String(index + 101).padStart(40, "0")}`,
       verification: "robyn-testnet-mock",
-      routeKind:
-        index < 4
-          ? "canonical-v4-single-hop"
-          : index === 4
-            ? "wrapped-native"
-            : "pinned-adapter",
+      routeKind: index < 10 ? "uniswap-v4" : "wrapped-native",
     })),
   };
   const baskets = launchBasketPlan(manifest);

@@ -11,7 +11,7 @@ import {
 
 const manifestPath =
   process.argv.find((argument) => argument.endsWith(".json")) ??
-  "deployments/46630-v4-schema13.json";
+  "deployments/46630-v4-schema14.json";
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const rpcUrl =
   process.env.ROBYN_TESTNET_RPC_URL ??
@@ -68,7 +68,7 @@ if (failures.length) {
 
 check((await client.getChainId()) === 46630, "RPC chain ID is 46630");
 check(manifest.chainId === 46630, "manifest chain ID is 46630");
-check(manifest.schemaVersion === 13, "deployment manifest schema is v13");
+check(manifest.schemaVersion === 14, "deployment manifest schema is v14");
 check(
   manifest.liquidityVenue === "uniswap-v4",
   "manifest selects Uniswap v4",
@@ -262,7 +262,24 @@ check(
   "manifest freezes the governed production profile",
 );
 
-for (const route of manifest.assetRoutes ?? []) {
+const routes = manifest.assetRoutes ?? [];
+check(routes.length === 11, "manifest contains ten v4 routes and direct WETH");
+check(
+  routes.filter((route) => route.routeKind === "uniswap-v4").length === 10,
+  "ten asset routes are Uniswap v4 single-hop",
+);
+check(
+  routes.filter((route) => route.routeKind === "wrapped-native").length === 1,
+  "one route is direct wrapped native",
+);
+check(
+  !/(pinned-adapter|provider|priceGuard|adapterRuntimeHash|quoteExpiry)/i.test(
+    JSON.stringify(routes),
+  ),
+  "route manifest contains no external execution-adapter surface",
+);
+
+for (const route of routes) {
   const execution = await read(
     contracts.assetRouter,
     assetRouterAbi,
@@ -276,6 +293,10 @@ for (const route of manifest.assetRoutes ?? []) {
   check(
     execution.enabled === Boolean(route.enabled),
     `${route.symbol} enabled state matches manifest`,
+  );
+  check(
+    execution.kind === (route.routeKind === "wrapped-native" ? 2 : 1),
+    `${route.symbol} route kind is v4-only`,
   );
 }
 

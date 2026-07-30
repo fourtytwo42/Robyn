@@ -29,7 +29,7 @@ export function poolIdForRoute(asset, route) {
 
 export function validateMainnetRehearsalConfig(config, supportPolicy) {
   const failures = [];
-  if (config?.schemaVersion !== 13)
+  if (config?.schemaVersion !== 14)
     failures.push("unsupported rehearsal schema");
   if (config?.chainId !== 4663)
     failures.push("rehearsal chain ID must be 4663");
@@ -53,8 +53,8 @@ export function validateMainnetRehearsalConfig(config, supportPolicy) {
       failures.push(`invalid ${name} runtime hash`);
     }
   }
-  if (supportPolicy?.schemaVersion !== 13 || supportPolicy?.chainId !== 4663) {
-    failures.push("support policy must be schema 13 on chain 4663");
+  if (supportPolicy?.schemaVersion !== 14 || supportPolicy?.chainId !== 4663) {
+    failures.push("support policy must be schema 14 on chain 4663");
   }
   const assets = supportPolicy?.candidates ?? [];
   if (
@@ -100,11 +100,20 @@ export function validateMainnetRehearsalConfig(config, supportPolicy) {
   for (const requiredClass of [
     "canonical-v4-single-hop",
     "direct-native-wrap",
-    "pinned-execution-adapter",
   ]) {
     if (!executionClasses.has(requiredClass)) {
       failures.push(`missing ${requiredClass} candidate`);
     }
+  }
+  if (
+    [...executionClasses].some(
+      (executionClass) =>
+        !["canonical-v4-single-hop", "direct-native-wrap"].includes(
+          executionClass,
+        ),
+    )
+  ) {
+    failures.push("support policy contains a non-v4 execution class");
   }
   const weth = assets.find((asset) => asset.symbol === "WETH");
   if (
@@ -115,13 +124,8 @@ export function validateMainnetRehearsalConfig(config, supportPolicy) {
   ) {
     failures.push("the production WETH route is missing or inconsistent");
   }
-  if (
-    config?.provider?.id !== "0x-allowance-holder" ||
-    config?.provider?.chainId !== 4663 ||
-    config?.provider?.apiVersion !== "v2" ||
-    config?.provider?.requireIndependentOnchainPriceGuard !== true
-  ) {
-    failures.push("the pinned-adapter provider policy is incomplete");
+  if (config?.provider !== undefined) {
+    failures.push("schema 14 forbids external execution providers");
   }
   if (Number(config?.route?.fee) !== 10_000) {
     failures.push("route fee must be 1 percent");
@@ -133,7 +137,21 @@ export function validateMainnetRehearsalConfig(config, supportPolicy) {
     failures.push("production basket routes must be hookless");
   }
   if (config?.market?.initialLaunchMode !== "Paused") {
-    failures.push("schema 13 must deploy in Paused launch mode");
+    failures.push("schema 14 must deploy in Paused launch mode");
+  }
+  if (config?.safe?.version !== "1.4.1" || config?.safe?.threshold !== 2) {
+    failures.push("Safe v1.4.1 threshold-two policy mismatch");
+  }
+  for (const name of ["proxyFactory", "singleton", "fallbackHandler"]) {
+    const entry = config?.safe?.[name];
+    try {
+      getAddress(entry?.address ?? "");
+    } catch {
+      failures.push(`invalid Safe ${name} address`);
+    }
+    if (!/^0x[0-9a-fA-F]{64}$/.test(entry?.runtimeCodeHash ?? "")) {
+      failures.push(`invalid Safe ${name} runtime hash`);
+    }
   }
   const canary = config?.market?.canaryProfile;
   if (

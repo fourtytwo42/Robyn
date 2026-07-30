@@ -72,7 +72,7 @@ start_stack() {
     ROBYN_TESTNET_SERVER_RPC_URL="${ROBYN_TESTNET_SERVER_RPC_URL:-https://rpc.testnet.chain.robinhood.com}" \
     ROBYN_TESTNET_WS_RPC_URL="${ROBYN_TESTNET_WS_RPC_URL:-}" \
     ROBYN_TESTNET_RELEASE_ROOT="$selected" \
-    ROBYN_TESTNET_MANIFEST="$selected/deployments/46630-v4-schema13.json" \
+    ROBYN_TESTNET_MANIFEST="$selected/deployments/46630-v4-schema14.json" \
     ROBYN_TESTNET_DATABASE="$selected_database" \
     ROBYN_OPERATOR_KEY_FILE="$operator_key" \
     ROBYN_TESTNET_AUTH_ORIGINS="https://testnet.sherwoodforest.trade" \

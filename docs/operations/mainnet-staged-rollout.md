@@ -1,17 +1,17 @@
-# Schema-13 Mainnet Staged Rollout
+# Schema-14 V4-Only Mainnet Staged Rollout
 
 ## Authority boundary
 
-Schema-13 adds governed launch activation and future-launch-only graduation
-profiles. Passing this runbook produces a frozen Mainnet manifest and an
+Schema-14 retains governed launch activation and future-launch-only graduation
+profiles while removing every external execution-adapter path. Passing this runbook produces a frozen Mainnet manifest and an
 internal GO recommendation. It does not authorize an Ethereum bridge
 transaction, Robinhood Mainnet deployment, route activation, canary launch,
 profile change, or public activation. Every Mainnet transaction requires
 authorization for the exact frozen manifest and phase.
 
 No temporary EOA may replace the production Safe, Timelock, treasury, or
-governance roles. Keys, passwords, provider credentials, allocation secrets,
-raw calldata, and protected configuration never belong in Git, evidence, or
+governance roles. Keys, passwords, allocation secrets, signatures, raw
+calldata, and protected configuration never belong in Git, evidence, or
 `MEMORY.md`.
 
 ## Immutable evidence
@@ -20,7 +20,7 @@ Record the clean pushed Git SHA, source and deployment-manifest hashes,
 creation/runtime bytecode, ABI and storage-layout hashes, application artifact
 hashes, external addresses/runtime hashes, Safe owners and threshold,
 Timelock, treasury, governor, guardian, deployer, RDAO allocation-file hash,
-chain ID, fork block, price guards, and route caps.
+chain ID, fork block, direct v4 pool state, and route caps.
 
 The protected transaction journal is
 `/home/hendo420/robyn-evidence/mainnet/<release-id>/transactions.jsonl`.
@@ -60,7 +60,7 @@ high, or medium findings.
 ## Gate 2: Fresh Testnet
 
 Deploy fresh contracts on chain 46630 from the exact candidate. Archive
-Schema-12 history and rebuild an empty database from the new block. Verify
+Schema-13 history and rebuild an empty database from the new block. Verify
 runtime hashes, roles, bindings, routes, mode, profile, liabilities, and
 release identity.
 
@@ -73,9 +73,8 @@ invalidates all contract-dependent evidence.
 ## Gate 3: Exact Mainnet fork
 
 Pin chain 4663 immediately before execution. Requery every Robinhood token,
-Uniswap contract, price guard, route, 0x target, and runtime hash. Use real
-liquidity and provider calldata; never seed synthetic route liquidity. Fund
-only local fork actors.
+Uniswap contract, direct v4 route, and runtime hash. Use real direct v4
+liquidity; never seed synthetic route liquidity. Fund only local fork actors.
 
 Execute this sequence:
 
@@ -90,8 +89,8 @@ Execute this sequence:
 8. Prove the canary is unchanged and a second launch snapshots the new version.
 9. Enter Public, prove permissionless creation, then return to Paused.
 
-A missing or synthetic required route fails the rehearsal. Optional routes
-remain disabled individually.
+A missing, synthetic, or non-v4 required route fails the rehearsal. Optional
+routes remain disabled individually.
 
 ## Gate 4: RPC and funding
 
@@ -146,8 +145,8 @@ capital; report treasury, DAO, basket assets, gas, fees, and locked liquidity
 separately. Observe 24 consecutive healthy hours after the final action.
 
 Test required assets with the smallest safe round trip. A route failing its
-runtime hash, quote, price guard, allowance cleanup, cap, or round trip remains
-disabled. Observe 24 consecutive healthy hours after the final action with
+runtime hash, pool liquidity, v4 quote, TWAP/reference-tick protection, cap, or
+round trip remains disabled. Observe 24 consecutive healthy hours after the final action with
 exact reconciliation and zero accounting, supply, principal, or solvency
 anomaly.
 

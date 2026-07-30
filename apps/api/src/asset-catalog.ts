@@ -25,19 +25,14 @@ export type AssetRoute = {
     | "fixed-testnet"
     | "uniswap-v3"
     | "uniswap-v4"
-    | "wrapped-native"
-    | "pinned-adapter";
+    | "wrapped-native";
   ready: boolean;
   venue: Address | null;
   poolFee: number | null;
   liquidity: string | null;
   reason: string | null;
-  provider?: `0x${string}` | null;
   maximumNativeInput?: string | null;
   maximumAssetInput?: string | null;
-  priceGuardState?: "not-required" | "verified" | "unavailable";
-  adapterRuntimeHash?: `0x${string}` | null;
-  quoteExpiry?: string | null;
   lastSuccessfulExecution?: string | null;
   disabledReason?: string | null;
 };
@@ -171,13 +166,8 @@ const v4AssetRouterAbi = [
         type: "tuple",
         components: [
           { name: "kind", type: "uint8" },
-          { name: "adapter", type: "address" },
-          { name: "priceGuard", type: "address" },
           { name: "maximumNativeInput", type: "uint128" },
           { name: "maximumAssetInput", type: "uint128" },
-          { name: "provider", type: "bytes32" },
-          { name: "adapterRuntimeHash", type: "bytes32" },
-          { name: "priceGuardRuntimeHash", type: "bytes32" },
           { name: "disabledReason", type: "bytes32" },
           { name: "enabled", type: "bool" },
           { name: "runtimeVerified", type: "bool" },
@@ -258,7 +248,6 @@ const routeReasonLabels = new Map(
     ["ROUTE_DISABLED", "Conversion route is disabled"],
     ["CONVERSIONS_PAUSED", "Basket conversions are paused"],
     ["RUNTIME_HASH_MISMATCH", "Route runtime verification failed"],
-    ["PRICE_GUARD_MISSING", "Independent price guard is unavailable"],
     ["POOL_UNINITIALIZED", "Conversion pool is not initialized"],
     ["INSUFFICIENT_LIQUIDITY", "Conversion pool has insufficient liquidity"],
     [
@@ -280,9 +269,7 @@ function v4ExecutionKind(value: number): AssetRoute["kind"] {
     ? "uniswap-v4"
     : value === 2
       ? "wrapped-native"
-      : value === 3
-        ? "pinned-adapter"
-        : "none";
+      : "none";
 }
 
 export class AssetCatalogService {
@@ -483,26 +470,12 @@ export class AssetCatalogService {
         return {
           kind: v4ExecutionKind(execution.kind),
           ready: execution.ready,
-          venue: execution.kind === 3 ? execution.adapter : this.routeRegistry,
+          venue: this.routeRegistry,
           poolFee: status.fee === 0 ? null : status.fee,
           liquidity: execution.kind === 1 ? status.liquidity.toString() : null,
           reason: execution.ready ? null : reasonText(execution.reason),
-          provider: /^0x0+$/.test(execution.provider)
-            ? null
-            : execution.provider,
           maximumNativeInput: execution.maximumNativeInput.toString(),
           maximumAssetInput: execution.maximumAssetInput.toString(),
-          priceGuardState:
-            execution.kind !== 3
-              ? "not-required"
-              : execution.priceGuard !== zeroAddress &&
-                  execution.runtimeVerified
-                ? "verified"
-                : "unavailable",
-          adapterRuntimeHash: /^0x0+$/.test(execution.adapterRuntimeHash)
-            ? null
-            : execution.adapterRuntimeHash,
-          quoteExpiry: null,
           lastSuccessfulExecution: null,
           disabledReason: reasonText(execution.disabledReason),
         };

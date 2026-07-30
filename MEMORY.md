@@ -1,5 +1,44 @@
 # Project Memory
 
+### 2026-07-30 - Schema-14 V4-only candidate implementation checkpoint
+
+- Context: The product owner replaced Schema-13 with Schema-14 because removing
+  0x changes contract bytecode and invalidates the earlier contract-dependent
+  evidence.
+- Decision: Schema-14 permits only canonical Robinhood Uniswap v4 single-hop
+  routes and direct native ETH/WETH wrapping. External execution adapters,
+  provider calldata, 0x quote handling, price-guard adapters, and provider
+  credentials are removed. Historical Schema-12/13 deployment manifests remain
+  archived evidence only.
+- Files: The V4-only router and vault are in
+  `packages/contracts/src/uniswap/RobynV4AssetRouter.sol` and
+  `RobynNativeBasketVaultV2.sol`. Schema-14 deployment, verification,
+  rehearsal, recovery, campaign, and endurance tooling is under `scripts/`.
+  Protected governance validation is in
+  `scripts/validate-mainnet-governance-inputs.mjs`; postdeployment verification
+  is in `scripts/verify-mainnet-governance-deployment.mjs`.
+- Safe provenance: Official Safe v1.4.1 chain-4663 registry entries are pinned
+  for ProxyFactory `0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67`,
+  SafeL2 `0x29fcB43b46531BcA003ddC8FCB67FFE91900C762`, and fallback
+  handler `0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99`, including runtime
+  hashes. The validator requires three unique proven owners, exact five-way
+  2,000-bps RDAO allocation, and deterministic chain-specific Safe prediction.
+- Verification: Full `pnpm test` passes, including 247 Foundry tests with one
+  protected Mainnet fork skip. Explicit 256-run/depth-128 invariants pass with
+  zero reverts. The internal security gate passes with no history leaks, no
+  high/critical dependency advisory, 18,618-byte router runtime, and zero
+  unresolved high or medium Slither findings. This remains internal assurance.
+- State: Work is on `codex/schema14-v4-only`. No Mainnet signature, bridge,
+  deployment, route activation, or transaction occurred. Fresh Testnet
+  deployment, recovery, two-hour endurance, exact Mainnet fork receipts,
+  48-hour RPC acceptance, funding report, and browser/reconciliation gates are
+  not yet complete.
+- Follow-up: Commit and push the exact candidate, run the isolated Schema-14
+  Testnet rehearsal, then perform a fresh Testnet deployment and every
+  contract-dependent gate. Production governance validation remains blocked
+  until the four recipient addresses and three domain-separated control proofs
+  are supplied through protected files.
+
 ### 2026-07-30 - Schema-13 hard funding gate and unwind measurement
 
 - Context: Mainnet funding is capped at `0.04707292 ETH`. The release must
@@ -1333,20 +1372,21 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- 2026-07-30: The hard `0.04707292 ETH` funding gate, canonical non-broadcast
-  bridge estimator, and capital-preserving canary unwind are implemented on
-  the Schema-13 branch. Complete receipt measurement is blocked on the real
-  production Timelock, 2-of-3 Safe, signer/allocation inputs, and protected
-  provider configuration. Do not bridge or deploy from provisional estimates.
+- 2026-07-30: Schema-14 V4-only work is active on
+  `codex/schema14-v4-only`. It supersedes Schema-13 for any future Mainnet
+  deployment. Only canonical v4 single-hop routes and direct WETH wrapping are
+  permitted; all 0x/provider adapter code and surfaces are removed. Full
+  repository tests, explicit 256-run/depth-128 invariants, and the internal
+  security gate pass. Commit and push the candidate, then run the isolated
+  Schema-14 Testnet rehearsal before any live deployment.
 
-- 2026-07-30: Schema-13 work is active on
-  `codex/schema13-mainnet-canary`. It supersedes Schema-12 for any future
-  Mainnet deployment. Required behavior is launch modes defaulting to Paused,
-  guardian pause-only authority, Timelock-controlled Canary/Public activation,
-  and versioned future-launch-only graduation profiles. The Mainnet canary
-  profile is 0.01 ETH / 0.001 ETH; production is 6 ETH / 0.5 ETH after a DAO
-  proposal. No Mainnet transaction is authorized before all fresh gates pass.
-  Preserve active Schema-12 endurance run `schema12-2h-af43eb3-08` unchanged.
+- 2026-07-30: The hard `0.04707292 ETH` funding gate remains. Complete
+  receipt measurement requires protected production signer/allocation files,
+  three address-control proofs, two-owner Safe signing rehearsal, the exact
+  chain-4663 fork, current bridge estimate, and all required v4 route
+  executions. The Timelock is deployed during the paused protocol deployment;
+  no pre-existing Timelock or provider configuration is required. Do not
+  bridge or deploy from provisional estimates.
 
 - 2026-07-29: exact release
   `60b88549dee05cd3466d1a0fa5a062865d294767` is live and healthy after the
@@ -3101,6 +3141,28 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-30 - Schema-14 V4-only checkpoint
+
+- Branch `codex/schema14-v4-only` removes every external execution adapter and
+  provider path from contracts, keeper, API, UI, active manifests, and release
+  tooling. Route kinds are only v4 single-hop and direct WETH.
+- Schema-14-specific deployment, live verifier, isolated rehearsal, recovery,
+  campaign, endurance, Mainnet fork, bridge, and funding commands are in place.
+  The campaign accepts only a Paused Schema-14 chain-46630 manifest.
+- Official Safe v1.4.1 contracts and runtime hashes are pinned. New protected
+  tooling validates three distinct control proofs, exact 20/20/20/20/20 RDAO
+  allocation, deterministic Safe identity, Safe modules/handler/singleton,
+  two-day Timelock roles, open execution, deployer admin renunciation, and
+  exact postdeployment balances.
+- `pnpm test`, typecheck, lint, script syntax, Anvil smoke, 247 Foundry tests,
+  the 512-wallet/25,000-action simulation, explicit 256-run/depth-128
+  invariants, gitleaks history, dependency audit, EIP-170, and Slither triage
+  pass. One protected Mainnet fork test is intentionally skipped without its
+  production inputs.
+- No fresh Schema-14 Testnet deployment or Mainnet transaction has occurred.
+  The current public Testnet remains the archived Schema-13 deployment until
+  the pushed Schema-14 candidate passes isolated rehearsal and funding.
 
 ### 2026-07-30 - Schema-13 contract and application checkpoint
 
@@ -5314,12 +5376,20 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Supply the real production 2-of-3 Safe, Timelock, signer/allocation files,
-  and protected provider configuration. Run the exact pinned Mainnet fork as
-  locally broadcast transactions, seal every receipt category, rerun the
-  bridge estimate for the calculated amount, and issue the hard funding
-  report. Do not bridge or deploy unless it passes without reducing reserves,
-  headroom, or lifecycle coverage.
+- Commit and push the exact Schema-14 candidate, run the isolated chain-46630
+  rehearsal, deploy fresh Paused Schema-14 Testnet contracts, rebuild an empty
+  database, then repeat recovery, two-hour endurance, reconciliation, and
+  browser acceptance. Any contract change restarts these gates.
+- Supply protected `guardian-signers.json` and `rdao-allocation.json` with four
+  recipient addresses, three unique Safe owners including the deployer, and
+  domain-separated address-control signatures. Complete a two-owner Safe
+  signing rehearsal. Do not place signatures, wallet material, or protected
+  files in Git or public evidence.
+- Run the exact pinned Mainnet fork as locally broadcast transactions, verify
+  all required direct v4 routes without synthetic liquidity, seal every
+  receipt category, rerun the non-broadcast bridge estimate for the calculated
+  amount, and issue the hard funding report. Do not bridge or deploy unless it
+  passes without reducing reserves, headroom, or lifecycle coverage.
 
 - Commit, push, reproducibly build, and promote the per-launch oracle-refresh
   and canonical keeper-conversion recovery. Resume

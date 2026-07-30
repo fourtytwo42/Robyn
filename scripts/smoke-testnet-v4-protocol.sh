@@ -125,68 +125,35 @@ chain_deadline() {
   timestamp="$(cast block latest --field timestamp --rpc-url "$rpc_url")"
   printf '%s\n' "$(( timestamp + 600 ))"
 }
-wrapped_native="$(jq -er '.contracts.wrappedNative' "$manifest")"
 route_results='[]'
-while IFS=$'\t' read -r symbol asset route_kind adapter; do
+while IFS=$'\t' read -r symbol asset; do
   status="$(cast call "$router" \
-    'executionRouteStatus(address)((uint8,address,address,uint128,uint128,bytes32,bytes32,bytes32,bytes32,bool,bool,bool,bytes32))' \
+    'executionRouteStatus(address)((uint8,uint128,uint128,bytes32,bool,bool,bool,bytes32))' \
     "$asset" --rpc-url "$rpc_url" --json)"
-  [[ "$(jq -r '.[0][11]' <<<"$status")" == "true" ]] || {
+  [[ "$(jq -r '.[0][6]' <<<"$status")" == "true" ]] || {
     echo "$symbol execution route is not ready" >&2
     exit 1
   }
 
   native_in=1000000000
   before="$(cast call "$asset" 'balanceOf(address)(uint256)' "$account" --rpc-url "$rpc_url" | quote_first)"
-  execution_data='0x'
-  if [[ "$route_kind" == "pinned-adapter" ]]; then
-    quote_id="$(cast keccak "schema12-smoke-buy-$symbol-$native_in")"
-    provider_quote="$(cast call "$adapter" \
-      'quote(address,address,uint256,bytes32)(uint256,bytes)' \
-      "$wrapped_native" "$asset" "$native_in" "$quote_id" --rpc-url "$rpc_url" --json)"
-    quote="$(jq -r '.[0][0]' <<<"$provider_quote")"
-    execution_data="$(jq -r '.[0][1]' <<<"$provider_quote")"
-  else
-    quote="$(cast call "$router" 'quoteNativeToAsset(address,uint128)(uint256,uint256)' \
-      "$asset" "$native_in" --rpc-url "$rpc_url" | quote_first)"
-  fi
+  quote="$(cast call "$router" 'quoteNativeToAsset(address,uint128)(uint256,uint256)' \
+    "$asset" "$native_in" --rpc-url "$rpc_url" | quote_first)"
   minimum="$(minimum_99 "$quote")"
   deadline="$(chain_deadline)"
-  if [[ "$route_kind" == "pinned-adapter" ]]; then
-    buy_tx="$(send "$router" \
-      'swapExactNativeForAssetWithData(address,uint256,address,uint256,bytes)' \
-      "$asset" "$minimum" "$account" "$deadline" "$execution_data" --value "$native_in")"
-  else
-    buy_tx="$(send "$router" 'swapExactNativeForAsset(address,uint256,address,uint256)' \
-      "$asset" "$minimum" "$account" "$deadline" --value "$native_in")"
-  fi
+  buy_tx="$(send "$router" 'swapExactNativeForAsset(address,uint256,address,uint256)' \
+    "$asset" "$minimum" "$account" "$deadline" --value "$native_in")"
   after="$(cast call "$asset" 'balanceOf(address)(uint256)' "$account" --rpc-url "$rpc_url" | quote_first)"
   acquired="$(node -e 'console.log((BigInt(process.argv[2])-BigInt(process.argv[1])).toString())' "$before" "$after")"
   [[ "$acquired" -ge "$minimum" ]] || { echo "$symbol output delta is below minimum" >&2; exit 1; }
 
   sell_amount="$(node -e 'console.log((BigInt(process.argv[1])/2n).toString())' "$acquired")"
   approve_tx="$(send "$asset" 'approve(address,uint256)' "$router" "$sell_amount")"
-  reverse_execution_data='0x'
-  if [[ "$route_kind" == "pinned-adapter" ]]; then
-    quote_id="$(cast keccak "schema12-smoke-sell-$symbol-$sell_amount")"
-    provider_quote="$(cast call "$adapter" \
-      'quote(address,address,uint256,bytes32)(uint256,bytes)' \
-      "$asset" "$wrapped_native" "$sell_amount" "$quote_id" --rpc-url "$rpc_url" --json)"
-    reverse_quote="$(jq -r '.[0][0]' <<<"$provider_quote")"
-    reverse_execution_data="$(jq -r '.[0][1]' <<<"$provider_quote")"
-  else
-    reverse_quote="$(cast call "$router" 'quoteAssetToNative(address,uint128)(uint256,uint256)' \
-      "$asset" "$sell_amount" --from "$account" --rpc-url "$rpc_url" | quote_first)"
-  fi
+  reverse_quote="$(cast call "$router" 'quoteAssetToNative(address,uint128)(uint256,uint256)' \
+    "$asset" "$sell_amount" --from "$account" --rpc-url "$rpc_url" | quote_first)"
   reverse_minimum="$(minimum_99 "$reverse_quote")"
-  if [[ "$route_kind" == "pinned-adapter" ]]; then
-    sell_tx="$(send "$router" \
-      'swapExactAssetForNativeWithData(address,uint128,uint256,address,uint256,bytes)' \
-      "$asset" "$sell_amount" "$reverse_minimum" "$account" "$deadline" "$reverse_execution_data")"
-  else
-    sell_tx="$(send "$router" 'swapExactAssetForNative(address,uint128,uint256,address,uint256)' \
-      "$asset" "$sell_amount" "$reverse_minimum" "$account" "$deadline")"
-  fi
+  sell_tx="$(send "$router" 'swapExactAssetForNative(address,uint128,uint256,address,uint256)' \
+    "$asset" "$sell_amount" "$reverse_minimum" "$account" "$deadline")"
   allowance="$(cast call "$asset" 'allowance(address,address)(uint256)' \
     "$account" "$router" --rpc-url "$rpc_url" | quote_first)"
   [[ "$allowance" == "0" ]] || { echo "$symbol allowance was not fully consumed" >&2; exit 1; }
@@ -198,7 +165,7 @@ while IFS=$'\t' read -r symbol asset route_kind adapter; do
       nativeToAsset:$nativeToAsset,approval:$approval,assetToNative:$assetToNative
     }}]' <<<"$route_results")"
 done < <(
-  jq -r '.assetRoutes[] | [.symbol,.address,(.routeKind // "canonical-v4-single-hop"),(.adapter // "")] | @tsv' \
+  jq -r '.assetRoutes[] | [.symbol,.address] | @tsv' \
     "$manifest"
 )
 

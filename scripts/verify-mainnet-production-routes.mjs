@@ -45,13 +45,6 @@ const tokenAbi = parseAbi([
   "function symbol() view returns (string)",
   "function decimals() view returns (uint8)",
 ]);
-const safeAbi = parseAbi([
-  "function getThreshold() view returns (uint256)",
-  "function getOwners() view returns (address[])",
-]);
-const timelockAbi = parseAbi([
-  "function getMinDelay() view returns (uint256)",
-]);
 const quoterAbi = [
   {
     type: "function",
@@ -255,62 +248,6 @@ for (const asset of intendedMainnetAssets(config, supportPolicy)) {
       passed: wethMatches,
     };
     if (!wethMatches) assetFailures.push("WETH address does not match the venue");
-  } else if (asset.executionClass === "pinned-execution-adapter") {
-    const apiKey = process.env.ROBYN_ZERO_EX_API_KEY;
-    const taker = process.env.ROBYN_MAINNET_REHEARSAL_TAKER;
-    if (!apiKey || !taker) {
-      assetFailures.push("protected 0x credentials or rehearsal taker are not configured");
-    } else {
-      for (const [direction, sellToken, buyToken, sellAmount] of [
-        ["nativeToAsset", config.venue.weth.address, asset.address, route.nativeQuoteProbe],
-        ["assetToNative", asset.address, config.venue.weth.address, route.assetQuoteProbe],
-      ]) {
-        try {
-          const url = new URL(config.provider.quoteEndpoint);
-          url.search = new URLSearchParams({
-            chainId: "4663",
-            sellToken,
-            buyToken,
-            sellAmount,
-            taker,
-            recipient: taker,
-            slippageBps: String(config.provider.maximumSlippageBps),
-          }).toString();
-          const response = await fetch(url, {
-            headers: {
-              "0x-api-key": apiKey,
-              "0x-version": config.provider.apiVersion,
-              accept: "application/json",
-            },
-            signal: AbortSignal.timeout(20_000),
-          });
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const payload = await response.json();
-          const amount = BigInt(payload.buyAmount ?? 0);
-          const minimum = BigInt(payload.minBuyAmount ?? 0);
-          const target = getAddress(payload.transaction?.to ?? "");
-          const calldata = payload.transaction?.data;
-          const passed =
-            payload.liquidityAvailable !== false &&
-            amount > 0n &&
-            minimum > 0n &&
-            minimum <= amount &&
-            /^0x[0-9a-fA-F]{8,}$/.test(calldata ?? "");
-          quotes[direction] = {
-            amount: amount.toString(),
-            minimum: minimum.toString(),
-            allowanceTarget: target,
-            selector: passed ? calldata.slice(0, 10) : null,
-            passed,
-          };
-          if (!passed) assetFailures.push(`${direction} provider quote is invalid`);
-        } catch (error) {
-          quotes[direction] = { passed: false, error: error.message };
-          assetFailures.push(`${direction} provider quote failed`);
-        }
-      }
-    }
-    assetFailures.push("independent onchain price guard is not pinned");
   } else {
     assetFailures.push(`unsupported execution class ${asset.executionClass}`);
   }
@@ -335,91 +272,17 @@ for (const asset of intendedMainnetAssets(config, supportPolicy)) {
   });
 }
 
-const treasury = process.env.ROBYN_MAINNET_TREASURY;
-if (!treasury) failures.push("ROBYN_MAINNET_TREASURY is not configured");
-const guardian = process.env.ROBYN_MAINNET_GUARDIAN;
-if (!guardian) failures.push("ROBYN_MAINNET_GUARDIAN is not configured");
 const guardianSignersPath = process.env.ROBYN_MAINNET_GUARDIAN_SIGNERS;
 if (!guardianSignersPath)
   failures.push("ROBYN_MAINNET_GUARDIAN_SIGNERS is not configured");
 const allocationPath = process.env.ROBYN_MAINNET_RDAO_ALLOCATION;
 if (!allocationPath) failures.push("ROBYN_MAINNET_RDAO_ALLOCATION is not configured");
-if (!process.env.ROBYN_ZERO_EX_API_KEY) {
-  failures.push("protected 0x commercial credentials are not configured");
-}
 
 const roleConfiguration = {
-  treasuryConfigured: Boolean(treasury),
-  treasuryIsTimelock: false,
-  guardianConfigured: Boolean(guardian),
-  guardianIsTwoOfThreeSafe: false,
   guardianSignersConfigured: Boolean(guardianSignersPath),
   daoAllocationConfigured: Boolean(allocationPath),
   daoAllocationValid: false,
-  zeroExCommercialAccessConfigured: Boolean(process.env.ROBYN_ZERO_EX_API_KEY),
 };
-if (treasury) {
-  try {
-    const treasuryAddress = getAddress(treasury);
-    const code = await client.getCode({ address: treasuryAddress, blockNumber });
-    if (!code || code === "0x") throw new Error("treasury has no runtime code");
-    const delay = await client.readContract({
-      address: treasuryAddress,
-      abi: timelockAbi,
-      functionName: "getMinDelay",
-      blockNumber,
-    });
-    roleConfiguration.treasuryIsTimelock =
-      delay === BigInt(config.governance.timelockSeconds);
-    if (!roleConfiguration.treasuryIsTimelock) {
-      failures.push("treasury is not the production-delay Timelock");
-    }
-  } catch (error) {
-    failures.push(`treasury verification failed: ${error.shortMessage ?? error.message}`);
-  }
-}
-if (guardian && guardianSignersPath) {
-  try {
-    const guardianAddress = getAddress(guardian);
-    const signerDocument = JSON.parse(
-      await readFile(resolve(guardianSignersPath), "utf8"),
-    );
-    const expectedOwners = (Array.isArray(signerDocument)
-      ? signerDocument
-      : signerDocument.signers
-    ).map((owner) => getAddress(owner));
-    if (
-      expectedOwners.length !== 3 ||
-      new Set(expectedOwners.map((owner) => owner.toLowerCase())).size !== 3
-    ) {
-      throw new Error("guardian signer file must contain three unique addresses");
-    }
-    const [threshold, owners] = await Promise.all([
-      client.readContract({
-        address: guardianAddress,
-        abi: safeAbi,
-        functionName: "getThreshold",
-        blockNumber,
-      }),
-      client.readContract({
-        address: guardianAddress,
-        abi: safeAbi,
-        functionName: "getOwners",
-        blockNumber,
-      }),
-    ]);
-    const actual = new Set(owners.map((owner) => owner.toLowerCase()));
-    roleConfiguration.guardianIsTwoOfThreeSafe =
-      threshold === 2n &&
-      owners.length === 3 &&
-      expectedOwners.every((owner) => actual.has(owner.toLowerCase()));
-    if (!roleConfiguration.guardianIsTwoOfThreeSafe) {
-      failures.push("guardian is not the declared 2-of-3 Safe");
-    }
-  } catch (error) {
-    failures.push(`guardian verification failed: ${error.shortMessage ?? error.message}`);
-  }
-}
 if (allocationPath) {
   try {
     const allocation = JSON.parse(await readFile(resolve(allocationPath), "utf8"));
@@ -427,16 +290,16 @@ if (allocationPath) {
     const accounts = entries.map((entry) => entry.account.toLowerCase());
     roleConfiguration.daoAllocationValid =
       allocation.schemaVersion === 1 &&
-      entries.length > 0 &&
+      entries.length === 5 &&
       new Set(accounts).size === entries.length &&
+      entries.filter((entry) => entry.account === "timelock").length === 1 &&
       entries.every(
         (entry) =>
           Number.isInteger(entry.shareBps) &&
-          entry.shareBps > 0 &&
-          entry.shareBps <= 10_000 &&
+          entry.shareBps === 2_000 &&
           typeof entry.purpose === "string" &&
           entry.purpose.length > 0 &&
-          (["timelock", "deployer"].includes(entry.account) ||
+          (entry.account === "timelock" ||
             /^0x[0-9a-fA-F]{40}$/.test(entry.account)),
       ) &&
       entries.reduce((sum, entry) => sum + entry.shareBps, 0) === 10_000;
@@ -448,7 +311,7 @@ if (allocationPath) {
   }
 }
 const report = {
-  schemaVersion: 12,
+  schemaVersion: 14,
   checkedAt: new Date().toISOString(),
   chainId,
   blockNumber: blockNumber.toString(),

@@ -145,26 +145,13 @@ contract RobynNativeBasketVaultV2 is ReentrancyGuard {
         nonReentrant
         returns (uint256 actualOutput)
     {
-        return _convertLeg(index, amount, minimumOutput, deadline, bytes(""));
+        return _convertLeg(index, amount, minimumOutput, deadline);
     }
 
-    function convertLegWithData(
-        uint256 index,
-        uint256 amount,
-        uint256 minimumOutput,
-        uint256 deadline,
-        bytes calldata executionData
-    ) external nonReentrant returns (uint256 actualOutput) {
-        return _convertLeg(index, amount, minimumOutput, deadline, executionData);
-    }
-
-    function _convertLeg(
-        uint256 index,
-        uint256 amount,
-        uint256 minimumOutput,
-        uint256 deadline,
-        bytes memory executionData
-    ) private returns (uint256 actualOutput) {
+    function _convertLeg(uint256 index, uint256 amount, uint256 minimumOutput, uint256 deadline)
+        private
+        returns (uint256 actualOutput)
+    {
         if (address(launchToken) == address(0)) revert NotBound();
         _validateLeg(index);
         if (amount == 0 || amount > type(uint128).max || minimumOutput == 0) {
@@ -182,16 +169,9 @@ contract RobynNativeBasketVaultV2 is ReentrancyGuard {
         if (selected.pendingNative == 0) selected.pendingSince = 0;
         totalNativeConsumed += amount;
         uint256 rewardBefore = selected.asset.balanceOf(address(this));
-        uint256 reported;
-        if (executionData.length == 0) {
-            reported = assetRouter.swapExactNativeForAsset{ value: amount }(
-                address(selected.asset), minimumOutput, address(this), deadline
-            );
-        } else {
-            reported = assetRouter.swapExactNativeForAssetWithData{ value: amount }(
-                address(selected.asset), minimumOutput, address(this), deadline, executionData
-            );
-        }
+        uint256 reported = assetRouter.swapExactNativeForAsset{ value: amount }(
+            address(selected.asset), minimumOutput, address(this), deadline
+        );
         actualOutput = selected.asset.balanceOf(address(this)) - rewardBefore;
         if (reported != actualOutput || actualOutput < minimumOutput) {
             revert InsufficientOutput(minimumOutput, actualOutput);

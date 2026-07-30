@@ -17,13 +17,13 @@ function run(root, command, extra) {
       script,
       command,
       "--release-id",
-      "schema13-test",
+      "schema14-test",
       "--phase",
       "paused-deploy",
       "--chain-id",
       "4663",
       "--idempotency-key",
-      "schema13:deploy:1",
+      "schema14:deploy:1",
       ...extra,
     ],
     {
@@ -42,7 +42,7 @@ test("records one intent and receipt without allowing replay", async () => {
       "--calldata-hash",
       hash,
       "--expected-effect",
-      "Deploy frozen Schema-13 stack in Paused mode",
+      "Deploy frozen Schema-14 stack in Paused mode",
     ]);
     assert.equal(begin.status, 0, begin.stderr);
     const duplicate = run(root, "begin", [
@@ -80,7 +80,7 @@ test("records one intent and receipt without allowing replay", async () => {
     assert.match(duplicateReceipt.stderr, /receipt_already_recorded/);
     const lines = (
       await readFile(
-        path.join(root, "schema13-test", "transactions.jsonl"),
+        path.join(root, "schema14-test", "transactions.jsonl"),
         "utf8",
       )
     )
@@ -104,13 +104,13 @@ test("rejects unsupported chains and secret-like text", async () => {
         script,
         "begin",
         "--release-id",
-        "schema13-test",
+        "schema14-test",
         "--phase",
         "bridge",
         "--chain-id",
         "46630",
         "--idempotency-key",
-        "schema13:bridge:1",
+        "schema14:bridge:1",
         "--nonce",
         "1",
         "--calldata-hash",

@@ -98,15 +98,14 @@ The only unguarded cross-function observer is the read-only
 or extract principal. The security gate accepts only this exact call graph and
 continues to fail on any other `reentrancy-eth` result.
 
-Schema-12 adds two narrowly reviewed balance-delta call graphs. The asset
-router transfers the exact caller-supplied input to a runtime-hash-pinned
-adapter, measures the returned token balance, validates the adapter report and
-independent price guard, and only then forwards output. The basket vault
-debits the selected pending-native liability before calling the router,
-measures actual reward-token output, and records the conversion only after the
-launch token accepts the measured deposit. Every state-changing entrypoint in
-both contracts uses `nonReentrant`; failed adapter, guard, recipient, or reward
-calls revert the complete transaction.
+Schema-14 restricts basket execution to verified Uniswap v4 single-hop routes
+and direct native/WETH wrapping. The router exposes no arbitrary target,
+external execution bytes, or adapter configuration. The basket vault debits
+the selected pending-native liability before calling the router, measures
+actual reward-token output, and records the conversion only after the launch
+token accepts the measured deposit. Every state-changing entrypoint in both
+contracts uses `nonReentrant`; failed swaps, recipients, or reward calls revert
+the complete transaction.
 
 Slither reports these measured balance deltas as `reentrancy-balance` and the
 vault's value-bearing router call as `reentrancy-eth`. It also reports the

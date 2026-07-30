@@ -2,15 +2,15 @@
 set -euo pipefail
 
 [[ "${EUID}" -eq 0 ]] || { echo "run as root" >&2; exit 1; }
-run_id="${1:?usage: schema12-recovery-gate.sh RUN_ID}"
+run_id="${1:?usage: schema14-recovery-gate.sh RUN_ID}"
 [[ "${run_id}" =~ ^[a-z0-9][a-z0-9-]{2,63}$ ]]
 release="$(readlink -f /opt/robyn/testnet-current)"
 [[ "${release}" == /opt/robyn/testnet-releases/* ]]
 evidence="/var/lib/robyn/testnet-recovery/${run_id}"
 backup_root="/var/backups/robyn"
-work="$(mktemp -d /var/tmp/robyn-schema12-recovery.XXXXXX)"
-database_restore_dump="$(mktemp /var/tmp/robyn-schema12-database.XXXXXX)"
-restore_db="robyn_schema12_restore_$(date -u +%Y%m%d%H%M%S)_${RANDOM}"
+work="$(mktemp -d /var/tmp/robyn-schema14-recovery.XXXXXX)"
+database_restore_dump="$(mktemp /var/tmp/robyn-schema14-database.XXXXXX)"
+restore_db="robyn_schema14_restore_$(date -u +%Y%m%d%H%M%S)_${RANDOM}"
 redis_pid=""
 minio_pid=""
 ipfs_pid=""
@@ -35,11 +35,11 @@ database="$(
     jq -er \
       '.[] | select(.name=="robyn-indexer-testnet") | .pm2_env.env.PGDATABASE'
 )"
-[[ "${database}" =~ ^robyn_testnet_schema12_[A-Za-z0-9_]+$ ]] || {
-  echo "refusing non-schema-12 active database: ${database}" >&2
+[[ "${database}" =~ ^robyn_testnet_schema14_[A-Za-z0-9_]+$ ]] || {
+  echo "refusing non-schema-14 active database: ${database}" >&2
   exit 1
 }
-jq -e '.schemaVersion == 12 and .chainId == 46630' \
+jq -e '.schemaVersion == 14 and .chainId == 46630' \
   "${release}/deployments/46630-v4.json" >/dev/null
 
 resume_writers() {
@@ -229,7 +229,7 @@ wait_healthy backup-resumed
 jq -n --arg createdAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg gitSha "${served_sha}" --arg manifestSha256 "${manifest_sha}" --arg database "${database}" --arg databaseFingerprint "${source_fingerprint}" '{schemaVersion:1,createdAt:$createdAt,gitSha:$gitSha,manifestSha256:$manifestSha256,chainId:46630,database:$database,databaseFingerprint:$databaseFingerprint,secretsIncluded:false}' >"${snapshot}/manifest.json"
 (cd "${snapshot}" && find . -type f -print0 | sort -z | xargs -0 sha256sum >"${work}/snapshot.SHA256SUMS")
 mv "${work}/snapshot.SHA256SUMS" "${snapshot}/SHA256SUMS"
-archive="${backup_root}/schema12-${run_id}.tar.zst"
+archive="${backup_root}/schema14-${run_id}.tar.zst"
 encrypted="${archive}.age"
 tar --zstd -cf "${archive}" -C "${snapshot}" .
 age -r "$(tr -d '\r\n' </etc/robyn/backup-age-recipient.txt)" -o "${encrypted}" "${archive}"
@@ -305,8 +305,8 @@ while IFS=$'\t' read -r cid sha; do
   [[ "${actual}" == "${cid}" ]]
 done <"${restored}/ipfs/pin-artifacts.tsv"
 
-if ! runuser -u hendo420 -- env HOME=/home/hendo420 gh release view schema12-recovery-backups -R fourtytwo42/Robyn >/dev/null 2>&1; then
-  runuser -u hendo420 -- env HOME=/home/hendo420 gh release create schema12-recovery-backups -R fourtytwo42/Robyn --target main --title 'Schema-12 encrypted recovery backups' --notes 'Encrypted testnet recovery artifacts. No secret or recovery identity is included.' >/dev/null
+if ! runuser -u hendo420 -- env HOME=/home/hendo420 gh release view schema14-recovery-backups -R fourtytwo42/Robyn >/dev/null 2>&1; then
+  runuser -u hendo420 -- env HOME=/home/hendo420 gh release create schema14-recovery-backups -R fourtytwo42/Robyn --target main --title 'Schema-14 encrypted recovery backups' --notes 'Encrypted testnet recovery artifacts. No secret or recovery identity is included.' >/dev/null
 fi
 upload_encrypted="${work}/$(basename "${encrypted}")"
 install -o hendo420 -g hendo420 -m 0600 "${encrypted}" "${upload_encrypted}"
@@ -315,7 +315,7 @@ install -o hendo420 -g hendo420 -m 0600 "${encrypted}" "${upload_encrypted}"
   sha256sum "$(basename "${upload_encrypted}")" >"$(basename "${upload_encrypted}").sha256"
 )
 chown hendo420:hendo420 "${upload_encrypted}.sha256"
-runuser -u hendo420 -- env HOME=/home/hendo420 gh release upload schema12-recovery-backups "${upload_encrypted}" "${upload_encrypted}.sha256" -R fourtytwo42/Robyn --clobber >/dev/null
+runuser -u hendo420 -- env HOME=/home/hendo420 gh release upload schema14-recovery-backups "${upload_encrypted}" "${upload_encrypted}.sha256" -R fourtytwo42/Robyn --clobber >/dev/null
 
 # Stop isolated restore services before live one-fault drills.
 kill "${redis_pid}" "${minio_pid}" "${ipfs_pid}" >/dev/null 2>&1 || true

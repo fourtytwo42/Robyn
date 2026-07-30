@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("Schema-13 deployment is fail-closed, Paused, and profile-pinned", async () => {
+test("Schema-14 deployment is fail-closed, Paused, and profile-pinned", async () => {
   const source = await readFile(
-    "scripts/deploy-testnet-schema13-protocol.sh",
+    "scripts/deploy-testnet-schema14-protocol.sh",
     "utf8",
   );
-  assert.match(source, /ROBYN_TESTNET_SCHEMA13_BROADCAST/);
+  assert.match(source, /ROBYN_TESTNET_SCHEMA14_BROADCAST/);
   assert.match(source, /http:\/\/127\.0\.0\.1:18548/);
   assert.match(
     source,
@@ -27,12 +27,17 @@ test("Schema-13 deployment is fail-closed, Paused, and profile-pinned", async ()
     source,
     /graduationProfileVersion\(\)\(uint64\).*awk '\{print \$1\}'/,
   );
-  assert.match(source, /verify-testnet-schema13-deployment\.mjs/);
+  assert.match(source, /verify-testnet-schema14-deployment\.mjs/);
+  assert.match(source, /configureWrappedNativeRoute\(uint128,bool\)/);
+  assert.doesNotMatch(
+    source,
+    /PinnedAdapter|pinned-adapter|configureAdapterRoute|provider|priceGuard/,
+  );
 });
 
-test("Schema-13 verifier checks live mode, roles, and profile", async () => {
+test("Schema-14 verifier checks live mode, roles, and profile", async () => {
   const source = await readFile(
-    "scripts/verify-testnet-schema13-deployment.mjs",
+    "scripts/verify-testnet-schema14-deployment.mjs",
     "utf8",
   );
   assert.match(source, /RobynV4LaunchCoordinatorV6/);
@@ -43,43 +48,43 @@ test("Schema-13 verifier checks live mode, roles, and profile", async () => {
   assert.match(source, /derived actual threshold meets target/);
 });
 
-test("launch receipt decoder supports both archived and Schema-13 events", async () => {
+test("launch receipt decoder supports both archived and Schema-14 events", async () => {
   const source = await readFile("scripts/decode-v4-launch-receipt.mjs", "utf8");
   assert.match(source, /RobynV4LaunchCoordinatorV\[56\]/);
   assert.match(source, /graduationProfileHash/);
 });
 
-test("Schema-13 rehearsal is isolated and emits exact-commit gas evidence", async () => {
+test("Schema-14 rehearsal is isolated and emits exact-commit gas evidence", async () => {
   const source = await readFile(
-    "scripts/rehearse-testnet-schema13-protocol.sh",
+    "scripts/rehearse-testnet-schema14-protocol.sh",
     "utf8",
   );
   assert.match(source, /--fork-url "\$upstream_rpc"/);
   assert.match(source, /--host 127\.0\.0\.1/);
   assert.match(source, /ROBYN_ALLOW_UNLOCKED_REHEARSAL=true/);
-  assert.match(source, /ROBYN_TESTNET_SCHEMA13_BROADCAST=true/);
+  assert.match(source, /ROBYN_TESTNET_SCHEMA14_BROADCAST=true/);
   assert.match(source, /measure-testnet-v4-deployment-gas\.sh/);
 
   assert.match(source, /headroomBps >= 2500/);
   assert.match(source, /\.reserveWei \| tonumber/);
-  assert.match(source, /\(\.transactionCount \| tonumber\) >= 96/);
+  assert.match(source, /\(\.transactionCount \| tonumber\) >= 80/);
   assert.match(source, /liveBroadcast:false/);
   assert.match(source, /rm -rf -- "\$work"/);
 });
 
-test("Testnet release pipeline binds the Schema-13 manifest", async () => {
+test("Testnet release pipeline binds the Schema-14 manifest", async () => {
   const build = await readFile("scripts/build-testnet-release.sh", "utf8");
   const promote = await readFile("scripts/promote-testnet-release.sh", "utf8");
   const verify = await readFile("scripts/verify-testnet-release.sh", "utf8");
-  assert.match(build, /deployments\/46630-v4-schema13\.json/);
+  assert.match(build, /deployments\/46630-v4-schema14\.json/);
   assert.match(
     build,
     /ROBYN_DEPLOYMENT_PATH="\$staging\/\$deployment_manifest"/,
   );
   assert.match(
     promote,
-    /ROBYN_TESTNET_MANIFEST="\$selected\/deployments\/46630-v4-schema13\.json"/,
+    /ROBYN_TESTNET_MANIFEST="\$selected\/deployments\/46630-v4-schema14\.json"/,
   );
-  assert.match(verify, /\.schemaVersion == 13/);
-  assert.match(verify, /verify-testnet-schema13-deployment\.mjs "\$manifest"/);
+  assert.match(verify, /\.schemaVersion == 14/);
+  assert.match(verify, /verify-testnet-schema14-deployment\.mjs "\$manifest"/);
 });

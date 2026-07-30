@@ -29,19 +29,14 @@ export type BasketAsset = {
       | "fixed-testnet"
       | "uniswap-v3"
       | "uniswap-v4"
-      | "wrapped-native"
-      | "pinned-adapter";
+      | "wrapped-native";
     ready: boolean;
     venue: Address | null;
     poolFee: number | null;
     liquidity: string | null;
     reason: string | null;
-    provider?: `0x${string}` | null;
     maximumNativeInput?: string | null;
     maximumAssetInput?: string | null;
-    priceGuardState?: "not-required" | "verified" | "unavailable";
-    adapterRuntimeHash?: `0x${string}` | null;
-    quoteExpiry?: string | null;
     lastSuccessfulExecution?: string | null;
     disabledReason?: string | null;
   };
@@ -527,11 +522,7 @@ function AssetRow({
               ? "Funded mock route"
               : asset.route.kind === "wrapped-native"
                 ? "Direct WETH route"
-                : asset.route.kind === "pinned-adapter"
-                  ? asset.route.priceGuardState === "verified"
-                    ? "Protected provider route"
-                    : "Provider route lacks price guard"
-                  : "Live Uniswap route"
+                : "Live Uniswap v4 route"
             : (asset.route.reason ?? "No route")}
         </span>
       </div>

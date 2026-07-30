@@ -176,19 +176,15 @@ const mockRoutes = assetRoutes.filter(
     route.verification === "robyn-controlled-testnet-dex",
 );
 const v4Routes = assetRoutes.filter(
-  (route) => (route.routeKind ?? "canonical-v4-single-hop") === "canonical-v4-single-hop",
+  (route) => ["uniswap-v4", "canonical-v4-single-hop"].includes(route.routeKind ?? "uniswap-v4"),
 );
 const wrappedNativeRoutes = assetRoutes.filter(
   (route) => route.routeKind === "wrapped-native",
 );
-const pinnedAdapterRoutes = assetRoutes.filter(
-  (route) => route.routeKind === "pinned-adapter",
-);
-check(assetRoutes.length === 11, "all 11 schema-12 candidate routes are frozen");
-check(mockRoutes.length === 11, "all schema-12 Testnet routes are explicitly synthetic");
-check(v4Routes.length === 4, "four canonical-v4 Testnet routes are frozen");
+check(assetRoutes.length === 11, "all 11 schema-14 candidate routes are frozen");
+check(mockRoutes.length === 11, "all schema-14 Testnet routes are explicitly synthetic");
+check(v4Routes.length === 10, "ten Uniswap v4 Testnet routes are frozen");
 check(wrappedNativeRoutes.length === 1, "the direct WETH route is frozen");
-check(pinnedAdapterRoutes.length === 6, "six deterministic pinned-adapter fixtures are frozen");
 check(
   new Set(assetRoutes.map((route) => route.address.toLowerCase())).size === 11,
   "route assets are unique by address",
@@ -205,7 +201,7 @@ for (const route of assetRoutes) {
   check(execution.enabled, `${route.symbol} execution route is enabled`);
   check(execution.runtimeVerified, `${route.symbol} route runtime is verified`);
 
-  if ((route.routeKind ?? "canonical-v4-single-hop") === "canonical-v4-single-hop") {
+  if (["uniswap-v4", "canonical-v4-single-hop"].includes(route.routeKind ?? "uniswap-v4")) {
     const status = await read(contracts.assetRouter, abis.assetRouter, "routeStatus", [asset]);
     check(execution.kind === 1, `${route.symbol} is a canonical-v4 route`);
     check(status.ready, `${route.symbol} v4 route is ready`);
@@ -242,42 +238,8 @@ for (const route of assetRoutes) {
       route.runtimeCodeHash === keccak256(await client.getCode({ address: asset })),
       `${route.symbol} runtime hash matches the manifest`,
     );
-  } else if (route.routeKind === "pinned-adapter") {
-    check(execution.kind === 3, `${route.symbol} is a pinned-adapter route`);
-    check(
-      getAddress(execution.adapter) === getAddress(route.adapter),
-      `${route.symbol} adapter matches the manifest`,
-    );
-    check(
-      getAddress(execution.priceGuard) === getAddress(route.priceGuard),
-      `${route.symbol} price guard matches the manifest`,
-    );
-    check(
-      execution.adapterRuntimeHash === route.adapterRuntimeHash,
-      `${route.symbol} adapter runtime hash is pinned`,
-    );
-    check(
-      execution.priceGuardRuntimeHash === route.priceGuardRuntimeHash,
-      `${route.symbol} price-guard runtime hash is pinned`,
-    );
-    check(
-      execution.maximumNativeInput === BigInt(route.maximumNativeInput),
-      `${route.symbol} native input cap matches the manifest`,
-    );
-    check(
-      execution.maximumAssetInput === BigInt(route.maximumAssetInput),
-      `${route.symbol} asset input cap matches the manifest`,
-    );
-    for (const [label, address, frozenHash] of [
-      ["adapter", getAddress(route.adapter), route.adapterRuntimeHash],
-      ["price guard", getAddress(route.priceGuard), route.priceGuardRuntimeHash],
-    ]) {
-      const code = await client.getCode({ address });
-      check(code && code !== "0x", `${route.symbol} ${label} has runtime code`);
-      check(keccak256(code) === frozenHash, `${route.symbol} ${label} runtime hash matches`);
-    }
   } else {
-    check(false, `${route.symbol} has a recognized schema-12 route kind`);
+    check(false, `${route.symbol} has a recognized schema-14 route kind`);
   }
 }
 check(

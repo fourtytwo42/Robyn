@@ -21,7 +21,7 @@ const supportPolicy = JSON.parse(
   ),
 );
 
-test("the production rehearsal config freezes the schema-13 candidate universe", () => {
+test("the production rehearsal config freezes the schema-14 v4-only candidate universe", () => {
   assert.deepEqual(validateMainnetRehearsalConfig(config, supportPolicy), []);
   const assets = intendedMainnetAssets(config, supportPolicy);
   assert.equal(assets.length, 11);
@@ -35,13 +35,19 @@ test("the production rehearsal config freezes the schema-13 candidate universe",
   );
   assert.equal(
     assets.filter(
-      ({ executionClass }) => executionClass === "pinned-execution-adapter",
+      ({ executionClass }) => executionClass === "canonical-v4-single-hop",
     ).length,
-    4,
+    10,
+  );
+  assert.equal(
+    assets.filter(
+      ({ executionClass }) => executionClass === "direct-native-wrap",
+    ).length,
+    1,
   );
 });
 
-test("the schema-13 config freezes canary, production, and funding safeguards", () => {
+test("the schema-14 config freezes canary, production, and funding safeguards", () => {
   assert.equal(config.market.initialLaunchMode, "Paused");
   assert.deepEqual(config.market.canaryProfile, {
     targetGraduationNative: "10000000000000000",

@@ -264,7 +264,7 @@ test("terminal curve buy is bounded by the immutable market cap", () => {
   );
 });
 
-test("final endurance coverage requires the schema-12 two-hour lifecycle", () => {
+test("final endurance coverage requires the schema-14 two-hour lifecycle", () => {
   const assets = Array.from(
     { length: 11 },
     (_, index) => `0x${index.toString(16).padStart(40, "0")}`,

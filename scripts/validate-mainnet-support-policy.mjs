@@ -11,7 +11,7 @@ const policyPath = resolve(
 const policy = JSON.parse(await readFile(policyPath, "utf8"));
 const failures = [];
 
-if (policy.schemaVersion !== 12) failures.push("schemaVersion must be 12");
+if (policy.schemaVersion !== 14) failures.push("schemaVersion must be 14");
 if (policy.chainId !== 4663) failures.push("chainId must be 4663");
 if (policy.status !== "candidate-only") {
   failures.push("support policy must remain candidate-only before deployment");
@@ -31,6 +31,13 @@ for (const candidate of policy.candidates ?? []) {
   if (!execution) {
     failures.push(`${candidate.symbol} has an unknown execution class`);
   }
+  if (
+    !["canonical-v4-single-hop", "direct-native-wrap"].includes(
+      candidate.executionClass,
+    )
+  ) {
+    failures.push(`${candidate.symbol} has a non-v4 execution class`);
+  }
   if (!/^[1-9][0-9]*$/.test(candidate.maximumNativeInputWei ?? "")) {
     failures.push(`${candidate.symbol} has an invalid maximum input`);
   }
@@ -46,12 +53,6 @@ for (const candidate of policy.candidates ?? []) {
     } catch {
       failures.push(`${candidate.symbol} has an invalid address`);
     }
-  }
-  if (
-    candidate.executionClass === "pinned-execution-adapter" &&
-    execution?.requiresIndependentOnchainPriceGuard !== true
-  ) {
-    failures.push(`${candidate.symbol} is missing the independent price guard gate`);
   }
 }
 
@@ -81,7 +82,7 @@ if (failures.length > 0) {
 
 process.stdout.write(
   `${JSON.stringify({
-    schemaVersion: 12,
+    schemaVersion: 14,
     chainId: policy.chainId,
     candidateCount: seen.size,
     defaultEnabled: policy.activationPolicy.defaultEnabled,

@@ -230,35 +230,15 @@ Recommended flow:
 
 Robinhood's current docs say Stock Tokens are ERC-20s and implement ERC-8056. Corporate actions adjust `uiMultiplier()` rather than rebasing raw balances. Chainlink's stock price already incorporates that multiplier, so price math must not apply it twice.
 
-### 0x Swap API v2
-
-[0x officially supports Robinhood Chain](https://0x.org/post/robinhood-chain) on chain ID `4663`, including same-chain Swap API liquidity and Stock Token RFQ routes. This avoids building our own market-maker network or route optimizer.
-
-The API is off-chain: a keeper requests a firm quote and receives executable `transaction.to`, `transaction.data`, expected buy amount, allowance target and expiry-related execution context. The basket contract then executes the returned calldata.
-
-The [official 0x Foundry example](https://github.com/0xProject/0x-examples/tree/main/swap-v2-with-foundry) confirms a contract wallet can be the taker and call the v2 `AllowanceHolder`. It is explicitly demo code and grants a maximum approval, so it must not be copied unchanged.
-
-Production executor rules:
-
-- `sellToken` must be WETH or USDG configured for the launch.
-- `buyToken` must be one of that launch's immutable basket assets.
-- `sellAmount` may not exceed the asset leg's accrued budget.
-- The quote taker and final recipient must be the per-launch basket contract.
-- `transaction.to` and the allowance spender must match a currently governance-approved 0x entry point returned through an authenticated integration process.
-- Approve only the exact sell amount, then clear the approval after execution.
-- Never approve the 0x Settler. 0x explicitly says approvals belong only on the returned AllowanceHolder or Permit2 target.
-- Record pre/post balances and require received amount to meet the on-chain minimum.
-- Enforce deadline, nonce or quote hash to prevent replay.
-- Compare quote value with Chainlink before the external call.
-- Do not expose an unrestricted target, selector or arbitrary-call function.
-
-Every 0x API request requires an API key. Confirm production quotas, RFQ availability for the initial assets, smart-contract taker support and commercial terms before freezing the design.
-
 ### Direct Uniswap routes
 
-Direct Uniswap v3/v4 execution is reusable for WETH, USDG and crypto assets with a known liquid pool. Use the known router or PoolManager, an on-chain Quoter or TWAP where appropriate, and a hard minimum output.
+Schema-14 supports only direct Uniswap v4 single-hop execution and native/WETH
+wrapping. Use the verified PoolManager, on-chain Quoter, bounded input,
+reference-tick/TWAP protection, and a hard minimum output.
 
-Do not assume every Stock Token has a deep AMM pool. IndexPad's own security notes acknowledge that its inline `USDG/stock` pool assumption may not hold on mainnet. Prefer 0x RFQ for Stock Tokens until pool liquidity is measured and continuously monitored.
+Do not assume every Stock Token has a deep AMM pool. A required asset without a
+qualifying direct v4 pool fails the Mainnet rehearsal. An optional asset remains
+disabled until its direct v4 pool passes the deployment-block checks.
 
 ## Oracle and corporate-action safety
 
@@ -434,7 +414,7 @@ We do not build a bonding curve, ERC-20 factory, Uniswap migration, v4 hook, tra
 1. Check out Alloy at a pinned commit; make its compile and tests reproducible locally.
 2. Request Alloy's claimed audit report and verify scope, commit and auditor.
 3. Fork Robinhood mainnet at a pinned block and verify a contract can hold, transfer and claim each initial Stock Token.
-4. Obtain a 0x API key and execute WETH/USDG to NVDA and SPY quotes with a contract-wallet taker on a fork or controlled mainnet amount.
+4. Execute bounded direct-v4 WETH/native round trips for NVDA and SPY on the pinned fork.
 5. Verify Chainlink feed proxy, heartbeat, sequencer feed and `oraclePaused()` behavior for the initial assets.
 6. Run the Bags smart-contract claimer spike, including `claim(false)`, ownership transfer/renunciation, beacon upgrade monitoring and wrapper `createAndBuy` forwarding.
 
@@ -448,9 +428,8 @@ Build `BasketController` with:
 
 - immutable token addresses and basis-point weights;
 - per-leg accrued sell budgets;
-- exact approvals cleared after use;
-- 0x AllowanceHolder target allowlist;
-- balance-delta and `minBuyAmount` checks;
+- no arbitrary target or execution-calldata entrypoint;
+- direct v4 balance-delta and minimum-output checks;
 - Chainlink and sequencer guards;
 - asset-specific failure isolation;
 - event-complete accounting.

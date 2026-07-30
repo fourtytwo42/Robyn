@@ -2,13 +2,13 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-port="${ROBYN_TESTNET_SCHEMA13_REHEARSAL_PORT:-18546}"
+port="${ROBYN_TESTNET_SCHEMA14_REHEARSAL_PORT:-18546}"
 local_rpc="http://127.0.0.1:${port}"
 upstream_rpc="${ROBYN_TESTNET_RPC_URL:-http://127.0.0.1:18548}"
-evidence_root="${ROBYN_SCHEMA13_REHEARSAL_EVIDENCE_ROOT:-/home/hendo420/robyn-evidence/schema13-mainnet-go/testnet-rehearsal}"
-run_id="${ROBYN_SCHEMA13_REHEARSAL_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
+evidence_root="${ROBYN_SCHEMA14_REHEARSAL_EVIDENCE_ROOT:-/home/hendo420/robyn-evidence/schema14-mainnet-go/testnet-rehearsal}"
+run_id="${ROBYN_SCHEMA14_REHEARSAL_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
 output="${evidence_root}/${run_id}"
-work="$(mktemp -d /tmp/robyn-schema13-rehearsal.XXXXXX)"
+work="$(mktemp -d /tmp/robyn-schema14-rehearsal.XXXXXX)"
 export PATH="$HOME/.foundry/bin:$PATH"
 cd "$repo_root"
 
@@ -18,7 +18,7 @@ cleanup() {
     wait "$anvil_pid" >/dev/null 2>&1 || true
   fi
   case "$work" in
-    /tmp/robyn-schema13-rehearsal.*) rm -rf -- "$work" ;;
+    /tmp/robyn-schema14-rehearsal.*) rm -rf -- "$work" ;;
     *) echo "Refusing unsafe rehearsal cleanup path: $work" >&2; exit 98 ;;
   esac
 }
@@ -29,20 +29,20 @@ trap cleanup EXIT
   exit 1
 }
 [[ -z "$(git status --porcelain)" ]] || {
-  echo "Schema-13 rehearsal requires a clean checkout" >&2
+  echo "Schema-14 rehearsal requires a clean checkout" >&2
   exit 1
 }
 git_sha="$(git rev-parse HEAD)"
 [[ "$(git rev-parse '@{u}')" == "$git_sha" ]] || {
-  echo "Schema-13 rehearsal requires a pushed commit" >&2
+  echo "Schema-14 rehearsal requires a pushed commit" >&2
   exit 1
 }
 [[ "$(cast chain-id --rpc-url "$upstream_rpc")" == "46630" ]] || {
-  echo "Schema-13 rehearsal upstream must be chain 46630" >&2
+  echo "Schema-14 rehearsal upstream must be chain 46630" >&2
   exit 1
 }
 if cast chain-id --rpc-url "$local_rpc" >/dev/null 2>&1; then
-  echo "Schema-13 rehearsal port ${port} is already in use" >&2
+  echo "Schema-14 rehearsal port ${port} is already in use" >&2
   exit 1
 fi
 
@@ -67,33 +67,33 @@ done
 
 deployer="$(cast rpc eth_accounts --rpc-url "$local_rpc" | jq -er '.[0]')"
 guardian="$(cast rpc eth_accounts --rpc-url "$local_rpc" | jq -er '.[1]')"
-manifest="$output/46630-v4-schema13.rehearsal.json"
-gas_evidence="$output/46630-v4-schema13.gas.json"
+manifest="$output/46630-v4-schema14.rehearsal.json"
+gas_evidence="$output/46630-v4-schema14.gas.json"
 
 ROBYN_TESTNET_RPC_URL="$local_rpc" \
-ROBYN_TESTNET_SCHEMA13_MANIFEST="$manifest" \
+ROBYN_TESTNET_SCHEMA14_MANIFEST="$manifest" \
 ROBYN_TESTNET_REHEARSAL=true \
 ROBYN_ALLOW_UNLOCKED_REHEARSAL=true \
 ROBYN_TESTNET_REHEARSAL_DEPLOYER="$deployer" \
 ROBYN_GUARDIAN_ADDRESS="$guardian" \
-ROBYN_TESTNET_SCHEMA13_BROADCAST=true \
-ROBYN_TESTNET_SCHEMA13_VERIFICATION_REPORT="$output/verification.json" \
-  scripts/deploy-testnet-schema13-protocol.sh >"$output/deploy.log"
+ROBYN_TESTNET_SCHEMA14_BROADCAST=true \
+ROBYN_TESTNET_SCHEMA14_VERIFICATION_REPORT="$output/verification.json" \
+  scripts/deploy-testnet-schema14-protocol.sh >"$output/deploy.log"
 
 ROBYN_TESTNET_RPC_URL="$local_rpc" \
 ROBYN_TESTNET_PRICING_RPC_URL="$upstream_rpc" \
 ROBYN_TESTNET_V4_PROTOCOL_MANIFEST="$manifest" \
 ROBYN_TESTNET_V4_GAS_EVIDENCE="$gas_evidence" \
   scripts/measure-testnet-v4-deployment-gas.sh >"$output/gas.log"
-# Schema-13 has no genesis launch transaction: the complete deployment must
-# remain Paused, so its manifest has 96 transactions instead of Schema-12's 97.
+# Schema-14 has no genesis launch transaction: the complete deployment must
+# remain Paused. The exact transaction count is measured from the rehearsal.
 
 jq -e \
   --arg gitSha "$git_sha" \
   '.gitCommit == $gitSha
    and .headroomBps >= 2500
    and (.reserveWei | tonumber) >= 1500000000000000
-   and (.transactionCount | tonumber) >= 96
+   and (.transactionCount | tonumber) >= 80
    and .sufficientBalance == true' \
   "$gas_evidence" >/dev/null
 
@@ -122,4 +122,4 @@ jq -n \
   }' >"$output/summary.json"
 
 (cd "$output" && sha256sum ./* >SHA256SUMS)
-printf 'schema13TestnetRehearsal=passed\nsummary=%s\n' "$output/summary.json"
+printf 'schema14TestnetRehearsal=passed\nsummary=%s\n' "$output/summary.json"

@@ -73,24 +73,20 @@ export function basketConversionActorIndex(launchIndex, legIndex) {
 }
 
 export function assertSecurityRemediationManifest(manifest) {
-  if (
-    ![12, 13].includes(manifest?.schemaVersion) ||
-    manifest?.chainId !== 46630
-  ) {
+  if (manifest?.schemaVersion !== 14 || manifest?.chainId !== 46630) {
     throw new Error(
-      "Campaign requires a schema-12 or schema-13 security-remediated chain-46630 manifest",
+      "Campaign requires a schema-14 v4-only chain-46630 manifest",
     );
   }
   if (
-    manifest.schemaVersion === 13 &&
-    (manifest.launchControl?.initialMode !== "Paused" ||
-      manifest.graduationProfiles?.current?.targetGraduationNative !==
-        "10000000000000000" ||
-      manifest.graduationProfiles?.current?.maximumCurvePurchase !==
-        "1000000000000000")
+    manifest.launchControl?.initialMode !== "Paused" ||
+    manifest.graduationProfiles?.current?.targetGraduationNative !==
+      "10000000000000000" ||
+    manifest.graduationProfiles?.current?.maximumCurvePurchase !==
+      "1000000000000000"
   ) {
     throw new Error(
-      "Schema-13 campaign manifest must freeze the Paused canary profile",
+      "Schema-14 campaign manifest must freeze the Paused canary profile",
     );
   }
   if (
@@ -141,19 +137,17 @@ export function launchBasketPlan(manifest) {
     throw new Error("Campaign route catalog contains duplicate addresses");
   }
   const routeKinds = manifest.assetRoutes.map(
-    (route) => route.routeKind ?? "canonical-v4-single-hop",
+    (route) => route.routeKind ?? "uniswap-v4",
   );
   if (
-    routeKinds.filter((kind) => kind === "canonical-v4-single-hop").length !==
-      4 ||
-    routeKinds.filter((kind) => kind === "wrapped-native").length !== 1 ||
-    routeKinds.filter((kind) => kind === "pinned-adapter").length !== 6
+    routeKinds.filter((kind) =>
+      ["uniswap-v4", "canonical-v4-single-hop"].includes(kind),
+    ).length !== 10 ||
+    routeKinds.filter((kind) => kind === "wrapped-native").length !== 1
   ) {
-    throw new Error(
-      "Campaign requires four v4, one WETH, and six pinned-adapter routes",
-    );
+    throw new Error("Campaign requires ten v4 routes and one WETH route");
   }
-  // Eight three-leg launches still exercise 24 conversions, but schema-12 has
+  // Eight three-leg launches still exercise 24 conversions, but schema-14 has
   // eleven individually qualified assets. Cycle deterministically after every
   // asset has appeared once so every route class is covered without inventing
   // extra assets.

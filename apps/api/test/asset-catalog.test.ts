@@ -111,13 +111,8 @@ describe("AssetCatalogService", () => {
         if (functionName === "executionRouteStatus") {
           return {
             kind: 1,
-            adapter: native,
-            priceGuard: native,
             maximumNativeInput: 1_000_000n,
             maximumAssetInput: 2n ** 128n - 1n,
-            provider: keccak256(stringToHex("UNISWAP_V4")),
-            adapterRuntimeHash: `0x${"0".repeat(64)}`,
-            priceGuardRuntimeHash: `0x${"0".repeat(64)}`,
             disabledReason: `0x${"0".repeat(64)}`,
             enabled: true,
             runtimeVerified: true,
@@ -167,78 +162,6 @@ describe("AssetCatalogService", () => {
     await expect(service.quote(asset, 10n)).resolves.toBe(25n);
   });
 
-  it("exposes pinned-provider availability and safety metadata", async () => {
-    const adapter = "0x0000000000000000000000000000000000000005" as Address;
-    const guard = "0x0000000000000000000000000000000000000006" as Address;
-    const adapterHash = `0x${"a".repeat(64)}` as const;
-    const client = {
-      getCode: async () => "0x01",
-      readContract: async ({ functionName }: { functionName: string }) => {
-        if (functionName === "name") return "Optional asset";
-        if (functionName === "symbol") return "OPT";
-        if (functionName === "decimals") return 18;
-        if (functionName === "totalSupply") return 100n;
-        if (functionName === "executionRouteStatus") {
-          return {
-            kind: 3,
-            adapter,
-            priceGuard: guard,
-            maximumNativeInput: 5_000n,
-            maximumAssetInput: 9_000n,
-            provider: keccak256(stringToHex("ZERO_EX_ALLOWANCE_HOLDER")),
-            adapterRuntimeHash: adapterHash,
-            priceGuardRuntimeHash: `0x${"b".repeat(64)}`,
-            disabledReason: `0x${"0".repeat(64)}`,
-            enabled: true,
-            runtimeVerified: true,
-            ready: true,
-            reason: `0x${"0".repeat(64)}`,
-          };
-        }
-        if (functionName === "routeStatus") {
-          return {
-            poolId: `0x${"0".repeat(64)}`,
-            liquidity: 0n,
-            minimumLiquidity: 0n,
-            maximumNativeInput: 5_000n,
-            spotTick: 0,
-            referenceTick: 0,
-            maximumReferenceTickDeviation: 0,
-            enforceReferencePrice: false,
-            verificationClass: `0x${"0".repeat(64)}`,
-            fee: 0,
-            tickSpacing: 0,
-            hooks: native,
-            ready: true,
-            reason: `0x${"0".repeat(64)}`,
-          };
-        }
-        throw new Error(`unexpected ${functionName}`);
-      },
-    } as unknown as PublicClient;
-    const service = new AssetCatalogService(
-      client,
-      46630,
-      native,
-      registry,
-      manifest(),
-    );
-
-    await expect(service.resolve(asset)).resolves.toMatchObject({
-      route: {
-        kind: "pinned-adapter",
-        ready: true,
-        venue: adapter,
-        maximumNativeInput: "5000",
-        maximumAssetInput: "9000",
-        priceGuardState: "verified",
-        adapterRuntimeHash: adapterHash,
-        quoteExpiry: null,
-        lastSuccessfulExecution: null,
-      },
-    });
-  });
-
   it("classifies an unknown contract as unverified even when its symbol spoofs a curated asset", async () => {
     const unknown = "0x0000000000000000000000000000000000000004" as Address;
     const client = {
@@ -251,13 +174,8 @@ describe("AssetCatalogService", () => {
         if (functionName === "executionRouteStatus") {
           return {
             kind: 0,
-            adapter: native,
-            priceGuard: native,
             maximumNativeInput: 0n,
             maximumAssetInput: 0n,
-            provider: `0x${"0".repeat(64)}`,
-            adapterRuntimeHash: `0x${"0".repeat(64)}`,
-            priceGuardRuntimeHash: `0x${"0".repeat(64)}`,
             disabledReason: `0x${"0".repeat(64)}`,
             enabled: false,
             runtimeVerified: false,
@@ -306,13 +224,8 @@ describe("AssetCatalogService", () => {
         if (functionName === "executionRouteStatus") {
           return {
             kind: 0,
-            adapter: native,
-            priceGuard: native,
             maximumNativeInput: 0n,
             maximumAssetInput: 0n,
-            provider: `0x${"0".repeat(64)}`,
-            adapterRuntimeHash: `0x${"0".repeat(64)}`,
-            priceGuardRuntimeHash: `0x${"0".repeat(64)}`,
             disabledReason: `0x${"0".repeat(64)}`,
             enabled: false,
             runtimeVerified: false,

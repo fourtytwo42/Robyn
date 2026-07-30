@@ -1700,7 +1700,6 @@ async function conversions() {
   const accounts = loadAccounts();
   const vaultAbi = artifactAbi("RobynNativeBasketVaultV2");
   const assetRouterAbi = artifactAbi("RobynV4AssetRouter");
-  const testnetProviderAdapterAbi = artifactAbi("TestnetPinnedExecutionAdapter");
   const lockerAbi = artifactAbi("RobynV4FeePositionLocker");
   const tokenAbi = artifactAbi("RobynLaunchToken");
   const hookAbi = artifactAbi("RobynV4FeeAndPhaseHook");
@@ -1985,7 +1984,7 @@ async function conversions() {
         const transaction = await publicClient.getTransaction({ hash: existingTransaction.hash });
         const decoded = decodeFunctionData({ abi: vaultAbi, data: transaction.input });
         if (
-          !["convertLeg", "convertLegWithData"].includes(decoded.functionName) ||
+          decoded.functionName !== "convertLeg" ||
           !decoded.args ||
           decoded.args.length < 3
         ) {
@@ -2071,38 +2070,18 @@ async function conversions() {
       let amount = before.pendingNative < status.maximumNativeInput ? before.pendingNative : status.maximumNativeInput;
       let quoted;
       let minimumOutput;
-      let executionData = "0x";
-      let conversionFunctionName =
-        route.routeKind === "pinned-adapter" ? "convertLegWithData" : "convertLeg";
+      const conversionFunctionName = "convertLeg";
       let conversionArgs;
       for (let attempt = 0; attempt < 16; attempt += 1) {
-        if (route.routeKind === "pinned-adapter") {
-          [quoted, executionData] = await publicClient.readContract({
-            address: route.adapter,
-            abi: testnetProviderAdapterAbi,
-            functionName: "quote",
-            args: [
-              manifest.contracts.wrappedNative,
-              before.asset,
-              amount,
-              keccak256(stringToHex(`${label}-${attempt}-${amount}`)),
-            ],
-          });
-        } else {
-          [quoted] = await publicClient.readContract({
-            address: manifest.contracts.assetRouter,
-            abi: assetRouterAbi,
-            functionName: "quoteNativeToAsset",
-            args: [before.asset, amount],
-          });
-          executionData = "0x";
-        }
+        [quoted] = await publicClient.readContract({
+          address: manifest.contracts.assetRouter,
+          abi: assetRouterAbi,
+          functionName: "quoteNativeToAsset",
+          args: [before.asset, amount],
+        });
         if (quoted === 0n) throw new Error(`Zero basket quote for ${label}`);
         minimumOutput = (quoted * 99n) / 100n || 1n;
-        conversionArgs =
-          conversionFunctionName === "convertLegWithData"
-            ? [BigInt(legIndex), amount, minimumOutput, deadline, executionData]
-            : [BigInt(legIndex), amount, minimumOutput, deadline];
+        conversionArgs = [BigInt(legIndex), amount, minimumOutput, deadline];
         const request = {
           account: account.address,
           to: launch.vault,
@@ -2131,10 +2110,7 @@ async function conversions() {
         }
       }
       if (launch.index === 0 && legIndex === 0) {
-        const rejectionArgs =
-          conversionFunctionName === "convertLegWithData"
-            ? [0n, amount, quoted + 1n, deadline, executionData]
-            : [0n, amount, quoted + 1n, deadline];
+        const rejectionArgs = [0n, amount, quoted + 1n, deadline];
         await expectSimulationFailure(
           state,
           "basket-minimum-output-rejection",
@@ -2195,7 +2171,7 @@ async function conversions() {
     state.conversions.legs.length !== 24 ||
     new Set(state.conversions.legs.map((entry) => entry.asset.toLowerCase())).size !== 11
   ) {
-    throw new Error("Conversions did not exercise all 11 schema-12 basket assets");
+    throw new Error("Conversions did not exercise all 11 schema-14 basket assets");
   }
   const routeReadiness = [];
   for (const route of manifest.assetRoutes) {

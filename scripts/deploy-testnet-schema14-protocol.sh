@@ -6,22 +6,21 @@ rpc_url="${ROBYN_TESTNET_RPC_URL:-http://127.0.0.1:18548}"
 venue_manifest="${ROBYN_TESTNET_V4_MANIFEST:-$repo_root/deployments/46630-uniswap-v4-shared.json}"
 legacy_asset_manifest="${ROBYN_TESTNET_V3_ASSET_MANIFEST:-$repo_root/deployments/46630.json}"
 reuse_routes_manifest="${ROBYN_TESTNET_V4_REUSE_ROUTES_MANIFEST:-}"
-output="${ROBYN_TESTNET_SCHEMA13_MANIFEST:-$repo_root/deployments/46630-v4-schema13.json}"
+output="${ROBYN_TESTNET_SCHEMA14_MANIFEST:-$repo_root/deployments/46630-v4-schema14.json}"
 rehearsal="${ROBYN_TESTNET_REHEARSAL:-false}"
 create2_deployer="0x4e59b44847b379578588920cA78FbF26c0B4956C"
 expected_deployer="0xecc5d6d032ADc9ca9E0F4042128067b8366da17A"
 zero="0x0000000000000000000000000000000000000000"
-zero_bytes32="0x0000000000000000000000000000000000000000000000000000000000000000"
 export PATH="$HOME/.foundry/bin:$PATH"
 cd "$repo_root"
 source "$repo_root/scripts/lib/transaction-nonce.sh"
 
-[[ "${ROBYN_TESTNET_SCHEMA13_BROADCAST:-false}" == "true" ]] || {
-  echo "Set ROBYN_TESTNET_SCHEMA13_BROADCAST=true to authorize Schema-13 protocol deployment" >&2
+[[ "${ROBYN_TESTNET_SCHEMA14_BROADCAST:-false}" == "true" ]] || {
+  echo "Set ROBYN_TESTNET_SCHEMA14_BROADCAST=true to authorize Schema-14 protocol deployment" >&2
   exit 1
 }
 [[ "$(cast chain-id --rpc-url "$rpc_url")" == "46630" ]] || {
-  echo "Refusing Schema-13 protocol deployment outside chain 46630" >&2
+  echo "Refusing Schema-14 protocol deployment outside chain 46630" >&2
   exit 1
 }
 [[ -f "$venue_manifest" ]] || { echo "The reviewed shared-v4 manifest is required" >&2; exit 1; }
@@ -30,7 +29,7 @@ source "$repo_root/scripts/lib/transaction-nonce.sh"
   exit 1
 }
 [[ -z "$reuse_routes_manifest" ]] || {
-  echo "Schema-13 requires fresh route contracts and forbids route reuse" >&2
+  echo "Schema-14 requires fresh route contracts and forbids route reuse" >&2
   exit 1
 }
 
@@ -62,10 +61,10 @@ else
     echo "Real v4 deployment requires a clean exact origin/main commit" >&2
     exit 1
   }
-  [[ "${ROBYN_TESTNET_SCHEMA13_CONFIRM_CHAIN:-}" == "46630" ]] || {
-  # Schema-13 deliberately has no genesis launch transaction because deployment
-  # must finish Paused. Its complete manifest therefore contains 96 transactions.
-    echo "Set ROBYN_TESTNET_SCHEMA13_CONFIRM_CHAIN=46630 for explicit confirmation" >&2
+  [[ "${ROBYN_TESTNET_SCHEMA14_CONFIRM_CHAIN:-}" == "46630" ]] || {
+  # Schema-14 deliberately has no genesis launch transaction because deployment
+  # must finish Paused.
+    echo "Set ROBYN_TESTNET_SCHEMA14_CONFIRM_CHAIN=46630 for explicit confirmation" >&2
     exit 1
   }
   gas_evidence="${ROBYN_TESTNET_V4_GAS_EVIDENCE:-}"
@@ -73,7 +72,7 @@ else
      "$(jq -r '.gitCommit' "$gas_evidence")" == "$(git rev-parse HEAD)" &&
      "$(jq -r '.headroomBps' "$gas_evidence")" -ge 2500 &&
      "$(jq -r '.reserveWei' "$gas_evidence")" -ge 1500000000000000 &&
-     "$(jq -r '.transactionCount' "$gas_evidence")" -ge 96 &&
+     "$(jq -r '.transactionCount' "$gas_evidence")" -ge 80 &&
      "$(jq -r '.sufficientBalance' "$gas_evidence")" == "true" ]] || {
     echo "Exact-commit chain-46630 gas evidence covering all transactions, 25% headroom, and the reserve is required" >&2
     exit 1
@@ -203,7 +202,7 @@ if [[ -n "$reuse_routes_manifest" ]]; then
   [[ "$(jq -r '.chainId' "$reuse_routes_manifest")" == "46630" &&
      "$(jq -r '.liquidityVenue' "$reuse_routes_manifest")" == "uniswap-v4" &&
      "$(jq -r '.assetRoutes | length' "$reuse_routes_manifest")" == "11" ]] || {
-    echo "The route-reuse manifest is not a complete schema-12 chain-46630 manifest" >&2
+    echo "The route-reuse manifest is not a complete chain-46630 v4 manifest" >&2
     exit 1
   }
   test_asset_liquidity_locker="$(
@@ -233,17 +232,16 @@ mock_token_seed_max="100000000000000"
 mock_liquidity="50000000000000"
 mock_maximum_native_input="1000000000000"
 wrapped_native_maximum_input="500000000000000000"
-wrapped_native_verification_class="$(cast keccak 'ROBYN_SCHEMA12_DIRECT_WETH')"
 send_transaction "$asset_router" \
-  'configureWrappedNativeRoute(uint128,bytes32,bool)' \
-  "$wrapped_native_maximum_input" "$wrapped_native_verification_class" true >/dev/null
+  'configureWrappedNativeRoute(uint128,bool)' \
+  "$wrapped_native_maximum_input" true >/dev/null
 wrapped_native_status="$(
   cast call "$asset_router" \
-    'executionRouteStatus(address)((uint8,address,address,uint128,uint128,bytes32,bytes32,bytes32,bytes32,bool,bool,bool,bytes32))' \
+    'executionRouteStatus(address)((uint8,uint128,uint128,bytes32,bool,bool,bool,bytes32))' \
     "$wrapped_native" --rpc-url "$rpc_url" --json
 )"
-[[ "$(jq -r '.[0][11]' <<<"$wrapped_native_status")" == "true" ]] || {
-  echo "The schema-12 direct WETH route is not ready" >&2
+[[ "$(jq -r '.[0][6]' <<<"$wrapped_native_status")" == "true" ]] || {
+  echo "The schema-14 direct WETH route is not ready" >&2
   exit 1
 }
 wrapped_native_runtime_hash="$(runtime_code_hash "$wrapped_native")"
@@ -259,7 +257,7 @@ if [[ -z "$reuse_routes_manifest" ]]; then
       tickSpacing:0,
       hook:"0x0000000000000000000000000000000000000000",
       verification:"robyn-controlled-testnet-dex",
-      provenance:"schema13-direct-wrap",
+      provenance:"schema14-direct-wrap",
       routeKind:"wrapped-native",
       runtimeCodeHash:$runtimeCodeHash
     }' >>"$mock_route_log"
@@ -275,7 +273,7 @@ fi
     }' >>"$route_safety_log"
 if [[ -z "$reuse_routes_manifest" ]]; then
 while IFS=$'\t' read -r symbol name category; do
-  asset_key="schema13Asset${symbol}"
+  asset_key="schema14Asset${symbol}"
   deploy_contract "$asset_key" \
     src/testnet/TestnetMockERC20.sol:TestnetMockERC20 \
     "Robyn Testnet Mock $name" "tm$symbol" "$deployer" "0"
@@ -308,7 +306,8 @@ while IFS=$'\t' read -r symbol name category; do
       referenceTick:0,
       maximumReferenceTickDeviation:$maximumReferenceTickDeviation,
       enforceReferencePrice:false,
-      maximumProtectedRouteSlippageBps:100
+      maximumProtectedRouteSlippageBps:100,
+      routeKind:"uniswap-v4"
     }' >>"$route_safety_log"
   jq -nc \
     --arg symbol "$symbol" \
@@ -330,118 +329,23 @@ while IFS=$'\t' read -r symbol name category; do
       tickSpacing:200,
       hook:"0x0000000000000000000000000000000000000000",
       verification:"robyn-testnet-mock",
-      provenance:"schema13-fresh-mock-v4-pool",
+      provenance:"schema14-fresh-mock-v4-pool",
       liquidityLocker:$liquidityLocker,
       seedTransaction:$seedTransaction,
       assetCreationTransaction:$assetCreationTransaction
     }' >>"$mock_route_log"
-done <<'SCHEMA12_V4_ASSETS'
+done <<'SCHEMA14_V4_ASSETS'
 GOOGL	Alphabet	stock
 MSFT	Microsoft	stock
 NVDA	NVIDIA	stock
-SPY	SPDR S&P 500 ETF	etf
-SCHEMA12_V4_ASSETS
-
-provider_maximum_native_input="1000000000000"
-provider_maximum_asset_input="1000000000000000000"
-provider_asset_inventory="1000000000000000000000000"
-provider_wrapped_inventory="100000000000000"
-provider_rate_x18="1000000000000000000"
-provider_class="$(cast keccak 'SCHEMA12_TESTNET_DETERMINISTIC')"
-provider_sink="$timelock"
-while IFS=$'\t' read -r symbol name category; do
-  asset_key="schema13Asset${symbol}"
-  guard_key="schema13Guard${symbol}"
-  adapter_key="schema13Adapter${symbol}"
-  deploy_contract "$asset_key" \
-    src/testnet/TestnetMockERC20.sol:TestnetMockERC20 \
-    "$name" "tm$symbol" "$deployer" "1000000000000000000000"
-  provider_asset="${addresses[$asset_key]}"
-  deploy_contract "$guard_key" \
-    src/testnet/TestnetPinnedExecutionAdapter.sol:TestnetFixedRatePriceGuard \
-    "$provider_asset" "$wrapped_native" "$provider_rate_x18"
-  provider_guard="${addresses[$guard_key]}"
-  deploy_contract "$adapter_key" \
-    src/testnet/TestnetPinnedExecutionAdapter.sol:TestnetPinnedExecutionAdapter \
-    "$asset_router" "$provider_asset" "$wrapped_native" "$provider_sink" "$provider_rate_x18"
-  provider_adapter="${addresses[$adapter_key]}"
-  send_transaction "$provider_asset" 'mint(address,uint256)' \
-    "$provider_adapter" "$provider_asset_inventory" >/dev/null
-  send_transaction --value "$provider_wrapped_inventory" \
-    "$wrapped_native" 'deposit()' >/dev/null
-  send_transaction "$wrapped_native" 'transfer(address,uint256)' \
-    "$provider_adapter" "$provider_wrapped_inventory" >/dev/null
-  provider_adapter_hash="$(runtime_code_hash "$provider_adapter")"
-  provider_guard_hash="$(runtime_code_hash "$provider_guard")"
-  provider_route="(3,$provider_adapter,$provider_guard,$provider_maximum_native_input,$provider_maximum_asset_input,$provider_class,$provider_adapter_hash,$provider_guard_hash,$zero_bytes32,true)"
-  send_transaction "$asset_router" \
-    'configureAdapterRoute(address,(uint8,address,address,uint128,uint128,bytes32,bytes32,bytes32,bytes32,bool))' \
-    "$provider_asset" "$provider_route" >/dev/null
-  provider_status="$(
-    cast call "$asset_router" \
-      'executionRouteStatus(address)((uint8,address,address,uint128,uint128,bytes32,bytes32,bytes32,bytes32,bool,bool,bool,bytes32))' \
-      "$provider_asset" --rpc-url "$rpc_url" --json
-  )"
-  [[ "$(jq -r '.[0][11]' <<<"$provider_status")" == "true" ]] || {
-    echo "$symbol deterministic provider route is not ready" >&2
-    exit 1
-  }
-  jq -nc \
-    --arg symbol "$symbol" \
-    --arg name "$name" \
-    --arg category "$category" \
-    --arg address "$provider_asset" \
-    --arg adapter "$provider_adapter" \
-    --arg priceGuard "$provider_guard" \
-    --arg adapterRuntimeHash "$provider_adapter_hash" \
-    --arg priceGuardRuntimeHash "$provider_guard_hash" \
-    --arg assetCreationTransaction "${txs[$asset_key]}" \
-    --arg adapterCreationTransaction "${txs[$adapter_key]}" \
-    --arg priceGuardCreationTransaction "${txs[$guard_key]}" \
-    --arg maximumNativeInput "$provider_maximum_native_input" \
-    --arg maximumAssetInput "$provider_maximum_asset_input" \
-    '{
-      symbol:$symbol,
-      mockSymbol:("tm" + $symbol),
-      name:$name,
-      category:$category,
-      address:$address,
-      poolId:null,
-      fee:0,
-      tickSpacing:0,
-      hook:"0x0000000000000000000000000000000000000000",
-      verification:"robyn-testnet-mock",
-      provenance:"schema13-deterministic-provider-fixture",
-      routeKind:"pinned-adapter",
-      provider:"schema13-testnet-deterministic",
-      adapter:$adapter,
-      priceGuard:$priceGuard,
-      adapterRuntimeHash:$adapterRuntimeHash,
-      priceGuardRuntimeHash:$priceGuardRuntimeHash,
-      maximumNativeInput:$maximumNativeInput,
-      maximumAssetInput:$maximumAssetInput,
-      assetCreationTransaction:$assetCreationTransaction,
-      adapterCreationTransaction:$adapterCreationTransaction,
-      priceGuardCreationTransaction:$priceGuardCreationTransaction
-    }' >>"$mock_route_log"
-  jq -nc \
-    --arg symbol "$symbol" \
-    '{
-      symbol:$symbol,
-      referenceTick:0,
-      maximumReferenceTickDeviation:0,
-      enforceReferencePrice:false,
-      maximumProtectedRouteSlippageBps:50,
-      routeKind:"pinned-adapter"
-    }' >>"$route_safety_log"
-done <<'SCHEMA12_PROVIDER_ASSETS'
 SPCX	SpaceX	stock
+SPY	SPDR S&P 500 ETF	etf
 GME	GameStop	stock
 USDG	Global Dollar	crypto
 USDe	Ethena USDe	crypto
 DEGEN	Degen	crypto
 ARROW	Arrow	crypto
-SCHEMA12_PROVIDER_ASSETS
+SCHEMA14_V4_ASSETS
 send_transaction "$test_asset_liquidity_locker" 'seal()' >/dev/null
 else
   while IFS=$'\t' read -r symbol asset pool_id verification provenance locker; do
@@ -789,7 +693,7 @@ archived_predecessor_sha="$(
   fi
 )"
 jq -n \
-  --argjson schemaVersion 13 \
+  --argjson schemaVersion 14 \
   --arg environment "$([[ "$rehearsal" == "true" ]] && echo robinhood-testnet-fork-rehearsal || echo robinhood-testnet)" \
   --argjson chainId 46630 \
   --argjson deploymentBlock "$deployment_block" \
@@ -872,7 +776,7 @@ jq -n \
     assetCatalog: {
       schemaVersion: 3,
       snapshotAt: (now | todateiso8601),
-      disclosure: "Schema-13 Testnet uses individually selected mock, direct-WETH, and deterministic provider routes. Test assets are not production Stock Tokens, backed shares, or redeemable securities.",
+      disclosure: "Schema-14 Testnet uses individually selected mock Uniswap v4 pools and a direct WETH route. Test assets are not production Stock Tokens, backed shares, or redeemable securities.",
       assets: $assetCatalog
     },
     contracts: {
@@ -1016,7 +920,7 @@ jq -n \
     }
   }' >"$tmp"
 mv "$tmp" "$output"
-verification_report="${ROBYN_TESTNET_SCHEMA13_VERIFICATION_REPORT:-/dev/null}"
+verification_report="${ROBYN_TESTNET_SCHEMA14_VERIFICATION_REPORT:-/dev/null}"
 ROBYN_TESTNET_RPC_URL="$rpc_url" \
-  node scripts/verify-testnet-schema13-deployment.mjs "$output" >"$verification_report"
-echo "Wrote verified Schema-13 protocol manifest: $output"
+  node scripts/verify-testnet-schema14-deployment.mjs "$output" >"$verification_report"
+echo "Wrote verified Schema-14 protocol manifest: $output"
