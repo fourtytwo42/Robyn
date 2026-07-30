@@ -25,11 +25,7 @@ export type BasketAsset = {
   referencePriceAt: string | null;
   route: {
     kind:
-      | "none"
-      | "fixed-testnet"
-      | "uniswap-v3"
-      | "uniswap-v4"
-      | "wrapped-native";
+      "none" | "fixed-testnet" | "uniswap-v3" | "uniswap-v4" | "wrapped-native";
     ready: boolean;
     venue: Address | null;
     poolFee: number | null;

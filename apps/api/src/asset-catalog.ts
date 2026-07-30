@@ -21,11 +21,7 @@ export type AssetVerification =
 
 export type AssetRoute = {
   kind:
-    | "none"
-    | "fixed-testnet"
-    | "uniswap-v3"
-    | "uniswap-v4"
-    | "wrapped-native";
+    "none" | "fixed-testnet" | "uniswap-v3" | "uniswap-v4" | "wrapped-native";
   ready: boolean;
   venue: Address | null;
   poolFee: number | null;
@@ -265,11 +261,7 @@ function routeKind(value: number): AssetRoute["kind"] {
 }
 
 function v4ExecutionKind(value: number): AssetRoute["kind"] {
-  return value === 1
-    ? "uniswap-v4"
-    : value === 2
-      ? "wrapped-native"
-      : "none";
+  return value === 1 ? "uniswap-v4" : value === 2 ? "wrapped-native" : "none";
 }
 
 export class AssetCatalogService {
