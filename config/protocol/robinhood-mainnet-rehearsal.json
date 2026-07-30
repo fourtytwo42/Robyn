@@ -1,11 +1,13 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 13,
   "environment": "robinhood-mainnet-fork-rehearsal",
   "chainId": 4663,
   "sources": {
     "uniswapRegistry": "https://raw.githubusercontent.com/Uniswap/contracts/main/deployments/json/4663.json",
     "robinhoodContracts": "https://docs.robinhood.com/chain/contracts/",
-    "robinhoodAssetApi": "https://api.robinhood.com/rhj/assets"
+    "robinhoodAssetApi": "https://api.robinhood.com/rhj/assets",
+    "robinhoodBridging": "https://docs.robinhood.com/chain/bridging/",
+    "robinhoodProtocolContracts": "https://docs.robinhood.com/chain/protocol-contracts/"
   },
   "venue": {
     "poolManager": {
@@ -52,9 +54,17 @@
     "curveTokenAllocation": "800000000000000000000000000",
     "graduationTokenAllocation": "200000000000000000000000000",
     "initialVirtualTokenReserve": "1066666666666666666666666666",
-    "initialVirtualNativeReserve": "2000000000000000000",
-    "graduationThresholdNative": "6000000000000000001",
-    "maximumCurvePurchase": "500000000000000000",
+    "initialLaunchMode": "Paused",
+    "canaryProfile": {
+      "targetGraduationNative": "10000000000000000",
+      "actualGraduationNative": "10000000000000000",
+      "maximumCurvePurchase": "1000000000000000"
+    },
+    "productionProfile": {
+      "targetGraduationNative": "6000000000000000000",
+      "actualGraduationNative": "6000000000000000001",
+      "maximumCurvePurchase": "500000000000000000"
+    },
     "curveFeeBps": 100,
     "hookFeeBps": 100,
     "maximumNativeResidual": "1000000000",
@@ -66,6 +76,22 @@
     "timelockSeconds": 172800,
     "quorumBps": 1000,
     "proposalThreshold": "10000000000000000000000000"
+  },
+  "funding": {
+    "approvedCeilingWei": "47072920000000000",
+    "l1EmergencyReserveWei": "10000000000000000",
+    "l2OperationalReserveWei": "20000000000000000",
+    "canaryPrincipalWei": "10000000000000000",
+    "l2GasHeadroomBps": 15000,
+    "bridgeGasHeadroomBps": 20000
+  },
+  "bridge": {
+    "method": "depositEth()",
+    "delayedInbox": {
+      "address": "0x1A07cc4BD17E0118BdB54D70990D2158AbAD7a2D",
+      "runtimeCodeHash": "0x69a469ef198a7f785b09fb0783fe42576faef7635e2d56426ec8746bad638e64"
+    },
+    "estimateOnlyUntilFundingGatePasses": true
   },
   "roles": {
     "treasuryPolicy": "newly-deployed-production-timelock",

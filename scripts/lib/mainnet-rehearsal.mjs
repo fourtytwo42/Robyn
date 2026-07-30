@@ -29,7 +29,7 @@ export function poolIdForRoute(asset, route) {
 
 export function validateMainnetRehearsalConfig(config, supportPolicy) {
   const failures = [];
-  if (config?.schemaVersion !== 12)
+  if (config?.schemaVersion !== 13)
     failures.push("unsupported rehearsal schema");
   if (config?.chainId !== 4663)
     failures.push("rehearsal chain ID must be 4663");
@@ -53,8 +53,8 @@ export function validateMainnetRehearsalConfig(config, supportPolicy) {
       failures.push(`invalid ${name} runtime hash`);
     }
   }
-  if (supportPolicy?.schemaVersion !== 12 || supportPolicy?.chainId !== 4663) {
-    failures.push("support policy must be schema 12 on chain 4663");
+  if (supportPolicy?.schemaVersion !== 13 || supportPolicy?.chainId !== 4663) {
+    failures.push("support policy must be schema 13 on chain 4663");
   }
   const assets = supportPolicy?.candidates ?? [];
   if (
@@ -132,8 +132,46 @@ export function validateMainnetRehearsalConfig(config, supportPolicy) {
   if (config?.route?.hooks !== zeroAddress) {
     failures.push("production basket routes must be hookless");
   }
-  if (config?.market?.graduationThresholdNative !== "6000000000000000001") {
-    failures.push("production graduation threshold mismatch");
+  if (config?.market?.initialLaunchMode !== "Paused") {
+    failures.push("schema 13 must deploy in Paused launch mode");
+  }
+  const canary = config?.market?.canaryProfile;
+  if (
+    canary?.targetGraduationNative !== "10000000000000000" ||
+    canary?.actualGraduationNative !== "10000000000000000" ||
+    canary?.maximumCurvePurchase !== "1000000000000000"
+  ) {
+    failures.push("canary graduation profile mismatch");
+  }
+  const production = config?.market?.productionProfile;
+  if (
+    production?.targetGraduationNative !== "6000000000000000000" ||
+    production?.actualGraduationNative !== "6000000000000000001" ||
+    production?.maximumCurvePurchase !== "500000000000000000"
+  ) {
+    failures.push("production graduation profile mismatch");
+  }
+  const funding = config?.funding;
+  if (
+    funding?.approvedCeilingWei !== "47072920000000000" ||
+    funding?.l1EmergencyReserveWei !== "10000000000000000" ||
+    funding?.l2OperationalReserveWei !== "20000000000000000" ||
+    funding?.canaryPrincipalWei !== "10000000000000000" ||
+    funding?.l2GasHeadroomBps !== 15_000 ||
+    funding?.bridgeGasHeadroomBps !== 20_000
+  ) {
+    failures.push("capital-preserving funding policy mismatch");
+  }
+  const bridge = config?.bridge;
+  if (
+    bridge?.method !== "depositEth()" ||
+    bridge?.delayedInbox?.address?.toLowerCase() !==
+      "0x1a07cc4bd17e0118bdb54d70990d2158abad7a2d" ||
+    bridge?.delayedInbox?.runtimeCodeHash?.toLowerCase() !==
+      "0x69a469ef198a7f785b09fb0783fe42576faef7635e2d56426ec8746bad638e64" ||
+    bridge?.estimateOnlyUntilFundingGatePasses !== true
+  ) {
+    failures.push("canonical bridge policy mismatch");
   }
   if (config?.governance?.votingDelaySeconds !== 86_400) {
     failures.push("production voting delay mismatch");
@@ -148,7 +186,12 @@ export function validateMainnetRehearsalConfig(config, supportPolicy) {
 }
 
 export function intendedMainnetAssets(config, supportPolicy) {
-  validateMainnetRehearsalConfig(config, supportPolicy);
+  const failures = validateMainnetRehearsalConfig(config, supportPolicy);
+  if (failures.length > 0) {
+    throw new Error(
+      `invalid mainnet rehearsal configuration: ${failures.join("; ")}`,
+    );
+  }
   return (supportPolicy.candidates ?? []).map((asset) => ({
     symbol: asset.symbol,
     address: getAddress(asset.address),

@@ -11,6 +11,7 @@
     "campaign:testnet": "node scripts/testnet-assurance-campaign.mjs",
     "dev": "turbo run dev",
     "endurance:testnet": "node scripts/testnet-endurance.mjs",
+    "estimate:mainnet-bridge": "node scripts/estimate-schema13-mainnet-bridge.mjs",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "lint": "turbo run lint",
@@ -24,6 +25,7 @@
     "test:mainnet-rehearsal": "node --test scripts/test/mainnet-rehearsal.test.mjs",
     "test:scripts": "find scripts -name '*.mjs' -print0 | xargs -0 -n1 node --check",
     "typecheck": "turbo run typecheck",
+    "measure:mainnet-funding": "node scripts/measure-schema13-mainnet-funding.mjs",
     "validate:mainnet-curve": "node scripts/validate-mainnet-curve.mjs",
     "validate:mainnet-support": "node scripts/validate-mainnet-support-policy.mjs",
     "verify:mainnet-rehearsal": "node scripts/verify-mainnet-production-routes.mjs"

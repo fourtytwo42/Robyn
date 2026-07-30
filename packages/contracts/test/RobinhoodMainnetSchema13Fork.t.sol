@@ -46,6 +46,9 @@ contract RobinhoodMainnetSchema13ForkTest is Test {
     IV4Quoter private constant QUOTER = IV4Quoter(0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94);
     IStateView private constant STATE_VIEW = IStateView(0xF3334192D15450CdD385c8B70e03f9A6bD9E673b);
     IAllowanceTransfer private constant PERMIT2 = IAllowanceTransfer(0x000000000022D473030F116dDEE9F6B43aC78BA3);
+    event CanaryCapitalLedger(
+        uint256 bondingSpend, uint256 tokensUnwound, uint256 quotedNative, uint256 recoveredNative, uint256 recoveryBps
+    );
     address private constant GOOGL = 0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3;
     address private constant MSFT = 0xe93237C50D904957Cf27E7B1133b510C669c2e74;
     address private constant NVDA = 0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC;
@@ -97,8 +100,11 @@ contract RobinhoodMainnetSchema13ForkTest is Test {
         );
 
         uint256 treasuryBefore = treasury.balance;
+        uint256 canaryBalanceBefore = address(this).balance;
         (RobynLaunchToken token, RobynNativeBasketVaultV2 vault, RobynV4BondingCurveMarket market) =
             coordinator.createLaunch{value: 0.001 ether}(_request(bytes32(uint256(4663))));
+        uint256 graduationSpend;
+        uint128 lockedPrincipal;
         assertEq(market.maximumCurvePurchase(), 0.001 ether);
         assertEq(market.graduationThresholdNative(), 0.01 ether);
         assertGt(token.balanceOf(address(this)), 0);
@@ -108,13 +114,14 @@ contract RobinhoodMainnetSchema13ForkTest is Test {
                 market.buy{value: 0.001 ether}(1);
             }
             assertTrue(market.graduated());
+            graduationSpend = canaryBalanceBefore - address(this).balance;
             RobynV4FeePositionLocker locker = market.graduationAdapter().locker();
-            uint128 lockedPrincipal = locker.principalLiquidity();
+            lockedPrincipal = locker.principalLiquidity();
             assertLe(locker.principalNativeResidual(), 1 gwei);
             assertLe(locker.principalTokenResidual(), 0.000001 ether);
 
             uint256 pendingTokenBefore = hook.pendingTokenFees(address(token));
-            market.buy{value: 0.01 ether}(1);
+            market.buy{value: 0.000001 ether}(1);
             assertGt(hook.pendingTokenFees(address(token)), pendingTokenBefore);
             uint256 sellAmount = token.balanceOf(address(this)) / 50;
             token.approve(address(market), sellAmount);
@@ -143,7 +150,7 @@ contract RobinhoodMainnetSchema13ForkTest is Test {
         feeRouter.settleDaoFees(feeRouter.totalDaoNativeLiability());
         feeRouter.settleTreasuryFees(feeRouter.totalTreasuryNativeLiability());
 
-        for (uint256 index; index < 3; ++index) {
+        for (uint256 index; index < vault.legCount(); ++index) {
             RobynNativeBasketVaultV2.BasketLeg memory leg = vault.leg(index);
             assertGt(leg.pendingNative, 0);
             RobynV4AssetRouter.RouteStatus memory status = assetRouter.routeStatus(address(leg.asset));
@@ -189,6 +196,9 @@ contract RobinhoodMainnetSchema13ForkTest is Test {
             marketFactory.graduationProfileByToken(address(productionToken)).actualGraduationNative
         );
         assertEq(marketFactory.graduationProfileByToken(address(token)).targetGraduationNative, 0.01 ether);
+
+        _unwind(token, market, graduationSpend);
+        _settlePostUnwind(token, vault, market, lockedPrincipal);
 
         _govern(
             address(coordinator),
@@ -400,6 +410,61 @@ contract RobinhoodMainnetSchema13ForkTest is Test {
         assertEq(uint8(governor.state(proposalId)), 7);
     }
 
+    function _unwind(RobynLaunchToken token, RobynV4BondingCurveMarket market, uint256 graduationSpend) private {
+        uint256 tokensToUnwind = token.balanceOf(address(this));
+        assertGt(tokensToUnwind, 0);
+        (, uint256 unwindQuote) = market.quoteSell(tokensToUnwind);
+        uint256 nativeBeforeUnwind = address(this).balance;
+        token.approve(address(market), tokensToUnwind);
+        uint256 recoveredNative = market.sell(tokensToUnwind, (unwindQuote * 99) / 100);
+        assertEq(token.allowance(address(this), address(market)), 0);
+        assertEq(token.balanceOf(address(this)), 0);
+        assertEq(address(this).balance - nativeBeforeUnwind, recoveredNative);
+        uint256 recoveryBps = (recoveredNative * 10_000) / graduationSpend;
+        assertGe(recoveryBps, 7_500);
+        assertLt(recoveryBps, 10_000);
+        emit CanaryCapitalLedger(graduationSpend, tokensToUnwind, unwindQuote, recoveredNative, recoveryBps);
+    }
+
+    function _settlePostUnwind(
+        RobynLaunchToken token,
+        RobynNativeBasketVaultV2 vault,
+        RobynV4BondingCurveMarket market,
+        uint128 lockedPrincipal
+    ) private {
+        uint256 finalNativeFees = hook.pendingNativeFees(address(token));
+        if (finalNativeFees != 0) hook.settleNativeFees(token, finalNativeFees);
+        RobynV4FeePositionLocker finalLocker = market.graduationAdapter().locker();
+        (uint256 finalCollectedNative, uint256 finalCollectedToken) = finalLocker.collectFees(0, 0);
+        if (finalCollectedNative != 0) finalLocker.routeCollectedNative(finalCollectedNative);
+        if (finalCollectedToken != 0) {
+            (uint256 finalTokenQuote,) = assetRouter.quoteAssetToNative(address(token), uint128(finalCollectedToken));
+            finalLocker.convertCollectedToken(
+                uint128(finalCollectedToken), (finalTokenQuote * 99) / 100, block.timestamp
+            );
+        }
+        RobynNativeProtocolFeeRouterV4.LaunchFeeAccount memory account = feeRouter.launchAccount(address(token));
+        if (account.pendingBasketNative != 0) {
+            feeRouter.settleBasketFees(address(token), account.pendingBasketNative);
+        }
+        RobynNativeBasketVaultV2.BasketLeg memory finalLeg = vault.leg(0);
+        if (finalLeg.pendingNative != 0) {
+            RobynV4AssetRouter.RouteStatus memory finalRoute = assetRouter.routeStatus(address(finalLeg.asset));
+            uint256 finalConversionAmount = finalLeg.pendingNative > finalRoute.maximumNativeInput
+                ? finalRoute.maximumNativeInput
+                : finalLeg.pendingNative;
+            (uint256 finalBasketQuote,) =
+                assetRouter.quoteNativeToAsset(address(finalLeg.asset), uint128(finalConversionAmount));
+            vault.convertLeg(0, finalConversionAmount, (finalBasketQuote * 99) / 100, block.timestamp);
+        }
+        uint256 finalDaoLiability = feeRouter.totalDaoNativeLiability();
+        if (finalDaoLiability != 0) feeRouter.settleDaoFees(finalDaoLiability);
+        uint256 finalTreasuryLiability = feeRouter.totalTreasuryNativeLiability();
+        if (finalTreasuryLiability != 0) feeRouter.settleTreasuryFees(finalTreasuryLiability);
+        assertEq(POSITION_MANAGER.getPositionLiquidity(finalLocker.positionTokenId()), lockedPrincipal);
+        assertEq(feeRouter.totalNativeLiabilities(), address(feeRouter).balance);
+    }
+
     function _deployHook() private returns (RobynV4FeeAndPhaseHook deployed) {
         uint160 flags = Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_DONATE_FLAG
             | Hooks.AFTER_INITIALIZE_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
@@ -417,14 +482,10 @@ contract RobinhoodMainnetSchema13ForkTest is Test {
     }
 
     function _request(bytes32 salt) private pure returns (RobynNativeLaunchFactoryV4.LaunchRequest memory request) {
-        address[] memory assets = new address[](3);
-        assets[0] = GOOGL;
-        assets[1] = MSFT;
-        assets[2] = NVDA;
-        uint16[] memory weights = new uint16[](3);
-        weights[0] = 3_334;
-        weights[1] = 3_333;
-        weights[2] = 3_333;
+        address[] memory assets = new address[](1);
+        assets[0] = address(WETH);
+        uint16[] memory weights = new uint16[](1);
+        weights[0] = 10_000;
         request = RobynNativeLaunchFactoryV4.LaunchRequest({
             name: "Sherwood Mainnet Fork",
             symbol: "SMF",

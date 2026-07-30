@@ -1,5 +1,37 @@
 # Project Memory
 
+### 2026-07-30 - Schema-13 hard funding gate and unwind measurement
+
+- Context: Mainnet funding is capped at `0.04707292 ETH`. The release must
+  preserve a 0.01 ETH L1 emergency reserve, 0.02 ETH Robinhood operational
+  reserve, 0.01 ETH canary principal, 150% of measured L2 gas, and twice the
+  current L1 bridge gas estimate.
+- Implementation: Added fail-closed fork-receipt accounting in
+  `scripts/lib/mainnet-funding.mjs`, the protected report command
+  `scripts/measure-schema13-mainnet-funding.mjs`, and the non-broadcast
+  canonical Delayed Inbox estimator
+  `scripts/estimate-schema13-mainnet-bridge.mjs`. Gas evidence must contain
+  successful receipt identities for every deployment, governance, canary,
+  unwind, and post-unwind phase from an exact pinned-release chain-4663 fork.
+- Bridge verification: At Ethereum block 25,645,919, official Delayed Inbox
+  `0x1A07cc4BD17E0118BdB54D70990D2158AbAD7a2D` had pinned runtime hash
+  `0x69a469ef198a7f785b09fb0783fe42576faef7635e2d56426ec8746bad638e64`.
+  A non-broadcast one-wei `depositEth()` probe estimated 92,957 gas and
+  1,585,206,909 wei max fee per gas. This is a bridge-method probe, not the
+  final bridge amount or a passed funding report.
+- Canary verification: The Mainnet fork fixture now uses a controlled WETH
+  basket, checkpoints canary spend immediately after graduation, performs one
+  quote-bounded full-balance unwind, requires at least 75% gross recovery,
+  settles the final hook/LP/basket/DAO/treasury cycle, and proves locked
+  position liquidity remains unchanged.
+- Tests: Funding/rehearsal tests pass 9/9, all script syntax checks pass, and
+  the complete Foundry suite passes. The protected Mainnet fork fails closed
+  before deployment because `ROBYN_MAINNET_TREASURY` and the remaining real
+  production Safe/allocation inputs are not configured.
+- State: No bridge, Robinhood Mainnet deployment, signature, or Mainnet
+  transaction occurred. The final funding decision remains blocked until the
+  exact production-input fork produces the complete receipt ledger.
+
 ### 2026-07-30 - Schema-13 governed graduation and Mainnet canary authorized
 
 - Context: The user approved replacing the Schema-12 Mainnet candidate with a
@@ -1300,6 +1332,12 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-07-30: The hard `0.04707292 ETH` funding gate, canonical non-broadcast
+  bridge estimator, and capital-preserving canary unwind are implemented on
+  the Schema-13 branch. Complete receipt measurement is blocked on the real
+  production Timelock, 2-of-3 Safe, signer/allocation inputs, and protected
+  provider configuration. Do not bridge or deploy from provisional estimates.
 
 - 2026-07-30: Schema-13 work is active on
   `codex/schema13-mainnet-canary`. It supersedes Schema-12 for any future
@@ -4609,6 +4647,12 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-30: Schema-13 funding tooling passed 9 focused tests, all script
+  syntax checks, and the complete Foundry suite. The official Delayed Inbox
+  runtime hash matched at Ethereum block 25,645,919 and a non-broadcast
+  `depositEth()` probe estimated 92,957 gas. The exact fork intentionally
+  stopped at missing production inputs; no transaction was broadcast.
+
 - 2026-07-30: Schema-13 exact commit `d2b882c` passed the disposable Testnet fork rehearsal with 162/162 live deployment checks, 96/96 deployment transactions measured, 62,285,289 total gas, sufficient protected-deployer balance, and verified evidence checksums. No public-chain transaction was broadcast.
 - 2026-07-30: Schema-13 exact release `61225c5` deployed fresh to Testnet from block 95,152,900 in Paused mode. The 96 deployment receipts succeeded using 66,891,884 gas, 162/162 checks passed, the 0.0015 ETH reserve remained intact, and evidence checksums verify.
 - 2026-07-30: Schema-13 application release `5c552fe` passed the complete immutable release gate and promoted onto fresh database `robyn_testnet_schema13_5c552fe`. The public Testnet status is healthy and Paused with zero lag, zero failed jobs, and 162 live deployment checks.
@@ -5269,6 +5313,13 @@ When sources conflict, use this order:
 - Follow-up: Build and promote the exact pushed documentation commit, complete automated browser and real-wallet acceptance, then start the ten-hour endurance gate.
 
 ## Open Follow-ups
+
+- Supply the real production 2-of-3 Safe, Timelock, signer/allocation files,
+  and protected provider configuration. Run the exact pinned Mainnet fork as
+  locally broadcast transactions, seal every receipt category, rerun the
+  bridge estimate for the calculated amount, and issue the hard funding
+  report. Do not bridge or deploy unless it passes without reducing reserves,
+  headroom, or lifecycle coverage.
 
 - Commit, push, reproducibly build, and promote the per-launch oracle-refresh
   and canonical keeper-conversion recovery. Resume

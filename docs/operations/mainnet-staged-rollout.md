@@ -100,10 +100,20 @@ comparison/fallback. Require chain 4663, `eth_syncing=false`, normal lag at
 most 50 blocks, no corruption/OOM/unplanned restart, canonical agreement,
 healthy recovery, and sufficient disk runway.
 
-Measure deployment and canary gas from the exact fork. L2 funding must cover
-150% of deployment cost, 150% of canary transaction cost, 0.01 ETH locked
-principal, and 0.02 ETH operations. L1 must retain twice bridge gas plus
-0.01 ETH emergency reserve.
+The approved funding ceiling is exactly `0.04707292 ETH`. Measure every
+deployment, binding, activation, launch, bonding, graduation, swap, settlement,
+claim, governance, unwind, and post-unwind transaction from successful
+chain-4663 fork receipts. Synthetic estimates and omitted lifecycle phases
+fail the gate. L2 funding must cover 150% of measured deployment cost, 150% of
+measured canary cost, 0.01 ETH locked principal, and a retained 0.02 ETH
+operational reserve. L1 must retain twice the current `depositEth()` estimate
+plus the 0.01 ETH emergency reserve.
+
+Use `pnpm estimate:mainnet-bridge` to verify chain ID 1, the official Delayed
+Inbox address and pinned runtime hash, and estimate `depositEth()` without
+signing or broadcasting. Use `pnpm measure:mainnet-funding` only with the exact
+fork receipt ledger and bridge estimate. A failed report means no bridge and no
+deployment; reserves, headroom, and coverage cannot be reduced to make it pass.
 
 At execution verify chain ID 1, deployer identity, and official bridge runtime
 code. Bridge only the calculated amount from deployer to itself. Journal the
@@ -124,6 +134,16 @@ After separate authorization, enter Canary and enable only independently
 qualified routes at bounded caps. Create one project WETH basket launch.
 Exercise bonding, graduation, both swap directions, fees, conversion,
 settlement, streams, all pull claims, and creator split locking.
+
+All bonding tokens remain in protected project software wallets. After the
+one-hour claims and governance checks, quote the complete project-held launch
+token balance and submit at most one bounded exact-input unwind with a deadline
+and quote-derived minimum output. Do not retry a submitted transaction blindly.
+Then harvest and settle the resulting fees, process one bounded final reward
+cycle, and reconcile. The position NFT and locked LP principal are never
+removed. Count only liquid native ETH returned to the deployer as recovered
+capital; report treasury, DAO, basket assets, gas, fees, and locked liquidity
+separately. Observe 24 consecutive healthy hours after the final action.
 
 Test required assets with the smallest safe round trip. A route failing its
 runtime hash, quote, price guard, allowance cleanup, cap, or round trip remains
