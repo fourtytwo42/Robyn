@@ -29,16 +29,20 @@
   endurance; do not treat this degraded state as acceptance.
 - Evidence: Protected deployment and verification evidence is under
   `/home/hendo420/robyn-evidence/schema14-mainnet-go/testnet-live/6f0b1ec/`.
-- Release: Immutable application release `03bf8788a0ae01a95bd9b64799895140488cd37d`
-  passed the complete build gate and checksum verification. Promotion is pending
-  because `scripts/promote-testnet-release.sh` requires root and this SSH
-  session has no noninteractive sudo authorization.
-- Follow-up: Commit and push the manifest/verifier checkpoint, build and promote
-  the exact application release, rebuild the active database from block
-  95,295,401, then complete recovery, uninterrupted two-hour endurance,
-  reconciliation, and browser gates. Production Safe/RDAO validation and the
-  exact Mainnet fork/funding ledger remain blocked on the four real recipient
-  addresses and three protected control proofs.
+- Release: Exact application candidate `a9893f4f585564f5cc47defa8b2199d9e8c6a7ba`
+  passed the complete immutable release gate and checksum verification. Its
+  promotion tooling now creates and migrates a guaranteed-empty database when
+  explicitly requested and isolates BullMQ financial jobs by database name, so
+  Schema-13 projections and queue entries cannot leak into Schema-14.
+- Promotion blocker: `/opt/robyn/testnet-current` still serves archived
+  Schema-13 release `5c552fe-schema13`. Root must promote the frozen Schema-14
+  release with fresh database `robyn_testnet_schema14_a9893f4`; this SSH session
+  has no noninteractive sudo authorization.
+- Follow-up: Promote the final release, rebuild from block 95,295,401, repair
+  the root-owned LAN Nitro unit, then complete recovery, uninterrupted two-hour
+  endurance, reconciliation, and browser gates. Production Safe/RDAO
+  validation and the exact Mainnet fork/funding ledger remain blocked on the
+  four real recipient addresses and three protected control proofs.
 
 ### 2026-07-30 - Schema-14 V4-only candidate implementation checkpoint
 
@@ -1419,15 +1423,14 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- 2026-07-30: Schema-14 V4-only work is active on
-  `codex/schema14-v4-only`. It supersedes Schema-13 for any future Mainnet
-  deployment. Only canonical v4 single-hop routes and direct WETH wrapping are
-  permitted; all 0x/provider adapter code and surfaces are removed. Full
-  repository tests, explicit 256-run/depth-128 invariants, and the internal
-  security gate pass. Exact pushed commit `8ad3cc5` passed the isolated
-  Schema-14 Testnet rehearsal with 84 successful receipts and 57,444,084 gas.
-  Record this checkpoint, freeze the resulting clean SHA, and rerun the
-  rehearsal before any live deployment.
+- 2026-07-30: Fresh Schema-14 contracts are live on Testnet from block
+  95,295,401 and remain Paused. The 84 deployment receipts succeeded, the
+  dedicated verifier passed 177 checks, and no Mainnet action occurred. Exact
+  application candidate `a9893f4f585564f5cc47defa8b2199d9e8c6a7ba`
+  passed the complete release gate and isolates its fresh database and keeper
+  queue. Root promotion to `robyn_testnet_schema14_a9893f4` is pending. The LAN
+  Testnet Nitro feed mismatch must also be repaired and its Alchemy failover
+  drills repeated before recovery or endurance can pass.
 
 - 2026-07-30: The hard `0.04707292 ETH` funding gate remains. Complete
   receipt measurement requires protected production signer/allocation files,
@@ -4762,6 +4765,13 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-30: Fresh Schema-14 Testnet deployment completed at block 95,295,401
+  with 84 successful receipts and 177/177 dedicated live checks. Exact
+  candidate `a9893f4` passed format, lint, typecheck, all application/script
+  tests, 247 Foundry tests with one protected Mainnet fork skip, internal
+  security gates, immutable packaging, and checksum verification. Promotion
+  remains root-blocked; no Mainnet action occurred.
+
 - 2026-07-30: Schema-13 funding tooling passed 9 focused tests, all script
   syntax checks, and the complete Foundry suite. The official Delayed Inbox
   runtime hash matched at Ethereum block 25,645,919 and a non-broadcast
@@ -5429,10 +5439,10 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Commit and push the exact Schema-14 candidate, run the isolated chain-46630
-  rehearsal, deploy fresh Paused Schema-14 Testnet contracts, rebuild an empty
-  database, then repeat recovery, two-hour endurance, reconciliation, and
-  browser acceptance. Any contract change restarts these gates.
+- Promote the frozen Schema-14 application onto fresh database
+  `robyn_testnet_schema14_a9893f4`, rebuild from deployment block 95,295,401,
+  then repeat recovery, two-hour endurance, reconciliation, and browser
+  acceptance. Any contract change restarts these gates.
 - Supply protected `guardian-signers.json` and `rdao-allocation.json` with four
   recipient addresses, three unique Safe owners including the deployer, and
   domain-separated address-control signatures. Complete a two-owner Safe
