@@ -375,9 +375,9 @@ test("funding preflight and execution share all required campaign wallet targets
     /for \(let index = 40; index < 48; index \+= 1\) \{\s*targetByIndex\.set\(index, 750_000_000_000_000n\);/,
   );
   for (const [index, amount] of [
-    [96, "700_000_000_000_000n"],
-    [97, "700_000_000_000_000n"],
-    [98, "700_000_000_000_000n"],
+    [96, "800_000_000_000_000n"],
+    [97, "800_000_000_000_000n"],
+    [98, "800_000_000_000_000n"],
     [99, "500_000_000_000_000n"],
   ]) {
     assert.match(

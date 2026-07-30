@@ -1,5 +1,24 @@
 # Project Memory
 
+### 2026-07-29 - Endurance fee-maintenance actor funding corrected
+
+- Context: Exact release `f3723f123e7b5bf77856685758d4d930a8e0cdff`
+  passed final recovery run `schema12-f3723f1-final-03`. Endurance run
+  `schema12-2h-f3723f1-04` then accumulated 1,500 healthy seconds, 51 passing
+  samples, and 63 confirmed transactions before correctly failing closed.
+- Root cause: Actor 96 had enough funding for approvals, external full-range
+  liquidity, LP harvesting, and native hook settlement, but was 3,366,654,000
+  wei short of the estimated token-fee conversion cost. No failed transaction
+  was broadcast; all 63 confirmed hashes remain sealed and must not be replayed.
+- Decision: Raise the dedicated fee-maintenance/liquidity targets for actors
+  96 through 98 from 0.0007 ETH to 0.0008 ETH. Preflight and execution continue
+  sharing one target function and retain the separate fixed workload estimate
+  plus 0.0015 ETH reserve.
+- Verification: The 22 endurance-policy tests, script syntax, focused
+  formatting, and diff checks pass.
+- Follow-up: Commit, push, reproducibly rebuild and promote, rerun affected
+  recovery, then use a fresh run ID, salts, launches, and empty journal for a
+  completely new uninterrupted two-hour clock.
 ### 2026-07-29 - First schema-12 endurance attempt exposed quiet-chain lag
 
 - Context: Recovery run `schema12-e45158d-final-02` passed with matching
