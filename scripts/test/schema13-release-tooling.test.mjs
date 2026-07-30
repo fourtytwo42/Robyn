@@ -59,9 +59,27 @@ test("Schema-13 rehearsal is isolated and emits exact-commit gas evidence", asyn
   assert.match(source, /ROBYN_ALLOW_UNLOCKED_REHEARSAL=true/);
   assert.match(source, /ROBYN_TESTNET_SCHEMA13_BROADCAST=true/);
   assert.match(source, /measure-testnet-v4-deployment-gas\.sh/);
+
   assert.match(source, /headroomBps >= 2500/);
   assert.match(source, /\.reserveWei \| tonumber/);
   assert.match(source, /\(\.transactionCount \| tonumber\) >= 96/);
   assert.match(source, /liveBroadcast:false/);
   assert.match(source, /rm -rf -- "\$work"/);
+});
+
+test("Testnet release pipeline binds the Schema-13 manifest", async () => {
+  const build = await readFile("scripts/build-testnet-release.sh", "utf8");
+  const promote = await readFile("scripts/promote-testnet-release.sh", "utf8");
+  const verify = await readFile("scripts/verify-testnet-release.sh", "utf8");
+  assert.match(build, /deployments\/46630-v4-schema13\.json/);
+  assert.match(
+    build,
+    /ROBYN_DEPLOYMENT_PATH="\$staging\/\$deployment_manifest"/,
+  );
+  assert.match(
+    promote,
+    /ROBYN_TESTNET_MANIFEST="\$selected\/deployments\/46630-v4-schema13\.json"/,
+  );
+  assert.match(verify, /\.schemaVersion == 13/);
+  assert.match(verify, /verify-testnet-schema13-deployment\.mjs "\$manifest"/);
 });

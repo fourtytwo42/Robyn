@@ -7,8 +7,8 @@ cd "$release_real"
 sha256sum -c testnet-release-manifest.json.sha256 >/dev/null
 sha256sum -c testnet-release-files.sha256 >/dev/null
 git_sha="$(jq -r .gitSha testnet-release-manifest.json)"
-manifest="$release_real/deployments/46630-v4.json"
-jq -e '.schemaVersion == 12 and .chainId == 46630' "$manifest" >/dev/null
+manifest="$release_real/deployments/46630-v4-schema13.json"
+jq -e '.schemaVersion == 13 and .chainId == 46630 and .launchControl.initialMode == "Paused"' "$manifest" >/dev/null
 
 pm2_json="$(PM2_HOME=/home/hendo420/.pm2 "$release_real/node_modules/.bin/pm2" jlist)"
 testnet="$(jq '[.[]|select(.name|endswith("-testnet"))]' <<<"$pm2_json")"
@@ -71,8 +71,8 @@ status="$(curl -fsS http://127.0.0.1:3111/status)"
 curl -fsS http://127.0.0.1:3210/health >/dev/null
 public_status="$(curl -fsS https://testnet.sherwoodforest.trade/api/status)"
 [[ "$(jq -r .chainId <<<"$status")" -eq 46630 ]]
-[[ "$(jq -r .launchCount <<<"$status")" -ge 1 ]]
-[[ "$(jq -r .launchCount <<<"$public_status")" -ge 1 ]]
+[[ "$(jq -r .launchCount <<<"$status")" -ge 0 ]]
+[[ "$(jq -r .launchCount <<<"$public_status")" -ge 0 ]]
 [[ "$(jq -r .launchCount <<<"$status")" == \
    "$(jq -r .launchCount <<<"$public_status")" ]]
 [[ "$(jq -r .chainId <<<"$public_status")" -eq 46630 ]]
@@ -99,7 +99,7 @@ observed_head_gap=$(( local_observed_head - public_observed_head ))
 [[ "$observed_head_gap" -le 100 ]]
 ROBYN_TESTNET_RPC_URL="$server_rpc_url" \
   ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS=true \
-  node scripts/verify-testnet-v4-deployment.mjs "$manifest" \
+  node scripts/verify-testnet-schema13-deployment.mjs "$manifest" \
   > /tmp/robyn-testnet-deployment-verify.json
 jq -e '.failures|length==0' /tmp/robyn-testnet-deployment-verify.json >/dev/null
 

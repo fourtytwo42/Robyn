@@ -10,6 +10,7 @@ release_id="${1:-$git_sha}"
 target="/opt/robyn/testnet-releases/$release_id"
 staging="/opt/robyn/testnet-staging/$release_id.$$"
 archive="/tmp/robyn-testnet-source-$$.tar"
+deployment_manifest="${ROBYN_TESTNET_DEPLOYMENT_MANIFEST:-deployments/46630-v4-schema13.json}"
 gate_log="/tmp/robyn-testnet-gates-$$.log"
 security_json="/tmp/robyn-testnet-security-$$.json"
 release_env="${ROBYN_TESTNET_RELEASE_ENV:-/home/hendo420/.config/robyn/testnet/release.env}"
@@ -27,13 +28,14 @@ trap cleanup EXIT
 [[ ! -e "$target" ]] || { echo "release exists: $target" >&2; exit 1; }
 mkdir -p /opt/robyn/testnet-releases /opt/robyn/testnet-staging
 
+[[ -r "$deployment_manifest" ]] || { echo "missing Testnet deployment manifest: $deployment_manifest" >&2; exit 1; }
 set -a
 # shellcheck disable=SC1090
 source "$release_env"
 set +a
 node scripts/validate-public-release-environment.mjs \
   testnet \
-  deployments/46630-v4.json \
+  "$deployment_manifest" \
   "$NEXT_PUBLIC_APP_URL" \
   "$ROBYN_TESTNET_RPC_URL" \
   "${NEXT_PUBLIC_ROBYN_EXPLORER_URL:-https://explorer.testnet.chain.robinhood.com}"
@@ -81,7 +83,7 @@ cp "$security_json" "$staging/release-evidence/static-security-audit.json"
     --recursive run build
   ROBYN_NETWORK_MODE=testnet \
   NEXT_PUBLIC_ROBYN_NETWORK_MODE=testnet \
-  ROBYN_DEPLOYMENT_PATH="$staging/deployments/46630-v4.json" \
+  ROBYN_DEPLOYMENT_PATH="$staging/$deployment_manifest" \
   NEXT_PUBLIC_ROBYN_RPC_URL="$ROBYN_TESTNET_RPC_URL" \
   NEXT_PUBLIC_ROBYN_EXPLORER_URL="${NEXT_PUBLIC_ROBYN_EXPLORER_URL:-https://explorer.testnet.chain.robinhood.com}" \
   NEXT_PUBLIC_DATA_API_URL="" \
@@ -127,7 +129,7 @@ cp "$security_json" "$staging/release-evidence/static-security-audit.json"
     --arg gitSha "$git_sha" \
     --arg createdAt "$(date -u +%FT%TZ)" \
     --arg sourceArchiveSha256 "$source_sha" \
-    --arg deploymentManifestSha256 "$(sha256sum deployments/46630-v4.json | cut -d' ' -f1)" \
+    --arg deploymentManifestSha256 "$(sha256sum "$deployment_manifest" | cut -d' ' -f1)" \
     --arg nodeVersion "$(node --version)" \
     --arg pnpmVersion "$(pnpm --version)" \
     '{
