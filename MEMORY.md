@@ -29,6 +29,10 @@
   endurance; do not treat this degraded state as acceptance.
 - Evidence: Protected deployment and verification evidence is under
   `/home/hendo420/robyn-evidence/schema14-mainnet-go/testnet-live/6f0b1ec/`.
+- Release: Immutable application release `03bf8788a0ae01a95bd9b64799895140488cd37d`
+  passed the complete build gate and checksum verification. Promotion is pending
+  because `scripts/promote-testnet-release.sh` requires root and this SSH
+  session has no noninteractive sudo authorization.
 - Follow-up: Commit and push the manifest/verifier checkpoint, build and promote
   the exact application release, rebuild the active database from block
   95,295,401, then complete recovery, uninterrupted two-hour endurance,
