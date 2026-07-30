@@ -1587,9 +1587,13 @@ Durable project context lives here. Update this file whenever information should
   successful and none may be replayed. The coordinator is Paused by guardian
   transaction `0x0a0b5c59c88c1569b6599af0ff841243bf4a381ab5e48b6f21eff2c86e0965c7`.
   Existing bonding, trading, claims, and withdrawals remain operational.
-  Complete journaled unused-funding recovery, seal checksums, then implement
-  and run the isolated fast and deep Devnet torture tiers. No Mainnet action
-  occurred.
+  Journaled recovery returned unused RDAO and native funding in 35 new,
+  confirmed recovery transactions while retaining all launch-token positions.
+  The recovery journal also preserves the 18 confirmed graduation-prefixed
+  funding and bonding transactions. `SHA256SUMS` verifies the run state,
+  samples, transaction journal, receipt reconciliation, guardian pause,
+  recovery journal, and reviews. Implement and run the isolated fast and deep
+  Devnet torture tiers next. No Mainnet action occurred.
 
 - 2026-07-30: Schema-15 exact release `afcf4b2` is live and healthy. Failed
   run `schema15-accelerated-f66c4e1-01` is sealed and its unused funding was
@@ -3392,9 +3396,11 @@ Durable project context lives here. Update this file whenever information should
 - New Testnet launches are Paused. Public Testnet remains online and existing
   launch activity is not paused.
 - The funding-recovery tool now has an explicit fail-closed
-  `--allow-incomplete-history` path for an incomplete failed run with no
-  graduation history. It preserves healthy time, terminal failure, and
-  retained bonding launches in its durable journal.
+  `--allow-incomplete-history` path for an incomplete failed run. It requires
+  the explicit bonding-history flag, preserves healthy time, terminal failure,
+  retained launches, and every graduation-prefixed transaction, and recovers
+  only unused RDAO/native funding. Run 04 completed 35 successful recovery
+  transactions and its sealed checksums pass.
 
 ### 2026-07-30 - Schema-15 accelerated Testnet checkpoint
 
@@ -5715,11 +5721,6 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Complete run 04 funding recovery using both
-  `--allow-incomplete-history true` and `--allow-bonding-history true`, then
-  checksum and seal its state, samples, transaction journal, receipt
-  reconciliation, manual guardian pause, and recovery journal. Never replay
-  any of its 89 confirmed hashes and retain its three launch-token positions.
 - Implement the Schema-15 isolated Devnet torture harness, run the mandatory
   fast tier, preserve exact failing seeds if any, and run the deep tier before
   any Testnet promotion.

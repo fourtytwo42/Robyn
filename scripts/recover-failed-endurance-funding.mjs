@@ -89,14 +89,13 @@ const healthySeconds = Number(failedRun.healthySeconds ?? 0);
 const incompleteHistoryIsEligible =
   allowIncompleteHistory &&
   failedRun.completed !== true &&
-  failedRun.terminalFailure &&
-  !hasGraduationHistory;
+  failedRun.terminalFailure;
 if (
   failedRun.runId !== option("run-id") ||
   failedRun.failed !== true ||
   (healthySeconds !== 0 && !incompleteHistoryIsEligible) ||
   (retainedLaunches.length !== 0 && !allowBondingHistory) ||
-  hasGraduationHistory
+  (hasGraduationHistory && !incompleteHistoryIsEligible)
 ) {
   throw new Error(
     "Funding recovery requires an eligible failed, incomplete run without graduation history",
@@ -182,13 +181,23 @@ try {
     recipient: manifest.deployer,
     bondingHistoryRecovery: retainedLaunches.length > 0,
     incompleteHistoryRecovery: healthySeconds !== 0,
+    graduationHistoryRecovery: hasGraduationHistory,
     originalHealthySeconds: healthySeconds,
     terminalFailure: failedRun.terminalFailure
       ? {
-          reason: failedRun.terminalFailure.reason,
-          at: failedRun.terminalFailure.at,
+          message:
+            failedRun.terminalFailure.message ??
+            failedRun.terminalFailure.reason ??
+            null,
+          sampledAt:
+            failedRun.terminalFailure.sampledAt ??
+            failedRun.terminalFailure.at ??
+            null,
         }
       : null,
+    graduationTransactions: (failedRun.transactions ?? [])
+      .filter((entry) => entry.label?.startsWith("endurance-graduate-"))
+      .map(({ label, hash, blockNumber }) => ({ label, hash, blockNumber })),
     retainedLaunches: retainedLaunches.map((launch) => ({
       index: launch.index,
       token: launch.token,
