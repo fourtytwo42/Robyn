@@ -29,14 +29,18 @@
   endurance; do not treat this degraded state as acceptance.
 - Evidence: Protected deployment and verification evidence is under
   `/home/hendo420/robyn-evidence/schema14-mainnet-go/testnet-live/6f0b1ec/`.
-- Release: Exact application candidate `a9893f4f585564f5cc47defa8b2199d9e8c6a7ba`
+- Release: Exact application code commit
+  `3673d313b5989723de118d9e9618a206a33526a2`
   passed the complete immutable release gate and checksum verification. Its
   promotion tooling now creates and migrates a guaranteed-empty database when
   explicitly requested and isolates BullMQ financial jobs by database name, so
-  Schema-13 projections and queue entries cannot leak into Schema-14.
+  Schema-13 projections and queue entries cannot leak into Schema-14. Read-only
+  RPC traffic receives three bounded transient retries, while an ambiguous
+  signed-transaction transport failure is never replayed across providers and
+  instead requires transaction-journal reconciliation.
 - Promotion blocker: `/opt/robyn/testnet-current` still serves archived
   Schema-13 release `5c552fe-schema13`. Root must promote the frozen Schema-14
-  release with fresh database `robyn_testnet_schema14_a9893f4`; this SSH session
+  release with fresh database `robyn_testnet_schema14_95295401`; this SSH session
   has no noninteractive sudo authorization.
 - Follow-up: Promote the final release, rebuild from block 95,295,401, repair
   the root-owned LAN Nitro unit, then complete recovery, uninterrupted two-hour
@@ -1426,11 +1430,13 @@ Durable project context lives here. Update this file whenever information should
 - 2026-07-30: Fresh Schema-14 contracts are live on Testnet from block
   95,295,401 and remain Paused. The 84 deployment receipts succeeded, the
   dedicated verifier passed 177 checks, and no Mainnet action occurred. Exact
-  application candidate `a9893f4f585564f5cc47defa8b2199d9e8c6a7ba`
-  passed the complete release gate and isolates its fresh database and keeper
-  queue. Root promotion to `robyn_testnet_schema14_a9893f4` is pending. The LAN
-  Testnet Nitro feed mismatch must also be repaired and its Alchemy failover
-  drills repeated before recovery or endurance can pass.
+  application code commit `3673d313b5989723de118d9e9618a206a33526a2`
+  passed the complete release gate, isolates its fresh database and keeper
+  queue, retries only read-only transient RPC failures, and never replays an
+  ambiguous signed write across providers. Root promotion to
+  `robyn_testnet_schema14_95295401` is pending. The LAN Testnet Nitro feed
+  mismatch must also be repaired and its Alchemy failover drills repeated
+  before recovery or endurance can pass.
 
 - 2026-07-30: The hard `0.04707292 ETH` funding gate remains. Complete
   receipt measurement requires protected production signer/allocation files,
@@ -4767,10 +4773,12 @@ When sources conflict, use this order:
 
 - 2026-07-30: Fresh Schema-14 Testnet deployment completed at block 95,295,401
   with 84 successful receipts and 177/177 dedicated live checks. Exact
-  candidate `a9893f4` passed format, lint, typecheck, all application/script
-  tests, 247 Foundry tests with one protected Mainnet fork skip, internal
-  security gates, immutable packaging, and checksum verification. Promotion
-  remains root-blocked; no Mainnet action occurred.
+  application code commit `3673d31` passed format, lint, typecheck, all
+  application/script tests, 247 Foundry tests with one protected Mainnet fork
+  skip, and the internal security gates. Focused failover tests prove bounded
+  retry for reads and zero cross-provider replay after an ambiguous signed
+  write. Final immutable packaging follows the documentation checkpoint.
+  Promotion remains root-blocked; no Mainnet action occurred.
 
 - 2026-07-30: Schema-13 funding tooling passed 9 focused tests, all script
   syntax checks, and the complete Foundry suite. The official Delayed Inbox
@@ -5440,7 +5448,7 @@ When sources conflict, use this order:
 ## Open Follow-ups
 
 - Promote the frozen Schema-14 application onto fresh database
-  `robyn_testnet_schema14_a9893f4`, rebuild from deployment block 95,295,401,
+  `robyn_testnet_schema14_95295401`, rebuild from deployment block 95,295,401,
   then repeat recovery, two-hour endurance, reconciliation, and browser
   acceptance. Any contract change restarts these gates.
 - Supply protected `guardian-signers.json` and `rdao-allocation.json` with four
