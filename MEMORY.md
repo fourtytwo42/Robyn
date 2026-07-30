@@ -64,6 +64,10 @@
   promoted process exposes `.pm2_env.PGDATABASE`. Live services remained
   healthy and no backup, fault drill, or transaction started. The lookup now
   accepts both PM2 layouts and has focused regression coverage.
+- Recovery attempt 02: The corrected lookup passed, then the gate refused the
+  archived generic `46630-v4.json` Schema-14 manifest before any service was
+  touched. Recovery now exclusively verifies, hashes, and archives
+  `46630-v4-schema15.json`; regression coverage forbids the generic alias.
 - Follow-up: Commit, push, rebuild, and promote this recovery-tooling fix, then
   restart the full gate with a new run ID before installing or starting a new
   Schema-15 endurance run.
@@ -4884,6 +4888,12 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-30: Recovery run `schema15-recovery-f60dee6-02` failed
+  safely at manifest preflight because the Schema-15 gate still referenced the
+  archived generic Schema-14 manifest. No service was interrupted and the live
+  stack stayed healthy. All recovery manifest operations now use the explicit
+  Schema-15 file, and the focused test forbids regression.
 
 - 2026-07-30: Recovery run `schema15-recovery-7607f1f-01` failed
   safely before touching services because its PM2 database lookup did not

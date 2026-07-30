@@ -40,7 +40,7 @@ database="$(
   exit 1
 }
 jq -e '.schemaVersion == 15 and .chainId == 46630' \
-  "${release}/deployments/46630-v4.json" >/dev/null
+  "${release}/deployments/46630-v4-schema15.json" >/dev/null
 
 resume_writers() {
   if [[ "${writers_quiesced}" == true ]]; then
@@ -178,7 +178,7 @@ SQL
 
 wait_healthy baseline
 served_sha="$(jq -er .gitSha "${release}/testnet-release-manifest.json")"
-manifest_sha="$(sha256sum "${release}/deployments/46630-v4.json" | cut -d' ' -f1)"
+manifest_sha="$(sha256sum "${release}/deployments/46630-v4-schema15.json" | cut -d' ' -f1)"
 runuser -u hendo420 -- env PM2_HOME="${PM2_HOME}" "${pm2}" jlist >"${evidence}/pm2-before.json"
 status_json >"${evidence}/status-before.json"
 runuser -u hendo420 -- psql -d "${database}" -Atqc "select count(*) from job_audit where state='failed'" >"${evidence}/failed-jobs-before.txt"
@@ -212,7 +212,7 @@ mkdir -p "${mc_config}"
 /usr/local/bin/mcli --config-dir "${mc_config}" mirror --overwrite --preserve "source/${MINIO_BUCKET}" "${snapshot}/artifacts" >/dev/null
 curl -fsS -X POST http://127.0.0.1:5001/api/v0/pin/ls?type=recursive | jq -r '.Keys|keys[]' | sort >"${snapshot}/ipfs/pins.txt"
 runuser -u hendo420 -- psql -d "${database}" -Atqc "select cid||E'\t'||artifact_sha256 from ipfs_pins where local_status='pinned' order by cid" >"${snapshot}/ipfs/pin-artifacts.tsv"
-cp "${release}/deployments/46630-v4.json" "${snapshot}/configuration/"
+cp "${release}/deployments/46630-v4-schema15.json" "${snapshot}/configuration/"
 cp "${release}/testnet-release-manifest.json" "${snapshot}/configuration/"
 sed -E 's#=.*#=<redacted>#' /home/hendo420/.config/robyn/testnet/release.env >"${snapshot}/configuration/release-env-inventory.txt"
 systemctl cat pm2-hendo420.service postgresql.service redis-server.service minio.service robyn-ipfs.service nginx.service >"${snapshot}/configuration/systemd-units.txt"

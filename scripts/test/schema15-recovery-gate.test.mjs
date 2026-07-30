@@ -17,6 +17,8 @@ describe("schema-15 recovery gate", () => {
     );
     assert.match(source, /\^robyn_testnet_schema15_\[A-Za-z0-9_\]\+\$/);
     assert.match(source, /\.schemaVersion == 15/);
+    assert.match(source, /deployments\/46630-v4-schema15\.json/);
+    assert.doesNotMatch(source, /deployments\/46630-v4\.json/);
     assert.doesNotMatch(source, /database="robyn_testnet_rehearsal"/);
   });
 
