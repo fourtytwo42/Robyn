@@ -22,7 +22,7 @@ const nodeBinary = "/opt/node-v24.18.0-linux-x64/bin/node";
 const database = process.env.ROBYN_TESTNET_DATABASE || "robyn_testnet";
 const queueName =
   process.env.ROBYN_TESTNET_QUEUE_NAME ||
-  `robyn-conversions-testnet:${database}`;
+  `robyn-conversions-testnet-${database}`;
 const authOrigins =
   process.env.ROBYN_TESTNET_AUTH_ORIGINS || "http://127.0.0.1:3012";
 
