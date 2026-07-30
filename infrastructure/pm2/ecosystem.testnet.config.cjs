@@ -50,6 +50,8 @@ module.exports = {
               RPC_RECOVERY_HEAD_LAG_BLOCKS: "10",
               RPC_RECOVERY_CONSECUTIVE_PROBES: "2",
               RPC_UPSTREAM_TIMEOUT_MS: "15000",
+              RPC_UPSTREAM_RETRY_COUNT: "3",
+              RPC_UPSTREAM_RETRY_DELAY_MS: "250",
               RPC_STATUS_FILE: "/var/lib/robyn/testnet-rpc-gateway/status.json",
             },
             autorestart: true,

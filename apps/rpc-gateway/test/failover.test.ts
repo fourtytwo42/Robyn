@@ -1,6 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  createHttpUpstreamRequest,
   TestnetRpcFailover,
   type RpcBody,
   type UpstreamRequest,
@@ -8,6 +9,10 @@ import {
 
 const primaryUrl = "http://192.0.2.10:8547";
 const fallbackUrl = "https://alchemy.invalid/key";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 function result(id: unknown, value: unknown) {
   return { jsonrpc: "2.0", id, result: value };
@@ -195,7 +200,7 @@ describe("testnet RPC failover", () => {
     expect(failover.snapshot().activeProvider).toBe("primary");
   });
 
-  it("retries the identical request through Alchemy after a primary transport failure", async () => {
+  it("does not replay a signed transaction after an ambiguous primary transport failure", async () => {
     const upstream = createUpstream();
     const failover = controller(upstream.request);
     await failover.probe();
@@ -208,14 +213,16 @@ describe("testnet RPC failover", () => {
       params: ["0x1234"],
     };
 
-    await failover.request(payload);
+    await expect(failover.request(payload)).rejects.toThrow(
+      "primary write outcome is unknown; reconcile before retry",
+    );
 
     expect(failover.snapshot()).toMatchObject({
       activeProvider: "fallback",
       primaryRequestFailures: 1,
-      paidFallbackCu: 10,
+      paidFallbackCu: 0,
     });
-    expect(upstream.request).toHaveBeenLastCalledWith(fallbackUrl, payload);
+    expect(upstream.request).not.toHaveBeenCalledWith(fallbackUrl, payload);
   });
 
   it("falls back for read-only requests when the LAN node cannot serve state", async () => {
@@ -357,5 +364,58 @@ describe("testnet RPC failover", () => {
       primary: { healthy: false },
       fallback: { healthy: false },
     });
+  });
+});
+
+describe("HTTP upstream retries", () => {
+  it("retries a transient read failure with the identical payload", async () => {
+    const payload = {
+      jsonrpc: "2.0" as const,
+      id: 21,
+      method: "eth_blockNumber",
+      params: [],
+    };
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("connection reset"))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(result(21, "0x3e8")), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      createHttpUpstreamRequest(1_000, 2, 1)(fallbackUrl, payload),
+    ).resolves.toEqual(result(21, "0x3e8"));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const firstRequest = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const secondRequest = fetchMock.mock.calls[1]?.[1] as RequestInit;
+    expect(firstRequest.body).toBe(secondRequest.body);
+  });
+
+  it("never retries a signed transaction transport failure", async () => {
+    const payload = {
+      jsonrpc: "2.0" as const,
+      id: 22,
+      method: "eth_sendRawTransaction",
+      params: ["0x1234"],
+    };
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("connection reset"))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(result(22, "0xhash")), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      createHttpUpstreamRequest(1_000, 3, 1)(primaryUrl, payload),
+    ).rejects.toThrow("connection reset");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

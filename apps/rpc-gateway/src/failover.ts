@@ -137,18 +137,45 @@ function hasUnavailableStateError(response: unknown): boolean {
   });
 }
 
-export function createHttpUpstreamRequest(timeoutMs = 15_000): UpstreamRequest {
+function transientHttpStatus(status: number): boolean {
+  return [408, 425, 429, 500, 502, 503, 504].includes(status);
+}
+
+export function createHttpUpstreamRequest(
+  timeoutMs = 15_000,
+  retryCount = 3,
+  retryDelayMs = 250,
+): UpstreamRequest {
   return async (url, payload) => {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-    if (!response.ok) {
-      throw new Error(`upstream returned HTTP ${response.status}`);
+    const maximumAttempts = isReadOnlyBody(payload) ? retryCount + 1 : 1;
+    let lastError: unknown = new Error("upstream request failed");
+    for (let attempt = 0; attempt < maximumAttempts; attempt += 1) {
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+        if (!response.ok) {
+          const error = new Error(`upstream returned HTTP ${response.status}`);
+          if (
+            !transientHttpStatus(response.status) ||
+            attempt + 1 >= maximumAttempts
+          ) {
+            throw error;
+          }
+          lastError = error;
+        } else {
+          return response.json() as Promise<unknown>;
+        }
+      } catch (error) {
+        lastError = error;
+        if (attempt + 1 >= maximumAttempts) throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
     }
-    return response.json() as Promise<unknown>;
+    throw lastError;
   };
 }
 
@@ -342,7 +369,7 @@ export class TestnetRpcFailover {
           throw new Error("primary state unavailable");
         }
         return response;
-      } catch {
+      } catch (error) {
         this.primaryRequestFailures += 1;
         this.primary = {
           ...this.primary,
@@ -352,6 +379,13 @@ export class TestnetRpcFailover {
         };
         this.recoveryHealthyProbes = 0;
         this.use("fallback");
+        if (!isReadOnlyBody(payload)) {
+          await this.persist(this.snapshot());
+          throw new Error(
+            "primary write outcome is unknown; reconcile before retry",
+            { cause: error },
+          );
+        }
         const cost = bodyComputeUnits(payload);
         this.paidFallbackCu += cost;
         try {
