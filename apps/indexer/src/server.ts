@@ -30,6 +30,7 @@ import {
 import {
   createDebouncedWake,
   FilteredLogWakeClient,
+  observedLagRequiresSync,
   WakeCoordinator,
 } from "./wake.js";
 
@@ -74,6 +75,9 @@ const reconciliationMs = Number(
     "900000",
 );
 const ingesterHeartbeatMs = Number(process.env.INDEXER_HEARTBEAT_MS ?? "10000");
+const maximumObservedLagBlocks = BigInt(
+  process.env.INDEXER_MAXIMUM_OBSERVED_LAG_BLOCKS ?? "40",
+);
 const wakeDebounceMs = Number(process.env.INDEXER_WS_DEBOUNCE_MS ?? "500");
 const wakeRpcUrl = process.env.ROBYN_OPERATOR_WS_RPC_URL?.trim() || null;
 const projectorPollMs = Number(process.env.PROJECTOR_POLL_MS ?? "1000");
@@ -1722,11 +1726,10 @@ async function runIngesterPipeline() {
   if (
     !Number.isSafeInteger(ingesterHeartbeatMs) ||
     ingesterHeartbeatMs <= 0 ||
-    ingesterHeartbeatMs > reconciliationMs
+    ingesterHeartbeatMs > reconciliationMs ||
+    maximumObservedLagBlocks <= 0n
   ) {
-    throw new Error(
-      "Indexer heartbeat interval must be positive and no greater than reconciliation",
-    );
+    throw new Error("Indexer heartbeat and observed-lag policy are invalid");
   }
   if (wakeRpcUrl) {
     filteredLogWakeClient = new FilteredLogWakeClient({
@@ -1806,6 +1809,15 @@ async function runIngesterPipeline() {
             webSocket: filteredLogWakeClient?.snapshot() ?? null,
             heartbeatOnly: true,
           });
+          if (
+            result.checkpoint === null ||
+            observedLagRequiresSync(
+              observedHead,
+              BigInt(result.checkpoint),
+              maximumObservedLagBlocks,
+            )
+          )
+            break;
         }
       }
     } catch (error) {

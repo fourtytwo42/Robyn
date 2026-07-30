@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   createDebouncedWake,
   normalizeWakeAddresses,
+  observedLagRequiresSync,
   reconnectDelayMs,
   WakeCoordinator,
   wakeAddressFingerprint,
@@ -27,6 +28,13 @@ test("websocket reconnect backoff is bounded", () => {
   assert.equal(reconnectDelayMs(1), 2_000);
   assert.equal(reconnectDelayMs(20), 30_000);
   assert.throws(() => reconnectDelayMs(-1), /Invalid/);
+});
+
+test("observed head lag triggers a bounded canonical sync", () => {
+  assert.equal(observedLagRequiresSync(139n, 100n, 40n), false);
+  assert.equal(observedLagRequiresSync(140n, 100n, 40n), true);
+  assert.equal(observedLagRequiresSync(99n, 100n, 40n), false);
+  assert.throws(() => observedLagRequiresSync(140n, 100n, 0n), /positive/);
 });
 
 test("wake coordinator coalesces queued events and retains reconciliation", async () => {

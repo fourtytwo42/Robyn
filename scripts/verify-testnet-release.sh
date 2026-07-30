@@ -20,7 +20,8 @@ testnet="$(jq '[.[]|select(.name|endswith("-testnet"))]' <<<"$pm2_json")"
 indexer_ws_url="$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_OPERATOR_WS_RPC_URL' <<<"$testnet")"
 [[ "$indexer_ws_url" == wss://robinhood-testnet.g.alchemy.com/v2/* ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_RECONCILIATION_MS' <<<"$testnet")" == "900000" ]]
-[[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_HEARTBEAT_MS' <<<"$testnet")" == "30000" ]]
+[[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_HEARTBEAT_MS' <<<"$testnet")" == "5000" ]]
+[[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_MAXIMUM_OBSERVED_LAG_BLOCKS' <<<"$testnet")" == "40" ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_WS_DEBOUNCE_MS' <<<"$testnet")" == "500" ]]
 
 server_rpc_url="$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_OPERATOR_RPC_URL' <<<"$testnet")"

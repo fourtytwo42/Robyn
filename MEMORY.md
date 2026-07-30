@@ -1,5 +1,26 @@
 # Project Memory
 
+### 2026-07-29 - First schema-12 endurance attempt exposed quiet-chain lag
+
+- Context: Recovery run `schema12-e45158d-final-02` passed with matching
+  database fingerprints, 104 reproduced artifacts, isolated datastore and
+  storage restores, PM2 and native-service recovery, LAN/Alchemy failure
+  drills, zero duplicate logs, and zero failed financial work.
+- Result: Endurance run `schema12-2h-e45158d-03` funded successfully and
+  confirmed 24 transactions with no failed receipt. Its second timed sample
+  correctly invalidated the complete clock when fresh-RPC ingestion lag reached
+  159 blocks. Preserve this run and never replay its confirmed hashes.
+- Root cause: Robinhood Testnet advances about five blocks per second. The
+  event-driven ingester used a 30-second head heartbeat and a 15-minute safety
+  reconciliation, so a quiet interval could exceed the 100-block gate before
+  the next canonical sync.
+- Decision: Use a five-second LAN-primary head heartbeat and trigger canonical
+  synchronization at 40 observed blocks of lag while retaining the 15-minute
+  full reconciliation. Alchemy remains fallback/comparison only during normal
+  operation. Focused indexer tests, formatting, lint, and typecheck pass.
+- Follow-up: Commit, push, rebuild, promote, rerun recovery, then use a fresh
+  run ID and empty journal for another uninterrupted two-hour attempt.
+
 ### 2026-07-29 - Lifecycle complete; recovery fixture corrected
 
 - Context: Campaign `schema12-assurance-0bad303-03` completed all ten phases

@@ -1,5 +1,18 @@
 import type { Address } from "viem";
 
+export function observedLagRequiresSync(
+  observedHead: bigint,
+  checkpoint: bigint,
+  maximumLagBlocks: bigint,
+) {
+  if (maximumLagBlocks <= 0n) {
+    throw new Error("Maximum observed lag must be positive");
+  }
+  return (
+    observedHead > checkpoint && observedHead - checkpoint >= maximumLagBlocks
+  );
+}
+
 export type WakeReason = "event" | "reconciliation";
 
 export class WakeCoordinator {
