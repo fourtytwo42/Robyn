@@ -68,11 +68,12 @@
   archived generic `46630-v4.json` Schema-14 manifest before any service was
   touched. Recovery now exclusively verifies, hashes, and archives
   `46630-v4-schema15.json`; regression coverage forbids the generic alias.
-- Recovery pass: Exact release `1a1425c` passed full recovery run
-  `schema15-recovery-1a1425c-03`. The encrypted backup was copied outside the
-  VM failure domain; database fingerprints matched; Redis, MinIO, and IPFS
-  restored; all PM2/native-service and LAN/Alchemy failure drills passed; and
-  there were zero duplicate logs or failed financial jobs.
+- Recovery pass: Exact served release `f66c4e1` passed full recovery run
+  `schema15-recovery-f66c4e1-04`. The encrypted backup was copied outside the
+  VM failure domain; database fingerprints matched; 117 artifacts plus Redis,
+  MinIO, and IPFS restored; all PM2/native-service and LAN/Alchemy failure drills
+  passed; and there were zero duplicate logs or failed financial jobs. Earlier
+  run 03 also passed against `1a1425c`.
 - Endurance preflight: The static installer and runner default still referenced
   the archived generic Schema-14 manifest. They now bind explicitly to
   `46630-v4-schema15.json`, and regression coverage forbids the generic alias.
@@ -4900,6 +4901,12 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-30: Exact served release `f66c4e1` passed recovery run
+  `schema15-recovery-f66c4e1-04` with matching database fingerprints, 117
+  restored artifacts, Redis/MinIO/IPFS recovery, all PM2 and native-service
+  drills, all RPC failover/recovery drills, no duplicate logs, no failed jobs,
+  off-VM encrypted backup, and verified evidence checksums.
 
 - 2026-07-30: Exact accelerated endurance release `f66c4e1` is live.
   Fresh run `schema15-accelerated-f66c4e1-01` has a new encrypted 100-wallet
