@@ -33,7 +33,7 @@ export PM2_HOME=/home/hendo420/.pm2
 database="$(
   runuser -u hendo420 -- env PM2_HOME="${PM2_HOME}" "${pm2}" jlist |
     jq -er \
-      '.[] | select(.name=="robyn-indexer-testnet") | .pm2_env.env.PGDATABASE'
+      '.[] | select(.name=="robyn-indexer-testnet") | (.pm2_env.PGDATABASE // .pm2_env.env.PGDATABASE // empty)'
 )"
 [[ "${database}" =~ ^robyn_testnet_schema15_[A-Za-z0-9_]+$ ]] || {
   echo "refusing non-schema-15 active database: ${database}" >&2

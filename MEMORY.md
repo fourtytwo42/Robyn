@@ -13,12 +13,12 @@
   offers writes every two minutes, reviews every five minutes, creates launches
   through minute 21, graduates through minute 28, and probes streams at minutes
   1, 3, 5, 9, and 10.
-- State: Exact commit `9468b48469a7f943703c89a999b9b418d00a5899`
-  is pushed to `main`. A fresh Schema-15 contract stack is deployed on Testnet
-  from block 95,386,964 and remains Paused. The application still serves the
-  archived Schema-14 release until Schema-15 build, promotion, and recovery pass.
-  The old endurance unit is runtime-masked and inactive. No Mainnet transaction
-  occurred.
+- State: Exact application release
+  `7607f1f10c274f9dac659f3fa92a67daf974cf0a` is pushed to `main`, built
+  immutably, and promoted on Testnet against fresh database
+  `robyn_testnet_schema15_95386964`. The fresh Schema-15 contracts remain
+  Paused from block 95,386,964. The old endurance unit is runtime-masked and
+  inactive. No Mainnet transaction occurred.
 - Files: Reward-duration configuration is authority-bound and sealed in
   `RobynLaunchToken.sol`, immutable in `RobynDaoToken.sol` and
   `RobynNativeProtocolFeeRouterV4.sol`, and injected by
@@ -53,9 +53,20 @@
   correction is `8c27f6e4ffd8f5244022777545eb37a630ceb8b450b3c2958fbcab0794c1b2e9`.
   Evidence is under
   `/home/hendo420/robyn-evidence/schema15-mainnet-go/testnet-live/9468b48-fresh-20260730T204819Z/`.
-- Follow-up: Commit the live manifest and handoff, build and promote an exact
-  Schema-15 application release with a new empty database, then run the full
-  recovery gate before installing or starting a new Schema-15 endurance run.
+- Promotion: Immutable release `7607f1f` passed the complete build gate and
+  promoted successfully on 2026-07-30. The new database has 14 migrations,
+  zero launches, and 74 canonical logs from the Schema-15 deployment. All seven
+  Testnet PM2 processes are online with zero restarts. LAN is primary, Alchemy
+  is healthy fallback, both heads agree, the WebSocket is subscribed, queues
+  are empty, and the 177-check live verifier passes.
+- Recovery attempt 01: The gate exited before quiescing any process because
+  its PM2 database lookup assumed only `.pm2_env.env.PGDATABASE`, while the
+  promoted process exposes `.pm2_env.PGDATABASE`. Live services remained
+  healthy and no backup, fault drill, or transaction started. The lookup now
+  accepts both PM2 layouts and has focused regression coverage.
+- Follow-up: Commit, push, rebuild, and promote this recovery-tooling fix, then
+  restart the full gate with a new run ID before installing or starting a new
+  Schema-15 endurance run.
 
 ### 2026-07-30 - Fresh Schema-14 Testnet deployment completed Paused
 
@@ -1506,13 +1517,14 @@ Durable project context lives here. Update this file whenever information should
 ## Active Handoff
 
 - 2026-07-30: Schema-15 accelerated clocks are deployed fresh on Testnet from
-  block 95,386,964 and the 177-check verifier passes. The stack remains Paused;
-  the public application still serves Schema-14. The first partial attempt and
-  the accidentally resumed Schema-14 endurance run are invalidated, sealed,
-  and must never be replayed. The old endurance unit is runtime-masked. Next:
-  commit the live manifest, build/promote Schema-15 against a new empty
-  database, complete recovery, then install a new run ID. Production clocks
-  remain one hour and no Mainnet transaction occurred.
+  block 95,386,964 and exact release `7607f1f` is promoted against fresh
+  database `robyn_testnet_schema15_95386964`. The stack remains Paused; all
+  seven PM2 services are online with zero restarts, both RPC providers agree,
+  LAN is primary, queues are empty, and the 177-check verifier passes. The first
+  partial attempt and accidentally resumed Schema-14 run remain invalidated and
+  sealed. The old endurance unit is runtime-masked. Next: complete recovery,
+  then install a new run ID. Production clocks remain one hour and no Mainnet
+  transaction occurred.
 
 - 2026-07-30: Fresh Schema-14 contracts are live on Testnet from block
   95,295,401 and remain Paused. The 84 deployment receipts succeeded, the
@@ -3292,13 +3304,15 @@ Durable project context lives here. Update this file whenever information should
 - Testnet-only contract clocks are 600-second holder, creator, and DAO reward
   streams, 60-second voting delay, 300-second voting period, and 60-second
   Timelock. Production defaults remain unchanged.
-- Exact commit `9468b48469a7f943703c89a999b9b418d00a5899` passed the complete repository
-  tests and exact isolated deployment rehearsal.
+- Exact application release `7607f1f10c274f9dac659f3fa92a67daf974cf0a`
+  passed the complete immutable build gate and is served publicly from the
+  fresh `robyn_testnet_schema15_95386964` database.
 - Fresh Paused Schema-15 contracts are live from block 95,386,964. The clean
   deployment consumed exactly 84 nonces and passed 177 live checks.
-- The public application still serves Schema-14. The old runner is masked and
-  no Schema-15 endurance clock has started. Recovery and promotion remain
-  pending.
+- LAN is primary, Alchemy is healthy fallback, the WebSocket is subscribed,
+  all seven Testnet PM2 services have zero restarts, and financial queues are
+  empty. The old runner is masked and no Schema-15 endurance clock has started.
+  Recovery remains pending.
 
 ### 2026-07-30 - Schema-14 V4-only checkpoint
 
@@ -4871,6 +4885,19 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-30: Recovery run `schema15-recovery-7607f1f-01` failed
+  safely before touching services because its PM2 database lookup did not
+  accept the active top-level environment layout. The live stack stayed healthy
+  with zero restarts. The lookup now accepts both PM2 layouts and its focused
+  test passes; rebuild and promote before retrying under a new run ID.
+
+- 2026-07-30: Immutable Schema-15 release `7607f1f` promoted onto fresh
+  database `robyn_testnet_schema15_95386964`. Fourteen migrations applied,
+  zero launches were imported, 74 deployment logs indexed, seven Testnet PM2
+  services are online with zero restarts, LAN and Alchemy heads agree, LAN is
+  primary, WebSocket wake is subscribed, queues are empty, and live protocol
+  audit and all 177 deployment checks pass. Recovery remains the next gate.
+
 - 2026-07-30: Schema-15 implementation passed full `pnpm test`: 252 Foundry
   tests, 90 script tests, all application tests and typechecks, with one
   protected Mainnet fork skipped. Exact commit `9468b48469a7f943703c89a999b9b418d00a5899`
@@ -5557,9 +5584,8 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Commit and push the live Schema-15 manifest, build and promote an exact
-  application release with a new empty database, and complete the Schema-15
-  recovery gate. Only then install and start a new two-hour endurance run ID.
+- Complete the Schema-15 recovery gate against exact served release
+  `7607f1f`. Only then install and start a new two-hour endurance run ID.
   Keep the old runner masked and never replay its 47 confirmed transactions or
   the 12 transactions from the invalidated partial deployment. Repeat final
   reconciliation and browser acceptance from zero.

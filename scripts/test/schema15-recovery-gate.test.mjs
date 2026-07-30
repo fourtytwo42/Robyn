@@ -11,6 +11,10 @@ describe("schema-15 recovery gate", () => {
   it("is valid shell and binds recovery to the active schema-15 database", () => {
     assert.doesNotThrow(() => execFileSync("bash", ["-n", scriptPath]));
     assert.match(source, /select\(\.name=="robyn-indexer-testnet"\)/);
+    assert.match(
+      source,
+      /\.pm2_env\.PGDATABASE \/\/ \.pm2_env\.env\.PGDATABASE \/\/ empty/,
+    );
     assert.match(source, /\^robyn_testnet_schema15_\[A-Za-z0-9_\]\+\$/);
     assert.match(source, /\.schemaVersion == 15/);
     assert.doesNotMatch(source, /database="robyn_testnet_rehearsal"/);
