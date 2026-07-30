@@ -16,7 +16,7 @@ install -o root -g hendo420 -m 0640 /dev/null /etc/robyn/testnet-endurance.env
 cat >/etc/robyn/testnet-endurance.env <<EOF
 ROBYN_ENDURANCE_RUN_ID=$run_id
 ROBYN_ENDURANCE_RELEASE_LINK=/opt/robyn/testnet-current
-ROBYN_ENDURANCE_MANIFEST=/opt/robyn/testnet-current/deployments/46630-v4.json
+ROBYN_ENDURANCE_MANIFEST=/opt/robyn/testnet-current/deployments/46630-v4-schema15.json
 ROBYN_ENDURANCE_OUTPUT_DIR=$output
 ROBYN_ENDURANCE_CAMPAIGN_STATE_DIR=$campaign_state
 ROBYN_ENDURANCE_CAMPAIGN_PASSPHRASE_FILE=$campaign_root/campaign-passphrase

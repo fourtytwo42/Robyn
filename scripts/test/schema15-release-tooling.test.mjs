@@ -76,6 +76,11 @@ test("Testnet release pipeline binds the Schema-15 manifest", async () => {
   const build = await readFile("scripts/build-testnet-release.sh", "utf8");
   const promote = await readFile("scripts/promote-testnet-release.sh", "utf8");
   const verify = await readFile("scripts/verify-testnet-release.sh", "utf8");
+  const installEndurance = await readFile(
+    "scripts/install-testnet-endurance.sh",
+    "utf8",
+  );
+  const endurance = await readFile("scripts/testnet-endurance.mjs", "utf8");
   assert.match(build, /deployments\/46630-v4-schema15\.json/);
   assert.match(
     build,
@@ -91,6 +96,16 @@ test("Testnet release pipeline binds the Schema-15 manifest", async () => {
   assert.match(promote, /refusing to reuse database requested as fresh/);
   assert.match(promote, /createdb --owner="\$operator"/);
   assert.match(promote, /expected 14 migrations/);
+  assert.match(
+    installEndurance,
+    /ROBYN_ENDURANCE_MANIFEST=\/opt\/robyn\/testnet-current\/deployments\/46630-v4-schema15\.json/,
+  );
+  assert.doesNotMatch(
+    installEndurance,
+    /ROBYN_ENDURANCE_MANIFEST=.*46630-v4\.json/,
+  );
+  assert.match(endurance, /46630-v4-schema15\.json/);
+  assert.doesNotMatch(endurance, /"46630-v4\.json"/);
 });
 
 test("Schema-15 runtime isolates keeper queues by database", async () => {

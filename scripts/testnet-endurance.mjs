@@ -88,7 +88,7 @@ const releaseManifest = JSON.parse(
 );
 const manifestPath = resolve(
   process.env.ROBYN_ENDURANCE_MANIFEST ??
-    join(releaseRoot, "deployments", "46630-v4.json"),
+    join(releaseRoot, "deployments", "46630-v4-schema15.json"),
 );
 const manifest = assertSecurityRemediationManifest(
   JSON.parse(readFileSync(manifestPath, "utf8")),

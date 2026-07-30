@@ -68,9 +68,16 @@
   archived generic `46630-v4.json` Schema-14 manifest before any service was
   touched. Recovery now exclusively verifies, hashes, and archives
   `46630-v4-schema15.json`; regression coverage forbids the generic alias.
-- Follow-up: Commit, push, rebuild, and promote this recovery-tooling fix, then
-  restart the full gate with a new run ID before installing or starting a new
-  Schema-15 endurance run.
+- Recovery pass: Exact release `1a1425c` passed full recovery run
+  `schema15-recovery-1a1425c-03`. The encrypted backup was copied outside the
+  VM failure domain; database fingerprints matched; Redis, MinIO, and IPFS
+  restored; all PM2/native-service and LAN/Alchemy failure drills passed; and
+  there were zero duplicate logs or failed financial jobs.
+- Endurance preflight: The static installer and runner default still referenced
+  the archived generic Schema-14 manifest. They now bind explicitly to
+  `46630-v4-schema15.json`, and regression coverage forbids the generic alias.
+- Follow-up: Commit, push, build and promote this final runner-manifest binding,
+  then install a fresh Schema-15 run ID. Never reuse prior journals.
 
 ### 2026-07-30 - Fresh Schema-14 Testnet deployment completed Paused
 
@@ -4889,6 +4896,14 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-30: Recovery run `schema15-recovery-1a1425c-03` passed.
+  The database fingerprints matched; 117 artifacts restored; Redis, MinIO, and
+  IPFS recovery passed; every PM2 and native-service fault drill passed; LAN,
+  Alchemy, dual-outage, and primary-return behavior passed; no duplicate logs or
+  failed financial jobs remained; and the encrypted backup was copied outside
+  the VM failure domain. Before endurance installation, the installer and
+  runner were corrected to bind explicitly to the Schema-15 manifest.
+
 - 2026-07-30: Recovery run `schema15-recovery-f60dee6-02` failed
   safely at manifest preflight because the Schema-15 gate still referenced the
   archived generic Schema-14 manifest. No service was interrupted and the live
@@ -5594,8 +5609,9 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Complete the Schema-15 recovery gate against exact served release
-  `7607f1f`. Only then install and start a new two-hour endurance run ID.
+- Build and promote the final explicit Schema-15 endurance-manifest binding,
+  then install and start a fresh two-hour run ID. Recovery has passed; never
+  reuse any earlier transaction journal.
   Keep the old runner masked and never replay its 47 confirmed transactions or
   the 12 transactions from the invalidated partial deployment. Repeat final
   reconciliation and browser acceptance from zero.
