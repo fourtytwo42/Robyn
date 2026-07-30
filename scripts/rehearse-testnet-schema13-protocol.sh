@@ -90,8 +90,8 @@ jq -e \
   --arg gitSha "$git_sha" \
   '.gitCommit == $gitSha
    and .headroomBps >= 2500
-   and .reserveWei >= "1500000000000000"
-   and .transactionCount >= "97"
+   and (.reserveWei | tonumber) >= 1500000000000000
+   and (.transactionCount | tonumber) >= 97
    and .sufficientBalance == true' \
   "$gas_evidence" >/dev/null
 

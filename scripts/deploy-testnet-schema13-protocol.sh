@@ -619,13 +619,13 @@ send_transaction "$timelock" 'grantRole(bytes32,address)' "$canceller_role" "$gu
 send_transaction "$timelock" 'grantRole(bytes32,address)' "$executor_role" "$zero" >/dev/null
 send_transaction "$timelock" 'renounceRole(bytes32,address)' "$admin_role" "$deployer" >/dev/null
 
-profile_version="$(cast call "$market_factory" 'graduationProfileVersion()(uint64)' --rpc-url "$rpc_url")"
-profile_target="$(cast call "$market_factory" 'graduationThresholdNative()(uint256)' --rpc-url "$rpc_url")"
-profile_actual="$(cast call "$market_factory" 'actualGraduationThresholdNative()(uint256)' --rpc-url "$rpc_url")"
-profile_maximum_purchase="$(cast call "$market_factory" 'maximumCurvePurchase()(uint256)' --rpc-url "$rpc_url")"
-profile_virtual_native="$(cast call "$market_factory" 'initialVirtualNativeReserve()(uint256)' --rpc-url "$rpc_url")"
-profile_terminal_native_per_token="$(cast call "$market_factory" 'terminalNativePerTokenX18()(uint256)' --rpc-url "$rpc_url")"
-profile_terminal_sqrt_price="$(cast call "$market_factory" 'terminalSqrtPriceX96()(uint160)' --rpc-url "$rpc_url")"
+profile_version="$(cast call "$market_factory" 'graduationProfileVersion()(uint64)' --rpc-url "$rpc_url" | awk '{print $1}')"
+profile_target="$(cast call "$market_factory" 'graduationThresholdNative()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')"
+profile_actual="$(cast call "$market_factory" 'actualGraduationThresholdNative()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')"
+profile_maximum_purchase="$(cast call "$market_factory" 'maximumCurvePurchase()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')"
+profile_virtual_native="$(cast call "$market_factory" 'initialVirtualNativeReserve()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')"
+profile_terminal_native_per_token="$(cast call "$market_factory" 'terminalNativePerTokenX18()(uint256)' --rpc-url "$rpc_url" | awk '{print $1}')"
+profile_terminal_sqrt_price="$(cast call "$market_factory" 'terminalSqrtPriceX96()(uint160)' --rpc-url "$rpc_url" | awk '{print $1}')"
 profile_hash="$(cast call "$market_factory" 'currentGraduationProfileHash()(bytes32)' --rpc-url "$rpc_url")"
 venue_hash="$(sha256sum "$venue_manifest" | awk '{print $1}')"
 official_asset_routes='[]'

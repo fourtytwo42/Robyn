@@ -23,6 +23,10 @@ test("Schema-13 deployment is fail-closed, Paused, and profile-pinned", async ()
   assert.match(source, /targetGraduationNative: "6000000000000000000"/);
   assert.match(source, /maximumCurvePurchase: "500000000000000000"/);
   assert.doesNotMatch(source, /createLaunch\(/);
+  assert.match(
+    source,
+    /graduationProfileVersion\(\)\(uint64\).*awk '\{print \$1\}'/,
+  );
   assert.match(source, /verify-testnet-schema13-deployment\.mjs/);
 });
 
@@ -56,8 +60,8 @@ test("Schema-13 rehearsal is isolated and emits exact-commit gas evidence", asyn
   assert.match(source, /ROBYN_TESTNET_SCHEMA13_BROADCAST=true/);
   assert.match(source, /measure-testnet-v4-deployment-gas\.sh/);
   assert.match(source, /headroomBps >= 2500/);
-  assert.match(source, /reserveWei >= "1500000000000000"/);
-  assert.match(source, /transactionCount >= "97"/);
+  assert.match(source, /\.reserveWei \| tonumber/);
+  assert.match(source, /\.transactionCount \| tonumber/);
   assert.match(source, /liveBroadcast:false/);
   assert.match(source, /rm -rf -- "\$work"/);
 });
