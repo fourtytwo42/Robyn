@@ -28,6 +28,13 @@
   zero reverts. The internal security gate passes with no history leaks, no
   high/critical dependency advisory, 18,618-byte router runtime, and zero
   unresolved high or medium Slither findings. This remains internal assurance.
+- Rehearsal: Exact pushed commit
+  `8ad3cc58372836023231ceed6d3a304491318bc7` passed the isolated chain-46630
+  Schema-14 deployment rehearsal at fork block 95,292,313. All 84 deployment
+  and configuration receipts succeeded using 57,444,084 gas. The funding
+  preflight required 2,286,650,197,988,140 wei including 25% headroom and the
+  0.0015 ETH reserve. Checksummed evidence is under
+  `/home/hendo420/robyn-evidence/schema14-mainnet-go/testnet-rehearsal/8ad3cc5-20260730/`.
 - State: Work is on `codex/schema14-v4-only`. No Mainnet signature, bridge,
   deployment, route activation, or transaction occurred. Fresh Testnet
   deployment, recovery, two-hour endurance, exact Mainnet fork receipts,
@@ -1377,8 +1384,10 @@ Durable project context lives here. Update this file whenever information should
   deployment. Only canonical v4 single-hop routes and direct WETH wrapping are
   permitted; all 0x/provider adapter code and surfaces are removed. Full
   repository tests, explicit 256-run/depth-128 invariants, and the internal
-  security gate pass. Commit and push the candidate, then run the isolated
-  Schema-14 Testnet rehearsal before any live deployment.
+  security gate pass. Exact pushed commit `8ad3cc5` passed the isolated
+  Schema-14 Testnet rehearsal with 84 successful receipts and 57,444,084 gas.
+  Record this checkpoint, freeze the resulting clean SHA, and rerun the
+  rehearsal before any live deployment.
 
 - 2026-07-30: The hard `0.04707292 ETH` funding gate remains. Complete
   receipt measurement requires protected production signer/allocation files,
@@ -3160,6 +3169,10 @@ Durable project context lives here. Update this file whenever information should
   invariants, gitleaks history, dependency audit, EIP-170, and Slither triage
   pass. One protected Mainnet fork test is intentionally skipped without its
   production inputs.
+- Exact pushed commit `8ad3cc58372836023231ceed6d3a304491318bc7`
+  passed an isolated chain-46630 Schema-14 rehearsal: 84/84 intended
+  deployment/configuration receipts, 57,444,084 gas, 25% headroom, and the
+  0.0015 ETH reserve. No public Testnet transaction occurred.
 - No fresh Schema-14 Testnet deployment or Mainnet transaction has occurred.
   The current public Testnet remains the archived Schema-13 deployment until
   the pushed Schema-14 candidate passes isolated rehearsal and funding.
