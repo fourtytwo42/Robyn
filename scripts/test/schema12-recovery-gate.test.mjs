@@ -27,4 +27,20 @@ describe("schema-12 recovery gate", () => {
     assert.doesNotMatch(source, /schema11-recovery-backups/);
     assert.doesNotMatch(source, /schema11-one-hour/);
   });
+
+  it("records expected degraded health during RPC interruption drills", () => {
+    assert.match(source, /status_json_degraded\(\)/);
+    assert.match(source, /curl -sk --max-time 10 -o "\$\{output\}"/);
+    assert.match(source, /\[\[ "\$\{http_status\}" == "503" \]\]/);
+    assert.match(source, /\.overall=="degraded"/);
+    assert.match(source, /\.rpc\.status==\$rpc_status/);
+    assert.match(
+      source,
+      /status_json_degraded "\$\{evidence\}\/lan-interruption-status\.json" ok/,
+    );
+    assert.match(
+      source,
+      /status_json_degraded "\$\{evidence\}\/both-rpc-interruption-status\.json" degraded/,
+    );
+  });
 });

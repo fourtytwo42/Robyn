@@ -1,5 +1,27 @@
 # Project Memory
 
+### 2026-07-29 - Recovery accepts explicit degraded RPC failover status
+
+- Context: Recovery run `schema12-57fed0b-final-05` completed encrypted backup,
+  isolated restores, PM2 drills, native-service drills, and reached the LAN RPC
+  interruption. The gateway correctly switched to healthy Alchemy fallback,
+  but the gate exited before capturing application status.
+- Root cause: The public admin-health route intentionally returns HTTP 503
+  while fallback is active because failover is explicitly degraded. The
+  recovery script used `curl -f`, incorrectly treating that expected 503 as a
+  failed drill.
+- Decision: Normal health probes still require HTTP 200. RPC interruption
+  probes separately require HTTP 503 plus a semantically degraded response,
+  the expected RPC availability, and conserved protocol accounting. The
+  gateway-specific assertions remain authoritative for provider selection.
+- Files: `scripts/schema12-recovery-gate.sh` and
+  `scripts/test/schema12-recovery-gate.test.mjs`.
+- Verification: Shell syntax, all three focused recovery tests, formatting,
+  service recovery, and diff checks pass.
+- Follow-up: Freeze a new exact application candidate, promote it, rerun the
+  complete recovery gate under a new ID, and keep endurance stopped until that
+  recovery passes.
+
 ### 2026-07-29 - Endurance projection health race bounded
 
 - Context: Exact release `692ded228caabe1701ac59a77f8eb3fd81eee83c`
