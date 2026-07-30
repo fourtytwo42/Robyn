@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "schema": 15,
+  "description": "Executable repository-owned source closure for production and accelerated Schema-15 deployments.",
+  "roots": [
+    { "contract": "RobynDaoToken", "source": "src/dao/RobynDaoToken.sol", "modes": ["production", "accelerated"] },
+    { "contract": "RobynGovernor", "source": "src/dao/RobynGovernor.sol", "modes": ["production"] },
+    { "contract": "RobynTestnetGovernor", "source": "src/dao/RobynTestnetGovernor.sol", "modes": ["accelerated"] },
+    { "contract": "RobynV4AssetRouter", "source": "src/uniswap/RobynV4AssetRouter.sol", "modes": ["production", "accelerated"] },
+    { "contract": "RobynV4TestAssetLiquidityLocker", "source": "src/uniswap/RobynV4TestAssetLiquidityLocker.sol", "modes": ["accelerated"] },
+    { "contract": "RobynNativeLaunchDeployerV4", "source": "src/uniswap/RobynNativeLaunchDeployerV4.sol", "modes": ["production", "accelerated"] },
+    { "contract": "RobynNativeVaultDeployerV4", "source": "src/uniswap/RobynNativeVaultDeployerV4.sol", "modes": ["production", "accelerated"] },
+    { "contract": "RobynNativeLaunchFactoryV4", "source": "src/uniswap/RobynNativeLaunchFactoryV4.sol", "modes": ["production", "accelerated"] },
+    { "contract": "RobynNativeProtocolFeeRouterV4", "source": "src/uniswap/RobynNativeProtocolFeeRouterV4.sol", "modes": ["production", "accelerated"] },
+    { "contract": "RobynTokenSink", "source": "src/RobynTokenSink.sol", "modes": ["production", "accelerated"], "coverageExcludedReason": "no executable statements" },
+    { "contract": "RobynV4FeeAndPhaseHook", "source": "src/uniswap/RobynV4FeeAndPhaseHook.sol", "modes": ["production", "accelerated"] },
+    { "contract": "RobynV4AdapterDeployer", "source": "src/uniswap/RobynV4AdapterDeployer.sol", "modes": ["production", "accelerated"] },
+    { "contract": "RobynV4LockerDeployer", "source": "src/uniswap/RobynV4LockerDeployer.sol", "modes": ["production", "accelerated"] },
+    { "contract": "RobynV4MarketDeployer", "source": "src/uniswap/RobynV4MarketDeployer.sol", "modes": ["production", "accelerated"] },
+    { "contract": "RobynV4MarketFactory", "source": "src/uniswap/RobynV4MarketFactory.sol", "modes": ["production", "accelerated"] },
+    { "contract": "RobynV4LaunchCoordinatorV6", "source": "src/uniswap/RobynV4LaunchCoordinatorV6.sol", "modes": ["production", "accelerated"] }
+  ],
+  "retiredSources": [
+    "src/uniswap/RobynNativeProtocolFeeRouterV3.sol",
+    "src/uniswap/RobynV4LaunchCoordinatorV5.sol",
+    "src/uniswap/RobynV4OracleHook.sol",
+    "src/uniswap/UniswapV3AdapterDeployer.sol",
+    "src/uniswap/UniswapV3BondingCurveMarket.sol",
+    "src/uniswap/UniswapV3GraduationAdapter.sol",
+    "src/uniswap/UniswapV3MarketDeployer.sol",
+    "src/uniswap/UniswapV3MarketFactory.sol",
+    "src/uniswap/UniswapV3MarketFactoryV2.sol",
+    "src/uniswap/UniswapV3MarketFactoryV3.sol",
+    "src/uniswap/UniswapV3NativeFeeConverter.sol",
+    "src/RobynAtomicLaunchCoordinator.sol",
+    "src/RobynDaoLaunchCoordinator.sol",
+    "src/RobynDaoLaunchCoordinatorV5.sol",
+    "src/RobynLaunchDeployerV2.sol",
+    "src/RobynLaunchFactory.sol",
+    "src/RobynLaunchFactoryV2.sol",
+    "src/RobynLaunchFactoryV3.sol"
+  ],
+  "thresholds": {
+    "aggregateLinePercent": 90,
+    "aggregateBranchPercent": 80
+  }
+}

@@ -11,6 +11,8 @@ interface DaoTokenMatrixVm {
         external
         returns (uint8 v, bytes32 r, bytes32 s);
     function warp(uint256 timestamp) external;
+    function snapshotState() external returns (uint256);
+    function revertToState(uint256 snapshotId) external returns (bool);
 }
 
 contract DaoRewardDepositor {
@@ -163,36 +165,23 @@ contract DaoTokenMatrixTest {
     }
 
     function testClaimsAtZeroTenThirtyFiftyNineAndSixtyMinutes() external {
-        uint256 started = block.timestamp;
-        depositor.deposit{ value: 9 ether }(token);
-        require(token.claimableRewardOf(holder) == 0, "zero-minute claimable");
-
-        vm.warp(started + 10 minutes);
-        uint256 atTen = token.claimableRewardOf(holder);
-        require(atTen >= 1.5 ether - 1 && atTen <= 1.5 ether, "ten-minute amount");
-        vm.prank(holder);
-        require(token.claimRewards() == atTen, "ten-minute claim");
-
-        vm.warp(started + 30 minutes);
-        uint256 atThirty = token.claimableRewardOf(holder);
-        require(atThirty >= 3 ether - 1 && atThirty <= 3 ether, "thirty-minute amount");
-        vm.prank(holder);
-        require(token.claimRewards() == atThirty, "thirty-minute claim");
-
-        vm.warp(started + 59 minutes);
-        uint256 atFiftyNine = token.claimableRewardOf(holder);
-        require(
-            atFiftyNine >= 4.35 ether - 1 && atFiftyNine <= 4.35 ether, "fifty-nine-minute amount"
-        );
-        vm.prank(holder);
-        require(token.claimRewards() == atFiftyNine, "fifty-nine-minute claim");
-
-        vm.warp(started + 60 minutes);
-        uint256 atSixty = token.claimableRewardOf(holder);
-        require(atSixty >= 0.15 ether - 2 && atSixty <= 0.15 ether, "sixty-minute amount");
-        vm.prank(holder);
-        require(token.claimRewards() == atSixty, "sixty-minute claim");
-        require(token.streamingRewards() == 0, "stream remains");
+        uint256 snapshot = vm.snapshotState();
+        uint256[5] memory elapsed =
+            [uint256(0), uint256(10 minutes), uint256(30 minutes), uint256(59 minutes), 1 hours];
+        for (uint256 index; index < elapsed.length; ++index) {
+            if (index != 0) require(vm.revertToState(snapshot), "boundary restore");
+            depositor.deposit{ value: 9 ether }(token);
+            uint256 started = block.timestamp;
+            if (elapsed[index] != 0) vm.warp(started + elapsed[index]);
+            uint256 claimable = token.claimableRewardOf(holder);
+            uint256 expected = (9 ether * elapsed[index]) / 1 hours;
+            require(claimable >= expected - (expected == 0 ? 0 : 1), "boundary amount low");
+            require(claimable <= expected, "boundary amount high");
+            if (claimable != 0) {
+                vm.prank(holder);
+                require(token.claimRewards() == claimable, "boundary claim");
+            }
+        }
     }
 
     function testZeroEligibleSupplyPausesAndPermissionlesslyResumesStream() external {

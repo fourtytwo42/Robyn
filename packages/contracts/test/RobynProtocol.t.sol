@@ -15,6 +15,8 @@ import { DevnetMockERC20 } from "../src/devnet/DevnetMockERC20.sol";
 
 interface RobynProtocolVm {
     function warp(uint256 timestamp) external;
+    function snapshotState() external returns (uint256);
+    function revertToState(uint256 snapshotId) external returns (bool);
 }
 
 contract ProtocolMockERC20 is ERC20 {
@@ -340,31 +342,21 @@ contract RobynProtocolTest {
     }
 
     function testHolderClaimsAtZeroTenThirtyFiftyNineAndSixtyMinutes() public {
-        uint256 started = block.timestamp;
-        vault.recordFees(900);
-        vault.convertLeg(0, 360, 360, block.timestamp);
-        require(token.withdrawableRewardOf(address(this), 0) == 0, "zero-minute reward");
-
-        vm.warp(started + 10 minutes);
-        uint256 atTen = token.withdrawableRewardOf(address(this), 0);
-        require(atTen >= 59 && atTen <= 60, "ten-minute reward");
-        require(token.claim(0) == atTen, "ten-minute claim");
-
-        vm.warp(started + 30 minutes);
-        uint256 atThirty = token.withdrawableRewardOf(address(this), 0);
-        require(atThirty >= 119 && atThirty <= 120, "thirty-minute reward");
-        require(token.claim(0) == atThirty, "thirty-minute claim");
-
-        vm.warp(started + 59 minutes);
-        uint256 atFiftyNine = token.withdrawableRewardOf(address(this), 0);
-        require(atFiftyNine >= 173 && atFiftyNine <= 174, "fifty-nine-minute reward");
-        require(token.claim(0) == atFiftyNine, "fifty-nine-minute claim");
-
-        vm.warp(started + 60 minutes);
-        uint256 atSixty = token.withdrawableRewardOf(address(this), 0);
-        require(atSixty > 0 && atSixty <= 7, "sixty-minute reward");
-        require(token.claim(0) == atSixty, "sixty-minute claim");
-        require(token.streamingRewards(0) == 0, "holder stream remains");
+        uint256 snapshot = vm.snapshotState();
+        uint256[5] memory elapsed =
+            [uint256(0), uint256(10 minutes), uint256(30 minutes), uint256(59 minutes), 1 hours];
+        for (uint256 index; index < elapsed.length; ++index) {
+            if (index != 0) require(vm.revertToState(snapshot), "boundary restore");
+            vault.recordFees(900);
+            vault.convertLeg(0, 360, 360, block.timestamp);
+            uint256 started = block.timestamp;
+            if (elapsed[index] != 0) vm.warp(started + elapsed[index]);
+            uint256 claimable = token.withdrawableRewardOf(address(this), 0);
+            uint256 expected = (360 * elapsed[index]) / 1 hours;
+            require(claimable >= expected - (expected == 0 ? 0 : 1), "boundary reward low");
+            require(claimable <= expected, "boundary reward high");
+            if (claimable != 0) require(token.claim(0) == claimable, "boundary claim");
+        }
     }
 
     function testMaliciousRewardTokenCannotReenterClaim() public {

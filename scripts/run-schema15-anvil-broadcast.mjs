@@ -60,13 +60,30 @@ if (deploymentReceipt.status !== "success" || !deploymentReceipt.contractAddress
   throw new Error("Schema-15 Anvil harness deployment failed");
 }
 const harness = deploymentReceipt.contractAddress;
+const transactionEvidence = async (label, receipt, expectedResult = "success") => {
+  const transaction = await publicClient.getTransaction({
+    hash: receipt.transactionHash,
+  });
+  const block = await publicClient.getBlock({
+    blockNumber: receipt.blockNumber,
+  });
+  return {
+    label,
+    hash: receipt.transactionHash,
+    calldataHash: keccak256(transaction.input),
+    expectedResult,
+    actualResult: receipt.status,
+    blockNumber: receipt.blockNumber.toString(),
+    gasUsed: receipt.gasUsed.toString(),
+    stateFingerprint: block.stateRoot,
+    failureTrace: null,
+  };
+};
 const transactions = [
-  {
-    label: "deploy-exact-production-and-accelerated-streams",
-    hash: deploymentHash,
-    blockNumber: deploymentReceipt.blockNumber.toString(),
-    gasUsed: deploymentReceipt.gasUsed.toString(),
-  },
+  await transactionEvidence(
+    "deploy-exact-production-and-accelerated-streams",
+    deploymentReceipt,
+  ),
 ];
 const initializeHash = await wallet.sendTransaction({
   to: harness,
@@ -76,12 +93,9 @@ const initializeReceipt = await publicClient.waitForTransactionReceipt({
   hash: initializeHash,
 });
 if (initializeReceipt.status !== "success") throw new Error("Harness initialization failed");
-transactions.push({
-  label: "initialize-exact-stream-contracts",
-  hash: initializeHash,
-  blockNumber: initializeReceipt.blockNumber.toString(),
-  gasUsed: initializeReceipt.gasUsed.toString(),
-});
+transactions.push(
+  await transactionEvidence("initialize-exact-stream-contracts", initializeReceipt),
+);
 const read = (functionName) =>
   publicClient.readContract({ address: harness, abi, functionName });
 const productionToken = getAddress(await read("productionToken"));
@@ -95,12 +109,7 @@ const send = async (label, functionName, args = []) => {
   });
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   if (receipt.status !== "success") throw new Error(`${label} failed`);
-  return {
-    label,
-    hash,
-    blockNumber: receipt.blockNumber.toString(),
-    gasUsed: receipt.gasUsed.toString(),
-  };
+  return transactionEvidence(label, receipt);
 };
 
 transactions.push(await send("deposit-both-streams", "depositBoth", [10n ** 21n]));
@@ -132,12 +141,7 @@ const claim = async (label, token) => {
   });
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   if (receipt.status !== "success") throw new Error(`${label} failed`);
-  transactions.push({
-    label,
-    hash,
-    blockNumber: receipt.blockNumber.toString(),
-    gasUsed: receipt.gasUsed.toString(),
-  });
+  transactions.push(await transactionEvidence(label, receipt));
 };
 await claim("claim-accelerated-after-ten-minutes", acceleratedToken);
 

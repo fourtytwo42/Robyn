@@ -215,6 +215,20 @@ done
 run_phase compile "forge build exact Schema-15 contracts" \
   forge build --root packages/contracts
 
+run_phase coverage_scope \
+  "derive exact production and accelerated Schema-15 artifact closure" \
+  node scripts/build-schema15-coverage-scope.mjs \
+    --definition scripts/schema15-coverage-scope.json \
+    --contracts-root packages/contracts \
+    --release-sha "$head_sha" \
+    --output "$output/coverage-scope.json"
+scope_sha="$(jq -er '.scopeSha256' "$output/coverage-scope.json")"
+jq --arg coverageScopeSha256 "$scope_sha" \
+  '. + {coverageScopeSha256:$coverageScopeSha256}' \
+  "$output/run.json" >"$work/run-scoped.json"
+mv "$work/run-scoped.json" "$output/run.json"
+chmod 0600 "$output/run.json"
+
 run_phase unit_and_deterministic \
   "forge test all unit and deterministic scenarios; fuzz=${fuzz_runs}" \
   env FOUNDRY_FUZZ_RUNS="$fuzz_runs" \
@@ -223,8 +237,15 @@ run_phase unit_and_deterministic \
 
 for ((offset=0; offset<invariant_seed_count; ++offset)); do
   current_seed="$((seed + offset))"
-  run_phase "invariant_${offset}" \
-    "Schema-15 invariants runs=${invariant_runs} depth=${invariant_depth} seed=${current_seed}" \
+  run_phase "invariant_protocol_${offset}" \
+    "Schema-15 protocol invariants runs=${invariant_runs} depth=${invariant_depth} seed=${current_seed}" \
+    env FOUNDRY_INVARIANT_RUNS="$invariant_runs" \
+      FOUNDRY_INVARIANT_DEPTH="$invariant_depth" \
+      FOUNDRY_FUZZ_SEED="$current_seed" \
+      forge test --root packages/contracts \
+        --match-path test/RobynProtocolInvariant.t.sol -vv
+  run_phase "invariant_v4_${offset}" \
+    "Schema-15 v4 invariants runs=${invariant_runs} depth=${invariant_depth} seed=${current_seed}" \
     env FOUNDRY_INVARIANT_RUNS="$invariant_runs" \
       FOUNDRY_INVARIANT_DEPTH="$invariant_depth" \
       FOUNDRY_FUZZ_SEED="$current_seed" \
@@ -259,11 +280,10 @@ fi
 run_phase coverage \
   "forge coverage LCOV for protocol sources with normalized local remappings" \
   forge coverage --root packages/contracts --ir-minimum \
+    --skip Schema15DevnetTorture \
     --skip RobinhoodMainnet \
     --skip RobynV4HundredsUsersSimulation \
     --skip SchemaV4HundredsUsersSimulation \
-    --no-match-test \
-      'test(CreatorClaimsAtZeroTenThirtyFiftyNineAndSixtyMinutes|ClaimsAtZeroTenThirtyFiftyNineAndSixtyMinutes|HolderClaimsAtZeroTenThirtyFiftyNineAndSixtyMinutes)' \
     --no-match-coverage node_modules \
     --report lcov \
     --report-file "$output/lcov.info" \
@@ -278,6 +298,7 @@ run_phase evidence_validation \
   "validate action matrix and 90/80 coverage thresholds" \
   node scripts/validate-schema15-torture-evidence.mjs \
     --matrix scripts/schema15-torture-matrix.json \
+    --scope "$output/coverage-scope.json" \
     --test-log "$output/unit_and_deterministic.log" \
     --lcov "$output/lcov.info" \
     --output "$output/validation.json"

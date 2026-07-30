@@ -1621,6 +1621,19 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-30: Schema-15 coverage remediation now derives a 21-source
+  executable deployment closure from compiled artifact metadata, rejects
+  retired sources, preserves the fixed 90% line / 80% branch policy, and
+  reports per-contract gaps. The deterministic 0/10/30/59/60-minute holder,
+  creator, and DAO reward tests all pass under normal instrumentation. The
+  exact closure measures 85.68% lines, but Foundry 1.7.1 `--ir-minimum`
+  branch output is invalid: six sources have executed branch lines and zero
+  recorded taken branches. Accurate non-via-IR coverage cannot compile three
+  active contracts because optimizer-disabled Solidity hits stack-too-deep.
+  Keep the gate fail closed, run a fresh fast attempt from the pushed
+  remediation SHA, and do not start deep or promote Testnet unless a truthful
+  90/80 report passes.
+
 - 2026-07-30: Fast Schema-15 Devnet torture candidate `6d23a64`, seed
   `150001`, is blocked solely by the fixed coverage gate. All executable
   lifecycle, fuzz, invariant, simulation, route, action-matrix, and isolated
@@ -3444,6 +3457,26 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-30 - Exact Schema-15 coverage closure and tooling blocker
+
+- The versioned coverage manifest names production and accelerated deployment
+  roots and derives their transitive executable source closure from artifact
+  metadata. The result contains 21 active repository-owned sources, no
+  retired sources, and fixed 90% line / 80% branch thresholds.
+- Current exact-closure LCOV is 1,914/2,234 lines (85.6759%) and 113/432
+  branches (26.1574%). All 41 existing action obligations are present.
+- Branch LCOV is not trustworthy under the required `--ir-minimum` mode:
+  deployer/factory source lines containing branch sites have nonzero line
+  execution counts while every corresponding branch record remains zero.
+  The validator now detects and rejects this condition.
+- Non-via-IR coverage is not an alternative yet. Optimizer-disabled compilation
+  fails with stack-too-deep in `RobynNativeLaunchFactoryV4`,
+  `RobynV4LaunchCoordinatorV6`, and `RobynV4MarketFactory`.
+- The isolated Anvil evidence now records calldata hash, expected and actual
+  result, receipt identity, gas, block state root, and failure trace fields.
+  Both native and v4 invariant suites are scheduled for every configured seed.
+  Testnet remains Paused; deep and promotion remain blocked.
+
 ### 2026-07-30 - Fast Devnet gate is failed and sealed
 
 - Exact SHA `6d23a64`, seed `150001`, passed compile, 294
@@ -5071,6 +5104,16 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-30: Schema-15 coverage-remediation checks on the authoritative VM:
+  four harness self-tests pass; the three formerly excluded reward-boundary
+  tests pass in seven inherited suites; artifact closure derivation returns 21
+  sources and 16 deployment roots; isolated Anvil chain 31337 rehearsal passes
+  with five structured receipts and exact 3,600/600-second stream durations.
+  Exact-closure validation correctly fails at 85.6759% line, 26.1574% branch,
+  and six branch-instrumentation anomalies. Individual non-via-IR compilation
+  isolates stack-too-deep to the launch factory, V6 coordinator, and market
+  factory.
+
 - 2026-07-30: Fast Devnet torture run for exact SHA `6d23a64` and seed
   `150001` completed in 97 seconds. Compile, 294 unit/deterministic tests,
   256×128 invariants, 512 wallets, 32 launches, 25,000 actions over 20 seeds,
@@ -5820,6 +5863,11 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Obtain truthful branch instrumentation for the exact active closure without
+  lowering the 80% requirement. Options are to remove the three active
+  contracts' non-via-IR stack pressure without changing behavior, or implement
+  an independently verified semantic branch collector. Any production
+  bytecode change creates a fresh candidate and restarts both torture tiers.
 - Use the sealed LCOV report to add targeted tests until the fixed 90% line
   and 80% branch thresholds pass. Recommit, push, and restart fast from a new
   evidence directory and seed. Run deep only after fast passes.

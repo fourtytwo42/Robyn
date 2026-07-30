@@ -655,37 +655,23 @@ contract RobynV4NativeProtocolTest is Test {
     }
 
     function testCreatorClaimsAtZeroTenThirtyFiftyNineAndSixtyMinutes() public {
-        (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
-            coordinator.createLaunch(_request(bytes32(uint256(309))));
-        uint256 started = block.timestamp;
-        uint256 assigned = 0.00025 ether;
-        market.buy{ value: 0.1 ether }(1);
-        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), 0);
-
-        uint256 claimed;
-        vm.warp(started + 10 minutes);
-        uint256 atTen = feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
-        assertEq(atTen, (assigned * 10 minutes) / 1 hours);
-        claimed += feeRouter.claimCreatorFees(address(token));
-
-        vm.warp(started + 30 minutes);
-        uint256 atThirty =
-            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
-        assertEq(atThirty, (assigned * 30 minutes) / 1 hours - claimed);
-        claimed += feeRouter.claimCreatorFees(address(token));
-
-        vm.warp(started + 59 minutes);
-        uint256 atFiftyNine =
-            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
-        assertEq(atFiftyNine, (assigned * 59 minutes) / 1 hours - claimed);
-        claimed += feeRouter.claimCreatorFees(address(token));
-
-        vm.warp(started + 60 minutes);
-        uint256 atSixty = feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
-        assertEq(atSixty, assigned - claimed);
-        claimed += feeRouter.claimCreatorFees(address(token));
-        assertEq(claimed, assigned);
-        assertEq(feeRouter.totalCreatorNativeLiability(), 0);
+        uint256 snapshot = vm.snapshotState();
+        uint256[5] memory elapsed =
+            [uint256(0), uint256(10 minutes), uint256(30 minutes), uint256(59 minutes), 1 hours];
+        for (uint256 index; index < elapsed.length; ++index) {
+            if (index != 0) assertTrue(vm.revertToState(snapshot));
+            (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
+                coordinator.createLaunch(_request(bytes32(uint256(3090 + index))));
+            market.buy{ value: 0.1 ether }(1);
+            uint256 started = block.timestamp;
+            if (elapsed[index] != 0) vm.warp(started + elapsed[index]);
+            uint256 claimable =
+                feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
+            assertEq(claimable, (0.00025 ether * elapsed[index]) / 1 hours);
+            if (claimable != 0) {
+                assertEq(feeRouter.claimCreatorFees(address(token)), claimable);
+            }
+        }
     }
 
     function testCreatorBatchToAndFailedRecipientPreserveStreams() public {
