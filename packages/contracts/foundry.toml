@@ -35,3 +35,19 @@ fail_on_revert = true
 runs = 256
 depth = 128
 fail_on_revert = true
+
+[profile.torture-fast.fuzz]
+runs = 1024
+
+[profile.torture-fast.invariant]
+runs = 256
+depth = 128
+fail_on_revert = true
+
+[profile.torture-deep.fuzz]
+runs = 10000
+
+[profile.torture-deep.invariant]
+runs = 1024
+depth = 256
+fail_on_revert = true

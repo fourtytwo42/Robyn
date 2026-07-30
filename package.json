@@ -19,6 +19,8 @@
     "test:anvil": "bash scripts/smoke-anvil.sh",
     "test:campaign": "node --test scripts/test/testnet-assurance-campaign.test.mjs",
     "test:contracts": "PATH=$HOME/.foundry/bin:$PATH forge test --root packages/contracts -vv",
+    "test:contracts:torture:fast": "bash scripts/run-schema15-devnet-torture.sh --tier fast --seed 150001 --release-sha $(git rev-parse HEAD)",
+    "test:contracts:torture:deep": "bash scripts/run-schema15-devnet-torture.sh --tier deep --seed 150001 --release-sha $(git rev-parse HEAD)",
     "test:deployment-nonce": "bash scripts/test/testnet-deployment-nonce.test.sh",
     "test:deployment-verifier": "node --test scripts/test/testnet-v4-deployment-verifier.test.mjs",
     "test:endurance": "node --test scripts/test/testnet-endurance-policy.test.mjs",
@@ -29,8 +31,8 @@
     "validate:mainnet-governance": "node scripts/validate-mainnet-governance-inputs.mjs",
     "validate:mainnet-curve": "node scripts/validate-mainnet-curve.mjs",
     "validate:mainnet-support": "node scripts/validate-mainnet-support-policy.mjs",
-    "verify:mainnet-rehearsal": "node scripts/verify-mainnet-production-routes.mjs"
-    ,"verify:mainnet-governance": "node scripts/verify-mainnet-governance-deployment.mjs"
+    "verify:mainnet-rehearsal": "node scripts/verify-mainnet-production-routes.mjs",
+    "verify:mainnet-governance": "node scripts/verify-mainnet-governance-deployment.mjs"
   },
   "devDependencies": {
     "@openzeppelin/contracts": "5.4.0",

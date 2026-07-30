@@ -30,9 +30,10 @@ contract AssuranceGovernedValue {
 ///      32 atomic launches. Twenty fixed seeds partition the action stream for exact replay.
 contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
     uint256 private constant USER_COUNT = 512;
-    uint256 private constant LAUNCH_COUNT = 32;
-    uint256 private constant ACTION_COUNT = 25_000;
-    uint256 private constant SEED_COUNT = 20;
+    uint256 private launchCount;
+    uint256 private actionCount;
+    uint256 private seedCount;
+    uint256 private baseSeed;
 
     V4TestAsset[] private assets;
     RobynLaunchToken[] private tokens;
@@ -41,6 +42,15 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
 
     function setUp() public override {
         super.setUp();
+        launchCount = vm.envOr("ROBYN_TORTURE_LAUNCH_COUNT", uint256(32));
+        actionCount = vm.envOr("ROBYN_TORTURE_ACTION_COUNT", uint256(25_000));
+        seedCount = vm.envOr("ROBYN_TORTURE_SEED_COUNT", uint256(20));
+        baseSeed = vm.envOr("ROBYN_TORTURE_BASE_SEED", uint256(0));
+        require(launchCount >= 32 && launchCount <= 64, "launch count");
+        require(launchCount % 8 == 0, "creator partition");
+        require(actionCount >= 25_000 && actionCount <= 100_000, "action count");
+        require(seedCount >= 20 && seedCount <= 50, "seed count");
+        require(actionCount % seedCount == 0, "action/seed partition");
         assets.push(basketAsset);
         for (uint256 index = 1; index < 24; ++index) {
             V4TestAsset asset = new V4TestAsset();
@@ -58,7 +68,7 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
         }
         vm.warp(block.timestamp + 1);
 
-        for (uint256 index; index < LAUNCH_COUNT; ++index) {
+        for (uint256 index; index < launchCount; ++index) {
             address creator = _actor(index % 8);
             vm.prank(creator);
             (
@@ -74,10 +84,10 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
 
     function testNativeV4Campaign512Wallets32Launches25000Actions20Seeds() public {
         uint256 successfulActions;
-        for (uint256 seed; seed < SEED_COUNT; ++seed) {
-            for (uint256 offset; offset < ACTION_COUNT / SEED_COUNT; ++offset) {
-                uint256 entropy = uint256(keccak256(abi.encode(seed, offset)));
-                uint256 marketIndex = (entropy >> 32) % LAUNCH_COUNT;
+        for (uint256 seed; seed < seedCount; ++seed) {
+            for (uint256 offset; offset < actionCount / seedCount; ++offset) {
+                uint256 entropy = uint256(keccak256(abi.encode(baseSeed, seed, offset)));
+                uint256 marketIndex = (entropy >> 32) % launchCount;
                 address actor = _actor(entropy % USER_COUNT);
                 RobynV4BondingCurveMarket market = markets[marketIndex];
                 RobynLaunchToken token = tokens[marketIndex];
@@ -95,7 +105,7 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
                 ++successfulActions;
             }
         }
-        assertEq(successfulActions, ACTION_COUNT);
+        assertEq(successfulActions, actionCount);
 
         _graduateThreeAndTrade();
         _convertAllBasketRewards();
@@ -131,7 +141,7 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
     }
 
     function _convertAllBasketRewards() private {
-        for (uint256 launchIndex; launchIndex < LAUNCH_COUNT; ++launchIndex) {
+        for (uint256 launchIndex; launchIndex < launchCount; ++launchIndex) {
             RobynNativeBasketVaultV2 vault = vaults[launchIndex];
             for (uint256 legIndex; legIndex < 3; ++legIndex) {
                 RobynNativeBasketVaultV2.BasketLeg memory selected = vault.leg(legIndex);
@@ -159,7 +169,7 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
 
         for (uint256 index; index < 128; ++index) {
             address actor = _actor(index);
-            uint256 launchIndex = index % LAUNCH_COUNT;
+            uint256 launchIndex = index % launchCount;
             for (uint256 legIndex; legIndex < 3; ++legIndex) {
                 if (tokens[launchIndex].withdrawableRewardOf(actor, legIndex) != 0) {
                     vm.prank(actor);
@@ -173,8 +183,9 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
         }
 
         for (uint256 creatorIndex; creatorIndex < 8; ++creatorIndex) {
-            address[] memory creatorTokens = new address[](4);
-            for (uint256 offset; offset < 4; ++offset) {
+            uint256 creatorLaunchCount = launchCount / 8;
+            address[] memory creatorTokens = new address[](creatorLaunchCount);
+            for (uint256 offset; offset < creatorLaunchCount; ++offset) {
                 creatorTokens[offset] = address(tokens[creatorIndex + (offset * 8)]);
             }
             vm.prank(_actor(creatorIndex));
@@ -219,14 +230,14 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
     }
 
     function _assertCampaignConservation() private view {
-        assertEq(launchFactory.launchCount(), LAUNCH_COUNT);
+        assertEq(launchFactory.launchCount(), launchCount);
         assertEq(daoToken.totalSupply(), 1_000_000_000 ether);
         assertEq(feeRouter.totalCreatorNativeLiability(), 0);
 
         uint256 cumulativeFees;
         uint256 basketFees;
         uint256 creatorFees;
-        for (uint256 index; index < LAUNCH_COUNT; ++index) {
+        for (uint256 index; index < launchCount; ++index) {
             assertEq(tokens[index].totalSupply(), 1_000_000_000 ether);
             assertTrue(tokens[index].exclusionsSealed());
             assertTrue(markets[index].seeded());

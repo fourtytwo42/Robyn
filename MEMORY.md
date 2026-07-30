@@ -1,5 +1,31 @@
 # Project Memory
 
+### 2026-07-30 - Schema-15 Devnet torture harness completed
+
+- Context: Testnet endurance run `schema15-accelerated-b74dbc8-04` remains
+  stopped, invalidated, reconciled, recovered, and sealed for the
+  user-requested Devnet torture pivot.
+- Files: `scripts/run-schema15-devnet-torture.sh` is the single fast/deep
+  entrypoint. The package commands, Foundry profiles, action matrix, evidence
+  validator, isolated-Anvil broadcast sequence, parameterized 512-wallet
+  simulation, and focused production/accelerated timing and snapshot-replay
+  tests are implemented.
+- Isolation: The runner requires an exact clean pushed SHA, uses loopback Anvil
+  port 28546 on chain 31337 with disposable keys, writes only below the
+  protected Devnet-torture evidence root, and contains no Mainnet or Testnet
+  write path.
+- Verification: Runner tests, shell syntax, formatting, the exact 11-candidate
+  mechanical route round-trip, 41 focused Schema-15 tests, the 512-wallet,
+  32-launch, 25,000-action, 20-seed simulation, and the isolated broadcast
+  smoke pass. Foundry 1.7 coverage requires a local dependency symlink and
+  normalized remappings; the runner handles and removes it automatically.
+- Follow-up: Commit and push the harness, then run the mandatory fast tier on
+  that exact SHA. The first complete LCOV probe measured only 71.55% line and
+  20.78% branch coverage across all non-mock `src` files, below the required
+  90% and 80% gates. Do not weaken the thresholds; preserve the fast-tier
+  evidence and add tests or narrow scope only if the exact deployed contract
+  closure is defined and justified.
+
 ### 2026-07-30 - Schema-15 accelerated run 04 started
 
 - State: Exact immutable release
@@ -1576,6 +1602,13 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-07-30: The isolated Schema-15 Devnet torture harness is implemented and
+  locally validated. Commit and push it, then run the fast tier against the
+  exact pushed SHA. Coverage remains a likely blocking gate: the initial full
+  protocol LCOV probe measured 71.55% lines and 20.78% branches against the
+  fixed 90%/80% policy. Preserve any failed seed and evidence; do not promote
+  to Testnet and do not reduce thresholds. No Mainnet action occurred.
 
 - 2026-07-30: Testnet endurance run
   `schema15-accelerated-b74dbc8-04` is stopped and invalidated for the
@@ -3385,6 +3418,20 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-30 - Schema-15 Devnet torture harness ready for exact-SHA run
+
+- The fast/deep runner, isolated chain-31337 Anvil broadcast rehearsal,
+  production and accelerated reward configurations, deterministic snapshot
+  replay, 11-candidate mechanical route matrix, parameterized economic
+  simulation, action ledger, coverage enforcement, and protected checksum
+  evidence are implemented.
+- Focused compilation/tests and the isolated broadcast lifecycle pass. The
+  runner still must be committed and pushed before its clean/exact-SHA
+  precondition permits the mandatory fast gate.
+- The first complete LCOV measurement is below policy. That is a genuine
+  promotion blocker until additional tests lift coverage or the exact deployed
+  contract closure is formally defined without excluding active protocol code.
+
 ### 2026-07-30 - Schema-15 endurance pivot to isolated Devnet torture
 
 - Run `schema15-accelerated-b74dbc8-04` is inactive, invalidated, incomplete,
@@ -4988,6 +5035,14 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-30: Schema-15 harness validation passed shell syntax, runner unit
+  tests, Prettier, `forge fmt --check`, 41 focused tests, all 11 mechanical
+  route candidate round trips, the default 512-wallet/32-launch/25,000-action/
+  20-seed simulation, and the isolated production/accelerated Anvil lifecycle.
+  A full LCOV probe ran successfully after normalizing dependency remappings
+  and measured 71.55% line and 20.78% branch coverage across non-mock protocol
+  source, below the mandatory 90%/80% gate.
+
 - 2026-07-30: Accelerated run `schema15-accelerated-f66c4e1-01`
   completed 38 funding/RDAO setup transactions and two readiness samples, then
   failed before its first launch transaction because launch mode remained
@@ -5721,9 +5776,10 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Implement the Schema-15 isolated Devnet torture harness, run the mandatory
-  fast tier, preserve exact failing seeds if any, and run the deep tier before
-  any Testnet promotion.
+- Commit and push the implemented Schema-15 isolated Devnet torture harness,
+  run the mandatory fast tier, preserve exact failing seeds and coverage
+  evidence, resolve every blocking defect without weakening policy, then run
+  the deep tier before any Testnet promotion.
 - Commit, build, and promote the governed pre-clock activation fix. Recover
   only the 38 setup transactions from failed run
   `schema15-accelerated-f66c4e1-01` through its new durable recovery journal,
