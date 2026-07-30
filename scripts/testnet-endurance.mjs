@@ -1900,6 +1900,40 @@ async function ensurePublicLaunchMode() {
     calldatas,
   };
   if (!state.launchActivation.proposalId) {
+    const proposalThreshold = await publicClient.readContract({
+      address: manifest.contracts.governor,
+      abi: governorAbi,
+      functionName: "proposalThreshold",
+    });
+    const checkpointDeadline = Date.now() + 2 * 60 * 1000;
+    let checkpointVotes = 0n;
+    while (Date.now() < checkpointDeadline) {
+      const clock = BigInt(
+        await publicClient.readContract({
+          address: manifest.contracts.daoToken,
+          abi: daoAbi,
+          functionName: "clock",
+        }),
+      );
+      if (clock > 0n) {
+        checkpointVotes = await publicClient.readContract({
+          address: manifest.contracts.daoToken,
+          abi: daoAbi,
+          functionName: "getPastVotes",
+          args: [accounts[0].address, clock - 1n],
+        });
+        if (checkpointVotes >= proposalThreshold) break;
+      }
+      await sleep(1_000);
+    }
+    if (checkpointVotes < proposalThreshold) {
+      throw new Error(
+        `Endurance proposer checkpoint did not reach threshold: ${checkpointVotes} < ${proposalThreshold}`,
+      );
+    }
+    state.launchActivation.proposerCheckpointVotes = checkpointVotes.toString();
+    state.launchActivation.proposalThreshold = proposalThreshold.toString();
+    saveState();
     await contractTransaction(
       "endurance-activation-propose",
       accounts[0],
@@ -2533,8 +2567,28 @@ if (process.env.ROBYN_ENDURANCE_PREFLIGHT_ONLY === "1") {
   process.stdout.write(`${json(await fundingPreflight())}\n`);
   process.exit(0);
 }
-await ensureFunding();
-await ensurePublicLaunchMode();
+try {
+  await ensureFunding();
+  await ensurePublicLaunchMode();
+} catch (error) {
+  const failure = {
+    sampledAt: new Date().toISOString(),
+    message: error instanceof Error ? error.message : String(error),
+    phase: "pre-clock",
+    releaseSha: releaseManifest.gitSha,
+  };
+  state.failed = true;
+  state.paused = true;
+  state.terminalFailure = failure;
+  state.failures.push({
+    sampledAt: failure.sampledAt,
+    failures: [failure.message],
+    phase: failure.phase,
+    releaseSha: failure.releaseSha,
+  });
+  saveState();
+  throw error;
+}
 let stopping = false;
 process.on("SIGTERM", () => {
   stopping = true;

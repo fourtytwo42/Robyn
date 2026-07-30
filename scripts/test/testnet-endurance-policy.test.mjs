@@ -516,9 +516,12 @@ test("pre-clock activation uses normal governance before readiness", async () =>
   assert.match(source, /"endurance-activation-vote"/);
   assert.match(source, /"endurance-activation-queue"/);
   assert.match(source, /"endurance-activation-execute"/);
+  assert.match(source, /functionName: "getPastVotes"/);
+  assert.match(source, /checkpointVotes >= proposalThreshold/);
+  assert.match(source, /phase: "pre-clock"/);
   assert.match(
     source,
-    /await ensureFunding\(\);\nawait ensurePublicLaunchMode\(\);/,
+    /await ensureFunding\(\);\n\s+await ensurePublicLaunchMode\(\);/,
   );
   assert.ok(
     source.indexOf("await ensurePublicLaunchMode();") <

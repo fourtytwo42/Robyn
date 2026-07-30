@@ -1532,16 +1532,22 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- 2026-07-30: Schema-15 exact release `f66c4e1` remains live and
-  healthy. Fresh run `schema15-accelerated-f66c4e1-01` received faucet
-  funding, completed 38 setup transactions, and passed two readiness samples,
-  but its first launch reverted during estimation because the coordinator was
-  still Paused. Zero healthy seconds accumulated and no launch transaction was
-  submitted. The run is failed and sealed. The runner now performs a normal
-  pre-clock Governor/Timelock proposal to enter Public mode, and a journaled
-  fail-closed tool recovers the failed identity's RDAO and native funding before
-  a new salted run. Do not reuse any of the 38 hashes. Production clocks remain
-  one hour; no Mainnet action occurred.
+- 2026-07-30: Schema-15 exact release `afcf4b2` is live and healthy. Failed
+  run `schema15-accelerated-f66c4e1-01` is sealed and its unused funding was
+  recovered through the journaled recovery tool without replaying any of its
+  38 confirmed setup hashes. Fresh run `schema15-accelerated-afcf4b2-02`
+  also completed 38 setup transactions but stopped before readiness, the
+  proposal transaction, or any launch because Governor proposal estimation
+  observed zero past votes immediately after delegation. The revert decoded
+  as `GovernorInsufficientProposerVotes`; current votes and balance were
+  120 million RDAO, but the ERC-5805 checkpoint had not matured. Run 02 has
+  zero healthy seconds, zero launches, is failed and sealed, and none of its
+  confirmed hashes may be reused. The runner now waits for
+  `getPastVotes(clock()-1) >= proposalThreshold` before proposing and records
+  all pre-clock failures durably. Recover run 02 funding, commit and promote
+  the fix, then use a new run ID, salts, wallets, and journal for run 03.
+  Production governance and reward clocks remain unchanged; no Mainnet action
+  occurred.
 
 - 2026-07-30: Fresh Schema-14 contracts are live on Testnet from block
   95,295,401 and remain Paused. The 84 deployment receipts succeeded, the
