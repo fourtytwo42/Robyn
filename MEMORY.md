@@ -1,5 +1,28 @@
 # Project Memory
 
+### 2026-07-29 - Endurance projection health race bounded
+
+- Context: Exact release `692ded228caabe1701ac59a77f8eb3fd81eee83c`
+  passed recovery and began run `schema12-2h-692ded2-05`. The run accumulated
+  1,470.436 consecutive healthy seconds, 51 samples, and 61 confirmed
+  transactions with no failed receipt before correctly stopping on an API
+  health sample. Preserve every confirmed hash and never replay it.
+- Root cause: The projector commits King, reward, and launch checkpoints
+  sequentially. The API required their block strings to be exactly equal, so a
+  sample between commits reported degraded even though ingestion and King lag
+  were zero and launch/reward lag was only 40 blocks.
+- Decision: Required projection checkpoints remain mandatory, may not exceed
+  ingestion, and are healthy only within the release gate of 100 blocks. The
+  fresh projector heartbeat remains required. Missing, ahead, or stale
+  checkpoints still fail closed.
+- Files: `apps/api/src/projection-health.ts`,
+  `apps/api/test/projection-health.test.ts`, and `apps/api/src/server.ts`.
+- Verification: API strict typecheck, build, formatting, and all 70 API tests
+  pass.
+- Follow-up: Commit and push, reproducibly build and promote the correction,
+  rerun exact-release recovery, and start a fresh two-hour run with a new ID,
+  salts, launches, and empty journal.
+
 ### 2026-07-29 - Endurance fee-maintenance actor funding corrected
 
 - Context: Exact release `f3723f123e7b5bf77856685758d4d930a8e0cdff`

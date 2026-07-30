@@ -40,6 +40,7 @@ import {
   type AssetCatalogManifest,
 } from "./asset-catalog.js";
 import { rewardStreamConservation } from "./reward-conservation.js";
+import { projectionCheckpointsHealthy } from "./projection-health.js";
 
 const app = Fastify({
   logger: { level: process.env.LOG_LEVEL ?? "info" },
@@ -989,6 +990,15 @@ async function freshness() {
   const ingestionBlock = BigInt(ingestion?.last_block ?? "0");
   const projectionBlock = BigInt(projection?.last_block ?? "0");
   const headBlock = BigInt(observedHead);
+  const projectionCheckpointsOk = projectionCheckpointsHealthy({
+    ingestionBlock,
+    launchBlock: projection ? BigInt(projection.last_block) : undefined,
+    kingBlock: kingProjection ? BigInt(kingProjection.last_block) : undefined,
+    rewardBlock: rewardProjection
+      ? BigInt(rewardProjection.last_block)
+      : undefined,
+    requireKing: Boolean(deployment.kingOfForestPolicy),
+  });
   const lastDegradations = [
     ingestionHeartbeat?.metadata.lastRpcDegradationAt,
     projectionHeartbeat?.metadata.lastRpcDegradationAt,
@@ -1040,9 +1050,7 @@ async function freshness() {
     projectionStatus:
       projectionHeartbeat?.status === "ok" &&
       projectionHeartbeat.fresh &&
-      (!deployment.kingOfForestPolicy ||
-        kingProjection?.last_block === projection?.last_block) &&
-      rewardProjection?.last_block === projection?.last_block
+      projectionCheckpointsOk
         ? "ok"
         : "degraded",
   };
