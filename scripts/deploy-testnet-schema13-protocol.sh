@@ -1014,5 +1014,7 @@ jq -n \
     }
   }' >"$tmp"
 mv "$tmp" "$output"
-ROBYN_TESTNET_RPC_URL="$rpc_url" node scripts/verify-testnet-schema13-deployment.mjs "$output" >/dev/null
+verification_report="${ROBYN_TESTNET_SCHEMA13_VERIFICATION_REPORT:-/dev/null}"
+ROBYN_TESTNET_RPC_URL="$rpc_url" \
+  node scripts/verify-testnet-schema13-deployment.mjs "$output" >"$verification_report"
 echo "Wrote verified Schema-13 protocol manifest: $output"

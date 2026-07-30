@@ -77,11 +77,8 @@ ROBYN_ALLOW_UNLOCKED_REHEARSAL=true \
 ROBYN_TESTNET_REHEARSAL_DEPLOYER="$deployer" \
 ROBYN_GUARDIAN_ADDRESS="$guardian" \
 ROBYN_TESTNET_SCHEMA13_BROADCAST=true \
+ROBYN_TESTNET_SCHEMA13_VERIFICATION_REPORT="$output/verification.json" \
   scripts/deploy-testnet-schema13-protocol.sh >"$output/deploy.log"
-
-ROBYN_TESTNET_RPC_URL="$local_rpc" \
-  node scripts/verify-testnet-schema13-deployment.mjs "$manifest" \
-  >"$output/verification.json"
 
 ROBYN_TESTNET_RPC_URL="$local_rpc" \
 ROBYN_TESTNET_PRICING_RPC_URL="$upstream_rpc" \
