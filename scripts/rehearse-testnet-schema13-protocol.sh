@@ -85,13 +85,15 @@ ROBYN_TESTNET_PRICING_RPC_URL="$upstream_rpc" \
 ROBYN_TESTNET_V4_PROTOCOL_MANIFEST="$manifest" \
 ROBYN_TESTNET_V4_GAS_EVIDENCE="$gas_evidence" \
   scripts/measure-testnet-v4-deployment-gas.sh >"$output/gas.log"
+# Schema-13 has no genesis launch transaction: the complete deployment must
+# remain Paused, so its manifest has 96 transactions instead of Schema-12's 97.
 
 jq -e \
   --arg gitSha "$git_sha" \
   '.gitCommit == $gitSha
    and .headroomBps >= 2500
    and (.reserveWei | tonumber) >= 1500000000000000
-   and (.transactionCount | tonumber) >= 97
+   and (.transactionCount | tonumber) >= 96
    and .sufficientBalance == true' \
   "$gas_evidence" >/dev/null
 

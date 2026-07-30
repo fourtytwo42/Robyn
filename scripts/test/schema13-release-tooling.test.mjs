@@ -61,7 +61,7 @@ test("Schema-13 rehearsal is isolated and emits exact-commit gas evidence", asyn
   assert.match(source, /measure-testnet-v4-deployment-gas\.sh/);
   assert.match(source, /headroomBps >= 2500/);
   assert.match(source, /\.reserveWei \| tonumber/);
-  assert.match(source, /\.transactionCount \| tonumber/);
+  assert.match(source, /\(\.transactionCount \| tonumber\) >= 96/);
   assert.match(source, /liveBroadcast:false/);
   assert.match(source, /rm -rf -- "\$work"/);
 });

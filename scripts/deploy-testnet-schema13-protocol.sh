@@ -63,6 +63,8 @@ else
     exit 1
   }
   [[ "${ROBYN_TESTNET_SCHEMA13_CONFIRM_CHAIN:-}" == "46630" ]] || {
+  # Schema-13 deliberately has no genesis launch transaction because deployment
+  # must finish Paused. Its complete manifest therefore contains 96 transactions.
     echo "Set ROBYN_TESTNET_SCHEMA13_CONFIRM_CHAIN=46630 for explicit confirmation" >&2
     exit 1
   }
@@ -71,7 +73,7 @@ else
      "$(jq -r '.gitCommit' "$gas_evidence")" == "$(git rev-parse HEAD)" &&
      "$(jq -r '.headroomBps' "$gas_evidence")" -ge 2500 &&
      "$(jq -r '.reserveWei' "$gas_evidence")" -ge 1500000000000000 &&
-     "$(jq -r '.transactionCount' "$gas_evidence")" -ge 97 &&
+     "$(jq -r '.transactionCount' "$gas_evidence")" -ge 96 &&
      "$(jq -r '.sufficientBalance' "$gas_evidence")" == "true" ]] || {
     echo "Exact-commit chain-46630 gas evidence covering all transactions, 25% headroom, and the reserve is required" >&2
     exit 1
