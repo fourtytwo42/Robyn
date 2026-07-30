@@ -837,7 +837,7 @@ jq -n \
       claims: "pull-claim-vested-amount-only"
     },
     creatorRewards: {
-      allocation: "assigned-at-fee-intake-and-unlocked-over-one-hour",
+      allocation: "assigned-at-fee-intake-and-unlocked-over-ten-minutes-on-testnet",
       maximumRecipients: 8,
       sharesTotalBps: 10000,
       updatesAffect: "future-fees-only",

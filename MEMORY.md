@@ -13,11 +13,12 @@
   offers writes every two minutes, reviews every five minutes, creates launches
   through minute 21, graduates through minute 28, and probes streams at minutes
   1, 3, 5, 9, and 10.
-- State: Work is on branch `codex/schema15-accelerated-testnet`. Live Schema-14
-  remains Paused. Its endurance supervisor and governance executor are stopped.
-  Proposal `schema14-public-b53217e-01` is Active and voted but has never been
-  queued; it cannot be canceled after voting and remains inert unless explicitly
-  queued later. No Mainnet transaction occurred.
+- State: Exact commit `9468b48469a7f943703c89a999b9b418d00a5899`
+  is pushed to `main`. A fresh Schema-15 contract stack is deployed on Testnet
+  from block 95,386,964 and remains Paused. The application still serves the
+  archived Schema-14 release until Schema-15 build, promotion, and recovery pass.
+  The old endurance unit is runtime-masked and inactive. No Mainnet transaction
+  occurred.
 - Files: Reward-duration configuration is authority-bound and sealed in
   `RobynLaunchToken.sol`, immutable in `RobynDaoToken.sol` and
   `RobynNativeProtocolFeeRouterV4.sol`, and injected by
@@ -33,10 +34,28 @@
   zero failures. Required balance including 25% headroom and the 0.0015 ETH
   reserve was 0.002326266364361520 ETH. Evidence is under
   `/home/hendo420/robyn-evidence/schema15-mainnet-go/testnet-rehearsal/4933056-20260730T203244Z/`.
-- Follow-up: Commit this documentation checkpoint and rerun the isolated
-  rehearsal against the resulting exact SHA. Only after that passes may a
-  fresh Paused Schema-15 Testnet deployment, recovery gate, and new endurance
-  run be considered.
+- Exact rehearsal: The documentation checkpoint commit
+  `9468b48469a7f943703c89a999b9b418d00a5899` also passed an isolated rehearsal
+  at block 95,383,511: 84 successful transactions, 57,587,229 gas, 177 checks,
+  and zero failures. Checksums pass under
+  `/home/hendo420/robyn-evidence/schema15-mainnet-go/testnet-rehearsal/9468b48-20260730T203356Z/`.
+- Deployment interruption: The first live attempt overlapped the old Schema-14
+  endurance unit. Twelve Schema-15 transactions and 47 old-run transactions
+  confirmed before the attempt was invalidated. All hashes were sealed under
+  `/home/hendo420/robyn-evidence/schema15-mainnet-go/testnet-live/9468b48-20260730T203726Z/`;
+  none may be replayed or treated as the active deployment. The old runner was
+  stopped and runtime-masked.
+- Live deployment: A new deployment identity then used isolated nonces 1782
+  through 1865 via the synchronized LAN Testnet RPC. All 84 transactions and
+  177 verifier checks passed. The deployer retained
+  0.011035905930106913 ETH, above the 0.0015 ETH reserve. Active coordinator is
+  `0xF00FFCCa2fDADBF4f35a5653e1FfeD4ff887cdf9`; manifest hash before the wording
+  correction is `8c27f6e4ffd8f5244022777545eb37a630ceb8b450b3c2958fbcab0794c1b2e9`.
+  Evidence is under
+  `/home/hendo420/robyn-evidence/schema15-mainnet-go/testnet-live/9468b48-fresh-20260730T204819Z/`.
+- Follow-up: Commit the live manifest and handoff, build and promote an exact
+  Schema-15 application release with a new empty database, then run the full
+  recovery gate before installing or starting a new Schema-15 endurance run.
 
 ### 2026-07-30 - Fresh Schema-14 Testnet deployment completed Paused
 
@@ -1486,12 +1505,14 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- 2026-07-30: Schema-15 accelerated-Testnet candidate is implemented on
-  `codex/schema15-accelerated-testnet`; full repository tests pass. Live
-  Schema-14 remains Paused, its runner/supervisor are stopped, and its voted
-  replacement proposal remains unqueued and inert. Production clocks remain
-  one hour; only Testnet is accelerated. Next gate is a clean pushed commit and
-  isolated Schema-15 rehearsal. No Mainnet transaction occurred.
+- 2026-07-30: Schema-15 accelerated clocks are deployed fresh on Testnet from
+  block 95,386,964 and the 177-check verifier passes. The stack remains Paused;
+  the public application still serves Schema-14. The first partial attempt and
+  the accidentally resumed Schema-14 endurance run are invalidated, sealed,
+  and must never be replayed. The old endurance unit is runtime-masked. Next:
+  commit the live manifest, build/promote Schema-15 against a new empty
+  database, complete recovery, then install a new run ID. Production clocks
+  remain one hour and no Mainnet transaction occurred.
 
 - 2026-07-30: Fresh Schema-14 contracts are live on Testnet from block
   95,295,401 and remain Paused. The 84 deployment receipts succeeded, the
@@ -3266,6 +3287,19 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-30 - Schema-15 accelerated Testnet checkpoint
+
+- Testnet-only contract clocks are 600-second holder, creator, and DAO reward
+  streams, 60-second voting delay, 300-second voting period, and 60-second
+  Timelock. Production defaults remain unchanged.
+- Exact commit `9468b48469a7f943703c89a999b9b418d00a5899` passed the complete repository
+  tests and exact isolated deployment rehearsal.
+- Fresh Paused Schema-15 contracts are live from block 95,386,964. The clean
+  deployment consumed exactly 84 nonces and passed 177 live checks.
+- The public application still serves Schema-14. The old runner is masked and
+  no Schema-15 endurance clock has started. Recovery and promotion remain
+  pending.
+
 ### 2026-07-30 - Schema-14 V4-only checkpoint
 
 - Branch `codex/schema14-v4-only` removes every external execution adapter and
@@ -4837,13 +4871,15 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
-- 2026-07-30: Schema-15 accelerated timing implementation passed full
-  `pnpm test`: 252 Foundry tests passed, one protected Mainnet fork skipped,
-  90 script tests passed, all application tests and typechecks passed, and
-  `git diff --check` was clean. No deployment or public-chain write occurred.
-  Exact commit `4933056` then passed an isolated chain-46630 rehearsal with
-  84 successful transactions, 57,587,205 gas, zero verification failures, and
-  a 0.002326266364361520 ETH requirement including reserve.
+- 2026-07-30: Schema-15 implementation passed full `pnpm test`: 252 Foundry
+  tests, 90 script tests, all application tests and typechecks, with one
+  protected Mainnet fork skipped. Exact commit `9468b48469a7f943703c89a999b9b418d00a5899`
+  then passed an isolated 84-transaction rehearsal and 177 checks. Fresh live
+  deployment passed 84/84 transactions and 177/177 checks from block 95,386,964
+  while remaining Paused. The earlier overlapping attempt was invalidated with
+  its 12 confirmed receipts and the old runner's 47 receipts sealed. No
+  confirmed receipt will be replayed. Evidence roots are recorded in the
+  Schema-15 entry above.
 
 - 2026-07-30: Fresh Schema-14 Testnet deployment completed at block 95,295,401
   with 84 successful receipts and 177/177 dedicated live checks. Exact
@@ -5521,11 +5557,12 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Freeze, commit, and push Schema-15, run its isolated chain-46630 rehearsal,
-  then deploy a fresh Paused Schema-15 stack only after rehearsal and funding
-  pass. Schema-14 remains archived live history and must not resume endurance.
-  Repeat recovery, two-hour endurance, reconciliation, and browser acceptance
-  from zero because contract bytecode changed.
+- Commit and push the live Schema-15 manifest, build and promote an exact
+  application release with a new empty database, and complete the Schema-15
+  recovery gate. Only then install and start a new two-hour endurance run ID.
+  Keep the old runner masked and never replay its 47 confirmed transactions or
+  the 12 transactions from the invalidated partial deployment. Repeat final
+  reconciliation and browser acceptance from zero.
 - Supply protected `guardian-signers.json` and `rdao-allocation.json` with four
   recipient addresses, three unique Safe owners including the deployer, and
   domain-separated address-control signatures. Complete a two-owner Safe
