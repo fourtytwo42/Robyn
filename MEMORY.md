@@ -15,7 +15,7 @@
   reconciliation, so a quiet interval could exceed the 100-block gate before
   the next canonical sync.
 - Decision: Use a five-second LAN-primary head heartbeat and trigger canonical
-  synchronization at 40 observed blocks of lag while retaining the 15-minute
+  synchronization at 25 observed blocks of lag while retaining the 15-minute
   full reconciliation. Alchemy remains fallback/comparison only during normal
   operation. Focused indexer tests, formatting, lint, and typecheck pass.
 - Follow-up: Commit, push, rebuild, promote, rerun recovery, then use a fresh

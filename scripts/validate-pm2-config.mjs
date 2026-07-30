@@ -91,7 +91,7 @@ for (const app of apps) {
       "wss://example.invalid/testnet" ||
       app.env?.INDEXER_RECONCILIATION_MS !== "900000" ||
       app.env?.INDEXER_HEARTBEAT_MS !== "5000" ||
-      app.env?.INDEXER_MAXIMUM_OBSERVED_LAG_BLOCKS !== "40" ||
+      app.env?.INDEXER_MAXIMUM_OBSERVED_LAG_BLOCKS !== "25" ||
       app.env?.INDEXER_WS_DEBOUNCE_MS !== "500")
   ) {
     throw new Error(
@@ -162,7 +162,7 @@ if (
   mainnetIndexer?.env?.ROBYN_OPERATOR_WS_RPC_URL !== mainnetWebSocketRpc ||
   mainnetIndexer?.env?.INDEXER_RECONCILIATION_MS !== "900000" ||
   mainnetIndexer?.env?.INDEXER_HEARTBEAT_MS !== "5000" ||
-  mainnetIndexer?.env?.INDEXER_MAXIMUM_OBSERVED_LAG_BLOCKS !== "40"
+  mainnetIndexer?.env?.INDEXER_MAXIMUM_OBSERVED_LAG_BLOCKS !== "25"
 ) {
   throw new Error(
     "robyn-indexer-mainnet must mirror the filtered WebSocket and 15-minute reconciliation policy",

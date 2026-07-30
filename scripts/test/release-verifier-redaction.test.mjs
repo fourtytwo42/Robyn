@@ -27,7 +27,7 @@ test("release verification pins the deployed heartbeat interval", () => {
   assert.match(verifier, /INDEXER_HEARTBEAT_MS[\s\S]{0,160}"5000"/);
   assert.match(
     verifier,
-    /INDEXER_MAXIMUM_OBSERVED_LAG_BLOCKS[\s\S]{0,160}"40"/,
+    /INDEXER_MAXIMUM_OBSERVED_LAG_BLOCKS[\s\S]{0,160}"25"/,
   );
 });
 
