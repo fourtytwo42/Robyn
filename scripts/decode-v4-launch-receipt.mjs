@@ -9,8 +9,13 @@ if (!transactionHash) {
 }
 
 const rpcUrl = process.env.ROBYN_TESTNET_RPC_URL ?? "https://rpc.testnet.chain.robinhood.com";
+const coordinatorArtifact =
+  process.env.ROBYN_V4_COORDINATOR_ARTIFACT ?? "RobynV4LaunchCoordinatorV5";
+if (!/^RobynV4LaunchCoordinatorV[56]$/.test(coordinatorArtifact)) {
+  throw new Error("unsupported coordinator artifact");
+}
 const artifactPath =
-  "packages/contracts/out/RobynV4LaunchCoordinatorV5.sol/RobynV4LaunchCoordinatorV5.json";
+  `packages/contracts/out/${coordinatorArtifact}.sol/${coordinatorArtifact}.json`;
 const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
 const eventAbi = artifact.abi.find(
   (entry) => entry.type === "event" && entry.name === "AtomicV4LaunchCreated",
@@ -57,5 +62,25 @@ process.stdout.write(
     configurationHash: receiptData.configurationHash,
     launchSaltHash: receiptData.launchSaltHash,
     metadataUriHash: receiptData.metadataUriHash,
+    ...(receiptData.graduationProfile
+      ? {
+          graduationProfile: {
+            version: receiptData.graduationProfile.version.toString(),
+            targetGraduationNative:
+              receiptData.graduationProfile.targetGraduationNative.toString(),
+            actualGraduationNative:
+              receiptData.graduationProfile.actualGraduationNative.toString(),
+            maximumCurvePurchase:
+              receiptData.graduationProfile.maximumCurvePurchase.toString(),
+            initialVirtualNativeReserve:
+              receiptData.graduationProfile.initialVirtualNativeReserve.toString(),
+            terminalNativePerTokenX18:
+              receiptData.graduationProfile.terminalNativePerTokenX18.toString(),
+            terminalSqrtPriceX96:
+              receiptData.graduationProfile.terminalSqrtPriceX96.toString(),
+          },
+          graduationProfileHash: receiptData.graduationProfileHash,
+        }
+      : {}),
   })}\n`,
 );

@@ -46,7 +46,7 @@ set +e
     --solc-remaps=@openzeppelin/contracts/=${repo}/node_modules/@openzeppelin/contracts/ \
     --solc-args=--base-path\ ${repo}/packages/contracts\ --allow-paths\ ${repo}/node_modules \
     --exclude-dependencies \
-    --include-paths 'src/(Robyn(LaunchToken|TokenSink)\.sol|dao/Robyn(DaoToken|TestnetGovernor)\.sol|uniswap/(I?Robyn(ExecutionAdapter|PriceGuard)|Robyn(Native(BasketVaultV2|LaunchDeployerV4|LaunchFactoryV4|ProtocolFeeRouterV4|VaultDeployerV4)|V4(AdapterDeployer|AssetRouter|BondingCurveMarket|FeeAndPhaseHook|FeePositionLocker|GraduationAdapter|LaunchCoordinatorV5|LockerDeployer|MarketDeployer|MarketFactory|TestAssetLiquidityLocker)|ZeroExAllowanceHolderAdapter))\.sol)' \
+    --include-paths 'src/(Robyn(LaunchToken|TokenSink)\.sol|dao/Robyn(DaoToken|TestnetGovernor)\.sol|uniswap/(I?Robyn(ExecutionAdapter|PriceGuard)|Robyn(Native(BasketVaultV2|LaunchDeployerV4|LaunchFactoryV4|ProtocolFeeRouterV4|VaultDeployerV4)|V4(AdapterDeployer|AssetRouter|BondingCurveMarket|FeeAndPhaseHook|FeePositionLocker|GraduationAdapter|LaunchCoordinatorV6|LockerDeployer|MarketDeployer|MarketFactory|TestAssetLiquidityLocker)|ZeroExAllowanceHolderAdapter))\.sol)' \
     --json "${work}/slither.json" >/dev/null 2>"${work}/slither.log"
 )
 slither_status=$?

@@ -34,10 +34,25 @@ const atomicLaunchCoordinatorAbi = [
           { name: "weights", type: "uint16[]" },
           { name: "metadataUri", type: "string" },
           { name: "userSalt", type: "bytes32" },
+          { name: "expectedGraduationProfileVersion", type: "uint64" },
         ],
       },
     ],
     outputs: [{ type: "address" }, { type: "address" }, { type: "address" }],
+  },
+  {
+    type: "function",
+    name: "launchMode",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint8" }],
+  },
+  {
+    type: "function",
+    name: "canaryLauncher",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
   },
   {
     type: "event",
@@ -54,6 +69,49 @@ const atomicLaunchCoordinatorAbi = [
       { indexed: false, name: "configurationHash", type: "bytes32" },
       { indexed: false, name: "launchSaltHash", type: "bytes32" },
       { indexed: false, name: "metadataUriHash", type: "bytes32" },
+    ],
+  },
+  {
+    type: "event",
+    name: "AtomicV4LaunchCreated",
+    inputs: [
+      { indexed: true, name: "launchId", type: "uint256" },
+      { indexed: true, name: "creator", type: "address" },
+      { indexed: true, name: "token", type: "address" },
+      {
+        indexed: false,
+        name: "receipt",
+        type: "tuple",
+        components: [
+          { name: "vault", type: "address" },
+          { name: "market", type: "address" },
+          { name: "adapter", type: "address" },
+          { name: "poolManager", type: "address" },
+          { name: "poolId", type: "bytes32" },
+          { name: "positionManager", type: "address" },
+          { name: "hook", type: "address" },
+          { name: "locker", type: "address" },
+          { name: "poolFeePips", type: "uint24" },
+          { name: "tickSpacing", type: "int24" },
+          { name: "configurationHash", type: "bytes32" },
+          { name: "launchSaltHash", type: "bytes32" },
+          { name: "metadataUriHash", type: "bytes32" },
+          {
+            name: "graduationProfile",
+            type: "tuple",
+            components: [
+              { name: "version", type: "uint64" },
+              { name: "targetGraduationNative", type: "uint256" },
+              { name: "actualGraduationNative", type: "uint256" },
+              { name: "maximumCurvePurchase", type: "uint256" },
+              { name: "initialVirtualNativeReserve", type: "uint256" },
+              { name: "terminalNativePerTokenX18", type: "uint256" },
+              { name: "terminalSqrtPriceX96", type: "uint160" },
+            ],
+          },
+          { name: "graduationProfileHash", type: "bytes32" },
+        ],
+      },
     ],
   },
 ] as const;
@@ -138,6 +196,13 @@ const marketFactoryAbi = [
     stateMutability: "view",
     inputs: [{ type: "address" }],
     outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "graduationProfileVersion",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint64" }],
   },
   {
     type: "function",
@@ -334,6 +399,14 @@ export function LaunchpadConsole({
   );
   const [busy, setBusy] = useState(false);
   const [launchedToken, setLaunchedToken] = useState<Address>();
+  const [launchControl, setLaunchControl] = useState<{
+    mode: 0 | 1 | 2;
+    canaryLauncher: Address;
+  } | null>(
+    deployment.schemaVersion && deployment.schemaVersion >= 13
+      ? null
+      : { mode: 2, canaryLauncher: ZERO },
+  );
   const rpcUrl = "/rpc";
   const chain = useMemo(
     () =>
@@ -360,6 +433,31 @@ export function LaunchpadConsole({
         : undefined,
     [account, chain, rpcUrl],
   );
+
+  const refreshLaunchControl = useCallback(async () => {
+    if (!deployment.contracts.atomicLaunchCoordinator) return;
+    if (!deployment.schemaVersion || deployment.schemaVersion < 13) {
+      setLaunchControl({ mode: 2, canaryLauncher: ZERO });
+      return;
+    }
+    const [mode, canaryLauncher] = await Promise.all([
+      publicClient.readContract({
+        address: deployment.contracts.atomicLaunchCoordinator,
+        abi: atomicLaunchCoordinatorAbi,
+        functionName: "launchMode",
+      }),
+      publicClient.readContract({
+        address: deployment.contracts.atomicLaunchCoordinator,
+        abi: atomicLaunchCoordinatorAbi,
+        functionName: "canaryLauncher",
+      }),
+    ]);
+    setLaunchControl({ mode: Number(mode) as 0 | 1 | 2, canaryLauncher });
+  }, [
+    deployment.contracts.atomicLaunchCoordinator,
+    deployment.schemaVersion,
+    publicClient,
+  ]);
 
   const loadWallet = useCallback(() => {
     const stored = window.sessionStorage.getItem("robyn-devnet-session-key");
@@ -454,9 +552,12 @@ export function LaunchpadConsole({
 
   useEffect(() => {
     loadWallet();
+    void refreshLaunchControl().catch(() =>
+      setStatus("Unable to verify launch activation mode."),
+    );
     window.addEventListener("robyn-wallet-change", loadWallet);
     return () => window.removeEventListener("robyn-wallet-change", loadWallet);
-  }, [loadWallet]);
+  }, [loadWallet, refreshLaunchControl]);
 
   useEffect(() => {
     void refresh().catch(() => setStatus("Unable to load launch registry."));
@@ -606,6 +707,11 @@ export function LaunchpadConsole({
           ? "Local and redundant pins are ready. Simulating launch..."
           : "Local IPFS pin is ready; redundant pin is pending on devnet.",
       );
+      const expectedGraduationProfileVersion = await publicClient.readContract({
+        address: deployment.contracts.marketFactory,
+        abi: marketFactoryAbi,
+        functionName: "graduationProfileVersion",
+      });
       const request = {
         name: name.trim(),
         symbol: symbol.trim().toUpperCase(),
@@ -613,6 +719,7 @@ export function LaunchpadConsole({
         weights: basket.map((item) => item.weight * 100),
         metadataUri: preparedBody.data.metadata_uri,
         userSalt: randomLaunchSalt(),
+        expectedGraduationProfileVersion,
       } as const;
       setStatus("Simulating the complete atomic launch...");
       const simulation = await publicClient.simulateContract({
@@ -625,16 +732,27 @@ export function LaunchpadConsole({
       setStatus("Confirm one transaction in your wallet...");
       const receipt = await submit(simulation.request);
       setStatus("Confirming launch identity from its transaction receipt...");
-      const launchLog = receipt.logs.find(
-        (log) => log.address.toLowerCase() === coordinator.toLowerCase(),
-      );
-      if (!launchLog) throw new Error("Atomic launch event was not emitted.");
-      const decoded = decodeEventLog({
-        abi: atomicLaunchCoordinatorAbi,
-        eventName: "AtomicLaunchCreated",
-        data: launchLog.data,
-        topics: launchLog.topics,
-      });
+      const decoded = receipt.logs
+        .filter(
+          (log) => log.address.toLowerCase() === coordinator.toLowerCase(),
+        )
+        .map((log) => {
+          try {
+            return decodeEventLog({
+              abi: atomicLaunchCoordinatorAbi,
+              data: log.data,
+              topics: log.topics,
+            });
+          } catch {
+            return undefined;
+          }
+        })
+        .find(
+          (event) =>
+            event?.eventName === "AtomicLaunchCreated" ||
+            event?.eventName === "AtomicV4LaunchCreated",
+        );
+      if (!decoded) throw new Error("Atomic launch event was not emitted.");
       const token = decoded.args.token;
       setLaunchedToken(token);
       setStatus("Waiting for the canonical launch to be indexed...");
@@ -767,7 +885,13 @@ export function LaunchpadConsole({
       {modalOnly ? null : (
         <div className="console-heading">
           <div>
-            <p className="eyebrow">Permissionless launchpad</p>
+            <p className="eyebrow">
+              {launchControl?.mode === 0
+                ? "Launches paused"
+                : launchControl?.mode === 1
+                  ? "Controlled Canary"
+                  : "Permissionless launchpad"}
+            </p>
             <h2 id="launchpad-title">
               Create a token holders want to earn with.
             </h2>
@@ -785,7 +909,14 @@ export function LaunchpadConsole({
       <div className={modalOnly ? undefined : "launch-layout"}>
         <GuidedLaunchWizard
           account={account?.address}
-          busy={busy}
+          busy={
+            busy ||
+            !launchControl ||
+            launchControl.mode === 0 ||
+            (launchControl.mode === 1 &&
+              account?.address.toLowerCase() !==
+                launchControl.canaryLauncher.toLowerCase())
+          }
           name={name}
           setName={setName}
           symbol={symbol}

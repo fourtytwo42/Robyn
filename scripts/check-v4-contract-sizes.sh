@@ -12,6 +12,7 @@ contracts=(
   RobynNativeLaunchDeployerV4
   RobynNativeVaultDeployerV4
   RobynV4LaunchCoordinatorV5
+  RobynV4LaunchCoordinatorV6
   RobynV4MarketFactory
   RobynV4BondingCurveMarket
   RobynV4GraduationAdapter

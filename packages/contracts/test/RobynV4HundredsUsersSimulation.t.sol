@@ -268,7 +268,8 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
             assets: selectedAssets,
             weights: weights,
             metadataUri: METADATA_URI,
-            userSalt: keccak256(abi.encode("sherwood-assurance", index))
+            userSalt: keccak256(abi.encode("sherwood-assurance", index)),
+            expectedGraduationProfileVersion: 1
         });
     }
 

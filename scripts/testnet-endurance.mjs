@@ -585,7 +585,12 @@ async function waitForLaunchAndBind(token, metadata) {
   throw new Error(`Indexer did not expose endurance token ${token}`);
 }
 
-const coordinatorAbi = artifactAbi("RobynV4LaunchCoordinatorV5");
+const coordinatorAbi = artifactAbi(
+  manifest.schemaVersion >= 13
+    ? "RobynV4LaunchCoordinatorV6"
+    : "RobynV4LaunchCoordinatorV5",
+);
+const marketFactoryAbi = artifactAbi("RobynV4MarketFactory");
 const marketAbi = artifactAbi("RobynV4BondingCurveMarket");
 const tokenAbi = artifactAbi("RobynLaunchToken");
 const feeRouterAbi = artifactAbi("RobynNativeProtocolFeeRouterV4");
@@ -652,6 +657,11 @@ async function createEnduranceLaunch(index) {
     (_, offset) =>
       manifest.assetRoutes[(index * 3 + offset) % manifest.assetRoutes.length],
   );
+  const expectedGraduationProfileVersion = await publicClient.readContract({
+    address: manifest.contracts.marketFactory,
+    abi: marketFactoryAbi,
+    functionName: "graduationProfileVersion",
+  });
   const request = {
     name: metadata.name,
     symbol: metadata.symbol,
@@ -663,6 +673,7 @@ async function createEnduranceLaunch(index) {
         `${derived[40 + index].privateKey}:${runId}:${releaseManifest.gitSha}:${index}`,
       ),
     ),
+    expectedGraduationProfileVersion,
   };
   const transaction = await contractTransaction(
     `endurance-launch-${index}`,

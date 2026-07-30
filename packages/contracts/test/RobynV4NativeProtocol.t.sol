@@ -1,44 +1,44 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {Test} from "forge-std/Test.sol";
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
-import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
-import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
-import {CustomRevert} from "@uniswap/v4-core/src/libraries/CustomRevert.sol";
-import {SqrtPriceMath} from "@uniswap/v4-core/src/libraries/SqrtPriceMath.sol";
-import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
-import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
-import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
-import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
-import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
-import {ModifyLiquidityParams, SwapParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
-import {IPositionManager} from "@uniswap/v4-periphery/src/interfaces/IPositionManager.sol";
-import {IStateView} from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
-import {IV4Quoter} from "@uniswap/v4-periphery/src/interfaces/IV4Quoter.sol";
-import {HookMiner} from "@uniswap/v4-periphery/src/utils/HookMiner.sol";
-import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
-import {RobynLaunchToken} from "../src/RobynLaunchToken.sol";
-import {RobynTokenSink} from "../src/RobynTokenSink.sol";
-import {RobynDaoToken} from "../src/dao/RobynDaoToken.sol";
-import {TestnetWETH9} from "../src/testnet/TestnetWETH9.sol";
-import {RobynNativeBasketVaultV2} from "../src/uniswap/RobynNativeBasketVaultV2.sol";
-import {RobynNativeLaunchDeployerV4} from "../src/uniswap/RobynNativeLaunchDeployerV4.sol";
-import {RobynNativeLaunchFactoryV4} from "../src/uniswap/RobynNativeLaunchFactoryV4.sol";
-import {RobynNativeVaultDeployerV4} from "../src/uniswap/RobynNativeVaultDeployerV4.sol";
-import {RobynNativeProtocolFeeRouterV4} from "../src/uniswap/RobynNativeProtocolFeeRouterV4.sol";
-import {RobynV4AssetRouter} from "../src/uniswap/RobynV4AssetRouter.sol";
-import {IWrappedNative} from "../src/uniswap/RobynV4AssetRouter.sol";
-import {RobynV4AdapterDeployer} from "../src/uniswap/RobynV4AdapterDeployer.sol";
-import {RobynV4BondingCurveMarket} from "../src/uniswap/RobynV4BondingCurveMarket.sol";
-import {RobynV4FeePositionLocker} from "../src/uniswap/RobynV4FeePositionLocker.sol";
-import {RobynV4GraduationAdapter} from "../src/uniswap/RobynV4GraduationAdapter.sol";
-import {RobynV4LaunchCoordinatorV5} from "../src/uniswap/RobynV4LaunchCoordinatorV5.sol";
-import {RobynV4LockerDeployer} from "../src/uniswap/RobynV4LockerDeployer.sol";
-import {RobynV4MarketDeployer} from "../src/uniswap/RobynV4MarketDeployer.sol";
-import {RobynV4MarketFactory} from "../src/uniswap/RobynV4MarketFactory.sol";
-import {RobynV4FeeAndPhaseHook} from "../src/uniswap/RobynV4FeeAndPhaseHook.sol";
+import { Test } from "forge-std/Test.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { IPoolManager } from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import { IHooks } from "@uniswap/v4-core/src/interfaces/IHooks.sol";
+import { Hooks } from "@uniswap/v4-core/src/libraries/Hooks.sol";
+import { CustomRevert } from "@uniswap/v4-core/src/libraries/CustomRevert.sol";
+import { SqrtPriceMath } from "@uniswap/v4-core/src/libraries/SqrtPriceMath.sol";
+import { TickMath } from "@uniswap/v4-core/src/libraries/TickMath.sol";
+import { BalanceDelta } from "@uniswap/v4-core/src/types/BalanceDelta.sol";
+import { Currency } from "@uniswap/v4-core/src/types/Currency.sol";
+import { PoolId, PoolIdLibrary } from "@uniswap/v4-core/src/types/PoolId.sol";
+import { PoolKey } from "@uniswap/v4-core/src/types/PoolKey.sol";
+import { ModifyLiquidityParams, SwapParams } from "@uniswap/v4-core/src/types/PoolOperation.sol";
+import { IPositionManager } from "@uniswap/v4-periphery/src/interfaces/IPositionManager.sol";
+import { IStateView } from "@uniswap/v4-periphery/src/interfaces/IStateView.sol";
+import { IV4Quoter } from "@uniswap/v4-periphery/src/interfaces/IV4Quoter.sol";
+import { HookMiner } from "@uniswap/v4-periphery/src/utils/HookMiner.sol";
+import { IAllowanceTransfer } from "permit2/src/interfaces/IAllowanceTransfer.sol";
+import { RobynLaunchToken } from "../src/RobynLaunchToken.sol";
+import { RobynTokenSink } from "../src/RobynTokenSink.sol";
+import { RobynDaoToken } from "../src/dao/RobynDaoToken.sol";
+import { TestnetWETH9 } from "../src/testnet/TestnetWETH9.sol";
+import { RobynNativeBasketVaultV2 } from "../src/uniswap/RobynNativeBasketVaultV2.sol";
+import { RobynNativeLaunchDeployerV4 } from "../src/uniswap/RobynNativeLaunchDeployerV4.sol";
+import { RobynNativeLaunchFactoryV4 } from "../src/uniswap/RobynNativeLaunchFactoryV4.sol";
+import { RobynNativeVaultDeployerV4 } from "../src/uniswap/RobynNativeVaultDeployerV4.sol";
+import { RobynNativeProtocolFeeRouterV4 } from "../src/uniswap/RobynNativeProtocolFeeRouterV4.sol";
+import { RobynV4AssetRouter } from "../src/uniswap/RobynV4AssetRouter.sol";
+import { IWrappedNative } from "../src/uniswap/RobynV4AssetRouter.sol";
+import { RobynV4AdapterDeployer } from "../src/uniswap/RobynV4AdapterDeployer.sol";
+import { RobynV4BondingCurveMarket } from "../src/uniswap/RobynV4BondingCurveMarket.sol";
+import { RobynV4FeePositionLocker } from "../src/uniswap/RobynV4FeePositionLocker.sol";
+import { RobynV4GraduationAdapter } from "../src/uniswap/RobynV4GraduationAdapter.sol";
+import { RobynV4LaunchCoordinatorV6 } from "../src/uniswap/RobynV4LaunchCoordinatorV6.sol";
+import { RobynV4LockerDeployer } from "../src/uniswap/RobynV4LockerDeployer.sol";
+import { RobynV4MarketDeployer } from "../src/uniswap/RobynV4MarketDeployer.sol";
+import { RobynV4MarketFactory } from "../src/uniswap/RobynV4MarketFactory.sol";
+import { RobynV4FeeAndPhaseHook } from "../src/uniswap/RobynV4FeeAndPhaseHook.sol";
 
 interface ITestPositionManager is IPositionManager {
     function ownerOf(uint256 tokenId) external view returns (address);
@@ -50,17 +50,20 @@ interface IPoolSwapFixture {
         bool settleUsingBurn;
     }
 
-    function swap(PoolKey memory key, SwapParams memory params, TestSettings memory settings, bytes memory hookData)
-        external
-        payable
-        returns (BalanceDelta delta);
+    function swap(
+        PoolKey memory key,
+        SwapParams memory params,
+        TestSettings memory settings,
+        bytes memory hookData
+    ) external payable returns (BalanceDelta delta);
 }
 
 interface IPoolModifyLiquidityFixture {
-    function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes memory hookData)
-        external
-        payable
-        returns (bytes32 delta);
+    function modifyLiquidity(
+        PoolKey memory key,
+        ModifyLiquidityParams memory params,
+        bytes memory hookData
+    ) external payable returns (bytes32 delta);
 }
 
 interface IPoolDonateFixture {
@@ -77,7 +80,7 @@ contract V4TestAsset is ERC20 {
 }
 
 contract ForceNative {
-    constructor() payable {}
+    constructor() payable { }
 
     function force(address payable recipient) external {
         selfdestruct(recipient);
@@ -103,7 +106,7 @@ contract RobynV4NativeProtocolTest is Test {
     RobynNativeLaunchFactoryV4 internal launchFactory;
     RobynNativeProtocolFeeRouterV4 internal feeRouter;
     RobynV4MarketFactory internal marketFactory;
-    RobynV4LaunchCoordinatorV5 internal coordinator;
+    RobynV4LaunchCoordinatorV6 internal coordinator;
     RobynDaoToken internal daoToken;
     V4TestAsset internal basketAsset;
     TestnetWETH9 internal testWrappedNative;
@@ -111,9 +114,10 @@ contract RobynV4NativeProtocolTest is Test {
     address internal constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
     address payable internal constant TREASURY = payable(address(0xBEEF));
     address internal constant GUARDIAN = address(0xCAFE);
-    string internal constant METADATA_URI = "ipfs://bafkreif2akiscaildcwr6zeux4w6i2s5kmibuf6j4jvcrbozme2q";
+    string internal constant METADATA_URI =
+        "ipfs://bafkreif2akiscaildcwr6zeux4w6i2s5kmibuf6j4jvcrbozme2q";
 
-    receive() external payable {}
+    receive() external payable { }
 
     function setUp() public virtual {
         vm.deal(address(this), 100 ether);
@@ -145,14 +149,21 @@ contract RobynV4NativeProtocolTest is Test {
         );
         testWrappedNative = new TestnetWETH9();
         assetRouter = new RobynV4AssetRouter(
-            poolManager, quoter, stateView, address(this), GUARDIAN, IWrappedNative(address(testWrappedNative))
+            poolManager,
+            quoter,
+            stateView,
+            address(this),
+            GUARDIAN,
+            IWrappedNative(address(testWrappedNative))
         );
         basketAsset = new V4TestAsset();
         _seedBasketPool();
 
         RobynNativeLaunchDeployerV4 launchDeployer = new RobynNativeLaunchDeployerV4();
         RobynNativeVaultDeployerV4 vaultDeployer = new RobynNativeVaultDeployerV4();
-        launchFactory = new RobynNativeLaunchFactoryV4(assetRouter, launchDeployer, vaultDeployer, 1 wei, 1 hours);
+        launchFactory = new RobynNativeLaunchFactoryV4(
+            assetRouter, launchDeployer, vaultDeployer, 1 wei, 1 hours
+        );
         launchDeployer.bindController(address(launchFactory));
         vaultDeployer.bindController(address(launchFactory));
 
@@ -202,10 +213,14 @@ contract RobynV4NativeProtocolTest is Test {
         marketDeployer.bindController(address(marketFactory));
         hook.bindRegistrar(address(marketFactory));
         assetRouter.bindLaunchRegistrar(address(marketFactory));
-        coordinator = new RobynV4LaunchCoordinatorV5(launchFactory, marketFactory, feeRouter);
+        coordinator = new RobynV4LaunchCoordinatorV6(
+            launchFactory, marketFactory, feeRouter, TREASURY, GUARDIAN
+        );
         launchFactory.bindCoordinator(address(coordinator));
         marketFactory.bindCoordinator(address(coordinator));
         feeRouter.bindCoordinator(address(coordinator));
+        vm.prank(TREASURY);
+        coordinator.setPublicMode();
         address[] memory exclusions = new address[](1);
         exclusions[0] = TREASURY;
         daoToken.sealRewardExclusions(exclusions);
@@ -227,10 +242,132 @@ contract RobynV4NativeProtocolTest is Test {
         assertFalse(assetRouter.routeStatus(address(token)).ready);
     }
 
+    function testLaunchModesRestrictCreationWithoutStoppingExistingBondingTrades() public {
+        vm.prank(GUARDIAN);
+        coordinator.pauseLaunches();
+        vm.expectRevert(RobynV4LaunchCoordinatorV6.LaunchesPaused.selector);
+        coordinator.createLaunch(_request(bytes32(uint256(201))));
+
+        vm.prank(TREASURY);
+        coordinator.setCanaryMode(address(this));
+        address outsider = address(0x123456);
+        vm.deal(outsider, 1 ether);
+        vm.prank(outsider);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RobynV4LaunchCoordinatorV6.CanaryLauncherOnly.selector, address(this), outsider
+            )
+        );
+        coordinator.createLaunch(_request(bytes32(uint256(202))));
+
+        (,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(bytes32(uint256(203))));
+        vm.prank(GUARDIAN);
+        coordinator.pauseLaunches();
+        uint256 output = market.buy{ value: 0.1 ether }(1);
+        assertGt(output, 0);
+
+        vm.prank(GUARDIAN);
+        vm.expectRevert(RobynV4LaunchCoordinatorV6.Unauthorized.selector);
+        coordinator.setPublicMode();
+    }
+
+    function testGovernedProfilesSnapshotFutureLaunchesAndRejectStaleRequests() public {
+        RobynNativeLaunchFactoryV4.LaunchRequest memory firstRequest =
+            _request(bytes32(uint256(211)));
+        (RobynLaunchToken firstToken,, RobynV4BondingCurveMarket firstMarket) =
+            coordinator.createLaunch(firstRequest);
+        RobynV4MarketFactory.GraduationProfile memory firstProfile =
+            marketFactory.graduationProfileByToken(address(firstToken));
+        assertEq(firstProfile.version, 1);
+
+        vm.prank(TREASURY);
+        uint64 canaryVersion = marketFactory.setGraduationProfile(0.01 ether, 0.001 ether);
+        assertEq(canaryVersion, 2);
+
+        RobynNativeLaunchFactoryV4.LaunchRequest memory staleRequest =
+            _request(bytes32(uint256(212)));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RobynV4MarketFactory.GraduationProfileVersionMismatch.selector, 1, 2
+            )
+        );
+        coordinator.createLaunch(staleRequest);
+
+        RobynNativeLaunchFactoryV4.LaunchRequest memory canaryRequest =
+            _request(bytes32(uint256(213)));
+        canaryRequest.expectedGraduationProfileVersion = canaryVersion;
+        (RobynLaunchToken canaryToken,, RobynV4BondingCurveMarket canaryMarket) =
+            coordinator.createLaunch(canaryRequest);
+        RobynV4MarketFactory.GraduationProfile memory canaryProfile =
+            marketFactory.graduationProfileByToken(address(canaryToken));
+
+        assertEq(canaryProfile.version, 2);
+        assertEq(canaryProfile.targetGraduationNative, 0.01 ether);
+        assertEq(canaryProfile.actualGraduationNative, 0.01 ether);
+        assertEq(canaryMarket.graduationThresholdNative(), canaryProfile.actualGraduationNative);
+        assertEq(canaryMarket.maximumCurvePurchase(), 0.001 ether);
+        assertEq(firstMarket.graduationThresholdNative(), firstProfile.actualGraduationNative);
+        assertEq(
+            marketFactory.graduationProfileHashByToken(address(firstToken)),
+            keccak256(abi.encode(firstProfile))
+        );
+
+        vm.prank(TREASURY);
+        uint64 publicVersion = marketFactory.setGraduationProfile(6 ether, 0.5 ether);
+        assertEq(publicVersion, 3);
+        assertEq(
+            marketFactory.graduationProfileByToken(address(canaryToken)).targetGraduationNative,
+            0.01 ether
+        );
+        assertEq(canaryMarket.graduationThresholdNative(), 0.01 ether);
+    }
+
+    function testCanaryAndProductionProfilesBothGraduateAtSnapshottedCurves() public {
+        vm.prank(TREASURY);
+        uint64 canaryVersion = marketFactory.setGraduationProfile(0.01 ether, 0.001 ether);
+        RobynNativeLaunchFactoryV4.LaunchRequest memory canaryRequest =
+            _request(bytes32(uint256(221)));
+        canaryRequest.expectedGraduationProfileVersion = canaryVersion;
+        (RobynLaunchToken canaryToken,, RobynV4BondingCurveMarket canaryMarket) =
+            coordinator.createLaunch(canaryRequest);
+        for (uint256 index; index < 20 && !canaryMarket.graduated(); ++index) {
+            canaryMarket.buy{ value: 0.001 ether }(1);
+        }
+        assertTrue(canaryMarket.graduated());
+        assertEq(canaryMarket.graduationThresholdNative(), 0.01 ether);
+        assertGt(canaryMarket.graduationAdapter().locker().principalLiquidity(), 0);
+        assertTrue(assetRouter.routeStatus(address(canaryToken)).ready);
+
+        vm.prank(TREASURY);
+        uint64 publicVersion = marketFactory.setGraduationProfile(6 ether, 0.5 ether);
+        RobynNativeLaunchFactoryV4.LaunchRequest memory publicRequest =
+            _request(bytes32(uint256(222)));
+        publicRequest.expectedGraduationProfileVersion = publicVersion;
+        (RobynLaunchToken publicToken,, RobynV4BondingCurveMarket publicMarket) =
+            coordinator.createLaunch(publicRequest);
+        for (uint256 index; index < 20 && !publicMarket.graduated(); ++index) {
+            publicMarket.buy{ value: 0.5 ether }(1);
+        }
+        assertTrue(publicMarket.graduated());
+        RobynV4MarketFactory.GraduationProfile memory publicProfile =
+            marketFactory.graduationProfileByToken(address(publicToken));
+        assertEq(publicProfile.targetGraduationNative, 6 ether);
+        assertEq(publicMarket.graduationThresholdNative(), publicProfile.actualGraduationNative);
+        assertGt(publicMarket.graduationAdapter().locker().principalLiquidity(), 0);
+        assertTrue(assetRouter.routeStatus(address(publicToken)).ready);
+
+        assertEq(
+            marketFactory.graduationProfileByToken(address(canaryToken)).targetGraduationNative,
+            0.01 ether
+        );
+        assertEq(canaryMarket.graduationThresholdNative(), 0.01 ether);
+    }
+
     function testAtomicLaunchCanIncludeCreatorPurchase() public {
         uint256 purchase = 0.1 ether;
         (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
-            coordinator.createLaunch{value: purchase}(_request(bytes32(uint256(101))));
+            coordinator.createLaunch{ value: purchase }(_request(bytes32(uint256(101))));
 
         uint256 creatorTokens = token.balanceOf(address(this));
         assertGt(creatorTokens, 0);
@@ -243,51 +380,68 @@ contract RobynV4NativeProtocolTest is Test {
     }
 
     function testBondingCurvePurchaseCapIsEnforced() public {
-        (,, RobynV4BondingCurveMarket market) = coordinator.createLaunch(_request(bytes32(uint256(104))));
+        (,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(bytes32(uint256(104))));
         vm.expectRevert(
             abi.encodeWithSelector(
-                RobynV4BondingCurveMarket.MaximumCurvePurchaseExceeded.selector, 0.5 ether, 0.5 ether + 1
+                RobynV4BondingCurveMarket.MaximumCurvePurchaseExceeded.selector,
+                0.5 ether,
+                0.5 ether + 1
             )
         );
-        market.buy{value: 0.5 ether + 1}(1);
+        market.buy{ value: 0.5 ether + 1 }(1);
         vm.expectRevert(
             abi.encodeWithSelector(
-                RobynV4BondingCurveMarket.MaximumCurvePurchaseExceeded.selector, 0.5 ether, 0.5 ether + 1
+                RobynV4BondingCurveMarket.MaximumCurvePurchaseExceeded.selector,
+                0.5 ether,
+                0.5 ether + 1
             )
         );
         market.quoteBuy(0.5 ether + 1);
     }
 
     function testOnlyCoordinatorCanUseLaunchPurchasePath() public {
-        (,, RobynV4BondingCurveMarket market) = coordinator.createLaunch(_request(bytes32(uint256(102))));
+        (,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(bytes32(uint256(102))));
         vm.deal(address(0x1234), 1 ether);
         vm.prank(address(0x1234));
         vm.expectRevert(RobynV4BondingCurveMarket.Unauthorized.selector);
-        market.buyFor{value: 0.1 ether}(address(0x1234), 1);
+        market.buyFor{ value: 0.1 ether }(address(0x1234), 1);
     }
 
     function testOversizedInitialPurchaseRollsBackLaunch() public {
         uint256 countBefore = launchFactory.launchCount();
         vm.expectPartialRevert(RobynV4BondingCurveMarket.MaximumCurvePurchaseExceeded.selector);
-        coordinator.createLaunch{value: 1.4 ether}(_request(bytes32(uint256(103))));
+        coordinator.createLaunch{ value: 1.4 ether }(_request(bytes32(uint256(103))));
         assertEq(launchFactory.launchCount(), countBefore);
     }
 
     function testOracleHookRejectsZeroInitializer() public {
         vm.expectRevert(RobynV4FeeAndPhaseHook.InvalidConfiguration.selector);
         new RobynV4FeeAndPhaseHook(
-            poolManager, feeRouter, address(0), address(positionManager), keccak256("invalid-initializer")
+            poolManager,
+            feeRouter,
+            address(0),
+            address(positionManager),
+            keccak256("invalid-initializer")
         );
     }
 
     function testOracleHookRejectsZeroDeploymentDomain() public {
         vm.expectRevert(RobynV4FeeAndPhaseHook.InvalidConfiguration.selector);
-        new RobynV4FeeAndPhaseHook(poolManager, feeRouter, address(this), address(positionManager), bytes32(0));
+        new RobynV4FeeAndPhaseHook(
+            poolManager, feeRouter, address(this), address(positionManager), bytes32(0)
+        );
     }
 
     function testAssetRouterBootstrapConfigurationClosesWhenRegistrarBinds() public {
         RobynV4AssetRouter bootstrapRouter = new RobynV4AssetRouter(
-            poolManager, quoter, stateView, address(0xF00D), GUARDIAN, IWrappedNative(address(testWrappedNative))
+            poolManager,
+            quoter,
+            stateView,
+            address(0xF00D),
+            GUARDIAN,
+            IWrappedNative(address(testWrappedNative))
         );
         RobynV4AssetRouter.Route memory configured = RobynV4AssetRouter.Route({
             fee: 3_000,
@@ -312,18 +466,21 @@ contract RobynV4NativeProtocolTest is Test {
     }
 
     function testAssetRouterRejectsDirectNativeAndSweepsForcedNative() public {
-        (bool directSent, bytes memory revertData) = address(assetRouter).call{value: 1 ether}("");
+        (bool directSent, bytes memory revertData) = address(assetRouter).call{ value: 1 ether }("");
         assertFalse(directSent);
-        assertEq(revertData, abi.encodeWithSelector(RobynV4AssetRouter.DirectNativeTransferRejected.selector));
+        assertEq(
+            revertData,
+            abi.encodeWithSelector(RobynV4AssetRouter.DirectNativeTransferRejected.selector)
+        );
         assertEq(assetRouter.unattributedNative(), 0);
 
-        ForceNative forced = new ForceNative{value: 1 ether}();
+        ForceNative forced = new ForceNative{ value: 1 ether }();
         forced.force(payable(address(assetRouter)));
         assertEq(assetRouter.unattributedNative(), 1 ether);
 
         uint128 swapAmount = 0.002 ether;
         (uint256 quote,) = assetRouter.quoteNativeToAsset(address(basketAsset), swapAmount);
-        assetRouter.swapExactNativeForAsset{value: swapAmount}(
+        assetRouter.swapExactNativeForAsset{ value: swapAmount }(
             address(basketAsset), (quote * 99) / 100, address(this), block.timestamp
         );
         assertEq(assetRouter.unattributedNative(), 1 ether);
@@ -342,7 +499,7 @@ contract RobynV4NativeProtocolTest is Test {
         (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
             coordinator.createLaunch(_request(bytes32(uint256(2))));
         uint256 treasuryBefore = TREASURY.balance;
-        market.buy{value: 0.1 ether}(1);
+        market.buy{ value: 0.1 ether }(1);
         uint256 totalFee = feeRouter.launchAccount(address(token)).cumulativeNativeFees;
         assertEq(totalFee, 0.001 ether);
         assertEq(feeRouter.totalCreatorNativeLiability(), 0.00025 ether);
@@ -364,11 +521,12 @@ contract RobynV4NativeProtocolTest is Test {
         address firstRecipient = address(0xA11CE);
         address secondRecipient = address(0xB0B);
 
-        market.buy{value: 0.1 ether}(1);
+        market.buy{ value: 0.1 ether }(1);
         uint256 firstAllocation = 0.00025 ether;
         assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), 0);
         vm.warp(block.timestamp + 30 minutes);
-        uint256 firstVested = feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
+        uint256 firstVested =
+            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
         assertEq(firstVested, firstAllocation / 2);
 
         address[] memory recipients = new address[](2);
@@ -379,27 +537,41 @@ contract RobynV4NativeProtocolTest is Test {
         shares[1] = 4_000;
         feeRouter.setCreatorFeeSplit(address(token), recipients, shares, false);
 
-        market.buy{value: 0.1 ether}(1);
+        market.buy{ value: 0.1 ether }(1);
         assertEq(
             feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)),
             firstVested,
             "accrued creator claim changed"
         );
         assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), firstRecipient), 0);
-        assertEq(feeRouter.cumulativeCreatorNativeByRecipient(address(token), firstRecipient), 0.00015 ether);
+        assertEq(
+            feeRouter.cumulativeCreatorNativeByRecipient(address(token), firstRecipient),
+            0.00015 ether
+        );
         assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), secondRecipient), 0);
         assertEq(feeRouter.launchAccount(address(token)).claimableCreatorNative, 0.0005 ether);
 
         vm.warp(block.timestamp + 1 hours);
-        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), firstAllocation);
-        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), firstRecipient), 0.00015 ether);
-        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), secondRecipient), 0.0001 ether);
+        assertEq(
+            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)),
+            firstAllocation
+        );
+        assertEq(
+            feeRouter.claimableCreatorNativeByRecipient(address(token), firstRecipient),
+            0.00015 ether
+        );
+        assertEq(
+            feeRouter.claimableCreatorNativeByRecipient(address(token), secondRecipient),
+            0.0001 ether
+        );
 
         uint256 firstBalanceBefore = firstRecipient.balance;
         vm.prank(firstRecipient);
         assertEq(feeRouter.claimCreatorFees(address(token)), 0.00015 ether);
         assertEq(firstRecipient.balance - firstBalanceBefore, 0.00015 ether);
-        assertEq(feeRouter.claimedCreatorNativeByRecipient(address(token), firstRecipient), 0.00015 ether);
+        assertEq(
+            feeRouter.claimedCreatorNativeByRecipient(address(token), firstRecipient), 0.00015 ether
+        );
         assertEq(feeRouter.launchAccount(address(token)).claimableCreatorNative, 0.00035 ether);
         assertEq(feeRouter.totalCreatorNativeLiability(), 0.00035 ether);
     }
@@ -408,15 +580,17 @@ contract RobynV4NativeProtocolTest is Test {
         (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
             coordinator.createLaunch(_request(bytes32(uint256(307))));
 
-        market.buy{value: 0.1 ether}(1);
+        market.buy{ value: 0.1 ether }(1);
         uint256 allocation = 0.00025 ether;
         assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), 0);
 
         vm.warp(block.timestamp + 10 minutes);
         uint256 vestedAtTen = allocation / 6;
-        assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), vestedAtTen);
+        assertEq(
+            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), vestedAtTen
+        );
 
-        market.buy{value: 0.1 ether}(1);
+        market.buy{ value: 0.1 ether }(1);
         assertEq(
             feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)),
             vestedAtTen,
@@ -434,7 +608,8 @@ contract RobynV4NativeProtocolTest is Test {
         vm.warp(block.timestamp + 30 minutes);
         uint256 expectedTailVested = (state.unvested * 30 minutes) / 1 hours;
         assertEq(
-            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), vestedAtTen + expectedTailVested
+            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)),
+            vestedAtTen + expectedTailVested
         );
 
         uint256 balanceBefore = address(this).balance;
@@ -443,7 +618,8 @@ contract RobynV4NativeProtocolTest is Test {
         assertEq(address(this).balance - balanceBefore, claimed);
 
         vm.warp(block.timestamp + 30 minutes);
-        uint256 remainder = feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
+        uint256 remainder =
+            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
         assertEq(remainder + claimed, allocation * 2);
         assertEq(feeRouter.claimCreatorFees(address(token)), remainder);
         assertEq(feeRouter.totalCreatorNativeLiability(), 0);
@@ -454,7 +630,7 @@ contract RobynV4NativeProtocolTest is Test {
             coordinator.createLaunch(_request(bytes32(uint256(309))));
         uint256 started = block.timestamp;
         uint256 assigned = 0.00025 ether;
-        market.buy{value: 0.1 ether}(1);
+        market.buy{ value: 0.1 ether }(1);
         assertEq(feeRouter.claimableCreatorNativeByRecipient(address(token), address(this)), 0);
 
         uint256 claimed;
@@ -464,12 +640,14 @@ contract RobynV4NativeProtocolTest is Test {
         claimed += feeRouter.claimCreatorFees(address(token));
 
         vm.warp(started + 30 minutes);
-        uint256 atThirty = feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
+        uint256 atThirty =
+            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
         assertEq(atThirty, (assigned * 30 minutes) / 1 hours - claimed);
         claimed += feeRouter.claimCreatorFees(address(token));
 
         vm.warp(started + 59 minutes);
-        uint256 atFiftyNine = feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
+        uint256 atFiftyNine =
+            feeRouter.claimableCreatorNativeByRecipient(address(token), address(this));
         assertEq(atFiftyNine, (assigned * 59 minutes) / 1 hours - claimed);
         claimed += feeRouter.claimCreatorFees(address(token));
 
@@ -486,8 +664,8 @@ contract RobynV4NativeProtocolTest is Test {
             coordinator.createLaunch(_request(bytes32(uint256(310))));
         (RobynLaunchToken second,, RobynV4BondingCurveMarket secondMarket) =
             coordinator.createLaunch(_request(bytes32(uint256(311))));
-        firstMarket.buy{value: 0.1 ether}(1);
-        secondMarket.buy{value: 0.1 ether}(1);
+        firstMarket.buy{ value: 0.1 ether }(1);
+        secondMarket.buy{ value: 0.1 ether }(1);
         vm.warp(block.timestamp + 1 hours);
 
         address[] memory tokens = new address[](2);
@@ -499,9 +677,10 @@ contract RobynV4NativeProtocolTest is Test {
         assertEq(claimed, 0.0005 ether);
         assertEq(recipient.balance - beforeBalance, claimed);
 
-        firstMarket.buy{value: 0.1 ether}(1);
+        firstMarket.buy{ value: 0.1 ether }(1);
         vm.warp(block.timestamp + 1 hours);
-        uint256 claimable = feeRouter.claimableCreatorNativeByRecipient(address(first), address(this));
+        uint256 claimable =
+            feeRouter.claimableCreatorNativeByRecipient(address(first), address(this));
         uint256 liabilityBefore = feeRouter.totalCreatorNativeLiability();
         RejectNative rejector = new RejectNative();
         vm.expectRevert(RobynNativeProtocolFeeRouterV4.NativeTransferFailed.selector);
@@ -518,17 +697,17 @@ contract RobynV4NativeProtocolTest is Test {
         (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
             coordinator.createLaunch(_request(bytes32(uint256(308))));
 
-        ForceNative forcedBeforeBuy = new ForceNative{value: 0.25 ether}();
+        ForceNative forcedBeforeBuy = new ForceNative{ value: 0.25 ether }();
         forcedBeforeBuy.force(payable(address(market)));
         assertEq(market.unattributedNative(), 0.25 ether);
         assertEq(market.curveNativePrincipal(), 0);
 
-        market.buy{value: 0.5 ether}(1);
+        market.buy{ value: 0.5 ether }(1);
         uint256 principalAfterBuy = market.curveNativePrincipal();
         assertGt(principalAfterBuy, 0);
         assertEq(market.unattributedNative(), 0.25 ether);
 
-        ForceNative forcedMidCurve = new ForceNative{value: 0.125 ether}();
+        ForceNative forcedMidCurve = new ForceNative{ value: 0.125 ether }();
         forcedMidCurve.force(payable(address(market)));
         assertEq(market.unattributedNative(), 0.375 ether);
         assertEq(market.curveNativePrincipal(), principalAfterBuy);
@@ -595,8 +774,10 @@ contract RobynV4NativeProtocolTest is Test {
         vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
         feeRouter.setCreatorFeeSplit(address(token), recipients, shares, false);
 
-        address[] memory tooManyRecipients = new address[](uint256(feeRouter.MAX_CREATOR_RECIPIENTS()) + 1);
-        uint16[] memory tooManyShares = new uint16[](uint256(feeRouter.MAX_CREATOR_RECIPIENTS()) + 1);
+        address[] memory tooManyRecipients =
+            new address[](uint256(feeRouter.MAX_CREATOR_RECIPIENTS()) + 1);
+        uint16[] memory tooManyShares =
+            new uint16[](uint256(feeRouter.MAX_CREATOR_RECIPIENTS()) + 1);
         for (uint256 index; index < tooManyRecipients.length; ++index) {
             tooManyRecipients[index] = address(uint160(index + 1));
             tooManyShares[index] = index == tooManyRecipients.length - 1 ? 2_000 : 1_000;
@@ -612,7 +793,7 @@ contract RobynV4NativeProtocolTest is Test {
         (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
             coordinator.createLaunch(_request(bytes32(uint256(306))));
 
-        market.buy{value: 0.1 ether}(1);
+        market.buy{ value: 0.1 ether }(1);
 
         assertEq(feeRouter.totalDaoNativeLiability(), 0.0002 ether);
         vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
@@ -630,11 +811,17 @@ contract RobynV4NativeProtocolTest is Test {
     function testProtectedBasketRouteRejectsWeakMinimumOutputAndReferenceDeviation() public {
         uint128 amount = 0.002 ether;
         vm.expectPartialRevert(RobynV4AssetRouter.WeakMinimumOutput.selector);
-        assetRouter.swapExactNativeForAsset{value: amount}(address(basketAsset), 1, address(this), block.timestamp);
+        assetRouter.swapExactNativeForAsset{ value: amount }(
+            address(basketAsset), 1, address(this), block.timestamp
+        );
 
-        for (uint256 index; index < 128 && assetRouter.routeStatus(address(basketAsset)).ready; ++index) {
+        for (
+            uint256 index;
+            index < 128 && assetRouter.routeStatus(address(basketAsset)).ready;
+            ++index
+        ) {
             (uint256 quote,) = assetRouter.quoteNativeToAsset(address(basketAsset), amount);
-            assetRouter.swapExactNativeForAsset{value: amount}(
+            assetRouter.swapExactNativeForAsset{ value: amount }(
                 address(basketAsset), (quote * 99) / 100, address(this), block.timestamp
             );
         }
@@ -664,7 +851,7 @@ contract RobynV4NativeProtocolTest is Test {
         assertTrue(assetRouter.routeStatus(address(token)).ready);
 
         uint256 tokenBefore = token.balanceOf(address(this));
-        market.buy{value: 0.01 ether}(1);
+        market.buy{ value: 0.01 ether }(1);
         assertGt(token.balanceOf(address(this)), tokenBefore);
         uint128 sellAmount = uint128((token.balanceOf(address(this)) - tokenBefore) / 2);
         token.approve(address(market), sellAmount);
@@ -680,7 +867,10 @@ contract RobynV4NativeProtocolTest is Test {
             coordinator.createLaunch(_request(bytes32(uint256(305))));
         PoolKey memory key = market.graduationAdapter().poolKey();
         (uint160 priceBefore, int24 tickBefore,,) = stateView.getSlot0(key.toId());
-        assertEq(uint256(hook.poolPhase(PoolId.unwrap(key.toId()))), uint256(RobynV4FeeAndPhaseHook.PoolPhase.Bonding));
+        assertEq(
+            uint256(hook.poolPhase(PoolId.unwrap(key.toId()))),
+            uint256(RobynV4FeeAndPhaseHook.PoolPhase.Bonding)
+        );
 
         IPoolSwapFixture swapper = IPoolSwapFixture(
             _deployPinned(
@@ -689,18 +879,20 @@ contract RobynV4NativeProtocolTest is Test {
             )
         );
         IPoolSwapFixture.TestSettings memory settings =
-            IPoolSwapFixture.TestSettings({takeClaims: false, settleUsingBurn: false});
+            IPoolSwapFixture.TestSettings({ takeClaims: false, settleUsingBurn: false });
         vm.expectPartialRevert(CustomRevert.WrappedError.selector);
-        swapper.swap{value: 0.01 ether}(
+        swapper.swap{ value: 0.01 ether }(
             key,
             SwapParams({
-                zeroForOne: true, amountSpecified: -int256(0.01 ether), sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE + 1
+                zeroForOne: true,
+                amountSpecified: -int256(0.01 ether),
+                sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE + 1
             }),
             settings,
             bytes("")
         );
 
-        market.buy{value: 0.1 ether}(1);
+        market.buy{ value: 0.1 ether }(1);
         IPoolModifyLiquidityFixture liquidityRouter = IPoolModifyLiquidityFixture(
             _deployPinned(
                 "../../node_modules/@uniswap/v4-periphery/foundry-out/PoolModifyLiquidityTest.sol/PoolModifyLiquidityTest.default.json",
@@ -709,7 +901,7 @@ contract RobynV4NativeProtocolTest is Test {
         );
         token.approve(address(liquidityRouter), type(uint256).max);
         vm.expectPartialRevert(CustomRevert.WrappedError.selector);
-        liquidityRouter.modifyLiquidity{value: 0.01 ether}(
+        liquidityRouter.modifyLiquidity{ value: 0.01 ether }(
             key,
             ModifyLiquidityParams({
                 tickLower: -887200,
@@ -727,7 +919,7 @@ contract RobynV4NativeProtocolTest is Test {
             )
         );
         vm.expectPartialRevert(CustomRevert.WrappedError.selector);
-        donor.donate{value: 1 wei}(key, 1 wei, 0, bytes(""));
+        donor.donate{ value: 1 wei }(key, 1 wei, 0, bytes(""));
 
         (uint160 priceAfter, int24 tickAfter,,) = stateView.getSlot0(key.toId());
         assertEq(priceAfter, priceBefore);
@@ -767,15 +959,19 @@ contract RobynV4NativeProtocolTest is Test {
     }
 
     function testGraduationAdapterRejectsDirectNativeAndSweepsForcedNative() public {
-        (,, RobynV4BondingCurveMarket market) = coordinator.createLaunch(_request(bytes32(uint256(308))));
+        (,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(bytes32(uint256(308))));
         RobynV4GraduationAdapter adapter = market.graduationAdapter();
 
-        (bool directSent, bytes memory revertData) = address(adapter).call{value: 1 ether}("");
+        (bool directSent, bytes memory revertData) = address(adapter).call{ value: 1 ether }("");
         assertFalse(directSent);
-        assertEq(revertData, abi.encodeWithSelector(RobynV4GraduationAdapter.DirectNativeTransferRejected.selector));
+        assertEq(
+            revertData,
+            abi.encodeWithSelector(RobynV4GraduationAdapter.DirectNativeTransferRejected.selector)
+        );
         assertEq(adapter.unattributedNative(), 0);
 
-        ForceNative forced = new ForceNative{value: 1 ether}();
+        ForceNative forced = new ForceNative{ value: 1 ether }();
         forced.force(payable(address(adapter)));
         assertEq(adapter.unattributedNative(), 1 ether);
 
@@ -800,7 +996,9 @@ contract RobynV4NativeProtocolTest is Test {
         RobynV4FeePositionLocker soloLocker = soloMarket.graduationAdapter().locker();
         RobynV4FeePositionLocker sharedLocker = sharedMarket.graduationAdapter().locker();
         _addThirdPartyFullRangeLiquidity(
-            sharedMarket.graduationAdapter().poolKey(), sharedToken, sharedLocker.principalLiquidity()
+            sharedMarket.graduationAdapter().poolKey(),
+            sharedToken,
+            sharedLocker.principalLiquidity()
         );
 
         uint256 soloLockedLpFee = _accrueAndRoutePostGraduationFees(soloMarket, soloToken);
@@ -808,9 +1006,13 @@ contract RobynV4NativeProtocolTest is Test {
         assertGt(soloLockedLpFee, 0);
         assertGt(sharedLockedLpFee, 0);
         assertLt(sharedLockedLpFee, soloLockedLpFee);
-        assertEq(positionManager.getPositionLiquidity(soloLocker.positionTokenId()), soloLocker.principalLiquidity());
         assertEq(
-            positionManager.getPositionLiquidity(sharedLocker.positionTokenId()), sharedLocker.principalLiquidity()
+            positionManager.getPositionLiquidity(soloLocker.positionTokenId()),
+            soloLocker.principalLiquidity()
+        );
+        assertEq(
+            positionManager.getPositionLiquidity(sharedLocker.positionTokenId()),
+            sharedLocker.principalLiquidity()
         );
     }
 
@@ -821,7 +1023,7 @@ contract RobynV4NativeProtocolTest is Test {
 
         uint256 tokenBefore = token.balanceOf(address(this));
         uint256 pendingTokenBefore = hook.pendingTokenFees(address(token));
-        market.buy{value: 0.01 ether}(1);
+        market.buy{ value: 0.01 ether }(1);
         uint256 receivedToken = token.balanceOf(address(this)) - tokenBefore;
         uint256 tokenFee = hook.pendingTokenFees(address(token)) - pendingTokenBefore;
         assertGt(tokenFee, 0);
@@ -841,7 +1043,10 @@ contract RobynV4NativeProtocolTest is Test {
 
         uint256 routedBefore = feeRouter.launchAccount(address(token)).cumulativeHookNativeFees;
         hook.settleNativeFees(token, nativeFee);
-        assertEq(feeRouter.launchAccount(address(token)).cumulativeHookNativeFees, routedBefore + nativeFee);
+        assertEq(
+            feeRouter.launchAccount(address(token)).cumulativeHookNativeFees,
+            routedBefore + nativeFee
+        );
         assertEq(hook.pendingNativeFees(address(token)), pendingNativeBefore);
     }
 
@@ -857,14 +1062,16 @@ contract RobynV4NativeProtocolTest is Test {
             )
         );
         IPoolSwapFixture.TestSettings memory settings =
-            IPoolSwapFixture.TestSettings({takeClaims: false, settleUsingBurn: false});
+            IPoolSwapFixture.TestSettings({ takeClaims: false, settleUsingBurn: false });
 
         uint256 nativeFeeBefore = hook.pendingNativeFees(address(token));
         uint256 nativeBalanceBefore = address(this).balance;
-        swapper.swap{value: 0.1 ether}(
+        swapper.swap{ value: 0.1 ether }(
             key,
             SwapParams({
-                zeroForOne: true, amountSpecified: int256(1 ether), sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE + 1
+                zeroForOne: true,
+                amountSpecified: int256(1 ether),
+                sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE + 1
             }),
             settings,
             bytes("")
@@ -899,9 +1106,9 @@ contract RobynV4NativeProtocolTest is Test {
         (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
             coordinator.createLaunch(_request(bytes32(uint256(302))));
         _graduateMarket(market);
-        market.buy{value: 0.01 ether}(1);
+        market.buy{ value: 0.01 ether }(1);
         vm.warp(block.timestamp + 5 minutes);
-        market.buy{value: 0.000001 ether}(1);
+        market.buy{ value: 0.000001 ether }(1);
 
         uint128 tokenFees = uint128(hook.pendingTokenFees(address(token)));
         assertGt(tokenFees, 0);
@@ -909,12 +1116,18 @@ contract RobynV4NativeProtocolTest is Test {
         uint256 routedBefore = feeRouter.launchAccount(address(token)).cumulativeHookNativeFees;
         uint256 nativePendingBefore = hook.pendingNativeFees(address(token));
 
-        uint256 nativeOut = hook.convertTokenFees(token, tokenFees, (quote * 99) / 100, block.timestamp);
+        uint256 nativeOut =
+            hook.convertTokenFees(token, tokenFees, (quote * 99) / 100, block.timestamp);
 
         assertGt(nativeOut, 0);
         assertEq(hook.pendingTokenFees(address(token)), 0);
-        assertEq(feeRouter.launchAccount(address(token)).cumulativeHookLaunchFeesConverted, tokenFees);
-        assertEq(feeRouter.launchAccount(address(token)).cumulativeHookNativeFees, routedBefore + nativeOut);
+        assertEq(
+            feeRouter.launchAccount(address(token)).cumulativeHookLaunchFeesConverted, tokenFees
+        );
+        assertEq(
+            feeRouter.launchAccount(address(token)).cumulativeHookNativeFees,
+            routedBefore + nativeOut
+        );
         assertGt(hook.pendingNativeFees(address(token)), nativePendingBefore);
     }
 
@@ -935,15 +1148,20 @@ contract RobynV4NativeProtocolTest is Test {
         _graduateMarket(market);
         RobynV4FeePositionLocker locker = market.graduationAdapter().locker();
         vm.warp(block.timestamp + 5 minutes);
-        market.buy{value: 0.000001 ether}(1);
+        market.buy{ value: 0.000001 ether }(1);
         uint128 collectedTokenFees = _accrueTokenLpFees(market, token);
         uint256 feesBefore = feeRouter.launchAccount(address(token)).cumulativeNativeFees;
 
         uint256 nativeOut = locker.convertCollectedToken(collectedTokenFees, 1, block.timestamp);
 
         assertGt(nativeOut, 0);
-        assertEq(feeRouter.launchAccount(address(token)).cumulativeLaunchFeesConverted, collectedTokenFees);
-        assertEq(feeRouter.launchAccount(address(token)).cumulativeNativeFees, feesBefore + nativeOut);
+        assertEq(
+            feeRouter.launchAccount(address(token)).cumulativeLaunchFeesConverted,
+            collectedTokenFees
+        );
+        assertEq(
+            feeRouter.launchAccount(address(token)).cumulativeNativeFees, feesBefore + nativeOut
+        );
     }
 
     function testLaunchFeeSaleRejectsSpotTwapManipulation() public {
@@ -953,7 +1171,7 @@ contract RobynV4NativeProtocolTest is Test {
         RobynV4FeePositionLocker locker = market.graduationAdapter().locker();
         uint128 collectedTokenFees = _accrueTokenLpFees(market, token);
         vm.warp(block.timestamp + 5 minutes);
-        market.buy{value: 0.1 ether}(1);
+        market.buy{ value: 0.1 ether }(1);
 
         vm.expectPartialRevert(RobynV4FeePositionLocker.SpotTwapDeviation.selector);
         locker.convertCollectedToken(collectedTokenFees, 1, block.timestamp);
@@ -966,7 +1184,7 @@ contract RobynV4NativeProtocolTest is Test {
         RobynV4FeePositionLocker locker = market.graduationAdapter().locker();
         uint128 collectedTokenFees = _accrueTokenLpFees(market, token);
         vm.warp(block.timestamp + 5 minutes);
-        market.buy{value: 0.000001 ether}(1);
+        market.buy{ value: 0.000001 ether }(1);
         vm.warp(block.timestamp + 15 minutes + 1);
 
         vm.expectPartialRevert(RobynV4FeePositionLocker.StaleObservation.selector);
@@ -990,18 +1208,69 @@ contract RobynV4NativeProtocolTest is Test {
         assertEq(address(token), predictedToken);
     }
 
+    function testGraduationProfileGovernanceAndBoundsFailClosed() public {
+        vm.expectRevert(RobynV4MarketFactory.Unauthorized.selector);
+        marketFactory.setGraduationProfile(0.01 ether, 0.001 ether);
+
+        vm.startPrank(TREASURY);
+        vm.expectRevert(RobynV4MarketFactory.InvalidConfiguration.selector);
+        marketFactory.setGraduationProfile(0.01 ether - 1, 0.001 ether);
+        vm.expectRevert(RobynV4MarketFactory.InvalidConfiguration.selector);
+        marketFactory.setGraduationProfile(100 ether + 1, 0.5 ether);
+        vm.expectRevert(RobynV4MarketFactory.InvalidConfiguration.selector);
+        marketFactory.setGraduationProfile(1 ether, 0);
+        vm.expectRevert(RobynV4MarketFactory.InvalidConfiguration.selector);
+        marketFactory.setGraduationProfile(1 ether, 0.5 ether + 1);
+        uint64 version = marketFactory.setGraduationProfile(100 ether, 50 ether);
+        vm.stopPrank();
+
+        assertEq(version, 2);
+        assertEq(marketFactory.graduationThresholdNative(), 100 ether);
+        assertEq(marketFactory.maximumCurvePurchase(), 50 ether);
+    }
+
+    function testFuzzGraduationProfileDerivationStaysBounded(
+        uint256 targetGraduationNative,
+        uint256 maximumPurchase
+    ) public {
+        targetGraduationNative =
+            bound(targetGraduationNative, 0.01 ether, 100 ether);
+        maximumPurchase = bound(maximumPurchase, 1, targetGraduationNative / 2);
+
+        vm.prank(TREASURY);
+        uint64 version =
+            marketFactory.setGraduationProfile(targetGraduationNative, maximumPurchase);
+        RobynV4MarketFactory.GraduationProfile memory profile =
+            marketFactory.currentGraduationProfile();
+
+        assertEq(profile.version, version);
+        assertEq(profile.targetGraduationNative, targetGraduationNative);
+        assertEq(profile.maximumCurvePurchase, maximumPurchase);
+        assertGe(profile.actualGraduationNative, targetGraduationNative);
+        assertLt(
+            profile.actualGraduationNative - targetGraduationNative,
+            marketFactory.initialVirtualTokenReserve()
+                / (marketFactory.initialVirtualTokenReserve() - marketFactory.curveTokenAllocation())
+                + 1
+        );
+        assertGt(profile.initialVirtualNativeReserve, 0);
+        assertGt(profile.terminalNativePerTokenX18, 0);
+        assertGt(profile.terminalSqrtPriceX96, 0);
+        assertEq(marketFactory.currentGraduationProfileHash(), keccak256(abi.encode(profile)));
+    }
+
     function _graduateMarket(RobynV4BondingCurveMarket market) internal {
         while (!market.graduated()) {
-            market.buy{value: 0.5 ether}(1);
+            market.buy{ value: 0.5 ether }(1);
         }
     }
 
-    function _accrueAndRoutePostGraduationFees(RobynV4BondingCurveMarket market, RobynLaunchToken token)
-        internal
-        returns (uint256 lockedLpNativeFee)
-    {
+    function _accrueAndRoutePostGraduationFees(
+        RobynV4BondingCurveMarket market,
+        RobynLaunchToken token
+    ) internal returns (uint256 lockedLpNativeFee) {
         uint256 hookFeeBefore = hook.pendingTokenFees(address(token));
-        market.buy{value: 0.01 ether}(1);
+        market.buy{ value: 0.01 ether }(1);
         assertGt(hook.pendingTokenFees(address(token)) - hookFeeBefore, 0);
         RobynV4FeePositionLocker locker = market.graduationAdapter().locker();
         (uint256 collectedNative,) = locker.collectFees(0, 0);
@@ -1014,7 +1283,7 @@ contract RobynV4NativeProtocolTest is Test {
         returns (uint128 collectedTokenFees)
     {
         uint256 tokenBefore = token.balanceOf(address(this));
-        market.buy{value: 0.01 ether}(1);
+        market.buy{ value: 0.01 ether }(1);
         uint256 purchased = token.balanceOf(address(this)) - tokenBefore;
         uint256 sellAmount = purchased / 2;
         token.approve(address(market), sellAmount);
@@ -1024,13 +1293,18 @@ contract RobynV4NativeProtocolTest is Test {
         collectedTokenFees = uint128(collected);
     }
 
-    function _addThirdPartyFullRangeLiquidity(PoolKey memory key, RobynLaunchToken token, uint128 liquidity) internal {
-        IPoolModifyLiquidityFixture liquidityRouter = IPoolModifyLiquidityFixture(
-            _deployPinned(
-                "../../node_modules/@uniswap/v4-periphery/foundry-out/PoolModifyLiquidityTest.sol/PoolModifyLiquidityTest.default.json",
-                abi.encode(poolManager)
-            )
-        );
+    function _addThirdPartyFullRangeLiquidity(
+        PoolKey memory key,
+        RobynLaunchToken token,
+        uint128 liquidity
+    ) internal {
+        IPoolModifyLiquidityFixture liquidityRouter =
+            IPoolModifyLiquidityFixture(
+                _deployPinned(
+                    "../../node_modules/@uniswap/v4-periphery/foundry-out/PoolModifyLiquidityTest.sol/PoolModifyLiquidityTest.default.json",
+                    abi.encode(poolManager)
+                )
+            );
         (uint160 sqrtPriceX96,,,) = stateView.getSlot0(key.toId());
         uint160 lower = TickMath.getSqrtPriceAtTick(-887200);
         uint160 upper = TickMath.getSqrtPriceAtTick(887200);
@@ -1038,7 +1312,7 @@ contract RobynV4NativeProtocolTest is Test {
         uint256 tokenAmount = SqrtPriceMath.getAmount1Delta(lower, sqrtPriceX96, liquidity, true);
         require(token.balanceOf(address(this)) >= tokenAmount, "insufficient third-party token");
         token.approve(address(liquidityRouter), tokenAmount);
-        liquidityRouter.modifyLiquidity{value: nativeAmount}(
+        liquidityRouter.modifyLiquidity{ value: nativeAmount }(
             key,
             ModifyLiquidityParams({
                 tickLower: -887200,
@@ -1051,7 +1325,10 @@ contract RobynV4NativeProtocolTest is Test {
         assertEq(token.allowance(address(this), address(liquidityRouter)), 0);
     }
 
-    function _deployPinned(string memory artifact, bytes memory constructorArgs) internal returns (address deployed) {
+    function _deployPinned(string memory artifact, bytes memory constructorArgs)
+        internal
+        returns (address deployed)
+    {
         bytes memory creationCode = vm.getCode(artifact);
         bytes memory initCode = abi.encodePacked(creationCode, constructorArgs);
         assembly {
@@ -1061,16 +1338,19 @@ contract RobynV4NativeProtocolTest is Test {
     }
 
     function _deployHook() internal returns (RobynV4FeeAndPhaseHook deployed) {
-        uint160 flags = Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_DONATE_FLAG
-            | Hooks.AFTER_INITIALIZE_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
+        uint160 flags = Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_SWAP_FLAG
+            | Hooks.BEFORE_DONATE_FLAG | Hooks.AFTER_INITIALIZE_FLAG | Hooks.AFTER_SWAP_FLAG
+            | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
         bytes32 deploymentDomain = keccak256("robyn-v4-native-protocol-test");
         (address predicted, bytes32 salt) = HookMiner.find(
             address(this),
             flags,
             type(RobynV4FeeAndPhaseHook).creationCode,
-            abi.encode(poolManager, feeRouter, address(this), address(positionManager), deploymentDomain)
+            abi.encode(
+                poolManager, feeRouter, address(this), address(positionManager), deploymentDomain
+            )
         );
-        deployed = new RobynV4FeeAndPhaseHook{salt: salt}(
+        deployed = new RobynV4FeeAndPhaseHook{ salt: salt }(
             poolManager, feeRouter, address(this), address(positionManager), deploymentDomain
         );
         assertEq(address(deployed), predicted);
@@ -1098,11 +1378,15 @@ contract RobynV4NativeProtocolTest is Test {
         asset.approve(address(liquidityRouter), type(uint256).max);
         uint128 liquidity = 10 ether;
         uint160 upper = TickMath.getSqrtPriceAtTick(600);
-        uint256 nativeAmount = SqrtPriceMath.getAmount0Delta(uint160(1 << 96), upper, liquidity, true);
-        liquidityRouter.modifyLiquidity{value: nativeAmount}(
+        uint256 nativeAmount =
+            SqrtPriceMath.getAmount0Delta(uint160(1 << 96), upper, liquidity, true);
+        liquidityRouter.modifyLiquidity{ value: nativeAmount }(
             key,
             ModifyLiquidityParams({
-                tickLower: -600, tickUpper: 600, liquidityDelta: int256(uint256(liquidity)), salt: bytes32(0)
+                tickLower: -600,
+                tickUpper: 600,
+                liquidityDelta: int256(uint256(liquidity)),
+                salt: bytes32(0)
             }),
             bytes("")
         );
@@ -1124,7 +1408,11 @@ contract RobynV4NativeProtocolTest is Test {
         assertTrue(assetRouter.routeStatus(address(asset)).ready);
     }
 
-    function _request(bytes32 salt) internal view returns (RobynNativeLaunchFactoryV4.LaunchRequest memory request) {
+    function _request(bytes32 salt)
+        internal
+        view
+        returns (RobynNativeLaunchFactoryV4.LaunchRequest memory request)
+    {
         address[] memory assets = new address[](1);
         assets[0] = address(basketAsset);
         uint16[] memory weights = new uint16[](1);
@@ -1135,7 +1423,8 @@ contract RobynV4NativeProtocolTest is Test {
             assets: assets,
             weights: weights,
             metadataUri: METADATA_URI,
-            userSalt: salt
+            userSalt: salt,
+            expectedGraduationProfileVersion: 1
         });
     }
 }

@@ -11,7 +11,7 @@ const commonEvidence = [
 ];
 
 const contractSpecs = [
-  ["RobynV4LaunchCoordinatorV5", "packages/contracts/src/uniswap/RobynV4LaunchCoordinatorV5.sol"],
+  ["RobynV4LaunchCoordinatorV6", "packages/contracts/src/uniswap/RobynV4LaunchCoordinatorV6.sol"],
   ["RobynNativeLaunchFactoryV4", "packages/contracts/src/uniswap/RobynNativeLaunchFactoryV4.sol"],
   ["RobynNativeLaunchDeployerV4", "packages/contracts/src/uniswap/RobynNativeLaunchDeployerV4.sol"],
   ["RobynNativeVaultDeployerV4", "packages/contracts/src/uniswap/RobynNativeVaultDeployerV4.sol"],

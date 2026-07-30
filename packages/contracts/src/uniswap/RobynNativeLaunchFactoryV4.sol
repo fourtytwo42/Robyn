@@ -24,6 +24,7 @@ contract RobynNativeLaunchFactoryV4 {
         uint16[] weights;
         string metadataUri;
         bytes32 userSalt;
+        uint64 expectedGraduationProfileVersion;
     }
 
     struct CreatedLaunch {
@@ -34,7 +35,7 @@ contract RobynNativeLaunchFactoryV4 {
         bytes32 launchSaltHash;
     }
 
-    string public constant CONTRACT_VERSION = "5.0.0";
+    string public constant CONTRACT_VERSION = "6.0.0";
     uint256 public immutable chainId;
     RobynV4AssetRouter public immutable assetRouter;
     RobynNativeLaunchDeployerV4 public immutable launchDeployer;
@@ -160,7 +161,8 @@ contract RobynNativeLaunchFactoryV4 {
                 address(created.vault),
                 request.assets,
                 request.weights,
-                keccak256(bytes(request.metadataUri))
+                keccak256(bytes(request.metadataUri)),
+                request.expectedGraduationProfileVersion
             )
         );
         emit LaunchCreated(
@@ -233,7 +235,8 @@ contract RobynNativeLaunchFactoryV4 {
                 request.assets,
                 request.weights,
                 keccak256(bytes(request.metadataUri)),
-                request.userSalt
+                request.userSalt,
+                request.expectedGraduationProfileVersion
             )
         );
     }

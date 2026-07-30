@@ -33,10 +33,25 @@ const atomicLaunchCoordinatorAbi = [
           { name: "weights", type: "uint16[]" },
           { name: "metadataUri", type: "string" },
           { name: "userSalt", type: "bytes32" },
+          { name: "expectedGraduationProfileVersion", type: "uint64" },
         ],
       },
     ],
     outputs: [{ type: "address" }, { type: "address" }, { type: "address" }],
+  },
+  {
+    type: "function",
+    name: "launchMode",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint8" }],
+  },
+  {
+    type: "function",
+    name: "canaryLauncher",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
   },
   {
     type: "event",
@@ -80,6 +95,20 @@ const atomicLaunchCoordinatorAbi = [
           { name: "configurationHash", type: "bytes32" },
           { name: "launchSaltHash", type: "bytes32" },
           { name: "metadataUriHash", type: "bytes32" },
+          {
+            name: "graduationProfile",
+            type: "tuple",
+            components: [
+              { name: "version", type: "uint64" },
+              { name: "targetGraduationNative", type: "uint256" },
+              { name: "actualGraduationNative", type: "uint256" },
+              { name: "maximumCurvePurchase", type: "uint256" },
+              { name: "initialVirtualNativeReserve", type: "uint256" },
+              { name: "terminalNativePerTokenX18", type: "uint256" },
+              { name: "terminalSqrtPriceX96", type: "uint160" },
+            ],
+          },
+          { name: "graduationProfileHash", type: "bytes32" },
         ],
       },
     ],
@@ -168,6 +197,13 @@ const marketFactoryAbi = [
     stateMutability: "view",
     inputs: [{ type: "address" }],
     outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "graduationProfileVersion",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint64" }],
   },
   {
     type: "function",
@@ -398,6 +434,38 @@ export function NetworkLaunchpadConsole({
   );
   const [busy, setBusy] = useState(false);
   const [launchedToken, setLaunchedToken] = useState<Address>();
+  const [launchControl, setLaunchControl] = useState<{
+    mode: 0 | 1 | 2;
+    canaryLauncher: Address;
+  } | null>(
+    deployment.schemaVersion && deployment.schemaVersion >= 13
+      ? null
+      : { mode: 2, canaryLauncher: ZERO },
+  );
+  const refreshLaunchControl = useCallback(async () => {
+    if (!publicClient || !deployment.contracts.atomicLaunchCoordinator) return;
+    if (!deployment.schemaVersion || deployment.schemaVersion < 13) {
+      setLaunchControl({ mode: 2, canaryLauncher: ZERO });
+      return;
+    }
+    const [mode, canaryLauncher] = await Promise.all([
+      publicClient.readContract({
+        address: deployment.contracts.atomicLaunchCoordinator,
+        abi: atomicLaunchCoordinatorAbi,
+        functionName: "launchMode",
+      }),
+      publicClient.readContract({
+        address: deployment.contracts.atomicLaunchCoordinator,
+        abi: atomicLaunchCoordinatorAbi,
+        functionName: "canaryLauncher",
+      }),
+    ]);
+    setLaunchControl({ mode: Number(mode) as 0 | 1 | 2, canaryLauncher });
+  }, [
+    deployment.contracts.atomicLaunchCoordinator,
+    deployment.schemaVersion,
+    publicClient,
+  ]);
   const refresh = useCallback(async () => {
     if (!publicClient) return;
     const count = await publicClient.readContract({
@@ -474,7 +542,10 @@ export function NetworkLaunchpadConsole({
 
   useEffect(() => {
     void refresh().catch(() => setStatus("Unable to load launch registry."));
-  }, [refresh]);
+    void refreshLaunchControl().catch(() =>
+      setStatus("Unable to verify launch activation mode."),
+    );
+  }, [refresh, refreshLaunchControl]);
 
   const submit = useCallback(
     async (
@@ -635,6 +706,11 @@ export function NetworkLaunchpadConsole({
         throw new Error(
           "Protected launch requires verified redundant IPFS pinning.",
         );
+      const expectedGraduationProfileVersion = await publicClient.readContract({
+        address: deployment.contracts.marketFactory,
+        abi: marketFactoryAbi,
+        functionName: "graduationProfileVersion",
+      });
       const request = {
         name: name.trim(),
         symbol: symbol.trim().toUpperCase(),
@@ -642,6 +718,7 @@ export function NetworkLaunchpadConsole({
         weights: basket.map((item) => item.weight * 100),
         metadataUri: preparedBody.data.metadata_uri,
         userSalt: randomLaunchSalt(),
+        expectedGraduationProfileVersion,
       } as const;
       let initialPurchaseValue = 0n;
       try {
@@ -895,7 +972,13 @@ export function NetworkLaunchpadConsole({
       {modalOnly ? null : (
         <div className="console-heading">
           <div>
-            <p className="eyebrow">Permissionless launchpad</p>
+            <p className="eyebrow">
+              {launchControl?.mode === 0
+                ? "Launches paused"
+                : launchControl?.mode === 1
+                  ? "Mainnet Canary"
+                  : "Permissionless launchpad"}
+            </p>
             <h2 id="launchpad-title">
               Create a token holders want to earn with.
             </h2>
@@ -912,7 +995,14 @@ export function NetworkLaunchpadConsole({
       <div className={modalOnly ? undefined : "launch-layout"}>
         <GuidedLaunchWizard
           account={account}
-          busy={busy}
+          busy={
+            busy ||
+            !launchControl ||
+            launchControl.mode === 0 ||
+            (launchControl.mode === 1 &&
+              account?.toLowerCase() !==
+                launchControl.canaryLauncher.toLowerCase())
+          }
           name={name}
           setName={setName}
           symbol={symbol}

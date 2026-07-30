@@ -75,6 +75,9 @@ export default async function LaunchDetail({
   }
   const launch = detail.data;
   const market = analytics.data;
+  const isMainnetCanary =
+    publicEnvironment.isMainnet &&
+    launch.target_graduation_native === "10000000000000000";
   const quoteSymbol =
     market.liquidityVenue === "uniswap-v4"
       ? "ETH"
@@ -126,6 +129,14 @@ export default async function LaunchDetail({
               <span className="live-chip">
                 {marketPhaseLabel(market.marketPhase)}
               </span>
+              {isMainnetCanary ? (
+                <span
+                  className="campaign-test-chip"
+                  title="Controlled Schema-13 Mainnet canary launch"
+                >
+                  Mainnet Canary
+                </span>
+              ) : null}
               {launch.kingOfForest?.awarded ? (
                 <span
                   className={`king-card-chip ${launch.kingOfForest.isCurrent ? "current" : "former"}`}
@@ -396,6 +407,12 @@ export default async function LaunchDetail({
               </div>
               <small>
                 Target {metric(market.graduationThresholdBase, quoteSymbol)}
+                {launch.graduation_profile_version
+                  ? ` · profile v${launch.graduation_profile_version}`
+                  : ""}
+                {launch.maximum_curve_purchase
+                  ? ` · max buy ${metric(launch.maximum_curve_purchase, quoteSymbol)}`
+                  : ""}
                 {market.marketPhase === "bonding"
                   ? ` · ${quantity(market.remainingCurveTokens)} ${launch.symbol} remain on curve`
                   : " · migration complete and irreversible"}

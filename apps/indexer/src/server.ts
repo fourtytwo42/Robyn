@@ -160,13 +160,40 @@ const marketFactoryAbi = [
     inputs: [{ type: "address" }],
     outputs: [{ type: "address" }],
   },
+  {
+    type: "function",
+    name: "graduationProfileByToken",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "version", type: "uint64" },
+          { name: "targetGraduationNative", type: "uint256" },
+          { name: "actualGraduationNative", type: "uint256" },
+          { name: "maximumCurvePurchase", type: "uint256" },
+          { name: "initialVirtualNativeReserve", type: "uint256" },
+          { name: "terminalNativePerTokenX18", type: "uint256" },
+          { name: "terminalSqrtPriceX96", type: "uint160" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "graduationProfileHashByToken",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "bytes32" }],
+  },
 ] as const;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const atomicLaunchEvent = parseAbiItem(
   "event AtomicLaunchCreated(uint256 indexed launchId,address indexed creator,address indexed token,address vault,address market,address adapter,address pool,address locker,bytes32 configurationHash,bytes32 launchSaltHash,bytes32 metadataUriHash)",
 );
 const atomicV4LaunchEvent = parseAbiItem(
-  "event AtomicV4LaunchCreated(uint256 indexed launchId,address indexed creator,address indexed token,(address vault,address market,address adapter,address poolManager,bytes32 poolId,address positionManager,address hook,address locker,uint24 poolFeePips,int24 tickSpacing,bytes32 configurationHash,bytes32 launchSaltHash,bytes32 metadataUriHash) receipt)",
+  "event AtomicV4LaunchCreated(uint256 indexed launchId,address indexed creator,address indexed token,(address vault,address market,address adapter,address poolManager,bytes32 poolId,address positionManager,address hook,address locker,uint24 poolFeePips,int24 tickSpacing,bytes32 configurationHash,bytes32 launchSaltHash,bytes32 metadataUriHash,(uint64 version,uint256 targetGraduationNative,uint256 actualGraduationNative,uint256 maximumCurvePurchase,uint256 initialVirtualNativeReserve,uint256 terminalNativePerTokenX18,uint160 terminalSqrtPriceX96) graduationProfile,bytes32 graduationProfileHash) receipt)",
 );
 const kingMarketEvents = [
   parseAbiItem(
@@ -646,6 +673,44 @@ async function projectLaunch(
       if ((graduated && phase !== 3) || (!graduated && phase !== 1)) {
         throw new Error(`Launch ${id} market and pool phases differ`);
       }
+      if (typeof atomic.args.graduationProfileHash === "string") {
+        const [onchainProfile, onchainProfileHash] = await Promise.all([
+          client.readContract({
+            address: manifest.contracts.marketFactory,
+            abi: marketFactoryAbi,
+            functionName: "graduationProfileByToken",
+            args: [token],
+          }),
+          client.readContract({
+            address: manifest.contracts.marketFactory,
+            abi: marketFactoryAbi,
+            functionName: "graduationProfileHashByToken",
+            args: [token],
+          }),
+        ]);
+        const eventProfile = atomic.args.graduationProfile as
+          Record<string, unknown> | undefined;
+        const profileFields = [
+          "version",
+          "targetGraduationNative",
+          "actualGraduationNative",
+          "maximumCurvePurchase",
+          "initialVirtualNativeReserve",
+          "terminalNativePerTokenX18",
+          "terminalSqrtPriceX96",
+        ] as const;
+        if (
+          !eventProfile ||
+          onchainProfileHash.toLowerCase() !==
+            atomic.args.graduationProfileHash.toLowerCase() ||
+          profileFields.some(
+            (field) =>
+              String(onchainProfile[field]) !== String(eventProfile[field]),
+          )
+        ) {
+          throw new Error(`Launch ${id} graduation profile differs`);
+        }
+      }
     }
     if (manifest.contracts.protocolFeeRouter) {
       const feeAccount = await client.readContract({
@@ -702,6 +767,11 @@ async function projectLaunch(
     (found[0]
       ? BigInt(found[0].block_number)
       : BigInt(manifest.deploymentBlock));
+  const graduationProfile =
+    atomic?.args.graduationProfile &&
+    typeof atomic.args.graduationProfile === "object"
+      ? (atomic.args.graduationProfile as Record<string, unknown>)
+      : undefined;
   const [campaign] = await sql.unsafe<
     {
       campaign_id: string;
@@ -713,7 +783,7 @@ async function projectLaunch(
     [manifest.chainId, token.toLowerCase()],
   );
   await sql.unsafe(
-    "INSERT INTO launches (chain_id,launch_id,token,vault,market,adapter,locker,creator,name,symbol,assets,weights_bps,created_block,updated_block,formula_version,campaign_id,campaign_release_sha,automated_test_launch,pool_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12::jsonb,$13,$14,$15,$16,$17,$18,$19) ON CONFLICT (chain_id,token) DO UPDATE SET vault=EXCLUDED.vault,market=EXCLUDED.market,adapter=EXCLUDED.adapter,locker=EXCLUDED.locker,name=EXCLUDED.name,symbol=EXCLUDED.symbol,assets=EXCLUDED.assets,weights_bps=EXCLUDED.weights_bps,created_block=EXCLUDED.created_block,updated_block=EXCLUDED.updated_block,formula_version=EXCLUDED.formula_version,campaign_id=EXCLUDED.campaign_id,campaign_release_sha=EXCLUDED.campaign_release_sha,automated_test_launch=EXCLUDED.automated_test_launch,pool_id=EXCLUDED.pool_id",
+    "INSERT INTO launches (chain_id,launch_id,token,vault,market,adapter,locker,creator,name,symbol,assets,weights_bps,created_block,updated_block,formula_version,campaign_id,campaign_release_sha,automated_test_launch,pool_id,graduation_profile_version,target_graduation_native,actual_graduation_native,maximum_curve_purchase,initial_virtual_native_reserve,terminal_native_per_token_x18,terminal_sqrt_price_x96,graduation_profile_hash) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12::jsonb,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27) ON CONFLICT (chain_id,token) DO UPDATE SET vault=EXCLUDED.vault,market=EXCLUDED.market,adapter=EXCLUDED.adapter,locker=EXCLUDED.locker,name=EXCLUDED.name,symbol=EXCLUDED.symbol,assets=EXCLUDED.assets,weights_bps=EXCLUDED.weights_bps,created_block=EXCLUDED.created_block,updated_block=EXCLUDED.updated_block,formula_version=EXCLUDED.formula_version,campaign_id=EXCLUDED.campaign_id,campaign_release_sha=EXCLUDED.campaign_release_sha,automated_test_launch=EXCLUDED.automated_test_launch,pool_id=EXCLUDED.pool_id,graduation_profile_version=EXCLUDED.graduation_profile_version,target_graduation_native=EXCLUDED.target_graduation_native,actual_graduation_native=EXCLUDED.actual_graduation_native,maximum_curve_purchase=EXCLUDED.maximum_curve_purchase,initial_virtual_native_reserve=EXCLUDED.initial_virtual_native_reserve,terminal_native_per_token_x18=EXCLUDED.terminal_native_per_token_x18,terminal_sqrt_price_x96=EXCLUDED.terminal_sqrt_price_x96,graduation_profile_hash=EXCLUDED.graduation_profile_hash",
     [
       manifest.chainId,
       id.toString(),
@@ -735,7 +805,9 @@ async function projectLaunch(
       created.toString(),
       atomic && manifest.contracts.protocolFeeRouter
         ? manifest.liquidityVenue === "uniswap-v4"
-          ? "native-v4-dao-atomic"
+          ? graduationProfile
+            ? "native-v4-schema13-governed"
+            : "native-v4-dao-atomic"
           : "native-v3-dao-atomic"
         : atomic
           ? "native-v2-atomic"
@@ -745,6 +817,24 @@ async function projectLaunch(
       campaign?.automated_test_launch ?? false,
       atomic && typeof atomic.args.poolId === "string"
         ? atomic.args.poolId.toLowerCase()
+        : null,
+      graduationProfile ? String(graduationProfile.version) : null,
+      graduationProfile
+        ? String(graduationProfile.targetGraduationNative)
+        : null,
+      graduationProfile
+        ? String(graduationProfile.actualGraduationNative)
+        : null,
+      graduationProfile ? String(graduationProfile.maximumCurvePurchase) : null,
+      graduationProfile
+        ? String(graduationProfile.initialVirtualNativeReserve)
+        : null,
+      graduationProfile
+        ? String(graduationProfile.terminalNativePerTokenX18)
+        : null,
+      graduationProfile ? String(graduationProfile.terminalSqrtPriceX96) : null,
+      atomic && typeof atomic.args.graduationProfileHash === "string"
+        ? atomic.args.graduationProfileHash.toLowerCase()
         : null,
     ],
   );

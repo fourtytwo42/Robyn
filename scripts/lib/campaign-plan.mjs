@@ -73,9 +73,24 @@ export function basketConversionActorIndex(launchIndex, legIndex) {
 }
 
 export function assertSecurityRemediationManifest(manifest) {
-  if (manifest?.schemaVersion !== 12 || manifest?.chainId !== 46630) {
+  if (
+    ![12, 13].includes(manifest?.schemaVersion) ||
+    manifest?.chainId !== 46630
+  ) {
     throw new Error(
-      "Campaign requires a schema-12 security-remediated chain-46630 manifest",
+      "Campaign requires a schema-12 or schema-13 security-remediated chain-46630 manifest",
+    );
+  }
+  if (
+    manifest.schemaVersion === 13 &&
+    (manifest.launchControl?.initialMode !== "Paused" ||
+      manifest.graduationProfiles?.current?.targetGraduationNative !==
+        "10000000000000000" ||
+      manifest.graduationProfiles?.current?.maximumCurvePurchase !==
+        "1000000000000000")
+  ) {
+    throw new Error(
+      "Schema-13 campaign manifest must freeze the Paused canary profile",
     );
   }
   if (

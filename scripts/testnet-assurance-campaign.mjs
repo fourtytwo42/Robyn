@@ -896,7 +896,17 @@ async function launches() {
   if (!state.phases.funded) throw new Error("Fund the campaign before launching");
   const accounts = loadAccounts();
   const plan = launchBasketPlan(manifest);
-  const coordinatorAbi = artifactAbi("RobynV4LaunchCoordinatorV5");
+  const coordinatorAbi = artifactAbi(
+    manifest.schemaVersion >= 13
+      ? "RobynV4LaunchCoordinatorV6"
+      : "RobynV4LaunchCoordinatorV5",
+  );
+  const marketFactoryAbi = artifactAbi("RobynV4MarketFactory");
+  const expectedGraduationProfileVersion = await publicClient.readContract({
+    address: manifest.contracts.marketFactory,
+    abi: marketFactoryAbi,
+    functionName: "graduationProfileVersion",
+  });
   state.launches ??= [];
   for (const launch of plan) {
     if (state.launches.some((existing) => existing.index === launch.index)) continue;
@@ -927,6 +937,7 @@ async function launches() {
       weights: launch.weights,
       metadataUri: metadata.metadataUri,
       userSalt,
+      expectedGraduationProfileVersion,
     };
     const data = encodeFunctionData({
       abi: coordinatorAbi,

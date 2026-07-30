@@ -1,5 +1,46 @@
 # Project Memory
 
+### 2026-07-30 - Schema-13 governed graduation and Mainnet canary authorized
+
+- Context: The user approved replacing the Schema-12 Mainnet candidate with a
+  fresh Schema-13 release. Schema-13 adds contract-level `Paused`, `Canary`,
+  and `Public` launch modes plus DAO-governed graduation profiles that apply
+  only to future launches.
+- Decision: The protected Mainnet canary profile targets 0.01 ETH graduation
+  with a 0.001 ETH maximum bonding purchase. The canary performs one real
+  low-capital graduation. After it passes, governance must install the 6 ETH / 0.5
+  ETH production profile before public activation. Existing launches never
+  change when governance updates the default. The 2-of-3 Safe may pause new
+  launches; only the Timelock may enter Canary/Public or resume.
+- Funding: The encrypted project deployer controls the Ethereum L1 ETH.
+  Bridging and every Mainnet transaction remain blocked until the fresh
+  contracts pass Devnet, Testnet, internal security, recovery, endurance,
+  exact Mainnet fork, RPC, reproducibility, role, and funding gates.
+- State: Development starts on `codex/schema13-mainnet-canary` from exact
+  Schema-12 commit `af43eb38591d1d9b26bad7f5a3d67fb32318c1cf`.
+  Live run `schema12-2h-af43eb3-08` continues independently from immutable
+  release artifacts; do not modify, stop, reuse, or replay its journals.
+- Follow-up: Implement the contract interfaces, deployment state machine,
+  index/API/UI surfaces, tests, runbook, and protected transaction journal.
+- Contract checkpoint: `RobynNativeLaunchFactoryV4.LaunchRequest` now commits
+  `expectedGraduationProfileVersion` into both the launch salt and base
+  configuration hash. `RobynV4MarketFactory` v2 derives the virtual native
+  reserve, actual rounded completion amount, terminal price, and sqrt price
+  from a governed target, snapshots the complete profile per token, and
+  rejects stale expected versions. Governance authority is the fee router
+  treasury/Timelock; the guardian has no profile mutation path.
+- Coordinator checkpoint: New `RobynV4LaunchCoordinatorV6` defaults to
+  `Paused`; only the governor can select `Canary` or `Public`, while governor
+  or guardian may pause. Canary creation is restricted to the configured
+  launcher and pausing does not alter existing markets.
+- Verification: Contract compilation succeeds. The focused native-v4 suite
+  passes 35/35, including launch-mode authorization, continued bonding while
+  paused, future-only profile snapshots, exact 0.01 ETH profile derivation,
+  and stale-version rejection.
+- Follow-up: Add explicit 0.01 ETH and 6 ETH graduation execution proofs,
+  update deployment/rehearsal/indexer/API/UI surfaces, and add the runbook and
+  protected journal before a fresh Testnet deployment.
+
 ### 2026-07-29 - Recovery tolerates healthy admin snapshots during failover
 
 - Context: Corrected run `schema12-067a374-final-06` reached LAN
@@ -1259,6 +1300,15 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-07-30: Schema-13 work is active on
+  `codex/schema13-mainnet-canary`. It supersedes Schema-12 for any future
+  Mainnet deployment. Required behavior is launch modes defaulting to Paused,
+  guardian pause-only authority, Timelock-controlled Canary/Public activation,
+  and versioned future-launch-only graduation profiles. The Mainnet canary
+  profile is 0.01 ETH / 0.001 ETH; production is 6 ETH / 0.5 ETH after a DAO
+  proposal. No Mainnet transaction is authorized before all fresh gates pass.
+  Preserve active Schema-12 endurance run `schema12-2h-af43eb3-08` unchanged.
 
 - 2026-07-29: exact release
   `60b88549dee05cd3466d1a0fa5a062865d294767` is live and healthy after the
@@ -3013,6 +3063,18 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-30 - Schema-13 contract and application checkpoint
+
+- Branch `codex/schema13-mainnet-canary` implements V6 launch modes and versioned, future-launch-only graduation profiles. The coordinator defaults Paused; the guardian is pause-only; the Timelock controls Canary/Public and profiles.
+- Real 0.01 ETH/0.001 ETH canary and 6 ETH/0.5 ETH production profiles both graduate in focused Foundry tests. Existing launch snapshots remain unchanged after governance, stale expected versions revert, and 37/37 focused protocol tests pass.
+- Profile identity now flows through launch salts/configuration hashes, events, index projection, migration 0014, API responses, launch UI, and the persisted background protocol audit. All seven TypeScript packages typecheck.
+- The canonical rollout runbook is `docs/operations/mainnet-staged-rollout.md`. `scripts/mainnet-transaction-journal.mjs` provides protected append-only intent/receipt recording and rejects duplicate idempotency keys; its focused tests pass.
+- No Schema-13 Testnet or Mainnet deployment, bridge, route activation, canary transaction, or public activation has occurred or is authorized. Preserve the active Schema-12 endurance run unchanged.
+- V5 and V6 now both pass the request's expected profile version into the market factory; the unversioned compatibility overload was removed. A 256-case profile fuzz property proves every allowed 0.01-100 ETH target derives an actual threshold at or above the requested target with bounded rounding.
+- The Schema-13 Mainnet fork fixture now requires deployed production Timelock and Safe addresses, then exercises Canary, the 6 ETH / 0.5 ETH profile transition, and Public mode through a real `RobynGovernor` proposal, 1-day voting delay, 3-day voting period, and 2-day Timelock execution. It remains a no-broadcast fixture and skips without protected Mainnet inputs.
+- Complete repository validation passes: Prettier, zero-warning lint, all seven TypeScript typechecks, service tests, Anvil smoke, 256 Foundry tests with zero failures and two protected Mainnet fork skips, deployment nonce/verifier checks, and the 512-wallet/32-launch/25,000-action/20-seed simulation.
+- The protected exact Mainnet fork has not run because production Safe, Timelock, RDAO allocation, and other protected production inputs are not configured. The fresh Schema-13 Testnet deployment, renewed exact-candidate security audit, recovery, uninterrupted endurance, reconciliation, browser acceptance, 48-hour Mainnet RPC gate, and Mainnet funding preflight remain pending.
 
 ### 2026-07-29 - Conversion recovery preserves canonical keeper work
 

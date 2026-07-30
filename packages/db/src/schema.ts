@@ -5,6 +5,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgTable,
   primaryKey,
   text,
@@ -75,6 +76,34 @@ export const launches = pgTable(
     createdBlock: bigint("created_block", { mode: "bigint" }).notNull(),
     updatedBlock: bigint("updated_block", { mode: "bigint" }).notNull(),
     formulaVersion: text("formula_version").notNull().default("native-v1"),
+    graduationProfileVersion: bigint("graduation_profile_version", {
+      mode: "bigint",
+    }),
+    targetGraduationNative: numeric("target_graduation_native", {
+      precision: 78,
+      scale: 0,
+    }),
+    actualGraduationNative: numeric("actual_graduation_native", {
+      precision: 78,
+      scale: 0,
+    }),
+    maximumCurvePurchase: numeric("maximum_curve_purchase", {
+      precision: 78,
+      scale: 0,
+    }),
+    initialVirtualNativeReserve: numeric("initial_virtual_native_reserve", {
+      precision: 78,
+      scale: 0,
+    }),
+    terminalNativePerTokenX18: numeric("terminal_native_per_token_x18", {
+      precision: 78,
+      scale: 0,
+    }),
+    terminalSqrtPriceX96: numeric("terminal_sqrt_price_x96", {
+      precision: 78,
+      scale: 0,
+    }),
+    graduationProfileHash: text("graduation_profile_hash"),
     campaignId: text("campaign_id"),
     campaignReleaseSha: text("campaign_release_sha"),
     automatedTestLaunch: boolean("automated_test_launch")

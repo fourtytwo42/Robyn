@@ -119,6 +119,7 @@ const deployment = JSON.parse(
     conversionRouter?: Address;
     routeRegistry?: Address;
     marketFactory: Address;
+    atomicLaunchCoordinator?: Address;
     legacyMarketFactories?: Address[];
     daoToken: Address;
     governor: Address;
@@ -436,6 +437,42 @@ const marketFactoryViewAbi = [
     inputs: [{ type: "address" }],
     outputs: [{ type: "address" }],
   },
+  {
+    type: "function",
+    name: "currentGraduationProfile",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "version", type: "uint64" },
+          { name: "targetGraduationNative", type: "uint256" },
+          { name: "actualGraduationNative", type: "uint256" },
+          { name: "maximumCurvePurchase", type: "uint256" },
+          { name: "initialVirtualNativeReserve", type: "uint256" },
+          { name: "terminalNativePerTokenX18", type: "uint256" },
+          { name: "terminalSqrtPriceX96", type: "uint160" },
+        ],
+      },
+    ],
+  },
+] as const;
+const launchCoordinatorViewAbi = [
+  {
+    type: "function",
+    name: "launchMode",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint8" }],
+  },
+  {
+    type: "function",
+    name: "canaryLauncher",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
 ] as const;
 
 type LaunchRow = {
@@ -451,6 +488,14 @@ type LaunchRow = {
   created_block: string;
   updated_block: string;
   formula_version: string;
+  graduation_profile_version: string | null;
+  target_graduation_native: string | null;
+  actual_graduation_native: string | null;
+  maximum_curve_purchase: string | null;
+  initial_virtual_native_reserve: string | null;
+  terminal_native_per_token_x18: string | null;
+  terminal_sqrt_price_x96: string | null;
+  graduation_profile_hash: string | null;
   campaign_id: string | null;
   campaign_release_sha: string | null;
   automated_test_launch: boolean;
@@ -1211,6 +1256,69 @@ async function remediationProtocolState() {
   const daoVested = global[6] as bigint;
   const daoQueued = global[7] as bigint;
   const daoStreaming = global[8] as bigint;
+  let launchControl: null | {
+    mode: "Paused" | "Canary" | "Public";
+    canaryLauncher: Address;
+    currentProfile: {
+      version: string;
+      targetGraduationNative: string;
+      actualGraduationNative: string;
+      maximumCurvePurchase: string;
+      initialVirtualNativeReserve: string;
+      terminalNativePerTokenX18: string;
+      terminalSqrtPriceX96: string;
+    };
+  } = null;
+  if (
+    (deployment.schemaVersion ?? 0) >= 13 &&
+    deployment.contracts.atomicLaunchCoordinator
+  ) {
+    const control = await verifiedBatchRead(
+      [
+        {
+          address: deployment.contracts.atomicLaunchCoordinator,
+          abi: launchCoordinatorViewAbi,
+          functionName: "launchMode",
+        },
+        {
+          address: deployment.contracts.atomicLaunchCoordinator,
+          abi: launchCoordinatorViewAbi,
+          functionName: "canaryLauncher",
+        },
+        {
+          address: deployment.contracts.marketFactory,
+          abi: marketFactoryViewAbi,
+          functionName: "currentGraduationProfile",
+        },
+      ],
+      blockNumber,
+    );
+    const profile = control[2] as {
+      version: bigint;
+      targetGraduationNative: bigint;
+      actualGraduationNative: bigint;
+      maximumCurvePurchase: bigint;
+      initialVirtualNativeReserve: bigint;
+      terminalNativePerTokenX18: bigint;
+      terminalSqrtPriceX96: bigint;
+    };
+    const mode = Number(control[0]);
+    if (mode < 0 || mode > 2) throw new Error("invalid_launch_mode");
+    launchControl = {
+      mode: (["Paused", "Canary", "Public"] as const)[mode]!,
+      canaryLauncher: control[1] as Address,
+      currentProfile: {
+        version: profile.version.toString(),
+        targetGraduationNative: profile.targetGraduationNative.toString(),
+        actualGraduationNative: profile.actualGraduationNative.toString(),
+        maximumCurvePurchase: profile.maximumCurvePurchase.toString(),
+        initialVirtualNativeReserve:
+          profile.initialVirtualNativeReserve.toString(),
+        terminalNativePerTokenX18: profile.terminalNativePerTokenX18.toString(),
+        terminalSqrtPriceX96: profile.terminalSqrtPriceX96.toString(),
+      },
+    };
+  }
   const creatorRecipients = await sql.unsafe<
     { token: Address; recipient: Address }[]
   >(
@@ -1431,6 +1539,7 @@ async function remediationProtocolState() {
     rewardStreamRoundingDust: rewardStreamRoundingDust.toString(),
     bondingPools,
     tradingPools,
+    launchControl,
     tokenSink: deployment.contracts.tokenSink,
   };
 }
@@ -1661,7 +1770,7 @@ app.get<{
     request.query.phase !== undefined;
   const candidateLimit = rankedRequest ? 1001 : limit;
   const storedRows = await sql.unsafe<LaunchRow[]>(
-    "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version,campaign_id,campaign_release_sha,automated_test_launch,pool_id FROM launches WHERE chain_id=$1 AND ($2::bigint IS NULL OR launch_id::bigint<$2::bigint) AND ($4::text IS NULL OR token=$4 OR strpos(lower(name),$4)>0 OR strpos(lower(symbol),$4)>0) AND ($5::text IS NULL OR assets ? $5) AND ($6::integer IS NULL OR jsonb_array_length(assets)=$6) AND ($7::text IS NULL OR creator=$7) ORDER BY CASE WHEN token=$4 THEN 0 ELSE 1 END,launch_id::bigint DESC LIMIT $3",
+    "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version,graduation_profile_version::text,target_graduation_native::text,actual_graduation_native::text,maximum_curve_purchase::text,initial_virtual_native_reserve::text,terminal_native_per_token_x18::text,terminal_sqrt_price_x96::text,graduation_profile_hash,campaign_id,campaign_release_sha,automated_test_launch,pool_id FROM launches WHERE chain_id=$1 AND ($2::bigint IS NULL OR launch_id::bigint<$2::bigint) AND ($4::text IS NULL OR token=$4 OR strpos(lower(name),$4)>0 OR strpos(lower(symbol),$4)>0) AND ($5::text IS NULL OR assets ? $5) AND ($6::integer IS NULL OR jsonb_array_length(assets)=$6) AND ($7::text IS NULL OR creator=$7) ORDER BY CASE WHEN token=$4 THEN 0 ELSE 1 END,launch_id::bigint DESC LIMIT $3",
     [
       chainId,
       rankedRequest ? null : before,
@@ -1849,7 +1958,7 @@ app.get<{
 
 app.get("/king-of-forest", async () => {
   const storedRows = await sql.unsafe<LaunchRow[]>(
-    "SELECT l.launch_id::text,l.token,l.vault,l.market,l.creator,l.name,l.symbol,l.assets,l.weights_bps,l.created_block::text,l.updated_block::text,l.formula_version,l.campaign_id,l.campaign_release_sha,l.automated_test_launch,l.pool_id FROM king_of_forest_awards a JOIN launches l ON l.chain_id=a.chain_id AND l.token=a.token WHERE a.chain_id=$1 ORDER BY a.awarded_block DESC,a.awarded_transaction_index DESC,a.awarded_log_index DESC,a.token DESC LIMIT 100",
+    "SELECT l.launch_id::text,l.token,l.vault,l.market,l.creator,l.name,l.symbol,l.assets,l.weights_bps,l.created_block::text,l.updated_block::text,l.formula_version,l.graduation_profile_version::text,l.target_graduation_native::text,l.actual_graduation_native::text,l.maximum_curve_purchase::text,l.initial_virtual_native_reserve::text,l.terminal_native_per_token_x18::text,l.terminal_sqrt_price_x96::text,l.graduation_profile_hash,l.campaign_id,l.campaign_release_sha,l.automated_test_launch,l.pool_id FROM king_of_forest_awards a JOIN launches l ON l.chain_id=a.chain_id AND l.token=a.token WHERE a.chain_id=$1 ORDER BY a.awarded_block DESC,a.awarded_transaction_index DESC,a.awarded_log_index DESC,a.token DESC LIMIT 100",
     [chainId],
   );
   const rows = await hydrateMarkets(storedRows);
@@ -1879,7 +1988,7 @@ app.get<{ Params: { token: string } }>(
     if (!/^0x[0-9a-fA-F]{40}$/.test(request.params.token))
       return reply.code(400).send({ error: "invalid_token" });
     const storedRows = await sql.unsafe<LaunchRow[]>(
-      "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version,campaign_id,campaign_release_sha,automated_test_launch,pool_id FROM launches WHERE chain_id=$1 AND token=$2",
+      "SELECT launch_id::text,token,vault,market,creator,name,symbol,assets,weights_bps,created_block::text,updated_block::text,formula_version,graduation_profile_version::text,target_graduation_native::text,actual_graduation_native::text,maximum_curve_purchase::text,initial_virtual_native_reserve::text,terminal_native_per_token_x18::text,terminal_sqrt_price_x96::text,graduation_profile_hash,campaign_id,campaign_release_sha,automated_test_launch,pool_id FROM launches WHERE chain_id=$1 AND token=$2",
       [chainId, request.params.token.toLowerCase()],
     );
     const rows = await hydrateMarkets(storedRows);

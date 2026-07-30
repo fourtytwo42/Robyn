@@ -26,9 +26,11 @@ import { RobynV4FeeAndPhaseHook } from "./RobynV4FeeAndPhaseHook.sol";
 contract RobynV4MarketFactory {
     using PoolIdLibrary for PoolKey;
 
-    string public constant CONTRACT_VERSION = "1.0.0";
+    string public constant CONTRACT_VERSION = "2.0.0";
     uint24 public constant POOL_FEE_PIPS = 10_000;
     int24 public constant TICK_SPACING = 200;
+    uint256 public constant MINIMUM_GRADUATION_TARGET = 0.01 ether;
+    uint256 public constant MAXIMUM_GRADUATION_TARGET = 100 ether;
 
     error InvalidConfiguration();
     error Unauthorized();
@@ -36,6 +38,7 @@ contract RobynV4MarketFactory {
     error CoordinatorAlreadyBound();
     error MarketAlreadyExists();
     error PoolInitializationMismatch();
+    error GraduationProfileVersionMismatch(uint64 expected, uint64 actual);
 
     RobynNativeLaunchFactoryV4 public immutable launchFactory;
     RobynNativeProtocolFeeRouterV4 public immutable feeRouter;
@@ -50,27 +53,50 @@ contract RobynV4MarketFactory {
     RobynV4MarketDeployer public immutable marketDeployer;
     address public immutable initializer;
     address public immutable tokenSink;
+    address public immutable governor;
     address public coordinator;
 
     uint256 public immutable curveTokenAllocation;
     uint256 public immutable graduationTokenAllocation;
     uint256 public immutable initialVirtualTokenReserve;
-    uint256 public immutable initialVirtualNativeReserve;
-    uint256 public immutable graduationThresholdNative;
-    uint256 public immutable maximumCurvePurchase;
+    uint256 public initialVirtualNativeReserve;
+    uint256 public graduationThresholdNative;
+    uint256 public actualGraduationThresholdNative;
+    uint256 public maximumCurvePurchase;
     uint16 public immutable curveFeeBps;
     uint16 public immutable minimumUseBps;
     uint128 public immutable maximumNativeSwap;
     uint256 public immutable maximumNativeResidual;
     uint256 public immutable maximumTokenResidual;
-    uint160 public immutable terminalSqrtPriceX96;
-    uint256 public immutable terminalNativePerTokenX18;
+    uint160 public terminalSqrtPriceX96;
+    uint256 public terminalNativePerTokenX18;
+    uint64 public graduationProfileVersion;
+
+    struct GraduationProfile {
+        uint64 version;
+        uint256 targetGraduationNative;
+        uint256 actualGraduationNative;
+        uint256 maximumCurvePurchase;
+        uint256 initialVirtualNativeReserve;
+        uint256 terminalNativePerTokenX18;
+        uint160 terminalSqrtPriceX96;
+    }
 
     mapping(address token => address market) public marketByToken;
     mapping(address token => address adapter) public adapterByToken;
     mapping(address token => bytes32 poolId) public poolIdByToken;
+    mapping(address token => GraduationProfile profile) private _graduationProfileByToken;
 
     event CoordinatorBound(address indexed coordinator);
+    event GraduationProfileUpdated(
+        uint64 indexed version,
+        uint256 targetGraduationNative,
+        uint256 actualGraduationNative,
+        uint256 maximumCurvePurchase,
+        uint256 initialVirtualNativeReserve,
+        uint256 terminalNativePerTokenX18,
+        uint160 terminalSqrtPriceX96
+    );
     event MarketCreated(
         address indexed creator,
         address indexed token,
@@ -78,7 +104,12 @@ contract RobynV4MarketFactory {
         address adapter,
         bytes32 poolId,
         address locker,
-        uint160 initialSqrtPriceX96
+        uint160 initialSqrtPriceX96,
+        uint64 graduationProfileVersion,
+        uint256 targetGraduationNative,
+        uint256 actualGraduationNative,
+        uint256 maximumCurvePurchase,
+        bytes32 graduationProfileHash
     );
 
     struct Dependencies {
@@ -136,11 +167,12 @@ contract RobynV4MarketFactory {
                     != address(dependencies.poolManager) || curve_.curveTokenAllocation == 0
                 || curve_.graduationTokenAllocation == 0
                 || curve_.initialVirtualTokenReserve <= curve_.curveTokenAllocation
-                || curve_.initialVirtualNativeReserve == 0 || curve_.graduationThresholdNative == 0
-                || curve_.maximumCurvePurchase == 0 || curve_.curveFeeBps == 0
-                || curve_.maximumCurvePurchase > curve_.graduationThresholdNative
-                || curve_.curveFeeBps > 1_000 || minimumUseBps_ == 0 || minimumUseBps_ > 10_000
-                || maximumNativeSwap_ == 0 || maximumNativeResidual_ == 0
+                || curve_.graduationThresholdNative < MINIMUM_GRADUATION_TARGET
+                || curve_.graduationThresholdNative > MAXIMUM_GRADUATION_TARGET
+                || curve_.maximumCurvePurchase == 0
+                || curve_.maximumCurvePurchase > curve_.graduationThresholdNative / 2
+                || curve_.curveFeeBps == 0 || curve_.curveFeeBps > 1_000 || minimumUseBps_ == 0
+                || minimumUseBps_ > 10_000 || maximumNativeSwap_ == 0 || maximumNativeResidual_ == 0
                 || maximumTokenResidual_ == 0
         ) revert InvalidConfiguration();
         launchFactory = dependencies.launchFactory;
@@ -155,26 +187,21 @@ contract RobynV4MarketFactory {
         lockerDeployer = dependencies.lockerDeployer;
         marketDeployer = dependencies.marketDeployer;
         tokenSink = dependencies.tokenSink;
+        governor = dependencies.feeRouter.treasury();
         initializer = msg.sender;
         curveTokenAllocation = curve_.curveTokenAllocation;
         graduationTokenAllocation = curve_.graduationTokenAllocation;
         initialVirtualTokenReserve = curve_.initialVirtualTokenReserve;
-        initialVirtualNativeReserve = curve_.initialVirtualNativeReserve;
-        graduationThresholdNative = curve_.graduationThresholdNative;
-        maximumCurvePurchase = curve_.maximumCurvePurchase;
         curveFeeBps = curve_.curveFeeBps;
         minimumUseBps = minimumUseBps_;
         maximumNativeSwap = maximumNativeSwap_;
         maximumNativeResidual = maximumNativeResidual_;
         maximumTokenResidual = maximumTokenResidual_;
-        uint256 terminalTokenReserve =
-            curve_.initialVirtualTokenReserve - curve_.curveTokenAllocation;
-        uint256 terminalNativeReserve = Math.ceilDiv(
-            curve_.initialVirtualNativeReserve * curve_.initialVirtualTokenReserve,
-            terminalTokenReserve
+        GraduationProfile memory initialProfile = _deriveGraduationProfile(
+            1, curve_.graduationThresholdNative, curve_.maximumCurvePurchase
         );
-        terminalNativePerTokenX18 = Math.mulDiv(terminalNativeReserve, 1e18, terminalTokenReserve);
-        terminalSqrtPriceX96 = _sqrtPriceForNativePerToken(terminalNativePerTokenX18);
+        _storeCurrentProfile(initialProfile);
+        _emitGraduationProfileUpdated(initialProfile);
     }
 
     modifier onlyCoordinator() {
@@ -197,11 +224,68 @@ contract RobynV4MarketFactory {
         return curveTokenAllocation + graduationTokenAllocation;
     }
 
-    function createMarketFor(RobynLaunchToken token, address creator, address seedAuthority)
+    function currentGraduationProfile() public view returns (GraduationProfile memory profile) {
+        profile = GraduationProfile({
+            version: graduationProfileVersion,
+            targetGraduationNative: graduationThresholdNative,
+            actualGraduationNative: actualGraduationThresholdNative,
+            maximumCurvePurchase: maximumCurvePurchase,
+            initialVirtualNativeReserve: initialVirtualNativeReserve,
+            terminalNativePerTokenX18: terminalNativePerTokenX18,
+            terminalSqrtPriceX96: terminalSqrtPriceX96
+        });
+    }
+
+    function graduationProfileByToken(address token)
         external
-        onlyCoordinator
-        returns (RobynV4BondingCurveMarket market)
+        view
+        returns (GraduationProfile memory)
     {
+        return _graduationProfileByToken[token];
+    }
+
+    function currentGraduationProfileHash() external view returns (bytes32) {
+        return _graduationProfileHash(currentGraduationProfile());
+    }
+
+    function graduationProfileHashByToken(address token) external view returns (bytes32) {
+        return _graduationProfileHash(_graduationProfileByToken[token]);
+    }
+
+    function setGraduationProfile(uint256 targetGraduationNative, uint256 maximumPurchase)
+        external
+        returns (uint64 version)
+    {
+        if (msg.sender != governor) revert Unauthorized();
+        version = graduationProfileVersion + 1;
+        if (version == 0) revert InvalidConfiguration();
+        GraduationProfile memory profile =
+            _deriveGraduationProfile(version, targetGraduationNative, maximumPurchase);
+        _storeCurrentProfile(profile);
+        _emitGraduationProfileUpdated(profile);
+    }
+
+    function createMarketFor(
+        RobynLaunchToken token,
+        address creator,
+        address seedAuthority,
+        uint64 expectedGraduationProfileVersion
+    ) external onlyCoordinator returns (RobynV4BondingCurveMarket market) {
+        return _createMarketFor(token, creator, seedAuthority, expectedGraduationProfileVersion);
+    }
+
+    function _createMarketFor(
+        RobynLaunchToken token,
+        address creator,
+        address seedAuthority,
+        uint64 expectedGraduationProfileVersion
+    ) private returns (RobynV4BondingCurveMarket market) {
+        if (expectedGraduationProfileVersion != graduationProfileVersion) {
+            revert GraduationProfileVersionMismatch(
+                expectedGraduationProfileVersion, graduationProfileVersion
+            );
+        }
+        GraduationProfile memory profile = currentGraduationProfile();
         if (creator == address(0) || seedAuthority != msg.sender) revert InvalidConfiguration();
         if (launchFactory.creatorByToken(address(token)) != creator) revert Unauthorized();
         if (marketByToken[address(token)] != address(0)) revert MarketAlreadyExists();
@@ -209,23 +293,16 @@ contract RobynV4MarketFactory {
         if (vaultAddress == address(0)) revert InvalidConfiguration();
         RobynNativeBasketVaultV2 vault = RobynNativeBasketVaultV2(payable(vaultAddress));
 
-        (RobynV4GraduationAdapter adapter, bytes32 poolId) = _createAdapter(token);
-        market = _deployMarket(token, vault, creator, seedAuthority, adapter);
+        _graduationProfileByToken[address(token)] = profile;
+        (RobynV4GraduationAdapter adapter, bytes32 poolId) = _createAdapter(token, profile);
+        market = _deployMarket(token, vault, creator, seedAuthority, adapter, profile);
         marketByToken[address(token)] = address(market);
         adapterByToken[address(token)] = address(adapter);
         poolIdByToken[address(token)] = poolId;
-        emit MarketCreated(
-            creator,
-            address(token),
-            address(market),
-            address(adapter),
-            poolId,
-            address(adapter.locker()),
-            terminalSqrtPriceX96
-        );
+        _emitMarketCreated(creator, token, market, adapter, poolId, profile);
     }
 
-    function _createAdapter(RobynLaunchToken token)
+    function _createAdapter(RobynLaunchToken token, GraduationProfile memory profile)
         private
         returns (RobynV4GraduationAdapter adapter, bytes32 poolId)
     {
@@ -238,7 +315,7 @@ contract RobynV4MarketFactory {
                 stateView: stateView,
                 assetRouter: assetRouter,
                 hook: IHooks(address(oracleHook)),
-                initialSqrtPriceX96: terminalSqrtPriceX96,
+                initialSqrtPriceX96: profile.terminalSqrtPriceX96,
                 minimumUseBps: minimumUseBps,
                 maximumNativeSwap: maximumNativeSwap
             })
@@ -260,10 +337,10 @@ contract RobynV4MarketFactory {
         adapter.bindLocker(locker);
         poolId = PoolId.unwrap(key.toId());
         oracleHook.registerPool(key, address(adapter));
-        int24 initializedTick = poolManager.initialize(key, terminalSqrtPriceX96);
+        int24 initializedTick = poolManager.initialize(key, profile.terminalSqrtPriceX96);
         (uint160 actualSqrtPriceX96, int24 actualTick,,) = stateView.getSlot0(PoolId.wrap(poolId));
         if (
-            actualSqrtPriceX96 != terminalSqrtPriceX96 || actualTick != initializedTick
+            actualSqrtPriceX96 != profile.terminalSqrtPriceX96 || actualTick != initializedTick
                 || actualSqrtPriceX96 == 0
         ) {
             revert PoolInitializationMismatch();
@@ -290,22 +367,119 @@ contract RobynV4MarketFactory {
         RobynNativeBasketVaultV2 vault,
         address creator,
         address seedAuthority,
-        RobynV4GraduationAdapter adapter
+        RobynV4GraduationAdapter adapter,
+        GraduationProfile memory profile
     ) private returns (RobynV4BondingCurveMarket market) {
         RobynV4BondingCurveMarket.CurveConfig memory curve =
             RobynV4BondingCurveMarket.CurveConfig({
                 curveTokenAllocation: curveTokenAllocation,
                 graduationTokenAllocation: graduationTokenAllocation,
                 initialVirtualTokenReserve: initialVirtualTokenReserve,
-                initialVirtualNativeReserve: initialVirtualNativeReserve,
-                graduationThresholdNative: graduationThresholdNative,
-                maximumCurvePurchase: maximumCurvePurchase,
+                initialVirtualNativeReserve: profile.initialVirtualNativeReserve,
+                graduationThresholdNative: profile.actualGraduationNative,
+                maximumCurvePurchase: profile.maximumCurvePurchase,
                 curveFeeBps: curveFeeBps
             });
         market = marketDeployer.deploy(token, vault, creator, seedAuthority, curve, adapter);
         market.bindFeeRouter(feeRouter);
         adapter.bindMarket(address(market));
         adapter.bindFeeRouter(feeRouter);
+    }
+
+    function _deriveGraduationProfile(
+        uint64 version,
+        uint256 targetGraduationNative,
+        uint256 maximumPurchase
+    ) private view returns (GraduationProfile memory profile) {
+        if (
+            version == 0 || targetGraduationNative < MINIMUM_GRADUATION_TARGET
+                || targetGraduationNative > MAXIMUM_GRADUATION_TARGET || maximumPurchase == 0
+                || maximumPurchase > targetGraduationNative / 2
+        ) revert InvalidConfiguration();
+        uint256 terminalTokenReserve = initialVirtualTokenReserve - curveTokenAllocation;
+        uint256 derivedInitialVirtualNativeReserve =
+            Math.mulDiv(targetGraduationNative - 1, terminalTokenReserve, curveTokenAllocation) + 1;
+        uint256 actualGraduationNative = Math.ceilDiv(
+            derivedInitialVirtualNativeReserve * curveTokenAllocation, terminalTokenReserve
+        );
+        uint256 terminalNativeReserve = derivedInitialVirtualNativeReserve + actualGraduationNative;
+        uint256 derivedTerminalNativePerTokenX18 =
+            Math.mulDiv(terminalNativeReserve, 1e18, terminalTokenReserve);
+        uint160 derivedTerminalSqrtPriceX96 =
+            _sqrtPriceForNativePerToken(derivedTerminalNativePerTokenX18);
+        profile = GraduationProfile({
+            version: version,
+            targetGraduationNative: targetGraduationNative,
+            actualGraduationNative: actualGraduationNative,
+            maximumCurvePurchase: maximumPurchase,
+            initialVirtualNativeReserve: derivedInitialVirtualNativeReserve,
+            terminalNativePerTokenX18: derivedTerminalNativePerTokenX18,
+            terminalSqrtPriceX96: derivedTerminalSqrtPriceX96
+        });
+    }
+
+    function _storeCurrentProfile(GraduationProfile memory profile) private {
+        graduationProfileVersion = profile.version;
+        graduationThresholdNative = profile.targetGraduationNative;
+        actualGraduationThresholdNative = profile.actualGraduationNative;
+        maximumCurvePurchase = profile.maximumCurvePurchase;
+        initialVirtualNativeReserve = profile.initialVirtualNativeReserve;
+        terminalNativePerTokenX18 = profile.terminalNativePerTokenX18;
+        terminalSqrtPriceX96 = profile.terminalSqrtPriceX96;
+    }
+
+    function _emitGraduationProfileUpdated(GraduationProfile memory profile) private {
+        emit GraduationProfileUpdated(
+            profile.version,
+            profile.targetGraduationNative,
+            profile.actualGraduationNative,
+            profile.maximumCurvePurchase,
+            profile.initialVirtualNativeReserve,
+            profile.terminalNativePerTokenX18,
+            profile.terminalSqrtPriceX96
+        );
+    }
+
+    function _emitMarketCreated(
+        address creator,
+        RobynLaunchToken token,
+        RobynV4BondingCurveMarket market,
+        RobynV4GraduationAdapter adapter,
+        bytes32 poolId,
+        GraduationProfile memory profile
+    ) private {
+        emit MarketCreated(
+            creator,
+            address(token),
+            address(market),
+            address(adapter),
+            poolId,
+            address(adapter.locker()),
+            profile.terminalSqrtPriceX96,
+            profile.version,
+            profile.targetGraduationNative,
+            profile.actualGraduationNative,
+            profile.maximumCurvePurchase,
+            _graduationProfileHash(profile)
+        );
+    }
+
+    function _graduationProfileHash(GraduationProfile memory profile)
+        private
+        pure
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encode(
+                profile.version,
+                profile.targetGraduationNative,
+                profile.actualGraduationNative,
+                profile.maximumCurvePurchase,
+                profile.initialVirtualNativeReserve,
+                profile.terminalNativePerTokenX18,
+                profile.terminalSqrtPriceX96
+            )
+        );
     }
 
     function _sqrtPriceForNativePerToken(uint256 nativePerTokenX18) private pure returns (uint160) {

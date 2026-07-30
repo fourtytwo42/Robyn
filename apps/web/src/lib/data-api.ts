@@ -11,6 +11,14 @@ export type LaunchRecord = {
   created_block: string;
   updated_block: string;
   formula_version: string;
+  graduation_profile_version?: string | null;
+  target_graduation_native?: string | null;
+  actual_graduation_native?: string | null;
+  maximum_curve_purchase?: string | null;
+  initial_virtual_native_reserve?: string | null;
+  terminal_native_per_token_x18?: string | null;
+  terminal_sqrt_price_x96?: string | null;
+  graduation_profile_hash?: string | null;
   campaign_id: string | null;
   campaign_release_sha: string | null;
   automated_test_launch: boolean;
