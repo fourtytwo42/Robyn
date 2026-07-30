@@ -1,5 +1,20 @@
 # Project Memory
 
+### 2026-07-29 - Recovery tolerates healthy admin snapshots during failover
+
+- Context: Corrected run `schema12-067a374-final-06` reached LAN
+  interruption. The gateway proved Alchemy fallback with the LAN unhealthy,
+  while the public admin snapshot remained HTTP 200 and healthy because its
+  direct chain reads succeeded through the fallback before the data API cached
+  the gateway degradation. The run stopped on an overly strict 503 assertion.
+- Decision: Provider-specific gateway evidence is authoritative. Single-provider
+  drills accept public HTTP 200 or 503 only when RPC reads remain healthy and
+  protocol accounting is conserved. The both-provider outage still requires
+  HTTP 503, degraded RPC, and degraded overall health.
+- Verification: Shell syntax, focused tests, formatting, and diff checks pass.
+- Follow-up: Build and promote the exact correction and rerun recovery from the
+  beginning before starting endurance.
+
 ### 2026-07-29 - Recovery accepts explicit degraded RPC failover status
 
 - Context: Recovery run `schema12-57fed0b-final-05` completed encrypted backup,

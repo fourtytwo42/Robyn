@@ -88,15 +88,23 @@ for tool in age curl getent gh iptables jq pg_dump pg_restore psql redis-cli sha
 status_json() {
   curl -skf --max-time 10 https://testnet.sherwoodforest.trade/admin/health/status
 }
-status_json_degraded() {
+status_json_interrupted() {
   local output="$1"
   local expected_rpc_status="$2"
   local http_status
   http_status="$(curl -sk --max-time 10 -o "${output}" -w '%{http_code}' https://testnet.sherwoodforest.trade/admin/health/status)"
   printf '%s\n' "${http_status}" >"${output%.json}-http-status.txt"
-  [[ "${http_status}" == "503" ]]
+  case "${expected_rpc_status}" in
+    ok)
+      [[ "${http_status}" == "200" || "${http_status}" == "503" ]]
+      ;;
+    degraded)
+      [[ "${http_status}" == "503" ]]
+      ;;
+    *) return 1 ;;
+  esac
   jq -e --arg rpc_status "${expected_rpc_status}" \
-    '.overall=="degraded" and .rpc.status==$rpc_status and .protocol.status=="ok" and .protocol.routerSolvent==true and .protocol.daoStreamConserved==true and .protocol.creatorStreamConserved==true and (.protocol.rewardStreamMismatchCount|tonumber)==0' \
+    '.rpc.status==$rpc_status and (if $rpc_status=="degraded" then .overall=="degraded" else (.overall=="ok" or .overall=="degraded") end) and .protocol.status=="ok" and .protocol.routerSolvent==true and .protocol.daoStreamConserved==true and .protocol.creatorStreamConserved==true and (.protocol.rewardStreamMismatchCount|tonumber)==0' \
     "${output}" >/dev/null
 }
 gateway_json() {
@@ -346,17 +354,17 @@ done
 
 block_endpoint 192.168.50.117 8547
 wait_gateway lan-interrupted '.status=="degraded" and .activeProvider=="fallback" and .primary.healthy==false and .fallback.healthy==true'
-status_json_degraded "${evidence}/lan-interruption-status.json" ok
+status_json_interrupted "${evidence}/lan-interruption-status.json" ok
 unblock_endpoints
 wait_gateway lan-recovered '.status=="ok" and .activeProvider=="primary" and .primary.healthy==true and .fallback.healthy==true'
 
 block_endpoint robinhood-testnet.g.alchemy.com 443
 wait_gateway alchemy-interrupted '.status=="degraded" and .activeProvider=="primary" and .primary.healthy==true and .fallback.healthy==false'
-status_json_degraded "${evidence}/alchemy-interruption-status.json" ok
+status_json_interrupted "${evidence}/alchemy-interruption-status.json" ok
 
 block_endpoint 192.168.50.117 8547
 wait_gateway both-interrupted '.status=="unavailable" and .primary.healthy==false and .fallback.healthy==false'
-status_json_degraded "${evidence}/both-rpc-interruption-status.json" degraded
+status_json_interrupted "${evidence}/both-rpc-interruption-status.json" degraded
 curl -sS --max-time 10 -o "${evidence}/both-rpc-response.json" -w '%{http_code}\n' -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' http://127.0.0.1:18548/ >"${evidence}/both-rpc-http-status.txt" || true
 [[ "$(cat "${evidence}/both-rpc-http-status.txt")" == "503" ]]
 
