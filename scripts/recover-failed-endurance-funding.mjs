@@ -31,6 +31,8 @@ const option = (name, fallback) => {
 const stateDir = resolve(option("state-dir", "/nonexistent"));
 const passphrasePath = resolve(option("passphrase-file", "/nonexistent"));
 const allowBondingHistory = option("allow-bonding-history", "false") === "true";
+const allowIncompleteHistory =
+  option("allow-incomplete-history", "false") === "true";
 const manifestPath = resolve(
   option("manifest", "deployments/46630-v4-schema15.json"),
 );
@@ -83,16 +85,25 @@ const retainedLaunches = failedRun.enduranceLaunches ?? [];
 const hasGraduationHistory = (failedRun.transactions ?? []).some((entry) =>
   entry.label?.startsWith("endurance-graduate-"),
 );
+const healthySeconds = Number(failedRun.healthySeconds ?? 0);
+const incompleteHistoryIsEligible =
+  allowIncompleteHistory &&
+  failedRun.completed !== true &&
+  failedRun.terminalFailure &&
+  !hasGraduationHistory;
 if (
   failedRun.runId !== option("run-id") ||
   failedRun.failed !== true ||
-  Number(failedRun.healthySeconds ?? 0) !== 0 ||
+  (healthySeconds !== 0 && !incompleteHistoryIsEligible) ||
   (retainedLaunches.length !== 0 && !allowBondingHistory) ||
   hasGraduationHistory
 ) {
   throw new Error(
-    "Funding recovery requires a zero-healthy-second failed run without graduation history",
+    "Funding recovery requires an eligible failed, incomplete run without graduation history",
   );
+}
+if (allowIncompleteHistory && !allowBondingHistory) {
+  throw new Error("Incomplete-history recovery also requires --allow-bonding-history true");
 }
 if (campaignState.walletCount !== 100) {
   throw new Error("Funding recovery requires the encrypted 100-wallet identity");
@@ -170,6 +181,14 @@ try {
       .digest("hex"),
     recipient: manifest.deployer,
     bondingHistoryRecovery: retainedLaunches.length > 0,
+    incompleteHistoryRecovery: healthySeconds !== 0,
+    originalHealthySeconds: healthySeconds,
+    terminalFailure: failedRun.terminalFailure
+      ? {
+          reason: failedRun.terminalFailure.reason,
+          at: failedRun.terminalFailure.at,
+        }
+      : null,
     retainedLaunches: retainedLaunches.map((launch) => ({
       index: launch.index,
       token: launch.token,

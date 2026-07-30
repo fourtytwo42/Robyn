@@ -1577,6 +1577,20 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-30: Testnet endurance run
+  `schema15-accelerated-b74dbc8-04` is stopped and invalidated for the
+  Schema-15 Devnet torture pivot. The runner had already terminated on its
+  reserve guard at `2026-07-30T22:45:44.588Z`, before the operator stop
+  request, so that original terminal failure remains preserved. The run
+  accumulated 480.196 healthy seconds, created three bonding launches, and
+  recorded 89 distinct confirmed transaction hashes; all 89 receipts are
+  successful and none may be replayed. The coordinator is Paused by guardian
+  transaction `0x0a0b5c59c88c1569b6599af0ff841243bf4a381ab5e48b6f21eff2c86e0965c7`.
+  Existing bonding, trading, claims, and withdrawals remain operational.
+  Complete journaled unused-funding recovery, seal checksums, then implement
+  and run the isolated fast and deep Devnet torture tiers. No Mainnet action
+  occurred.
+
 - 2026-07-30: Schema-15 exact release `afcf4b2` is live and healthy. Failed
   run `schema15-accelerated-f66c4e1-01` is sealed and its unused funding was
   recovered through the journaled recovery tool without replaying any of its
@@ -3366,6 +3380,21 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-30 - Schema-15 endurance pivot to isolated Devnet torture
+
+- Run `schema15-accelerated-b74dbc8-04` is inactive, invalidated, incomplete,
+  and preserved as a terminal reserve-guard failure followed by an
+  operator-requested pivot. It is not a pass or an unexpected-failure
+  endurance result.
+- Receipt reconciliation found 89 distinct hashes, 89 successful receipts,
+  zero missing receipts, and zero failed receipts.
+- New Testnet launches are Paused. Public Testnet remains online and existing
+  launch activity is not paused.
+- The funding-recovery tool now has an explicit fail-closed
+  `--allow-incomplete-history` path for an incomplete failed run with no
+  graduation history. It preserves healthy time, terminal failure, and
+  retained bonding launches in its durable journal.
 
 ### 2026-07-30 - Schema-15 accelerated Testnet checkpoint
 
@@ -5686,6 +5715,14 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Complete run 04 funding recovery using both
+  `--allow-incomplete-history true` and `--allow-bonding-history true`, then
+  checksum and seal its state, samples, transaction journal, receipt
+  reconciliation, manual guardian pause, and recovery journal. Never replay
+  any of its 89 confirmed hashes and retain its three launch-token positions.
+- Implement the Schema-15 isolated Devnet torture harness, run the mandatory
+  fast tier, preserve exact failing seeds if any, and run the deep tier before
+  any Testnet promotion.
 - Commit, build, and promote the governed pre-clock activation fix. Recover
   only the 38 setup transactions from failed run
   `schema15-accelerated-f66c4e1-01` through its new durable recovery journal,
