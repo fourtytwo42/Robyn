@@ -87,4 +87,20 @@ test("Testnet release pipeline binds the Schema-14 manifest", async () => {
   );
   assert.match(verify, /\.schemaVersion == 14/);
   assert.match(verify, /verify-testnet-schema14-deployment\.mjs "\$manifest"/);
+  assert.match(promote, /ROBYN_TESTNET_CREATE_DATABASE/);
+  assert.match(promote, /refusing to reuse database requested as fresh/);
+  assert.match(promote, /createdb --owner="\$operator"/);
+  assert.match(promote, /expected 14 migrations/);
+});
+
+test("Schema-14 runtime isolates keeper queues by database", async () => {
+  const ecosystem = await readFile(
+    "infrastructure/pm2/ecosystem.testnet.config.cjs",
+    "utf8",
+  );
+  assert.match(ecosystem, /robyn-conversions-testnet:\$\{database\}/);
+  assert.equal(
+    (ecosystem.match(/ROBYN_QUEUE_NAME: queueName/g) ?? []).length,
+    2,
+  );
 });

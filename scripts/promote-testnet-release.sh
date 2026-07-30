@@ -11,6 +11,7 @@ operator=hendo420
 pm2_home=/home/hendo420/.pm2
 release_env=/home/hendo420/.config/robyn/testnet/release.env
 requested_database="${ROBYN_TESTNET_DATABASE:-}"
+create_database="${ROBYN_TESTNET_CREATE_DATABASE:-false}"
 campaign_token_file="${ROBYN_CAMPAIGN_OPERATOR_TOKEN_FILE:-/home/hendo420/.config/robyn/testnet/campaign-operator-token}"
 operator_key=/home/hendo420/.config/robyn/testnet/operator.key
 [[ -d "$target" && -r "$release_env" && -r "$campaign_token_file" ]]
@@ -54,6 +55,44 @@ fi
   echo "invalid testnet database name: $database" >&2
   exit 1
 }
+[[ "$create_database" == true || "$create_database" == false ]] || {
+  echo "ROBYN_TESTNET_CREATE_DATABASE must be true or false" >&2
+  exit 1
+}
+database_exists() {
+  runuser -u postgres -- psql -Atqc \
+    "SELECT 1 FROM pg_database WHERE datname='$database'" postgres |
+    grep -qx 1
+}
+prepare_database() {
+  if [[ "$create_database" == true ]]; then
+    if database_exists; then
+      echo "refusing to reuse database requested as fresh: $database" >&2
+      exit 1
+    fi
+    runuser -u postgres -- createdb --owner="$operator" "$database"
+    if ! as_operator env \
+      PGHOST=/var/run/postgresql \
+      PGDATABASE="$database" \
+      PGUSER="$operator" \
+      /opt/node-v24.18.0-linux-x64/bin/node \
+      "$target/packages/db/dist/migrate.js"; then
+      echo "fresh database migration failed; preserving $database for diagnosis" >&2
+      exit 1
+    fi
+    migration_count="$(
+      as_operator psql -h /var/run/postgresql -d "$database" -Atqc \
+        "SELECT count(*) FROM schema_migrations"
+    )"
+    [[ "$migration_count" == 14 ]] || {
+      echo "expected 14 migrations in $database, found $migration_count" >&2
+      exit 1
+    }
+  elif ! database_exists; then
+    echo "selected testnet database does not exist: $database" >&2
+    exit 1
+  fi
+}
 start_stack() {
   local selected="$1"
   local selected_database="$2"
@@ -88,6 +127,7 @@ rollback() {
   as_operator "$target/node_modules/.bin/pm2" save --force
 }
 
+prepare_database
 link_atomically "$target" "$current"
 if ! start_stack "$target" "$database"; then rollback; exit 1; fi
 healthy=false

@@ -20,6 +20,9 @@ const wsRpcUrl = process.env.ROBYN_TESTNET_WS_RPC_URL || "";
 const operatorKeyFile = required("ROBYN_OPERATOR_KEY_FILE");
 const nodeBinary = "/opt/node-v24.18.0-linux-x64/bin/node";
 const database = process.env.ROBYN_TESTNET_DATABASE || "robyn_testnet";
+const queueName =
+  process.env.ROBYN_TESTNET_QUEUE_NAME ||
+  `robyn-conversions-testnet:${database}`;
 const authOrigins =
   process.env.ROBYN_TESTNET_AUTH_ORIGINS || "http://127.0.0.1:3012";
 
@@ -89,7 +92,7 @@ module.exports = {
         HOST: "127.0.0.1",
         PORT: "3111",
         CHAIN_ID: "46630",
-        ROBYN_QUEUE_NAME: "robyn-conversions-testnet",
+        ROBYN_QUEUE_NAME: queueName,
         ROBYN_AUTH_ORIGINS: authOrigins,
         API_CORS_ORIGIN: authOrigins,
         ROBYN_ARTIFACT_SERVICE_URL: "http://127.0.0.1:3210",
@@ -182,7 +185,7 @@ module.exports = {
         ROBYN_OPERATOR_RPC_URL: backendRpcUrl,
         ROBYN_OPERATOR_KEY_FILE: operatorKeyFile,
         ROBYN_MANIFEST: manifest,
-        ROBYN_QUEUE_NAME: "robyn-conversions-testnet",
+        ROBYN_QUEUE_NAME: queueName,
         REDIS_URL: "redis://127.0.0.1:6379/1",
         KEEPER_SCAN_MS: "900000",
         KEEPER_REQUEST_POLL_MS: "1000",
