@@ -1,5 +1,23 @@
 # Project Memory
 
+### 2026-07-30 - Schema-15 Devnet fast torture gate blocked on coverage
+
+- Candidate: Exact pushed SHA
+  `6d23a647e7b7abbf15b5aba30a1d734af9d91d03`, seed `150001`.
+- Result: The fast gate ran to completion in 97 seconds. Compile, 294
+  unit/deterministic tests with 1,024 fuzz cases, 256-run/depth-128
+  invariants, the 512-wallet/32-launch/25,000-action/20-seed simulation, all
+  11 mechanical route candidates, all 41 required action-matrix entries, and
+  the isolated Anvil broadcast lifecycle passed. No unexpected transaction,
+  invariant, solvency, supply, principal, allowance, or replay defect surfaced.
+- Blocker: Evidence validation failed only because LCOV measured 71.55% line
+  coverage and 20.78% branch coverage across non-mock protocol source, below
+  the mandatory 90% and 80% thresholds. Testnet promotion and the deep tier
+  remain blocked; do not reduce the thresholds.
+- Evidence:
+  `/home/hendo420/robyn-evidence/devnet-torture/6d23a647e7b7abbf15b5aba30a1d734af9d91d03/fast-seed-150001-01/`.
+  All evidence checksums pass.
+
 ### 2026-07-30 - Schema-15 Devnet torture harness completed
 
 - Context: Testnet endurance run `schema15-accelerated-b74dbc8-04` remains
@@ -1602,6 +1620,14 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-07-30: Fast Schema-15 Devnet torture candidate `6d23a64`, seed
+  `150001`, is blocked solely by the fixed coverage gate. All executable
+  lifecycle, fuzz, invariant, simulation, route, action-matrix, and isolated
+  broadcast phases passed. Coverage is 71.55% lines and 20.78% branches
+  against required 90%/80%. Add targeted branch and line tests from the LCOV
+  evidence, then rerun both tiers from a clean pushed commit. Do not promote
+  Testnet or run the deep gate until fast passes. No Mainnet action occurred.
 
 - 2026-07-30: The isolated Schema-15 Devnet torture harness is implemented and
   locally validated. Commit and push it, then run the fast tier against the
@@ -3418,6 +3444,16 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-30 - Fast Devnet gate is failed and sealed
+
+- Exact SHA `6d23a64`, seed `150001`, passed compile, 294
+  unit/deterministic tests, 256×128 invariants, the exact 25,000-action
+  simulation, all 41 action requirements, and isolated Anvil broadcasting.
+- It failed only the non-negotiable LCOV thresholds: 71.55% line and 20.78%
+  branch versus 90%/80%. The evidence directory and checksums are sealed.
+- Schema-15 is not eligible for Testnet promotion and the deep tier has not
+  started.
+
 ### 2026-07-30 - Schema-15 Devnet torture harness ready for exact-SHA run
 
 - The fast/deep runner, isolated chain-31337 Anvil broadcast rehearsal,
@@ -5035,6 +5071,14 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-30: Fast Devnet torture run for exact SHA `6d23a64` and seed
+  `150001` completed in 97 seconds. Compile, 294 unit/deterministic tests,
+  256×128 invariants, 512 wallets, 32 launches, 25,000 actions over 20 seeds,
+  11 route candidates, 41/41 action-matrix requirements, and isolated Anvil
+  deployment/claims passed. Validation failed only at 71.55% line and 20.78%
+  branch coverage. Checksums verify all logs, JSON evidence, LCOV, receipts,
+  events, validation, and summary files.
+
 - 2026-07-30: Schema-15 harness validation passed shell syntax, runner unit
   tests, Prettier, `forge fmt --check`, 41 focused tests, all 11 mechanical
   route candidate round trips, the default 512-wallet/32-launch/25,000-action/
@@ -5776,6 +5820,9 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Use the sealed LCOV report to add targeted tests until the fixed 90% line
+  and 80% branch thresholds pass. Recommit, push, and restart fast from a new
+  evidence directory and seed. Run deep only after fast passes.
 - Commit and push the implemented Schema-15 isolated Devnet torture harness,
   run the mandatory fast tier, preserve exact failing seeds and coverage
   evidence, resolve every blocking defect without weakening policy, then run
