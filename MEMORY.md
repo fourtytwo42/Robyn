@@ -1860,10 +1860,17 @@ Durable project context lives here. Update this file whenever information should
   receipts are successful, three expected failures have no hashes, launch mode
   is Paused, recovery is complete, and evidence checksums pass. A runner-only
   correction reserves the missing `0.027903030303030306 ETH`, reports actual
-  confirmed graduation state, and passes all 115 script tests. Commit, push,
-  reproducibly build, and promote the correction, then require the larger
-  preflight before creating a fresh run. No contract change or Mainnet
-  transaction occurred. Mainnet governance inputs remain missing.
+  confirmed graduation state, and is pushed, reproducibly built, and served as
+  exact release `6d9c25049dd03a245ea622f50755811761aa985a`. All 177 deployment
+  checks, full repository tests, accounting, Paused launch mode, and both
+  Testnet RPC providers pass. A fresh run needs exactly
+  `0.042803030303030306 ETH`; the deployer has
+  `0.011537884111901993 ETH`, leaving a
+  `0.031265146191128313 ETH` shortfall. Do not create run 03 until funded.
+  Mainnet app-level chain-4663 gateway failover and recovery pass on the same
+  release with zero broadcasts, and sustained method-equivalence observation
+  remains active. Mainnet governance inputs remain missing. No contract change
+  or Mainnet transaction occurred.
 
 - 2026-07-31: Fresh Schema-16 Testnet contracts are deployed Paused from block
   `95508008` and verified 177/177, but the application has not been promoted
@@ -6213,21 +6220,19 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Commit and push the fresh Schema-16 Testnet manifest and corrected verifier
-  label, then reproducibly build and promote only that exact release. Create a
-  fresh `robyn_testnet_schema16_*` database and rebuild it exclusively from
-  deployment block `95508008`; never import Schema-15 launches or journals.
-- Complete Schema-16 isolated restore, all one-fault and RPC failover drills,
-  a fresh uninterrupted two-hour endurance campaign, exact reconciliation,
-  empty-database canonical rebuild, and desktop/mobile browser acceptance.
-- Commit, build, and promote the governed pre-clock activation fix. Recover
-  only the 38 setup transactions from failed run
-  `schema15-accelerated-f66c4e1-01` through its new durable recovery journal,
-  create a new salted 100-wallet identity, rerun funding/readiness, and start a
-  fresh two-hour run. Never reuse a confirmed hash from run 01.
-  Keep the old runner masked and never replay its 47 confirmed transactions or
-  the 12 transactions from the invalidated partial deployment. Repeat final
-  reconciliation and browser acceptance from zero.
+- Fund Testnet deployer `0xecc5d6d032ADc9ca9E0F4042128067b8366da17A`
+  by at least `0.031265146191128313 ETH` above its verified balance, then create
+  a new encrypted 100-wallet identity and a fresh run 03 under the exact served
+  release. Never reuse run 01 or 02 identities, salts, or confirmed hashes.
+- Continue the Mainnet RPC sustained observer and classify its initial
+  inactive-loopback probe separately from subsequent passing LAN/Alchemy
+  samples. Preserve the passing app-level fallback/recovery and exact
+  method-equivalence evidence; rerun the final read probe immediately before
+  deployment authorization.
+- After run 03 passes, complete Schema-16 final reconciliation, a separate
+  empty-database rebuild from deployment block `95508008`, and desktop,
+  tablet, and mobile in-app-browser acceptance against the exact served
+  release.
 - Supply protected `guardian-signers.json` and `rdao-allocation.json` with four
   recipient addresses, three unique Safe owners including the deployer, and
   domain-separated address-control signatures. Complete a two-owner Safe
