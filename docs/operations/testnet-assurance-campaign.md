@@ -104,16 +104,17 @@ systemctl status robyn-testnet-endurance.service --no-pager
 
 The unit is static and is never enabled. The runner:
 
-- signs locally and sends only through Robinhood's public chain-46630 RPC;
+- signs locally and sends through the protected loopback gateway with synchronized
+  LAN RPC primary and Alchemy fallback;
 - samples application, RPC, index, queue, accounting, disk, memory, IPFS, and
-  alert health every 30 seconds;
-- performs operator-grade verifier reviews every 20 minutes;
+  alert health every 15 seconds;
+- performs operator-grade verifier reviews every five minutes;
 - journals transaction hashes before receipt polling so recovery never
   rebroadcasts a known transaction;
-- runs bounded writes every five minutes and launches eight campaign-labeled
-  immutable-IPFS tokens near healthy minutes 0, 15, 30, 45, 60, 75, 90, and 105;
+- runs bounded writes every two minutes and launches eight campaign-labeled
+  immutable-IPFS tokens near healthy minutes 0, 2, 4, 6, 8, 10, 12, and 14;
 - terminates and invalidates the run on the first failed sample or workload action; and
-- seals append-only evidence and SHA-256 checksums after 7,200 uninterrupted
+- seals append-only evidence and SHA-256 checksums after 1,800 uninterrupted
   healthy seconds.
 
 The protected status view is `GET /api/operator/endurance` with the existing
@@ -121,7 +122,7 @@ operator bearer token. It returns run identity and health state, never wallet
 keys or credentials.
 
 Evidence lives under `/var/lib/robyn/testnet-endurance/<run-id>/`. A failed run is permanently retained as failed evidence. A replacement uses a
-new run ID, new launch salts, and a fresh two-hour clock; confirmed transactions
+new run ID, new launch salts, and a fresh 30-minute clock; confirmed transactions
 are never replayed.
 
 A fresh encrypted backup, isolated restore, and one-fault-at-a-time recovery

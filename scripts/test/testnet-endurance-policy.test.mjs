@@ -4,6 +4,12 @@ import test from "node:test";
 import { prepareFundedTransaction } from "../lib/endurance-transaction-funding.mjs";
 import {
   accumulatedHealthySeconds,
+  ENDURANCE_ADVANCED_COVERAGE_THRESHOLDS_SECONDS,
+  ENDURANCE_CREATOR_CLAIM_SECONDS,
+  ENDURANCE_STREAM_START_DEADLINE_SECONDS,
+  ENDURANCE_DURATION_SECONDS,
+  ENDURANCE_GRADUATION_THRESHOLDS_SECONDS,
+  ENDURANCE_LAUNCH_THRESHOLDS_SECONDS,
   campaignWorkloadFundingBudget,
   enduranceGraduationPrincipalReserveWei,
   diskHeadroomPass,
@@ -50,9 +56,9 @@ test("launch and cadence thresholds are deterministic", () => {
   assert.equal(dueCount(0, 300), 1);
   assert.equal(dueCount(599, 300), 2);
   assert.equal(dueLaunchCount(0), 1);
-  assert.equal(dueLaunchCount(179), 1);
-  assert.equal(dueLaunchCount(180), 2);
-  assert.equal(dueLaunchCount(1_260), 8);
+  assert.equal(dueLaunchCount(119), 1);
+  assert.equal(dueLaunchCount(120), 2);
+  assert.equal(dueLaunchCount(840), 8);
 });
 
 test("disk gate requires bytes and percentage", () => {
@@ -141,7 +147,21 @@ test("testnet endurance excludes explicitly mainnet-only alerts", () => {
   assert.deepEqual(enduranceRelevantFiringAlerts(null), []);
 });
 
-test("runner is fixed to one uninterrupted two-hour release gate", () => {
+test("runner is fixed to one uninterrupted 30-minute release gate", () => {
+  assert.equal(ENDURANCE_DURATION_SECONDS, 30 * 60);
+  assert.ok(
+    Math.max(...ENDURANCE_LAUNCH_THRESHOLDS_SECONDS) <
+      ENDURANCE_DURATION_SECONDS,
+  );
+  assert.ok(Math.max(...ENDURANCE_GRADUATION_THRESHOLDS_SECONDS) <= 18 * 60);
+  assert.ok(
+    Math.max(...ENDURANCE_ADVANCED_COVERAGE_THRESHOLDS_SECONDS) <= 20 * 60,
+  );
+  assert.ok(ENDURANCE_CREATOR_CLAIM_SECONDS <= 24 * 60);
+  assert.ok(
+    ENDURANCE_STREAM_START_DEADLINE_SECONDS + 10 * 60 <=
+      ENDURANCE_DURATION_SECONDS,
+  );
   const source = readFileSync(
     new URL("../testnet-endurance.mjs", import.meta.url),
     "utf8",
@@ -323,7 +343,7 @@ test("endurance funding reserves all three gross graduation principals", () => {
   );
 });
 
-test("final endurance coverage requires the schema-15 accelerated two-hour lifecycle", () => {
+test("final endurance coverage requires the schema-16 accelerated 30-minute lifecycle", () => {
   const assets = Array.from(
     { length: 11 },
     (_, index) => `0x${index.toString(16).padStart(40, "0")}`,

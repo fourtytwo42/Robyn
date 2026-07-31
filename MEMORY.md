@@ -1,5 +1,36 @@
 # Project Memory
 
+
+### 2026-07-31 - Run 06 operator-aborted; 30-minute replacement required
+
+- Release `acbb40973c73447905cdc8b66c4dec93ff043b99` was clean, pushed,
+  reproducible, promoted, and verified 177/177 against unchanged Schema-16.
+- Run `schema16-2h-acbb409-06` was stopped at the product owner's request after
+  `450.173` healthy seconds, 31 samples, four write cycles, two reviews, and 92
+  confirmed transactions. It is sealed as `operator-aborted`, `invalidated`,
+  and `incomplete` with zero ambiguous submissions and zero protocol failures.
+  None of its confirmed hashes may be replayed.
+- Guardian pause transaction
+  `0x5b8d78efec11d5932a7f70846177e363ee8218005f02428f7096f1def087340d`
+  confirmed and new launches are Paused. Journaled recovery returned
+  `0.010435282052952112 ETH`; the Testnet deployer held
+  `0.052439712586825919 ETH` after recovery.
+- Decision: the replacement Schema-16 Testnet endurance gate is one
+  uninterrupted 1,800-second observation. The full schedule is compressed,
+  not reduced: eight launches occur by minute 14, three graduations by minute
+  18, advanced v4 coverage by minute 20, completed ten-minute stream claims by
+  minute 22, and creator claim variants by minute 24.
+- Read-only Mainnet gateway chain identity, LAN-primary/Alchemy fallback, exact
+  fork lifecycle, and required GOOGL/MSFT/NVDA/SPCX/SPY/WETH route probes pass.
+  No Mainnet bridge or transaction is authorized.
+- Qualification: focused endurance tests pass 32/32; the full repository suite
+  passes 369 Foundry tests with zero failures and one intentional protected-fork
+  skip; formatting, lint, typecheck, secret, dependency, license, and reviewed
+  static-analysis gates pass.
+- Follow-up: commit, push, reproducibly build, and promote the exact
+  30-minute-policy release, then create a fresh run ID, identity, salts,
+  launches, and empty journals.
+
 ### 2026-07-31 - Run 06 recovery funding restored; requalification required
 
 - Release: Runner funding remediation commit
@@ -2108,6 +2139,14 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-31: Run `schema16-2h-acbb409-06` is operator-aborted, invalidated,
+  sealed, recovered, and inactive after 450.173 healthy seconds and 92
+  confirmed transactions. New launches are Paused and no hash is ambiguous.
+  The product owner replaced the two-hour gate with one uninterrupted
+  30-minute gate while retaining full lifecycle coverage. Qualify and promote
+  a new exact release, then create a fresh run ID and never replay run 06.
+  Mainnet remains unauthorized.
+
 - 2026-07-31: Run 05 is sealed and recovered. A clean runner-only candidate
   globally pins transaction fee envelopes, performs deterministic idempotent
   actor top-ups, protects the fixed reserve, and derives the workload budget
@@ -4083,6 +4122,16 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-31 - Endurance policy reduced to 30 minutes
+
+- The active Schema-16 endurance policy targets 1,800 uninterrupted healthy
+  seconds. Eight launches, three graduations, all advanced v4 work, completed
+  ten-minute reward-stream claims, creator claim variants, and governance are
+  scheduled by minute 24, leaving six minutes for final work and reviews.
+- Run 06 is historical invalidated evidence only. Its static service is
+  inactive, the coordinator is Paused, and none of its 92 confirmed
+  transactions may be resumed or replayed.
 
 ### 2026-07-31 - Global endurance transaction funding fixed and qualified
 
@@ -6647,6 +6696,12 @@ When sources conflict, use this order:
 - Follow-up: Build and promote the exact pushed documentation commit, complete automated browser and real-wallet acceptance, then start the ten-hour endurance gate.
 
 ## Open Follow-ups
+
+- Run focused and complete release gates for the 30-minute-policy candidate,
+  commit and push one clean SHA, prove two-build reproducibility, promote and
+  verify it, then create a fresh 30-minute run with new encrypted identities,
+  salts, launches, and empty journals. Keep run 06 inactive and never replay
+  any of its 92 confirmed hashes.
 
 - Freeze and push the runner-only funding candidate, run two independent
   reproducible builds, build/promote/verify only that exact Testnet artifact,

@@ -1,4 +1,4 @@
-export const ENDURANCE_DURATION_SECONDS = 2 * 60 * 60;
+export const ENDURANCE_DURATION_SECONDS = 30 * 60;
 export const isApprovedTestnetRpcUrl = (value) => {
   try {
     const url = new URL(value);
@@ -41,18 +41,26 @@ export const ENDURANCE_WRITE_INTERVAL_SECONDS = 2 * 60;
 export const ENDURANCE_REVIEW_INTERVAL_SECONDS = 5 * 60;
 export const ENDURANCE_LAUNCH_THRESHOLDS_SECONDS = [
   0,
-  3 * 60,
+  2 * 60,
+  4 * 60,
   6 * 60,
-  9 * 60,
+  8 * 60,
+  10 * 60,
   12 * 60,
-  15 * 60,
-  18 * 60,
-  21 * 60,
+  14 * 60,
 ];
 export const ENDURANCE_GRADUATION_THRESHOLDS_SECONDS = [
-  8 * 60,
+  6 * 60,
+  12 * 60,
   18 * 60,
-  28 * 60,
+];
+export const ENDURANCE_CREATOR_SPLIT_SECONDS = 10 * 60;
+export const ENDURANCE_CREATOR_CLAIM_SECONDS = 24 * 60;
+export const ENDURANCE_STREAM_START_DEADLINE_SECONDS = 12 * 60;
+export const ENDURANCE_ADVANCED_COVERAGE_THRESHOLDS_SECONDS = [
+  8 * 60,
+  14 * 60,
+  20 * 60,
 ];
 export const ENDURANCE_RESERVE_WEI = 1_500_000_000_000_000n;
 export const ENDURANCE_L1_DATA_FEE_RESERVE_WEI = 25_000_000_000_000n;

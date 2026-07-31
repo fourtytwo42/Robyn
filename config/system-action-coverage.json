@@ -9,12 +9,15 @@
   },
   "contracts": [
     {
-      "contract": "RobynV4LaunchCoordinatorV5",
-      "source": "packages/contracts/src/uniswap/RobynV4LaunchCoordinatorV5.sol",
-      "artifact": "RobynV4LaunchCoordinatorV5",
+      "contract": "RobynV4LaunchCoordinatorV6",
+      "source": "packages/contracts/src/uniswap/RobynV4LaunchCoordinatorV6.sol",
+      "artifact": "RobynV4LaunchCoordinatorV6",
       "functions": [
         "createLaunch",
-        "predictLaunchAddresses"
+        "pauseLaunches",
+        "predictLaunchAddresses",
+        "setCanaryMode",
+        "setPublicMode"
       ],
       "evidence": [
         "RobynV4NativeProtocol.t.sol",
@@ -73,7 +76,12 @@
       "functions": [
         "bindCoordinator",
         "createMarketFor",
-        "requiredTokenSupply"
+        "currentGraduationProfile",
+        "currentGraduationProfileHash",
+        "graduationProfileByToken",
+        "graduationProfileHashByToken",
+        "requiredTokenSupply",
+        "setGraduationProfile"
       ],
       "evidence": [
         "RobynV4NativeProtocol.t.sol",
@@ -135,7 +143,9 @@
         "quoteBuy",
         "quoteSell",
         "seed",
-        "sell"
+        "sell",
+        "sweepUnattributedNative",
+        "unattributedNative"
       ],
       "evidence": [
         "RobynV4NativeProtocol.t.sol",
@@ -156,7 +166,9 @@
         "quoteBuy",
         "quoteSell",
         "sellFor",
-        "spotNativePerTokenX18"
+        "spotNativePerTokenX18",
+        "sweepUnattributedNative",
+        "unattributedNative"
       ],
       "evidence": [
         "RobynV4NativeProtocol.t.sol",
@@ -219,14 +231,23 @@
         "bindLaunchRegistrar",
         "configureLaunchRoute",
         "configureRoute",
+        "configureWrappedNativeRoute",
+        "disableRoute",
+        "executionRoute",
+        "executionRouteStatus",
+        "pauseConversions",
         "poolKey",
         "protectedQuoteFloor",
         "quoteAssetToNative",
         "quoteNativeToAsset",
+        "resumeConversions",
         "route",
         "routeStatus",
         "swapExactAssetForNative",
-        "swapExactNativeForAsset"
+        "swapExactNativeForAsset",
+        "sweepUnattributedNative",
+        "sweepUnattributedToken",
+        "unattributedNative"
       ],
       "evidence": [
         "RobynV4NativeProtocol.t.sol",
@@ -255,14 +276,19 @@
       "artifact": "RobynNativeProtocolFeeRouterV4",
       "functions": [
         "bindCoordinator",
+        "checkpointCreatorRewards",
         "claimCreatorFees",
         "claimCreatorFeesBatch",
         "claimCreatorFeesBatchTo",
         "claimCreatorFeesTo",
+        "claimableCreatorNativeByRecipient",
         "convertAndRouteLaunchFees",
+        "creatorFeeSplit",
+        "creatorRewardStream",
         "launchAccount",
         "registerLaunch",
         "routeNativeFees",
+        "setCreatorFeeSplit",
         "setPaused",
         "settleBasketFees",
         "settleDaoFees",
@@ -295,6 +321,7 @@
         "activateQueuedRewards",
         "claim",
         "claimAll",
+        "configureRewardStreamDuration",
         "currentRewardPerToken",
         "distributeReward",
         "lastTimeRewardApplicable",
@@ -715,7 +742,7 @@
       "evidence": []
     },
     {
-      "id": "two-hour-public-testnet-endurance",
+      "id": "30-minute-public-testnet-endurance",
       "status": "pending",
       "evidence": []
     }

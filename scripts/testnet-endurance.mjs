@@ -57,6 +57,10 @@ import {
   enduranceTransactionEstimationGasCeiling,
   ENDURANCE_DURATION_SECONDS,
   ENDURANCE_GRADUATION_THRESHOLDS_SECONDS,
+  ENDURANCE_CREATOR_SPLIT_SECONDS,
+  ENDURANCE_CREATOR_CLAIM_SECONDS,
+  ENDURANCE_STREAM_START_DEADLINE_SECONDS,
+  ENDURANCE_ADVANCED_COVERAGE_THRESHOLDS_SECONDS,
   ENDURANCE_L1_DATA_FEE_RESERVE_WEI,
   ENDURANCE_MAXIMUM_API_P95_MS,
   ENDURANCE_MINIMUM_MEMORY_BYTES,
@@ -643,7 +647,7 @@ async function prepareMetadata(account, index) {
       mediaId: media.body.data.media_id,
       name,
       symbol,
-      description: `Automated two-hour schema-16 accelerated endurance launch ${index + 1}.`,
+      description: `Automated 30-minute schema-16 accelerated endurance launch ${index + 1}.`,
       campaignId: runId,
       releaseSha: releaseManifest.gitSha,
     }),
@@ -1759,7 +1763,7 @@ async function addExternalLiquidity(launch, positionIndex) {
 }
 
 async function maybeCreatorSplitUpdate() {
-  if (state.creatorSplitUpdated || state.healthySeconds < 15 * 60) return;
+  if (state.creatorSplitUpdated || state.healthySeconds < ENDURANCE_CREATOR_SPLIT_SECONDS) return;
   const launch = state.enduranceLaunches[0];
   if (!launch) return;
   await contractTransaction(
@@ -1790,7 +1794,7 @@ async function maybeCreatorSplitUpdate() {
 }
 
 async function maybeCreatorClaimCoverage() {
-  if (state.creatorClaimCoverageComplete || state.healthySeconds < 35 * 60) return;
+  if (state.creatorClaimCoverageComplete || state.healthySeconds < ENDURANCE_CREATOR_CLAIM_SECONDS) return;
   const [open, locked, direct] = state.enduranceLaunches;
   if (!open || !locked || !direct) return;
   const checks = await Promise.all([
@@ -1863,8 +1867,8 @@ async function maybeStreamProbe() {
   });
   if (!state.streamProbe) {
     if (holderClaimable === 0n || creatorClaimable === 0n || daoClaimable === 0n) {
-      if (state.healthySeconds >= 20 * 60) {
-        throw new Error("Accelerated stream probe did not start by healthy minute 20");
+      if (state.healthySeconds >= ENDURANCE_STREAM_START_DEADLINE_SECONDS) {
+        throw new Error("Accelerated stream probe did not start before its deadline");
       }
       return;
     }
@@ -1931,7 +1935,7 @@ async function maybeStreamProbe() {
 
 async function maybeAdvancedCoverage() {
   const first = state.enduranceLaunches[0];
-  if (first && state.healthySeconds >= 12 * 60) {
+  if (first && state.healthySeconds >= ENDURANCE_ADVANCED_COVERAGE_THRESHOLDS_SECONDS[0]) {
     await executeUniversalCoverage(first);
     await addExternalLiquidity(first, 0);
     if (!state.advancedCoverage.firstFeesMaintained) {
@@ -1941,7 +1945,7 @@ async function maybeAdvancedCoverage() {
     }
   }
   const second = state.enduranceLaunches[1];
-  if (second && state.healthySeconds >= 22 * 60) {
+  if (second && state.healthySeconds >= ENDURANCE_ADVANCED_COVERAGE_THRESHOLDS_SECONDS[1]) {
     await addExternalLiquidity(second, 1);
     if (!state.advancedCoverage.secondFeesMaintained) {
       await maintainGraduatedFees(accounts[97], second, 6006);
@@ -1950,7 +1954,7 @@ async function maybeAdvancedCoverage() {
     }
   }
   const third = state.enduranceLaunches[2];
-  if (third && state.healthySeconds >= 32 * 60) {
+  if (third && state.healthySeconds >= ENDURANCE_ADVANCED_COVERAGE_THRESHOLDS_SECONDS[2]) {
     if (!state.advancedCoverage.thirdFeesMaintained) {
       await maintainGraduatedFees(accounts[98], third, 6012);
       state.advancedCoverage.thirdFeesMaintained = true;

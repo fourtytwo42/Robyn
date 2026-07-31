@@ -185,7 +185,7 @@ const journeys = [
   "keeper-indexer-restart-rebuild-reconcile",
   "backup-isolated-restore-served-release",
   "public-100-wallet-1500-write-campaign",
-  "two-hour-public-testnet-endurance",
+  "30-minute-public-testnet-endurance",
 ].map((id) => ({ id, status: "pending", evidence: [] }));
 
 await writeFile(
