@@ -1,5 +1,40 @@
 # Project Memory
 
+### 2026-07-31 - Run 06 recovery funding restored; requalification required
+
+- Release: Runner funding remediation commit
+  `5da31dc9f894dd593cc9a0d2f952bc46f5787e54` was pushed to `origin/main`,
+  passed the complete repository/security and two-build reproducibility gates,
+  and was promoted as an immutable Testnet release. All 177 deployment checks
+  passed with unchanged Schema-16 bytecode, Paused launch control, empty
+  financial queues, and healthy LAN-primary/Alchemy-fallback RPC state.
+- Run 06: Fresh encrypted identity `schema16-2h-5da31dc-06` and its static
+  one-shot service are installed but inactive. Its exact non-broadcast
+  preflight required `0.048275530303030306 ETH` while the deployer initially
+  held `0.032450208636682081 ETH`; no run-06 transaction was submitted.
+- Recovery tooling: Added bounded, journaled recovery for project-controlled
+  bonding positions. It revalidates the failed-run receipt set, retains every
+  graduated launch, skips uneconomic dust, uses fresh 99% minimum-output
+  quotes, pins actor funding envelopes, resumes safely after an unbroadcast
+  preparation or confirmed sale, clears allowances, and never breaches the
+  `0.0015 ETH` project reserve. An isolated chain-46630 fork execution recovered
+  `0.007137832999022977 ETH` net from the run-02 position at deliberately high
+  Anvil fees.
+- Live recovery: The run-05 bonding dust was skipped and its graduated launch
+  retained. Journaled run-02, run-03, and archived Schema-15 run-04 bonding
+  recovery returned net `0.007833679741 ETH`, `0.003869840789519744 ETH`, and
+  `0.0088137423885 ETH`, respectively. The Testnet deployer now holds
+  `0.052967471555701825 ETH`. No locked LP, DAO, treasury, reward liability, or
+  user-controlled asset was touched.
+- Safety note: Port `28547` was discovered to be the persistent isolated
+  chain-4663 fork, not an unused Testnet regression port. Its chain ID was
+  immediately restored to `4663` and verified. Future Testnet forks must first
+  prove their loopback port is unused; the recovery regression used `28552`.
+- Follow-up: Commit and push the recovery tool/tests, repeat the full gates and
+  reproducible build for the new exact SHA, promote and verify it, rerun run-06
+  funding preflight, and start the clock only if it remains fully funded.
+  Mainnet remains no-broadcast and unauthorized.
+
 ### 2026-07-31 - Run 05 recovered; global transaction-funding remediation passes
 
 - Recovery: After the sealed run-05 receipt set was reverified, the protected
