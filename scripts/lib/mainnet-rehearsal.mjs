@@ -139,8 +139,12 @@ export function validateMainnetRehearsalConfig(config, supportPolicy) {
   if (config?.market?.initialLaunchMode !== "Paused") {
     failures.push("schema 16 must deploy in Paused launch mode");
   }
-  if (config?.safe?.version !== "1.4.1" || config?.safe?.threshold !== 2) {
-    failures.push("Safe v1.4.1 threshold-two policy mismatch");
+  if (
+    config?.safe?.version !== "1.4.1" ||
+    config?.safe?.governanceMode !== "sole-owner-bootstrap" ||
+    config?.safe?.threshold !== 1
+  ) {
+    failures.push("Safe v1.4.1 sole-owner bootstrap policy mismatch");
   }
   for (const name of ["proxyFactory", "singleton", "fallbackHandler"]) {
     const entry = config?.safe?.[name];

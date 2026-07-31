@@ -33,6 +33,20 @@ const SAFE_SETUP_ABI = [
 
 const HASH_PATTERN = /^0x[0-9a-fA-F]{64}$/;
 const SHA_PATTERN = /^(?:0x)?[0-9a-fA-F]{40}$/;
+export const GOVERNANCE_MODES = Object.freeze({
+  SOLE_OWNER_BOOTSTRAP: "sole-owner-bootstrap",
+  DISTRIBUTED: "distributed",
+});
+
+function governancePolicy(mode) {
+  if (mode === GOVERNANCE_MODES.SOLE_OWNER_BOOTSTRAP) {
+    return { ownerCount: 1, threshold: 1, allocationCount: 1 };
+  }
+  if (mode === GOVERNANCE_MODES.DISTRIBUTED) {
+    return { ownerCount: 3, threshold: 2, allocationCount: 5 };
+  }
+  throw new Error("unsupported governance mode");
+}
 
 function requireHash(value, label) {
   if (!HASH_PATTERN.test(value ?? "")) throw new Error(`invalid ${label}`);
@@ -50,7 +64,9 @@ export function guardianControlMessage({
   deploymentManifestHash,
   address,
   purpose,
+  governanceMode,
 }) {
+  governancePolicy(governanceMode);
   return [
     "Robyn Schema-16 guardian control proof",
     `chainId:${chainId}`,
@@ -61,6 +77,7 @@ export function guardianControlMessage({
     )}`,
     `address:${getAddress(address)}`,
     `purpose:${purpose}`,
+    `governanceMode:${governanceMode}`,
   ].join("\n");
 }
 
@@ -80,7 +97,13 @@ export function safeSaltNonce({
   releaseSha,
   deploymentManifestHash,
   owners,
+  governanceMode,
+  threshold,
 }) {
+  const policy = governancePolicy(governanceMode);
+  if (Number(threshold) !== policy.threshold) {
+    throw new Error("Safe threshold does not match governance mode");
+  }
   return BigInt(
     keccak256(
       encodeAbiParameters(
@@ -89,24 +112,35 @@ export function safeSaltNonce({
           { type: "bytes20" },
           { type: "bytes32" },
           { type: "bytes32" },
+          { type: "bytes32" },
+          { type: "uint256" },
         ],
         [
           BigInt(chainId),
           requireReleaseSha(releaseSha),
           requireHash(deploymentManifestHash, "deployment manifest hash"),
           signerSetHash(owners),
+          keccak256(stringToHex(governanceMode)),
+          BigInt(threshold),
         ],
       ),
     ),
   );
 }
 
-export function safeInitializer({ owners, fallbackHandler, threshold = 2 }) {
+export function safeInitializer({ owners, fallbackHandler, threshold }) {
   const sortedOwners = owners
     .map((owner) => getAddress(owner))
     .sort((left, right) =>
       left.toLowerCase().localeCompare(right.toLowerCase()),
     );
+  if (
+    !Number.isInteger(Number(threshold)) ||
+    Number(threshold) < 1 ||
+    Number(threshold) > sortedOwners.length
+  ) {
+    throw new Error("invalid Safe threshold");
+  }
   return encodeFunctionData({
     abi: SAFE_SETUP_ABI,
     functionName: "setup",
@@ -164,14 +198,32 @@ export async function validateGovernanceInputs({
   const failures = [];
   const chainId = 4663;
   const normalizedDeployer = getAddress(deployer);
+  const guardianMode = guardianInput?.governanceMode;
+  const allocationMode = allocationInput?.governanceMode;
+  let policy = null;
+  try {
+    policy = governancePolicy(guardianMode);
+  } catch (error) {
+    failures.push(error.message);
+  }
+  if (allocationMode !== guardianMode) {
+    failures.push("guardian and RDAO governance modes must match");
+  }
+  if (policy && Number(guardianInput?.threshold) !== policy.threshold) {
+    failures.push("guardian threshold must match governance mode");
+  }
   if (
-    guardianInput?.schemaVersion !== 1 ||
+    guardianInput?.schemaVersion !== 2 ||
     Number(guardianInput?.chainId) !== chainId
   ) {
-    failures.push("guardian input must use schema 1 on chain 4663");
+    failures.push("guardian input must use schema 2 on chain 4663");
   }
   const signers = guardianInput?.signers ?? [];
-  if (signers.length !== 3) failures.push("exactly three Safe owners required");
+  if (policy && signers.length !== policy.ownerCount) {
+    failures.push(
+      `governance mode ${guardianMode} requires exactly ${policy.ownerCount} Safe owner(s)`,
+    );
+  }
   const owners = [];
   const purposes = [];
   const proofEvidence = [];
@@ -186,6 +238,7 @@ export async function validateGovernanceInputs({
         deploymentManifestHash,
         address,
         purpose: signer.purpose,
+        governanceMode: guardianMode,
       });
       if (verifySignatures) {
         const recovered = await recoverMessageAddress({
@@ -209,31 +262,49 @@ export async function validateGovernanceInputs({
     }
   }
   const uniqueOwners = new Set(owners.map((item) => item.toLowerCase()));
-  if (uniqueOwners.size !== 3) failures.push("Safe owners must be unique");
+  if (uniqueOwners.size !== owners.length)
+    failures.push("Safe owners must be unique");
   if (!uniqueOwners.has(normalizedDeployer.toLowerCase())) {
     failures.push("protected deployer must be a Safe owner");
   }
   if (purposes.filter((value) => value === "project-deployer").length !== 1) {
     failures.push("one Safe owner must have project-deployer purpose");
   }
-  if (purposes.filter((value) => value === "team-recipient").length !== 2) {
+  if (
+    guardianMode === GOVERNANCE_MODES.DISTRIBUTED &&
+    purposes.filter((value) => value === "team-recipient").length !== 2
+  ) {
     failures.push("two Safe owners must have team-recipient purpose");
+  }
+  if (
+    guardianMode === GOVERNANCE_MODES.SOLE_OWNER_BOOTSTRAP &&
+    (owners.length !== 1 ||
+      owners[0]?.toLowerCase() !== normalizedDeployer.toLowerCase())
+  ) {
+    failures.push(
+      "sole-owner bootstrap Safe owner must be the protected deployer",
+    );
   }
 
   if (
-    allocationInput?.schemaVersion !== 1 ||
+    allocationInput?.schemaVersion !== 2 ||
     Number(allocationInput?.chainId) !== chainId
   ) {
-    failures.push("RDAO allocation must use schema 1 on chain 4663");
+    failures.push("RDAO allocation must use schema 2 on chain 4663");
   }
   const allocations = allocationInput?.allocations ?? [];
-  if (allocations.length !== 5) {
-    failures.push("RDAO allocation must contain exactly five recipients");
+  if (policy && allocations.length !== policy.allocationCount) {
+    failures.push(
+      `governance mode ${guardianMode} requires exactly ${policy.allocationCount} RDAO allocation(s)`,
+    );
   }
   const addressRecipients = [];
   let timelockCount = 0;
   for (const allocation of allocations) {
-    if (Number(allocation.basisPoints) !== 2_000) {
+    if (
+      guardianMode === GOVERNANCE_MODES.DISTRIBUTED &&
+      Number(allocation.basisPoints) !== 2_000
+    ) {
       failures.push("every RDAO allocation must equal 2,000 basis points");
     }
     if (allocation.recipient === "timelock") {
@@ -246,13 +317,22 @@ export async function validateGovernanceInputs({
       failures.push("invalid RDAO recipient address");
     }
   }
-  if (timelockCount !== 1) {
+  if (guardianMode === GOVERNANCE_MODES.DISTRIBUTED && timelockCount !== 1) {
     failures.push("exactly one RDAO allocation must resolve to timelock");
+  }
+  if (
+    guardianMode === GOVERNANCE_MODES.SOLE_OWNER_BOOTSTRAP &&
+    timelockCount !== 0
+  ) {
+    failures.push("sole-owner bootstrap must not allocate RDAO to timelock");
   }
   const uniqueRecipients = new Set(
     addressRecipients.map((item) => item.toLowerCase()),
   );
-  if (uniqueRecipients.size !== 4) {
+  if (
+    guardianMode === GOVERNANCE_MODES.DISTRIBUTED &&
+    uniqueRecipients.size !== 4
+  ) {
     failures.push("RDAO must have four unique address recipients");
   }
   for (const owner of uniqueOwners) {
@@ -262,6 +342,18 @@ export async function validateGovernanceInputs({
   }
   if (!uniqueRecipients.has(normalizedDeployer.toLowerCase())) {
     failures.push("protected deployer must receive an RDAO allocation");
+  }
+  if (
+    guardianMode === GOVERNANCE_MODES.SOLE_OWNER_BOOTSTRAP &&
+    (uniqueRecipients.size !== 1 ||
+      addressRecipients[0]?.toLowerCase() !==
+        normalizedDeployer.toLowerCase() ||
+      Number(allocations[0]?.basisPoints) !== 10_000 ||
+      allocations[0]?.purpose !== "project-deployer")
+  ) {
+    failures.push(
+      "sole-owner bootstrap must allocate 10,000 basis points to deployer",
+    );
   }
   if (
     allocations.reduce(
@@ -274,19 +366,32 @@ export async function validateGovernanceInputs({
   return {
     failures,
     chainId,
+    governanceMode: guardianMode,
+    threshold: policy?.threshold ?? null,
     deployer: normalizedDeployer,
     owners: [...owners].sort((left, right) =>
       left.toLowerCase().localeCompare(right.toLowerCase()),
     ),
-    signerSetHash: owners.length === 3 ? signerSetHash(owners) : null,
+    signerSetHash:
+      policy && owners.length === policy.ownerCount
+        ? signerSetHash(owners)
+        : null,
     proofEvidence,
-    allocations: allocations.map((allocation) => ({
-      recipient:
-        allocation.recipient === "timelock"
-          ? "timelock"
-          : getAddress(allocation.recipient),
-      purpose: allocation.purpose,
-      basisPoints: Number(allocation.basisPoints),
-    })),
+    allocations: allocations.map((allocation) => {
+      let recipient = allocation.recipient;
+      if (recipient !== "timelock") {
+        try {
+          recipient = getAddress(recipient);
+        } catch {
+          // The recorded validation failure is authoritative. Retaining the raw
+          // value keeps malformed input inside the fail-closed report path.
+        }
+      }
+      return {
+        recipient,
+        purpose: allocation.purpose,
+        basisPoints: Number(allocation.basisPoints),
+      };
+    }),
   };
 }

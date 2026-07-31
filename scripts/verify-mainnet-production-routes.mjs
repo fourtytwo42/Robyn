@@ -287,22 +287,35 @@ if (allocationPath) {
   try {
     const allocation = JSON.parse(await readFile(resolve(allocationPath), "utf8"));
     const entries = allocation.allocations;
-    const accounts = entries.map((entry) => entry.account.toLowerCase());
-    roleConfiguration.daoAllocationValid =
-      allocation.schemaVersion === 1 &&
-      entries.length === 5 &&
-      new Set(accounts).size === entries.length &&
-      entries.filter((entry) => entry.account === "timelock").length === 1 &&
+    const mode = allocation.governanceMode;
+    const recipients = entries.map((entry) => entry.recipient.toLowerCase());
+    const commonValid =
+      allocation.schemaVersion === 2 &&
+      mode === config.safe.governanceMode &&
+      new Set(recipients).size === entries.length &&
       entries.every(
         (entry) =>
-          Number.isInteger(entry.shareBps) &&
-          entry.shareBps === 2_000 &&
+          Number.isInteger(entry.basisPoints) &&
+          entry.basisPoints > 0 &&
           typeof entry.purpose === "string" &&
           entry.purpose.length > 0 &&
-          (entry.account === "timelock" ||
-            /^0x[0-9a-fA-F]{40}$/.test(entry.account)),
+          (entry.recipient === "timelock" ||
+            /^0x[0-9a-fA-F]{40}$/.test(entry.recipient)),
       ) &&
-      entries.reduce((sum, entry) => sum + entry.shareBps, 0) === 10_000;
+      entries.reduce((sum, entry) => sum + entry.basisPoints, 0) === 10_000;
+    const bootstrapValid =
+      mode === "sole-owner-bootstrap" &&
+      entries.length === 1 &&
+      entries[0].basisPoints === 10_000 &&
+      entries[0].purpose === "project-deployer" &&
+      entries[0].recipient !== "timelock";
+    const distributedValid =
+      mode === "distributed" &&
+      entries.length === 5 &&
+      entries.filter((entry) => entry.recipient === "timelock").length === 1 &&
+      entries.every((entry) => entry.basisPoints === 2_000);
+    roleConfiguration.daoAllocationValid =
+      commonValid && (bootstrapValid || distributedValid);
     if (!roleConfiguration.daoAllocationValid) {
       failures.push("RDAO allocation does not uniquely allocate the fixed supply");
     }

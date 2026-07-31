@@ -1854,6 +1854,20 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-31: The product owner selected an explicit Schema-16
+  `sole-owner-bootstrap` Mainnet governance mode: the protected deployer is the
+  only canonical Safe owner at threshold one and receives 100% of fixed RDAO;
+  the Timelock remains Governor executor and receives zero RDAO. Tooling now
+  retains the later `distributed` 2-of-3 mode, binds governance mode and
+  threshold into control proofs and Safe identity, and verifies proportional
+  allocation balances plus zero bootstrap Timelock balance. Focused 15/15,
+  full repository, 369-contract-test, invariant, security, formatting, lint,
+  and typecheck gates pass; contract sources are unchanged. Testnet deployer
+  funding is now sufficient at `0.061537884111901993 ETH` versus the corrected
+  `0.042803030303030306 ETH` requirement. Freeze, push, reproducibly build,
+  promote the exact application release, then start a fresh run 03 only after
+  exact readiness checks. No Mainnet transaction is authorized.
+
 - 2026-07-31: Schema-16 Testnet endurance run
   `schema16-2h-2dd8c73-02` failed safely at 480.192 healthy seconds because
   preflight omitted the principal for three graduations. Its 87 submitted
@@ -3757,6 +3771,20 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-07-31 - Schema-16 sole-owner bootstrap tooling
+
+- Mainnet governance inputs use schema 2 and an explicit mode. Bootstrap
+  requires one deployer signer, threshold one, and one 10,000-bps deployer
+  allocation; distributed mode preserves three owners, threshold two, four
+  address recipients, and one Timelock allocation at 2,000 bps each.
+- Safe setup still uses canonical v1.4.1 contracts with no modules, delegate
+  setup, or payment. The Safe remains guardian/Timelock canceller, so protocol
+  roles do not point directly to an EOA.
+- Until later distribution, the deployer controls all votes, DAO rewards, and
+  emergency guardian actions. This is an explicitly accepted residual risk.
+- Testnet is online and Paused, the previous endurance service is absent, and
+  no new endurance clock or Mainnet transaction has started.
 
 ### 2026-07-31 - Schema-16 coverage-compatible refactor
 
@@ -6220,6 +6248,15 @@ When sources conflict, use this order:
 - Follow-up: Build and promote the exact pushed documentation commit, complete automated browser and real-wallet acceptance, then start the ten-hour endurance gate.
 
 ## Open Follow-ups
+
+- Commit and push the sole-owner bootstrap tooling, run two-build
+  reproducibility, promote the exact release, recheck the funded deployer and
+  all readiness gates, then create a fresh run 03 with new identities, salts,
+  launches, and journals. Never reuse run 01 or 02 transactions.
+- Create protected schema-2 deployer-only guardian/allocation inputs after the
+  release SHA is frozen, generate the domain-separated control proof through
+  the encrypted deployer, and rehearse the canonical 1-of-1 Safe without any
+  Mainnet broadcast.
 
 - Fund Testnet deployer `0xecc5d6d032ADc9ca9E0F4042128067b8366da17A`
   by at least `0.031265146191128313 ETH` above its verified balance, then create

@@ -32,6 +32,12 @@ const [manifest, governance] = await Promise.all([
 if (manifest.schemaVersion !== 16 || Number(manifest.chainId) !== 4663) {
   throw new Error("deployment manifest must be Schema-16 on chain 4663");
 }
+if (
+  governance.schemaVersion !== 2 ||
+  !["sole-owner-bootstrap", "distributed"].includes(governance.governanceMode)
+) {
+  throw new Error("governance report must use schema 2 with an explicit mode");
+}
 const safe = getAddress(
   manifest.contracts?.safe ?? manifest.guardian ?? governance.predictedSafe,
 );
@@ -124,7 +130,9 @@ const failures = [];
 if (JSON.stringify(actualOwners) !== JSON.stringify(expectedOwners)) {
   failures.push("Safe owner set mismatch");
 }
-if (threshold !== 2n) failures.push("Safe threshold is not two");
+if (threshold !== BigInt(governance.threshold)) {
+  failures.push("Safe threshold differs from governance report");
+}
 if (modulesPage[0].length !== 0 || modulesPage[1] !== sentinel) {
   failures.push("Safe has an unexpected module");
 }
@@ -193,6 +201,7 @@ const resolvedAllocations = governance.allocations.map((allocation) => ({
       ? timelock
       : getAddress(allocation.recipient),
 }));
+let allocatedSupply = 0n;
 for (const allocation of resolvedAllocations) {
   const balance = await client.readContract({
     address: daoToken,
@@ -200,15 +209,34 @@ for (const allocation of resolvedAllocations) {
     functionName: "balanceOf",
     args: [allocation.recipient],
   });
-  if (balance !== 200_000_000n * 10n ** 18n) {
+  const expectedBalance =
+    (totalSupply * BigInt(allocation.basisPoints)) / 10_000n;
+  if (balance !== expectedBalance) {
     failures.push(`RDAO allocation mismatch for ${allocation.recipient}`);
   }
+  allocatedSupply += expectedBalance;
   allocation.balance = balance.toString();
+}
+if (allocatedSupply !== totalSupply) {
+  failures.push("RDAO allocations do not cover the fixed supply");
+}
+const timelockRdaoBalance = await client.readContract({
+  address: daoToken,
+  abi: tokenAbi,
+  functionName: "balanceOf",
+  args: [timelock],
+});
+if (
+  governance.governanceMode === "sole-owner-bootstrap" &&
+  timelockRdaoBalance !== 0n
+) {
+  failures.push("bootstrap Timelock unexpectedly owns RDAO");
 }
 const report = {
   schemaVersion: 16,
   generatedAt: new Date().toISOString(),
   chainId: 4663,
+  governanceMode: governance.governanceMode,
   sourceBlock: blockNumber.toString(),
   safe: {
     address: safe,
@@ -222,6 +250,7 @@ const report = {
   daoToken: {
     address: daoToken,
     totalSupply: totalSupply.toString(),
+    timelockBalance: timelockRdaoBalance.toString(),
     allocations: resolvedAllocations,
   },
   governor: { address: governor, token: governorToken, timelock: governorTimelock },

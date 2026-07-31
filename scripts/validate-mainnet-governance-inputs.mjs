@@ -81,13 +81,15 @@ const proxyCreationCode = await client.readContract({
 const initializer = safeInitializer({
   owners: result.owners,
   fallbackHandler: safe.fallbackHandler.address,
-  threshold: safe.threshold,
+  threshold: result.threshold,
 });
 const saltNonce = safeSaltNonce({
   chainId: 4663,
   releaseSha,
   deploymentManifestHash,
   owners: result.owners,
+  governanceMode: result.governanceMode,
+  threshold: result.threshold,
 });
 const predicted = predictChainSpecificSafe({
   chainId: 4663,
@@ -98,15 +100,16 @@ const predicted = predictChainSpecificSafe({
   saltNonce,
 });
 const report = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   generatedAt: new Date().toISOString(),
   chainId: 4663,
   sourceBlock: forkBlock.toString(),
   releaseSha: releaseSha.replace(/^0x/, "").toLowerCase(),
   deploymentManifestHash: deploymentManifestHash.toLowerCase(),
   deployer,
+  governanceMode: result.governanceMode,
   owners: result.owners,
-  threshold: safe.threshold,
+  threshold: result.threshold,
   signerSetHash: result.signerSetHash,
   controlProofs: result.proofEvidence,
   allocations: result.allocations,

@@ -1,8 +1,8 @@
-# Schema-14 V4-Only Mainnet Staged Rollout
+# Schema-16 V4-Only Mainnet Staged Rollout
 
 ## Authority boundary
 
-Schema-14 retains governed launch activation and future-launch-only graduation
+Schema-16 retains governed launch activation and future-launch-only graduation
 profiles while removing every external execution-adapter path. Passing this runbook produces a frozen Mainnet manifest and an
 internal GO recommendation. It does not authorize an Ethereum bridge
 transaction, Robinhood Mainnet deployment, route activation, canary launch,
@@ -13,6 +13,21 @@ No temporary EOA may replace the production Safe, Timelock, treasury, or
 governance roles. Keys, passwords, allocation secrets, signatures, raw
 calldata, and protected configuration never belong in Git, evidence, or
 `MEMORY.md`.
+
+## Sole-owner bootstrap governance
+
+The initial protected governance mode is `sole-owner-bootstrap`. The canonical
+Safe v1.4.1 proxy has the protected deployer as its only owner and threshold
+one. The fixed one-billion RDAO supply is allocated entirely to that deployer;
+the Timelock receives no RDAO but remains the Governor execution authority.
+The Safe is still the guardian and Timelock canceller, so protocol roles never
+point directly at an EOA.
+
+This mode intentionally concentrates voting, DAO rewards, and emergency pause
+authority. Record that residual risk in every readiness and activation report.
+When team distribution begins, checkpoint rewards, transfer RDAO, add two
+independently controlled Safe owners, raise the threshold to two, and verify a
+new `distributed` governance manifest before relying on distributed control.
 
 ## Immutable evidence
 
