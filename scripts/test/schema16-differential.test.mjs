@@ -28,6 +28,7 @@ test("dual-Anvil differential is exact-SHA, isolated, and evidence sealed", () =
   assert.match(runner, /prepare_graduations/);
   assert.match(runner, /graduationThresholdNative\(\)\(uint256\)/);
   assert.match(runner, /maximumCurvePurchase\(\)\(uint256\)/);
+  assert.match(runner, /--json \| jq -er '\.\[0\]'/);
   assert.match(runner, /gross <= 100000000000000/);
   assert.match(runner, /for phase in preflight fund launches trading conversions governance claims/);
   assert.match(runner, /sha256sum -c SHA256SUMS/);

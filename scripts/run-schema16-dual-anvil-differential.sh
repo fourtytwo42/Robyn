@@ -156,10 +156,10 @@ prepare_graduations() {
     market="$(jq -er --argjson index "$launch_index" '.launches[$index].market' "$state/state.json")"
     gross=0
     for _ in $(seq 1 20); do
-      threshold="$(cast call "$market" 'graduationThresholdNative()(uint256)' --rpc-url "$rpc" | cast to-dec)"
-      raised="$(cast call "$market" 'nativeRaised()(uint256)' --rpc-url "$rpc" | cast to-dec)"
-      fee="$(cast call "$market" 'feeBps()(uint256)' --rpc-url "$rpc" | cast to-dec)"
-      maximum="$(cast call "$market" 'maximumCurvePurchase()(uint256)' --rpc-url "$rpc" | cast to-dec)"
+      threshold="$(cast call "$market" 'graduationThresholdNative()(uint256)' --rpc-url "$rpc" --json | jq -er '.[0]')"
+      raised="$(cast call "$market" 'nativeRaised()(uint256)' --rpc-url "$rpc" --json | jq -er '.[0]')"
+      fee="$(cast call "$market" 'feeBps()(uint256)' --rpc-url "$rpc" --json | jq -er '.[0]')"
+      maximum="$(cast call "$market" 'maximumCurvePurchase()(uint256)' --rpc-url "$rpc" --json | jq -er '.[0]')"
       if (( raised >= threshold )); then
         gross=0
         break
