@@ -507,3 +507,24 @@ test("governance waits derive from the verified manifest", () => {
     /advanceOrWait\((601|1_801), "Governance (voting delay|voting period|timelock)"\)/,
   );
 });
+
+test("transaction deadlines derive from chain time", () => {
+  const source = readFileSync(
+    new URL("../testnet-assurance-campaign.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /async function chainDeadline\(seconds\)/);
+  assert.match(source, /current\.timestamp \+ BigInt\(seconds\)/);
+  assert.doesNotMatch(source, /Date\.now\(\) \/ 1000/);
+  assert.ok((source.match(/await chainDeadline\(/g) ?? []).length >= 10);
+});
+
+test("newly matured oracle history records a fresh observation", () => {
+  const source = readFileSync(
+    new URL("../testnet-assurance-campaign.mjs", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /let historyAdvanced = false/);
+  assert.match(source, /historyAdvanced = true/);
+  assert.match(source, /if \(!historyAdvanced && latestAge <= 600n\) return/);
+});

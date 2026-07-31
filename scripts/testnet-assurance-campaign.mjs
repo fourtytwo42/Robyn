@@ -1289,7 +1289,7 @@ async function trading() {
         launch.token,
         manifest.contracts.positionManager,
         (1n << 160n) - 1n,
-        BigInt(Math.floor(Date.now() / 1000) + 86_400),
+        await chainDeadline(86_400),
       ],
     );
     let calldata;
@@ -1312,7 +1312,7 @@ async function trading() {
             functionName: "modifyLiquidities",
             args: [
               calldata,
-              BigInt(Math.floor(Date.now() / 1000) + 600),
+              await chainDeadline(600),
             ],
           }),
         });
@@ -1334,7 +1334,7 @@ async function trading() {
       manifest.contracts.positionManager,
       positionManagerAbi,
       "modifyLiquidities",
-      [calldata, BigInt(Math.floor(Date.now() / 1000) + 600)],
+      [calldata, await chainDeadline(600)],
       amount0Max,
     );
     const mintedLiquidity = await publicClient.readContract({
@@ -1370,12 +1370,12 @@ async function trading() {
       args: [launch.token, value],
       account: account.address,
     });
-    await contractTransaction(state, `direct-v4-buy-${launchIndex}`, account, manifest.contracts.assetRouter, assetRouterAbi, "swapExactNativeForAsset", [launch.token, (quoted * 98n) / 100n || 1n, account.address, BigInt(Math.floor(Date.now() / 1000) + 600)], value);
+    await contractTransaction(state, `direct-v4-buy-${launchIndex}`, account, manifest.contracts.assetRouter, assetRouterAbi, "swapExactNativeForAsset", [launch.token, (quoted * 98n) / 100n || 1n, account.address, await chainDeadline(600)], value);
     const tokenBalance = await publicClient.readContract({ address: launch.token, abi: tokenAbi, functionName: "balanceOf", args: [account.address] });
     const sellAmount = tokenBalance / 4n;
     await contractTransaction(state, `direct-v4-approve-${launchIndex}`, account, launch.token, tokenAbi, "approve", [manifest.contracts.assetRouter, sellAmount]);
     const [nativeQuoted] = await publicClient.readContract({ address: manifest.contracts.assetRouter, abi: assetRouterAbi, functionName: "quoteAssetToNative", args: [launch.token, sellAmount], account: account.address });
-    await contractTransaction(state, `direct-v4-sell-${launchIndex}`, account, manifest.contracts.assetRouter, assetRouterAbi, "swapExactAssetForNative", [launch.token, sellAmount, (nativeQuoted * 98n) / 100n || 1n, account.address, BigInt(Math.floor(Date.now() / 1000) + 600)]);
+    await contractTransaction(state, `direct-v4-sell-${launchIndex}`, account, manifest.contracts.assetRouter, assetRouterAbi, "swapExactAssetForNative", [launch.token, sellAmount, (nativeQuoted * 98n) / 100n || 1n, account.address, await chainDeadline(600)]);
   }
 
   const universalLaunch = state.launches[graduated[0]];
@@ -1414,7 +1414,7 @@ async function trading() {
       [
         plan.commands,
         plan.inputs,
-        BigInt(Math.floor(Date.now() / 1000) + 600),
+        await chainDeadline(600),
       ],
       value,
     );
@@ -1485,7 +1485,7 @@ async function trading() {
       universalLaunch.token,
       manifest.contracts.universalRouter,
       (1n << 160n) - 1n,
-      BigInt(Math.floor(Date.now() / 1000) + 86_400),
+      await chainDeadline(86_400),
     ],
   );
   const [directNativeOutput] = await publicClient.readContract({
@@ -1597,6 +1597,11 @@ async function advanceOrWait(seconds, label) {
   }
 }
 
+async function chainDeadline(seconds) {
+  const current = await publicClient.getBlock();
+  return current.timestamp + BigInt(seconds);
+}
+
 async function ensureConversionOracle({
   state,
   manifest,
@@ -1606,6 +1611,7 @@ async function ensureConversionOracle({
   assetRouterAbi,
 }) {
   state.conversions.oracleRefreshes ??= [];
+  let historyAdvanced = false;
   try {
     await publicClient.readContract({
       address: manifest.contracts.oracleHook,
@@ -1618,6 +1624,7 @@ async function ensureConversionOracle({
       V4_ORACLE_WINDOW_MATURITY_SECONDS,
       `launch-${launch.index} oracle history`,
     );
+    historyAdvanced = true;
   }
 
   const current = await publicClient.getBlock();
@@ -1628,7 +1635,7 @@ async function ensureConversionOracle({
     args: [launch.poolId],
   });
   const latestAge = current.timestamp - BigInt(latest.timestamp);
-  if (latestAge <= 600n) return;
+  if (!historyAdvanced && latestAge <= 600n) return;
 
   const transactionAttempts = state.transactions.filter((entry) =>
     entry.label.startsWith(`oracle-refresh-${launch.index}-`),
@@ -1658,7 +1665,7 @@ async function ensureConversionOracle({
       launch.token,
       (quoted * 98n) / 100n || 1n,
       account.address,
-      BigInt(Math.floor(Date.now() / 1000) + 600),
+      await chainDeadline(600),
     ],
     ORACLE_REFRESH_NATIVE_INPUT_WEI,
   );
@@ -1715,7 +1722,7 @@ async function conversions() {
     // Give the event-driven keeper a bounded opportunity to consume work
     // awakened by the refresh before this campaign submits the same action.
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 3_000));
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
+    const deadline = await chainDeadline(600);
     const pendingNativeBefore = await publicClient.readContract({
       address: manifest.contracts.oracleHook,
       abi: hookAbi,
@@ -2066,7 +2073,7 @@ async function conversions() {
       const account = privateKeyToAccount(
         accounts[basketConversionActorIndex(launch.index, legIndex)].privateKey,
       );
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
+      const deadline = await chainDeadline(600);
       let amount = before.pendingNative < status.maximumNativeInput ? before.pendingNative : status.maximumNativeInput;
       let quoted;
       let minimumOutput;
