@@ -395,15 +395,27 @@ export class TestnetRpcFailover {
           );
           await this.persist(this.snapshot());
           return response;
-        } catch (error) {
+        } catch (fallbackError) {
           this.fallback = {
             ...this.fallback,
             healthy: false,
             checkedAt: new Date(this.now()).toISOString(),
             error: "request failed",
           };
-          await this.persist(this.snapshot());
-          throw error;
+          try {
+            const response = await this.upstreamRequest(
+              this.primaryUrl,
+              payload,
+            );
+            if (hasUnavailableStateError(response)) {
+              throw new Error("primary state unavailable");
+            }
+            await this.persist(this.snapshot());
+            return response;
+          } catch {
+            await this.persist(this.snapshot());
+            throw fallbackError;
+          }
         }
       }
     }
@@ -413,15 +425,35 @@ export class TestnetRpcFailover {
       const response = await this.upstreamRequest(this.fallbackUrl, payload);
       await this.persist(this.snapshot());
       return response;
-    } catch (error) {
+    } catch (fallbackError) {
       this.fallback = {
         ...this.fallback,
         healthy: false,
         checkedAt: new Date(this.now()).toISOString(),
         error: "request failed",
       };
-      await this.persist(this.snapshot());
-      throw error;
+      if (!isReadOnlyBody(payload)) {
+        await this.persist(this.snapshot());
+        throw fallbackError;
+      }
+      try {
+        const response = await this.upstreamRequest(this.primaryUrl, payload);
+        if (hasUnavailableStateError(response)) {
+          throw new Error("primary state unavailable");
+        }
+        await this.persist(this.snapshot());
+        return response;
+      } catch {
+        this.primaryRequestFailures += 1;
+        this.primary = {
+          ...this.primary,
+          healthy: false,
+          checkedAt: new Date(this.now()).toISOString(),
+          error: "request failed",
+        };
+        await this.persist(this.snapshot());
+        throw fallbackError;
+      }
     }
   }
 

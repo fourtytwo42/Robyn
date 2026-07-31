@@ -365,6 +365,92 @@ describe("testnet RPC failover", () => {
       fallback: { healthy: false },
     });
   });
+
+  it("uses the LAN node for a read when the active fallback request fails", async () => {
+    const upstream = createUpstream({ primaryOnline: false });
+    const failover = controller(upstream.request);
+    await failover.probe();
+    expect(failover.snapshot().activeProvider).toBe("fallback");
+
+    upstream.setPrimaryOnline(true);
+    upstream.setFallbackOnline(false);
+    const payload = {
+      jsonrpc: "2.0" as const,
+      id: 4,
+      method: "eth_blockNumber",
+      params: [],
+    };
+
+    await expect(failover.request(payload)).resolves.toEqual(
+      result(4, "0x3e8"),
+    );
+    expect(upstream.request).toHaveBeenCalledWith(fallbackUrl, payload);
+    expect(upstream.request).toHaveBeenCalledWith(primaryUrl, payload);
+    expect(failover.snapshot()).toMatchObject({
+      activeProvider: "fallback",
+      primary: { healthy: false },
+      fallback: { healthy: false },
+    });
+  });
+
+  it("rechecks the LAN node when both sides of an in-flight read fail transiently", async () => {
+    let applicationPrimaryAttempts = 0;
+    const request = vi.fn<UpstreamRequest>((url, payload) => {
+      const entry = (Array.isArray(payload) ? payload[0] : payload) as {
+        id?: unknown;
+        method: string;
+      };
+      if (entry.method === "eth_chainId") {
+        return Promise.resolve(result(entry.id, "0xb626"));
+      }
+      if (entry.method === "eth_syncing") {
+        return Promise.resolve(result(entry.id, false));
+      }
+      if (entry.method === "eth_blockNumber" && entry.id === "health-head") {
+        return Promise.resolve(result(entry.id, "0x3e8"));
+      }
+      if (entry.method === "eth_blockNumber" && url === primaryUrl) {
+        applicationPrimaryAttempts += 1;
+        if (applicationPrimaryAttempts === 1) {
+          return Promise.reject(new Error("transient primary failure"));
+        }
+        return Promise.resolve(result(entry.id, "0x3e8"));
+      }
+      if (url === fallbackUrl) {
+        return Promise.reject(new Error("transient fallback failure"));
+      }
+      return Promise.resolve(result(entry.id, "0xfeed"));
+    });
+    const failover = controller(request);
+    await failover.probe();
+
+    await expect(
+      failover.request({
+        jsonrpc: "2.0",
+        id: 6,
+        method: "eth_blockNumber",
+        params: [],
+      }),
+    ).resolves.toEqual(result(6, "0x3e8"));
+    expect(applicationPrimaryAttempts).toBe(2);
+  });
+
+  it("does not retry a failed fallback write against the LAN node", async () => {
+    const upstream = createUpstream({ primaryOnline: false });
+    const failover = controller(upstream.request);
+    await failover.probe();
+    upstream.setPrimaryOnline(true);
+    upstream.setFallbackOnline(false);
+    const payload = {
+      jsonrpc: "2.0" as const,
+      id: 5,
+      method: "eth_sendRawTransaction",
+      params: ["0x1234"],
+    };
+
+    await expect(failover.request(payload)).rejects.toThrow("fallback offline");
+    expect(upstream.request).not.toHaveBeenCalledWith(primaryUrl, payload);
+  });
 });
 
 describe("HTTP upstream retries", () => {

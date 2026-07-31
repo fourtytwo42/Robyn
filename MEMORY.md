@@ -1,5 +1,49 @@
 # Project Memory
 
+### 2026-07-31 - Run 04 invalidated by RPC burst and non-atomic lag sample
+
+- Context: Run `schema16-2h-80229a5-04` reached 997.453 uninterrupted healthy
+  seconds, six launches, one graduation, and 138 confirmed transactions before
+  the runner reported a 271-block ingestion lag. The indexer itself continued
+  syncing and the canonical checkpoint lag in the completed sample was 23
+  blocks.
+- Result: The one-shot service stopped, writes paused, and the guardian returned
+  new launches to `Paused`. Zero transaction submissions were ambiguous. Run 04
+  is invalid and sealed by its `SHA256SUMS`; it must never resume.
+- Recovery: The idempotent recovery path confirmed 35 transactions and returned
+  `0.009135672641575853 ETH` plus recoverable RDAO. Six launch positions,
+  including one graduated launch, remain recorded as Testnet history.
+- Root cause: The sample captured API status before a public token-page probe
+  stalled for about 64 seconds, then compared that stale observed head with a
+  new RPC head. During the stall, a read burst exposed asymmetric gateway
+  failover: once Alchemy became active, an Alchemy read failure did not try the
+  recovered LAN provider, and concurrent in-flight primary requests could also
+  surface after both legs failed once.
+- Fix in progress: Capture the RPC head immediately beside the API status
+  snapshot. For read-only calls, allow one safe alternate-provider attempt in
+  either direction; signed writes remain single-provider and are never replayed.
+  Focused gateway, endurance-policy, lint, typecheck, and formatting checks pass.
+- Mainnet: Protocol bytecode is unchanged. No bridge or Mainnet transaction is
+  authorized.
+
+### 2026-07-31 - Exact fee-fix release promoted and run 04 started
+
+- Release: Commit `80229a551f2aa839a3c9a1205dabf517eb0d9ec6` is clean,
+  pushed to `origin/main`, passes the full repository/security suite and exact
+  pinned Mainnet fork lifecycle, and passed two independent reproducible
+  builds. Immutable Testnet promotion passes all 177 checks with the unchanged
+  Schema-16 deployment manifest. The coordinator was guardian-paused after
+  failed run 03 before promotion.
+- Run: Fresh run `schema16-2h-80229a5-04` has a new encrypted 100-wallet
+  identity, salts, and empty journals. The static one-shot service is active.
+  Actor funding completed with zero ambiguity; governed activation and the two
+  readiness samples must pass before the 7,200-second clock starts.
+- Funding: Immediate endurance preflight measured
+  `0.048831912354761737 ETH` available versus
+  `0.042803030303030306 ETH` required, a
+  `0.006028882051731431 ETH` surplus while preserving the fixed reserve.
+- Mainnet: No bridge or Mainnet transaction is authorized.
+
 ### 2026-07-31 - Run 03 failed safely on dynamic fee drift
 
 - Context: Run `schema16-2h-c8156e6-03` reached 480.183 uninterrupted healthy
@@ -1925,6 +1969,15 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-07-31: Run `schema16-2h-80229a5-04` is failed, sealed, recovered, and
+  inactive after an RPC burst exposed asymmetric read failover and a
+  non-atomic ingestion-lag sample. It accumulated 997.453 healthy seconds and
+  138 confirmed transactions with zero ambiguous submissions. New launches
+  are Paused. The narrow application fix has focused tests passing; complete
+  repository/security/reproducibility checks, push/promote a new exact release,
+  then create a fresh run 05 with new identities and journals. Never replay run
+  04 hashes. No bridge or Mainnet transaction is authorized.
 
 - 2026-07-31: Run `schema16-2h-c8156e6-03` failed safely at 480.183 healthy
   seconds because a dynamically funded graduation wallet was short
@@ -3864,6 +3917,17 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-31 - Schema-16 run 04 invalidated and recovered
+
+- Exact release `80229a551f2aa839a3c9a1205dabf517eb0d9ec6` remains served,
+  but run `schema16-2h-80229a5-04` is invalid, sealed, recovered, and inactive.
+- The coordinator is guardian-paused. The run has 138 confirmed receipts, zero
+  ambiguous submissions, and six retained launch positions. Never resume it.
+- The application-only fix is uncommitted: health sampling now captures the RPC
+  head beside API status, and read-only gateway requests can safely try the
+  alternate provider in either direction. Signed writes are not retried across
+  providers. Protocol contracts and deployment addresses are unchanged.
+
 ### 2026-07-31 - Schema-16 run 03 invalidated and recovered
 
 - Exact release `c8156e6e92b2dd408a6ef0d423b2bf0b31907ea2` is clean,
@@ -5562,6 +5626,12 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-31: Run 04 failure preservation passed: all run evidence checksums
+  verify, guardian pause confirmed, zero hashes are ambiguous, and the separate
+  35-transaction recovery journal is complete. The gateway suite passes 28/28,
+  endurance policy passes 24/24, and focused lint, typecheck, and formatting
+  pass for the read-failover and atomic-head-sampling correction.
+
 - 2026-07-31: Sole-owner bootstrap release `c8156e6` passed 15 focused
   governance tests, the full repository suite, 369 Foundry tests with zero
   failures and one intentional skip, security analysis, and two-build
@@ -6360,6 +6430,14 @@ When sources conflict, use this order:
 - Follow-up: Build and promote the exact pushed documentation commit, complete automated browser and real-wallet acceptance, then start the ten-hour endurance gate.
 
 ## Open Follow-ups
+
+- Run the full repository and security suite for the RPC/health fix, perform two
+  reproducible builds, push and promote only the exact clean release, then start
+  run 05 with a fresh encrypted 100-wallet identity, salts, launches, and empty
+  journals. Never restart run 04 or replay any of its 138 confirmed hashes.
+- Add a focused burst/failover integration proof against the built gateway and
+  require token-page reads plus LAN/Alchemy recovery without surfaced 503s
+  before run 05 readiness.
 
 - Commit and push the runner fee-envelope correction, focused regression, and
   Mainnet fork ledger/TWAP test correction. Run repository checks and two

@@ -162,6 +162,16 @@ test("runner is fixed to one uninterrupted two-hour release gate", () => {
   assert.match(source, /status\.observedHeadBlock \?\? status\.asOfBlock/);
   assert.match(source, /readinessPasses < 2/);
   assert.match(source, /phase: readiness \? "readiness" : "endurance"/);
+  const statusIndex = source.indexOf("status = await statusResponse.json()");
+  const rpcHeadIndex = source.indexOf(
+    'rpcBlock = await rpcRetry("rpc-block", () => publicClient.getBlockNumber())',
+  );
+  const publicPageIndex = source.indexOf(
+    'await timedFetch("web-home", `${publicBase}/`, endpointLatencies)',
+  );
+  assert.ok(statusIndex >= 0);
+  assert.ok(rpcHeadIndex > statusIndex);
+  assert.ok(publicPageIndex > rpcHeadIndex);
 });
 
 test("pre-clock readiness tolerates an empty ingestion-lag history", () => {

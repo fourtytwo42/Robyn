@@ -2332,6 +2332,7 @@ async function sample({ readiness = false } = {}) {
       endpointLatencies,
     );
     status = await statusResponse.json();
+    rpcBlock = await rpcRetry("rpc-block", () => publicClient.getBlockNumber());
     await timedFetch("web-home", `${publicBase}/`, endpointLatencies);
     await timedFetch("web-markets", `${publicBase}/discover`, endpointLatencies);
     await timedFetch("web-dao", `${publicBase}/dao`, endpointLatencies);
@@ -2347,7 +2348,6 @@ async function sample({ readiness = false } = {}) {
         endpointLatencies,
       );
     }
-    rpcBlock = await rpcRetry("rpc-block", () => publicClient.getBlockNumber());
     const alertResponse = await fetch(
       "http://127.0.0.1:9090/api/v1/alerts",
       { signal: AbortSignal.timeout(5_000) },
