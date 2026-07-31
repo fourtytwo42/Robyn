@@ -489,3 +489,21 @@ test("claims reconcile pre-submission settlements won by the canonical keeper", 
     /canonical keeper settlement won the pre-submission race/,
   );
 });
+
+test("governance waits derive from the verified manifest", () => {
+  const source = readFileSync(
+    new URL("../testnet-assurance-campaign.mjs", import.meta.url),
+    "utf8",
+  );
+  for (const field of [
+    "votingDelaySeconds",
+    "votingPeriodSeconds",
+    "timelockSeconds",
+  ]) {
+    assert.match(source, new RegExp(`manifest\\.dao\\.governance\\.${field}`));
+  }
+  assert.doesNotMatch(
+    source,
+    /advanceOrWait\((601|1_801), "Governance (voting delay|voting period|timelock)"\)/,
+  );
+});

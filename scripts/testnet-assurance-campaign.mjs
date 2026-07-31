@@ -2274,7 +2274,10 @@ async function governance() {
     /revert|execution/i,
   );
 
-  await advanceOrWait(601, "Governance voting delay");
+  await advanceOrWait(
+    Number(manifest.dao.governance.votingDelaySeconds) + 1,
+    "Governance voting delay",
+  );
   const successfulId = BigInt(state.governance.proposals.successful.id);
   const defeatedId = BigInt(state.governance.proposals.defeated.id);
   for (let index = 0; index < 8; index += 1) {
@@ -2298,11 +2301,17 @@ async function governance() {
     /revert|execution/i,
   );
 
-  await advanceOrWait(1_801, "Governance voting period");
+  await advanceOrWait(
+    Number(manifest.dao.governance.votingPeriodSeconds) + 1,
+    "Governance voting period",
+  );
   const queueAccount = privateKeyToAccount(accounts[3].privateKey);
   const successful = state.governance.proposals.successful;
   await contractTransaction(state, "governance-queue-successful", queueAccount, manifest.contracts.governor, governorAbi, "queue", [targets, values, calldatas, successful.descriptionHash]);
-  await advanceOrWait(601, "Governance timelock");
+  await advanceOrWait(
+    Number(manifest.dao.governance.timelockSeconds) + 1,
+    "Governance timelock",
+  );
   await contractTransaction(state, "governance-execute-successful", queueAccount, manifest.contracts.governor, governorAbi, "execute", [targets, values, calldatas, successful.descriptionHash]);
 
   const states = {};
