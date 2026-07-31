@@ -146,6 +146,47 @@ campaign() {
     --gas-price-wei 10000000000 \
     --l1-base-fee-wei 1
 }
+
+prepare_graduations() {
+  local rpc="$1" state="$2" receipt_log="$3"
+  local buyer market threshold raised fee maximum required_net gross value
+  buyer="$(cast rpc eth_accounts --rpc-url "$rpc" | jq -er '.[8]')"
+  : >"$receipt_log"
+  for launch_index in 0 1 2; do
+    market="$(jq -er --argjson index "$launch_index" '.launches[$index].market' "$state/state.json")"
+    gross=0
+    for _ in $(seq 1 20); do
+      threshold="$(cast call "$market" 'graduationThresholdNative()(uint256)' --rpc-url "$rpc" | cast to-dec)"
+      raised="$(cast call "$market" 'nativeRaised()(uint256)' --rpc-url "$rpc" | cast to-dec)"
+      fee="$(cast call "$market" 'feeBps()(uint256)' --rpc-url "$rpc" | cast to-dec)"
+      maximum="$(cast call "$market" 'maximumCurvePurchase()(uint256)' --rpc-url "$rpc" | cast to-dec)"
+      if (( raised >= threshold )); then
+        gross=0
+        break
+      fi
+      required_net=$((threshold - raised))
+      gross="$(
+        node -e \
+          'const [net, fee] = process.argv.slice(1).map(BigInt); process.stdout.write(((net * 10000n + (10000n - fee) - 1n) / (10000n - fee)).toString())' \
+          "$required_net" "$fee"
+      )"
+      (( gross > 100000000000000 )) || break
+      value=$((gross - 100000000000000))
+      (( value <= maximum )) || value="$maximum"
+      cast send "$market" 'buy(uint256)' 1 \
+        --from "$buyer" \
+        --unlocked \
+        --value "$value" \
+        --rpc-url "$rpc" \
+        --json >>"$receipt_log"
+    done
+    (( gross <= 100000000000000 )) || {
+      echo "Unable to prepare launch $launch_index within the fixed graduation bound" >&2
+      return 1
+    }
+  done
+}
+
 campaign init "$baseline_rpc" "$evidence/baseline-manifest.json" "$baseline_state" \
   >"$evidence/baseline-campaign.log" 2>&1
 cp "$baseline_state/encrypted-root.json" "$candidate_state/encrypted-root.json"
@@ -160,6 +201,9 @@ for side in baseline candidate; do
   for phase in preflight fund launches trading conversions governance claims; do
     campaign "$phase" "$rpc" "$manifest" "$state" \
       >>"$evidence/${side}-campaign.log" 2>&1
+    if [[ "$phase" == launches ]]; then
+      prepare_graduations "$rpc" "$state" "$evidence/${side}-graduation-prep.jsonl"
+    fi
   done
   cp "$state/evidence.json" "$evidence/${side}-campaign-state.json"
   node scripts/capture-schema16-differential-state.mjs \
