@@ -16,8 +16,11 @@
 - Evidence:
   `/home/hendo420/robyn-evidence/devnet-torture/185c363d59f468f23da7df3bf0f4f2b3165699ef/20260731T011144Z-deep/`
   and `/home/hendo420/robyn-evidence/schema16-pretest/185c363/`.
-- Follow-up: Schema-16 contract qualification is green, but fresh Schema-16
-  Testnet deployment/recovery/reconciliation/browser/endurance tooling still
+- Follow-up: Fast/deep, static-analysis, and reproducibility gates are green.
+  The full dual-Anvil Schema-15-versus-16 state differential remains required;
+  only ABI/storage identity, canonical salt/hash compatibility, and current
+  deterministic regression behavior have been proved so far. Fresh Schema-16
+  Testnet deployment/recovery/reconciliation/browser/endurance tooling also
   needs to be versioned and verified before any Testnet promotion. No Testnet
   deployment or Mainnet action occurred.
 
@@ -1681,10 +1684,13 @@ Durable project context lives here. Update this file whenever information should
 
 - 2026-07-31: Exact Schema-16 contract candidate `185c363` passed the final
   fast and complete deep Devnet torture gates, security audit, and two-build
-  reproducibility comparison. The next ordered work is versioned Schema-16
-  Testnet deployment/recovery tooling, followed by a fresh Paused deployment,
-  recovery, two-hour endurance, reconciliation, and browser acceptance. Do
-  not reuse Schema-15 manifests or journals. No Mainnet action is authorized.
+  reproducibility comparison. Before Testnet tooling or deployment, complete
+  the formal dual-Anvil Schema-15-versus-16 state differential; ABI/storage
+  identity and canonical salt/hash compatibility already pass. Then version
+  Schema-16 Testnet deployment/recovery tooling and run a fresh Paused
+  deployment, recovery, two-hour endurance, reconciliation, and browser
+  acceptance. Do not reuse Schema-15 manifests or journals. No Mainnet action
+  is authorized.
 
 - 2026-07-31: Schema-16 fast gate passed on exact pushed SHA `7902daf`, seed
   `160001`, in 81 seconds with all executable phases and checksum validation
@@ -6012,6 +6018,11 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Complete the formal dual-Anvil Schema-15-versus-16 differential for
+  deterministic launch inputs, events, configuration/profile hashes, revert
+  selectors, balances, liabilities, supplies, phases, fees, and rewards.
+  CREATE2 addresses may differ only where creation bytecode makes the address
+  bytecode-dependent.
 - Version and test Schema-16 Testnet deployment, verifier, recovery, release,
   and manifest tooling. Never point Schema-16 at a Schema-15 manifest or
   import Schema-15 launches/journals.
