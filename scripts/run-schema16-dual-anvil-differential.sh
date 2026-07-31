@@ -76,6 +76,8 @@ for port in "$baseline_port" "$candidate_port"; do
     sleep 0.1
   done
   [[ "$(cast chain-id --rpc-url "http://127.0.0.1:${port}")" == "46630" ]]
+  cast rpc anvil_setBlockTimestampInterval 1 \
+    --rpc-url "http://127.0.0.1:${port}" >/dev/null
 done
 
 (cd "$baseline_worktree" && forge build --root packages/contracts) \
