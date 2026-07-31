@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 
 const [baselinePath, candidatePath, outputPath] = process.argv
   .slice(2)
-  .map(resolve);
+  .map((path) => resolve(path));
 if (!baselinePath || !candidatePath || !outputPath) {
   throw new Error("Usage: compare baseline.json candidate.json output.json");
 }

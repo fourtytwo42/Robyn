@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 const runner = readFileSync(
@@ -59,4 +62,42 @@ test("state capture includes economic, reward, principal, event, and revert pari
   assert.match(compare, /addressBook/);
   assert.match(compare, /passed: equal/);
   assert.match(compare, /firstDifference/);
+});
+
+test("comparator accepts three paths and normalizes logical addresses", () => {
+  const directory = mkdtempSync(join(tmpdir(), "schema16-compare-"));
+  try {
+    const baseline = join(directory, "baseline.json");
+    const candidate = join(directory, "candidate.json");
+    const output = join(directory, "comparison.json");
+    writeFileSync(
+      baseline,
+      JSON.stringify({
+        addressBook: {
+          coordinator: "0x1111111111111111111111111111111111111111",
+        },
+        fingerprint: "baseline",
+        state: { owner: "0x1111111111111111111111111111111111111111" },
+      }),
+    );
+    writeFileSync(
+      candidate,
+      JSON.stringify({
+        addressBook: {
+          coordinator: "0x2222222222222222222222222222222222222222",
+        },
+        fingerprint: "candidate",
+        state: { owner: "0x2222222222222222222222222222222222222222" },
+      }),
+    );
+    execFileSync(process.execPath, [
+      "scripts/compare-schema16-differential.mjs",
+      baseline,
+      candidate,
+      output,
+    ]);
+    assert.equal(JSON.parse(readFileSync(output, "utf8")).passed, true);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
