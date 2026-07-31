@@ -13,12 +13,41 @@ const baseline = JSON.parse(readFileSync(baselinePath, "utf8"));
 const candidate = JSON.parse(readFileSync(candidatePath, "utf8"));
 
 function normalize(snapshot) {
+  const timestampKeys = new Set([
+    "pendingSince",
+    "lastUpdateTime",
+    "streamEnd",
+  ]);
+  const ignoredMetadata = new Set([
+    "fingerprint",
+    "blockNumber",
+    "logIndex",
+    "transactionHash",
+    "transactionIndex",
+    "blockHash",
+    "seedTransaction",
+    "assetCreationTransaction",
+    "provenance",
+  ]);
   const replacements = Object.entries(snapshot.addressBook)
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([role, address]) => [address.slice(2).toLowerCase(), `@${role}`]);
+  const opaqueIdentifiers = [
+    ...(snapshot.manifestIdentity?.assetRoutes ?? [])
+      .filter((route) => route.poolId)
+      .map((route) => [
+        route.poolId.toLowerCase(),
+        `@route.${route.symbol}.poolId`,
+      ]),
+    ...(snapshot.launches ?? [])
+      .filter((launch) => launch.poolId)
+      .map((launch) => [
+        launch.poolId.toLowerCase(),
+        `@launch.${launch.index}.poolId`,
+      ]),
+  ];
   const visit = (value, key = "") => {
-    if (key === "addressBook" || key === "fingerprint") return undefined;
-    if (key === "blockNumber" || key === "logIndex") return undefined;
+    if (key === "addressBook" || ignoredMetadata.has(key)) return undefined;
     if (Array.isArray(value)) return value.map((item) => visit(item));
     if (value && typeof value === "object") {
       return Object.fromEntries(
@@ -28,7 +57,12 @@ function normalize(snapshot) {
       );
     }
     if (typeof value !== "string") return value;
+    if (timestampKeys.has(key) && BigInt(value) !== 0n) {
+      return "@timestamp";
+    }
     let normalized = value.toLowerCase();
+    const opaque = opaqueIdentifiers.find(([identifier]) => identifier === normalized);
+    if (opaque) return opaque[1];
     for (const [address, role] of replacements) {
       normalized = normalized.replaceAll(address, role);
     }

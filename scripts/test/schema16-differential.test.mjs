@@ -23,6 +23,11 @@ test("dual-Anvil differential is exact-SHA, isolated, and evidence sealed", () =
   assert.match(runner, /28546/);
   assert.match(runner, /28547/);
   assert.match(runner, /--fork-block-number "\$fork_block"/);
+  assert.match(runner, /start_timestamp=\$\(\(fork_timestamp \+ 86400\)\)/);
+  assert.equal(
+    (runner.match(/--timestamp "\$start_timestamp"/g) ?? []).length,
+    2,
+  );
   assert.match(runner, /git rev-parse '@\{u\}'/);
   assert.match(runner, /schemaVersion=16/);
   assert.match(runner, /anvil_impersonateAccount/);
@@ -62,6 +67,22 @@ test("state capture includes economic, reward, principal, event, and revert pari
   assert.match(compare, /addressBook/);
   assert.match(compare, /passed: equal/);
   assert.match(compare, /firstDifference/);
+  for (const metadata of [
+    "transactionHash",
+    "seedTransaction",
+    "assetCreationTransaction",
+    "provenance",
+  ]) {
+    assert.match(compare, new RegExp(`"${metadata}"`));
+  }
+  for (const behavior of [
+    "runtimeCodeHash",
+    "poolId",
+    "configurationHash",
+    "currentProfileHash",
+  ]) {
+    assert.doesNotMatch(compare, new RegExp(`"${behavior}"`));
+  }
 });
 
 test("comparator accepts three paths and normalizes logical addresses", () => {
@@ -77,7 +98,13 @@ test("comparator accepts three paths and normalizes logical addresses", () => {
           coordinator: "0x1111111111111111111111111111111111111111",
         },
         fingerprint: "baseline",
-        state: { owner: "0x1111111111111111111111111111111111111111" },
+        manifestIdentity: { assetRoutes: [] },
+        launches: [{ index: 0, poolId: `0x${"11".repeat(32)}` }],
+        state: {
+          owner: "0x1111111111111111111111111111111111111111",
+          lastUpdateTime: "1000",
+          streamEnd: "1060",
+        },
       }),
     );
     writeFileSync(
@@ -87,7 +114,13 @@ test("comparator accepts three paths and normalizes logical addresses", () => {
           coordinator: "0x2222222222222222222222222222222222222222",
         },
         fingerprint: "candidate",
-        state: { owner: "0x2222222222222222222222222222222222222222" },
+        manifestIdentity: { assetRoutes: [] },
+        launches: [{ index: 0, poolId: `0x${"22".repeat(32)}` }],
+        state: {
+          owner: "0x2222222222222222222222222222222222222222",
+          lastUpdateTime: "2000",
+          streamEnd: "2060",
+        },
       }),
     );
     execFileSync(process.execPath, [

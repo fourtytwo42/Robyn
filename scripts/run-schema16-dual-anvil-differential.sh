@@ -52,15 +52,22 @@ done
 mkdir -p "$evidence"
 chmod 0700 "$evidence"
 fork_block="$(cast block-number --rpc-url "$upstream_rpc")"
+fork_timestamp="$(
+  cast block "$fork_block" --rpc-url "$upstream_rpc" --json |
+    jq -er '.timestamp'
+)"
+start_timestamp=$((fork_timestamp + 86400))
 git worktree add --detach "$baseline_worktree" "$baseline_sha" >/dev/null
 ln -s "$repo_root/node_modules" "$baseline_worktree/node_modules"
 
 anvil --host 127.0.0.1 --port "$baseline_port" --fork-url "$upstream_rpc" \
-  --fork-block-number "$fork_block" --chain-id 46630 --silent \
+  --fork-block-number "$fork_block" --chain-id 46630 \
+  --timestamp "$start_timestamp" --silent \
   >"$evidence/baseline-anvil.log" 2>&1 &
 baseline_pid="$!"
 anvil --host 127.0.0.1 --port "$candidate_port" --fork-url "$upstream_rpc" \
-  --fork-block-number "$fork_block" --chain-id 46630 --silent \
+  --fork-block-number "$fork_block" --chain-id 46630 \
+  --timestamp "$start_timestamp" --silent \
   >"$evidence/candidate-anvil.log" 2>&1 &
 candidate_pid="$!"
 for port in "$baseline_port" "$candidate_port"; do
