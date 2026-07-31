@@ -271,6 +271,27 @@ contract RobynV4NativeProtocolTest is Test {
         assertFalse(assetRouter.routeStatus(address(token)).ready);
     }
 
+    function testLaunchSaltRefactorPreservesCanonicalPreimage() public view {
+        RobynNativeLaunchFactoryV4.LaunchRequest memory request = _request(bytes32(uint256(200)));
+        (,, bytes32 actual) = coordinator.predictLaunchAddresses(address(this), request);
+        bytes32 expected = keccak256(
+            abi.encode(
+                block.chainid,
+                address(launchFactory),
+                address(this),
+                keccak256(bytes(request.name)),
+                keccak256(bytes(request.symbol)),
+                1_000_000_000 ether,
+                request.assets,
+                request.weights,
+                keccak256(bytes(request.metadataUri)),
+                request.userSalt,
+                request.expectedGraduationProfileVersion
+            )
+        );
+        assertEq(actual, expected);
+    }
+
     function testLaunchModesRestrictCreationWithoutStoppingExistingBondingTrades() public {
         vm.prank(GUARDIAN);
         coordinator.pauseLaunches();

@@ -26,7 +26,7 @@ import { RobynV4FeeAndPhaseHook } from "./RobynV4FeeAndPhaseHook.sol";
 contract RobynV4MarketFactory {
     using PoolIdLibrary for PoolKey;
 
-    string public constant CONTRACT_VERSION = "2.0.0";
+    string public constant CONTRACT_VERSION = "3.0.0";
     uint24 public constant POOL_FEE_PIPS = 10_000;
     int24 public constant TICK_SPACING = 200;
     uint256 public constant MINIMUM_GRADUATION_TARGET = 0.01 ether;
@@ -135,46 +135,11 @@ contract RobynV4MarketFactory {
         uint256 maximumNativeResidual_,
         uint256 maximumTokenResidual_
     ) {
-        if (
-            address(dependencies.launchFactory) == address(0)
-                || address(dependencies.feeRouter) == address(0)
-                || address(dependencies.assetRouter) == address(0)
-                || address(dependencies.oracleHook) == address(0)
-                || address(dependencies.poolManager) == address(0)
-                || address(dependencies.positionManager) == address(0)
-                || address(dependencies.permit2) == address(0)
-                || address(dependencies.stateView) == address(0)
-                || address(dependencies.adapterDeployer) == address(0)
-                || address(dependencies.lockerDeployer) == address(0)
-                || address(dependencies.marketDeployer) == address(0)
-                || dependencies.tokenSink == address(0) || dependencies.tokenSink.code.length == 0
-                || address(dependencies.launchFactory).code.length == 0
-                || address(dependencies.feeRouter).code.length == 0
-                || address(dependencies.assetRouter).code.length == 0
-                || address(dependencies.oracleHook).code.length == 0
-                || address(dependencies.poolManager).code.length == 0
-                || address(dependencies.positionManager).code.length == 0
-                || address(dependencies.permit2).code.length == 0
-                || address(dependencies.stateView).code.length == 0
-                || address(dependencies.adapterDeployer).code.length == 0
-                || address(dependencies.lockerDeployer).code.length == 0
-                || address(dependencies.marketDeployer).code.length == 0
-                || address(dependencies.launchFactory.assetRouter())
-                    != address(dependencies.assetRouter)
-                || address(dependencies.feeRouter.assetRouter())
-                    != address(dependencies.assetRouter)
-                || address(dependencies.oracleHook.poolManager())
-                    != address(dependencies.poolManager) || curve_.curveTokenAllocation == 0
-                || curve_.graduationTokenAllocation == 0
-                || curve_.initialVirtualTokenReserve <= curve_.curveTokenAllocation
-                || curve_.graduationThresholdNative < MINIMUM_GRADUATION_TARGET
-                || curve_.graduationThresholdNative > MAXIMUM_GRADUATION_TARGET
-                || curve_.maximumCurvePurchase == 0
-                || curve_.maximumCurvePurchase > curve_.graduationThresholdNative / 2
-                || curve_.curveFeeBps == 0 || curve_.curveFeeBps > 1_000 || minimumUseBps_ == 0
-                || minimumUseBps_ > 10_000 || maximumNativeSwap_ == 0 || maximumNativeResidual_ == 0
-                || maximumTokenResidual_ == 0
-        ) revert InvalidConfiguration();
+        _validateDependencies(dependencies);
+        _validateCurve(curve_);
+        _validateLimits(
+            minimumUseBps_, maximumNativeSwap_, maximumNativeResidual_, maximumTokenResidual_
+        );
         launchFactory = dependencies.launchFactory;
         feeRouter = dependencies.feeRouter;
         assetRouter = dependencies.assetRouter;
@@ -202,6 +167,56 @@ contract RobynV4MarketFactory {
         );
         _storeCurrentProfile(initialProfile);
         _emitGraduationProfileUpdated(initialProfile);
+    }
+
+    function _validateDependencies(Dependencies memory dependencies) private view {
+        _requireContract(address(dependencies.launchFactory));
+        _requireContract(address(dependencies.feeRouter));
+        _requireContract(address(dependencies.assetRouter));
+        _requireContract(address(dependencies.oracleHook));
+        _requireContract(address(dependencies.poolManager));
+        _requireContract(address(dependencies.positionManager));
+        _requireContract(address(dependencies.permit2));
+        _requireContract(address(dependencies.stateView));
+        _requireContract(address(dependencies.adapterDeployer));
+        _requireContract(address(dependencies.lockerDeployer));
+        _requireContract(address(dependencies.marketDeployer));
+        _requireContract(dependencies.tokenSink);
+        if (
+            address(dependencies.launchFactory.assetRouter()) != address(dependencies.assetRouter)
+                || address(dependencies.feeRouter.assetRouter())
+                    != address(dependencies.assetRouter)
+                || address(dependencies.oracleHook.poolManager())
+                    != address(dependencies.poolManager)
+        ) revert InvalidConfiguration();
+    }
+
+    function _validateCurve(RobynV4BondingCurveMarket.CurveConfig memory curve_) private pure {
+        if (
+            curve_.curveTokenAllocation == 0 || curve_.graduationTokenAllocation == 0
+                || curve_.initialVirtualTokenReserve <= curve_.curveTokenAllocation
+                || curve_.graduationThresholdNative < MINIMUM_GRADUATION_TARGET
+                || curve_.graduationThresholdNative > MAXIMUM_GRADUATION_TARGET
+                || curve_.maximumCurvePurchase == 0
+                || curve_.maximumCurvePurchase > curve_.graduationThresholdNative / 2
+                || curve_.curveFeeBps == 0 || curve_.curveFeeBps > 1_000
+        ) revert InvalidConfiguration();
+    }
+
+    function _validateLimits(
+        uint16 minimumUseBps_,
+        uint128 maximumNativeSwap_,
+        uint256 maximumNativeResidual_,
+        uint256 maximumTokenResidual_
+    ) private pure {
+        if (
+            minimumUseBps_ == 0 || minimumUseBps_ > 10_000 || maximumNativeSwap_ == 0
+                || maximumNativeResidual_ == 0 || maximumTokenResidual_ == 0
+        ) revert InvalidConfiguration();
+    }
+
+    function _requireContract(address account) private view {
+        if (account == address(0) || account.code.length == 0) revert InvalidConfiguration();
     }
 
     modifier onlyCoordinator() {

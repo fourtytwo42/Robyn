@@ -35,7 +35,21 @@ contract RobynNativeLaunchFactoryV4 {
         bytes32 launchSaltHash;
     }
 
-    string public constant CONTRACT_VERSION = "6.0.0";
+    struct LaunchSaltPreimage {
+        uint256 chainId;
+        address factory;
+        address creator;
+        bytes32 nameHash;
+        bytes32 symbolHash;
+        uint256 initialSupply;
+        address[] assets;
+        uint16[] weights;
+        bytes32 metadataUriHash;
+        bytes32 userSalt;
+        uint64 expectedGraduationProfileVersion;
+    }
+
+    string public constant CONTRACT_VERSION = "7.0.0";
     uint256 public immutable chainId;
     RobynV4AssetRouter public immutable assetRouter;
     RobynNativeLaunchDeployerV4 public immutable launchDeployer;
@@ -67,12 +81,9 @@ contract RobynNativeLaunchFactoryV4 {
         uint256 minimumConversionNative_,
         uint256 maximumPendingDelay_
     ) {
-        if (
-            address(assetRouter_) == address(0) || address(launchDeployer_) == address(0)
-                || address(vaultDeployer_) == address(0) || address(assetRouter_).code.length == 0
-                || address(launchDeployer_).code.length == 0
-                || address(vaultDeployer_).code.length == 0
-        ) revert InvalidAddress();
+        _requireContract(address(assetRouter_));
+        _requireContract(address(launchDeployer_));
+        _requireContract(address(vaultDeployer_));
         assetRouter = assetRouter_;
         launchDeployer = launchDeployer_;
         vaultDeployer = vaultDeployer_;
@@ -112,25 +123,51 @@ contract RobynNativeLaunchFactoryV4 {
         uint256 initialSupply,
         LaunchRequest calldata request
     ) external onlyCoordinator returns (CreatedLaunch memory created) {
+        created.launchSaltHash =
+            _validateAndReserveLaunch(creator, supplyRecipient, initialSupply, request);
+        (created.token, created.vault) =
+            _deployLaunch(created.launchSaltHash, supplyRecipient, initialSupply, request);
+        created.vault.bindLaunchToken(created.token);
+        (created.launchId, created.configurationHash) =
+            _recordLaunch(creator, created.token, created.vault, request);
+        emit LaunchCreated(
+            created.launchId,
+            creator,
+            address(created.token),
+            address(created.vault),
+            created.configurationHash
+        );
+    }
+
+    function _validateAndReserveLaunch(
+        address creator,
+        address supplyRecipient,
+        uint256 initialSupply,
+        LaunchRequest calldata request
+    ) private returns (bytes32 launchSaltHash) {
         if (creator == address(0) || supplyRecipient == address(0)) {
             revert InvalidAddress();
         }
         if (request.userSalt == bytes32(0)) revert InvalidSalt();
         requireBasketRoutes(request.assets);
-        created.launchSaltHash = _launchSaltHash(creator, initialSupply, request);
-        if (usedLaunchSalt[created.launchSaltHash]) {
-            revert LaunchSaltAlreadyUsed(created.launchSaltHash);
-        }
-        usedLaunchSalt[created.launchSaltHash] = true;
         if (
             launchDeployer.controller() != address(this)
                 || vaultDeployer.controller() != address(this)
         ) revert Unauthorized();
+        launchSaltHash = _launchSaltHash(creator, initialSupply, request);
+        if (usedLaunchSalt[launchSaltHash]) revert LaunchSaltAlreadyUsed(launchSaltHash);
+        usedLaunchSalt[launchSaltHash] = true;
+    }
+
+    function _deployLaunch(
+        bytes32 launchSaltHash,
+        address supplyRecipient,
+        uint256 initialSupply,
+        LaunchRequest calldata request
+    ) private returns (RobynLaunchToken token, RobynNativeBasketVaultV2 vault) {
         bytes32 vaultSalt =
-            keccak256(abi.encode(created.launchSaltHash, keccak256("ROBYN_NATIVE_VAULT_V2")));
-        bytes32 tokenSalt =
-            keccak256(abi.encode(created.launchSaltHash, keccak256("ROBYN_NATIVE_TOKEN_V4")));
-        created.vault = vaultDeployer.deployVault(
+            keccak256(abi.encode(launchSaltHash, keccak256("ROBYN_NATIVE_VAULT_V2")));
+        vault = vaultDeployer.deployVault(
             vaultSalt,
             assetRouter,
             request.assets,
@@ -139,38 +176,32 @@ contract RobynNativeLaunchFactoryV4 {
             maximumPendingDelay
         );
         RobynNativeLaunchDeployerV4.TokenRequest memory tokenRequest =
-            RobynNativeLaunchDeployerV4.TokenRequest({
-                name: request.name,
-                symbol: request.symbol,
-                supplyRecipient: supplyRecipient,
-                initialSupply: initialSupply,
-                vault: address(created.vault),
-                assets: request.assets,
-                tokenUri: request.metadataUri
-            });
-        created.token = launchDeployer.deployToken(tokenSalt, tokenRequest);
-        created.vault.bindLaunchToken(created.token);
-        created.launchId = ++launchCount;
-        launchTokenById[created.launchId] = address(created.token);
-        vaultByToken[address(created.token)] = address(created.vault);
-        creatorByToken[address(created.token)] = creator;
-        created.configurationHash = keccak256(
+            _tokenRequest(request, supplyRecipient, initialSupply, address(vault));
+        bytes32 tokenSalt =
+            keccak256(abi.encode(launchSaltHash, keccak256("ROBYN_NATIVE_TOKEN_V4")));
+        token = launchDeployer.deployToken(tokenSalt, tokenRequest);
+    }
+
+    function _recordLaunch(
+        address creator,
+        RobynLaunchToken token,
+        RobynNativeBasketVaultV2 vault,
+        LaunchRequest calldata request
+    ) private returns (uint256 launchId, bytes32 configurationHash) {
+        launchId = ++launchCount;
+        launchTokenById[launchId] = address(token);
+        vaultByToken[address(token)] = address(vault);
+        creatorByToken[address(token)] = creator;
+        configurationHash = keccak256(
             abi.encode(
                 block.chainid,
-                address(created.token),
-                address(created.vault),
+                address(token),
+                address(vault),
                 request.assets,
                 request.weights,
                 keccak256(bytes(request.metadataUri)),
                 request.expectedGraduationProfileVersion
             )
-        );
-        emit LaunchCreated(
-            created.launchId,
-            creator,
-            address(created.token),
-            address(created.vault),
-            created.configurationHash
         );
     }
 
@@ -207,16 +238,29 @@ contract RobynNativeLaunchFactoryV4 {
         bytes32 tokenSalt =
             keccak256(abi.encode(launchSaltHash, keccak256("ROBYN_NATIVE_TOKEN_V4")));
         RobynNativeLaunchDeployerV4.TokenRequest memory tokenRequest =
-            RobynNativeLaunchDeployerV4.TokenRequest({
-                name: request.name,
-                symbol: request.symbol,
-                supplyRecipient: supplyRecipient,
-                initialSupply: initialSupply,
-                vault: predictedVault,
-                assets: request.assets,
-                tokenUri: request.metadataUri
-            });
+            _tokenRequest(request, supplyRecipient, initialSupply, predictedVault);
         predictedToken = launchDeployer.predictToken(tokenSalt, tokenRequest);
+    }
+
+    function _tokenRequest(
+        LaunchRequest calldata request,
+        address supplyRecipient,
+        uint256 initialSupply,
+        address vault
+    ) private pure returns (RobynNativeLaunchDeployerV4.TokenRequest memory tokenRequest) {
+        tokenRequest = RobynNativeLaunchDeployerV4.TokenRequest({
+            name: request.name,
+            symbol: request.symbol,
+            supplyRecipient: supplyRecipient,
+            initialSupply: initialSupply,
+            vault: vault,
+            assets: request.assets,
+            tokenUri: request.metadataUri
+        });
+    }
+
+    function _requireContract(address account) private view {
+        if (account == address(0) || account.code.length == 0) revert InvalidAddress();
     }
 
     function _launchSaltHash(address creator, uint256 initialSupply, LaunchRequest calldata request)
@@ -224,20 +268,26 @@ contract RobynNativeLaunchFactoryV4 {
         view
         returns (bytes32)
     {
-        return keccak256(
-            abi.encode(
-                block.chainid,
-                address(this),
-                creator,
-                keccak256(bytes(request.name)),
-                keccak256(bytes(request.symbol)),
-                initialSupply,
-                request.assets,
-                request.weights,
-                keccak256(bytes(request.metadataUri)),
-                request.userSalt,
-                request.expectedGraduationProfileVersion
-            )
-        );
+        LaunchSaltPreimage memory preimage;
+        preimage.chainId = block.chainid;
+        preimage.factory = address(this);
+        preimage.creator = creator;
+        preimage.nameHash = keccak256(bytes(request.name));
+        preimage.symbolHash = keccak256(bytes(request.symbol));
+        preimage.initialSupply = initialSupply;
+        preimage.assets = request.assets;
+        preimage.weights = request.weights;
+        preimage.metadataUriHash = keccak256(bytes(request.metadataUri));
+        preimage.userSalt = request.userSalt;
+        preimage.expectedGraduationProfileVersion = request.expectedGraduationProfileVersion;
+        // A dynamic tuple encoded as one struct starts with a 32-byte top-level
+        // offset. Hashing the tuple payload preserves the legacy flat abi.encode
+        // preimage while avoiding the compiler's unoptimized stack overflow.
+        bytes memory encoded = abi.encode(preimage);
+        bytes32 result;
+        assembly ("memory-safe") {
+            result := keccak256(add(encoded, 0x40), sub(mload(encoded), 0x20))
+        }
+        return result;
     }
 }

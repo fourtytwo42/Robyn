@@ -1,5 +1,26 @@
 # Project Memory
 
+### 2026-07-31 - Schema-16 non-via-IR coverage candidate ready to freeze
+
+- Context: Schema-15 active-closure coverage could not produce truthful branch
+  data because three active contracts hit optimizer-disabled stack-too-deep.
+- Decision: Schema-16 structurally decomposes `RobynNativeLaunchFactoryV4` and
+  `RobynV4MarketFactory` without changing their public runtime interfaces,
+  storage meaning, economics, hashes, or authorization. The V6 coordinator
+  compiles accurately without a source change after the two factory refactors.
+- Files: The two factories, `Schema16CoverageMatrix.t.sol`, the canonical salt
+  regression in `RobynV4NativeProtocol.t.sol`, and the versioned Schema-16
+  scope, runner, validator, and runner self-test under `scripts/`.
+- Verification: All active sources compile without optimizer and without
+  via-IR. The 70-test focused matrix passes. Accurate active-closure LCOV is
+  92.68% lines and exactly 80.00% branches, with no missing active source,
+  retired source, or invalid branch record. Factory and coordinator public
+  ABIs and semantic storage layouts match pushed Schema-15 SHA `5899a5f`.
+- Follow-up: Commit and push a clean Schema-16 SHA, run fast with a new seed
+  and real action log, then run deep only if fast passes. Testnet remains
+  online and Paused. No Testnet promotion, endurance, bridge, or Mainnet
+  transaction is authorized.
+
 ### 2026-07-30 - Schema-15 Devnet fast torture gate blocked on coverage
 
 - Candidate: Exact pushed SHA
@@ -1620,6 +1641,14 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-07-31: Schema-16 structural coverage remediation is implemented in the
+  authoritative VM worktree. Accurate non-via-IR active-closure coverage now
+  passes at 92.68% lines and 80.00% branches; the 70-test focused matrix and
+  tooling self-tests pass. Public ABIs and semantic storage layouts match
+  Schema-15 for both factories and the unchanged V6 coordinator. Freeze a
+  clean pushed SHA and run the fast gate with a new seed. Deep and Testnet
+  promotion remain blocked until fast passes.
 
 - 2026-07-30: Fresh fast gate for exact pushed candidate `119c543`, seed
   `150002`, is sealed and failed only at fail-closed evidence validation.
@@ -3470,6 +3499,21 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-31 - Schema-16 coverage-compatible refactor
+
+- `RobynNativeLaunchFactoryV4` is split into validation/reservation,
+  deployment, recording, and canonical salt-preimage stages.
+- `RobynV4MarketFactory` is split into dependency, curve, and limit validation
+  stages while retaining its existing profile and market-creation behavior.
+- `RobynV4LaunchCoordinatorV6` now compiles accurately without via-IR after
+  the factory changes and did not require a source change.
+- The artifact-derived Schema-16 closure rejects retired contracts and uses
+  accurate optimizer-disabled, non-via-IR LCOV. Current probe: 92.68% lines,
+  80.00% branches, zero missing active sources, zero retired sources, and zero
+  branch-instrumentation failures.
+- Testnet remains Paused and online. No endurance, Testnet promotion, bridge,
+  or Mainnet action occurred.
+
 ### 2026-07-30 - Exact Schema-15 coverage closure and tooling blocker
 
 - Exact pushed remediation commit `119c54331dd275768965a0dcea359900d9aae785`
@@ -5126,6 +5170,15 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-31: Schema-16 pre-freeze checks: all active sources compile with
+  optimizer disabled and without via-IR; 70 focused coverage/rollback tests
+  pass; runner self-tests 4/4 pass; shell syntax and diff whitespace checks
+  pass; active-closure LCOV is 92.68% lines and 80.00% branches. Normal
+  optimized `Schema16CoverageMatrixTest` and `RobynV4NativeProtocolTest` pass.
+  Schema-15-vs-16 ABI and semantic storage comparisons are identical for
+  `RobynNativeLaunchFactoryV4`, `RobynV4MarketFactory`, and
+  `RobynV4LaunchCoordinatorV6`.
+
 - 2026-07-30: Fast seed `150002` at exact pushed SHA `119c543`:
   compile pass; coverage-scope hash
   `f33fc679a8c30fc836798b216b9fcde9eb762397180c554598aa7d99e341ec4b`;
@@ -5895,14 +5948,13 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Obtain truthful branch instrumentation for the exact active closure without
-  lowering the 80% requirement. Options are to remove the three active
-  contracts' non-via-IR stack pressure without changing behavior, or implement
-  an independently verified semantic branch collector. Any production
-  bytecode change creates a fresh candidate and restarts both torture tiers.
-- Use the sealed LCOV report to add targeted tests until the fixed 90% line
-  and 80% branch thresholds pass. Recommit, push, and restart fast from a new
-  evidence directory and seed. Run deep only after fast passes.
+- Commit and push the Schema-16 candidate, rerun fast with a new seed and real
+  action evidence, and preserve its exact coverage report and checksums. Run
+  deep only after fast passes.
+- After both torture tiers pass, repeat internal review and reproducible build
+  gates before any fresh Paused Schema-16 Testnet deployment. Testnet recovery,
+  endurance, reconciliation, browser acceptance, Mainnet fork rehearsal, RPC
+  acceptance, and funding calculation remain later ordered gates.
 - Commit and push the implemented Schema-15 isolated Devnet torture harness,
   run the mandatory fast tier, preserve exact failing seeds and coverage
   evidence, resolve every blocking defect without weakening policy, then run
