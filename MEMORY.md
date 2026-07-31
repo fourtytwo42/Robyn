@@ -1621,6 +1621,19 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-30: Fresh fast gate for exact pushed candidate `119c543`, seed
+  `150002`, is sealed and failed only at fail-closed evidence validation.
+  Compile, 1,024-case unit/deterministic fuzzing, both 256-run/depth-128
+  invariant suites, the 512-wallet/32-launch/25,000-action/20-seed
+  simulation, all 41 action obligations, and isolated Anvil broadcasting
+  passed. Exact active-closure coverage remained 85.6759% lines and 26.1574%
+  branches, and six executed sources proved the via-IR branch map invalid.
+  Checksums pass under
+  `/home/hendo420/robyn-evidence/devnet-torture/119c54331dd275768965a0dcea359900d9aae785/20260730T235801Z-fast/`.
+  Do not start deep or promote Testnet. Resolve truthful branch
+  instrumentation and line gaps, then use a new clean SHA, seed, and evidence
+  directory.
+
 - 2026-07-30: Schema-15 coverage remediation now derives a 21-source
   executable deployment closure from compiled artifact metadata, rejects
   retired sources, preserves the fixed 90% line / 80% branch policy, and
@@ -3459,6 +3472,10 @@ Durable project context lives here. Update this file whenever information should
 
 ### 2026-07-30 - Exact Schema-15 coverage closure and tooling blocker
 
+- Exact pushed remediation commit `119c54331dd275768965a0dcea359900d9aae785`
+  completed a fresh 110-second fast attempt with seed `150002`. Every
+  executable phase passed; evidence validation failed by policy and the deep
+  gate did not start.
 - The versioned coverage manifest names production and accelerated deployment
   roots and derives their transitive executable source closure from artifact
   metadata. The result contains 21 active repository-owned sources, no
@@ -5103,6 +5120,16 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-30: Fast seed `150002` at exact pushed SHA `119c543`:
+  compile pass; coverage-scope hash
+  `f33fc679a8c30fc836798b216b9fcde9eb762397180c554598aa7d99e341ec4b`;
+  unit/deterministic pass; native and v4 invariant passes; economic simulation
+  pass; isolated Anvil broadcast pass; evidence validation expected fail at
+  85.6759% line, 26.1574% branch, and six branch-map anomalies. `SHA256SUMS`
+  verifies every sealed evidence file. Public Testnet health remained HTTP
+  200 on chain 46630 with zero ingestion/projection lag and zero failed keeper
+  jobs; no torture or endurance service remained active.
 
 - 2026-07-30: Schema-15 coverage-remediation checks on the authoritative VM:
   four harness self-tests pass; the three formerly excluded reward-boundary
