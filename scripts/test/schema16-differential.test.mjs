@@ -23,7 +23,7 @@ test("dual-Anvil differential is exact-SHA, isolated, and evidence sealed", () =
   assert.match(runner, /28546/);
   assert.match(runner, /28547/);
   assert.match(runner, /--fork-block-number "\$fork_block"/);
-  assert.match(runner, /start_timestamp=\$\(\(fork_timestamp \+ 86400\)\)/);
+  assert.match(runner, /start_timestamp=\$\(\(fork_timestamp \+ 1\)\)/);
   assert.equal((runner.match(/--timestamp "\$start_timestamp"/g) ?? []).length, 2);
   assert.match(runner, /anvil_setBlockTimestampInterval 1/);
   assert.match(runner, /git rev-parse '@\{u\}'/);

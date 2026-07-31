@@ -56,7 +56,7 @@ fork_timestamp="$(
   cast block "$fork_block" --rpc-url "$upstream_rpc" --json |
     jq -er '.timestamp'
 )"
-start_timestamp=$((fork_timestamp + 86400))
+start_timestamp=$((fork_timestamp + 1))
 git worktree add --detach "$baseline_worktree" "$baseline_sha" >/dev/null
 ln -s "$repo_root/node_modules" "$baseline_worktree/node_modules"
 
