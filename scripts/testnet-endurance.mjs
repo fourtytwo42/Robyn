@@ -50,8 +50,9 @@ import {
   diskHeadroomPass,
   dueCount,
   dueLaunchCount,
-  enduranceSamplePassed,
   enduranceCoverageFailures,
+  enduranceGraduationPrincipalReserveWei,
+  enduranceSamplePassed,
   ENDURANCE_DURATION_SECONDS,
   ENDURANCE_GRADUATION_THRESHOLDS_SECONDS,
   ENDURANCE_L1_DATA_FEE_RESERVE_WEI,
@@ -312,7 +313,9 @@ function saveState() {
     requiredRewardAssetCount: 11,
     coveredRewardAssetCount: coveredAssets.size,
     launchCount: state.enduranceLaunches.length,
-    graduatedLaunchCount: state.transactions.filter((entry) => entry.label.startsWith("endurance-graduate-")).length,
+    graduatedLaunchCount: state.enduranceLaunches.filter(
+      (launch) => launch.graduated === true,
+    ).length,
     pendingRequirements: enduranceCoverageFailures(state),
   };
   const status = state.lastSample?.status;
@@ -770,16 +773,33 @@ async function fundingPreflight() {
     (total, entry) => total + entry.amount,
     0n,
   );
+  const prefundedGraduationWei = [96, 97, 98].reduce(
+    (total, index) => total + (targetByIndex.get(index) ?? 0n),
+    0n,
+  );
+  const graduationPrincipalReserveWei =
+    enduranceGraduationPrincipalReserveWei({
+      actualGraduationNative: BigInt(
+        manifest.graduationProfiles.current.actualGraduationNative,
+      ),
+      curveFeeBps: BigInt(manifest.market.curveFeeBps),
+      graduationCount: ENDURANCE_GRADUATION_THRESHOLDS_SECONDS.length,
+      prefundedGraduationWei,
+    });
   const workloadValueWei = 2_500_000_000_000_000n;
   const projectBalanceWei = await publicClient.getBalance({
     address: project.address,
   });
   const requiredWei =
-    actorFundingWei + workloadValueWei + ENDURANCE_RESERVE_WEI;
+    actorFundingWei +
+    graduationPrincipalReserveWei +
+    workloadValueWei +
+    ENDURANCE_RESERVE_WEI;
   return {
     projectAddress: project.address,
     projectBalanceWei,
     actorFundingWei,
+    graduationPrincipalReserveWei,
     workloadValueWei,
     reserveWei: ENDURANCE_RESERVE_WEI,
     requiredWei,
@@ -790,6 +810,7 @@ async function fundingPreflight() {
 }
 async function ensureFunding() {
   if (state.funding?.completedAt) return;
+  const preflight = await fundingPreflight();
   const targetByIndex = campaignFundingTargets();
   const balances = await Promise.all(
     [...targetByIndex.keys()].map((index) =>
@@ -809,10 +830,14 @@ async function ensureFunding() {
   const projectBalance = await publicClient.getBalance({
     address: project.address,
   });
-  const workloadValue = 2_500_000_000_000_000n;
-  if (projectBalance < required + workloadValue + ENDURANCE_RESERVE_WEI) {
+  const remainingRequiredWei =
+    required +
+    preflight.graduationPrincipalReserveWei +
+    preflight.workloadValueWei +
+    preflight.reserveWei;
+  if (projectBalance < remainingRequiredWei) {
     throw new Error(
-      `Endurance funding preflight failed: ${projectBalance} wei available`,
+      `Endurance funding preflight failed: ${projectBalance} wei available; ${remainingRequiredWei} wei required; ${remainingRequiredWei - projectBalance} wei shortfall`,
     );
   }
   for (const entry of shortfalls) {
@@ -855,7 +880,12 @@ async function ensureFunding() {
   }
   state.funding = {
     completedAt: new Date().toISOString(),
-    requiredWei: required.toString(),
+    requiredWei: preflight.requiredWei.toString(),
+    actorFundingWei: required.toString(),
+    graduationPrincipalReserveWei:
+      preflight.graduationPrincipalReserveWei.toString(),
+    workloadValueWei: preflight.workloadValueWei.toString(),
+    reserveWei: preflight.reserveWei.toString(),
     projectBalanceBeforeWei: projectBalance.toString(),
   };
   saveState();
@@ -879,7 +909,17 @@ async function maybeGraduate() {
       abi: marketAbi,
       functionName: "graduated",
     });
-    if (graduated) continue;
+    if (graduated) {
+      launch.graduated = true;
+      launch.graduatedAt ??= new Date().toISOString();
+      launch.graduationTransactionHash ??= state.transactions
+        .filter((entry) =>
+          entry.label.startsWith(`endurance-graduate-${index}-`),
+        )
+        .at(-1)?.hash;
+      saveState();
+      continue;
+    }
     const account = accounts[96 + index];
     for (let attempt = 0; attempt < 16; attempt += 1) {
       const [
@@ -984,7 +1024,7 @@ async function maybeGraduate() {
           },
         );
       }
-      await recordTransaction(
+      const graduationEntry = await recordTransaction(
         `endurance-graduate-${index}-${realCurveTokenReserve}`,
         account,
         buyRequest,
@@ -994,7 +1034,14 @@ async function maybeGraduate() {
         abi: marketAbi,
         functionName: "graduated",
       });
-      if (after) break;
+      if (after) {
+        launch.graduated = true;
+        launch.graduatedAt = new Date().toISOString();
+        launch.graduationTransactionHash = graduationEntry.hash;
+        launch.graduationBlockNumber = graduationEntry.blockNumber;
+        saveState();
+        break;
+      }
       if (attempt === 15) {
         throw new Error(
           `Endurance launch ${index} did not graduate after bounded top-ups`,

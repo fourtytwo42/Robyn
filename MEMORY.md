@@ -1,5 +1,43 @@
 # Project Memory
 
+### 2026-07-31 - Schema-16 endurance run 02 reserve guard and runner correction
+
+- Run: Fresh run `schema16-2h-2dd8c73-02` used exact served release
+  `2dd8c7396417937940b37b874f7cc43b55d5f943`. It accumulated 480.192
+  uninterrupted healthy seconds, created three launches, and stopped before
+  the next graduation funding transaction because the protected reserve would
+  have been breached.
+- Evidence: The run contains 90 action records: 87 unique submitted
+  transactions with 87 successful receipts and three expected pre-graduation
+  rejections without transaction hashes. The guardian returned launch mode to
+  Paused in confirmed transaction
+  `0x5a6de08d37d3b17c61491d76b0f87b1fe75f743d0cda7ee32ec6b9b0654c41e4`.
+  Checksums under
+  `/var/lib/robyn/testnet-endurance/schema16-2h-2dd8c73-02/` pass.
+- Recovery: The journaled incomplete-history recovery preserved bonding
+  positions, confirmed 35 recovery transactions, and returned
+  `0.009630330192789969 ETH` to the protected deployer. No confirmed
+  transaction may be replayed.
+- Root cause: The preflight included `0.0025 ETH` of general workload value but
+  omitted `0.027903030303030306 ETH` of additional fee-adjusted principal
+  needed for three 0.01 ETH graduations after the actors' initial funding.
+  Graduation coverage also reported funding/buy attempts rather than confirmed
+  graduation state.
+- Fix: The runner now reserves all three gross graduation principals, reports
+  the exact required balance and shortfall, persists the funding breakdown,
+  and marks coverage only after the market confirms graduation. Contract code,
+  deployment addresses, and database schema are unchanged. All 115 script and
+  recovery tests pass.
+- Mainnet: The owner waived the 48-hour host-level RPC observation and accepted
+  that residual risk. The app-level LAN-versus-Alchemy observer is active; its
+  corrected sample passes with zero broadcasts. A fresh route probe at block
+  `24205197` passes all six required routes; optional USDe and DEGEN remain
+  disabled. Protected Safe-owner and RDAO-allocation inputs are still missing.
+- Follow-up: Commit and push the runner correction, build and promote its exact
+  reproducible release, then create a new encrypted identity and run ID. Do not
+  start it until the corrected preflight passes without reducing the 0.0015 ETH
+  reserve. Mainnet bridging and deployment remain unauthorized.
+
 ### 2026-07-31 - Schema-16 Mainnet read-equivalence verifier corrected
 
 - Context: The Mainnet RPC acceptance script treated the valid JSON-RPC result
@@ -1815,6 +1853,17 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-07-31: Schema-16 Testnet endurance run
+  `schema16-2h-2dd8c73-02` failed safely at 480.192 healthy seconds because
+  preflight omitted the principal for three graduations. Its 87 submitted
+  receipts are successful, three expected failures have no hashes, launch mode
+  is Paused, recovery is complete, and evidence checksums pass. A runner-only
+  correction reserves the missing `0.027903030303030306 ETH`, reports actual
+  confirmed graduation state, and passes all 115 script tests. Commit, push,
+  reproducibly build, and promote the correction, then require the larger
+  preflight before creating a fresh run. No contract change or Mainnet
+  transaction occurred. Mainnet governance inputs remain missing.
 
 - 2026-07-31: Fresh Schema-16 Testnet contracts are deployed Paused from block
   `95508008` and verified 177/177, but the application has not been promoted

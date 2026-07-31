@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   accumulatedHealthySeconds,
+  enduranceGraduationPrincipalReserveWei,
   diskHeadroomPass,
   enduranceCoverageFailures,
   dueCount,
@@ -264,6 +265,37 @@ test("terminal curve buy is bounded by the immutable market cap", () => {
   );
 });
 
+test("endurance funding reserves all three gross graduation principals", () => {
+  assert.equal(
+    enduranceGraduationPrincipalReserveWei({
+      actualGraduationNative: 10_000_000_000_000_000n,
+      curveFeeBps: 100n,
+      graduationCount: 3,
+      prefundedGraduationWei: 2_400_000_000_000_000n,
+    }),
+    27_903_030_303_030_306n,
+  );
+  assert.equal(
+    enduranceGraduationPrincipalReserveWei({
+      actualGraduationNative: 10n,
+      curveFeeBps: 0n,
+      graduationCount: 1,
+      prefundedGraduationWei: 10n,
+    }),
+    0n,
+  );
+  assert.throws(
+    () =>
+      enduranceGraduationPrincipalReserveWei({
+        actualGraduationNative: 0n,
+        curveFeeBps: 100n,
+        graduationCount: 3,
+        prefundedGraduationWei: 0n,
+      }),
+    /inputs are invalid/,
+  );
+});
+
 test("final endurance coverage requires the schema-15 accelerated two-hour lifecycle", () => {
   const assets = Array.from(
     { length: 11 },
@@ -303,6 +335,7 @@ test("final endurance coverage requires the schema-15 accelerated two-hour lifec
   const complete = {
     requiredRewardAssets: assets,
     enduranceLaunches: Array.from({ length: 8 }, (_, index) => ({
+      graduated: index < 3,
       assets: Array.from(
         { length: 3 },
         (_, offset) => assets[(index * 3 + offset) % assets.length],
@@ -324,6 +357,15 @@ test("final endurance coverage requires the schema-15 accelerated two-hour lifec
       ),
     }).join(" "),
     /launch-token hook-fee conversion/,
+  );
+  assert.match(
+    enduranceCoverageFailures({
+      ...complete,
+      enduranceLaunches: complete.enduranceLaunches.map((launch, index) =>
+        index === 0 ? { ...launch, graduated: false } : launch,
+      ),
+    }).join(" "),
+    /endurance launch 0 did not graduate/,
   );
 });
 test("transaction funding includes dynamic EIP-1559 fee headroom", () => {

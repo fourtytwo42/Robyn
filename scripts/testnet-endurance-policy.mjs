@@ -146,6 +146,37 @@ export function boundedTerminalCurveBuyValue(curveState) {
   return terminal < maximumCurvePurchase ? terminal : maximumCurvePurchase;
 }
 
+export function enduranceGraduationPrincipalReserveWei({
+  actualGraduationNative,
+  curveFeeBps,
+  graduationCount,
+  prefundedGraduationWei,
+}) {
+  const bps = 10_000n;
+  if (
+    typeof actualGraduationNative !== "bigint" ||
+    actualGraduationNative <= 0n ||
+    typeof curveFeeBps !== "bigint" ||
+    curveFeeBps < 0n ||
+    curveFeeBps >= bps ||
+    !Number.isInteger(graduationCount) ||
+    graduationCount <= 0 ||
+    typeof prefundedGraduationWei !== "bigint" ||
+    prefundedGraduationWei < 0n
+  ) {
+    throw new Error("Endurance graduation reserve inputs are invalid");
+  }
+  const grossPerGraduation = ceilDiv(
+    actualGraduationNative * bps,
+    bps - curveFeeBps,
+  );
+  const grossGraduationPrincipal =
+    grossPerGraduation * BigInt(graduationCount);
+  return grossGraduationPrincipal > prefundedGraduationWei
+    ? grossGraduationPrincipal - prefundedGraduationWei
+    : 0n;
+}
+
 export function enduranceSamplePassed(
   infrastructurePassed,
   workloadFailure,
@@ -194,7 +225,7 @@ export function enduranceCoverageFailures(state) {
     failures.push("fewer than eight endurance launches");
   }
   for (const index of [0, 1, 2]) {
-    if (!has(`endurance-graduate-${index}-`)) {
+    if (state.enduranceLaunches?.[index]?.graduated !== true) {
       failures.push(`endurance launch ${index} did not graduate`);
     }
   }
