@@ -1,5 +1,21 @@
 # Project Memory
 
+### 2026-07-31 - Schema-16 fast torture gate passed
+
+- Candidate: Exact pushed SHA
+  `7902daff8e2436769f9e0af5463d23f5bb681114`, seed `160001`.
+- Result: The fast gate passed in 81 seconds. All 41 action obligations,
+  unit/deterministic tests, 1,024-case fuzzing, both 256-run/depth-128
+  invariant suites, the 512-wallet/32-launch/25,000-action/20-seed simulation,
+  and isolated Anvil broadcasting passed.
+- Coverage: Accurate non-via-IR active-closure coverage passed at 2,089/2,254
+  lines (92.6797%) and 348/435 branches (80.00%). There were no missing active
+  sources, retired counted sources, or invalid branch records.
+- Evidence:
+  `/home/hendo420/robyn-evidence/devnet-torture/7902daff8e2436769f9e0af5463d23f5bb681114/20260731T010727Z-fast/`.
+- Follow-up: Commit this checkpoint, rerun fast on the resulting exact
+  documented SHA, then run deep only after that final fast run passes.
+
 ### 2026-07-31 - Schema-16 non-via-IR coverage candidate ready to freeze
 
 - Context: Schema-15 active-closure coverage could not produce truthful branch
@@ -1641,6 +1657,12 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-07-31: Schema-16 fast gate passed on exact pushed SHA `7902daf`, seed
+  `160001`, in 81 seconds with all executable phases and checksum validation
+  green. Accurate coverage is 92.6797% lines and 80.00% branches. Commit this
+  MEMORY checkpoint, rerun fast on that final exact SHA, then start deep only
+  if the replacement fast run passes. Testnet remains Paused.
 
 - 2026-07-31: Schema-16 structural coverage remediation is implemented in the
   authoritative VM worktree. Accurate non-via-IR active-closure coverage now
@@ -5169,6 +5191,13 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-07-31: Exact Schema-16 SHA `7902daf`, seed `160001`, fast gate pass in
+  81 seconds. All 41 actions, unit/deterministic fuzzing, native and v4
+  invariants, economic simulation, isolated Anvil receipts, source-scope
+  checks, and checksums pass. LCOV: 2,089/2,254 lines and 348/435 branches.
+  Evidence:
+  `/home/hendo420/robyn-evidence/devnet-torture/7902daff8e2436769f9e0af5463d23f5bb681114/20260731T010727Z-fast/`.
 
 - 2026-07-31: Schema-16 pre-freeze checks: all active sources compile with
   optimizer disabled and without via-IR; 70 focused coverage/rollback tests
