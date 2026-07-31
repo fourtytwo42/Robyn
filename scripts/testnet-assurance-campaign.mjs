@@ -1582,7 +1582,11 @@ function loopbackRehearsal() {
 
 async function advanceOrWait(seconds, label) {
   if (loopbackRehearsal()) {
-    await publicClient.request({ method: "evm_increaseTime", params: [seconds] });
+    const current = await publicClient.getBlock();
+    await publicClient.request({
+      method: "evm_setNextBlockTimestamp",
+      params: [Number(current.timestamp) + seconds],
+    });
     await publicClient.request({ method: "evm_mine", params: [] });
     return;
   }

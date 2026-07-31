@@ -524,6 +524,9 @@ test("transaction deadlines derive from chain time", () => {
   assert.match(source, /current\.timestamp \+ BigInt\(seconds\)/);
   assert.doesNotMatch(source, /Date\.now\(\) \/ 1000/);
   assert.ok((source.match(/await chainDeadline\(/g) ?? []).length >= 10);
+  assert.match(source, /method: "evm_setNextBlockTimestamp"/);
+  assert.match(source, /Number\(current\.timestamp\) \+ seconds/);
+  assert.doesNotMatch(source, /method: "evm_increaseTime"/);
 });
 
 test("newly matured oracle history records a fresh observation", () => {
