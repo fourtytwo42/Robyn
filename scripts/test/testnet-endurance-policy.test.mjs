@@ -14,6 +14,7 @@ import {
   enduranceGraduationPrincipalReserveWei,
   diskHeadroomPass,
   enduranceCoverageFailures,
+  dueStreamClaimMinutes,
   dueCount,
   dueLaunchCount,
   enduranceRelevantFiringAlerts,
@@ -22,6 +23,7 @@ import {
   isApprovedTestnetRpcUrl,
   isRetryablePublicRpcError,
   normalizeFeeEnvelope,
+  missedStreamClaimBeforeCompletion,
   percentile,
   processContinuityFailures,
   reconcileReleaseIdentity,
@@ -415,6 +417,49 @@ test("final endurance coverage requires the schema-16 accelerated 30-minute life
     /endurance launch 0 did not graduate/,
   );
 });
+test("stream checkpoints use chain time and fail before a completed stream is drained", () => {
+  assert.deepEqual(
+    dueStreamClaimMinutes({
+      startedAtChainSeconds: 1_000,
+      currentChainSeconds: 1_299,
+      claimedMinutes: [1, 3],
+    }),
+    [],
+  );
+  assert.deepEqual(
+    dueStreamClaimMinutes({
+      startedAtChainSeconds: 1_000,
+      currentChainSeconds: 1_300,
+      claimedMinutes: [1, 3],
+    }),
+    [5],
+  );
+  assert.deepEqual(
+    dueStreamClaimMinutes({
+      startedAtChainSeconds: 1_000,
+      currentChainSeconds: 1_600,
+      claimedMinutes: [1, 3, 5, 9],
+    }),
+    [10],
+  );
+  assert.equal(
+    missedStreamClaimBeforeCompletion({
+      completionAtChainSeconds: 1_600,
+      currentChainSeconds: 1_599,
+      claimedMinutes: [1, 3, 5],
+    }),
+    undefined,
+  );
+  assert.equal(
+    missedStreamClaimBeforeCompletion({
+      completionAtChainSeconds: 1_600,
+      currentChainSeconds: 1_600,
+      claimedMinutes: [1, 3, 5],
+    }),
+    9,
+  );
+});
+
 test("transaction funding includes dynamic EIP-1559 fee headroom", () => {
   assert.equal(
     transactionFundingTarget({

@@ -1,5 +1,52 @@
 # Project Memory
 
+### 2026-07-31 - Run 07 invalidated; chain-time stream scheduler remediation
+
+- Run `schema16-30m-812b914-07` reached 1,800.118 healthy seconds but did
+  not pass. Its final gate lacked the nine-minute and completed ten-minute
+  stream claims. The one-shot service is stopped with no restart.
+- All 284 submitted transaction hashes have successful receipts, four expected
+  failures have no hashes, and there are zero ambiguous submissions. Evidence
+  is checksum-sealed under the run directory. Never replay these transactions.
+- Root cause is runner-only: long workload batches delayed healthy-time-based
+  claim scheduling until the onchain stream had completed. The five-minute
+  claim then withdrew the remaining vested amount, leaving nothing for the
+  nine- and ten-minute checkpoints.
+- The candidate fix derives the schedule from contract and chain timestamps,
+  creates a dedicated final stream after required fee-maintenance coverage,
+  suspends additional settlements during the probe, interleaves checks between
+  heavy actions, and persists final-validation failures as terminal state.
+- Focused policy tests pass. Protected recovery retained the three graduated
+  launches and recovered `0.007795871060746093 ETH` through 39 confirmed,
+  journaled transactions.
+- The corrected candidate passes the complete repository suite: 369 Foundry
+  tests passed, zero failed, and one protected Mainnet-fork test remained
+  intentionally skipped. Formatting, lint, typecheck, Anvil smoke, invariants,
+  secret, dependency, license, and reviewed static-analysis gates pass.
+- Follow-up: freeze, push, reproducibly build, and promote a new exact release,
+  then start a fresh 30-minute run with a new identity and inspect it near 10,
+  20, and 30 minutes.
+
+### 2026-07-31 - Run 07 start record (superseded by invalidation above)
+
+- Release `812b9149a7f658115f915874faff621d59ef4bbe` is pushed to
+  `origin/main`, reproducible, promoted, served, and verified 177/177 against
+  unchanged Schema-16 contracts.
+- Fresh run `schema16-30m-812b914-07` has a new encrypted 100-wallet identity,
+  empty journals, target `1,800` uninterrupted healthy seconds, and a static
+  one-shot service with zero restarts.
+- Fixed-coverage preflight passed with `0.052439712586825919 ETH` available,
+  `0.048275530303030306 ETH` required, and `0.004164182283795613 ETH` surplus
+  while preserving the fixed reserve.
+- Actor funding confirmed 39 transactions. The run is waiting through governed
+  Public activation before two readiness samples start the 30-minute clock. It
+  has no terminal failure.
+- Follow-up: monitor activation and the uninterrupted clock. On pass, pause
+  launches, reconcile, rebuild, complete browser acceptance, seal evidence,
+  and remove the service. Never replay run 06 or earlier run hashes. Mainnet
+  remains unauthorized.
+
+
 
 ### 2026-07-31 - Run 06 operator-aborted; 30-minute replacement required
 

@@ -51,16 +51,17 @@ export const ENDURANCE_LAUNCH_THRESHOLDS_SECONDS = [
 ];
 export const ENDURANCE_GRADUATION_THRESHOLDS_SECONDS = [
   6 * 60,
-  12 * 60,
-  18 * 60,
+  11 * 60,
+  16 * 60,
 ];
 export const ENDURANCE_CREATOR_SPLIT_SECONDS = 10 * 60;
 export const ENDURANCE_CREATOR_CLAIM_SECONDS = 24 * 60;
-export const ENDURANCE_STREAM_START_DEADLINE_SECONDS = 12 * 60;
+export const ENDURANCE_STREAM_START_DEADLINE_SECONDS = 20 * 60;
+export const ENDURANCE_STREAM_CLAIM_MINUTES = Object.freeze([1, 3, 5, 9, 10]);
 export const ENDURANCE_ADVANCED_COVERAGE_THRESHOLDS_SECONDS = [
   8 * 60,
-  14 * 60,
-  20 * 60,
+  13 * 60,
+  16 * 60,
 ];
 export const ENDURANCE_RESERVE_WEI = 1_500_000_000_000_000n;
 export const ENDURANCE_L1_DATA_FEE_RESERVE_WEI = 25_000_000_000_000n;
@@ -118,6 +119,49 @@ export function rewardClaimIndexes(rewardCount) {
     throw new Error("rewardCount must be a non-negative safe integer");
   }
   return Array.from({ length: rewardCount }, (_, index) => BigInt(index));
+}
+
+export function dueStreamClaimMinutes({
+  startedAtChainSeconds,
+  currentChainSeconds,
+  claimedMinutes = [],
+}) {
+  if (
+    !Number.isSafeInteger(startedAtChainSeconds) ||
+    startedAtChainSeconds < 0 ||
+    !Number.isSafeInteger(currentChainSeconds) ||
+    currentChainSeconds < startedAtChainSeconds ||
+    !Array.isArray(claimedMinutes)
+  ) {
+    throw new Error("Stream claim timing values are invalid");
+  }
+  const claimed = new Set(claimedMinutes);
+  return ENDURANCE_STREAM_CLAIM_MINUTES.filter(
+    (minute) =>
+      !claimed.has(minute) &&
+      currentChainSeconds - startedAtChainSeconds >= minute * 60,
+  );
+}
+
+export function missedStreamClaimBeforeCompletion({
+  completionAtChainSeconds,
+  currentChainSeconds,
+  claimedMinutes = [],
+}) {
+  if (
+    !Number.isSafeInteger(completionAtChainSeconds) ||
+    completionAtChainSeconds < 0 ||
+    !Number.isSafeInteger(currentChainSeconds) ||
+    currentChainSeconds < 0 ||
+    !Array.isArray(claimedMinutes)
+  ) {
+    throw new Error("Stream completion timing values are invalid");
+  }
+  if (currentChainSeconds < completionAtChainSeconds) return undefined;
+  const claimed = new Set(claimedMinutes);
+  return ENDURANCE_STREAM_CLAIM_MINUTES.find(
+    (minute) => minute < 10 && !claimed.has(minute),
+  );
 }
 
 function ceilDiv(value, divisor) {

@@ -51,6 +51,7 @@ import {
   diskHeadroomPass,
   dueCount,
   dueLaunchCount,
+  dueStreamClaimMinutes,
   enduranceCoverageFailures,
   enduranceGraduationPrincipalReserveWei,
   enduranceSamplePassed,
@@ -71,6 +72,7 @@ import {
   ENDURANCE_WRITE_INTERVAL_SECONDS,
   enduranceRelevantFiringAlerts,
   isRetryablePublicRpcError,
+  missedStreamClaimBeforeCompletion,
   isApprovedTestnetRpcUrl,
   normalizeFeeEnvelope,
   percentile,
@@ -1292,7 +1294,13 @@ async function maintainGraduatedFees(account, launch, cycle) {
   saveState();
 }
 
-async function runGraduatedTrade(account, launch, cycle, value) {
+async function runGraduatedTrade(
+  account,
+  launch,
+  cycle,
+  value,
+  { maintainFees = true } = {},
+) {
   const [quoted] = await publicClient.readContract({
     address: manifest.contracts.assetRouter,
     abi: assetRouterAbi,
@@ -1362,7 +1370,7 @@ async function runGraduatedTrade(account, launch, cycle, value) {
       ],
     );
   }
-  await maintainGraduatedFees(account, launch, cycle);
+  if (maintainFees) await maintainGraduatedFees(account, launch, cycle);
 }
 
 async function runWriteCycle(cycle) {
@@ -1377,7 +1385,9 @@ async function runWriteCycle(cycle) {
     functionName: "graduated",
   });
   if (graduated) {
-    await runGraduatedTrade(account, launch, cycle, value);
+    await runGraduatedTrade(account, launch, cycle, value, {
+      maintainFees: state.streamSeeded !== true,
+    });
     await claimEligible(account, launch, cycle);
     state.writeCycleCount = cycle + 1;
     saveState();
@@ -1833,7 +1843,7 @@ async function maybeCreatorClaimCoverage() {
 
 async function maybeStreamProbe() {
   const launch = state.enduranceLaunches[0];
-  if (!launch || !state.advancedCoverage?.universalComplete) return;
+  if (!launch || state.streamSeeded !== true) return;
   const holder = accounts[0];
   const creator = accounts[40];
   const dao = accounts[0];
@@ -1872,16 +1882,101 @@ async function maybeStreamProbe() {
       }
       return;
     }
+    const holderStreams = await Promise.all(
+      rewardClaimIndexes(rewardCount).map((index) =>
+        publicClient.readContract({
+          address: launch.token,
+          abi: tokenAbi,
+          functionName: "rewardStream",
+          args: [index],
+        }),
+      ),
+    );
+    const [holderDuration, creatorDuration, daoDuration, creatorStream, daoFinish] =
+      await Promise.all([
+        publicClient.readContract({
+          address: launch.token,
+          abi: tokenAbi,
+          functionName: "REWARD_STREAM_DURATION",
+        }),
+        publicClient.readContract({
+          address: manifest.contracts.protocolFeeRouter,
+          abi: feeRouterAbi,
+          functionName: "CREATOR_REWARD_STREAM_DURATION",
+        }),
+        publicClient.readContract({
+          address: manifest.contracts.daoToken,
+          abi: daoAbi,
+          functionName: "REWARD_STREAM_DURATION",
+        }),
+        publicClient.readContract({
+          address: manifest.contracts.protocolFeeRouter,
+          abi: feeRouterAbi,
+          functionName: "creatorRewardStream",
+          args: [launch.token, creator.address],
+        }),
+        publicClient.readContract({
+          address: manifest.contracts.daoToken,
+          abi: daoAbi,
+          functionName: "periodFinish",
+        }),
+      ]);
+    const activeHolderFinishes = holderStreams
+      .map((stream, index) => ({
+        finish: stream.periodFinish,
+        amount: holderAmounts[index],
+      }))
+      .filter(({ finish, amount }) => finish > 0n && amount > 0n)
+      .map(({ finish }) => finish);
+    if (
+      activeHolderFinishes.length === 0 ||
+      creatorStream.streamEnd === 0n ||
+      daoFinish === 0n
+    ) {
+      throw new Error("Accelerated stream schedule could not be derived");
+    }
+    const starts = [
+      ...activeHolderFinishes.map((finish) => finish - holderDuration),
+      creatorStream.streamEnd - creatorDuration,
+      daoFinish - daoDuration,
+    ];
+    const finishes = [
+      ...activeHolderFinishes,
+      creatorStream.streamEnd,
+      daoFinish,
+    ];
     state.streamProbe = {
       startedHealthySeconds: state.healthySeconds,
       startedAt: new Date().toISOString(),
+      startedAtChainSeconds: Number(
+        starts.reduce((latest, value) => (value > latest ? value : latest)),
+      ),
+      completionAtChainSeconds: Number(
+        finishes.reduce((latest, value) => (value > latest ? value : latest)),
+      ),
       claims: [],
     };
     saveState();
   }
-  for (const minute of [1, 3, 5, 9, 10]) {
-    if (state.streamProbe.claims.includes(minute)) continue;
-    if (state.healthySeconds - state.streamProbe.startedHealthySeconds < minute * 60) continue;
+  const currentChainSeconds = Number(
+    (await publicClient.getBlock({ blockTag: "latest" })).timestamp,
+  );
+  const missedMinute = missedStreamClaimBeforeCompletion({
+    completionAtChainSeconds: state.streamProbe.completionAtChainSeconds,
+    currentChainSeconds,
+    claimedMinutes: state.streamProbe.claims,
+  });
+  if (missedMinute !== undefined) {
+    throw new Error(
+      `Accelerated stream minute ${missedMinute} was not claimed before completion`,
+    );
+  }
+  const dueMinutes = dueStreamClaimMinutes({
+    startedAtChainSeconds: state.streamProbe.startedAtChainSeconds,
+    currentChainSeconds,
+    claimedMinutes: state.streamProbe.claims,
+  });
+  for (const minute of dueMinutes) {
     const currentHolder = await Promise.all(
       rewardClaimIndexes(rewardCount).map((index) =>
         publicClient.readContract({
@@ -1892,7 +1987,9 @@ async function maybeStreamProbe() {
         }),
       ),
     );
-    if (currentHolder.every((amount) => amount === 0n)) return;
+    if (currentHolder.every((amount) => amount === 0n)) {
+      throw new Error(`Accelerated holder stream minute ${minute} is not claimable`);
+    }
     const currentCreator = await publicClient.readContract({
       address: manifest.contracts.protocolFeeRouter,
       abi: feeRouterAbi,
@@ -1905,7 +2002,11 @@ async function maybeStreamProbe() {
       functionName: "claimableRewardOf",
       args: [dao.address],
     });
-    if (currentCreator === 0n || currentDao === 0n) return;
+    if (currentCreator === 0n || currentDao === 0n) {
+      throw new Error(
+        `Accelerated creator or DAO stream minute ${minute} is not claimable`,
+      );
+    }
     await contractTransaction(
       `endurance-stream-claim-${minute}-holder`,
       holder,
@@ -1943,6 +2044,7 @@ async function maybeAdvancedCoverage() {
       state.advancedCoverage.firstFeesMaintained = true;
       saveState();
     }
+    await maybeStreamProbe();
   }
   const second = state.enduranceLaunches[1];
   if (second && state.healthySeconds >= ENDURANCE_ADVANCED_COVERAGE_THRESHOLDS_SECONDS[1]) {
@@ -1952,6 +2054,7 @@ async function maybeAdvancedCoverage() {
       state.advancedCoverage.secondFeesMaintained = true;
       saveState();
     }
+    await maybeStreamProbe();
   }
   const third = state.enduranceLaunches[2];
   if (third && state.healthySeconds >= ENDURANCE_ADVANCED_COVERAGE_THRESHOLDS_SECONDS[2]) {
@@ -1960,6 +2063,12 @@ async function maybeAdvancedCoverage() {
       state.advancedCoverage.thirdFeesMaintained = true;
       saveState();
     }
+    if (!state.streamSeeded) {
+      await maintainGraduatedFees(accounts[99], first, 6018);
+      state.streamSeeded = true;
+      saveState();
+    }
+    await maybeStreamProbe();
   }
   await maybeCreatorSplitUpdate();
   await maybeStreamProbe();
@@ -2619,21 +2728,29 @@ async function sample({ readiness = false } = {}) {
 }
 
 async function runDueWork() {
+  await maybeStreamProbe();
   const launchDue = dueLaunchCount(state.healthySeconds);
   while (state.enduranceLaunches.length < launchDue) {
     await createEnduranceLaunch(state.enduranceLaunches.length);
+    await maybeStreamProbe();
   }
   await maybeGraduate();
+  await maybeStreamProbe();
   const writeDue = dueCount(state.healthySeconds, writeIntervalSeconds);
   while (state.writeCycleCount < writeDue) {
     await runWriteCycle(state.writeCycleCount);
+    await maybeStreamProbe();
   }
   await maybePreGraduationCoverage();
+  await maybeStreamProbe();
   await maybeAdvancedCoverage();
+  await maybeStreamProbe();
   await advanceGovernance();
+  await maybeStreamProbe();
   const reviewDue = dueCount(state.healthySeconds, reviewIntervalSeconds);
   while (state.reviewCount < reviewDue) {
     await runReview(state.reviewCount);
+    await maybeStreamProbe();
   }
 }
 
@@ -2773,8 +2890,12 @@ while (!stopping && !state.completed && !state.failed) {
     !state.workloadFailure &&
     !state.paused
   ) {
-    await runReview(state.reviewCount);
-    finalize();
+    try {
+      await runReview(state.reviewCount);
+      finalize();
+    } catch (error) {
+      pauseForWorkloadFailure(error);
+    }
     break;
   }
   const remaining = sampleIntervalSeconds * 1000 - (Date.now() - began);
