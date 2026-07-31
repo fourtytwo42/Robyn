@@ -52,7 +52,7 @@ export function guardianControlMessage({
   purpose,
 }) {
   return [
-    "Robyn Schema-14 guardian control proof",
+    "Robyn Schema-16 guardian control proof",
     `chainId:${chainId}`,
     `releaseSha:${requireReleaseSha(releaseSha).slice(2)}`,
     `deploymentManifestHash:${requireHash(

@@ -34,7 +34,7 @@ const allowBondingHistory = option("allow-bonding-history", "false") === "true";
 const allowIncompleteHistory =
   option("allow-incomplete-history", "false") === "true";
 const manifestPath = resolve(
-  option("manifest", "deployments/46630-v4-schema15.json"),
+  option("manifest", "deployments/46630-v4-schema16.json"),
 );
 const rpcUrl = option("rpc-url", "http://127.0.0.1:18548");
 const outputPath = resolve(
@@ -76,8 +76,8 @@ function atomicWrite(path, value) {
 }
 
 const manifest = readJson(manifestPath);
-if (manifest.schemaVersion !== 15 || manifest.chainId !== 46630) {
-  throw new Error("Funding recovery requires the Schema-15 Testnet manifest");
+if (manifest.schemaVersion !== 16 || manifest.chainId !== 46630) {
+  throw new Error("Funding recovery requires the Schema-16 Testnet manifest");
 }
 const campaignState = readJson(join(stateDir, "state.json"));
 const failedRun = readJson(runStatePath);

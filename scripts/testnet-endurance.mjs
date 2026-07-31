@@ -88,7 +88,7 @@ const releaseManifest = JSON.parse(
 );
 const manifestPath = resolve(
   process.env.ROBYN_ENDURANCE_MANIFEST ??
-    join(releaseRoot, "deployments", "46630-v4-schema15.json"),
+    join(releaseRoot, "deployments", "46630-v4-schema16.json"),
 );
 const manifest = assertSecurityRemediationManifest(
   JSON.parse(readFileSync(manifestPath, "utf8")),
@@ -545,7 +545,7 @@ async function prepareMetadata(account, index) {
       mediaId: media.body.data.media_id,
       name,
       symbol,
-      description: `Automated two-hour schema-15 accelerated endurance launch ${index + 1}.`,
+      description: `Automated two-hour schema-16 accelerated endurance launch ${index + 1}.`,
       campaignId: runId,
       releaseSha: releaseManifest.gitSha,
     }),

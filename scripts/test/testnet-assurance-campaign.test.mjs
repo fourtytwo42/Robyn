@@ -105,9 +105,9 @@ test("weighted funding tree preserves distinct wallet budgets and edge costs", (
   );
 });
 
-test("eight baskets cover every schema-15 route and all route classes", () => {
+test("eight baskets cover every schema-16 route and all route classes", () => {
   const manifest = {
-    schemaVersion: 15,
+    schemaVersion: 16,
     chainId: 46630,
     launchControl: { initialMode: "Paused" },
     graduationProfiles: {

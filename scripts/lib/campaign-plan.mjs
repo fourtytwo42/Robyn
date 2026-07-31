@@ -73,9 +73,9 @@ export function basketConversionActorIndex(launchIndex, legIndex) {
 }
 
 export function assertSecurityRemediationManifest(manifest) {
-  if (manifest?.schemaVersion !== 15 || manifest?.chainId !== 46630) {
+  if (manifest?.schemaVersion !== 16 || manifest?.chainId !== 46630) {
     throw new Error(
-      "Campaign requires a schema-15 accelerated-testnet v4-only chain-46630 manifest",
+      "Campaign requires a schema-16 accelerated-testnet v4-only chain-46630 manifest",
     );
   }
   if (
@@ -86,7 +86,7 @@ export function assertSecurityRemediationManifest(manifest) {
       "1000000000000000"
   ) {
     throw new Error(
-      "Schema-15 campaign manifest must freeze the Paused canary profile",
+      "Schema-16 campaign manifest must freeze the Paused canary profile",
     );
   }
   if (
@@ -147,7 +147,7 @@ export function launchBasketPlan(manifest) {
   ) {
     throw new Error("Campaign requires ten v4 routes and one WETH route");
   }
-  // Eight three-leg launches still exercise 24 conversions, but schema-15 has
+  // Eight three-leg launches still exercise 24 conversions, but schema-16 has
   // eleven individually qualified assets. Cycle deterministically after every
   // asset has appeared once so every route class is covered without inventing
   // extra assets.

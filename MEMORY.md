@@ -1,5 +1,25 @@
 # Project Memory
 
+### 2026-07-31 - Schema-16 differential and operational tooling implemented
+
+- Context: Schema-16 contract fast/deep qualification was green, but the
+  formal Schema-15-versus-16 state differential and Schema-16 Testnet tooling
+  still blocked promotion.
+- Decision: Added a protected dual-Anvil differential at pinned Testnet state
+  using baseline `5899a5f` and the exact pushed candidate. It deploys both full
+  stacks, runs identical eight-launch lifecycle campaigns through governance
+  and claims, captures normalized events, revert selectors, balances,
+  liabilities, supplies, profiles, rewards, and locked principal, and fails on
+  any unexplained difference.
+- Files: Schema-16 deployment, rehearsal, verifier, recovery, release,
+  endurance, funding-recovery, Mainnet rehearsal/funding, differential, and
+  isolation tooling under `scripts/`; active manifest is
+  `deployments/46630-v4-schema16.json`.
+- Verification: Script syntax, formatting, and 123 script tests pass.
+- Follow-up: Freeze and push the tooling candidate, run the dual-Anvil
+  differential, then rerun fast/deep, security, ABI/storage, and reproducible
+  build gates before any Testnet deployment. Testnet remains online and Paused.
+
 ### 2026-07-31 - Schema-16 deep torture and pre-Testnet review passed
 
 - Candidate: Exact pushed SHA

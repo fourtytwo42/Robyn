@@ -11,7 +11,7 @@ const policyPath = resolve(
 const policy = JSON.parse(await readFile(policyPath, "utf8"));
 const failures = [];
 
-if (policy.schemaVersion !== 14) failures.push("schemaVersion must be 14");
+if (policy.schemaVersion !== 16) failures.push("schemaVersion must be 16");
 if (policy.chainId !== 4663) failures.push("chainId must be 4663");
 if (policy.status !== "candidate-only") {
   failures.push("support policy must remain candidate-only before deployment");

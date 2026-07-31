@@ -42,8 +42,14 @@ test("broadcast sequence cannot leave isolated Anvil", () => {
 
 test("evidence validator enforces action and coverage gates", () => {
   assert.match(validator, /missingActions\.length === 0/);
-  assert.match(validator, /linePercent >= 90/);
-  assert.match(validator, /branchPercent >= 80/);
-  assert.match(validator, /!source\.includes\("\/src\/devnet\/"\)/);
-  assert.match(validator, /!source\.includes\("\/src\/testnet\/"\)/);
+  assert.match(
+    validator,
+    /linePercent >= scope\.thresholds\.aggregateLinePercent/,
+  );
+  assert.match(
+    validator,
+    /branchPercent >= scope\.thresholds\.aggregateBranchPercent/,
+  );
+  assert.match(validator, /missingSources\.length === 0/);
+  assert.match(validator, /retiredCounted\.length === 0/);
 });

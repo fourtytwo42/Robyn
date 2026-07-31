@@ -29,8 +29,8 @@ const [manifest, governance] = await Promise.all([
   readFile(manifestPath, "utf8").then(JSON.parse),
   readFile(governanceReportPath, "utf8").then(JSON.parse),
 ]);
-if (manifest.schemaVersion !== 14 || Number(manifest.chainId) !== 4663) {
-  throw new Error("deployment manifest must be Schema-14 on chain 4663");
+if (manifest.schemaVersion !== 16 || Number(manifest.chainId) !== 4663) {
+  throw new Error("deployment manifest must be Schema-16 on chain 4663");
 }
 const safe = getAddress(
   manifest.contracts?.safe ?? manifest.guardian ?? governance.predictedSafe,
