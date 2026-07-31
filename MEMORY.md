@@ -1,5 +1,40 @@
 # Project Memory
 
+### 2026-07-31 - Fresh Schema-16 Testnet deployment completed Paused
+
+- Candidate: Exact pushed contract/tooling SHA
+  `00c15c3c1879f33349297d9d3f0c0618d08156d9` passed fast seed `160004`,
+  deep seed `160005`, security analysis, reproducible builds, and the explicit
+  Schema-15/16 ABI and semantic-storage comparison. The deep gate passed in
+  3,916 seconds with all 20 protocol and 20 v4 invariant seeds. This SHA was
+  fast-forwarded through a clean integration worktree to `origin/main`.
+- Rehearsal: The isolated chain-46630 deployment rehearsal passed at fork
+  block `95507242`: 84 transactions, 57,629,999 gas, 25% headroom, and a
+  `0.002292772949411880 ETH` requirement including the `0.0015 ETH` reserve.
+- Deployment: Fresh Schema-16 contracts were deployed Paused from block
+  `95508008`. The protected deployer nonce advanced exactly from 2017 to 2101;
+  all 84 transactions confirmed. The manifest is
+  `deployments/46630-v4-schema16.json`, SHA-256
+  `603874485daacb9ff533620f8d8f3dde6216ed2346777b87c50569d970447c50`.
+  The predecessor Schema-15 manifest was copied and checksummed under the
+  protected Schema-16 evidence tree; no launches or journals were migrated.
+- Verification: All 177 runtime, receipt, role, binding, profile, route, and
+  Paused-mode checks passed. The protected deployer retained
+  `0.010093778529112024 ETH`, safely above the reserve. Evidence is under
+  `/home/hendo420/robyn-evidence/schema16-mainnet-go/testnet-deployment/00c15c3/20260731T051059Z/`.
+- Tooling correction: Post-deployment inspection found only a stale verifier
+  label saying `v15` while the condition correctly required manifest schema
+  16. The label is corrected to `v16` with a focused regression test; live
+  verification passes. Contract bytecode and deployed state are unchanged.
+- Follow-up: Commit and push the Schema-16 manifest, corrected verifier label,
+  regression test, and this checkpoint. Because that documentation/tooling
+  commit creates a new application release SHA, rebuild and promote only its
+  exact reproducible artifact. Then create a fresh
+  `robyn_testnet_schema16_*` database, rebuild from block `95508008`, and run
+  isolated restore, one-fault/RPC drills, a fresh uninterrupted two-hour
+  endurance campaign, exact reconciliation, empty-database rebuild, and
+  browser acceptance. Mainnet remains unauthorized.
+
 ### 2026-07-31 - Schema-15/16 full behavioral differential passed
 
 - Candidate: Exact pushed SHA
@@ -6068,17 +6103,13 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Complete the formal dual-Anvil Schema-15-versus-16 differential for
-  deterministic launch inputs, events, configuration/profile hashes, revert
-  selectors, balances, liabilities, supplies, phases, fees, and rewards.
-  CREATE2 addresses may differ only where creation bytecode makes the address
-  bytecode-dependent.
-- Version and test Schema-16 Testnet deployment, verifier, recovery, release,
-  and manifest tooling. Never point Schema-16 at a Schema-15 manifest or
-  import Schema-15 launches/journals.
-- Only after tooling verification, deploy fresh Schema-16 Testnet contracts
-  Paused, rebuild an empty index, and run recovery, uninterrupted two-hour
-  endurance, exact reconciliation, and browser acceptance.
+- Commit and push the fresh Schema-16 Testnet manifest and corrected verifier
+  label, then reproducibly build and promote only that exact release. Create a
+  fresh `robyn_testnet_schema16_*` database and rebuild it exclusively from
+  deployment block `95508008`; never import Schema-15 launches or journals.
+- Complete Schema-16 isolated restore, all one-fault and RPC failover drills,
+  a fresh uninterrupted two-hour endurance campaign, exact reconciliation,
+  empty-database canonical rebuild, and desktop/mobile browser acceptance.
 - Commit, build, and promote the governed pre-clock activation fix. Recover
   only the 38 setup transactions from failed run
   `schema15-accelerated-f66c4e1-01` through its new durable recovery journal,

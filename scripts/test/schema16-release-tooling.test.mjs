@@ -41,6 +41,7 @@ test("Schema-16 verifier checks live mode, roles, and profile", async () => {
     "utf8",
   );
   assert.match(source, /RobynV4LaunchCoordinatorV6/);
+  assert.match(source, /deployment manifest schema is v16/);
   assert.match(source, /coordinator remains Paused/);
   assert.match(source, /Timelock governs launch activation/);
   assert.match(source, /Timelock governs graduation profiles/);

@@ -68,7 +68,7 @@ if (failures.length) {
 
 check((await client.getChainId()) === 46630, "RPC chain ID is 46630");
 check(manifest.chainId === 46630, "manifest chain ID is 46630");
-check(manifest.schemaVersion === 16, "deployment manifest schema is v15");
+check(manifest.schemaVersion === 16, "deployment manifest schema is v16");
 check(
   manifest.liquidityVenue === "uniswap-v4",
   "manifest selects Uniswap v4",
