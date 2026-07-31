@@ -1,5 +1,29 @@
 # Project Memory
 
+### 2026-07-31 - Schema-16 Mainnet read-equivalence verifier corrected
+
+- Context: The Mainnet RPC acceptance script treated the valid JSON-RPC result
+  `eth_syncing: false` as a command failure because `jq -e` returns false for
+  the JSON value `false`. After that was corrected, the comparison exposed a
+  provider-only difference: Robinhood public RPC supplies `blockTimestamp=0x0`
+  on log objects while the LAN Nitro node supplies the real timestamp.
+- Fix: JSON-RPC responses now pass when they contain `result` and no `error`,
+  including a false result. Log comparison removes only the non-consensus
+  `blockTimestamp` enrichment and sorts by canonical block, transaction, and
+  log position. All other log fields and the block, transaction, receipt,
+  balance, code, call, fee-history, and gas-estimate comparisons remain exact.
+- Verification: Focused Mainnet rehearsal tests and shell validation pass. The
+  one-shot read-equivalence gate passed against LAN
+  `192.168.50.173:8547`: chain 4663, `eth_syncing=false`, local head 23926299,
+  public head 23926295, canonical common-block agreement, zero transaction
+  broadcasts. Checksummed evidence is under
+  `/home/hendo420/robyn-evidence/schema16-mainnet-go/rpc-read-acceptance/20260731T052859Z/`.
+- Evidence policy: Deep run seed `160009` at SHA `4bab789` was stopped for this
+  release correction and sealed as operator-aborted. It is not a pass.
+- Follow-up: Commit and push the correction, then run fresh exact-SHA fast,
+  deep, security, ABI/storage, and reproducible-build gates before promoting
+  the Schema-16 Testnet application release.
+
 ### 2026-07-31 - Schema-16 Mainnet evidence identity and route probe
 
 - Context: Post-deployment review found the active Schema-16 Mainnet route,
@@ -1791,6 +1815,18 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-07-31: Fresh Schema-16 Testnet contracts are deployed Paused from block
+  `95508008` and verified 177/177, but the application has not been promoted
+  and no Schema-16 database has been created. Mainnet read equivalence now
+  passes after correcting false-result handling and normalizing only the
+  provider-specific log timestamp enrichment. Freeze this correction in a
+  clean pushed SHA, then rerun exact-SHA fast/deep torture, security,
+  ABI/storage, and reproducible builds. Only after those pass may the exact
+  application artifact be promoted to a fresh
+  `robyn_testnet_schema16_95508008` database for recovery, two-hour endurance,
+  reconciliation, and browser gates. Protected Safe owners and RDAO allocation
+  inputs remain missing. No bridge or Mainnet transaction is authorized.
 
 - 2026-07-31: Exact Schema-16 contract candidate `185c363` passed the final
   fast and complete deep Devnet torture gates, security audit, and two-build

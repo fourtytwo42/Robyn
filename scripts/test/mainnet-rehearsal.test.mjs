@@ -122,3 +122,19 @@ test("all active Mainnet evidence and fork surfaces identify Schema 16", async (
   );
   assert.match(fork, /contract RobinhoodMainnetSchema16ForkTest/);
 });
+
+test("Mainnet RPC acceptance treats eth_syncing false as a valid result", async () => {
+  const source = await readFile(
+    "scripts/verify-robinhood-mainnet-rpc.sh",
+    "utf8",
+  );
+  assert.match(source, /has\("result"\)/);
+  assert.match(source, /jq -c '\.result'/);
+  assert.doesNotMatch(source, /jq -ce '\.result'/);
+  assert.match(source, /"\$syncing" == false/);
+  assert.match(source, /del\(\.blockTimestamp\)/);
+  assert.match(
+    source,
+    /sort_by\(\.blockNumber, \.transactionIndex, \.logIndex\)/,
+  );
+});

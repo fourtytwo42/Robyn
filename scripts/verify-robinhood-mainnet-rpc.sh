@@ -13,14 +13,29 @@ rpc() {
 }
 
 result() {
-  rpc "$1" "$2" "$3" | jq -ce '.result'
+  local response
+  response="$(rpc "$1" "$2" "$3")"
+  jq -e 'has("result") and (has("error") | not)' <<<"$response" \
+    >/dev/null
+  jq -c '.result' <<<"$response"
+}
+
+normalize_result() {
+  local label=$1
+  if [[ "$label" == logs ]]; then
+    jq -cS \
+      'map(del(.blockTimestamp)) |
+       sort_by(.blockNumber, .transactionIndex, .logIndex)'
+  else
+    jq -cS .
+  fi
 }
 
 compare() {
   local label=$1 method=$2 params=$3
   local local_result public_result
-  local_result=$(result "$LOCAL_RPC" "$method" "$params" | jq -cS .)
-  public_result=$(result "$PUBLIC_RPC" "$method" "$params" | jq -cS .)
+  local_result=$(result "$LOCAL_RPC" "$method" "$params" | normalize_result "$label")
+  public_result=$(result "$PUBLIC_RPC" "$method" "$params" | normalize_result "$label")
   if [[ "$local_result" != "$public_result" ]]; then
     echo "$label mismatch" >&2
     return 1
