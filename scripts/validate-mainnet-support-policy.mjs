@@ -82,7 +82,7 @@ if (failures.length > 0) {
 
 process.stdout.write(
   `${JSON.stringify({
-    schemaVersion: 14,
+    schemaVersion: 16,
     chainId: policy.chainId,
     candidateCount: seen.size,
     defaultEnabled: policy.activationPolicy.defaultEnabled,

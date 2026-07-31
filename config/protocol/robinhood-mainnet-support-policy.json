@@ -18,11 +18,11 @@
   },
   "executionClasses": {
     "canonical-v4-single-hop": {
-      "supportedBySchema14": true,
+      "supportedBySchema16": true,
       "requiresFreshContracts": false
     },
     "direct-native-wrap": {
-      "supportedBySchema14": true,
+      "supportedBySchema16": true,
       "requiresFreshContracts": false
     }
   },

@@ -37,7 +37,7 @@ import { ITestPositionManager } from "./RobynV4NativeProtocol.t.sol";
 
 /// @notice No-broadcast security-remediated rehearsal on a Robinhood mainnet fork.
 /// @dev Uses canonical chain-4663 v4 contracts and rejects synthetic production routes.
-contract RobinhoodMainnetSchema14ForkTest is Test {
+contract RobinhoodMainnetSchema16ForkTest is Test {
     using PoolIdLibrary for PoolKey;
 
     IPoolManager private constant POOL_MANAGER =

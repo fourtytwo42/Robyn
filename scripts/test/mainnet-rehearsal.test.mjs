@@ -91,3 +91,34 @@ test("pool IDs are deterministic and sensitive to route configuration", () => {
   assert.equal(first, second);
   assert.notEqual(first, changed);
 });
+
+test("all active Mainnet evidence and fork surfaces identify Schema 16", async () => {
+  const files = [
+    "scripts/estimate-schema16-mainnet-bridge.mjs",
+    "scripts/measure-schema16-mainnet-funding.mjs",
+    "scripts/verify-mainnet-production-routes.mjs",
+    "scripts/verify-mainnet-governance-deployment.mjs",
+    "scripts/validate-mainnet-support-policy.mjs",
+  ];
+  for (const file of files) {
+    const source = await readFile(file, "utf8");
+    assert.match(source, /schemaVersion: 16/);
+    assert.doesNotMatch(source, /schemaVersion: 14/);
+  }
+  assert.equal(config.schemaVersion, 16);
+  assert.equal(supportPolicy.schemaVersion, 16);
+  assert.equal(
+    supportPolicy.executionClasses["canonical-v4-single-hop"]
+      .supportedBySchema16,
+    true,
+  );
+  assert.equal(
+    supportPolicy.executionClasses["direct-native-wrap"].supportedBySchema16,
+    true,
+  );
+  const fork = await readFile(
+    "packages/contracts/test/RobinhoodMainnetSchema16Fork.t.sol",
+    "utf8",
+  );
+  assert.match(fork, /contract RobinhoodMainnetSchema16ForkTest/);
+});

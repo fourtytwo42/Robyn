@@ -311,7 +311,7 @@ if (allocationPath) {
   }
 }
 const report = {
-  schemaVersion: 14,
+  schemaVersion: 16,
   checkedAt: new Date().toISOString(),
   chainId,
   blockNumber: blockNumber.toString(),

@@ -72,7 +72,7 @@ const result = calculateMainnetFundingGate({
   gasEvidence,
 });
 const report = {
-  schemaVersion: 14,
+  schemaVersion: 16,
   generatedAt: new Date().toISOString(),
   chainIds: { ethereum: ethereumChainId, robinhood: robinhoodChainId },
   deployer,

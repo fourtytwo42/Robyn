@@ -206,7 +206,7 @@ for (const allocation of resolvedAllocations) {
   allocation.balance = balance.toString();
 }
 const report = {
-  schemaVersion: 14,
+  schemaVersion: 16,
   generatedAt: new Date().toISOString(),
   chainId: 4663,
   sourceBlock: blockNumber.toString(),

@@ -1,5 +1,30 @@
 # Project Memory
 
+### 2026-07-31 - Schema-16 Mainnet evidence identity and route probe
+
+- Context: Post-deployment review found the active Schema-16 Mainnet route,
+  governance, bridge, funding, and support-policy generators still stamped
+  report payloads as schema 14; the no-broadcast fork test also retained its
+  Schema-14 filename and contract name.
+- Fix: All active evidence payloads now identify schema 16. The support policy
+  execution classes use `supportedBySchema16`, and the fork rehearsal is
+  `RobinhoodMainnetSchema16ForkTest`. A regression test fails if any active
+  Schema-16 evidence generator reintroduces `schemaVersion: 14`.
+- Verification: The focused 13-test Mainnet rehearsal/funding/governance suite,
+  support-policy validation, formatting, and full Foundry compile pass.
+- Route probe: At Mainnet block `23922591`, the LAN RPC reported chain 4663,
+  `eth_syncing=false`, and all six required routes plus all five optional
+  routes passed current runtime, registry, pool-liquidity, and bidirectional
+  quote checks. This is read-only point-in-time evidence, not the exact fork
+  execution gate or deployment-block qualification.
+- Blocker: The route report remains correctly failed overall because protected
+  `guardian-signers.json` and `rdao-allocation.json` do not exist. Three real
+  Safe owners, address-control proofs, exact five-way 20% allocation, and a
+  two-owner signing rehearsal are still required.
+- Follow-up: Commit and push this correction, then rerun fast and deep torture,
+  security analysis, reproducible builds, and the exact route probe on the
+  resulting SHA. Do not bridge or broadcast any Mainnet transaction.
+
 ### 2026-07-31 - Fresh Schema-16 Testnet deployment completed Paused
 
 - Candidate: Exact pushed contract/tooling SHA
