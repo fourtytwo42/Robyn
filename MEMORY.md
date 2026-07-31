@@ -1860,8 +1860,9 @@ Durable project context lives here. Update this file whenever information should
   receipts are successful, three expected failures have no hashes, launch mode
   is Paused, recovery is complete, and evidence checksums pass. A runner-only
   correction reserves the missing `0.027903030303030306 ETH`, reports actual
-  confirmed graduation state, and is pushed, reproducibly built, and served as
-  exact release `6d9c25049dd03a245ea622f50755811761aa985a`. All 177 deployment
+  confirmed graduation state, and is pushed, reproducibly built, and promoted.
+  Resolve its exact identity from clean `origin/main` and the immutable runtime
+  manifest rather than this self-referential memory entry. All 177 deployment
   checks, full repository tests, accounting, Paused launch mode, and both
   Testnet RPC providers pass. A fresh run needs exactly
   `0.042803030303030306 ETH`; the deployer has
