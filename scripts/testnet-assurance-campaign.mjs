@@ -2225,9 +2225,37 @@ async function governance() {
   const accounts = loadAccounts();
   const daoAbi = artifactAbi("RobynDaoToken");
   const governorAbi = artifactAbi("RobynTestnetGovernor");
+  const timelockAbi = artifactAbi("TimelockController");
   const project = privateKeyToAccount(projectPrivateKey(manifest));
   const memberAmount = 20_000_000n * 10n ** 18n;
   state.governance ??= { proposals: {} };
+  const [votingDelaySeconds, votingPeriodSeconds, timelockSeconds] =
+    await Promise.all([
+      publicClient.readContract({
+        address: manifest.contracts.governor,
+        abi: governorAbi,
+        functionName: "votingDelay",
+      }),
+      publicClient.readContract({
+        address: manifest.contracts.governor,
+        abi: governorAbi,
+        functionName: "votingPeriod",
+      }),
+      publicClient.readContract({
+        address: manifest.contracts.timelock,
+        abi: timelockAbi,
+        functionName: "getMinDelay",
+      }),
+    ]);
+  const expectedGovernanceTiming = manifest.dao.governance;
+  if (
+    Number(votingDelaySeconds) !== expectedGovernanceTiming.votingDelaySeconds ||
+    Number(votingPeriodSeconds) !==
+      expectedGovernanceTiming.votingPeriodSeconds ||
+    Number(timelockSeconds) !== expectedGovernanceTiming.timelockSeconds
+  ) {
+    throw new Error("Deployed governance timing does not match the manifest");
+  }
 
   for (let index = 0; index < 10; index += 1) {
     await contractTransaction(state, `rdao-transfer-${index}`, project, manifest.contracts.daoToken, daoAbi, "transfer", [accounts[index].address, memberAmount]);
@@ -2282,7 +2310,7 @@ async function governance() {
   );
 
   await advanceOrWait(
-    Number(manifest.dao.governance.votingDelaySeconds) + 1,
+    Number(votingDelaySeconds) + 2,
     "Governance voting delay",
   );
   const successfulId = BigInt(state.governance.proposals.successful.id);
@@ -2309,14 +2337,14 @@ async function governance() {
   );
 
   await advanceOrWait(
-    Number(manifest.dao.governance.votingPeriodSeconds) + 1,
+    Number(votingPeriodSeconds) + 2,
     "Governance voting period",
   );
   const queueAccount = privateKeyToAccount(accounts[3].privateKey);
   const successful = state.governance.proposals.successful;
   await contractTransaction(state, "governance-queue-successful", queueAccount, manifest.contracts.governor, governorAbi, "queue", [targets, values, calldatas, successful.descriptionHash]);
   await advanceOrWait(
-    Number(manifest.dao.governance.timelockSeconds) + 1,
+    Number(timelockSeconds) + 2,
     "Governance timelock",
   );
   await contractTransaction(state, "governance-execute-successful", queueAccount, manifest.contracts.governor, governorAbi, "execute", [targets, values, calldatas, successful.descriptionHash]);

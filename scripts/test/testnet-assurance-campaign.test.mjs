@@ -495,13 +495,20 @@ test("governance waits derive from the verified manifest", () => {
     new URL("../testnet-assurance-campaign.mjs", import.meta.url),
     "utf8",
   );
-  for (const field of [
-    "votingDelaySeconds",
-    "votingPeriodSeconds",
-    "timelockSeconds",
-  ]) {
-    assert.match(source, new RegExp(`manifest\\.dao\\.governance\\.${field}`));
-  }
+  assert.match(
+    source,
+    /const expectedGovernanceTiming = manifest\.dao\.governance/,
+  );
+  assert.match(source, /functionName: "votingDelay"/);
+  assert.match(source, /functionName: "votingPeriod"/);
+  assert.match(source, /functionName: "getMinDelay"/);
+  assert.match(
+    source,
+    /Deployed governance timing does not match the manifest/,
+  );
+  assert.match(source, /Number\(votingDelaySeconds\) \+ 2/);
+  assert.match(source, /Number\(votingPeriodSeconds\) \+ 2/);
+  assert.match(source, /Number\(timelockSeconds\) \+ 2/);
   assert.doesNotMatch(
     source,
     /advanceOrWait\((601|1_801), "Governance (voting delay|voting period|timelock)"\)/,
