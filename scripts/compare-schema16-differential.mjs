@@ -63,6 +63,9 @@ function normalize(snapshot) {
     let normalized = value.toLowerCase();
     const opaque = opaqueIdentifiers.find(([identifier]) => identifier === normalized);
     if (opaque) return opaque[1];
+    for (const [identifier, role] of opaqueIdentifiers) {
+      normalized = normalized.replaceAll(identifier.slice(2), role);
+    }
     for (const [address, role] of replacements) {
       normalized = normalized.replaceAll(address, role);
     }

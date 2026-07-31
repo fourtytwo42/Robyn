@@ -24,7 +24,10 @@ test("dual-Anvil differential is exact-SHA, isolated, and evidence sealed", () =
   assert.match(runner, /28547/);
   assert.match(runner, /--fork-block-number "\$fork_block"/);
   assert.match(runner, /start_timestamp=\$\(\(fork_timestamp \+ 1\)\)/);
-  assert.equal((runner.match(/--timestamp "\$start_timestamp"/g) ?? []).length, 2);
+  assert.equal(
+    (runner.match(/--timestamp "\$start_timestamp"/g) ?? []).length,
+    2,
+  );
   assert.match(runner, /anvil_setBlockTimestampInterval 1/);
   assert.match(runner, /git rev-parse '@\{u\}'/);
   assert.match(runner, /schemaVersion=16/);
@@ -36,7 +39,10 @@ test("dual-Anvil differential is exact-SHA, isolated, and evidence sealed", () =
   assert.match(runner, /maximumCurvePurchase\(\)\(uint256\)/);
   assert.match(runner, /--json \| jq -er '\.\[0\]'/);
   assert.match(runner, /gross <= 100000000000000/);
-  assert.match(runner, /for phase in preflight fund launches trading conversions governance claims/);
+  assert.match(
+    runner,
+    /for phase in preflight fund launches trading conversions governance claims/,
+  );
   assert.match(runner, /sha256sum -c SHA256SUMS/);
   assert.doesNotMatch(runner, /MAINNET|4663\b|docker/i);
 });
@@ -51,7 +57,7 @@ test("state capture includes economic, reward, principal, event, and revert pari
     "failureSelectors",
     "getLogs",
   ]) {
-  assert.match(capture, new RegExp(marker));
+    assert.match(capture, new RegExp(marker));
   }
   assert.match(capture, /value\.match\(\/0x\[0-9a-fA-F\]\{8,\}\//);
   assert.match(capture, /seen = new WeakSet\(\)/);
@@ -89,7 +95,9 @@ test("comparator accepts three paths and normalizes logical addresses", () => {
     writeFileSync(
       baseline,
       JSON.stringify({
-        addressBook: { coordinator: "0x1111111111111111111111111111111111111111" },
+        addressBook: {
+          coordinator: "0x1111111111111111111111111111111111111111",
+        },
         fingerprint: "baseline",
         manifestIdentity: { assetRoutes: [] },
         launches: [{ index: 0, poolId: `0x${"11".repeat(32)}` }],
@@ -97,13 +105,16 @@ test("comparator accepts three paths and normalizes logical addresses", () => {
           owner: "0x1111111111111111111111111111111111111111",
           lastUpdateTime: "1000",
           streamEnd: "1060",
+          encoded: `0xdead${"11".repeat(32)}beef`,
         },
       }),
     );
     writeFileSync(
       candidate,
       JSON.stringify({
-        addressBook: { coordinator: "0x2222222222222222222222222222222222222222" },
+        addressBook: {
+          coordinator: "0x2222222222222222222222222222222222222222",
+        },
         fingerprint: "candidate",
         manifestIdentity: { assetRoutes: [] },
         launches: [{ index: 0, poolId: `0x${"22".repeat(32)}` }],
@@ -111,6 +122,7 @@ test("comparator accepts three paths and normalizes logical addresses", () => {
           owner: "0x2222222222222222222222222222222222222222",
           lastUpdateTime: "2000",
           streamEnd: "2060",
+          encoded: `0xdead${"22".repeat(32)}beef`,
         },
       }),
     );
