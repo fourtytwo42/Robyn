@@ -133,7 +133,8 @@ operator="$(cast rpc eth_accounts --rpc-url "$baseline_rpc" | jq -er '.[9]')"
 
 campaign() {
   local command="$1" rpc="$2" manifest="$3" state="$4"
-  node scripts/testnet-assurance-campaign.mjs "$command" \
+  ROBYN_CAMPAIGN_REHEARSAL_KEY_FILE="$key_file" \
+    node scripts/testnet-assurance-campaign.mjs "$command" \
     --campaign "$campaign_id" \
     --manifest "$manifest" \
     --state-dir "$state" \
