@@ -3486,6 +3486,11 @@ Durable project context lives here. Update this file whenever information should
   deployer/factory source lines containing branch sites have nonzero line
   execution counts while every corresponding branch record remains zero.
   The validator now detects and rejects this condition.
+- The isolated official Foundry `1.7.2-nightly` build at signed release commit
+  `160b60260db63ce6204f2ee15764aca3e9ef04fe` was tested without replacing the
+  VM toolchain. Its recent branch-anchor fix raised measured branches only
+  from 26.16% to 27.08% and retained the same six impossible zero-hit source
+  records, so upgrading Foundry alone does not clear the blocker.
 - Non-via-IR coverage is not an alternative yet. Optimizer-disabled compilation
   fails with stack-too-deep in `RobynNativeLaunchFactoryV4`,
   `RobynV4LaunchCoordinatorV6`, and `RobynV4MarketFactory`.
