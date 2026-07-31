@@ -1,5 +1,26 @@
 # Project Memory
 
+### 2026-07-31 - Schema-16 deep torture and pre-Testnet review passed
+
+- Candidate: Exact pushed SHA
+  `185c363d59f468f23da7df3bf0f4f2b3165699ef`.
+- Fast: Seed `160002` passed on the final documented SHA.
+- Deep: Seed `160003` passed in 3,952 seconds. All 20 protocol and 20 v4
+  invariant seeds passed at 1,024 runs/depth 256; 10,000-case fuzzing, the
+  512-wallet/64-launch/100,000-action/50-seed simulation, isolated Anvil
+  broadcast, 41 action obligations, and 90/80 coverage validation passed.
+- Security: `scripts/security-audit.sh` passed with no gitleaks findings,
+  high/critical dependency findings, unresolved high/medium Slither findings,
+  EIP-170 violation, or license-gate failure.
+- Reproducibility: Two clean application and contract builds matched.
+- Evidence:
+  `/home/hendo420/robyn-evidence/devnet-torture/185c363d59f468f23da7df3bf0f4f2b3165699ef/20260731T011144Z-deep/`
+  and `/home/hendo420/robyn-evidence/schema16-pretest/185c363/`.
+- Follow-up: Schema-16 contract qualification is green, but fresh Schema-16
+  Testnet deployment/recovery/reconciliation/browser/endurance tooling still
+  needs to be versioned and verified before any Testnet promotion. No Testnet
+  deployment or Mainnet action occurred.
+
 ### 2026-07-31 - Schema-16 fast torture gate passed
 
 - Candidate: Exact pushed SHA
@@ -1657,6 +1678,13 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-07-31: Exact Schema-16 contract candidate `185c363` passed the final
+  fast and complete deep Devnet torture gates, security audit, and two-build
+  reproducibility comparison. The next ordered work is versioned Schema-16
+  Testnet deployment/recovery tooling, followed by a fresh Paused deployment,
+  recovery, two-hour endurance, reconciliation, and browser acceptance. Do
+  not reuse Schema-15 manifests or journals. No Mainnet action is authorized.
 
 - 2026-07-31: Schema-16 fast gate passed on exact pushed SHA `7902daf`, seed
   `160001`, in 81 seconds with all executable phases and checksum validation
@@ -5192,6 +5220,13 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-31: Exact SHA `185c363`, fast seed `160002` passed. Deep seed
+  `160003` passed in 3,952 seconds with 20 protocol and 20 v4 invariant seeds
+  at 1,024 runs/depth 256, 10,000-case fuzzing, 100,000 actions across 50
+  seeds, isolated broadcast, 41/41 actions, 92.6797% lines, and 80.00%
+  branches. Security audit and reproducible builds passed. Deep evidence:
+  `/home/hendo420/robyn-evidence/devnet-torture/185c363d59f468f23da7df3bf0f4f2b3165699ef/20260731T011144Z-deep/`.
+
 - 2026-07-31: Exact Schema-16 SHA `7902daf`, seed `160001`, fast gate pass in
   81 seconds. All 41 actions, unit/deterministic fuzzing, native and v4
   invariants, economic simulation, isolated Anvil receipts, source-scope
@@ -5977,17 +6012,12 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Commit and push the Schema-16 candidate, rerun fast with a new seed and real
-  action evidence, and preserve its exact coverage report and checksums. Run
-  deep only after fast passes.
-- After both torture tiers pass, repeat internal review and reproducible build
-  gates before any fresh Paused Schema-16 Testnet deployment. Testnet recovery,
-  endurance, reconciliation, browser acceptance, Mainnet fork rehearsal, RPC
-  acceptance, and funding calculation remain later ordered gates.
-- Commit and push the implemented Schema-15 isolated Devnet torture harness,
-  run the mandatory fast tier, preserve exact failing seeds and coverage
-  evidence, resolve every blocking defect without weakening policy, then run
-  the deep tier before any Testnet promotion.
+- Version and test Schema-16 Testnet deployment, verifier, recovery, release,
+  and manifest tooling. Never point Schema-16 at a Schema-15 manifest or
+  import Schema-15 launches/journals.
+- Only after tooling verification, deploy fresh Schema-16 Testnet contracts
+  Paused, rebuild an empty index, and run recovery, uninterrupted two-hour
+  endurance, exact reconciliation, and browser acceptance.
 - Commit, build, and promote the governed pre-clock activation fix. Recover
   only the 38 setup transactions from failed run
   `schema15-accelerated-f66c4e1-01` through its new durable recovery journal,
