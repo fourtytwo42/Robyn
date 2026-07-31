@@ -1,5 +1,32 @@
 # Project Memory
 
+### 2026-07-31 - Focused Schema-16 Testnet acceptance replaces endurance
+
+- Decision: The product owner confirmed that the completed fast/deep Devnet
+  torture gates cover prolonged randomized assurance and replaced the pending
+  Testnet endurance requirement with a focused live Testnet acceptance gate.
+- Run `schema16-30m-a8d54bb-08` never started and submitted zero
+  transactions. It is sealed as operator-aborted/incomplete with reason
+  `user_replaced_endurance_with_focused_testnet_acceptance`; its static service
+  and heartbeat monitor were removed.
+- Exact served release `a8d54bb125d091be0cea010262a68a2baaceda30`
+  passed focused live acceptance on chain 46630: all 284 prior campaign
+  receipts reverified successful, all 11 routes were ready and quoted in both
+  directions, completed holder/creator/DAO claims confirmed once each, and
+  deployment verification passed 177/177.
+- Final health was green with healthy ingestion, projection and LAN/Alchemy
+  gateway state; router solvency held; phase, locker, and reward-stream
+  mismatch counts were zero; all financial queues were empty. The project
+  wallet retained `0.020552343064387924 ETH`, preserving the `0.0015 ETH`
+  reserve.
+- Public disconnected-browser acceptance passed Discover, launch detail, DAO,
+  Portfolio, Whitepaper, and admin health without horizontal overflow or
+  application console errors. Wallet-extension warnings were excluded and no
+  browser wallet transaction was initiated.
+- Evidence is checksum-sealed at
+  `/home/hendo420/robyn-evidence/testnet/schema16-focused-a8d54bb-02/`.
+  Mainnet remains no-broadcast and unauthorized.
+
 ### 2026-07-31 - Run 07 invalidated; chain-time stream scheduler remediation
 
 - Run `schema16-30m-812b914-07` reached 1,800.118 healthy seconds but did
@@ -2186,6 +2213,15 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-31: Focused Schema-16 live Testnet acceptance passed on exact release
+  `a8d54bb125d091be0cea010262a68a2baaceda30`. The product owner explicitly
+  removed the Testnet endurance requirement because the extensive Devnet
+  torture gates already passed. No endurance service or monitor remains.
+  Advance only to the remaining no-broadcast Mainnet preparation: protected
+  sole-owner bootstrap inputs and signing rehearsal, exact chain-4663 fork and
+  real-route execution, reserve-preserving bridge/deployment/canary funding
+  calculation, and a frozen manifest requiring explicit authorization.
+
 - 2026-07-31: Run `schema16-2h-acbb409-06` is operator-aborted, invalidated,
   sealed, recovered, and inactive after 450.173 healthy seconds and 92
   confirmed transactions. New launches are Paused and no hash is ambiguous.
@@ -4170,6 +4206,18 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-31 - Focused Testnet acceptance complete; no endurance required
+
+- Exact release `a8d54bb125d091be0cea010262a68a2baaceda30` is served on
+  chain 46630 with unchanged Schema-16 contracts and 177/177 deployment checks.
+- Focused live acceptance reverified the 284 successful campaign receipts,
+  bidirectional quotes for all 11 configured routes, and fresh completed
+  holder, creator, and DAO pull claims. Accounting and operational health are
+  green, queues are empty, and the fixed reserve remains preserved.
+- The never-started replacement endurance run is sealed with zero transactions;
+  its service and heartbeat were removed. Testnet remains online and new
+  launches remain Paused.
+
 ### 2026-07-31 - Endurance policy reduced to 30 minutes
 
 - The active Schema-16 endurance policy targets 1,800 uninterrupted healthy
@@ -5926,6 +5974,15 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-31: Focused live Testnet acceptance passed on exact served SHA
+  `a8d54bb125d091be0cea010262a68a2baaceda30`: 284/284 historical campaign
+  receipts successful, 11/11 live routes ready with native-to-asset and
+  asset-to-native quotes, three fresh completed reward claims confirmed,
+  177/177 deployment checks, solvent accounting, zero mismatch counts, empty
+  queues, and six public browser routes with no application console errors.
+  Evidence checksums verify under
+  `/home/hendo420/robyn-evidence/testnet/schema16-focused-a8d54bb-02/`.
+
 - 2026-07-31: Funding remediation verification passes: 30/30 focused tests,
   isolated Anvil fee-change proof, exact run-05 conversion fork at block
   `95707868`, complete repository suite, 369 Foundry tests, invariant suites,
@@ -6743,6 +6800,15 @@ When sources conflict, use this order:
 - Follow-up: Build and promote the exact pushed documentation commit, complete automated browser and real-wallet acceptance, then start the ten-hour endurance gate.
 
 ## Open Follow-ups
+
+- Complete the remaining no-broadcast Mainnet prerequisites: protected
+  sole-owner bootstrap allocation/Safe inputs, address-control and 1-of-1 Safe
+  signing rehearsal, exact chain-4663 fork deployment and required real v4
+  route execution, app-level LAN/Alchemy equivalence/failover verification,
+  and the reserve-preserving bridge/deployment/canary funding ledger.
+- Freeze and seal the exact Mainnet manifest, then request explicit approval
+  before any bridge or Mainnet transaction. Public mode remains a separate
+  later authorization.
 
 - Run focused and complete release gates for the 30-minute-policy candidate,
   commit and push one clean SHA, prove two-build reproducibility, promote and
