@@ -308,13 +308,18 @@ for (const launch of campaign.launches) {
   });
 }
 
-function nestedHex(value) {
-  if (typeof value === "string" && /^0x[0-9a-fA-F]{8,}$/.test(value)) {
-    return value;
+function nestedHex(value, seen = new WeakSet()) {
+  if (typeof value === "string") {
+    return value.match(/0x[0-9a-fA-F]{8,}/)?.[0] ?? null;
   }
-  if (!value || typeof value !== "object") return null;
+  if (!value || typeof value !== "object" || seen.has(value)) return null;
+  seen.add(value);
+  for (const key of ["data", "cause", "details", "shortMessage", "message"]) {
+    const found = nestedHex(value[key], seen);
+    if (found) return found;
+  }
   for (const nested of Object.values(value)) {
-    const found = nestedHex(nested);
+    const found = nestedHex(nested, seen);
     if (found) return found;
   }
   return null;

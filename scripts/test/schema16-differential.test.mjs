@@ -30,7 +30,10 @@ test("dual-Anvil differential is exact-SHA, isolated, and evidence sealed", () =
   assert.match(runner, /maximumCurvePurchase\(\)\(uint256\)/);
   assert.match(runner, /--json \| jq -er '\.\[0\]'/);
   assert.match(runner, /gross <= 100000000000000/);
-  assert.match(runner, /for phase in preflight fund launches trading conversions governance claims/);
+  assert.match(
+    runner,
+    /for phase in preflight fund launches trading conversions governance claims/,
+  );
   assert.match(runner, /sha256sum -c SHA256SUMS/);
   assert.doesNotMatch(runner, /MAINNET|4663\b|docker/i);
 });
@@ -47,6 +50,12 @@ test("state capture includes economic, reward, principal, event, and revert pari
   ]) {
     assert.match(capture, new RegExp(marker));
   }
+  assert.match(capture, /value\.match\(\/0x\[0-9a-fA-F\]\{8,\}\//);
+  assert.match(capture, /seen = new WeakSet\(\)/);
+  assert.match(
+    capture,
+    /\["data", "cause", "details", "shortMessage", "message"\]/,
+  );
   assert.match(compare, /addressBook/);
   assert.match(compare, /passed: equal/);
   assert.match(compare, /firstDifference/);
