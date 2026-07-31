@@ -1,5 +1,35 @@
 # Project Memory
 
+### 2026-07-31 - Schema-15/16 full behavioral differential passed
+
+- Candidate: Exact pushed SHA
+  `fca9c992707b3817ea9fb0fc248edf49d84618e8` passed against Schema-15
+  baseline `5899a5fc99dde04f60f1bba88bc9716e99dcd45f`.
+- Scope: Two pinned chain-46630 Anvil forks deployed complete stacks and ran
+  identical 100-wallet funding, eight launches, three graduations, trading,
+  v4 liquidity, conversions, governance, claims, expected reverts, and state
+  capture.
+- Result: Logical address and address-derived pool identities were normalized.
+  Deployment provenance, receipt hashes, absolute timestamps, block numbers,
+  and log indexes remain preserved as raw evidence but are excluded from
+  semantic equality. Events, revert selectors, profile/configuration hashes,
+  runtime hashes, balances, liabilities, supplies, phases, fees, rewards,
+  locked principal, and allowances matched exactly. Both normalized
+  fingerprints are
+  `1a779e932d1679a0764ea721f85478e6c58dc183c0a2d3f4b33fd84fa469e327`.
+- Operational fixes: Schema-16 campaign tooling now uses chain-derived
+  deadlines, manifest-verified deployed governance clocks, deterministic
+  loopback time travel, and a fresh oracle observation after accelerated
+  history maturity.
+- Evidence:
+  `/home/hendo420/robyn-evidence/schema16-differential/fca9c992707b3817ea9fb0fc248edf49d84618e8/20260731T034405Z/`.
+  `SHA256SUMS` verifies.
+- Follow-up: Commit this checkpoint, then rerun fast and deep torture,
+  security analysis, ABI/storage comparison, and reproducible builds on the
+  resulting exact pushed SHA before integrating to `origin/main`. Testnet
+  remains online and Paused. No Testnet deployment or Mainnet transaction
+  occurred.
+
 ### 2026-07-31 - Schema-16 differential and operational tooling implemented
 
 - Context: Schema-16 contract fast/deep qualification was green, but the
