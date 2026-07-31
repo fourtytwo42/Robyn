@@ -1,5 +1,77 @@
 # Project Memory
 
+### 2026-07-31 - Run 03 failed safely on dynamic fee drift
+
+- Context: Run `schema16-2h-c8156e6-03` reached 480.183 uninterrupted healthy
+  seconds, three launches, and 95 confirmed transactions before its first
+  graduation actor was short by `385892000000 wei` when the wallet client
+  recomputed a higher EIP-1559 fee after the exact-balance funding transfer.
+- Result: The runner recorded a terminal workload failure, paused writes, and
+  the static one-shot service stopped with zero ambiguous submissions. Run 03
+  is invalid and must never resume. Its files and 95 receipts are sealed by
+  `/var/lib/robyn/testnet-endurance/schema16-2h-c8156e6-03/SHA256SUMS`.
+- Recovery: The idempotent incomplete-history recovery journal returned
+  `0.009721569650959950 ETH` plus recoverable RDAO in 35 confirmed
+  transactions. Three bonding-history launch-token positions remain recorded
+  and were not replayed or silently discarded.
+- Fix: Graduation requests now pin the same `maxFeePerGas` and
+  `maxPriorityFeePerGas` envelope used by the dynamic funding calculation.
+  The focused policy suite passes 24/24. This is runner-only; protocol
+  bytecode and the existing Schema-16 deployment are unchanged.
+- Follow-up: Commit and push the runner/test and fork-test evidence fixes,
+  reproduce and promote a new exact application release, then create run 04
+  with a new encrypted identity, salts, launches, and empty journals.
+
+### 2026-07-31 - Sole-owner bootstrap release promoted and endurance run 03 started
+
+- Release: Governance-tooling-only commit
+  `c8156e6e92b2dd408a6ef0d423b2bf0b31907ea2` is clean, pushed to
+  `origin/main`, reproducibly built, and served from the matching immutable
+  Testnet release. Contract bytecode and Schema-16 deployment manifest hash
+  `603874485daacb9ff533620f8d8f3dde6216ed2346777b87c50569d970447c50`
+  remain unchanged. All 177 deployment checks passed.
+- RPC correction: The Testnet failover gateway is loopback port `18548`.
+  Port `18547` is an unrelated stale Anvil fork and returned missing-trie
+  errors. The gateway itself is healthy with LAN primary, Alchemy fallback,
+  equal heads, and a projected 2,592,000 paid CU/month from probes. The first
+  preflight attempt used the wrong port and sent no transaction.
+- Funding: The corrected gateway preflight passed. The keeper was journaled to
+  `0.002304357331712 ETH`, above its workload target and safety buffer.
+- Endurance: Fresh run `schema16-2h-c8156e6-03` uses a new encrypted 100-wallet
+  identity, new salts, and empty workload journals. The static non-recurring
+  service started at `2026-07-31T15:07:03Z`. Wallet funding and governance
+  activation receipts are being journaled; the 7,200-second healthy clock had
+  not started at this checkpoint. Confirmed hashes must never be replayed.
+- Mainnet: No bridge or Mainnet transaction is authorized. Protected
+  deployer-only bootstrap inputs, the exact fork rehearsal, route execution,
+  funding report, and frozen manifest remain pending.
+
+### 2026-07-31 - Run 03 clock started and bootstrap fork ledger corrected
+
+- Endurance: Governed Testnet activation completed and two readiness samples
+  initially failed only the fixed disk gate. Eight obsolete, unused immutable
+  releases were inventoried and removed; the active and previous releases and
+  all evidence/backups were preserved. This recovered 12,371,574,784 bytes,
+  leaving about 20 GiB free. Run `schema16-2h-c8156e6-03` then entered its
+  uninterrupted healthy clock with no failures.
+- Mainnet inputs: Protected deployer-only guardian/allocation inputs validate
+  at pinned block `24274679`. The predicted canonical 1-of-1 Safe is
+  `0xa227543e4910759A7873945F995CF218Db3d8A68`. An offline signing rehearsal
+  recovered the deployer and used an intentionally unreachable nonce so its
+  signature cannot execute a live Safe transaction.
+- Fork: The canonical Safe proxy and a two-day Timelock were deployed only on
+  isolated loopback Anvil. The production lifecycle initially reported 71.01%
+  recovery because its ledger omitted ETH returned by the mandatory earlier
+  round-trip sale. Counting all liquid ETH returned to the project, as the
+  funding policy requires, gives 78.20% (`0.007899561856669940 ETH` recovered
+  from `0.010101010101010102 ETH` bonding spend). Waiting the protocol's
+  five-minute TWAP window after the large unwind allows final settlement. The
+  corrected fork lifecycle passes without lowering the 75% requirement.
+- Source state: The fork-ledger correction touches only the Mainnet Foundry
+  rehearsal test; runtime contract and application artifacts are unchanged.
+  Do not commit or promote it while the exact `c8156e6` endurance run is in
+  progress. Mainnet remains unauthorized.
+
 ### 2026-07-31 - Schema-16 endurance run 02 reserve guard and runner correction
 
 - Run: Fresh run `schema16-2h-2dd8c73-02` used exact served release
@@ -1853,6 +1925,26 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-07-31: Run `schema16-2h-c8156e6-03` failed safely at 480.183 healthy
+  seconds because a dynamically funded graduation wallet was short
+  `385892000000 wei` after the wallet client recomputed a higher fee. The
+  service is inactive, all 95 confirmed receipts are sealed, zero submissions
+  are ambiguous, and idempotent recovery returned `0.009721569650959950 ETH`
+  plus recoverable RDAO. The runner now pins the fee envelope used by its
+  funding calculation and its 24 focused tests pass. Commit/push, reproducibly
+  build/promote a new exact release, and start fresh run 04 only with new
+  identities and journals. No bridge or Mainnet transaction is authorized.
+
+- 2026-07-31: Exact application release `c8156e6` is live and verified on
+  Schema-16. Fresh one-shot Testnet endurance run
+  `schema16-2h-c8156e6-03` is active with new encrypted identities and durable
+  journals. Its readiness path uses the real Testnet failover gateway at
+  `127.0.0.1:18548`; `18547` is a stale Anvil fork and must not be used for
+  Testnet campaign work. Monitor the run without replaying confirmed hashes.
+  After a pass, pause launches, reconcile, rebuild from block `95508008`, run
+  responsive in-app-browser acceptance, seal evidence, and remove the static
+  service. No Mainnet transaction is authorized.
 
 - 2026-07-31: The product owner selected an explicit Schema-16
   `sole-owner-bootstrap` Mainnet governance mode: the protected deployer is the
@@ -3772,6 +3864,19 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-31 - Schema-16 run 03 invalidated and recovered
+
+- Exact release `c8156e6e92b2dd408a6ef0d423b2bf0b31907ea2` is clean,
+  pushed, reproducible, promoted, and passes all 177 deployment checks.
+- Run `schema16-2h-c8156e6-03` is failed, sealed, and inactive. Its confirmed
+  transactions must never be replayed. Recovery is complete and retains three
+  campaign launch-token positions as Testnet history.
+- The runner-only fee-envelope correction and its focused regression are
+  uncommitted. A new exact release and run 04 are required.
+- Testnet gateway `127.0.0.1:18548` is healthy with LAN primary and Alchemy
+  fallback. Do not use the unrelated Anvil process on `18547`.
+- Keeper funding is `0.002304357331712 ETH`. Mainnet remains untouched.
+
 ### 2026-07-31 - Schema-16 sole-owner bootstrap tooling
 
 - Mainnet governance inputs use schema 2 and an explicit mode. Bootstrap
@@ -5457,6 +5562,13 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-31: Sole-owner bootstrap release `c8156e6` passed 15 focused
+  governance tests, the full repository suite, 369 Foundry tests with zero
+  failures and one intentional skip, security analysis, and two-build
+  reproducibility. The immutable Testnet promotion passed 177/177 checks.
+  Run 03 preflight passed through loopback gateway `18548`; keeper funding was
+  raised through the journaled path before the one-shot service started.
+
 - 2026-07-31: Exact SHA `185c363`, fast seed `160002` passed. Deep seed
   `160003` passed in 3,952 seconds with 20 protocol and 20 v4 invariant seeds
   at 1,024 runs/depth 256, 10,000-case fuzzing, 100,000 actions across 50
@@ -6248,6 +6360,21 @@ When sources conflict, use this order:
 - Follow-up: Build and promote the exact pushed documentation commit, complete automated browser and real-wallet acceptance, then start the ten-hour endurance gate.
 
 ## Open Follow-ups
+
+- Commit and push the runner fee-envelope correction, focused regression, and
+  Mainnet fork ledger/TWAP test correction. Run repository checks and two
+  reproducible builds, promote only that exact release, then create run 04
+  with new encrypted identities, salts, launches, and empty journals.
+- Never restart run 03 or replay any of its 95 confirmed hashes. Preserve its
+  SHA-256 evidence and the separate 35-transaction recovery journal.
+- After a pass, pause new launches, complete accounting/reward/principal
+  reconciliation, rebuild an empty database from block `95508008`, perform
+  desktop/tablet/mobile in-app-browser acceptance, seal checksums, and remove
+  the static service.
+- Create protected deployer-only schema-2 governance inputs, obtain the
+  address-control proof, run the 1-of-1 Safe signing rehearsal, and execute the
+  exact no-broadcast Mainnet fork and funding gates. No bridge or Mainnet
+  transaction is authorized.
 
 - Commit and push the sole-owner bootstrap tooling, run two-build
   reproducibility, promote the exact release, recheck the funded deployer and

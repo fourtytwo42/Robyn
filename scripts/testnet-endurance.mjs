@@ -996,6 +996,16 @@ async function maybeGraduate() {
         (await rpcRetry("read public gas price", () =>
           publicClient.getGasPrice(),
         ));
+      const maxPriorityFeePerGas =
+        estimatedFees.maxPriorityFeePerGas &&
+        estimatedFees.maxPriorityFeePerGas <= maxFeePerGas
+          ? estimatedFees.maxPriorityFeePerGas
+          : maxFeePerGas;
+      // Pin the same fee envelope used by the funding calculation. Leaving
+      // these fields implicit lets the wallet client recompute a higher fee
+      // after the exact-balance top-up and can strand the graduation actor.
+      buyRequest.maxFeePerGas = maxFeePerGas;
+      buyRequest.maxPriorityFeePerGas = maxPriorityFeePerGas;
       const fundingTarget = transactionFundingTarget({
         valueWei: value,
         estimatedGas,

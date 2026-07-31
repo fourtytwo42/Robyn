@@ -76,6 +76,7 @@ contract RobinhoodMainnetSchema16ForkTest is Test {
     RobynDaoToken private daoToken;
     TimelockController private timelock;
     RobynGovernor private governor;
+    uint256 private roundTripRecoveredNative;
 
     receive() external payable { }
 
@@ -111,7 +112,7 @@ contract RobinhoodMainnetSchema16ForkTest is Test {
         _govern(
             address(coordinator),
             abi.encodeCall(RobynV4LaunchCoordinatorV6.setCanaryMode, (address(this))),
-            "Enter Schema-14 Mainnet canary mode"
+            "Enter Schema-16 Mainnet canary mode"
         );
 
         uint256 treasuryBefore = treasury.balance;
@@ -140,7 +141,7 @@ contract RobinhoodMainnetSchema16ForkTest is Test {
             assertGt(hook.pendingTokenFees(address(token)), pendingTokenBefore);
             uint256 sellAmount = token.balanceOf(address(this)) / 50;
             token.approve(address(market), sellAmount);
-            market.sell(sellAmount, 1);
+            roundTripRecoveredNative = market.sell(sellAmount, 1);
             uint256 pendingNative = hook.pendingNativeFees(address(token));
             assertGt(pendingNative, 0);
             hook.settleNativeFees(token, pendingNative);
@@ -202,7 +203,7 @@ contract RobinhoodMainnetSchema16ForkTest is Test {
         _govern(
             address(marketFactory),
             abi.encodeCall(RobynV4MarketFactory.setGraduationProfile, (6 ether, 0.5 ether)),
-            "Install Schema-14 production graduation profile"
+            "Install Schema-16 production graduation profile"
         );
         uint64 productionVersion = marketFactory.graduationProfileVersion();
         assertEq(productionVersion, 2);
@@ -226,12 +227,13 @@ contract RobinhoodMainnetSchema16ForkTest is Test {
         );
 
         _unwind(token, market, graduationSpend);
+        vm.warp(block.timestamp + 5 minutes + 1);
         _settlePostUnwind(token, vault, market, lockedPrincipal);
 
         _govern(
             address(coordinator),
             abi.encodeCall(RobynV4LaunchCoordinatorV6.setPublicMode, ()),
-            "Enter Schema-14 public launch mode"
+            "Enter Schema-16 public launch mode"
         );
         address permissionlessCreator = address(0x4663);
         vm.deal(permissionlessCreator, 1 ether);
@@ -439,7 +441,7 @@ contract RobinhoodMainnetSchema16ForkTest is Test {
         assertEq(uint8(governor.state(proposalId)), 0);
 
         vm.warp(block.timestamp + governor.votingDelay() + 1);
-        governor.castVoteWithReason(proposalId, 1, "Schema-14 production rehearsal");
+        governor.castVoteWithReason(proposalId, 1, "Schema-16 production rehearsal");
         assertEq(uint8(governor.state(proposalId)), 1);
 
         vm.warp(block.timestamp + governor.votingPeriod() + 1);
@@ -469,11 +471,12 @@ contract RobinhoodMainnetSchema16ForkTest is Test {
         assertEq(token.allowance(address(this), address(market)), 0);
         assertEq(token.balanceOf(address(this)), 0);
         assertEq(address(this).balance - nativeBeforeUnwind, recoveredNative);
-        uint256 recoveryBps = (recoveredNative * 10_000) / graduationSpend;
+        uint256 totalRecoveredNative = recoveredNative + roundTripRecoveredNative;
+        uint256 recoveryBps = (totalRecoveredNative * 10_000) / graduationSpend;
         assertGe(recoveryBps, 7_500);
         assertLt(recoveryBps, 10_000);
         emit CanaryCapitalLedger(
-            graduationSpend, tokensToUnwind, unwindQuote, recoveredNative, recoveryBps
+            graduationSpend, tokensToUnwind, unwindQuote, totalRecoveredNative, recoveryBps
         );
     }
 
@@ -528,7 +531,7 @@ contract RobinhoodMainnetSchema16ForkTest is Test {
         uint160 flags = Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_SWAP_FLAG
             | Hooks.BEFORE_DONATE_FLAG | Hooks.AFTER_INITIALIZE_FLAG | Hooks.AFTER_SWAP_FLAG
             | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG;
-        bytes32 domain = keccak256("sherwood-schema14-mainnet-fork");
+        bytes32 domain = keccak256("sherwood-schema16-mainnet-fork");
         (address predicted, bytes32 salt) = HookMiner.find(
             address(this),
             flags,
