@@ -24,6 +24,7 @@ test("dual-Anvil differential is exact-SHA, isolated, and evidence sealed", () =
   assert.match(runner, /schemaVersion=16/);
   assert.match(runner, /anvil_impersonateAccount/);
   assert.match(runner, /ROBYN_CAMPAIGN_REHEARSAL_KEY_FILE="\$key_file"/);
+  assert.match(runner, /--gas-price-wei 10000000000/);
   assert.match(runner, /for phase in preflight fund launches trading conversions governance claims/);
   assert.match(runner, /sha256sum -c SHA256SUMS/);
   assert.doesNotMatch(runner, /MAINNET|4663\b|docker/i);

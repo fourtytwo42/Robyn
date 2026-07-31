@@ -143,7 +143,7 @@ campaign() {
     --keeper-address "$operator" \
     --rehearsal \
     --metadata-uri ipfs://bafkreif2akiscaildcwr6zeux4w6i2s5kmibuf6j4jvcrbozme2q \
-    --gas-price-wei 1 \
+    --gas-price-wei 10000000000 \
     --l1-base-fee-wei 1
 }
 campaign init "$baseline_rpc" "$evidence/baseline-manifest.json" "$baseline_state" \
