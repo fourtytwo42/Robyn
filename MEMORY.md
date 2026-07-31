@@ -1,5 +1,108 @@
 # Project Memory
 
+### 2026-07-31 - Run 05 recovered; global transaction-funding remediation passes
+
+- Recovery: After the sealed run-05 receipt set was reverified, the protected
+  incomplete-history recovery confirmed 35 transactions and returned
+  `0.009303967730412647 ETH` plus recoverable RDAO to the Testnet deployer.
+  Five launch positions, including one graduated launch, remain retained as
+  Testnet history. No locked liquidity or protocol/user-controlled asset was
+  touched.
+- Fix: A clean feature worktree from exact `ba4de89` now routes every endurance
+  transaction through one funding preparer. It pins a single EIP-1559 envelope,
+  funds actors with deterministic target-bound labels before estimation,
+  rechecks the final target, enforces a 32-million submitted-gas ceiling, and
+  protects the fixed project reserve. The preflight workload allowance is now
+  derived from the complete action schedule with 25% headroom instead of a
+  fixed constant.
+- Regression: The focused suite passes 30/30, including isolated Anvil with a
+  zero-balance actor and a base-fee change after funding. An exact fork of
+  run-05 block `95707868` successfully executed
+  `convertTokenFees(address,uint128,uint256,uint256)` with one funding receipt
+  and one action receipt; pending token fees fell to zero. Evidence SHA-256 is
+  `b39c6805241b95ff1fbbfd32f23365dc810dbdabc7a1b80faef14305fc26aac8`.
+- Gates: The complete repository suite passes, including 369 Foundry tests with
+  zero failures and one intentional skip. Security passes with no leaks, zero
+  unresolved high/medium findings, and an 18,618-byte asset-router runtime.
+- Follow-up: Commit/push the clean runner-only candidate, run two-build
+  reproducibility, promote and verify the exact release, calculate the new
+  Testnet budget, and start only a fresh run 06. Mainnet remains unauthorized.
+
+### 2026-07-31 - Run 05 invalidated by conversion-wallet gas shortfall
+
+- Endurance: Run `schema16-2h-ba4de89-05` accumulated `721.584` consecutive
+  healthy seconds, five launches, one graduation, all 11 required reward
+  assets, seven write cycles, three reviews, and 124 confirmed transactions.
+  The static service stopped and cannot restart. No transaction remains
+  submitted or ambiguous.
+- Failure: A project software wallet attempting
+  `convertTokenFees(address,uint128,uint256,uint256)` was short
+  `1418162000000 wei` (`0.000001418162 ETH`) against the node's admission fee
+  envelope. The failing conversion was rejected before submission, so it has
+  no transaction hash and must not be replayed as if confirmed.
+- Safety: The guardian returned new launches to `Paused` in confirmed
+  transaction
+  `0x939baf83679a5c1b6f8b94effab28d5aa22c4d3771156563f80d3362fab7870d`.
+  Existing bonding, trading, claims, and withdrawals remain available. The
+  failed run is sealed by
+  `/var/lib/robyn/testnet-endurance/schema16-2h-ba4de89-05/SHA256SUMS`
+  (checksum-file SHA-256
+  `6eb6155f2afe3d7dd087ad6184e43ad4b3e7316c718cb2bc5326a9aaa8b996dc`).
+- Live stack: Public Testnet health remained OK on chain 46630 with ingestion
+  and projection lag zero, empty keeper queues, solvent protocol accounting,
+  and healthy LAN-primary/Alchemy-fallback RPC state.
+- Follow-up: Diagnose and correct the runner-only dynamic funding model for
+  token-fee conversion, run focused and adjacent regressions, freeze and
+  promote a clean pushed release, then start a completely fresh endurance run
+  with a new ID, identity, salts, launches, and empty journals. Run 05 is
+  invalid and can never resume. Mainnet remains unauthorized.
+
+### 2026-07-31 - Archived Testnet capital recovered; run 05 activation started
+
+- Recovery: A read-only inventory found only dust in direct mock stock/WETH
+  balances but a large project-controlled bonding position retained from
+  invalidated run `schema16-2h-c8156e6-03`. A protected, append-only recovery
+  journal sold exactly 220 million launch tokens with a 1% minimum-output
+  guard and swept the proceeds to the Testnet deployer.
+- Result: Eight recovery/funding/approval/sale/sweep receipts confirmed. The
+  sale returned `0.005925248506480256 ETH`; net deployer recovery was
+  `0.005915728908980256 ETH`. The deployer finished at
+  `0.043426354105905640 ETH`. No locked liquidity, treasury or DAO balance,
+  reward liability, or protocol-owned asset was touched.
+- Preflight: Exact run-05 funding now passes against
+  `0.042803030303030306 ETH` required, leaving
+  `0.000623323802875334 ETH` surplus while preserving the fixed reserve.
+- Endurance: Static non-recurring run `schema16-2h-ba4de89-05` is active on
+  exact served release `ba4de8970c4781451dd126c8901ddff485eb85ae`.
+  Actor funding completed with zero failures or ambiguous submissions. The
+  governed activation proposal and vote confirmed; the runner is waiting for
+  the accelerated voting/timelock windows before two readiness samples and the
+  uninterrupted 7,200-second clock.
+- Evidence: Protected recovery journal is
+  `/home/hendo420/.local/state/robyn-testnet-recovery/schema16-2h-c8156e6-03-partial-bonding-unwind.json`.
+  Never replay its confirmed hashes or any prior endurance transaction.
+- Mainnet: No bridge or Mainnet transaction is authorized.
+
+### 2026-07-31 - RPC fix promoted; run 05 funding-blocked before writes
+
+- Release: Exact clean pushed SHA
+  `ba4de8970c4781451dd126c8901ddff485eb85ae` passed the full repository and
+  security gates, 369 Foundry tests, and two-build reproducibility. The
+  immutable Testnet release is promoted and passes 177 deployment checks with
+  the unchanged Schema-16 manifest and coordinator `Paused`.
+- Live regression: A real burst of 240 concurrent gateway reads plus 24 token
+  page renders returned HTTP 200 with zero JSON-RPC errors and zero new gateway
+  503s. Maximum observed RPC and page times were 0.40 and 2.00 seconds.
+- Run: Fresh identity `schema16-2h-ba4de89-05` and its static non-recurring
+  service are installed, but the service is inactive and no workload
+  transaction has been submitted.
+- Funding blocker: Exact preflight measured
+  `0.037510625196925384 ETH` available versus
+  `0.042803030303030306 ETH` required. Add at least
+  `0.005292405106104922 ETH` to the protected Testnet deployer, then rerun the
+  complete preflight; do not reduce the reserve or coverage.
+- Mainnet: No bridge or Mainnet transaction is authorized.
+
 ### 2026-07-31 - Run 04 invalidated by RPC burst and non-atomic lag sample
 
 - Context: Run `schema16-2h-80229a5-04` reached 997.453 uninterrupted healthy
@@ -1970,6 +2073,35 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-07-31: Run 05 is sealed and recovered. A clean runner-only candidate
+  globally pins transaction fee envelopes, performs deterministic idempotent
+  actor top-ups, protects the fixed reserve, and derives the workload budget
+  from the required schedule. Focused Anvil, exact run-05 conversion-fork,
+  complete repository, 369-contract-test, and security gates pass. Commit and
+  push this candidate, require two-build reproducibility, promote the exact
+  release, then create run 06 only if its recalculated fixed-coverage preflight
+  passes. Never resume run 05. Mainnet remains unauthorized.
+
+- 2026-07-31: Run `schema16-2h-ba4de89-05` is failed, sealed, and inactive
+  after 721.584 healthy seconds and 124 confirmed transactions. The first
+  token-fee conversion wallet was short `0.000001418162 ETH` against the
+  node-admission fee envelope; the transaction was never submitted and no hash
+  is ambiguous. Guardian pause is confirmed and new launches are Paused. The
+  public Testnet stack remains healthy. Diagnose and fix the runner-only
+  conversion funding model, run focused and adjacent regressions, freeze and
+  promote a clean pushed release, and start a new run ID from zero. Never
+  resume or replay run 05. Mainnet remains unauthorized.
+
+- 2026-07-31: Exact release `ba4de89` is reproducible, promoted, and verified.
+  Archived run-03 bonding capital recovered a net
+  `0.005915728908980256 ETH`; run-05 funding now passes with a
+  `0.000623323802875334 ETH` surplus. Fresh run
+  `schema16-2h-ba4de89-05` is active with a new encrypted 100-wallet identity.
+  Actor funding and the activation proposal/vote confirmed with zero failures
+  or ambiguous submissions. It is waiting through accelerated governance
+  before its two readiness samples and uninterrupted 7,200-second clock.
+  Never resume or replay runs 03 or 04. Mainnet remains unauthorized.
+
 - 2026-07-31: Run `schema16-2h-80229a5-04` is failed, sealed, recovered, and
   inactive after an RPC burst exposed asymmetric read failover and a
   non-atomic ingestion-lag sample. It accumulated 997.453 healthy seconds and
@@ -3917,6 +4049,43 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-07-31 - Global endurance transaction funding fixed and qualified
+
+- Every submitted runner transaction now carries the fee envelope used by its
+  funding calculation. Actor funding is deterministic, target-bound, and
+  restart-safe; project transactions fail before submission if they would
+  breach the fixed reserve.
+- The real run-05 token-fee conversion passes on isolated chain-46630 state
+  after a post-funding base-fee change. No live transaction was broadcast.
+- Run-05 unused actor ETH/RDAO is recovered. Five launch positions remain
+  retained and are not silently liquidated.
+
+### 2026-07-31 - Schema-16 run 05 failed safely and is sealed
+
+- Run 05 is invalid after 721.584 healthy seconds, 124 confirmed transactions,
+  five launches, one graduation, and complete 11-asset campaign coverage to
+  that point. Its service is absent/inactive and cannot restart.
+- The terminal failure was a runner wallet gas underfunding for token-fee
+  conversion. It occurred at node admission before submission, leaving zero
+  ambiguous hashes. New launches are guardian-paused.
+- Live Testnet health remains OK with zero ingestion/projection lag, empty
+  queues, solvent accounting, and healthy LAN/Alchemy providers.
+
+### 2026-07-31 - Schema-16 run 05 funded and in governed activation
+
+- Exact release `ba4de8970c4781451dd126c8901ddff485eb85ae` is clean,
+  pushed, reproducible, served, and passes 177 deployment checks.
+- Live burst verification passed 264 concurrent application/gateway reads
+  without an HTTP 503 or JSON-RPC error. LAN remains primary and Alchemy
+  healthy fallback.
+- Archived, project-controlled bonding tokens recovered enough Testnet ETH for
+  the exact fixed-coverage budget without touching protocol-controlled funds.
+  Run 05 is active, actor funding is complete, and governed activation is
+  progressing before the uninterrupted clock.
+- Run 05 has a fresh encrypted identity and empty journals. Its static service
+  is installed but inactive. The exact shortfall is
+  `0.005292405106104922 ETH`; no coverage or reserve is reduced.
+
 ### 2026-07-31 - Schema-16 run 04 invalidated and recovered
 
 - Exact release `80229a551f2aa839a3c9a1205dabf517eb0d9ec6` remains served,
@@ -5626,6 +5795,19 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-07-31: Funding remediation verification passes: 30/30 focused tests,
+  isolated Anvil fee-change proof, exact run-05 conversion fork at block
+  `95707868`, complete repository suite, 369 Foundry tests, invariant suites,
+  gitleaks, dependency/license checks, Slither triage, and EIP-170. Exact fork
+  evidence checksum is
+  `b39c6805241b95ff1fbbfd32f23365dc810dbdabc7a1b80faef14305fc26aac8`.
+
+- 2026-07-31: Run 05 failure preservation passed: 124 transaction receipts are
+  confirmed, submitted count is zero, guardian pause transaction
+  `0x939baf83679a5c1b6f8b94effab28d5aa22c4d3771156563f80d3362fab7870d`
+  confirmed, and the sealed run checksum file hashes to
+  `6eb6155f2afe3d7dd087ad6184e43ad4b3e7316c718cb2bc5326a9aaa8b996dc`.
+
 - 2026-07-31: Run 04 failure preservation passed: all run evidence checksums
   verify, guardian pause confirmed, zero hashes are ambiguous, and the separate
   35-transaction recovery journal is complete. The gateway suite passes 28/28,
@@ -6430,6 +6612,23 @@ When sources conflict, use this order:
 - Follow-up: Build and promote the exact pushed documentation commit, complete automated browser and real-wallet acceptance, then start the ten-hour endurance gate.
 
 ## Open Follow-ups
+
+- Freeze and push the runner-only funding candidate, run two independent
+  reproducible builds, build/promote/verify only that exact Testnet artifact,
+  and calculate the new schedule-derived funding requirement.
+- If funded, create run 06 with a new encrypted identity, salts, launches, and
+  empty journals. Never reuse run 05 or any of its 124 confirmed hashes.
+- In parallel, complete protected sole-owner bootstrap inputs, exact
+  no-broadcast chain-4663 fork/route rehearsal, app-level RPC observation, and
+  the reserve-preserving Mainnet funding report. Do not bridge or deploy.
+
+- Diagnose the run-05 token-fee conversion wallet funding path. Pin or safely
+  cover the same EIP-1559 fee envelope used for node admission, add focused and
+  adjacent regressions, then run full checks and reproducible builds.
+- Freeze, push, and promote the corrected exact release, recover only
+  journaled project-controlled funds after preserving evidence, and create a
+  fresh endurance run with a new ID, encrypted identity, salts, launches, and
+  empty journals. Never resume run 05 or replay its 124 confirmed hashes.
 
 - Run the full repository and security suite for the RPC/health fix, perform two
   reproducible builds, push and promote only the exact clean release, then start

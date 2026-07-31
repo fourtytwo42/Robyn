@@ -23,7 +23,7 @@
     "test:contracts:torture:deep": "bash scripts/run-schema16-devnet-torture.sh --tier deep --seed 160001 --release-sha $(git rev-parse HEAD)",
     "test:deployment-nonce": "bash scripts/test/testnet-deployment-nonce.test.sh",
     "test:deployment-verifier": "node --test scripts/test/testnet-v4-deployment-verifier.test.mjs",
-    "test:endurance": "node --test scripts/test/testnet-endurance-policy.test.mjs",
+    "test:endurance": "node --test scripts/test/testnet-endurance-policy.test.mjs scripts/test/endurance-transaction-funding-anvil.test.mjs",
     "test:mainnet-rehearsal": "node --test scripts/test/mainnet-rehearsal.test.mjs",
     "test:scripts": "find scripts -name '*.mjs' -print0 | xargs -0 -n1 node --check",
     "typecheck": "turbo run typecheck",

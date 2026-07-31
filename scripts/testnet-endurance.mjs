@@ -42,17 +42,19 @@ import {
 import {
   applyHeadroom,
   assertSecurityRemediationManifest,
-  transactionGasLimit,
   V4_FEE_COLLECTION_MINIMUMS,
 } from "./lib/campaign-plan.mjs";
+import { prepareFundedTransaction } from "./lib/endurance-transaction-funding.mjs";
 import {
   boundedTerminalCurveBuyValue,
+  campaignWorkloadFundingBudget,
   diskHeadroomPass,
   dueCount,
   dueLaunchCount,
   enduranceCoverageFailures,
   enduranceGraduationPrincipalReserveWei,
   enduranceSamplePassed,
+  enduranceTransactionEstimationGasCeiling,
   ENDURANCE_DURATION_SECONDS,
   ENDURANCE_GRADUATION_THRESHOLDS_SECONDS,
   ENDURANCE_L1_DATA_FEE_RESERVE_WEI,
@@ -61,16 +63,18 @@ import {
   ENDURANCE_RESERVE_WEI,
   ENDURANCE_REVIEW_INTERVAL_SECONDS,
   ENDURANCE_SAMPLE_INTERVAL_SECONDS,
+  ENDURANCE_TRANSACTION_GAS_CEILING,
   ENDURANCE_WRITE_INTERVAL_SECONDS,
   enduranceRelevantFiringAlerts,
   isRetryablePublicRpcError,
   isApprovedTestnetRpcUrl,
+  normalizeFeeEnvelope,
   percentile,
   processContinuityFailures,
   protocolHealthFailures,
   reconcileReleaseIdentity,
   rewardClaimIndexes,
-  transactionFundingTarget,
+  transactionFundingShortfall,
 } from "./testnet-endurance-policy.mjs";
 
 const repoRoot = resolve(new URL("..", import.meta.url).pathname);
@@ -385,24 +389,115 @@ async function receiptFor(hash) {
   });
 }
 
-async function recordTransaction(label, account, request) {
+async function currentFeeEnvelope(label) {
+  const estimatedFees = await rpcRetry(`fees-${label}`, () =>
+    publicClient.estimateFeesPerGas(),
+  );
+  const fallbackGasPrice =
+    estimatedFees.maxFeePerGas ?? estimatedFees.gasPrice
+      ? undefined
+      : await rpcRetry(`gas-price-${label}`, () => publicClient.getGasPrice());
+  return normalizeFeeEnvelope({
+    maxFeePerGas: estimatedFees.maxFeePerGas,
+    maxPriorityFeePerGas: estimatedFees.maxPriorityFeePerGas,
+    gasPrice: estimatedFees.gasPrice,
+    fallbackGasPrice,
+  });
+}
+
+function automaticFundingLabel(label, stage, targetWei) {
+  const identity = createHash("sha256")
+    .update(`${label}:${stage}:${targetWei}`)
+    .digest("hex")
+    .slice(0, 20);
+  return `endurance-auto-fund-${stage}-${identity}`;
+}
+
+async function ensureTransactionFunding({
+  label,
+  account,
+  stage,
+  targetWei,
+  allowTopUp,
+}) {
+  const balanceWei = await publicClient.getBalance({
+    address: account.address,
+  });
+  const shortfallWei = transactionFundingShortfall({
+    balanceWei,
+    targetWei,
+  });
+  if (getAddress(account.address) === getAddress(project.address)) {
+    if (balanceWei < targetWei + ENDURANCE_RESERVE_WEI) {
+      throw new Error(
+        `Endurance transaction ${label} would breach the reserve: ${balanceWei} wei available; ${targetWei + ENDURANCE_RESERVE_WEI} wei required`,
+      );
+    }
+    return { balanceWei, targetWei, shortfallWei: 0n };
+  }
+  if (shortfallWei > 0n && !allowTopUp) {
+    throw new Error(
+      `Endurance transaction ${label} is underfunded and automatic funding is disabled`,
+    );
+  }
+  if (shortfallWei > 0n) {
+    await recordTransaction(
+      automaticFundingLabel(label, stage, targetWei),
+      project,
+      { to: account.address, value: shortfallWei },
+      { autoFund: false, additionalFeeReserveWei: 0n },
+    );
+  }
+  const fundedBalanceWei = await publicClient.getBalance({
+    address: account.address,
+  });
+  if (fundedBalanceWei < targetWei) {
+    throw new Error(
+      `Endurance transaction ${label} remains underfunded after ${stage}: ${fundedBalanceWei} wei available; ${targetWei} wei required`,
+    );
+  }
+  return { balanceWei: fundedBalanceWei, targetWei, shortfallWei };
+}
+
+async function recordTransaction(label, account, request, options = {}) {
   const confirmed = state.transactions.find((entry) => entry.label === label);
   if (confirmed) return confirmed;
   let hash = state.submittedTransactions[label]?.hash;
   if (!hash) {
-    const estimated = await rpcRetry(`estimate-${label}`, () =>
-      publicClient.estimateGas({ ...request, account }),
-    );
+    const feeEnvelope = await currentFeeEnvelope(label);
+    const additionalFeeReserveWei =
+      options.additionalFeeReserveWei ?? ENDURANCE_L1_DATA_FEE_RESERVE_WEI;
+    const prepared = await prepareFundedTransaction({
+      request,
+      feeEnvelope,
+      estimationGasCeiling: enduranceTransactionEstimationGasCeiling(label),
+      transactionGasCeiling: ENDURANCE_TRANSACTION_GAS_CEILING,
+      additionalFeeReserveWei,
+      ensureFunding: ({ stage, targetWei }) =>
+        ensureTransactionFunding({
+          label,
+          account,
+          stage,
+          targetWei,
+          allowTopUp: options.autoFund !== false,
+        }),
+      estimateGas: (preparedRequest) =>
+        rpcRetry(`estimate-${label}`, () =>
+          publicClient.estimateGas({ ...preparedRequest, account }),
+        ),
+    });
     hash = await writer(account).sendTransaction({
-      ...request,
+      ...prepared.request,
       account,
-      gas: transactionGasLimit(estimated),
     });
     state.submittedTransactions[label] = {
       hash,
       submittedAt: new Date().toISOString(),
       from: account.address,
       to: request.to,
+      gas: prepared.gas.toString(),
+      maxFeePerGas: feeEnvelope.maxFeePerGas.toString(),
+      maxPriorityFeePerGas: feeEnvelope.maxPriorityFeePerGas.toString(),
     };
     saveState();
   }
@@ -786,7 +881,11 @@ async function fundingPreflight() {
       graduationCount: ENDURANCE_GRADUATION_THRESHOLDS_SECONDS.length,
       prefundedGraduationWei,
     });
-  const workloadValueWei = 2_500_000_000_000_000n;
+  const feeEnvelope = await currentFeeEnvelope("funding-preflight");
+  const workloadBudget = campaignWorkloadFundingBudget({
+    maxFeePerGas: feeEnvelope.maxFeePerGas,
+  });
+  const workloadValueWei = workloadBudget.totalWei;
   const projectBalanceWei = await publicClient.getBalance({
     address: project.address,
   });
@@ -801,6 +900,7 @@ async function fundingPreflight() {
     actorFundingWei,
     graduationPrincipalReserveWei,
     workloadValueWei,
+    workloadBudget,
     reserveWei: ENDURANCE_RESERVE_WEI,
     requiredWei,
     surplusWei: projectBalanceWei - requiredWei,
@@ -978,62 +1078,6 @@ async function maybeGraduate() {
         }),
         value,
       };
-      const estimatedGas = await rpcRetry(
-        `estimate graduation ${index}`,
-        () =>
-          publicClient.estimateGas({
-            ...buyRequest,
-            account: project.address,
-          }),
-      );
-      const estimatedFees = await rpcRetry(
-        `estimate graduation fees ${index}`,
-        () => publicClient.estimateFeesPerGas(),
-      );
-      const maxFeePerGas =
-        estimatedFees.maxFeePerGas ??
-        estimatedFees.gasPrice ??
-        (await rpcRetry("read public gas price", () =>
-          publicClient.getGasPrice(),
-        ));
-      const maxPriorityFeePerGas =
-        estimatedFees.maxPriorityFeePerGas &&
-        estimatedFees.maxPriorityFeePerGas <= maxFeePerGas
-          ? estimatedFees.maxPriorityFeePerGas
-          : maxFeePerGas;
-      // Pin the same fee envelope used by the funding calculation. Leaving
-      // these fields implicit lets the wallet client recompute a higher fee
-      // after the exact-balance top-up and can strand the graduation actor.
-      buyRequest.maxFeePerGas = maxFeePerGas;
-      buyRequest.maxPriorityFeePerGas = maxPriorityFeePerGas;
-      const fundingTarget = transactionFundingTarget({
-        valueWei: value,
-        estimatedGas,
-        maxFeePerGas,
-        additionalFeeReserveWei: ENDURANCE_L1_DATA_FEE_RESERVE_WEI,
-      });
-      const buyerBalance = await publicClient.getBalance({
-        address: account.address,
-      });
-      if (buyerBalance < fundingTarget) {
-        const funding = fundingTarget - buyerBalance;
-        const projectBalance = await publicClient.getBalance({
-          address: project.address,
-        });
-        if (projectBalance < funding + ENDURANCE_RESERVE_WEI) {
-          throw new Error(
-            `Endurance graduation ${index} would breach the reserve`,
-          );
-        }
-        await recordTransaction(
-          `endurance-graduate-fund-${index}-${realCurveTokenReserve}-${fundingTarget}`,
-          project,
-          {
-            to: account.address,
-            value: funding,
-          },
-        );
-      }
       const graduationEntry = await recordTransaction(
         `endurance-graduate-${index}-${realCurveTokenReserve}`,
         account,

@@ -56,6 +56,39 @@ export const ENDURANCE_GRADUATION_THRESHOLDS_SECONDS = [
 ];
 export const ENDURANCE_RESERVE_WEI = 1_500_000_000_000_000n;
 export const ENDURANCE_L1_DATA_FEE_RESERVE_WEI = 25_000_000_000_000n;
+export const ENDURANCE_TRANSACTION_GAS_CEILING = 32_000_000n;
+export const ENDURANCE_WORKLOAD_ACTION_SCHEDULE = Object.freeze([
+  Object.freeze({
+    category: "setup-governance-funding",
+    count: 150n,
+    gasCeiling: 250_000n,
+    l1DataFeeReserveCount: 0n,
+  }),
+  Object.freeze({
+    category: "launch-creation",
+    count: 8n,
+    gasCeiling: 25_000_000n,
+    l1DataFeeReserveCount: 8n,
+  }),
+  Object.freeze({
+    category: "graduation",
+    count: 3n,
+    gasCeiling: 10_000_000n,
+    l1DataFeeReserveCount: 3n,
+  }),
+  Object.freeze({
+    category: "v4-liquidity-fees",
+    count: 36n,
+    gasCeiling: 4_000_000n,
+    l1DataFeeReserveCount: 13n,
+  }),
+  Object.freeze({
+    category: "trades-claims-transfers",
+    count: 160n,
+    gasCeiling: 500_000n,
+    l1DataFeeReserveCount: 0n,
+  }),
+]);
 export const ENDURANCE_MINIMUM_DISK_BYTES = 12n * 1024n * 1024n * 1024n;
 export const ENDURANCE_MINIMUM_DISK_PERCENT = 15;
 export const ENDURANCE_MINIMUM_MEMORY_BYTES = 1024n * 1024n * 1024n;
@@ -106,6 +139,94 @@ export function transactionFundingTarget({
   const bufferedFeeReserve =
     feeReserve + ceilDiv(feeReserve * feeHeadroomBps, bps);
   return valueWei + bufferedFeeReserve + additionalFeeReserveWei;
+}
+
+export function normalizeFeeEnvelope({
+  maxFeePerGas,
+  maxPriorityFeePerGas,
+  gasPrice,
+  fallbackGasPrice,
+}) {
+  const normalizedMaxFee = maxFeePerGas ?? gasPrice ?? fallbackGasPrice;
+  if (typeof normalizedMaxFee !== "bigint" || normalizedMaxFee <= 0n) {
+    throw new Error("Transaction fee envelope requires a positive maximum fee");
+  }
+  const normalizedPriorityFee =
+    typeof maxPriorityFeePerGas === "bigint" &&
+    maxPriorityFeePerGas > 0n &&
+    maxPriorityFeePerGas <= normalizedMaxFee
+      ? maxPriorityFeePerGas
+      : normalizedMaxFee;
+  return {
+    maxFeePerGas: normalizedMaxFee,
+    maxPriorityFeePerGas: normalizedPriorityFee,
+  };
+}
+
+export function transactionFundingShortfall({ balanceWei, targetWei }) {
+  if (balanceWei < 0n || targetWei < 0n) {
+    throw new Error("Transaction funding balances cannot be negative");
+  }
+  return balanceWei >= targetWei ? 0n : targetWei - balanceWei;
+}
+
+export function enduranceTransactionEstimationGasCeiling(label) {
+  if (typeof label !== "string" || label.length === 0) {
+    throw new Error("Endurance transaction label is invalid");
+  }
+  if (/^endurance-launch-\d+$/.test(label)) return 16_000_000n;
+  if (
+    /(?:graduate|universal|external-liquidity|lp-harvest|hook-|position|donation)/.test(
+      label,
+    )
+  ) {
+    return 3_000_000n;
+  }
+  return 2_000_000n;
+}
+
+export function campaignWorkloadFundingBudget({
+  maxFeePerGas,
+  l1DataFeeReserveWei = ENDURANCE_L1_DATA_FEE_RESERVE_WEI,
+  schedule = ENDURANCE_WORKLOAD_ACTION_SCHEDULE,
+}) {
+  if (maxFeePerGas <= 0n || l1DataFeeReserveWei < 0n) {
+    throw new Error("Campaign workload funding values are invalid");
+  }
+  const bps = 10_000n;
+  const campaignHeadroomBps = 2_500n;
+  let transactionCount = 0n;
+  let gasUnits = 0n;
+  let l1DataFeeReserveCount = 0n;
+  for (const entry of schedule) {
+    if (
+      !entry?.category ||
+      entry.count <= 0n ||
+      entry.gasCeiling <= 0n ||
+      entry.l1DataFeeReserveCount < 0n ||
+      entry.l1DataFeeReserveCount > entry.count
+    ) {
+      throw new Error("Campaign workload schedule is invalid");
+    }
+    transactionCount += entry.count;
+    gasUnits += entry.count * entry.gasCeiling;
+    l1DataFeeReserveCount += entry.l1DataFeeReserveCount;
+  }
+  const executionWei = gasUnits * maxFeePerGas;
+  const bufferedExecutionWei =
+    executionWei + ceilDiv(executionWei * campaignHeadroomBps, bps);
+  const l1DataFeeReserveTotalWei =
+    l1DataFeeReserveCount * l1DataFeeReserveWei;
+  return {
+    transactionCount,
+    gasUnits,
+    l1DataFeeReserveCount,
+    maxFeePerGas,
+    executionWei,
+    bufferedExecutionWei,
+    l1DataFeeReserveTotalWei,
+    totalWei: bufferedExecutionWei + l1DataFeeReserveTotalWei,
+  };
 }
 
 export function terminalCurveBuyValue({

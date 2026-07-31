@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { prepareFundedTransaction } from "../lib/endurance-transaction-funding.mjs";
 import {
   accumulatedHealthySeconds,
+  campaignWorkloadFundingBudget,
   enduranceGraduationPrincipalReserveWei,
   diskHeadroomPass,
   enduranceCoverageFailures,
@@ -10,8 +12,10 @@ import {
   dueLaunchCount,
   enduranceRelevantFiringAlerts,
   enduranceSamplePassed,
+  enduranceTransactionEstimationGasCeiling,
   isApprovedTestnetRpcUrl,
   isRetryablePublicRpcError,
+  normalizeFeeEnvelope,
   percentile,
   processContinuityFailures,
   reconcileReleaseIdentity,
@@ -20,6 +24,7 @@ import {
   boundedTerminalCurveBuyValue,
   terminalCurveBuyValue,
   transactionFundingTarget,
+  transactionFundingShortfall,
 } from "../testnet-endurance-policy.mjs";
 
 test("healthy duration excludes failed samples", () => {
@@ -141,6 +146,10 @@ test("runner is fixed to one uninterrupted two-hour release gate", () => {
     new URL("../testnet-endurance.mjs", import.meta.url),
     "utf8",
   );
+  const fundingSource = readFileSync(
+    new URL("../lib/endurance-transaction-funding.mjs", import.meta.url),
+    "utf8",
+  );
   assert.match(source, /targetHealthySeconds:\s*ENDURANCE_DURATION_SECONDS/);
   assert.match(source, /endpointLatencies\.push\(\{\s*name,\s*durationMs:/);
   assert.match(
@@ -149,10 +158,18 @@ test("runner is fixed to one uninterrupted two-hour release gate", () => {
   );
   assert.match(source, /publicPageP95Ms:\s*publicPageP95/);
   assert.doesNotMatch(source, /endpoint p95 .* exceeds threshold/);
-  assert.match(source, /gas:\s*transactionGasLimit\(estimated\)/);
+  assert.match(
+    fundingSource,
+    /const gas = transactionGasLimit\(estimatedGas\)/,
+  );
+  assert.match(fundingSource, /gas > transactionGasCeiling/);
   assert.match(
     source,
-    /assertSecurityRemediationManifest,\s*transactionGasLimit,\s*V4_FEE_COLLECTION_MINIMUMS,[\s\S]*from "\.\/lib\/campaign-plan\.mjs"/,
+    /assertSecurityRemediationManifest,\s*V4_FEE_COLLECTION_MINIMUMS,[\s\S]*from "\.\/lib\/campaign-plan\.mjs"/,
+  );
+  assert.match(
+    source,
+    /prepareFundedTransaction.*from "\.\/lib\/endurance-transaction-funding\.mjs"/,
   );
   assert.match(source, /mode:\s*"uninterrupted"/);
   assert.match(source, /terminalFailure/);
@@ -417,16 +434,191 @@ test("transaction funding includes dynamic EIP-1559 fee headroom", () => {
   );
 });
 
+test("fee envelopes pin one valid EIP-1559 ceiling", () => {
+  assert.deepEqual(
+    normalizeFeeEnvelope({
+      maxFeePerGas: 12n,
+      maxPriorityFeePerGas: 3n,
+      gasPrice: 10n,
+      fallbackGasPrice: 9n,
+    }),
+    { maxFeePerGas: 12n, maxPriorityFeePerGas: 3n },
+  );
+  assert.deepEqual(
+    normalizeFeeEnvelope({
+      gasPrice: 10n,
+      maxPriorityFeePerGas: 11n,
+    }),
+    { maxFeePerGas: 10n, maxPriorityFeePerGas: 10n },
+  );
+  assert.deepEqual(normalizeFeeEnvelope({ fallbackGasPrice: 7n }), {
+    maxFeePerGas: 7n,
+    maxPriorityFeePerGas: 7n,
+  });
+  assert.throws(() => normalizeFeeEnvelope({}), /positive maximum fee/);
+});
+
+test("transaction funding shortfalls cover zero exact and insufficient balances", () => {
+  assert.equal(
+    transactionFundingShortfall({ balanceWei: 0n, targetWei: 25n }),
+    25n,
+  );
+  assert.equal(
+    transactionFundingShortfall({ balanceWei: 25n, targetWei: 25n }),
+    0n,
+  );
+  assert.equal(
+    transactionFundingShortfall({ balanceWei: 30n, targetWei: 25n }),
+    0n,
+  );
+  assert.throws(
+    () => transactionFundingShortfall({ balanceWei: -1n, targetWei: 25n }),
+    /cannot be negative/,
+  );
+});
+
+test("transaction funding uses conservative action-specific estimation ceilings", () => {
+  assert.equal(
+    enduranceTransactionEstimationGasCeiling("endurance-launch-7"),
+    16_000_000n,
+  );
+  assert.equal(
+    enduranceTransactionEstimationGasCeiling("endurance-hook-token-address-6"),
+    3_000_000n,
+  );
+  assert.equal(
+    enduranceTransactionEstimationGasCeiling("endurance-graduate-0-reserve"),
+    3_000_000n,
+  );
+  assert.equal(
+    enduranceTransactionEstimationGasCeiling("endurance-rdao-claim-1"),
+    2_000_000n,
+  );
+  assert.throws(
+    () => enduranceTransactionEstimationGasCeiling(""),
+    /label is invalid/,
+  );
+});
+
+test("campaign workload funding is schedule-derived with 25 percent headroom", () => {
+  const budget = campaignWorkloadFundingBudget({
+    maxFeePerGas: 10n,
+    l1DataFeeReserveWei: 100n,
+    schedule: [
+      {
+        category: "one",
+        count: 2n,
+        gasCeiling: 1_000n,
+        l1DataFeeReserveCount: 1n,
+      },
+      {
+        category: "two",
+        count: 3n,
+        gasCeiling: 2_000n,
+        l1DataFeeReserveCount: 2n,
+      },
+    ],
+  });
+  assert.deepEqual(budget, {
+    transactionCount: 5n,
+    gasUnits: 8_000n,
+    l1DataFeeReserveCount: 3n,
+    maxFeePerGas: 10n,
+    executionWei: 80_000n,
+    bufferedExecutionWei: 100_000n,
+    l1DataFeeReserveTotalWei: 300n,
+    totalWei: 100_300n,
+  });
+  assert.throws(
+    () =>
+      campaignWorkloadFundingBudget({
+        maxFeePerGas: 10n,
+        schedule: [
+          {
+            category: "invalid",
+            count: 1n,
+            gasCeiling: 1n,
+            l1DataFeeReserveCount: 2n,
+          },
+        ],
+      }),
+    /schedule is invalid/,
+  );
+});
+
+test("funded transaction preparation pins fees before funding and estimation", async () => {
+  let actorBalanceWei = 0n;
+  let currentNodeMaximumFeeWei = 10n;
+  const fundingStages = [];
+  const prepared = await prepareFundedTransaction({
+    request: { to: "0x0000000000000000000000000000000000000001", value: 100n },
+    feeEnvelope: { maxFeePerGas: 10n, maxPriorityFeePerGas: 2n },
+    estimationGasCeiling: 1_000n,
+    transactionGasCeiling: 2_000n,
+    additionalFeeReserveWei: 50n,
+    ensureFunding: async ({ stage, targetWei, request }) => {
+      assert.equal(request.maxFeePerGas, 10n);
+      assert.equal(request.maxPriorityFeePerGas, 2n);
+      const shortfallWei = transactionFundingShortfall({
+        balanceWei: actorBalanceWei,
+        targetWei,
+      });
+      actorBalanceWei += shortfallWei;
+      fundingStages.push({ stage, targetWei, shortfallWei });
+      if (stage === "estimate") currentNodeMaximumFeeWei = 20n;
+    },
+    estimateGas: async (request) => {
+      assert.ok(actorBalanceWei >= 25_150n);
+      assert.equal(currentNodeMaximumFeeWei, 20n);
+      assert.equal(request.maxFeePerGas, 10n);
+      return 400n;
+    },
+  });
+  assert.equal(prepared.gas, 800n);
+  assert.equal(prepared.request.maxFeePerGas, 10n);
+  assert.equal(prepared.request.maxPriorityFeePerGas, 2n);
+  assert.deepEqual(fundingStages, [
+    { stage: "estimate", targetWei: 25_150n, shortfallWei: 25_150n },
+    { stage: "final", targetWei: 10_150n, shortfallWei: 0n },
+  ]);
+});
+
+test("funded transaction preparation rejects an observed gas ceiling breach", async () => {
+  await assert.rejects(
+    () =>
+      prepareFundedTransaction({
+        request: {},
+        feeEnvelope: { maxFeePerGas: 10n, maxPriorityFeePerGas: 1n },
+        estimationGasCeiling: 1_000n,
+        transactionGasCeiling: 2_000n,
+        additionalFeeReserveWei: 0n,
+        ensureFunding: async () => {},
+        estimateGas: async () => 1_001n,
+      }),
+    /gas ceiling/,
+  );
+});
+
 test("funding preflight and execution share all required campaign wallet targets", () => {
   const source = readFileSync(
     new URL("../testnet-endurance.mjs", import.meta.url),
     "utf8",
   );
+  const fundingSource = readFileSync(
+    new URL("../lib/endurance-transaction-funding.mjs", import.meta.url),
+    "utf8",
+  );
   assert.equal(source.match(/campaignFundingTargets\(\)/g)?.length, 3);
-  assert.match(source, /buyRequest\.maxFeePerGas = maxFeePerGas/);
+  assert.match(source, /async function ensureTransactionFunding/);
+  assert.match(source, /automaticFundingLabel\(label, stage, targetWei\)/);
   assert.match(
+    fundingSource,
+    /preparedRequest = \{ \.\.\.request, \.\.\.feeEnvelope \}/,
+  );
+  assert.match(source, /campaignWorkloadFundingBudget/);
+  assert.doesNotMatch(
     source,
-    /buyRequest\.maxPriorityFeePerGas = maxPriorityFeePerGas/,
+    /const workloadValueWei = 2_500_000_000_000_000n/,
   );
   assert.match(
     source,
