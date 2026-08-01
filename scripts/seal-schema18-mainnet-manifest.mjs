@@ -190,7 +190,7 @@ const manifest = {
   bootstrapStepTwoAuthorized: false,
   publicActivationAuthorized: false,
 };
-await mkdir(outputDirectory, { recursive: false, mode: 0o700 });
+await mkdir(outputDirectory, { recursive: true, mode: 0o700 });
 for (const [name, value] of Object.entries(raw)) {
   await writeFile(resolve(outputDirectory, evidenceChecksums[name].sealedFile), value, { mode: 0o600, flag: "wx" });
 }
