@@ -1,5 +1,12 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 fast gate 01 fails closed on scope metadata
+
+- Context: Fast gate evidence `20260801-schema18-fast-01` stopped after compilation and before protocol scenarios because the new coverage definition still declared schema 16 and referenced a missing Schema-18 coverage-matrix copy.
+- Result: No protocol test failure and no external-chain access occurred. The failed 28-second run is checksummed and must not be treated as a pass.
+- Fix: Set the coverage definition to schema 18 and add `Schema18CoverageMatrix.t.sol` as the Schema-18-named copy of the already passing 70-test active-contract matrix.
+- Follow-up: Commit and push a fresh exact SHA, then restart the entire fast gate with a new evidence directory and seed.
+
 ### 2026-08-01 - Schema-18 full suite and security gate pass
 
 - Context: Schema-17 remains fully guardian-paused and Mainnet remains untouched. Schema-18 deployment, verifier, lifecycle, release, application, coverage, and torture tooling is now implemented on `codex/schema18-reward-accounting` in addition to the reward-accounting correction.

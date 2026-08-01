@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "schema": 16,
+  "schema": 18,
   "description": "Executable repository-owned source closure for production and accelerated Schema-18 deployments.",
   "coverageCompiler": {
     "viaIR": false,
