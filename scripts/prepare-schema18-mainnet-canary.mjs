@@ -71,7 +71,7 @@ for (const identity of gate1.runtimeIdentities) {
 }
 const fees = await client.estimateFeesPerGas(); const sampledMaxFee = fees.maxFeePerGas ?? fees.gasPrice; const maxFeePerGas = (sampledMaxFee * 3n + 1n) / 2n;
 const measuredGas = receipts.reduce((sum, receipt) => sum + BigInt(receipt.gasUsed), 0n);
-const gasAllowance = (measuredGas * maxFeePerGas * 3n + 1n) / 2n;
+const gasAllowance = measuredGas * maxFeePerGas;
 const balance = await client.getBalance({address:getAddress(source.deployer)});
 const requiredBalance = RESERVE + PRINCIPAL + ROUTE_CAPITAL + gasAllowance;
 if (balance < requiredBalance) throw new Error(`Gate 2 funding shortfall ${requiredBalance-balance} wei`);
