@@ -219,7 +219,7 @@ try {
   await mkdir(path.dirname(foundryInput), { recursive: true, mode: 0o700 });
   await copyFile(path.join(prepareRoot, "deployment-prepared.json"), foundryInput);
   env.ROBYN_SCHEMA18_MAINNET_MANIFEST = path.join(prepareRoot, "lifecycle-manifest.json");
-  env.SCHEMA18_DEPLOYMENT_INPUT = "tmp/schema18-mainnet-deployment-input.json";
+  env.SCHEMA18_DEPLOYMENT_INPUT = foundryInput;
 
   command("forge", ["build", "--root", "packages/contracts"], { env });
   command(
