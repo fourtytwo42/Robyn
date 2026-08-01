@@ -8,8 +8,9 @@ const source = await readFile(
 );
 
 test("Schema-18 Testnet lifecycle is LAN-only and release-bound", () => {
-  assert.match(source, /const CHAIN_ID = 46630/);
-  assert.match(source, /const RESERVE = 1_500_000_000_000_000n/);
+  assert.match(source, /const CHAIN_ID = mainnetFork \? 4663 : 46630/);
+  assert.match(source, /const RESERVE = mainnetFork \? 0n : 1_500_000_000_000_000n/);
+  assert.match(source, /type: "json-rpc"/);
   assert.match(source, /ROBYN_SCHEMA18_TESTNET_RELEASE_SHA/);
   assert.match(source, /const toolingSha = git\("rev-parse", "HEAD"\)/);
   assert.match(source, /exact clean pushed tooling/);
