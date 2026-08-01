@@ -23,6 +23,16 @@ contract Schema18RewardAsset is ERC20 {
     function mint(address recipient, uint256 amount) external {
         _mint(recipient, amount);
     }
+
+    function burn(address account, uint256 amount) external {
+        _burn(account, amount);
+    }
+}
+
+contract Schema18NoTransferAsset is Schema18RewardAsset {
+    function transferFrom(address, address, uint256) public pure override returns (bool) {
+        return true;
+    }
 }
 
 contract Schema18RewardAccountingTest {
@@ -182,5 +192,75 @@ contract Schema18RewardAccountingTest {
         require(aggregateClaimable <= deposited, "aggregate reward over-credit");
         require(token.totalRewardsVested() == deposited, "aggregate vested conservation");
         require(token.distributionRemainder() < token.eligibleRewardSupply(), "carry bound");
+    }
+
+    function testHolderInitializationAndEmptyTransferFailClosed() external {
+        address holder = address(0xA11CE);
+        Schema18NoTransferAsset rewardAsset = new Schema18NoTransferAsset();
+        address[] memory assets = new address[](1);
+        assets[0] = address(rewardAsset);
+        RobynLaunchToken token = new RobynLaunchToken(
+            "Schema 18 Empty Transfer",
+            "S18E",
+            holder,
+            1_000_000_000 ether,
+            address(this),
+            assets,
+            "ipfs://baaaaaaaaaaaaaaaaaaaa"
+        );
+
+        vm.prank(holder);
+        try token.sealExclusions(new address[](0)) {
+            revert("unauthorized seal succeeded");
+        } catch (bytes memory reason) {
+            require(bytes4(reason) == RobynLaunchToken.Unauthorized.selector, "seal selector");
+        }
+        token.sealExclusions(new address[](0));
+        rewardAsset.mint(address(this), 1);
+        rewardAsset.approve(address(token), 1);
+        try token.distributeReward(0, 1) {
+            revert("empty transfer succeeded");
+        } catch (bytes memory reason) {
+            require(bytes4(reason) == RobynLaunchToken.InvalidAmount.selector, "transfer selector");
+        }
+    }
+
+    function testHolderAccountingReportsSurplusAndDeficitAndBlocksInsolventClaim() external {
+        address holder = address(0xA11CE);
+        Schema18RewardAsset rewardAsset = new Schema18RewardAsset();
+        address[] memory assets = new address[](1);
+        assets[0] = address(rewardAsset);
+        RobynLaunchToken token = new RobynLaunchToken(
+            "Schema 18 Solvency",
+            "S18S",
+            holder,
+            1_000_000_000 ether,
+            address(this),
+            assets,
+            "ipfs://baaaaaaaaaaaaaaaaaaaa"
+        );
+        token.sealExclusions(new address[](0));
+        rewardAsset.mint(address(this), 100);
+        rewardAsset.approve(address(token), 100);
+        token.distributeReward(0, 100);
+        vm.warp(block.timestamp + 1 hours);
+
+        rewardAsset.mint(address(token), 1);
+        (,,,,,,, uint256 outstanding, uint256 surplus, uint256 deficit) =
+            token.rewardAccountingState(0);
+        require(outstanding == 100 && surplus == 1 && deficit == 0, "surplus state");
+
+        rewardAsset.burn(address(token), 51);
+        (,,,,,,, outstanding, surplus, deficit) = token.rewardAccountingState(0);
+        require(outstanding == 100 && surplus == 0 && deficit == 50, "deficit state");
+        vm.prank(holder);
+        try token.claim(0) {
+            revert("insolvent claim succeeded");
+        } catch (bytes memory reason) {
+            require(
+                bytes4(reason) == RobynLaunchToken.RewardAccountingInsolvent.selector,
+                "insolvency selector"
+            );
+        }
     }
 }

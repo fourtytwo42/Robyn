@@ -1,5 +1,12 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 fast gate 04 narrows final coverage gap
+
+- Context: Fast gate 04 passed all execution phases and produced valid active-closure coverage at 91.73% lines and 78.72% branches. It failed only the unchanged 80% branch threshold.
+- Fix: Add holder-reward regressions for unauthorized exclusion sealing, a token that reports `transferFrom` success without transferring value, explicit surplus and deficit reporting, and claim-time insolvency rejection after backing is externally reduced.
+- Commands/tests: The expanded Schema-18 reward suite passes 6/6 and matches the intended custom-error selectors.
+- Follow-up: Restart the complete fast gate on a fresh pushed SHA; deep remains blocked until fast passes.
+
 ### 2026-08-01 - Schema-18 fast gate 03 exposes validator output constant
 
 - Context: Fast gate 03 passed every execution and coverage-generation phase, then failed closed because the scope builder still emitted schema 16 even though its input validation required schema 18.
