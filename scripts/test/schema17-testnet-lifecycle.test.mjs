@@ -44,6 +44,8 @@ test("Schema-17 Testnet lifecycle journals and never replays ambiguous work", ()
     /submission is ambiguous; manual reconciliation required/,
   );
   assert.match(source, /would breach the fixed Testnet reserve/);
+  assert.match(source, /if \(!\(await paused\(\)\)\) await shutdown\(\)/);
+  assert.match(source, /type: "shutdown-failed"/);
 });
 
 test("Schema-17 Testnet lifecycle binds both exact bootstrap plans", () => {

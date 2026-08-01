@@ -922,5 +922,17 @@ try {
     `${json({ stage, failedAt: new Date().toISOString(), error: error.stack ?? error.message })}\n`,
     { mode: 0o600 },
   ).catch(() => {});
+  if (!readOnly.has(stage) && stage !== "shutdown") {
+    try {
+      if (!(await paused())) await shutdown();
+    } catch (shutdownError) {
+      await append({
+        type: "shutdown-failed",
+        recordedAt: new Date().toISOString(),
+        stage,
+        error: String(shutdownError?.stack ?? shutdownError).slice(0, 2_000),
+      }).catch(() => {});
+    }
+  }
   throw error;
 }

@@ -1,5 +1,33 @@
 # Project Memory
 
+### 2026-08-01 - Schema-17 live DAO claim exposes reward over-credit
+
+- Context: The funded live Schema-17 Testnet lifecycle completed bootstrap
+  step one, all six route round trips, graduation, settlement, and the real
+  one-hour reward interval. Holder and creator claims confirmed. No Mainnet
+  transaction occurred.
+- Failure: DAO `claimRewards()` reverted during gas estimation before signing
+  with `NativeTransferFailed()` (`0xf4b3b1bc`). The DAO reported
+  `23,051,883,486,375 wei` claimable against exactly
+  `23,051,883,486,368 wei` deposited and held, a 7-wei over-credit after nine
+  overlapping deposits. No DAO claim transaction was submitted.
+- Decision: Do not donate ETH or otherwise mask the insolvency. Schema-17 is
+  blocked from Mainnet and requires a fresh schema contract correction plus
+  complete contract-dependent requalification. The live run is failed and may
+  not resume.
+- Safety: Holder claim `0xcb1d2b...ccd6` and creator claim
+  `0x64c4df...af6f` remain confirmed and must never be replayed. An explicit
+  nine-transaction Safe shutdown restored launch mode Paused, paused both
+  conversion systems, and disabled all six routes.
+- Evidence: Checksummed failure evidence is at
+  `/home/hendo420/robyn-evidence/schema17-testnet/live-77fd741-01/`.
+- Tooling correction: The lifecycle runner now attempts guardian shutdown
+  whenever a state-changing stage fails while onchain state is not fully
+  Paused, rather than relying on an already-written stage marker.
+- Follow-up: Add a minimized overlapping-deposit regression that reproduces
+  the over-credit, correct DAO reward rounding under a new schema, rerun all
+  contract-dependent gates, and deploy fresh Paused Testnet contracts.
+
 ### 2026-08-01 - Full Schema-17 local lifecycle passes; live funding blocked
 
 - Context: Runner-only fixes were qualified against a fresh, fully funded,
