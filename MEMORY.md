@@ -2317,6 +2317,27 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-08-01: Schema-16 is deployed and independently verified on Robinhood
+  Mainnet in the strictly Paused state authorized by the owner. The canonical
+  bridge moved exactly `0.032107112992656 ETH`; the 35 deployment/binding
+  receipts all succeeded, with zero failed receipts and no replay. Frozen
+  runtime is `a8d54bb125d091be0cea010262a68a2baaceda30`, live tooling is
+  `f80a187fbf1eb7b5c0f15abd1e9fd461457c958f`, and the authorized LAN-policy
+  manifest SHA is
+  `4bcef848c054fdf9ecc2a2612ee0e9de0847651343777a0b3c647f24caf0be17`.
+  Safe is `0xE6CD65E3039fCbb7fD8fb992E5388247d9627549`, coordinator is
+  `0x35C342D0DCB296Ca8Fcdf66EbF87a27B05E66BE0`, launch mode is Paused,
+  conversions are Paused, routes enabled are zero, launches and liabilities
+  are zero, and application writes remain disabled. Evidence is sealed at
+  `/home/hendo420/robyn-evidence/mainnet/schema16-a8d54bb-ca7180e3` with
+  `SHA256SUMS` hash
+  `fc9ac75b3891216f4bfd409658eaab0b44bd66cf3cebd598476a4dc466177bb6`.
+  Remaining balances are `0.014961246027568606 ETH` on Ethereum and
+  `0.031268344574712 ETH` on Robinhood Mainnet. Canary mode, route
+  enablement, conversions, application writes, and Public mode remain
+  unauthorized and require a separately sealed state report plus explicit
+  approval.
+
 - 2026-08-01: The authorized canonical Mainnet bridge of exactly
   `0.032107112992656 ETH` succeeded as Ethereum transaction
   `0xdf7c5ab957f4b331e43614b75df98f239d1a90bb57b930658dbefc693ba7818b`;
