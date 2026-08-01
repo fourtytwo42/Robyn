@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 unanimous recovery tooling reaches first fork pass
+
+- Context: Gate 2 consumed bootstrap step one and completed all six route round trips, then a transient LAN RPC failure stopped before launch signing. The authorized Safe shutdown restored Paused launches and conversions and disabled every route; 28/28 live receipts succeeded and no canary launch exists.
+- Decision: Recovery must irreversibly owner-finalize bootstrap, schedule the exact qualified step-one call batch through the unanimous-owner Governor path, wait the one-hour Timelock, execute Canary reactivation, then run a fresh controlled canary and final guardian shutdown. Public activation remains a later independent manifest and approval.
+- Files: Added restart-safe Schema-18 recovery runner, exact-state fork rehearsal, fail-closed recovery manifest sealer, focused tests, and package entrypoints. Recovery reuses the onchain-hash-verified bootstrap-step-one payload and rejects nonce, runtime, route, reserve, RPC-policy, receipt, or plan drift.
+- Verification: The first development rehearsal pinned LAN-sourced chain-4663 block 25380963 and passed 73/73 local-fork transactions, all six routes, the one-hour Timelock, canary lifecycle, one-hour rewards, 78.99% recovery, reconciliation, and guardian shutdown with zero Mainnet broadcasts. Focused tests pass 12/12; lint and typecheck pass.
+- RPC policy: A live preflight again found the PM2 fallback-authorization flag true while LAN remained primary and paid fallback CU remained zero. The gateway was restarted with fallback authorization false, persisted with pm2 save, and verified healthy across recovery probes. Do not run process-mutating tests against the live PM2 namespace.
+- Follow-up: Commit and push a clean tooling SHA, repeat the exact-state fork rehearsal, run reproducibility and final LAN/funding checks, seal the exact recovery-and-canary manifest, and stop for explicit owner authorization before any further Mainnet transaction.
+
 ### 2026-08-01 - Schema-18 Gate-2 attempt safely shuts down after LAN degradation
 
 - Authorization: The owner authorized manifest SHA-256 `6d0a01a631f5ad40ba18f65fd163e6b52519972c9af45ace4559f2a7fa70dab0` from bootstrap step one through final guardian shutdown. Gate 3, Public mode, application writes, and further bridging remain unauthorized.
@@ -2842,7 +2851,7 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
-- 2026-08-01: Schema-18 is fully deployed on Robinhood Mainnet and independently verified in the owner-authorized Paused state. The exact bridge and all 35 L2 deployment/binding receipts succeeded; the journal contains no ambiguity or replay. Gate-one evidence is checksum-sealed. Launches, conversions, routes, and application writes remain disabled. Stop for a separately sealed bootstrap-step-one/Canary manifest and explicit authorization.
+- 2026-08-01: Schema-18 remains fully deployed and guardian-Paused on Robinhood Mainnet after the authorized Gate-2 attempt stopped before launch signing. Bootstrap step one and six route round trips confirmed, then all routes and conversions were disabled through Safe shutdown. Bootstrap remains unfinalized at next step 1; no canary launch exists. Prepare, rehearse, and seal the owner-finalization plus unanimous one-hour-Timelock recovery manifest, then stop for exact authorization before any further Mainnet broadcast.
 
 
 - 2026-08-01: Schema-18 focused Testnet qualification is complete on served application release `8327b250122cd9050a7da6a44e12859e3cf521aa` and unchanged contract candidate `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4`. The full lifecycle, real-hour claims, corrected empty-database rebuild, responsive browser acceptance, final reconciliation, reproducibility, promotion, and evidence checksums pass. Testnet is guardian-paused with all routes disabled and application writes off. Advance to the exact no-broadcast chain-4663 Mainnet rehearsal and funding manifest; Mainnet remains untouched and unauthorized.
@@ -4907,9 +4916,9 @@ Durable project context lives here. Update this file whenever information should
 ### 2026-08-01 - Schema-18 is deployed and Paused on Mainnet
 
 - Fresh Schema-18 governance and protocol contracts are deployed on chain 4663; Schema-16 and Schema-17 remain archived and Paused.
-- Coordinator and both conversion systems are Paused, all six routes are disabled, application writes are disabled, and there are zero launches, liabilities, unexpected balances, residual allowances, or unattributed assets.
+- Coordinator and both conversion systems are Paused, all six routes are disabled, application writes are disabled, and no Schema-18 canary launch exists. Bootstrap step one is consumed; bootstrap remains unfinalized at next step 1.
 - LAN RPC is the only application and transaction path. Alchemy remains probe-only, automatic fallback is unauthorized, and degraded LAN state must disable financial submissions.
-- Bootstrap step one, Canary, bootstrap step two, Public mode, and application writes are not authorized.
+- A new owner-finalization and unanimous one-hour-Timelock recovery manifest is being prepared. Recovery/canary broadcasts, Public mode, and application writes remain unauthorized until their separately sealed manifests receive exact approval.
 
 
 ### 2026-08-01 - Schema-18 is qualified and Paused on Testnet
