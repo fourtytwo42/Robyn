@@ -176,9 +176,12 @@ if (!readOnly.has(stage) && !mainnetFork) {
   }
   wallet = createWalletClient({ account, chain, transport: http(rpc, { timeout: 30_000, retryCount: 0 }) });
 } else if (!readOnly.has(stage)) {
-  account = { address: getAddress(manifest.deployer) };
+  account = {
+    address: getAddress(manifest.deployer),
+    type: "json-rpc",
+  };
   wallet = createWalletClient({
-    account: account.address,
+    account,
     chain,
     transport: http(rpc, { timeout: 30_000, retryCount: 0 }),
   });
