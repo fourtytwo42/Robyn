@@ -1,5 +1,38 @@
 # Project Memory
 
+### 2026-08-01 - Final a8d54bb Mainnet rehearsal passes; receipt ledger blocks funding certification
+
+- Exact Testnet-validated release
+  `a8d54bb125d091be0cea010262a68a2baaceda30` is frozen on pushed branch
+  `codex/mainnet-a8d54bb-freeze`. Its Testnet evidence checksums and independent
+  two-build reproducibility comparison pass.
+- Protected sole-owner bootstrap inputs were refreshed for the exact release
+  and manifest hash. Canonical chain-specific 1-of-1 Safe prediction is
+  `0xE6CD65E3039fCbb7fD8fb992E5388247d9627549`; control proof, local-fork Safe
+  deployment, threshold/owner checks, raw-hash signature verification, and
+  `checkSignatures` rehearsal pass. No reusable signature is in Git or public
+  evidence.
+- Fresh Mainnet route probe passed at block `24620873`: required GOOGL, MSFT,
+  NVDA, SPCX, SPY, and WETH all have real bidirectional execution; GME, USDG,
+  and ARROW also pass while USDe and DEGEN remain disabled.
+- The complete no-broadcast chain-4663 lifecycle passed on pinned fork block
+  `24618443` with 97,994,754 test gas, exact governance/profile transitions,
+  claims and settlements, unchanged locked principal, and 78.20% gross canary
+  capital recovery. Fresh LAN/Alchemy equivalence passed at one-block lag and
+  the 28 RPC gateway failover/wrong-chain tests pass.
+- A provisional canonical bridge estimate for `0.03 ETH` passed runtime and
+  balance checks without broadcast: 92,957 gas at the sampled fee envelope.
+- Hard blocker: `measure-schema16-mainnet-funding.mjs` correctly refuses to
+  certify funding without a phase-by-phase `local-fork-broadcast` receipt
+  ledger. The current Mainnet lifecycle is an in-process Foundry fork test, so
+  its gas cannot be relabeled as transaction receipts. Implement and run a
+  broadcast-style Schema-16 deployment/canary rehearsal before sealing an
+  authorization-eligible manifest.
+- Evidence is checksum-sealed under
+  `/home/hendo420/robyn-evidence/schema16-mainnet-go/{governance,fork,reproducibility}/`.
+  Readiness remains `authorizationEligible:false`; zero Mainnet transactions
+  were broadcast.
+
 ### 2026-07-31 - Focused Schema-16 Testnet acceptance replaces endurance
 
 - Decision: The product owner confirmed that the completed fast/deep Devnet
@@ -2212,6 +2245,16 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-08-01: Final `a8d54bb` reproducibility, protected sole-owner Safe,
+  current real routes, complete no-broadcast lifecycle, 78.20% unwind, RPC
+  equivalence, and provisional bridge estimate pass. Funding certification is
+  fail-closed because the repository has no phase-by-phase local-fork broadcast
+  receipt runner for Schema-16. Build that operational runner without changing
+  production bytecode, execute every required phase as actual Anvil
+  transactions, feed its ledger to `measure-schema16-mainnet-funding.mjs`, and
+  seal the manifest only if funding passes. No bridge or Mainnet transaction is
+  authorized.
 
 - 2026-07-31: Focused Schema-16 live Testnet acceptance passed on exact release
   `a8d54bb125d091be0cea010262a68a2baaceda30`. The product owner explicitly
@@ -5973,6 +6016,12 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-08-01: Exact `a8d54bb` final Mainnet preparation passes reproducibility,
+  canonical Safe control/signing, required real-route execution, the complete
+  fork lifecycle, 78.20% capital recovery, and fresh LAN/Alchemy equivalence.
+  The funding gate remains deliberately failed because actual per-phase local
+  broadcast receipts are missing; no synthetic identities were accepted.
 
 - 2026-07-31: Focused live Testnet acceptance passed on exact served SHA
   `a8d54bb125d091be0cea010262a68a2baaceda30`: 284/284 historical campaign
