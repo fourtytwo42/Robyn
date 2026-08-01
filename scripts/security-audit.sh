@@ -87,6 +87,18 @@ while IFS=$'\t' read -r check description; do
         exit 1
       fi
       ;;
+    weak-prng)
+      if [[ "${description}" == *"RobynDaoToken._rewardPerTokenIncrease"* &&
+            "${description}" == *"nextRemainder = combinedRemainder % supply"* ]]; then
+        reviewed_high=$((reviewed_high + 1))
+      elif [[ "${description}" == *"RobynLaunchToken._rewardPerShareIncrease"* &&
+              "${description}" == *"nextRemainder = combinedRemainder % supply"* ]]; then
+        reviewed_high=$((reviewed_high + 1))
+      else
+        echo "Untriaged high Slither detector in the active remediation scope: ${check}" >&2
+        exit 1
+      fi
+      ;;
     *)
       echo "Untriaged high Slither detector in the active remediation scope: ${check}" >&2
       exit 1
@@ -132,7 +144,7 @@ jq -n   --arg generatedAt "$(date --iso-8601=seconds)"   --arg gitSha "$(git rev
       reviewedHigh: $reviewedHigh,
       reviewedMedium: $reviewedMedium,
       highTriagePolicy: {
-        checks: ["arbitrary-send-eth", "reentrancy-balance", "reentrancy-eth"],
+        checks: ["arbitrary-send-eth", "reentrancy-balance", "reentrancy-eth", "weak-prng"],
         rationaleDocument: "docs/assurance/security-remediation-review.md"
       },
       mediumTriagePolicy: {

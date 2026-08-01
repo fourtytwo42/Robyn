@@ -246,6 +246,7 @@ const remediationDaoAbi = parseAbi([
   "function totalRewardsVested() view returns (uint256)",
   "function queuedRewards() view returns (uint256)",
   "function streamingRewards() view returns (uint256)",
+  "function rewardAccountingState() view returns (uint256 deposited,uint256 vested,uint256 unvested,uint256 claimed,uint256 queued,uint256 roundingCarry,uint256 available,uint256 outstanding,uint256 surplus,uint256 deficit)",
 ]);
 const remediationMarketAbi = parseAbi([
   "function graduated() view returns (bool)",
@@ -1338,6 +1339,15 @@ async function remediationProtocolState() {
         abi: remediationDaoAbi,
         functionName,
       })),
+      ...((deployment.schemaVersion ?? 0) >= 18
+        ? [
+            {
+              address: daoToken,
+              abi: remediationDaoAbi,
+              functionName: "rewardAccountingState",
+            } as BatchRead,
+          ]
+        : []),
     ],
     blockNumber,
   );
@@ -1350,6 +1360,10 @@ async function remediationProtocolState() {
   const daoVested = global[6] as bigint;
   const daoQueued = global[7] as bigint;
   const daoStreaming = global[8] as bigint;
+  const daoAccounting =
+    (deployment.schemaVersion ?? 0) >= 18
+      ? (global[9] as readonly bigint[])
+      : null;
   let launchControl: null | {
     mode: "Paused" | "Canary" | "Public";
     canaryLauncher: Address;
@@ -1427,7 +1441,7 @@ async function remediationProtocolState() {
     proposalThreshold: string;
     quorumNumerator: string;
   } = null;
-  if ((deployment.schemaVersion ?? 0) === 17) {
+  if ((deployment.schemaVersion ?? 0) >= 17) {
     const bootstrap = await verifiedBatchRead(
       [
         {
@@ -1672,7 +1686,10 @@ async function remediationProtocolState() {
     daoVested,
   );
   const daoStreamConserved =
-    daoConservation.conserved && daoClaimed <= daoVested;
+    daoConservation.conserved &&
+    daoClaimed <= daoVested &&
+    (!daoAccounting ||
+      (daoAccounting[9] === 0n && daoAccounting[6]! >= daoAccounting[7]!));
   const creatorStreamConserved =
     creatorAssigned === creatorVested + creatorUnvested &&
     creatorVested === creatorClaimed + creatorClaimable &&
@@ -1709,6 +1726,11 @@ async function remediationProtocolState() {
     daoClaimed: daoClaimed.toString(),
     daoUncheckpointedRoundingDust:
       daoConservation.uncheckpointedRoundingDust.toString(),
+    daoRoundingCarry: daoAccounting?.[5]?.toString() ?? "0",
+    daoBackingBalance: daoAccounting?.[6]?.toString() ?? null,
+    daoOutstanding: daoAccounting?.[7]?.toString() ?? null,
+    daoBackingSurplus: daoAccounting?.[8]?.toString() ?? null,
+    daoBackingDeficit: daoAccounting?.[9]?.toString() ?? null,
     creatorStreamConserved,
     creatorAssigned: creatorAssigned.toString(),
     creatorVested: creatorVested.toString(),

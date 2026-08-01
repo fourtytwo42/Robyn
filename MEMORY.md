@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 full suite and security gate pass
+
+- Context: Schema-17 remains fully guardian-paused and Mainnet remains untouched. Schema-18 deployment, verifier, lifecycle, release, application, coverage, and torture tooling is now implemented on `codex/schema18-reward-accounting` in addition to the reward-accounting correction.
+- Commands/tests: The complete repository suite passed 483 Foundry tests with zero failures and one protected Mainnet-fork skip. Application tests, lint, typecheck, gitleaks, and 24 focused Schema-18 tooling/release tests pass.
+- Security: Slither completes with zero unresolved high or medium findings. Its two `weak-prng` reports are narrowly triaged to the deterministic `% supply` carry in `RobynDaoToken._rewardPerTokenIncrease` and `RobynLaunchToken._rewardPerShareIncrease`; no random selection exists and every other occurrence still fails closed.
+- Decision: Commit and push the full Schema-18 tooling checkpoint before running reproducibility and the clean-SHA torture gates. Do not deploy Testnet until those gates pass and an isolated deployment rehearsal plus funding preflight succeeds.
+- Follow-up: Run reproducible builds, Schema-18 fast/deep torture and coverage, then rehearse and deploy a fresh Paused Schema-18 Testnet stack with new manifests, database, journals, and addresses.
+
 ### 2026-08-01 - Schema-18 reward accounting remediation begins
 
 - Context: The live Schema-17 DAO claim exceeded its 23,051,883,486,368-wei backing by 7 wei after nine overlapping deposits. Schema-17 remains guardian-paused and archived; Mainnet remains untouched.

@@ -36,6 +36,7 @@ const daoTokenAbi = parseAbi([
   "function queuedRewards() view returns (uint256)",
   "function streamingRewards() view returns (uint256)",
   "function totalRewardsVested() view returns (uint256)",
+  "function rewardAccountingState() view returns (uint256 deposited,uint256 vested,uint256 unvested,uint256 claimed,uint256 queued,uint256 roundingCarry,uint256 available,uint256 outstanding,uint256 surplus,uint256 deficit)",
   "function rewardRate() view returns (uint256)",
   "function periodFinish() view returns (uint256)",
   "function balanceOf(address) view returns (uint256)",
@@ -319,7 +320,7 @@ export function registerDaoRoutes(
       strict: true,
     });
     const bootstrapPromise =
-      deployment.schemaVersion === 17
+      (deployment.schemaVersion ?? 0) >= 17
         ? Promise.all([
             rpcClient.readContract({
               address: timelock,
@@ -393,6 +394,7 @@ export function registerDaoRoutes(
       bootstrapValues,
       accountValues,
       registeredLogs,
+      rewardAccounting,
     ] = await Promise.all([
       rpcClient.readContract({
         address: daoToken,
@@ -514,6 +516,13 @@ export function registerDaoRoutes(
       bootstrapPromise,
       accountCalls,
       registeredLogsPromise,
+      (deployment.schemaVersion ?? 0) >= 18
+        ? rpcClient.readContract({
+            address: daoToken,
+            abi: daoTokenAbi,
+            functionName: "rewardAccountingState",
+          })
+        : Promise.resolve(null),
     ]);
     const launchFees = await Promise.all(
       registeredLogs.map(async (log) => {
@@ -632,6 +641,15 @@ export function registerDaoRoutes(
           claimed: totalRewardsClaimed.toString(),
           ratePerSecond: rewardRate.toString(),
           streamEnd: streamEnd.toString(),
+          accounting: rewardAccounting
+            ? {
+                roundingCarry: rewardAccounting[5].toString(),
+                backingBalance: rewardAccounting[6].toString(),
+                outstanding: rewardAccounting[7].toString(),
+                surplus: rewardAccounting[8].toString(),
+                deficit: rewardAccounting[9].toString(),
+              }
+            : null,
         },
         pendingCreatorLiability: creatorLiability.toString(),
         pendingBasketLiability: basketLiability.toString(),

@@ -308,7 +308,7 @@ const rewardStreamEventByTopic = new Map(
   ]),
 );
 const rewardStreamEventTopics = [...rewardStreamEventByTopic.keys()];
-const schema17GovernanceEventDefinitions = [
+const schema18GovernanceEventDefinitions = [
   {
     source: "bootstrap-timelock",
     event: parseAbiItem(
@@ -328,14 +328,14 @@ const schema17GovernanceEventDefinitions = [
     ),
   },
 ] as const;
-const schema17GovernanceEventByTopic = new Map(
-  schema17GovernanceEventDefinitions.map((definition) => [
+const schema18GovernanceEventByTopic = new Map(
+  schema18GovernanceEventDefinitions.map((definition) => [
     toEventSelector(definition.event).toLowerCase(),
     definition,
   ]),
 );
-const schema17GovernanceEventTopics = [
-  ...schema17GovernanceEventByTopic.keys(),
+const schema18GovernanceEventTopics = [
+  ...schema18GovernanceEventByTopic.keys(),
 ];
 
 async function currentIndexedAddresses() {
@@ -1243,12 +1243,12 @@ async function projectSchema17Governance(asOfBlock: bigint) {
   const timelock = manifest.contracts.timelock;
   const governor = manifest.contracts.governor;
   if (typeof timelock !== "string" || typeof governor !== "string") {
-    throw new Error("Schema-17 manifest is missing Timelock or Governor");
+    throw new Error("Schema-18 manifest is missing Timelock or Governor");
   }
   const [checkpoint] = await sql.unsafe<
     { last_block: string; last_hash: string }[]
   >(
-    "SELECT last_block::text,last_hash FROM indexer_checkpoints WHERE service='schema17-governance-projector' AND chain_id=$1",
+    "SELECT last_block::text,last_hash FROM indexer_checkpoints WHERE service='schema18-governance-projector' AND chain_id=$1",
     [manifest.chainId],
   );
   const fromBlock = checkpoint
@@ -1262,12 +1262,12 @@ async function projectSchema17Governance(asOfBlock: bigint) {
       fromBlock.toString(),
       asOfBlock.toString(),
       [timelock.toLowerCase(), governor.toLowerCase()],
-      schema17GovernanceEventTopics,
+      schema18GovernanceEventTopics,
     ],
   );
   await sql.begin(async (tx) => {
     for (const log of logs) {
-      const definition = schema17GovernanceEventByTopic.get(
+      const definition = schema18GovernanceEventByTopic.get(
         log.topics[0]!.toLowerCase(),
       );
       if (!definition) continue;
@@ -1300,10 +1300,10 @@ async function projectSchema17Governance(asOfBlock: bigint) {
     );
     if (!captured)
       throw new Error(
-        "Schema-17 governance projection target is not canonical",
+        "Schema-18 governance projection target is not canonical",
       );
     await tx.unsafe(
-      "INSERT INTO indexer_checkpoints (service,chain_id,last_block,last_hash) VALUES ('schema17-governance-projector',$1,$2,$3) ON CONFLICT (service,chain_id) DO UPDATE SET last_block=EXCLUDED.last_block,last_hash=EXCLUDED.last_hash,updated_at=now()",
+      "INSERT INTO indexer_checkpoints (service,chain_id,last_block,last_hash) VALUES ('schema18-governance-projector',$1,$2,$3) ON CONFLICT (service,chain_id) DO UPDATE SET last_block=EXCLUDED.last_block,last_hash=EXCLUDED.last_hash,updated_at=now()",
       [manifest.chainId, asOfBlock.toString(), captured.hash.toLowerCase()],
     );
   });
@@ -1342,7 +1342,7 @@ async function resetCanonical() {
       manifest.chainId,
     ]);
     await tx.unsafe(
-      "DELETE FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector','king-of-forest-projector','reward-stream-projector','schema17-governance-projector') AND chain_id=$1",
+      "DELETE FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector','king-of-forest-projector','reward-stream-projector','schema18-governance-projector') AND chain_id=$1",
       [manifest.chainId],
     );
     await tx.unsafe(
@@ -1553,7 +1553,7 @@ async function projectOnce() {
         [manifest.chainId],
       );
       await tx.unsafe(
-        "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector','reward-stream-projector','schema17-governance-projector') AND chain_id=$1",
+        "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector','reward-stream-projector','schema18-governance-projector') AND chain_id=$1",
         [manifest.chainId],
       );
     });
@@ -1819,7 +1819,7 @@ async function projectOnce() {
               [manifest.chainId],
             );
             await tx.unsafe(
-              "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector','reward-stream-projector','schema17-governance-projector') AND chain_id=$1",
+              "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector','reward-stream-projector','schema18-governance-projector') AND chain_id=$1",
               [manifest.chainId],
             );
           });

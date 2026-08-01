@@ -7,8 +7,8 @@ cd "$release_real"
 sha256sum -c testnet-release-manifest.json.sha256 >/dev/null
 sha256sum -c testnet-release-files.sha256 >/dev/null
 git_sha="$(jq -r .gitSha testnet-release-manifest.json)"
-manifest="$release_real/deployments/46630-v4-schema17.json"
-jq -e '.schemaVersion == 17 and .chainId == 46630 and .launchControl.initialMode == "Paused"' "$manifest" >/dev/null
+manifest="$release_real/deployments/46630-v4-schema18.json"
+jq -e '.schemaVersion == 18 and .chainId == 46630 and .launchControl.initialMode == "Paused"' "$manifest" >/dev/null
 
 pm2_json="$(PM2_HOME=/home/hendo420/.pm2 "$release_real/node_modules/.bin/pm2" jlist)"
 testnet="$(jq '[.[]|select(.name|endswith("-testnet"))]' <<<"$pm2_json")"
@@ -98,9 +98,9 @@ public_observed_head="$(jq -r .observedHeadBlock <<<"$public_status")"
 observed_head_gap=$(( local_observed_head - public_observed_head ))
 [[ "$observed_head_gap" -lt 0 ]] && observed_head_gap=$(( -observed_head_gap ))
 [[ "$observed_head_gap" -le 100 ]]
-ROBYN_SCHEMA17_RPC_URL="$server_rpc_url" \
+ROBYN_SCHEMA18_RPC_URL="$server_rpc_url" \
   ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS=true \
-  node scripts/verify-schema17-deployment.mjs "$manifest" \
+  node scripts/verify-schema18-deployment.mjs "$manifest" \
   > /tmp/robyn-testnet-deployment-verify.json
 jq -e '.passed == true' /tmp/robyn-testnet-deployment-verify.json >/dev/null
 

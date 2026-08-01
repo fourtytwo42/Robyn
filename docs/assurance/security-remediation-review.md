@@ -132,6 +132,17 @@ independent-audit item before a real-value release.
 
 ## Automated evidence
 
+### Schema-18 deterministic remainder triage
+
+Slither's `weak-prng` detector reports the `% supply` operations in
+`RobynDaoToken._rewardPerTokenIncrease` and
+`RobynLaunchToken._rewardPerShareIncrease`. These operations do not generate
+randomness and do not influence a randomized selection. They compute the exact
+division remainder carried into the next reward-per-token checkpoint so that
+released value is represented once without being requeued. The security gate
+accepts only these two function-and-expression matches; every other
+`weak-prng` result remains an untriaged high finding and fails the audit.
+
 Evidence directory:
 
 `/home/hendo420/robyn-evidence/security-remediation/`
