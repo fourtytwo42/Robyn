@@ -25,6 +25,29 @@
   explicit authorization before submitting the governance proposal. Public
   mode and application writes remain unauthorized.
 
+### 2026-08-01 - Controlled Mainnet canary manifest funding gate passes
+
+- Context: The exact-state canary rehearsal and manifest sealer were run from
+  clean pushed operational tooling `fe3e664` without a Mainnet broadcast.
+- Result: The authorization-eligible but still unauthorized manifest is sealed
+  at
+  `/home/hendo420/robyn-evidence/mainnet/schema16-a8d54bb-canary-fe3e664/schema16-mainnet-canary-manifest.json`
+  with SHA-256
+  `ae8c8cc169419e89230f5e9ffbe86d862fb5d622a6438631f54edc5694814a84`.
+  The live balance is `0.031268344574712 ETH`; required funding is
+  `0.030949427313631102 ETH`, including the `0.02 ETH` reserve,
+  `0.010101010101010102 ETH` canary principal, route working capital, and 150%
+  gas allowance. Projected margin is `0.000318917261080898 ETH`.
+- Commands/tests: Full `pnpm test` passed, including 369 Foundry tests with zero
+  failures and one intentional skip. Lint, typecheck, script syntax, receipt
+  validation, exact-state rehearsal, LAN-only gateway policy, runtime hashes,
+  zero-liability Paused state, route execution, accounting, and guardian
+  shutdown passed.
+- Follow-up: Canary proposal and transactions remain unauthorized. Because this
+  memory checkpoint changes only operational documentation after the seal,
+  commit it separately and either bind its SHA as a documentation-only successor
+  or reseal before requesting explicit proposal authorization.
+
 ### 2026-08-01 - LAN-only RPC traffic with owner-authorized Alchemy selection
 
 - Decision: LAN RPC is the only active Testnet and Mainnet application
