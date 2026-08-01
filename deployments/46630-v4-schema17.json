@@ -1,0 +1,791 @@
+{
+  "schemaVersion": 17,
+  "environment": "robinhood-testnet",
+  "chainId": 46630,
+  "deploymentBlock": 95844126,
+  "kingOfForestPolicy": {
+    "version": "forest-v1",
+    "activationBlock": 95508008,
+    "progressThresholdBps": 5000,
+    "minimumUniqueTraders": 10
+  },
+  "gitCommit": "c2009ab9c626d530a7777de8331380c08ca62ad2",
+  "deployer": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",
+  "guardian": "0x1a40192140b2EdD9C3c18D25A0c913647d7c6aDC",
+  "governanceProfile": "schema17-hour-governance-testnet",
+  "archivedPredecessorManifestSha256": "603874485daacb9ff533620f8d8f3dde6216ed2346777b87c50569d970447c50",
+  "liquidityVenue": "uniswap-v4",
+  "venueProvenance": "shared-unlisted-robinhood-testnet-uniswap-v4-mirror",
+  "venueManifestSha256": "74f074bd64b41019789b40192272d15bb98be86a156391370a98c40938e3eb13",
+  "assetRoutes": [
+    {
+      "symbol": "WETH",
+      "address": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+      "poolId": null,
+      "fee": 0,
+      "tickSpacing": 0,
+      "hook": "0x0000000000000000000000000000000000000000",
+      "verification": "robyn-controlled-testnet-dex",
+      "provenance": "schema16-direct-wrap",
+      "routeKind": "wrapped-native",
+      "runtimeCodeHash": "0xa1513c4410cec44875c9b4877dabf3b4c3fc38230be914ac7ab5caf941daabcb",
+      "referenceTick": 0,
+      "maximumReferenceTickDeviation": 0,
+      "enforceReferencePrice": false,
+      "maximumProtectedRouteSlippageBps": 0,
+      "enabled": false,
+      "disabledReason": "schema17-bootstrap-pending"
+    },
+    {
+      "symbol": "GOOGL",
+      "mockSymbol": "tmGOOGL",
+      "name": "Alphabet",
+      "category": "stock",
+      "address": "0xD8c939f427815934e099002aFb59512191EE464c",
+      "poolId": "0xb1a665a5b9248cad13618ab970df14e481df34f637746a4511640de60a807975",
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hook": "0x0000000000000000000000000000000000000000",
+      "verification": "robyn-testnet-mock",
+      "provenance": "schema16-fresh-mock-v4-pool",
+      "liquidityLocker": "0xd1473d4003121b00de073285161c8A5f6eE9288f",
+      "seedTransaction": "0x7d748fcb4b72312141dc7d3c4c3226c2bd54f3892f4013a0d9fe7bf71138e9dc",
+      "assetCreationTransaction": "0xafd5cd8eed3a9a4b5be44c4d9346a9d721b30485a17304ae4ac968ae16f1b6e8",
+      "referenceTick": 0,
+      "maximumReferenceTickDeviation": 0,
+      "enforceReferencePrice": false,
+      "maximumProtectedRouteSlippageBps": 100,
+      "routeKind": "uniswap-v4",
+      "enabled": false,
+      "disabledReason": "schema17-bootstrap-pending"
+    },
+    {
+      "symbol": "MSFT",
+      "mockSymbol": "tmMSFT",
+      "name": "Microsoft",
+      "category": "stock",
+      "address": "0xF6ADDebdb72a47ee7d55B8D4914270fB723d01d4",
+      "poolId": "0x1e8deab3f22246371d19ff3fddb2640948674040bfa6dbced9ae291e9fdaa60f",
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hook": "0x0000000000000000000000000000000000000000",
+      "verification": "robyn-testnet-mock",
+      "provenance": "schema16-fresh-mock-v4-pool",
+      "liquidityLocker": "0xd1473d4003121b00de073285161c8A5f6eE9288f",
+      "seedTransaction": "0x76b0f571c5973f48e1f3e690036d63e0b0f7886bd23788fe28192ba0cfe6ec42",
+      "assetCreationTransaction": "0xff729299e9e1743d54e635ea3f7e8a06181a65b78526187872c1837e9cdfc40b",
+      "referenceTick": 0,
+      "maximumReferenceTickDeviation": 0,
+      "enforceReferencePrice": false,
+      "maximumProtectedRouteSlippageBps": 100,
+      "routeKind": "uniswap-v4",
+      "enabled": false,
+      "disabledReason": "schema17-bootstrap-pending"
+    },
+    {
+      "symbol": "NVDA",
+      "mockSymbol": "tmNVDA",
+      "name": "NVIDIA",
+      "category": "stock",
+      "address": "0x2f63e9484CF6242507b1cE8C8A479e6Dbbc7e677",
+      "poolId": "0x97c1fccbf4119735593063ebe8f2bc23d3b28b911c848a54318ddfcc7a34e160",
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hook": "0x0000000000000000000000000000000000000000",
+      "verification": "robyn-testnet-mock",
+      "provenance": "schema16-fresh-mock-v4-pool",
+      "liquidityLocker": "0xd1473d4003121b00de073285161c8A5f6eE9288f",
+      "seedTransaction": "0x7bee6a51841470214bc3227d3a3ab88ffda77e8a71628c7ecea836fd88eeca4a",
+      "assetCreationTransaction": "0x1b96712c77940e8bf5b90031c01e7b9aad942c9427b32e8e614fe3521d5b1359",
+      "referenceTick": 0,
+      "maximumReferenceTickDeviation": 0,
+      "enforceReferencePrice": false,
+      "maximumProtectedRouteSlippageBps": 100,
+      "routeKind": "uniswap-v4",
+      "enabled": false,
+      "disabledReason": "schema17-bootstrap-pending"
+    },
+    {
+      "symbol": "SPCX",
+      "mockSymbol": "tmSPCX",
+      "name": "SpaceX",
+      "category": "stock",
+      "address": "0x613863f5DcbD415039602e5A579103F160f69997",
+      "poolId": "0x3ecd75f7b25e4ad891754853c48983bfdab1940ea570f09f4b55c5335295edca",
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hook": "0x0000000000000000000000000000000000000000",
+      "verification": "robyn-testnet-mock",
+      "provenance": "schema16-fresh-mock-v4-pool",
+      "liquidityLocker": "0xd1473d4003121b00de073285161c8A5f6eE9288f",
+      "seedTransaction": "0xfc669fa1c9493e2aad5bab26a7a81428e98552dee04ce328053ed66a8e78fc45",
+      "assetCreationTransaction": "0x221b821648659402b691fee6c6ceafdfd3424d57b181cf8b4348dd1a9eea82a4",
+      "referenceTick": 0,
+      "maximumReferenceTickDeviation": 0,
+      "enforceReferencePrice": false,
+      "maximumProtectedRouteSlippageBps": 100,
+      "routeKind": "uniswap-v4",
+      "enabled": false,
+      "disabledReason": "schema17-bootstrap-pending"
+    },
+    {
+      "symbol": "SPY",
+      "mockSymbol": "tmSPY",
+      "name": "SPDR S&P 500 ETF",
+      "category": "etf",
+      "address": "0xDfCcA159be0d4E1a034BD653728F7543B53cD940",
+      "poolId": "0xc6f786e302f8393c768e1cbdbee08936e9da411d0182adf4aae9701ae9440c1f",
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hook": "0x0000000000000000000000000000000000000000",
+      "verification": "robyn-testnet-mock",
+      "provenance": "schema16-fresh-mock-v4-pool",
+      "liquidityLocker": "0xd1473d4003121b00de073285161c8A5f6eE9288f",
+      "seedTransaction": "0xa7ef89bc99a85753905ab54d1fce650ee25c1250866536b9f42e3d34d04ab48f",
+      "assetCreationTransaction": "0x693e92f533cc57063a1a7ff3d7c67993b8440f979ae991537ff5129c2bc8a8f7",
+      "referenceTick": 0,
+      "maximumReferenceTickDeviation": 0,
+      "enforceReferencePrice": false,
+      "maximumProtectedRouteSlippageBps": 100,
+      "routeKind": "uniswap-v4",
+      "enabled": false,
+      "disabledReason": "schema17-bootstrap-pending"
+    }
+  ],
+  "assetCatalog": {
+    "schemaVersion": 17,
+    "snapshotAt": "2026-07-31T05:11:46Z",
+    "disclosure": "Schema-16 Testnet uses individually selected mock Uniswap v4 pools and a direct WETH route. Test assets are not production Stock Tokens, backed shares, or redeemable securities.",
+    "assets": [
+      {
+        "symbol": "WETH",
+        "mockSymbol": "WETH",
+        "name": "Wrapped Ether",
+        "category": "crypto",
+        "logoUrl": "/assets/brand/robyn-mark.png",
+        "mainnetAddress": null,
+        "referencePriceUsd": null,
+        "address": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-controlled-testnet-dex",
+        "mockOnly": true,
+        "route": {
+          "kind": "wrapped-native",
+          "ready": true
+        },
+        "disclosure": "Robyn-controlled testnet WETH route. Test-only and not an official Robinhood asset.",
+        "poolId": null,
+        "poolFee": 0,
+        "tickSpacing": 0,
+        "hook": "0x0000000000000000000000000000000000000000",
+        "routeProvenance": "schema16-direct-wrap"
+      },
+      {
+        "symbol": "GOOGL",
+        "mockSymbol": "tmGOOGL",
+        "name": "Robyn Testnet Mock Alphabet Class A",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x2e0847e8910a9732eb3fb1bb4b70a580adad4fe3.png",
+        "mainnetAddress": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+        "referencePriceUsd": "319.64",
+        "address": "0xD8c939f427815934e099002aFb59512191EE464c",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "disclosure": "Robyn testnet mock. Not an official Robinhood Stock Token, backed share, or redeemable security.",
+        "poolId": "0xb1a665a5b9248cad13618ab970df14e481df34f637746a4511640de60a807975",
+        "poolFee": 10000,
+        "tickSpacing": 200,
+        "hook": "0x0000000000000000000000000000000000000000",
+        "routeProvenance": "schema16-fresh-mock-v4-pool"
+      },
+      {
+        "symbol": "MSFT",
+        "mockSymbol": "tmMSFT",
+        "name": "Robyn Testnet Mock Microsoft",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xe93237c50d904957cf27e7b1133b510c669c2e74.png",
+        "mainnetAddress": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+        "referencePriceUsd": "383.25",
+        "address": "0xF6ADDebdb72a47ee7d55B8D4914270fB723d01d4",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "disclosure": "Robyn testnet mock. Not an official Robinhood Stock Token, backed share, or redeemable security.",
+        "poolId": "0x1e8deab3f22246371d19ff3fddb2640948674040bfa6dbced9ae291e9fdaa60f",
+        "poolFee": 10000,
+        "tickSpacing": 200,
+        "hook": "0x0000000000000000000000000000000000000000",
+        "routeProvenance": "schema16-fresh-mock-v4-pool"
+      },
+      {
+        "symbol": "NVDA",
+        "mockSymbol": "tmNVDA",
+        "name": "Robyn Testnet Mock NVIDIA",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec.png",
+        "mainnetAddress": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+        "referencePriceUsd": "208.34",
+        "address": "0x2f63e9484CF6242507b1cE8C8A479e6Dbbc7e677",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "disclosure": "Robyn testnet mock. Not an official Robinhood Stock Token, backed share, or redeemable security.",
+        "poolId": "0x97c1fccbf4119735593063ebe8f2bc23d3b28b911c848a54318ddfcc7a34e160",
+        "poolFee": 10000,
+        "tickSpacing": 200,
+        "hook": "0x0000000000000000000000000000000000000000",
+        "routeProvenance": "schema16-fresh-mock-v4-pool"
+      },
+      {
+        "symbol": "SPCX",
+        "mockSymbol": "tmSPCX",
+        "name": "Robyn Testnet Mock SpaceX",
+        "category": "stock",
+        "logoUrl": null,
+        "mainnetAddress": null,
+        "referencePriceUsd": null,
+        "address": "0x613863f5DcbD415039602e5A579103F160f69997",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "disclosure": "Robyn testnet mock. Not an official Robinhood Stock Token, backed share, or redeemable security.",
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "poolId": "0x3ecd75f7b25e4ad891754853c48983bfdab1940ea570f09f4b55c5335295edca",
+        "poolFee": 10000,
+        "tickSpacing": 200,
+        "hook": "0x0000000000000000000000000000000000000000",
+        "routeProvenance": "schema16-fresh-mock-v4-pool"
+      },
+      {
+        "symbol": "SPY",
+        "mockSymbol": "tmSPY",
+        "name": "Robyn Testnet Mock SPDR S&P 500 ETF Trust",
+        "category": "etf-commodity",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x117cc2133c37b721f49de2a7a74833232b3b4c0c.png",
+        "mainnetAddress": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+        "referencePriceUsd": "739.22",
+        "address": "0xDfCcA159be0d4E1a034BD653728F7543B53cD940",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "disclosure": "Robyn testnet mock. Not an official Robinhood Stock Token, backed share, or redeemable security.",
+        "poolId": "0xc6f786e302f8393c768e1cbdbee08936e9da411d0182adf4aae9701ae9440c1f",
+        "poolFee": 10000,
+        "tickSpacing": 200,
+        "hook": "0x0000000000000000000000000000000000000000",
+        "routeProvenance": "schema16-fresh-mock-v4-pool"
+      }
+    ]
+  },
+  "contracts": {
+    "poolManager": "0x8366a39cc670b4001a1121b8f6a443a643e40951",
+    "positionManager": "0x58daec3116aae6D93017bAAea7749052E8a04fA7",
+    "quoter": "0x8dc178efb8111bb0973dd9d722ebeff267c98f94",
+    "universalRouter": "0x8876789976decbfcbbbe364623c63652db8c0904",
+    "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "stateView": "0x8c5db7b072e586ea4ea3ade80d5bac9a34e90fa5",
+    "wrappedNative": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+    "baseAsset": "0x0000000000000000000000000000000000000000",
+    "rewardAssets": [
+      "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+      "0xD8c939f427815934e099002aFb59512191EE464c",
+      "0xF6ADDebdb72a47ee7d55B8D4914270fB723d01d4",
+      "0x2f63e9484CF6242507b1cE8C8A479e6Dbbc7e677",
+      "0x613863f5DcbD415039602e5A579103F160f69997",
+      "0xDfCcA159be0d4E1a034BD653728F7543B53cD940"
+    ],
+    "conversionRouter": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+    "routeRegistry": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+    "factory": "0xF47812552F2BE863fB74725132aB5C98AE693ff7",
+    "timelock": "0x779B1A077f487DD2bf2e53a1701ee961277F3796",
+    "daoToken": "0x3A084eaD8dBfb2BB42b6e6400B8cb030AdD906CC",
+    "governor": "0x9571552157Cf4389899C3881A67661ce4a5CecB7",
+    "assetRouter": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+    "testAssetLiquidityLocker": "0xd1473d4003121b00de073285161c8A5f6eE9288f",
+    "launchDeployer": "0x100FFd5C3657c7CDE6f9D29d9e2F55920d53bBD0",
+    "vaultDeployer": "0xe2b4e1585E06a609E5e89e07A282C93805f67110",
+    "launchFactory": "0xF47812552F2BE863fB74725132aB5C98AE693ff7",
+    "protocolFeeRouter": "0x5aD3738Fa199f600aBD819C2261FdaC0F1b6Fc0c",
+    "oracleHook": "0x8B07De2Cd92699966E5808480162D9DcFD4Fd8E4",
+    "adapterDeployer": "0x2Ddb0424Ef71eF9d8567C88e9235622CaA6B6D05",
+    "lockerDeployer": "0x6095e5EE1996D03aaE7fd7fc10Ed09aA86b2c112",
+    "marketDeployer": "0xD06f57EeC64746a6Be67b7a642122671A949d312",
+    "marketFactory": "0x32D91e7D52Bdf656B5a4f0da65f6230EF94b156b",
+    "atomicLaunchCoordinator": "0x8D80a32dEdF895ee511895a532B9a41Da14b2038",
+    "tokenSink": "0xB49Bb7D6A61bD8320f54E99ddc1cA3cBF739C43c",
+    "guardian": "0x1a40192140b2EdD9C3c18D25A0c913647d7c6aDC",
+    "nativeFeeConverter": "0x0000000000000000000000000000000000000000",
+    "genesisToken": "0x0000000000000000000000000000000000000000",
+    "genesisVault": "0x0000000000000000000000000000000000000000",
+    "genesisMarket": "0x0000000000000000000000000000000000000000",
+    "genesisGraduationAdapter": "0x0000000000000000000000000000000000000000",
+    "genesisPositionLocker": "0x0000000000000000000000000000000000000000",
+    "feeRouter": "0x5aD3738Fa199f600aBD819C2261FdaC0F1b6Fc0c",
+    "coordinator": "0x8D80a32dEdF895ee511895a532B9a41Da14b2038"
+  },
+  "deploymentTransactions": {
+    "conversionRouter": "0x4dff44a4c9be3f67804ff3379ec1667e0e6d1ca923aaa81f81718c3add0e9879",
+    "routeRegistry": "0x4dff44a4c9be3f67804ff3379ec1667e0e6d1ca923aaa81f81718c3add0e9879",
+    "factory": "0x7f9174dee2f90ff6bbc699b8b4169cd41128c10a8efd43173773544174a3c37b",
+    "timelock": "0x2ca47cb15923f8c7230c9c5da011838ccae98907279a6cc24dd15953600bfa3b",
+    "daoToken": "0x51d5e865be34fe1a8b5fdb5be22d231b7dea0387caeae68437715fbc66b0d5cb",
+    "governor": "0xa342e2ce0a925956a33c9db4fafca009caa4627f873f84cc1b67af9ff827c27b",
+    "assetRouter": "0x4dff44a4c9be3f67804ff3379ec1667e0e6d1ca923aaa81f81718c3add0e9879",
+    "launchDeployer": "0x9e4f4377b8426f15c213aba0de3f979e36f092064897420a99ce15833d39a4d6",
+    "vaultDeployer": "0x4ee901401b68770a553e36a8f1eefdc573cbab4db2a9a0b174ae81eac865c79a",
+    "launchFactory": "0x7f9174dee2f90ff6bbc699b8b4169cd41128c10a8efd43173773544174a3c37b",
+    "protocolFeeRouter": "0xe82f5630dad6c3f0d72461e4603681308e87d0e2774e4a2cc3434fd171a9bcdf",
+    "oracleHook": "0x5311f1acfc64534997039d82c8f7a6dcd0ee3f7bcf4b98c990f1ed7f0f39496b",
+    "adapterDeployer": "0xfe8430f1a9d894ece89d20d4c9efc33839f30cfe8b43c84bbd6db4cded75299c",
+    "lockerDeployer": "0xd1bbf201bfb6d8a6f67a54c4f9e5a7884394e3f63cfc847d1ad7012028aef8b5",
+    "marketDeployer": "0xb39d949631e8203cd2b99f8537c45d7652ae1944b86068dd01be0662335892ee",
+    "marketFactory": "0x2719188aa3be21ba7bdfb35e914e6ffa5a5fe92986b1a53921a217976a847096",
+    "atomicLaunchCoordinator": "0xf6af407af0a9832f832ba4f0201af9961d0b4ddd0646812ebd58628723731c95",
+    "tokenSink": "0xebc130337710174734240e8ac0c798ed38a2f945f28defb3840f05f687aab614",
+    "feeRouter": "0xe82f5630dad6c3f0d72461e4603681308e87d0e2774e4a2cc3434fd171a9bcdf",
+    "coordinator": "0xf6af407af0a9832f832ba4f0201af9961d0b4ddd0646812ebd58628723731c95",
+    "guardianSafe": "0x3b96692723fce1ac019aa2a2d0cdf14dfee39cf83d0567c411ca53d416f2e1c8"
+  },
+  "configurationTransactions": [
+    "0x08d05269122ee1fb29fbaaa3b7ab531033e4175e7625ac968914553652119757",
+    "0x90aa456e5c74b035b094363e59474116ce9f60716a36ca997cc567b1c4e25fbf",
+    "0x7aa14507321da35763d3b03913ee74155b3ce45f5ed22b120cc57d68393900e7",
+    "0x5ce1c52840fd3e514bb0a8f6b87a0eadc68244b048624d788e47587bd12afc73",
+    "0xa0231ca6e7a308b353dc4f89ba9921bce4f87a9b1dab2e0cb9751d1d41914ac6",
+    "0xce2f9d1365c99445cf60e5f6697dd9443cd74fd6dbc3c66c7200f99254f5035e",
+    "0xb6341cbfcc8d822dd2d4ebd9634b25041572afea6862b91e06f150fed1bfddca",
+    "0xdd282a7d3549b916b006742bf16af1bdb787d1dabd22581b0e126ec86a345376",
+    "0xe7b9b239c7021dca1da8a81b8f7912149306aa250e2045946b935580edaa5739",
+    "0x1b0f37182e346e3ea1f84ef78b8607a94127addf3246cd146155be881992c721",
+    "0x88c1261e44c82ffdc1eb8635787cc4a5eef3f251140f52591fb713fb5b53e7cf",
+    "0x4e1f5656edcc2bf8893eba1ee3b97b2e610b3b168c8eff25ea069c3a90a1ad7a",
+    "0x86b959dc0878900185b543828f8b43da8a9dea4ab877611dcc7efa35159e8891",
+    "0xca343d0d9be537fb9a969752759eb9ef1241b21079ccf4f4f8b864f378d91783",
+    "0x5ed3bc0928d53ec0fa3bd99493f3fc435a545639a2fa0e72d7ee3d3f0e9fbc1d",
+    "0xc66f035e0bb891c63fd395c75fda4e8f034cac9063f292d77d43a25f1f41ff1b",
+    "0xdcf697df6573d70fe4dc92ceaa1b3ed4bc4fabb83604c37a79d477d99c8620c7",
+    "0xb7c6f4b56aa848265b0f4f0df3842e0bcee77b2d980c07814c5961cc7d066a46",
+    "0x7e1033f92e409338a4ba6001115529f9a75aad640d36bc5bb54c02f9b6fb03cf",
+    "0xc0366400857cc6744b206d9ccf21bc5db5a392755985f7c57902bde2e04ee192"
+  ],
+  "runtimeCodeHashes": {
+    "daoToken": "0x789fa612a4f27864d5784065c7322ee3494d94e8a9dfd68e2457ea1372944e3e",
+    "timelock": "0xbfab6e71c8628da591e0fa2ee7a5b7166d774136903a516ebf4db66efe7e1d62",
+    "governor": "0xde0aab90c5a5f77e8338e40c8059343de0fb414222dca796952e00df481dc627",
+    "assetRouter": "0x2e77d2be6e6ca1392bb8d315aea940d5f13bd2457c316826fd03e717a51f8d9e",
+    "protocolFeeRouter": "0xffa2e1e1468d47b5fb1bbf4fcccb7d2220253410e008ba42b185b6aa77eb2776",
+    "factory": "0xe9f5e90dfbf4fa2be6e5c35c237d2a47e1fb650c41120fd0dd393e15f410e611",
+    "atomicLaunchCoordinator": "0x9e4d3ce380e46145559cdf4619dfa94bff33130e81d0e08a6fcb642d8ba4ff48",
+    "launchDeployer": "0x5379d5a17b6d3d23816098a49ad75ecc4ea9055012d4147fdd4924db70fd9815",
+    "vaultDeployer": "0xd0ae39528876fc3c40f9c567ab2ad6bdd44fb5dbb39c7d907cfd0f9b9237c45b",
+    "tokenSink": "0xa8bf7ca1fc247eb461c219e063c9f4e605f1873fc4f813d257262d65011acbc6",
+    "oracleHook": "0x31f6a30f3b47edc4cc8f327017c00ce6f92837e3f27490028b9476c60cd56ce9",
+    "adapterDeployer": "0x6cb02af2a180b742b041e46f83ead8b00f040ad6a492b4a531a7eacb94612c09",
+    "lockerDeployer": "0x79875dceef102d7949bef6d32545d06ae574701b0c8336b6f2988e566edc7568",
+    "marketDeployer": "0x521cb05c6acf0060fd6b01f1f339fe18646a74da430550efbcb93b755cf73b3c",
+    "marketFactory": "0xa2cf3ac38f4732bd673fd497812d7c1b9ae74b7e5ea6132838095a053144324d",
+    "launchFactory": "0xe9f5e90dfbf4fa2be6e5c35c237d2a47e1fb650c41120fd0dd393e15f410e611",
+    "feeRouter": "0xffa2e1e1468d47b5fb1bbf4fcccb7d2220253410e008ba42b185b6aa77eb2776",
+    "coordinator": "0x9e4d3ce380e46145559cdf4619dfa94bff33130e81d0e08a6fcb642d8ba4ff48",
+    "stateView": "0x7d9c591e0956fd89d98feb4ffcfe8bf1f7a62bd485edd979fa21d104b49878a6",
+    "testAssetLiquidityLocker": "0x2022431b9e571f6788f85073b27f6751f9f20f41122e8c800ab41fc8534d623f"
+  },
+  "oracleHook": {
+    "create2Deployer": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+    "salt": "0x000000000000000000000000000000000000000000000000000000000000ad49",
+    "deploymentDomain": "0x6ebd706e4c2e5e35d7af670f12fa97221268dbd2b35f23a073bbd69125741b5a",
+    "permissionBits": "0x18e4",
+    "behavior": "immutable-phase-gated-1pct-fee-and-post-graduation-oracle",
+    "phases": [
+      "Bonding",
+      "Graduating",
+      "Trading"
+    ],
+    "protocolFeeBps": 100
+  },
+  "rewardStreams": {
+    "launchTokenDurationSeconds": 3600,
+    "daoDurationSeconds": 3600,
+    "creatorDurationSeconds": 3600,
+    "release": "rolling-linear-one-hour",
+    "allocation": "balance-held-while-unlocking",
+    "claims": "pull-claim-vested-amount-only"
+  },
+  "creatorRewards": {
+    "allocation": "assigned-at-fee-intake-and-unlocked-over-one-hour",
+    "maximumRecipients": 8,
+    "sharesTotalBps": 10000,
+    "updatesAffect": "future-fees-only",
+    "lockPolicy": "creator-controlled-and-irreversible"
+  },
+  "dao": {
+    "tokenName": "Robyn DAO",
+    "tokenSymbol": "RDAO",
+    "fixedSupply": "1000000000000000000000000000",
+    "initialOwnerShareBps": 10000,
+    "rewardStreamDurationSeconds": 3600,
+    "zeroEligibleSupplyPolicy": "queue-until-eligible-supply-returns",
+    "feePolicy": {
+      "basketBps": 5000,
+      "creatorBps": 2500,
+      "daoRewardsBps": 2000,
+      "treasuryBps": 500
+    },
+    "governance": {
+      "profile": "schema17-hour-governance-testnet",
+      "votingDelaySeconds": 3600,
+      "votingPeriodSeconds": 14400,
+      "timelockSeconds": 3600,
+      "quorumBps": 1000,
+      "proposalThresholdBps": 100,
+      "bootstrapWindowSeconds": 172800,
+      "bootstrapPlanHashes": [
+        "0x379216fbd7b5672cc855cfd8b160a4f997127848e3beeadc3db3cec68a8f4c00",
+        "0x111e9c3f563df53c48c1dabdaf03da45e48ec4069de1d7a589320675ba1869e7"
+      ],
+      "unanimousTimelockRequired": true
+    }
+  },
+  "market": {
+    "quoteCurrency": "native-ETH",
+    "poolFeePips": 10000,
+    "protocolFeeBps": 100,
+    "nominalPostGraduationFeeBps": 200,
+    "tickSpacing": 200,
+    "curveFeeBps": 100,
+    "curveTokenAllocation": "800000000000000000000000000",
+    "graduationTokenAllocation": "200000000000000000000000000",
+    "initialVirtualTokenReserve": "1066666666666666666666666666",
+    "initialVirtualNativeReserve": "3333333333333333",
+    "graduationThresholdNative": "10000000000000000",
+    "actualGraduationThresholdNative": "10000000000000000",
+    "maximumCurvePurchase": "1000000000000000",
+    "minimumUseBps": 9900,
+    "maximumNativeSwap": "250000000000000",
+    "maximumNativeResidual": "1000000000",
+    "maximumTokenResidual": "1000000000000",
+    "residualPolicy": "tracked-principal-dust-never-routed-or-converted",
+    "unattributedNativePolicy": "permissionless-sweep-to-timelock",
+    "unattributedLaunchTokenPolicy": "permissionless-sweep-to-immutable-token-sink"
+  },
+  "launchControl": {
+    "initialMode": "Paused",
+    "canaryLauncher": null,
+    "guardianAuthority": "pause-cancel-disable-only",
+    "governorAuthority": "timelock-only-after-bootstrap",
+    "bootstrapDeadline": null,
+    "bootstrapPlanHashes": [
+      "0x379216fbd7b5672cc855cfd8b160a4f997127848e3beeadc3db3cec68a8f4c00",
+      "0x111e9c3f563df53c48c1dabdaf03da45e48ec4069de1d7a589320675ba1869e7"
+    ],
+    "bootstrapFinalization": "irreversible-after-step-two-distribution-expiry-owner-finalization-or-guardian-abort"
+  },
+  "graduationProfiles": {
+    "current": {
+      "version": "1",
+      "targetGraduationNative": "10000000000000000",
+      "actualGraduationNative": "10000000000000000",
+      "maximumCurvePurchase": "1000000000000000",
+      "initialVirtualNativeReserve": "3333333333333333",
+      "terminalNativePerTokenX18": "49999999",
+      "terminalSqrtPriceX96": "11204554307002771614001824737925685",
+      "hash": "0x9d057a99f6c4c9a7c43bdeb18aca3fdc951d53edbe1d988ff51a8e5f6ec6e315"
+    },
+    "production": {
+      "targetGraduationNative": "6000000000000000000",
+      "maximumCurvePurchase": "500000000000000000"
+    },
+    "updatePolicy": "timelock-governed-future-launches-only"
+  },
+  "liabilityModel": {
+    "intake": "accounting-only",
+    "allocationBps": {
+      "basket": 5000,
+      "creator": 2500,
+      "dao": 2000,
+      "treasury": 500
+    },
+    "settlement": "permissionless-and-destination-isolated",
+    "solvencyIncludes": [
+      "basket",
+      "creator",
+      "dao",
+      "treasury"
+    ]
+  },
+  "releaseSha": "c2009ab9c626d530a7777de8331380c08ca62ad2",
+  "guardianSafe": "0x1a40192140b2EdD9C3c18D25A0c913647d7c6aDC",
+  "governance": {
+    "schemaVersion": 17,
+    "bootstrapWindowSeconds": 172800,
+    "votingDelaySeconds": 3600,
+    "votingPeriodSeconds": 14400,
+    "timelockDelaySeconds": 3600,
+    "proposalThresholdBps": 100,
+    "quorumBps": 1000,
+    "fixedDaoSupplyWei": "1000000000000000000000000000",
+    "bootstrapDomain": "0xf73e1a7033b158253704dee6e4cbf846e956069ec4c28a62bd448ade77cd1c59",
+    "bootstrapPlanHashes": [
+      "0x379216fbd7b5672cc855cfd8b160a4f997127848e3beeadc3db3cec68a8f4c00",
+      "0x111e9c3f563df53c48c1dabdaf03da45e48ec4069de1d7a589320675ba1869e7"
+    ],
+    "unanimousTimelockRequired": true,
+    "bootstrapArbitraryCallsAllowed": false,
+    "bootstrapNativeValueAllowed": false
+  },
+  "bootstrap": {
+    "domain": "0xf73e1a7033b158253704dee6e4cbf846e956069ec4c28a62bd448ade77cd1c59",
+    "steps": [
+      {
+        "step": 0,
+        "calls": [
+          {
+            "label": "resume-asset-conversions",
+            "target": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+            "valueWei": "0",
+            "data": "0x77eebfc4"
+          },
+          {
+            "label": "resume-fee-conversions",
+            "target": "0x5aD3738Fa199f600aBD819C2261FdaC0F1b6Fc0c",
+            "valueWei": "0",
+            "data": "0x16c38b3c0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "label": "enable-GOOGL-canary-route",
+            "target": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+            "valueWei": "0",
+            "data": "0xa3da3bde000000000000000000000000d8c939f427815934e099002afb59512191ee464c000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001"
+          },
+          {
+            "label": "enable-MSFT-canary-route",
+            "target": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+            "valueWei": "0",
+            "data": "0xa3da3bde000000000000000000000000f6addebdb72a47ee7d55b8d4914270fb723d01d4000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001"
+          },
+          {
+            "label": "enable-NVDA-canary-route",
+            "target": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+            "valueWei": "0",
+            "data": "0xa3da3bde0000000000000000000000002f63e9484cf6242507b1ce8c8a479e6dbbc7e677000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001"
+          },
+          {
+            "label": "enable-SPCX-canary-route",
+            "target": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+            "valueWei": "0",
+            "data": "0xa3da3bde000000000000000000000000613863f5dcbd415039602e5a579103f160f69997000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001"
+          },
+          {
+            "label": "enable-SPY-canary-route",
+            "target": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+            "valueWei": "0",
+            "data": "0xa3da3bde000000000000000000000000dfcca159be0d4e1a034bd653728f7543b53cd940000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001"
+          },
+          {
+            "label": "enable-WETH-canary-route",
+            "target": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+            "valueWei": "0",
+            "data": "0x0df428be000000000000000000000000000000000000000000000000000000e8d4a510000000000000000000000000000000000000000000000000000000000000000001"
+          },
+          {
+            "label": "enter-canary-mode",
+            "target": "0x8D80a32dEdF895ee511895a532B9a41Da14b2038",
+            "valueWei": "0",
+            "data": "0x3c57ac40000000000000000000000000ecc5d6d032adc9ca9e0f4042128067b8366da17a"
+          }
+        ],
+        "targets": [
+          "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+          "0x5aD3738Fa199f600aBD819C2261FdaC0F1b6Fc0c",
+          "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+          "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+          "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+          "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+          "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+          "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+          "0x8D80a32dEdF895ee511895a532B9a41Da14b2038"
+        ],
+        "valuesWei": [
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "payloads": [
+          "0x77eebfc4",
+          "0x16c38b3c0000000000000000000000000000000000000000000000000000000000000000",
+          "0xa3da3bde000000000000000000000000d8c939f427815934e099002afb59512191ee464c000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001",
+          "0xa3da3bde000000000000000000000000f6addebdb72a47ee7d55b8d4914270fb723d01d4000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001",
+          "0xa3da3bde0000000000000000000000002f63e9484cf6242507b1ce8c8a479e6dbbc7e677000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001",
+          "0xa3da3bde000000000000000000000000613863f5dcbd415039602e5a579103f160f69997000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001",
+          "0xa3da3bde000000000000000000000000dfcca159be0d4e1a034bd653728f7543b53cd940000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001",
+          "0x0df428be000000000000000000000000000000000000000000000000000000e8d4a510000000000000000000000000000000000000000000000000000000000000000001",
+          "0x3c57ac40000000000000000000000000ecc5d6d032adc9ca9e0f4042128067b8366da17a"
+        ],
+        "planHash": "0x379216fbd7b5672cc855cfd8b160a4f997127848e3beeadc3db3cec68a8f4c00"
+      },
+      {
+        "step": 1,
+        "calls": [
+          {
+            "label": "install-production-profile",
+            "target": "0x32D91e7D52Bdf656B5a4f0da65f6230EF94b156b",
+            "valueWei": "0",
+            "data": "0x17128ea400000000000000000000000000000000000000000000000053444835ec58000000000000000000000000000000000000000000000000000006f05b59d3b20000"
+          },
+          {
+            "label": "install-GOOGL-public-cap",
+            "target": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+            "valueWei": "0",
+            "data": "0xa3da3bde000000000000000000000000d8c939f427815934e099002afb59512191ee464c000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000174876e800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001"
+          },
+          {
+            "label": "install-MSFT-public-cap",
+            "target": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+            "valueWei": "0",
+            "data": "0xa3da3bde000000000000000000000000f6addebdb72a47ee7d55b8d4914270fb723d01d4000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000174876e800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001"
+          },
+          {
+            "label": "install-NVDA-public-cap",
+            "target": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+            "valueWei": "0",
+            "data": "0xa3da3bde0000000000000000000000002f63e9484cf6242507b1ce8c8a479e6dbbc7e677000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000174876e800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001"
+          },
+          {
+            "label": "install-SPCX-public-cap",
+            "target": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+            "valueWei": "0",
+            "data": "0xa3da3bde000000000000000000000000613863f5dcbd415039602e5a579103f160f69997000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000174876e800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001"
+          },
+          {
+            "label": "install-SPY-public-cap",
+            "target": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+            "valueWei": "0",
+            "data": "0xa3da3bde000000000000000000000000dfcca159be0d4e1a034bd653728f7543b53cd940000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000174876e800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001"
+          },
+          {
+            "label": "install-WETH-public-cap",
+            "target": "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+            "valueWei": "0",
+            "data": "0x0df428be000000000000000000000000000000000000000000000000000000174876e8000000000000000000000000000000000000000000000000000000000000000001"
+          },
+          {
+            "label": "enter-public-mode",
+            "target": "0x8D80a32dEdF895ee511895a532B9a41Da14b2038",
+            "valueWei": "0",
+            "data": "0x3e21d200"
+          }
+        ],
+        "targets": [
+          "0x32D91e7D52Bdf656B5a4f0da65f6230EF94b156b",
+          "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+          "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+          "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+          "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+          "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+          "0xD601d5Cad928d73666c7aa00Ac8BF262E3790c4f",
+          "0x8D80a32dEdF895ee511895a532B9a41Da14b2038"
+        ],
+        "valuesWei": [
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "payloads": [
+          "0x17128ea400000000000000000000000000000000000000000000000053444835ec58000000000000000000000000000000000000000000000000000006f05b59d3b20000",
+          "0xa3da3bde000000000000000000000000d8c939f427815934e099002afb59512191ee464c000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000174876e800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001",
+          "0xa3da3bde000000000000000000000000f6addebdb72a47ee7d55b8d4914270fb723d01d4000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000174876e800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001",
+          "0xa3da3bde0000000000000000000000002f63e9484cf6242507b1ce8c8a479e6dbbc7e677000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000174876e800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001",
+          "0xa3da3bde000000000000000000000000613863f5dcbd415039602e5a579103f160f69997000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000174876e800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001",
+          "0xa3da3bde000000000000000000000000dfcca159be0d4e1a034bd653728f7543b53cd940000000000000000000000000000000000000000000000000000000000000271000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000174876e800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f56817510421f09d17f06f45c94357a7b4416fb6c226fb1e9e7047cf162457dc0000000000000000000000000000000000000000000000000000000000000001",
+          "0x0df428be000000000000000000000000000000000000000000000000000000174876e8000000000000000000000000000000000000000000000000000000000000000001",
+          "0x3e21d200"
+        ],
+        "planHash": "0x111e9c3f563df53c48c1dabdaf03da45e48ec4069de1d7a589320675ba1869e7"
+      }
+    ]
+  },
+  "authorization": {
+    "mainnetTransactionsAuthorized": false,
+    "bootstrapExecutionAuthorized": false,
+    "publicActivationAuthorized": false
+  },
+  "routes": [
+    {
+      "symbol": "WETH",
+      "asset": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19"
+    },
+    {
+      "symbol": "GOOGL",
+      "asset": "0xD8c939f427815934e099002aFb59512191EE464c"
+    },
+    {
+      "symbol": "MSFT",
+      "asset": "0xF6ADDebdb72a47ee7d55B8D4914270fB723d01d4"
+    },
+    {
+      "symbol": "NVDA",
+      "asset": "0x2f63e9484CF6242507b1cE8C8A479e6Dbbc7e677"
+    },
+    {
+      "symbol": "SPCX",
+      "asset": "0x613863f5DcbD415039602e5A579103F160f69997"
+    },
+    {
+      "symbol": "SPY",
+      "asset": "0xDfCcA159be0d4E1a034BD653728F7543B53cD940"
+    }
+  ],
+  "initialState": {
+    "launchMode": "Paused",
+    "assetConversionsPaused": true,
+    "feeConversionsPaused": true,
+    "applicationWritesEnabled": false
+  },
+  "deploymentEvidence": {
+    "verifierManifestSha256": "b99d0b634cf25d84274447f879013bbb04cd597f5fdbf34f9b26793897c5b2fe",
+    "preparedManifestSha256": "27dda14bfeacb50603ff46094cda05a0011a11660a85e88d57ba9a17de66d0d5",
+    "failedGasLimitedTransaction": "0x0bcca77e5572ed1252c8962a4a7530c654f7b41dece0c21d241b6fd539115f11",
+    "correctiveTransactions": [
+      "0xb7c6f4b56aa848265b0f4f0df3842e0bcee77b2d980c07814c5961cc7d066a46",
+      "0x7e1033f92e409338a4ba6001115529f9a75aad640d36bc5bb54c02f9b6fb03cf",
+      "0xc0366400857cc6744b206d9ccf21bc5db5a392755985f7c57902bde2e04ee192"
+    ]
+  }
+}

@@ -1,5 +1,35 @@
 # Project Memory
 
+### 2026-08-01 - Schema-17 Testnet paused deployment completes
+
+- Context: The owner explicitly authorized three corrective Testnet
+  transactions after the initial broadcaster stopped at a gas-limited
+  administrator-renunciation call. No Mainnet transaction was authorized or
+  submitted.
+- Commands/tests: Each intent was persisted before signing with a fixed nonce,
+  calldata hash, fee envelope, gas ceiling, expected effect, and idempotency
+  key. Timelock administrator renunciation confirmed as
+  `0xb7c6f4b56aa848265b0f4f0df3842e0bcee77b2d980c07814c5961cc7d066a46`;
+  asset conversion pause confirmed as
+  `0x7e1033f92e409338a4ba6001115529f9a75aad640d36bc5bb54c02f9b6fb03cf`;
+  fee conversion pause confirmed as
+  `0xc0366400857cc6744b206d9ccf21bc5db5a392755985f7c57902bde2e04ee192`.
+- Result: The exact Schema-17 deployment verifier passes on chain 46630 at
+  deployment block 95,844,126: 15 runtime identities, six disabled routes,
+  Paused launches and conversions, zero launches/liabilities, fixed one-billion
+  RDAO supply wholly owned and delegated by the deployer, correct Safe,
+  Governor, and Timelock roles, 1-hour/4-hour voting clocks, one-hour Timelock,
+  and exact bootstrap plan hashes. Deployer balance remains approximately
+  0.020081 ETH.
+- Evidence: Checksummed receipts, intents, manifest, and verifier output are at
+  `/home/hendo420/robyn-evidence/schema17-testnet/c2009ab-paused-deployment/`.
+- Follow-up: Bind the fresh Schema-17 manifest into isolated Testnet
+  application/indexing configuration, rebuild from deployment block
+  95,844,126, then run the plan-bound focused lifecycle through one real reward
+  hour, recovery/reconciliation, RPC degradation, and browser acceptance. Keep
+  Mainnet untouched until the refreshed exact fork and funding manifest are
+  separately approved.
+
 ### 2026-08-01 - Schema-17 Testnet deployment is partial and stopped
 
 - Context: Exact clean pushed candidate

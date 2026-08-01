@@ -84,8 +84,8 @@ prepare_database() {
       as_operator psql -h /var/run/postgresql -d "$database" -Atqc \
         "SELECT count(*) FROM schema_migrations"
     )"
-    [[ "$migration_count" == 14 ]] || {
-      echo "expected 14 migrations in $database, found $migration_count" >&2
+    [[ "$migration_count" == 15 ]] || {
+      echo "expected 15 migrations in $database, found $migration_count" >&2
       exit 1
     }
   elif ! database_exists; then
@@ -109,9 +109,11 @@ start_stack() {
   as_operator env \
     ROBYN_TESTNET_PRIMARY_RPC_URL="${ROBYN_TESTNET_PRIMARY_RPC_URL:-http://192.168.50.117:8547}" \
     ROBYN_TESTNET_SERVER_RPC_URL="${ROBYN_TESTNET_SERVER_RPC_URL:-https://rpc.testnet.chain.robinhood.com}" \
-    ROBYN_TESTNET_WS_RPC_URL="${ROBYN_TESTNET_WS_RPC_URL:-}" \
+    ROBYN_TESTNET_WS_RPC_URL="" \
+    ROBYN_TESTNET_RPC_ACTIVE_PROVIDER="primary" \
+    ROBYN_TESTNET_RPC_FALLBACK_TRAFFIC_AUTHORIZED="false" \
     ROBYN_TESTNET_RELEASE_ROOT="$selected" \
-    ROBYN_TESTNET_MANIFEST="$selected/deployments/46630-v4-schema16.json" \
+    ROBYN_TESTNET_MANIFEST="$selected/deployments/46630-v4-schema17.json" \
     ROBYN_TESTNET_DATABASE="$selected_database" \
     ROBYN_OPERATOR_KEY_FILE="$operator_key" \
     ROBYN_TESTNET_AUTH_ORIGINS="https://testnet.sherwoodforest.trade" \

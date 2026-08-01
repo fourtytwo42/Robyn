@@ -7,8 +7,8 @@ cd "$release_real"
 sha256sum -c testnet-release-manifest.json.sha256 >/dev/null
 sha256sum -c testnet-release-files.sha256 >/dev/null
 git_sha="$(jq -r .gitSha testnet-release-manifest.json)"
-manifest="$release_real/deployments/46630-v4-schema16.json"
-jq -e '.schemaVersion == 16 and .chainId == 46630 and .launchControl.initialMode == "Paused"' "$manifest" >/dev/null
+manifest="$release_real/deployments/46630-v4-schema17.json"
+jq -e '.schemaVersion == 17 and .chainId == 46630 and .launchControl.initialMode == "Paused"' "$manifest" >/dev/null
 
 pm2_json="$(PM2_HOME=/home/hendo420/.pm2 "$release_real/node_modules/.bin/pm2" jlist)"
 testnet="$(jq '[.[]|select(.name|endswith("-testnet"))]' <<<"$pm2_json")"
@@ -17,8 +17,8 @@ testnet="$(jq '[.[]|select(.name|endswith("-testnet"))]' <<<"$pm2_json")"
 [[ "$(jq --arg root "$release_real" '[.[]|select((.name=="robyn-web-testnet" and .pm2_env.pm_cwd!=($root+"/apps/web")) or (.name!="robyn-web-testnet" and .pm2_env.pm_cwd!=$root))]|length' <<<"$testnet")" -eq 0 ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_INDEXER_ROLE' <<<"$testnet")" == "ingester" ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-projector-testnet")|.pm2_env.env.ROBYN_INDEXER_ROLE' <<<"$testnet")" == "projector" ]]
-indexer_ws_url="$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_OPERATOR_WS_RPC_URL' <<<"$testnet")"
-[[ "$indexer_ws_url" == wss://robinhood-testnet.g.alchemy.com/v2/* ]]
+indexer_ws_url="$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_OPERATOR_WS_RPC_URL // ""' <<<"$testnet")"
+[[ -z "$indexer_ws_url" ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_RECONCILIATION_MS' <<<"$testnet")" == "900000" ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_HEARTBEAT_MS' <<<"$testnet")" == "5000" ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.INDEXER_MAXIMUM_OBSERVED_LAG_BLOCKS' <<<"$testnet")" == "25" ]]
@@ -38,6 +38,7 @@ fallback_rpc_url="$(jq -r '.[]|select(.name=="robyn-rpc-gateway-testnet")|.pm2_e
 gateway_health="$(curl -fsS http://127.0.0.1:18548/health)"
 [[ "$(jq -r .expectedChainId <<<"$gateway_health")" -eq 46630 ]]
 [[ "$(jq -r .activeProvider <<<"$gateway_health")" == "primary" ]]
+[[ "$(jq -r .fallbackTrafficAuthorized <<<"$gateway_health")" == "false" ]]
 [[ "$(jq -r .primary.healthy <<<"$gateway_health")" == "true" ]]
 [[ "$(jq -r .fallback.healthy <<<"$gateway_health")" == "true" ]]
 [[ "$(jq -r .headLagBlocks <<<"$gateway_health")" -le 50 ]]
@@ -99,15 +100,15 @@ observed_head_gap=$(( local_observed_head - public_observed_head ))
 [[ "$observed_head_gap" -le 100 ]]
 ROBYN_TESTNET_RPC_URL="$server_rpc_url" \
   ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS=true \
-  node scripts/verify-testnet-schema16-deployment.mjs "$manifest" \
+  node scripts/verify-schema17-deployment.mjs "$manifest" \
   > /tmp/robyn-testnet-deployment-verify.json
-jq -e '.failures|length==0' /tmp/robyn-testnet-deployment-verify.json >/dev/null
+jq -e '.passed == true' /tmp/robyn-testnet-deployment-verify.json >/dev/null
 
 jq -n \
   --arg verifiedAt "$(date -u +%FT%TZ)" \
   --arg releasePath "$release_real" \
   --arg gitSha "$git_sha" \
-  --arg serverRpcProvider "lan-primary-alchemy-failover" \
+  --arg serverRpcProvider "lan-only-alchemy-probe" \
   --arg database "$database" \
   --argjson activeDatabaseIndexers "$(
     printf '%s\n' "${active_database_indexers[@]}" |
@@ -116,6 +117,6 @@ jq -n \
   --argjson gatewayHealth "$gateway_health" \
   --argjson status "$status" \
   --argjson publicStatus "$public_status" \
-  --argjson verifierChecks "$(jq '.checks|length' /tmp/robyn-testnet-deployment-verify.json)" \
+  --argjson verifierChecks "$(jq '.contractsVerified' /tmp/robyn-testnet-deployment-verify.json)" \
   '{verifiedAt:$verifiedAt,releasePath:$releasePath,gitSha:$gitSha,serverRpcProvider:$serverRpcProvider,database:$database,activeDatabaseIndexers:$activeDatabaseIndexers,gatewayHealth:$gatewayHealth,status:$status,publicStatus:$publicStatus,verifierChecks:$verifierChecks}'
 rm -f /tmp/robyn-testnet-deployment-verify.json
