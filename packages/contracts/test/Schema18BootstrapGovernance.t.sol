@@ -258,6 +258,27 @@ contract Schema18BootstrapGovernanceTest is Test {
         );
     }
 
+    function testUnanimousSchedulingRejectsMalformedActiveAndZeroClockCalls() external {
+        address[] memory noTargets = new address[](0);
+        uint256[] memory noValues = new uint256[](0);
+        bytes[] memory noPayloads = new bytes[](0);
+        vm.expectRevert(RobynGovernorV2.InvalidUnanimousOperation.selector);
+        governor.scheduleUnanimous(noTargets, noValues, noPayloads, keccak256("empty"));
+
+        vm.expectRevert(RobynGovernorV2.BootstrapStillActive.selector);
+        governor.scheduleUnanimous(
+            step0Targets, step0Values, step0Payloads, keccak256("bootstrap active")
+        );
+
+        timelock.finalizeBootstrap();
+        token.delegate(address(this));
+        vm.warp(0);
+        vm.expectRevert(RobynGovernorV2.UnanimousOwnershipRequired.selector);
+        governor.scheduleUnanimous(
+            step0Targets, step0Values, step0Payloads, keccak256("zero clock")
+        );
+    }
+
     function testHourDefaultsAndGovernanceCanChangeThem() external {
         timelock.finalizeBootstrap();
         token.delegate(address(this));

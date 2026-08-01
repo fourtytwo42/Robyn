@@ -1,5 +1,12 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 fast gate 03 exposes validator output constant
+
+- Context: Fast gate 03 passed every execution and coverage-generation phase, then failed closed because the scope builder still emitted schema 16 even though its input validation required schema 18.
+- Verification: Revalidating the untouched LCOV with only the evidence schema corrected measured 91.52% lines and 76.81% branches. The five new bootstrap tests raised branch coverage but did not yet reach 80%.
+- Fix: Correct the scope-builder output identity and add executable negative paths for unbound deployer calls, Testnet liquidity-locker configuration boundaries, and malformed/active/zero-clock unanimous scheduling.
+- Follow-up: Restart fast from a new pushed SHA and require the original 90/80 thresholds.
+
 ### 2026-08-01 - Schema-18 fast gate 02 reaches coverage threshold check
 
 - Context: Fast gate 02 passed compilation, the full deterministic/unit suite at 1,024 fuzz cases, both invariant suites at 256 runs/depth 128, the 512-wallet 25,000-action simulation, isolated Anvil broadcast, and valid non-via-IR coverage instrumentation.

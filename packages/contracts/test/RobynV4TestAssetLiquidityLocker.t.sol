@@ -92,6 +92,26 @@ contract RobynV4TestAssetLiquidityLockerTest is Test {
         locker.seal();
     }
 
+    function testConstructorAndSeedRejectEveryConfigurationBoundary() public {
+        vm.expectRevert(RobynV4TestAssetLiquidityLocker.InvalidConfiguration.selector);
+        new RobynV4TestAssetLiquidityLocker(IPoolManager(address(0)));
+        vm.expectRevert(RobynV4TestAssetLiquidityLocker.InvalidConfiguration.selector);
+        new RobynV4TestAssetLiquidityLocker(IPoolManager(address(0xBEEF)));
+
+        vm.expectRevert(RobynV4TestAssetLiquidityLocker.InvalidConfiguration.selector);
+        locker.seed{ value: 1 ether }(address(0xBEEF), 1 ether, 1 ether);
+        vm.expectRevert(RobynV4TestAssetLiquidityLocker.InvalidConfiguration.selector);
+        locker.seed{ value: 1 ether }(address(asset), 0, 1 ether);
+        vm.expectRevert(RobynV4TestAssetLiquidityLocker.InvalidConfiguration.selector);
+        locker.seed{ value: 1 ether }(address(asset), 1 ether, 0);
+        vm.expectRevert(RobynV4TestAssetLiquidityLocker.InvalidConfiguration.selector);
+        locker.seed(address(asset), 1 ether, 1 ether);
+
+        vm.prank(address(0xBEEF));
+        vm.expectRevert(RobynV4TestAssetLiquidityLocker.Unauthorized.selector);
+        locker.seal();
+    }
+
     function _deployPinned(string memory path, bytes memory constructorArgs)
         private
         returns (address deployed)

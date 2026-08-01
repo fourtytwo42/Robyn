@@ -83,7 +83,7 @@ const sourceDetails = sources.map((source) => ({
 }));
 const scopePayload = {
   schemaVersion: 1,
-  schema: 16,
+  schema: 18,
   releaseSha,
   definitionSha256: digest(readFileSync(definitionPath)),
   thresholds: definition.thresholds,

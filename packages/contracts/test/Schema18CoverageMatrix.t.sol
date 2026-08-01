@@ -958,6 +958,42 @@ contract Schema18CoverageMatrixTest is RobynV4NativeProtocolTest {
         _exerciseControllerBinding(address(marketDeployer));
     }
 
+    function testDeploymentHelpersRejectUnboundDeployCalls() public {
+        RobynV4AdapterDeployer adapterDeployer = new RobynV4AdapterDeployer();
+        RobynV4AdapterDeployer.Deployment memory adapterDeployment;
+        vm.expectRevert(RobynV4AdapterDeployer.Unauthorized.selector);
+        adapterDeployer.deploy(adapterDeployment);
+
+        RobynV4LockerDeployer lockerDeployer = new RobynV4LockerDeployer();
+        PoolKey memory emptyKey;
+        vm.expectRevert(RobynV4LockerDeployer.Unauthorized.selector);
+        lockerDeployer.deploy(
+            IPositionManagerPermit2(address(0)),
+            IAllowanceTransfer(address(0)),
+            IPoolManager(address(0)),
+            IERC20(address(0)),
+            emptyKey,
+            address(0),
+            0,
+            payable(address(0)),
+            address(0),
+            0,
+            0
+        );
+
+        RobynV4MarketDeployer marketDeployer = new RobynV4MarketDeployer();
+        RobynV4BondingCurveMarket.CurveConfig memory curve;
+        vm.expectRevert(RobynV4MarketDeployer.Unauthorized.selector);
+        marketDeployer.deploy(
+            RobynLaunchToken(address(0)),
+            RobynNativeBasketVaultV2(payable(address(0))),
+            address(0),
+            address(0),
+            curve,
+            RobynV4GraduationAdapter(payable(address(0)))
+        );
+    }
+
     function testLaunchAndVaultDeployersRejectUnboundCallers() public {
         RobynNativeLaunchDeployerV4 tokenDeployer = new RobynNativeLaunchDeployerV4(1 hours);
         address[] memory assets = new address[](1);
