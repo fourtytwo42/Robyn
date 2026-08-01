@@ -726,6 +726,15 @@ const run = async () => {
   const lockerAbi = (await artifact("RobynV4FeePositionLocker")).abi;
   const vaultAbi = (await artifact("RobynNativeBasketVaultV2")).abi;
   const tokenAbi = (await artifact("RobynLaunchToken")).abi;
+  const boundedRouteInput = async (asset, amount, direction) => {
+    const route = await read(contracts.assetRouter, built.assetRouter.abi, "executionRoute", [
+      asset,
+    ]);
+    const cap =
+      direction === "native-to-asset" ? route.maximumNativeInput : route.maximumAssetInput;
+    if (cap === 0n) throw new Error(`${direction} route has a zero input cap`);
+    return amount > cap ? cap : amount;
+  };
   const settleFees = async (phase) => {
     const native = await read(contracts.oracleHook, built.hook.abi, "pendingNativeFees", [token]);
     if (native > 0n) {
@@ -736,13 +745,14 @@ const run = async () => {
     }
     const tokenFees = await read(contracts.oracleHook, built.hook.abi, "pendingTokenFees", [token]);
     if (tokenFees > 0n) {
+      const amount = await boundedRouteInput(token, tokenFees, "asset-to-native");
       const quote = await read(contracts.assetRouter, built.assetRouter.abi, "quoteAssetToNative", [
         token,
-        tokenFees,
+        amount,
       ]);
       await write(phase, `${phase}-hook-token`, contracts.oracleHook, built.hook.abi, "convertTokenFees", [
         token,
-        tokenFees,
+        amount,
         (quote[0] * 99n) / 100n,
         await deadline(),
       ]);
@@ -754,12 +764,13 @@ const run = async () => {
     }
     const lockerToken = await read(locker, lockerAbi, "pendingCollectedTokenFees");
     if (lockerToken > 0n) {
+      const amount = await boundedRouteInput(token, lockerToken, "asset-to-native");
       const quote = await read(contracts.assetRouter, built.assetRouter.abi, "quoteAssetToNative", [
         token,
-        lockerToken,
+        amount,
       ]);
       await write(phase, `${phase}-locker-token`, locker, lockerAbi, "convertCollectedToken", [
-        lockerToken,
+        amount,
         (quote[0] * 99n) / 100n,
         await deadline(),
       ]);
@@ -787,13 +798,14 @@ const run = async () => {
     }
     const leg = await read(vault, vaultAbi, "leg", [0n]);
     if (leg.pendingNative > 0n) {
+      const amount = await boundedRouteInput(external.weth, leg.pendingNative, "native-to-asset");
       const quote = await read(contracts.assetRouter, built.assetRouter.abi, "quoteNativeToAsset", [
         external.weth,
-        leg.pendingNative,
+        amount,
       ]);
       await write(phase, `${phase}-weth-leg`, vault, vaultAbi, "convertLeg", [
         0n,
-        leg.pendingNative,
+        amount,
         (quote[0] * 99n) / 100n,
         await deadline(),
       ]);

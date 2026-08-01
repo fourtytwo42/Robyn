@@ -78,6 +78,8 @@ test("Schema-17 Testnet lifecycle covers routes, rewards, unwind, and shutdown",
     assert.match(source, new RegExp(`"${action}"`));
   }
   assert.match(source, /one-hour reward release is not complete/);
+  assert.match(source, /const boundedRouteInput = async/);
+  assert.match(source, /amount > cap \? cap : amount/);
   assert.match(source, /recovered less than 75% of gross principal/);
   assert.match(source, /50\/25\/20\/5 conservation failed/);
   assert.match(source, /locked principal changed/);

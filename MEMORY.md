@@ -1,5 +1,26 @@
 # Project Memory
 
+### 2026-08-01 - Schema-17 lifecycle route-cap remediation
+
+- Context: The fully funded, local-only chain-46630 rehearsal reached the
+  settlement stage after exact bootstrap step one, all six route round trips,
+  canary launch, and graduation. No live Testnet or Mainnet bootstrap
+  transaction was submitted.
+- Diagnosis: The lifecycle runner attempted to convert an entire pending fee
+  balance even when it exceeded the route's configured canary input cap. The
+  router correctly rejected the WETH basket quote with `InvalidAmount()`.
+- Decision: Each token-fee and basket conversion is bounded to the active
+  route's onchain `maximumAssetInput` or `maximumNativeInput`; any remainder
+  stays as an attributed pending liability for a later bounded conversion.
+- Files: `scripts/run-schema17-testnet-lifecycle.mjs` and
+  `scripts/test/schema17-testnet-lifecycle.test.mjs`.
+- Commands/tests: Focused lifecycle-tooling tests pass 4/4, formatting and
+  `git diff --check` pass. A fresh fully funded local rehearsal remains
+  required before considering the live one-hour Testnet lifecycle.
+- Follow-up: Commit and push the runner-only fix, repeat every local lifecycle
+  stage from a new fork and evidence directory, calculate peak funding, and
+  keep the live deployment Paused unless the fixed reserve gate passes.
+
 ### 2026-08-01 - Schema-17 promotion rollback and verifier defects fixed
 
 - Context: The first immutable Schema-17 Testnet application promotion used a
