@@ -1,5 +1,29 @@
 # Project Memory
 
+### 2026-08-01 - Full Schema-17 local lifecycle passes; live funding blocked
+
+- Context: Runner-only fixes were qualified against a fresh, fully funded,
+  local-only chain-46630 fork. No live Testnet bootstrap transaction and no
+  Mainnet transaction was submitted.
+- Commands/tests: Exact bootstrap steps, six route round trips, controlled
+  launch and graduation, bounded fee conversions, one-hour holder/creator/DAO
+  claims, capital unwind, production-profile installation, guardian shutdown,
+  and final reconciliation completed with 65/65 successful transactions and
+  25,345,321 total gas. Gross canary recovery was 78.99%.
+- Result: Checksummed evidence is under
+  `/home/hendo420/robyn-evidence/schema17-testnet/rehearsal-876c419-03-funded-local/`.
+  The measured peak required starting balance is
+  `0.036457511505009057 ETH`, including the doubled per-transaction gas limit,
+  25% fee headroom, per-transaction L1 reserve, and fixed 0.0015 ETH project
+  reserve. The live deployer held `0.020080839584387924 ETH`, a shortfall of
+  `0.016376671920621133 ETH`; atomic launch creation is the binding envelope.
+- Decision: Keep live Schema-17 Testnet Paused. Do not reduce the gas envelope,
+  reserve, route coverage, or lifecycle actions. More Testnet ETH is required
+  before the one-hour live lifecycle can start.
+- Follow-up: Complete runner regressions and preserve the passed local evidence.
+  Mainnet fork/funding work may continue without broadcasts, but Testnet final
+  qualification remains blocked on the exact funding shortfall.
+
 ### 2026-08-01 - Schema-17 canary capital ledger corrected
 
 - Context: After the route-cap remediation, the funded local rehearsal passed
