@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 Gate-2 canary tooling and exact-state rehearsal
+
+- Context: Schema-18 is live on Robinhood Mainnet only in the fully Paused Gate-1 state. Gate 2 and Gate 3 remain separately unauthorized.
+- Implementation: Added a restart-safe Schema-18 production canary runner, exact deployed-state Anvil rehearsal, and fail-closed Gate-2 manifest sealer. The runner binds the qualified contract/application releases, exact manifest SHA, clean tooling identity, encrypted deployer, LAN-only gateway, runtime hashes, bootstrap step-one hash, phase and fee ceilings, unique intent/receipt journal, 0.02 ETH reserve, six-hour minimum bootstrap window, guardian shutdown, and exact reconciliation. It contains no bootstrap-step-two or Public activation stage.
+- Rehearsal: A stale Anvil process on port 28549 was detected because its forked bootstrap hash differed; no live transaction occurred. The new rehearsal uses isolated port 28618 and verifies the exact pinned fork block. Fork block 25348242 then passed all nine Gate-2 stages with 71/71 local receipts, 78.99% gross recovery, guardian shutdown, fixed supplies/principal, exact reward and 50/25/20/5 conservation, and zero Mainnet broadcasts.
+- Verification: Full repository test passed 563 Foundry tests with zero failures and one protected fork skip; script tests, lint, typecheck, deployment nonce, and deployment verifier passed.
+- Follow-up: Commit and push exact tooling, repeat the exact-state rehearsal on that pushed SHA, refresh live RPC/funding/runtime state, and seal an authorization-false Gate-2 manifest. Do not broadcast bootstrap step one or any canary transaction without explicit approval of that exact manifest.
+
+
 ### 2026-08-01 - Schema-18 Mainnet bridge and Paused deployment complete
 
 - Authorization: The owner authorized only the exact `0.000941832567858 ETH` canonical bridge and a fully Paused Schema-18 deployment. Canary, bootstrap execution, route enablement, conversions, application writes, and Public mode remain unauthorized.
