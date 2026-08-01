@@ -88,7 +88,7 @@ module.exports = {
           process.env.ROBYN_MAINNET_RPC_ACTIVE_PROVIDER || "primary",
         RPC_FALLBACK_TRAFFIC_AUTHORIZED:
           process.env.ROBYN_MAINNET_RPC_FALLBACK_TRAFFIC_AUTHORIZED || "false",
-        RPC_SERVICE_NAME: "robyn-mainnet-rpc-failover",
+        RPC_SERVICE_NAME: "robyn-mainnet-rpc-gateway",
         RPC_STATUS_FILE: "/var/lib/robyn/mainnet-rpc-gateway/status.json",
       });
     }

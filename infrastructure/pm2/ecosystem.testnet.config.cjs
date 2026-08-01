@@ -58,6 +58,7 @@ module.exports = {
               RPC_UPSTREAM_RETRY_COUNT: "3",
               RPC_UPSTREAM_RETRY_DELAY_MS: "250",
               RPC_STATUS_FILE: "/var/lib/robyn/testnet-rpc-gateway/status.json",
+              RPC_SERVICE_NAME: "robyn-testnet-rpc-gateway",
             },
             autorestart: true,
             max_memory_restart: "256M",
