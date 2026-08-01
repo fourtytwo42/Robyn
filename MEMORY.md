@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 Testnet deployment rehearsal and funding gate pass
+
+- Context: Exact qualified contract candidate `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4` was rehearsed against an isolated native Anvil fork of chain 46630. Schema-17 remains guardian-paused and Mainnet remains untouched.
+- Result: The canonical Testnet Safe rehearsal and all 35 Schema-18 stack transactions confirmed locally with zero failed receipts. The deployment script verified predicted addresses, bindings, bootstrap hashes, one-billion RDAO allocation, hour-scale governance, Paused launches and conversions, zero launches, and zero initial liabilities.
+- Funding: Total measured deployment gas was 43,738,181. At the refreshed 10,000,000-wei gas price, 125% gas headroom plus the fixed 0.0015 ETH reserve requires 0.00204672727 ETH; the live deployer held 0.060470241328489274 ETH, so the Paused Testnet deployment funding gate passes.
+- Evidence: Checksums pass under `/home/hendo420/robyn-evidence/schema18-testnet/rehearsal-4728cb5-01/`.
+- Follow-up: Prepare a fresh live Schema-18 Testnet manifest and restart-safe journal, then deploy Paused, verify exact state, bind a new empty Schema-18 database, and run the focused real-hour reward lifecycle. Do not reuse Schema-17 addresses, launches, or journals.
+
 ### 2026-08-01 - Schema-18 fast and deep torture gates pass
 
 - Context: Exact clean pushed candidate `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4` completed both mandatory Schema-18 Devnet torture tiers. Schema-17 remains guardian-paused and Mainnet remains untouched.
