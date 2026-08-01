@@ -151,7 +151,7 @@ const safeAbi = parseAbi(["function execTransaction(address to,uint256 value,byt
 const safeSignature = () => concatHex([pad(account.address, { size: 32 }), zeroHash, "0x01"]);
 const safeExec = (label, target, data) => write("shutdown", label, contracts.safe, safeAbi, "execTransaction", [target, 0n, data, 0, 0n, 0n, 0n, zeroAddress, zeroAddress, safeSignature()]);
 const proposal = manifest.activationProposal;
-const proposalArgs = [proposal.targets.map(getAddress), proposal.values.map(BigInt), proposal.calldatas, proposal.descriptionHash];
+const proposalArgs = [proposal.targets.map((address) => getAddress(address)), proposal.values.map((value) => BigInt(value)), proposal.calldatas, proposal.descriptionHash];
 const mark = async (name, extra = {}) => { if (!state.completedStages.includes(name)) state.completedStages.push(name); Object.assign(state, extra); await saveState(); };
 
 const shutdown = async () => {
