@@ -18,7 +18,7 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
     uint16 public constant TREASURY_BPS = 500;
     uint8 public constant MAX_CREATOR_RECIPIENTS = 8;
     uint256 public immutable CREATOR_REWARD_STREAM_DURATION;
-    string public constant CONTRACT_VERSION = "7.0.0";
+    string public constant CONTRACT_VERSION = "8.0.0";
 
     struct CreatorRewardStream {
         uint256 rewardRate;
@@ -78,6 +78,7 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
     error ConversionPaused();
     error NativeTransferFailed();
     error Insolvent();
+    error RewardAccountingInsolvent(uint256 required, uint256 available);
     error CreatorSplitLocked();
 
     RobynDaoToken public immutable daoToken;
@@ -449,6 +450,10 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
         _updateCreatorStream(token, creator);
         CreatorRewardStream storage stream = _creatorRewardStreams[token][creator];
         amount = stream.accrued;
+        uint256 available = address(this).balance;
+        if (amount > available || amount > totalCreatorNativeLiability) {
+            revert RewardAccountingInsolvent(amount, available);
+        }
         stream.accrued = 0;
         claimedCreatorNativeByRecipient[token][creator] += amount;
         account.claimableCreatorNative -= amount;
@@ -550,7 +555,7 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
 
     function _startOrExtendCreatorStream(address token, address recipient, uint256 amount) private {
         CreatorRewardStream storage stream = _creatorRewardStreams[token][recipient];
-        uint256 remaining = stream.streamTotal - _vestedCreatorStreamRewards(stream);
+        uint256 remaining = stream.streamTotal - stream.streamReleased;
         uint256 distributable = remaining + amount;
         stream.rewardRate = distributable / CREATOR_REWARD_STREAM_DURATION;
         stream.periodFinish = block.timestamp + CREATOR_REWARD_STREAM_DURATION;

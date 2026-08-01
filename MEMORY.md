@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 reward accounting remediation begins
+
+- Context: The live Schema-17 DAO claim exceeded its 23,051,883,486,368-wei backing by 7 wei after nine overlapping deposits. Schema-17 remains guardian-paused and archived; Mainnet remains untouched.
+- Diagnosis: DAO and launch-holder checkpoints advanced the stream by the full emitted amount while requeueing the integer difference between emitted and reward-per-token-represented value. Later streams could therefore distribute the same rounding value twice. Creator streams use direct per-recipient accounting and did not share that path.
+- Decision: Schema-18 carries the magnified division remainder between checkpoints and never requeues already released rewards. DAO and holder claims now have explicit backing checks; creator claims receive the same fail-closed protection.
+- Files: `packages/contracts/src/dao/RobynDaoToken.sol`, `packages/contracts/src/dao/RobynDaoTokenV3.sol`, `packages/contracts/src/RobynLaunchToken.sol`, `packages/contracts/src/uniswap/RobynNativeProtocolFeeRouterV4.sol`, and `packages/contracts/test/Schema18RewardAccounting.t.sol`.
+- Commands/tests: The exact nine-deposit incident, one-wei stream, holder mirror, and 1,000-holder conservation tests pass 4/4. Schema-18 bootstrap passes 13/13, full lifecycle passes 42/42, DAO suites pass 18/18, protocol tests pass 23/23, and the 70-test coverage matrix passes.
+- Follow-up: Complete Schema-18 deployment/verifier/application tooling, run the full security and reproducibility gates, then deploy a fresh Paused Testnet stack and repeat the focused real-hour lifecycle with new journals.
+
 ### 2026-08-01 - Schema-17 live DAO claim exposes reward over-credit
 
 - Context: The funded live Schema-17 Testnet lifecycle completed bootstrap

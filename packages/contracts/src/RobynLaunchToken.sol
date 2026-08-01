@@ -15,7 +15,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     uint8 public constant MAX_EXCLUDED_ACCOUNTS = 16;
     uint256 public constant MAGNITUDE = 2 ** 128;
     uint256 public REWARD_STREAM_DURATION = 1 hours;
-    string public constant CONTRACT_VERSION = "5.0.0";
+    string public constant CONTRACT_VERSION = "6.0.0";
 
     error Unauthorized();
     error InvalidAssetCount();
@@ -31,6 +31,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     error TooManyExcludedAccounts(uint256 count);
     error InvalidTokenUri();
     error NoEligibleRewardSupply();
+    error RewardAccountingInsolvent(uint256 assetIndex, uint256 required, uint256 available);
 
     struct RewardStream {
         uint256 rewardRate;
@@ -51,6 +52,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     RewardStream[] private _streams;
     uint256[] public magnifiedRewardPerShare;
     uint256[] public pendingWithoutSupply;
+    uint256[] public distributionRemainder;
     uint256[] public totalRewardsReceived;
     uint256[] public totalRewardsDistributed;
     uint256[] public totalRewardsClaimed;
@@ -105,6 +107,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
             _streams.push(RewardStream(0, 0, 0, 0, 0, 0));
             magnifiedRewardPerShare.push(0);
             pendingWithoutSupply.push(0);
+            distributionRemainder.push(0);
             totalRewardsReceived.push(0);
             totalRewardsDistributed.push(0);
             totalRewardsClaimed.push(0);
@@ -165,7 +168,9 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         uint256 supply = eligibleSupply;
         if (supply == 0) return magnifiedRewardPerShare[index];
         uint256 newlyVested = _newlyVestedRewards(index);
-        return magnifiedRewardPerShare[index] + Math.mulDiv(newlyVested, MAGNITUDE, supply);
+        (uint256 increase,) =
+            _rewardPerShareIncrease(newlyVested, supply, distributionRemainder[index]);
+        return magnifiedRewardPerShare[index] + increase;
     }
 
     function streamingRewards(uint256 index) public view returns (uint256) {
@@ -179,9 +184,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         uint256 supply = eligibleSupply;
         if (supply == 0) return totalRewardsDistributed[index];
         uint256 newlyVested = _newlyVestedRewards(index);
-        uint256 rewardPerShareIncrease = Math.mulDiv(newlyVested, MAGNITUDE, supply);
-        uint256 represented = Math.mulDiv(rewardPerShareIncrease, supply, MAGNITUDE);
-        return totalRewardsDistributed[index] + represented;
+        return totalRewardsDistributed[index] + newlyVested;
     }
 
     function distributeReward(uint256 index, uint256 requestedAmount)
@@ -225,6 +228,35 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         return _withdrawn[account][index];
     }
 
+    function rewardAccountingState(uint256 index)
+        external
+        view
+        returns (
+            uint256 received,
+            uint256 vested,
+            uint256 unvested,
+            uint256 claimed,
+            uint256 queued,
+            uint256 roundingCarry,
+            uint256 available,
+            uint256 outstanding,
+            uint256 surplus,
+            uint256 deficit
+        )
+    {
+        _validateAssetIndex(index);
+        received = totalRewardsReceived[index];
+        unvested = streamingRewards(index);
+        queued = pendingWithoutSupply[index];
+        vested = received - queued - unvested;
+        claimed = totalRewardsClaimed[index];
+        roundingCarry = distributionRemainder[index];
+        available = _rewardAssets[index].balanceOf(address(this));
+        outstanding = received - claimed;
+        if (available >= outstanding) surplus = available - outstanding;
+        else deficit = outstanding - available;
+    }
+
     function withdrawableRewardOf(address account, uint256 index) public view returns (uint256) {
         _validateAssetIndex(index);
         if (isExcluded[account]) return 0;
@@ -264,6 +296,8 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         returns (uint256)
     {
         _accruedRewards[account][index] = 0;
+        uint256 available = _rewardAssets[index].balanceOf(address(this));
+        if (amount > available) revert RewardAccountingInsolvent(index, amount, available);
         _withdrawn[account][index] += amount;
         totalRewardsClaimed[index] += amount;
         _rewardAssets[index].safeTransfer(account, amount);
@@ -323,11 +357,11 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
             return;
         }
         uint256 emitted = _newlyVestedRewards(index);
-        uint256 rewardPerShareIncrease = Math.mulDiv(emitted, MAGNITUDE, supply);
-        uint256 represented = Math.mulDiv(rewardPerShareIncrease, supply, MAGNITUDE);
+        (uint256 rewardPerShareIncrease, uint256 nextRemainder) =
+            _rewardPerShareIncrease(emitted, supply, distributionRemainder[index]);
         magnifiedRewardPerShare[index] += rewardPerShareIncrease;
-        totalRewardsDistributed[index] += represented;
-        pendingWithoutSupply[index] += emitted - represented;
+        distributionRemainder[index] = nextRemainder;
+        totalRewardsDistributed[index] += emitted;
         stream.streamReleased += emitted;
         stream.lastUpdateTime = applicable;
     }
@@ -355,19 +389,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         RewardStream storage stream = _streams[index];
         uint256 remaining = stream.streamTotal - _vestedStreamRewards(index);
         uint256 distributable = pendingWithoutSupply[index] + remaining;
-        uint256 rewardPerShareIncrease = Math.mulDiv(distributable, MAGNITUDE, supply);
-        uint256 represented = Math.mulDiv(rewardPerShareIncrease, supply, MAGNITUDE);
-        if (represented == 0) {
-            pendingWithoutSupply[index] = distributable;
-            stream.rewardRate = 0;
-            stream.streamTotal = 0;
-            stream.streamReleased = 0;
-            stream.streamStartTime = block.timestamp;
-            stream.periodFinish = block.timestamp;
-            stream.lastUpdateTime = block.timestamp;
-            emit RewardStreamPaused(index, pendingWithoutSupply[index]);
-            return;
-        }
+        if (supply == 0 || distributable == 0) revert InvalidAmount();
         stream.rewardRate = distributable / REWARD_STREAM_DURATION;
         stream.streamTotal = distributable;
         stream.streamReleased = 0;
@@ -393,6 +415,17 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         RewardStream memory stream = _streams[index];
         uint256 vested = _vestedStreamRewards(index);
         return vested > stream.streamReleased ? vested - stream.streamReleased : 0;
+    }
+
+    function _rewardPerShareIncrease(uint256 amount, uint256 supply, uint256 priorRemainder)
+        private
+        pure
+        returns (uint256 increase, uint256 nextRemainder)
+    {
+        increase = Math.mulDiv(amount, MAGNITUDE, supply);
+        uint256 combinedRemainder = mulmod(amount, MAGNITUDE, supply) + priorRemainder;
+        increase += combinedRemainder / supply;
+        nextRemainder = combinedRemainder % supply;
     }
 
     function _validateAssetIndex(uint256 index) private view {
