@@ -203,6 +203,11 @@ const receiptDigest = (receipt) =>
       logs: receipt.logs.map((log) => ({ address: log.address, topics: log.topics, data: log.data })),
     }),
   );
+const isMissingTransaction = (error) => {
+  const name = String(error?.name ?? "").toLowerCase();
+  const message = String(error?.shortMessage ?? error?.message ?? error).toLowerCase();
+  return name.includes("notfound") || message.includes("not found") || message.includes("could not be found");
+};
 
 const phaseUsage = new Map();
 const submit = async ({ client, wallet, chain, chainId, phase, label, to, data, value = 0n, maxFeeCap, phaseGasCap }) => {
@@ -267,7 +272,7 @@ const submit = async ({ client, wallet, chain, chainId, phase, label, to, data, 
       phaseUsage.set(phase, (phaseUsage.get(phase) ?? 0n) + receipt.gasUsed);
       return receipt;
     } catch (error) {
-      if (!String(error).toLowerCase().includes("not found")) throw error;
+      if (!isMissingTransaction(error)) throw error;
     }
     if (confirmedNonce > request.nonce || pendingNonce > request.nonce + 1) {
       throw new Error(`${idempotencyKey} nonce advanced without a matching receipt`);
@@ -284,7 +289,7 @@ const submit = async ({ client, wallet, chain, chainId, phase, label, to, data, 
       phaseUsage.set(phase, (phaseUsage.get(phase) ?? 0n) + receipt.gasUsed);
       return receipt;
     } catch (error) {
-      if (!String(error).toLowerCase().includes("not found")) throw error;
+      if (!isMissingTransaction(error)) throw error;
     }
   } else {
     if (confirmedNonce !== pendingNonce) throw new Error(`${idempotencyKey} has an unresolved pending nonce`);
@@ -327,13 +332,13 @@ const submit = async ({ client, wallet, chain, chainId, phase, label, to, data, 
       phaseUsage.set(phase, (phaseUsage.get(phase) ?? 0n) + receipt.gasUsed);
       return receipt;
     } catch (receiptError) {
-      if (!String(receiptError).toLowerCase().includes("not found")) throw receiptError;
+      if (!isMissingTransaction(receiptError)) throw receiptError;
     }
     try {
       await client.getTransaction({ hash: transactionHash });
       throw new Error(`${logicalKey} submission response failed but the transaction exists; manual reconciliation required`);
     } catch (transactionError) {
-      if (!String(transactionError).toLowerCase().includes("not found")) throw transactionError;
+      if (!isMissingTransaction(transactionError)) throw transactionError;
     }
     const [latestAfter, pendingAfter] = await Promise.all([
       client.getTransactionCount({ address: account.address, blockTag: "latest" }),
