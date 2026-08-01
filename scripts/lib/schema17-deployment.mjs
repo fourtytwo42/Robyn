@@ -129,11 +129,16 @@ export function buildSchema17BootstrapCalls({
       `${route.symbol} route must be enabled in both plans`,
     );
     assert(
-      BigInt(route.public.maximumNativeInput) <=
+      BigInt(route.public.maximumNativeInput) * 10n ===
         BigInt(route.canary.maximumNativeInput),
-      `${route.symbol} public cap cannot exceed qualified canary cap`,
+      `${route.symbol} public cap must equal 10% of the qualified canary cap`,
     );
   }
+  assert(
+    BigInt(wrappedNativePublicCapWei) * 10n ===
+      BigInt(wrappedNativeCanaryCapWei),
+    "WETH public cap must equal 10% of the qualified canary cap",
+  );
   const first = [
     routeCall(
       "resume-asset-conversions",

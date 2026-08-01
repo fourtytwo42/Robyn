@@ -18,7 +18,11 @@ remappings = [
   "solmate/=../../node_modules/@uniswap/v4-periphery/lib/permit2/lib/solmate/",
 ]
 allow_paths = ["../../node_modules"]
-fs_permissions = [{ access = "read", path = "../../node_modules" }, { access = "read", path = "test/fixtures" }]
+fs_permissions = [
+  { access = "read", path = "../../node_modules" },
+  { access = "read", path = "test/fixtures" },
+  { access = "read", path = "tmp" },
+]
 gas_limit = 30_000_000_000
 
 [fmt]

@@ -1,9 +1,10 @@
-# Schema-16 V4-Only Mainnet Staged Rollout
+# Schema-17 Unanimous-Bootstrap Mainnet Staged Rollout
 
 ## Authority boundary
 
-Schema-16 retains governed launch activation and future-launch-only graduation
-profiles while removing every external execution-adapter path. Passing this runbook produces a frozen Mainnet manifest and an
+Schema-17 replaces the unused, fully Paused Schema-16 deployment with a fresh
+RDAO, one-hour Timelock, Governor V2, and protocol stack. It reuses the existing
+Safe and verified Robinhood/Uniswap infrastructure. Passing this runbook produces a frozen Mainnet manifest and an
 internal GO recommendation. It does not authorize an Ethereum bridge
 transaction, Robinhood Mainnet deployment, route activation, canary launch,
 profile change, or public activation. Every Mainnet transaction requires
@@ -14,16 +15,31 @@ governance roles. Keys, passwords, allocation secrets, signatures, raw
 calldata, and protected configuration never belong in Git, evidence, or
 `MEMORY.md`.
 
-## Sole-owner bootstrap governance
+## Plan-bound bootstrap and unanimous-owner governance
 
-The initial protected governance mode is `sole-owner-bootstrap`. The canonical
-Safe v1.4.1 proxy has the protected deployer as its only owner and threshold
-one. The fixed one-billion RDAO supply is allocated entirely to that deployer;
-the Timelock receives no RDAO but remains the Governor execution authority.
-The Safe is still the guardian and Timelock canceller, so protocol roles never
-point directly at an EOA.
+The canonical Safe v1.4.1 proxy remains the guardian and Timelock canceller,
+with the protected deployer as its only owner and threshold one. A fresh fixed
+one-billion RDAO supply is allocated entirely to the deployer. The fresh
+Schema-17 Timelock is the Governor execution authority.
 
-This mode intentionally concentrates voting, DAO rewards, and emergency pause
+The Timelock commits at construction to exactly two zero-value bootstrap
+batches. Only the deployer may execute them, only in order, and only during the
+48-hour bootstrap window. Step one enables the qualified bounded routes,
+resumes conversions, and enters Canary for the deployer. Step two installs the
+6 ETH/0.5 ETH future-launch profile, applies public caps equal to exactly 10%
+of the qualified maxima, and enters Public. Completing step two, the first
+nonzero RDAO transfer away from the deployer, expiry, explicit owner
+finalization, or Safe abort ends bootstrap irreversibly. Reacquiring every RDAO
+cannot restore bootstrap.
+
+After bootstrap, an account that currently owns the fixed supply and held and
+delegated the full supply at the previous governance timestamp may schedule an
+operation without a vote. The operation still waits the current Timelock delay
+and remains cancellable by the Safe. Initial governance timing is a one-hour
+voting delay, four-hour voting period, one-hour Timelock, 1% proposal threshold,
+and 10% quorum.
+
+This initial mode intentionally concentrates voting, DAO rewards, and emergency pause
 authority. Record that residual risk in every readiness and activation report.
 When team distribution begins, checkpoint rewards, transfer RDAO, add two
 independently controlled Safe owners, raise the threshold to two, and verify a
@@ -47,8 +63,8 @@ confirmation. Never reuse an idempotency key or replay a confirmed transaction.
 
 - Coordinator deploys in `Paused`.
 - Guardian can move any mode only to `Paused`.
-- Timelock alone selects `Canary`, changes the canary launcher, resumes, or
-  selects `Public`.
+- The two exact bootstrap batches or later Timelock governance alone select
+  `Canary`, change the canary launcher, resume, or select `Public`.
 - `Canary` permits creation only by the protected project deployer.
 - Pausing creation does not pause existing trades, claims, or withdrawals.
 - Timelock alone updates graduation profiles.
@@ -56,12 +72,19 @@ confirmation. Never reuse an idempotency key or replay a confirmed transaction.
   target.
 - Each request commits to an expected profile version.
 - Each launch snapshots its full curve; later governance cannot alter it.
+- The DAO may change governance clocks, proposal threshold, quorum, and the
+  Timelock delay through their respective governance-only paths.
+- The DAO cannot change fixed supplies, the 50/25/20/5 allocation, one-hour
+  reward duration, locked creator assignments, locked LP principal, accrued
+  liabilities, or existing launch snapshots.
 - Allocations, fees, supply, locked principal, and 50/25/20/5 routing remain
   invariant.
 
 ## Gate 1: Devnet and internal security
 
-Deploy a fresh native-Anvil stack. Test all modes, permissions, profile bounds,
+Deploy a fresh native-Anvil stack. Test both exact bootstrap plans, sequencing,
+wrong payloads, replay, expiry, distribution, reacquisition, guardian abort,
+atomic rollback, all modes, permissions, profile bounds,
 rounding, version races, configuration hashes, CREATE2 identity, and existing
 launch immutability. Graduate real 0.01 ETH/0.001 ETH and 6 ETH/0.5 ETH
 profiles. Verify pool initialization, terminal price, residual ceilings,
@@ -74,16 +97,15 @@ high, or medium findings.
 
 ## Gate 2: Fresh Testnet
 
-Deploy fresh contracts on chain 46630 from the exact candidate. Archive
-Schema-13 history and rebuild an empty database from the new block. Verify
+Deploy fresh Schema-17 contracts on chain 46630 from the exact candidate.
+Archive Schema-16 history and rebuild an empty database from the new block. Verify
 runtime hashes, roles, bindings, routes, mode, profile, liabilities, and
 release identity.
 
-Exercise governance from canary to production and prove old launches retain
-their snapshots. Complete encrypted backup, isolated restore, one-fault
-recovery, LAN-primary/Alchemy-fallback drills, reconciliation, browser
-acceptance, and a fresh uninterrupted endurance campaign. Any contract change
-invalidates all contract-dependent evidence.
+Exercise the complete two-step bootstrap through one real reward hour and prove
+the canary retains its snapshot after step two. Complete focused recovery,
+reconciliation, LAN degradation checks with Alchemy probe-only, and browser
+acceptance. Any contract change invalidates all contract-dependent evidence.
 
 ## Gate 3: Exact Mainnet fork
 
@@ -93,16 +115,19 @@ liquidity; never seed synthetic route liquidity. Fund only local fork actors.
 
 Execute this sequence:
 
-1. Deploy Paused with conversions and all routes disabled.
+1. Deploy Paused with conversions and all routes disabled and verify both exact
+   bootstrap hashes.
 2. Verify roles, hashes, balances, supplies, and zero liabilities.
-3. Install 0.01 ETH/0.001 ETH and enter Canary for the project deployer.
+3. Execute bootstrap step one and enter Canary for the project deployer.
 4. Create and graduate a WETH-basket canary.
 5. Exercise bonding, graduated swaps, fees, conversion, settlement, one-hour
    streams, pull claims, and creator split locking.
 6. Test every required core asset with a guarded bounded round trip.
-7. Install 6 ETH/0.5 ETH.
+7. Execute bootstrap step two to install 6 ETH/0.5 ETH and exact 10% public
+   route caps.
 8. Prove the canary is unchanged and a second launch snapshots the new version.
-9. Enter Public, prove permissionless creation, then return to Paused.
+9. Verify Public permissionless creation and irreversible bootstrap
+   finalization, then use the guardian to return the rehearsal to Paused.
 
 A missing, synthetic, or non-v4 required route fails the rehearsal. Optional
 routes remain disabled individually.
@@ -138,7 +163,8 @@ Do not deploy until the deposit and L2 balance are independently verified.
 
 ## Gate 5: Paused deployment
 
-After explicit authorization, deploy in Paused with the canary profile,
+After explicit authorization, deploy the fresh RDAO, Schema-17 Timelock,
+Governor V2, and protocol stack in Paused with the canary profile,
 conversions paused, routes disabled, and application transactions disabled.
 Complete bindings while Paused. Verify constructor arguments, bytecode, Safe,
 Timelock, roles, supplies, allocation, routes/caps, profile, liabilities, and
@@ -146,8 +172,9 @@ balances. Any mismatch archives the deployment and stops rollout.
 
 ## Gate 6: Controlled canary
 
-After separate authorization, enter Canary and enable only independently
-qualified routes at bounded caps. Create one project WETH basket launch.
+After separate exact-manifest authorization, execute bootstrap step one to
+enter Canary and enable only independently qualified routes at bounded caps.
+Create one project WETH basket launch.
 Exercise bonding, graduation, both swap directions, fees, conversion,
 settlement, streams, all pull claims, and creator split locking.
 
@@ -169,12 +196,11 @@ anomaly.
 
 ## Gate 7: Public promotion
 
-DAO governance installs 6 ETH/0.5 ETH. Verify the canary retains its snapshot.
-Remain Paused until the proposal is final, routes pass, state reconciles,
-monitoring is staffed, and public activation is authorized.
-
-Enter Public and enable Mainnet submissions in one controlled window. Begin
-route caps at 10% of qualified maxima and staff the first 24 public hours.
+After exact canary reconciliation, execute the precommitted bootstrap step two.
+It installs 6 ETH/0.5 ETH for future launches, applies route caps equal to 10%
+of qualified maxima, enters Public, and irreversibly finalizes bootstrap.
+Verify the canary retains its snapshot before enabling Mainnet application
+writes in the same controlled window. Staff the first 24 public hours.
 
 ## Failure policy and final report
 

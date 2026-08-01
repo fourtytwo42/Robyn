@@ -83,7 +83,7 @@ test("builds exact Canary and Public bootstrap call sets", () => {
   assert.ok(second.every((call) => call.valueWei === "0"));
 });
 
-test("rejects public caps above the canary qualification and duplicate routes", () => {
+test("requires exact 10% public caps", () => {
   const prediction = predictSchema17Deployments({
     deployer,
     startingNonce: 7,
@@ -108,6 +108,22 @@ test("rejects public caps above the canary qualification and duplicate routes", 
           },
         ],
       }),
-    /cannot exceed/,
+    /must equal 10%/,
+  );
+  assert.throws(
+    () =>
+      buildSchema17BootstrapCalls({
+        ...common,
+        wrappedNativePublicCapWei: "101",
+        routes: [
+          {
+            symbol: "GOOGL",
+            asset: "0x0000000000000000000000000000000000000044",
+            canary: route,
+            public: { ...route, maximumNativeInput: 100_000_000_000n },
+          },
+        ],
+      }),
+    /WETH public cap must equal 10%/,
   );
 });

@@ -1,5 +1,34 @@
 # Project Memory
 
+### 2026-08-01 - Schema-17 exact paused-deployment rehearsals pass
+
+- Context: Schema-16 Mainnet remains unused, fully Paused, and archived. No
+  Schema-17 Mainnet transaction is authorized. Work continues on
+  `codex/schema17-hour-governance` in
+  `/home/hendo420/Robyn-run06-funding`.
+- Decision: Schema-17 public caps must equal exactly 10% of the qualified
+  canary caps. Deployment consumes an exact prepared manifest, verifies the
+  existing Safe, predicts every address, deploys the hook through CREATE2,
+  completes bindings and role renunciation, then fails unless the resulting
+  protocol is fully Paused with zero launches and liabilities.
+- Files: `scripts/prepare-schema17-deployment.mjs`,
+  `packages/contracts/script/DeploySchema17.s.sol`, and
+  `packages/contracts/script/DeploySchema17TestnetSafe.s.sol`.
+- Commands/tests: The production broadcaster completed 15 deployments plus
+  bindings on an isolated chain-4663 fork with 56,933,185 estimated gas. A
+  fresh canonical 1-of-1 Safe and the complete stack then deployed on an
+  isolated chain-46630 fork at block 95,841,262. The Testnet stack used
+  56,953,975 estimated gas and satisfied all exact-address, bootstrap-hash,
+  role, supply, and zero-state assertions.
+- Result: Broadcaster mechanics are proven on both target chain identities
+  without any Mainnet transaction. The combined Testnet Safe and protocol
+  estimate is approximately 0.001005 ETH, below the verified available balance
+  while preserving the 0.0015 ETH reserve.
+- Follow-up: Finish tooling regressions, commit and push a clean SHA, rerun
+  security and reproducibility, then deploy and qualify a fresh Schema-17
+  Testnet stack. Refresh the full Mainnet route/canary rehearsal and seal an
+  exact funding manifest before requesting any Mainnet authorization.
+
 ### 2026-08-01 - Schema-17 core, lifecycle, and deployment tooling qualify
 
 - Context: Schema-16 Mainnet remains unused, fully Paused, and archived. No
