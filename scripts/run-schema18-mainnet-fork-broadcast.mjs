@@ -49,13 +49,15 @@ const commandEnv = {
   ...process.env,
   PATH: `${foundryBin}:${process.env.PATH}`,
 };
-const command = (name, args, options = {}) =>
-  execFileSync(name, args, {
+const command = (name, args, options = {}) => {
+  const output = execFileSync(name, args, {
     cwd: options.cwd ?? repoRoot,
     env: options.env ?? commandEnv,
     encoding: "utf8",
     stdio: options.stdio ?? ["ignore", "pipe", "pipe"],
-  }).trim();
+  });
+  return typeof output === "string" ? output.trim() : "";
+};
 const git = (...args) => command("git", ["-C", repoRoot, ...args]);
 const json = (value) =>
   JSON.stringify(
