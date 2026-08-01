@@ -52,6 +52,7 @@ test("exact-state rehearsal broadcasts only to Anvil and manifest remains unauth
   assert.match(prepare,/canaryTransactionsAuthorized:false/);
   assert.match(prepare,/publicActivationAuthorized:false/);
   assert.match(prepare,/applicationWritesAuthorized:false/);
+  assert.match(rehearsal,/authorizationEligible:true/);
   assert.match(prepare,/additionalBridgeAuthorized:false/);
   assert.match(prepare,/bootstrapPlanHash/);
   assert.match(prepare,/Gate 2 funding shortfall/);
