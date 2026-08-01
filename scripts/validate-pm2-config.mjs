@@ -152,7 +152,12 @@ const mainnet = loadConfig("infrastructure/pm2/ecosystem.mainnet.config.cjs", {
   ROBYN_MAINNET_MANIFEST: "/etc/robyn/mainnet-validation.json",
   ROBYN_MAINNET_SERVER_RPC_URL: mainnetHttpRpc,
   ROBYN_MAINNET_WS_RPC_URL: mainnetWebSocketRpc,
-  ROBYN_MAINNET_OPERATOR_KEY_FILE: "/etc/robyn/mainnet-operator-key",
+  ROBYN_MAINNET_TOOLING_ROOT: "/opt/robyn/mainnet-operations/validation",
+  ROBYN_MAINNET_OPERATOR_KEYSTORE: "/etc/robyn/mainnet-operator-keystore.json",
+  ROBYN_MAINNET_OPERATOR_PASSWORD_FILE:
+    "/etc/robyn/mainnet-operator-password",
+  ROBYN_MAINNET_OPERATOR_KEY_FIFO:
+    "/run/user/1000/robyn-mainnet-keeper-key.fifo",
 });
 const mainnetIndexer = mainnet.apps.find(
   (app) => app.name === "robyn-indexer-mainnet",
@@ -187,13 +192,28 @@ if (
   mainnetGateway?.env?.EXPECTED_CHAIN_ID !== "4663" ||
   mainnetGateway?.env?.PRIMARY_RPC_URL !== mainnetPrimaryRpc ||
   mainnetGateway?.env?.FALLBACK_RPC_URL !== mainnetHttpRpc ||
-  mainnetGateway?.env?.RPC_SERVICE_NAME !== "robyn-mainnet-rpc-failover" ||
+  mainnetGateway?.env?.RPC_SERVICE_NAME !== "robyn-mainnet-rpc-gateway" ||
   mainnetGateway?.env?.RPC_STATUS_FILE !==
     "/var/lib/robyn/mainnet-rpc-gateway/status.json"
 ) {
   throw new Error(
     "robyn-rpc-gateway-mainnet must use the isolated LAN-primary mainnet policy",
   );
+}
+const mainnetKeeper = mainnet.apps.find(
+  (app) => app.name === "robyn-keeper-mainnet",
+);
+if (
+  mainnetKeeper?.script !== "/bin/bash" ||
+  !mainnetKeeper?.args?.endsWith(
+    "/scripts/start-schema18-mainnet-keeper-secure.sh",
+  ) ||
+  mainnetKeeper?.env?.ROBYN_MAINNET_OPERATOR_KEYSTORE !==
+    "/etc/robyn/mainnet-operator-keystore.json" ||
+  mainnetKeeper?.env?.ROBYN_MAINNET_OPERATOR_KEY_FIFO !==
+    "/run/user/1000/robyn-mainnet-keeper-key.fifo"
+) {
+  throw new Error("mainnet keeper must use the protected FIFO keystore wrapper");
 }
 for (const name of [
   "robyn-api-mainnet",

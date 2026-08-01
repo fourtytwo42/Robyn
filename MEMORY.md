@@ -1,5 +1,26 @@
 # Project Memory
 
+### 2026-08-01 - Exact-state Gate-2 resume rehearsal passes
+
+- Context: The authorized Gate-2 run stopped safely before its tenth bonding purchase because the runner attempted another full `0.001 ETH` buy at 99% progress. Mainnet remained guardian-paused with no ambiguous transaction.
+- Fix: Added a distinct restart-safe resume runner that binds the existing launch, derives the final gross purchase from remaining net principal and the immutable curve fee, and submits exactly one bounded final bonding transaction. It never recreates the launch or replays the invalidated journal.
+- Exact amount: With `0.0099 ETH` raised, a `0.01 ETH` threshold, and a 1% fee, the final purchase is exactly `0.000101010101010102 ETH`.
+- Rehearsal: LAN-sourced chain-4663 fork block `25446633` passed 44/44 local transactions: unanimous scheduling, the one-hour Timelock, Canary reactivation, exact graduation, Sherwood and direct trading, settlement, one-hour holder/creator/DAO claims, 78.99% recovery, post-settlement, guardian shutdown, and reconciliation. No Mainnet transaction was broadcast.
+- Funding evidence: The exact fork began at the live `0.020848327945866533 ETH` balance and did not inflate it. Its minimum balance was `0.020712491864501287 ETH`, above the fixed `0.02 ETH` operational reserve, before the bounded unwind restored liquid capital.
+- Validation: Resume/public/journal focused tests pass 29/29; lint, typecheck, PM2 validation, syntax checks, and `git diff --check` pass.
+- Safety: Mainnet remains Paused, both conversion systems remain paused, all six routes remain disabled, application writes remain disabled, and the prior Gate-2 manifest remains invalidated.
+- Follow-up: Commit and push the operational tooling, repeat the exact-state rehearsal on that clean SHA, seal a replacement Gate-2 resume manifest with refreshed funding, and obtain approval for that exact hash before any further Mainnet broadcast. Public activation remains separately unauthorized.
+
+### 2026-08-01 - Schema-18 Gate-2 recovery stops safely at 99% bonding progress
+
+- Authorization: The owner authorized exact recovery/canary manifest SHA-256 `ba5227b2b45eddcdd73b41e12b3625a700beef5f7714fd6228847366fa424c76`. Additional bridging, Public mode, the production profile, and application writes remained unauthorized.
+- Confirmed progress: Bootstrap was irreversibly owner-finalized, unanimous Canary recovery was scheduled and executed after the real one-hour Timelock, and all six GOOGL/MSFT/NVDA/SPCX/SPY/WETH route round trips passed. The canary launch `0xe485303ed268f68ab6ed4d98d8850c028af2828c` was created and nine post-creation purchases confirmed.
+- Failure: The launch runner used another full `0.001 ETH` purchase at 99% progress instead of sizing the final purchase to the remaining `0.0001 ETH` curve principal. Its fixed-reserve guard rejected `bonding-buy-10` before signing because a full purchase would breach the `0.02 ETH` reserve. This is an operational runner-sizing defect, not a contract revert or accounting defect.
+- Safety: The failed run is invalidated and cannot resume or replay. Automatic Safe shutdown restored launch mode Paused, paused both conversion systems, and disabled all six routes. Mainnet application writes remain disabled. No submission is ambiguous.
+- State: The project wallet retains `0.020848327945866533 ETH`; the bonding market `0xd7dbee4a37cb9a829c963649b9f900fd14e41dcc` holds `0.0099 ETH` curve principal against a `0.01 ETH` threshold. The deployer holds `797984886649874075515992102` launch-token units. A fresh bounded full sell quote returns `0.009801 ETH` after a `0.000099 ETH` fee.
+- Evidence: `/home/hendo420/robyn-evidence/schema18-mainnet-recovery/gate2-live-ba5227b-20260801T222131Z/` is failure-sealed; its `SHA256SUMS` file hashes to `2775ab44c71b4b5c3730dcf268c86d8681eff07f380bfb811973a7f83894c677`.
+- Follow-up: Build an exact-state recovery/canary runner that either performs a bounded pre-graduation unwind or sizes the final purchase from remaining principal, rehearse it against the current Mainnet state, recalculate reserve-safe funding, and seal a new manifest. Do not broadcast changed calldata under the invalidated Gate-2 manifest.
+
 ### 2026-08-01 - Schema-18 unanimous recovery tooling reaches first fork pass
 
 - Context: Gate 2 consumed bootstrap step one and completed all six route round trips, then a transient LAN RPC failure stopped before launch signing. The authorized Safe shutdown restored Paused launches and conversions and disabled every route; 28/28 live receipts succeeded and no canary launch exists.

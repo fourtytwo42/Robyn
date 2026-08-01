@@ -1,3 +1,5 @@
+const path = require("node:path");
+
 function required(name) {
   const value = process.env[name];
   if (!value) throw new Error(`Missing required mainnet setting: ${name}`);
@@ -10,7 +12,12 @@ const primaryRpcUrl = required("ROBYN_MAINNET_PRIMARY_RPC_URL");
 const fallbackRpcUrl = required("ROBYN_MAINNET_SERVER_RPC_URL");
 const backendRpcUrl = "http://127.0.0.1:18549";
 const wsRpcUrl = required("ROBYN_MAINNET_WS_RPC_URL");
-const operatorKeyFile = required("ROBYN_MAINNET_OPERATOR_KEY_FILE");
+const toolingRoot = required("ROBYN_MAINNET_TOOLING_ROOT");
+const operatorKeystore = required("ROBYN_MAINNET_OPERATOR_KEYSTORE");
+const operatorPasswordFile = required("ROBYN_MAINNET_OPERATOR_PASSWORD_FILE");
+const operatorKeyFile =
+  process.env.ROBYN_MAINNET_OPERATOR_KEY_FIFO ||
+  `/run/user/${process.getuid()}/robyn-mainnet-keeper-key.fifo`;
 const database = process.env.ROBYN_MAINNET_DATABASE || "robyn_mainnet";
 const authOrigins =
   process.env.ROBYN_MAINNET_AUTH_ORIGINS || "https://sherwoodforest.trade";
@@ -97,10 +104,30 @@ module.exports = {
     if (name === "robyn-api-mainnet") env.PORT = ports.api;
     if (name === "robyn-artifacts-mainnet") env.PORT = ports.artifacts;
 
+    if (name === "robyn-keeper-mainnet") {
+      Object.assign(env, {
+        ROBYN_MAINNET_RELEASE_ROOT: releaseRoot,
+        ROBYN_MAINNET_TOOLING_ROOT: toolingRoot,
+        ROBYN_MAINNET_OPERATOR_KEYSTORE: operatorKeystore,
+        ROBYN_MAINNET_OPERATOR_PASSWORD_FILE: operatorPasswordFile,
+        ROBYN_MAINNET_OPERATOR_KEY_FIFO: operatorKeyFile,
+      });
+    }
+
     return {
       ...app,
       name,
       env,
+      ...(name === "robyn-keeper-mainnet"
+        ? {
+            cwd: toolingRoot,
+            script: "/bin/bash",
+            args: path.join(
+              toolingRoot,
+              "scripts/start-schema18-mainnet-keeper-secure.sh",
+            ),
+          }
+        : {}),
     };
   }),
 };

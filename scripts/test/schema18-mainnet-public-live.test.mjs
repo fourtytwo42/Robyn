@@ -1,0 +1,153 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+const runner = await readFile(
+  "scripts/run-schema18-mainnet-public-live.mjs",
+  "utf8",
+);
+const prepare = await readFile(
+  "scripts/prepare-schema18-mainnet-public.mjs",
+  "utf8",
+);
+const rehearsal = await readFile(
+  "scripts/run-schema18-mainnet-public-rehearsal.mjs",
+  "utf8",
+);
+const applicationManifest = await readFile(
+  "scripts/finalize-schema18-mainnet-application-manifest.mjs",
+  "utf8",
+);
+const publicNginx = await readFile(
+  "infrastructure/nginx/robyn-schema18-mainnet-public.conf",
+  "utf8",
+);
+const mainnetPm2 = await readFile(
+  "infrastructure/pm2/ecosystem.mainnet.config.cjs",
+  "utf8",
+);
+const secureKeeper = await readFile(
+  "scripts/start-schema18-mainnet-keeper-secure.sh",
+  "utf8",
+);
+const keyPipe = await readFile("scripts/pipe-keystore-private-key.mjs", "utf8");
+
+test("Gate 3 tooling is exact-release, LAN-only, and separately authorized", () => {
+  assert.match(runner, /4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4/);
+  assert.match(runner, /8327b250122cd9050a7da6a44e12859e3cf521aa/);
+  assert.match(runner, /ROBYN_SCHEMA18_MAINNET_PUBLIC_AUTHORIZED/);
+  assert.match(
+    runner,
+    /ROBYN_SCHEMA18_MAINNET_PUBLIC_AUTHORIZATION_RECEIPT_SHA256/,
+  );
+  assert.match(
+    runner,
+    /unanimous-public-through-application-writes-and-emergency-verification/,
+  );
+  assert.match(
+    runner,
+    /exact Gate 3 manifest lacks a matching protected authorization receipt/,
+  );
+  assert.match(runner, /publicActivationAuthorized !== false/);
+  assert.match(runner, /applicationWritesAuthorized !== false/);
+  assert.doesNotMatch(runner, /alchemy\.com|automaticAlchemyFallback/);
+});
+
+test("runner is restart-safe and preserves the operational reserve", () => {
+  assert.match(runner, /automatic replay is prohibited/);
+  assert.match(
+    runner,
+    /submission is ambiguous; manual reconciliation required/,
+  );
+  assert.match(runner, /has a pending nonce/);
+  assert.match(runner, /exceeds sealed phase gas ceiling/);
+  assert.match(runner, /exceeds sealed fee ceiling/);
+  assert.match(runner, /would breach the fixed Mainnet reserve/);
+  assert.match(runner, /const RESERVE = 20_000_000_000_000_000n/);
+});
+
+test("runner binds the exact Public batch, route state, profile, and emergency shutdown", () => {
+  for (const action of [
+    "scheduleUnanimous",
+    "executeBatch",
+    "pauseLaunches",
+    "pauseConversions",
+    "disableRoute",
+  ]) {
+    assert.match(runner, new RegExp(`"${action}"`));
+  }
+  assert.match(runner, /sealed Public batch hash mismatch/);
+  assert.match(runner, /one-hour Public Timelock is not complete/);
+  assert.match(runner, /production graduation profile mismatch/);
+  assert.match(runner, /maximumReferenceTickDeviation/);
+  assert.match(runner, /verificationClass/);
+  assert.match(runner, /Canary launch profile snapshot changed/);
+  assert.match(runner, /guardian-disable-/);
+});
+
+test("manifest sealer requires completed Gate 2, rehearsal receipts, exact app evidence, and no preauthorization", () => {
+  for (const stage of [
+    "execute-reactivation",
+    "routes",
+    "launch",
+    "settle",
+    "claims",
+    "unwind",
+    "post-settle",
+    "shutdown",
+    "reconcile",
+  ]) {
+    assert.match(prepare, new RegExp(`"${stage}"`));
+  }
+  assert.match(prepare, /Gate-2 journal is incomplete/);
+  assert.match(prepare, /Public rehearsal receipt ledger is incomplete/);
+  assert.match(prepare, /exact Mainnet application evidence is incomplete/);
+  assert.match(prepare, /Public funding shortfall/);
+  assert.match(prepare, /additionalBridgeAuthorized:false/);
+  assert.match(prepare, /publicActivationAuthorized:false/);
+  assert.match(prepare, /applicationWritesAuthorized:false/);
+});
+
+test("Public rehearsal pins the LAN fork and broadcasts only to Anvil", () => {
+  assert.match(rehearsal, /--fork-url/);
+  assert.match(rehearsal, /127\.0\.0\.1:28620/);
+  assert.match(rehearsal, /anvil_impersonateAccount/);
+  assert.match(rehearsal, /evm_increaseTime/);
+  assert.match(rehearsal, /mainnetTransactionsBroadcast: 0/);
+  assert.match(rehearsal, /local-fork-broadcast/);
+  assert.match(rehearsal, /publicActivationAuthorized: false/);
+  assert.match(rehearsal, /applicationWritesAuthorized: false/);
+});
+
+test("application manifest binds the exact releases and strips test-only route identity", () => {
+  assert.match(applicationManifest, /4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4/);
+  assert.match(applicationManifest, /8327b250122cd9050a7da6a44e12859e3cf521aa/);
+  assert.match(applicationManifest, /robinhood-mainnet-real-liquidity/);
+  assert.match(applicationManifest, /canonical-weth-runtime/);
+  assert.match(applicationManifest, /mockOnly: false/);
+  assert.match(applicationManifest, /applicationWritesEnabled: true/);
+  assert.match(applicationManifest, /publicActivationAuthorized: false/);
+});
+
+test("Public ingress keeps browser RPC on the LAN-only loopback gateway", () => {
+  assert.match(publicNginx, /listen 127\.0\.0\.1:3082/);
+  assert.match(publicNginx, /location = \/rpc/);
+  assert.match(publicNginx, /limit_except POST/);
+  assert.match(publicNginx, /proxy_pass http:\/\/127\.0\.0\.1:18549/);
+  assert.match(publicNginx, /proxy_pass http:\/\/127\.0\.0\.1:3121\//);
+  assert.match(publicNginx, /proxy_pass http:\/\/127\.0\.0\.1:3022/);
+  assert.doesNotMatch(publicNginx, /alchemy|rpc\.robinhood|fallback/i);
+});
+
+test("Mainnet keeper decrypts its operator key through a private FIFO", () => {
+  assert.match(mainnetPm2, /ROBYN_MAINNET_OPERATOR_KEYSTORE/);
+  assert.match(mainnetPm2, /ROBYN_MAINNET_OPERATOR_PASSWORD_FILE/);
+  assert.match(mainnetPm2, /start-schema18-mainnet-keeper-secure\.sh/);
+  assert.match(secureKeeper, /mkfifo -m 600/);
+  assert.match(secureKeeper, /CAST_UNSAFE_PASSWORD/);
+  assert.match(secureKeeper, /ROBYN_OPERATOR_KEY_FILE="\$key_fifo"/);
+  assert.match(secureKeeper, /rm -f -- "\$key_fifo"/);
+  assert.doesNotMatch(secureKeeper, /set -x|cat\s+["']?\$password_file/i);
+  assert.match(keyPipe, /0x\[0-9a-fA-F\]\{64\}/);
+  assert.match(keyPipe, /unique\.length !== 1/);
+});
