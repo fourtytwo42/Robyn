@@ -1,5 +1,39 @@
 # Project Memory
 
+### 2026-08-01 - Restart-safe production canary runner qualified; authorization pending
+
+- Context: Schema-16 runtime
+  `a8d54bb125d091be0cea010262a68a2baaceda30` remains fully deployed and
+  Paused on Robinhood Mainnet. The public application and all Mainnet writes
+  remain disabled. Alchemy remains comparison-probe-only; the loopback LAN
+  gateway is the only application and transaction path.
+- Decision: One future exact-manifest approval may cover the Governor proposal
+  through final Safe guardian shutdown. It does not cover Public mode,
+  application writes, the `6 ETH / 0.5 ETH` production profile, or another
+  bridge.
+- Files: `scripts/run-schema16-mainnet-canary-live.mjs`,
+  `scripts/observe-schema16-mainnet-canary.mjs`,
+  `scripts/lib/mainnet-canary-journal.mjs`, and
+  `scripts/test/mainnet-canary-journal.test.mjs`.
+- Commands/tests: The exact deployed-state Anvil rehearsal at block `24724430`
+  passed 74/74 transactions and recovered 78.20% gross canary principal. A
+  staged production-runner integration completed proposal, vote, queue,
+  execution, routes, launch, settlement, claims, one-shot unwind, final
+  settlement, guardian shutdown, reconciliation, and restart-safe status. A
+  separate induced post-unwind failure automatically completed the Safe
+  shutdown. The full repository suite passed, including 369 Foundry tests with
+  zero failures and one intentional skip; lint, typecheck, journal rejection,
+  one-shot observation, and two-clean-build reproducibility passed.
+- Result: Live read-only verification found chain `4663`, healthy LAN-primary
+  gateway policy, unchanged `0.031268344574712 ETH` deployer balance, Paused
+  coordinator and conversion systems, disabled routes, and no Mainnet canary
+  transaction. The final manifest must be resealed after this documentation
+  checkpoint so its production-runner SHA equals the clean pushed checkout.
+- Follow-up: Present the final unauthorized manifest and SHA-256 for explicit
+  approval. Do not submit the proposal until that exact approval is received.
+  After the governed sequence and guardian shutdown, run 144 ten-minute
+  observation samples before preparing any production-profile proposal.
+
 ### 2026-08-01 - Controlled Mainnet canary exact-state rehearsal passes
 
 - Context: Schema-16 remains fully deployed and Paused on Robinhood Mainnet;
