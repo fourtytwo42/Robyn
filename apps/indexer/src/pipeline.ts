@@ -33,6 +33,16 @@ export function requiredBlockNumbers(logBlocks: bigint[], rangeEnd: bigint) {
     .sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
 }
 
+export function mergeIndexedAddresses(...groups: Iterable<string>[]) {
+  return [
+    ...new Set(
+      groups.flatMap((group) =>
+        [...group].map((address) => address.toLowerCase()),
+      ),
+    ),
+  ].sort();
+}
+
 export function projectionWindow(
   deploymentBlock: bigint,
   projectedBlock: bigint | undefined,

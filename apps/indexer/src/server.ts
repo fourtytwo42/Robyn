@@ -16,6 +16,7 @@ import {
   completeProjectionBatch,
   failureBackoffMs,
   ingestionCycleResult,
+  mergeIndexedAddresses,
   projectionRequiresReset,
   projectionWindow,
   requiredBlockNumbers,
@@ -351,20 +352,45 @@ async function currentIndexedAddresses() {
     "SELECT token,vault,market,adapter,locker FROM launches WHERE chain_id=$1",
     [manifest.chainId],
   );
-  return [
-    ...new Set([
-      ...indexedAddresses,
-      ...launches.flatMap(({ token, vault, market, adapter, locker }) =>
-        [token, vault, market, adapter, locker]
-          .filter((value): value is string => Boolean(value))
-          .map((value) => value.toLowerCase() as Address),
+  const coordinator = manifest.contracts.atomicLaunchCoordinator?.toLowerCase();
+  const coordinatorLogs = coordinator
+    ? await sql.unsafe<
+        {
+          block_number: string;
+          data: Hex;
+          topics: Hex[];
+        }[]
+      >(
+        "SELECT block_number::text,data,topics FROM raw_logs WHERE chain_id=$1 AND address=$2 ORDER BY block_number,transaction_index,log_index",
+        [manifest.chainId, coordinator],
+      )
+    : [];
+  const createdAddresses = newlyCreatedLaunchAddresses(
+    coordinatorLogs.map((log) => ({
+      address: coordinator as Address,
+      blockNumber: BigInt(log.block_number),
+      data: log.data,
+      topics: log.topics as [] | [Hex, ...Hex[]],
+    })),
+  );
+  return mergeIndexedAddresses(
+    indexedAddresses,
+    launches.flatMap(({ token, vault, market, adapter, locker }) =>
+      [token, vault, market, adapter, locker].filter((value): value is string =>
+        Boolean(value),
       ),
-    ]),
-  ];
+    ),
+    createdAddresses.keys(),
+  ) as Address[];
 }
 
 function newlyCreatedLaunchAddresses(
-  logs: Awaited<ReturnType<typeof client.getLogs>>,
+  logs: {
+    address: Address;
+    blockNumber: bigint | null;
+    data: Hex;
+    topics: [] | [Hex, ...Hex[]];
+  }[],
 ) {
   const coordinator = manifest.contracts.atomicLaunchCoordinator?.toLowerCase();
   if (!coordinator) return new Map<Address, bigint>();

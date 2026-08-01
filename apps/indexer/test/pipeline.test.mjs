@@ -8,6 +8,7 @@ import {
   completeProjectionBatch,
   failureBackoffMs,
   ingestionCycleResult,
+  mergeIndexedAddresses,
   normalIngestionLagPassed,
   projectionRequiresReset,
   projectionWindow,
@@ -28,6 +29,24 @@ test("every range commits verified metadata for logs and its range end", () => {
     200n,
   ]);
   assert.deepEqual(requiredBlockNumbers([], 200n), [200n]);
+});
+
+test("launch addresses discovered in an earlier range remain indexed in later ranges", () => {
+  assert.deepEqual(
+    mergeIndexedAddresses(
+      ["0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"],
+      ["0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
+      [
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+      ],
+    ),
+    [
+      "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "0xcccccccccccccccccccccccccccccccccccccccc",
+    ],
+  );
 });
 
 test("checkpoint verification fails closed on stale heads and resets on reorgs", () => {

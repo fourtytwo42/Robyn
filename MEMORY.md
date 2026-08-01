@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 focused lifecycle passes and rebuild gap is corrected
+
+- Context: Fresh Schema-18 Testnet release `2654306dd8ea9244e74e7131d7fd88ad45d9c0be` completed both bootstrap steps, all six route round trips, controlled launch and graduation, fee conversion and settlement, the real one-hour reward interval, all three claims, bounded unwind, guardian shutdown, and final contract reconciliation through the LAN-only gateway.
+- Result: Holder, creator, and DAO claims all confirmed with zero backing deficit. Gross capital recovery was 78.99%. The final background audit reports exact DAO and creator conservation, router solvency, zero unattributed native value, unchanged locked principal and supplies, finalized bootstrap, Paused launches and conversions, and no Alchemy fallback traffic. Desktop, tablet, and mobile in-app-browser acceptance passed without console errors, warnings, or horizontal overflow.
+- Rebuild finding: The first empty-database rebuild produced correct launch state but missed later dynamic-address logs because the ingester did not retain coordinator-discovered token, vault, market, adapter, and locker addresses across historical block ranges. This was an indexing/recovery defect, not a contract or accounting defect.
+- Fix: `apps/indexer/src/server.ts` now reconstructs dynamic launch addresses directly from persisted canonical coordinator logs before each range, and `apps/indexer/src/pipeline.ts` adds normalized deterministic address merging. The focused indexer suite passes 24/24.
+- Verification: A second empty database `robyn_testnet_schema18_rebuild_20260801_1749` rebuilt 613 canonical logs. Its normalized fingerprints exactly match the live database for raw logs, launches, launch traders, 88 reward events, governance events, and King-of-the-Forest projections. Evidence is under `/home/hendo420/robyn-evidence/schema18-testnet/focused-live-2654306-01/`.
+- Follow-up: Commit and push the indexer-only correction, build reproducibly, promote the exact corrected application release while contracts remain guardian-paused, rerun release health and final checksums, then return to the Schema-18 Mainnet no-broadcast rehearsal. Mainnet remains untouched and unauthorized.
+
 ### 2026-08-01 - Schema-18 Testnet deploys fresh and fully Paused
 
 - Context: The qualified contract candidate `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4` was deployed fresh on Robinhood Testnet after its isolated deployment rehearsal and funding gate passed. Schema-17 remains archived and Mainnet was not accessed.
