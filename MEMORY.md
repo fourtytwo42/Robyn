@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 Testnet deploys fresh and fully Paused
+
+- Context: The qualified contract candidate `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4` was deployed fresh on Robinhood Testnet after its isolated deployment rehearsal and funding gate passed. Schema-17 remains archived and Mainnet was not accessed.
+- Deployment: Canonical Safe `0x8d523af06C357c689A7290fD76FaF72791eC60Ea` and all 15 predicted Schema-18 contracts were created from fresh nonces. The deployer now holds and delegates the fixed one-billion RDAO supply.
+- Recovery: The exact stack broadcaster confirmed 32 transactions before administrator renunciation exhausted its 34,372 gas limit, the same underestimated envelope previously seen in Schema-17. The failed receipt was unambiguous. Fresh journaled transactions renounced administrator authority and used the Safe to pause the asset and fee conversion systems; no confirmed transaction was replayed.
+- Verification: The Schema-18 verifier passes at deployment block `95977560`: 18 runtime identities, five disabled routes, Paused launches and conversions, zero launches and liabilities, correct Safe/Governor/Timelock roles, hour-scale governance, and no retained deployer administration. The deployer retained `0.059995970338489274 ETH` after deployment.
+- Evidence: Checksums pass under `/home/hendo420/robyn-evidence/schema18-testnet/live-4728cb5-paused-deployment/`.
+- Follow-up: Correct the deployment broadcaster gas ceiling regression before Mainnet use. Finalize the fresh Schema-18 Testnet application manifest, bind a new empty database, promote the exact application release, and run the focused one-hour overlapping-reward lifecycle plus reconciliation and browser acceptance.
+
 ### 2026-08-01 - Schema-18 Testnet deployment rehearsal and funding gate pass
 
 - Context: Exact qualified contract candidate `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4` was rehearsed against an isolated native Anvil fork of chain 46630. Schema-17 remains guardian-paused and Mainnet remains untouched.
