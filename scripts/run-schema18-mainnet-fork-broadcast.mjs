@@ -227,8 +227,6 @@ try {
     [
       "script",
       "script/DeploySchema18.s.sol:DeploySchema18",
-      "--root",
-      "packages/contracts",
       "--rpc-url",
       localRpc,
       "--broadcast",
@@ -239,7 +237,11 @@ try {
       "--gas-estimate-multiplier",
       "150",
     ],
-    { env, stdio: "inherit" },
+    {
+      cwd: path.join(repoRoot, "packages/contracts"),
+      env,
+      stdio: "inherit",
+    },
   );
   const broadcastPath = path.join(
     repoRoot,
