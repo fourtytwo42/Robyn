@@ -110,6 +110,7 @@ build_one() {
 
 build_one a
 cp -a "${work}/apps/web/.next" "${fixed_root}/second-web-build"
+rm -rf -- "${fixed_root}/store-a"
 build_one b
 
 compare() {
