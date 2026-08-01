@@ -94,6 +94,15 @@ type DaoOverview = {
     proposalThreshold: string;
     currentQuorum: string;
   };
+  bootstrap: null | {
+    active: boolean;
+    deadline: string;
+    nextStep: number;
+    finalized: boolean;
+    finalizationReason: Hex;
+    planHashes: [Hex, Hex];
+    unanimousNonce: string;
+  };
   account: null | {
     address: Address;
     balance: string;
@@ -426,6 +435,32 @@ export function DaoView({
                 rewritten.
               </p>
               <dl className="dao-definition-list">
+                {overview.bootstrap && (
+                  <>
+                    <div>
+                      <dt>Bootstrap</dt>
+                      <dd>
+                        {overview.bootstrap.active
+                          ? `Active, step ${overview.bootstrap.nextStep + 1} of 2`
+                          : overview.bootstrap.finalized
+                            ? "Finalized"
+                            : "Inactive"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Bootstrap deadline</dt>
+                      <dd>
+                        {new Date(
+                          Number(overview.bootstrap.deadline) * 1_000,
+                        ).toLocaleString()}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Unanimous operations</dt>
+                      <dd>{overview.bootstrap.unanimousNonce}</dd>
+                    </div>
+                  </>
+                )}
                 <div>
                   <dt>Proposal threshold</dt>
                   <dd>{tokenAmount(overview.governance.proposalThreshold)}</dd>

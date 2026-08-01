@@ -51,6 +51,19 @@ export type AdminHealthSnapshot = {
     bondingPools: number;
     tradingPools: number;
     tokenSink: string;
+    bootstrapControl: null | {
+      active: boolean;
+      deadline: string;
+      nextStep: number;
+      finalized: boolean;
+      finalizationReason: string;
+      unanimousNonce: string;
+      timelockDelaySeconds: string;
+      votingDelaySeconds: string;
+      votingPeriodSeconds: string;
+      proposalThreshold: string;
+      quorumNumerator: string;
+    };
   };
   data: {
     launchCount: string;
@@ -133,6 +146,7 @@ export async function getAdminHealthSnapshot(
   const keeperOk = data.keeperStatus === "ok";
   const artifactsOk = data.artifactStatus === "ok";
   const protocol = recordOrNull(data.protocol);
+  const bootstrapControl = recordOrNull(protocol?.bootstrapControl);
   const protocolOk = protocol === null || protocol.status === "ok";
   const web = getHealthStatus(now);
 
@@ -206,6 +220,28 @@ export async function getAdminHealthSnapshot(
           bondingPools: numberOrNull(protocol.bondingPools) ?? 0,
           tradingPools: numberOrNull(protocol.tradingPools) ?? 0,
           tokenSink: stringOrNull(protocol.tokenSink) ?? "Unavailable",
+          bootstrapControl: bootstrapControl
+            ? {
+                active: bootstrapControl.active === true,
+                deadline: stringOrNull(bootstrapControl.deadline) ?? "0",
+                nextStep: numberOrNull(bootstrapControl.nextStep) ?? 0,
+                finalized: bootstrapControl.finalized === true,
+                finalizationReason:
+                  stringOrNull(bootstrapControl.finalizationReason) ?? "0x0",
+                unanimousNonce:
+                  stringOrNull(bootstrapControl.unanimousNonce) ?? "0",
+                timelockDelaySeconds:
+                  stringOrNull(bootstrapControl.timelockDelaySeconds) ?? "0",
+                votingDelaySeconds:
+                  stringOrNull(bootstrapControl.votingDelaySeconds) ?? "0",
+                votingPeriodSeconds:
+                  stringOrNull(bootstrapControl.votingPeriodSeconds) ?? "0",
+                proposalThreshold:
+                  stringOrNull(bootstrapControl.proposalThreshold) ?? "0",
+                quorumNumerator:
+                  stringOrNull(bootstrapControl.quorumNumerator) ?? "0",
+              }
+            : null,
         }
       : null,
     data: {

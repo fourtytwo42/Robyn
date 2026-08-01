@@ -480,6 +480,94 @@ const launchCoordinatorViewAbi = [
     outputs: [{ type: "address" }],
   },
 ] as const;
+const schema17TimelockViewAbi = [
+  {
+    type: "function",
+    name: "getMinDelay",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "bootstrapActive",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "bootstrapDeadline",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint48" }],
+  },
+  {
+    type: "function",
+    name: "nextBootstrapStep",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint8" }],
+  },
+  {
+    type: "function",
+    name: "bootstrapFinalized",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "bootstrapFinalizationReason",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "bootstrapPlanHash",
+    stateMutability: "view",
+    inputs: [{ type: "uint8" }],
+    outputs: [{ type: "bytes32" }],
+  },
+] as const;
+const schema17GovernorViewAbi = [
+  {
+    type: "function",
+    name: "votingDelay",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "votingPeriod",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "proposalThreshold",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "quorumNumerator",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "unanimousNonce",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
 
 type LaunchRow = {
   launch_id: string;
@@ -1325,6 +1413,94 @@ async function remediationProtocolState() {
       },
     };
   }
+  let bootstrapControl: null | {
+    active: boolean;
+    deadline: string;
+    nextStep: number;
+    finalized: boolean;
+    finalizationReason: Hex;
+    planHashes: [Hex, Hex];
+    unanimousNonce: string;
+    timelockDelaySeconds: string;
+    votingDelaySeconds: string;
+    votingPeriodSeconds: string;
+    proposalThreshold: string;
+    quorumNumerator: string;
+  } = null;
+  if ((deployment.schemaVersion ?? 0) === 17) {
+    const bootstrap = await verifiedBatchRead(
+      [
+        {
+          address: deployment.contracts.timelock,
+          abi: schema17TimelockViewAbi,
+          functionName: "bootstrapActive",
+        },
+        {
+          address: deployment.contracts.timelock,
+          abi: schema17TimelockViewAbi,
+          functionName: "bootstrapDeadline",
+        },
+        {
+          address: deployment.contracts.timelock,
+          abi: schema17TimelockViewAbi,
+          functionName: "nextBootstrapStep",
+        },
+        {
+          address: deployment.contracts.timelock,
+          abi: schema17TimelockViewAbi,
+          functionName: "bootstrapFinalized",
+        },
+        {
+          address: deployment.contracts.timelock,
+          abi: schema17TimelockViewAbi,
+          functionName: "bootstrapFinalizationReason",
+        },
+        {
+          address: deployment.contracts.timelock,
+          abi: schema17TimelockViewAbi,
+          functionName: "bootstrapPlanHash",
+          args: [0],
+        },
+        {
+          address: deployment.contracts.timelock,
+          abi: schema17TimelockViewAbi,
+          functionName: "bootstrapPlanHash",
+          args: [1],
+        },
+        {
+          address: deployment.contracts.timelock,
+          abi: schema17TimelockViewAbi,
+          functionName: "getMinDelay",
+        },
+        ...[
+          "unanimousNonce",
+          "votingDelay",
+          "votingPeriod",
+          "proposalThreshold",
+          "quorumNumerator",
+        ].map((functionName) => ({
+          address: deployment.contracts.governor,
+          abi: schema17GovernorViewAbi,
+          functionName,
+        })),
+      ],
+      blockNumber,
+    );
+    bootstrapControl = {
+      active: bootstrap[0] as boolean,
+      deadline: (bootstrap[1] as bigint).toString(),
+      nextStep: Number(bootstrap[2]),
+      finalized: bootstrap[3] as boolean,
+      finalizationReason: bootstrap[4] as Hex,
+      planHashes: [bootstrap[5] as Hex, bootstrap[6] as Hex],
+      timelockDelaySeconds: (bootstrap[7] as bigint).toString(),
+      unanimousNonce: (bootstrap[8] as bigint).toString(),
+      votingDelaySeconds: (bootstrap[9] as bigint).toString(),
+      votingPeriodSeconds: (bootstrap[10] as bigint).toString(),
+      proposalThreshold: (bootstrap[11] as bigint).toString(),
+      quorumNumerator: (bootstrap[12] as bigint).toString(),
+    };
+  }
   const creatorRecipients = await sql.unsafe<
     { token: Address; recipient: Address }[]
   >(
@@ -1546,6 +1722,7 @@ async function remediationProtocolState() {
     bondingPools,
     tradingPools,
     launchControl,
+    bootstrapControl,
     tokenSink: deployment.contracts.tokenSink,
   };
 }

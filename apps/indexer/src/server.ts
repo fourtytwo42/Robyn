@@ -308,6 +308,35 @@ const rewardStreamEventByTopic = new Map(
   ]),
 );
 const rewardStreamEventTopics = [...rewardStreamEventByTopic.keys()];
+const schema17GovernanceEventDefinitions = [
+  {
+    source: "bootstrap-timelock",
+    event: parseAbiItem(
+      "event BootstrapStepExecuted(uint8 indexed step,bytes32 indexed planHash,address indexed caller)",
+    ),
+  },
+  {
+    source: "bootstrap-timelock",
+    event: parseAbiItem(
+      "event BootstrapFinalized(bytes32 indexed reason,address indexed caller,uint8 completedSteps)",
+    ),
+  },
+  {
+    source: "governor",
+    event: parseAbiItem(
+      "event UnanimousOperationScheduled(bytes32 indexed operationId,address indexed owner,uint48 indexed snapshot,uint256 nonce,bytes32 descriptionHash,bytes32 salt,uint256 delay)",
+    ),
+  },
+] as const;
+const schema17GovernanceEventByTopic = new Map(
+  schema17GovernanceEventDefinitions.map((definition) => [
+    toEventSelector(definition.event).toLowerCase(),
+    definition,
+  ]),
+);
+const schema17GovernanceEventTopics = [
+  ...schema17GovernanceEventByTopic.keys(),
+];
 
 async function currentIndexedAddresses() {
   const launches = await sql.unsafe<
@@ -1209,6 +1238,78 @@ async function projectRewardStreams(asOfBlock: bigint) {
   return logs.length;
 }
 
+async function projectSchema17Governance(asOfBlock: bigint) {
+  if ((manifest.schemaVersion ?? 0) !== 17) return 0;
+  const timelock = manifest.contracts.timelock;
+  const governor = manifest.contracts.governor;
+  if (typeof timelock !== "string" || typeof governor !== "string") {
+    throw new Error("Schema-17 manifest is missing Timelock or Governor");
+  }
+  const [checkpoint] = await sql.unsafe<
+    { last_block: string; last_hash: string }[]
+  >(
+    "SELECT last_block::text,last_hash FROM indexer_checkpoints WHERE service='schema17-governance-projector' AND chain_id=$1",
+    [manifest.chainId],
+  );
+  const fromBlock = checkpoint
+    ? BigInt(checkpoint.last_block) + 1n
+    : BigInt(manifest.deploymentBlock);
+  if (fromBlock > asOfBlock) return 0;
+  const logs = await sql.unsafe<RewardProjectionLog[]>(
+    "SELECT null::text token,l.block_number::text,l.block_hash,l.transaction_hash,l.log_index,l.address,l.topics,l.data FROM raw_logs l JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number AND b.hash=l.block_hash AND b.canonical=true WHERE l.chain_id=$1 AND l.block_number BETWEEN $2 AND $3 AND lower(l.address)=ANY($4::text[]) AND l.topics->>0=ANY($5::text[]) ORDER BY l.block_number,l.transaction_index,l.log_index",
+    [
+      manifest.chainId,
+      fromBlock.toString(),
+      asOfBlock.toString(),
+      [timelock.toLowerCase(), governor.toLowerCase()],
+      schema17GovernanceEventTopics,
+    ],
+  );
+  await sql.begin(async (tx) => {
+    for (const log of logs) {
+      const definition = schema17GovernanceEventByTopic.get(
+        log.topics[0]!.toLowerCase(),
+      );
+      if (!definition) continue;
+      const expectedAddress =
+        definition.source === "bootstrap-timelock" ? timelock : governor;
+      if (log.address.toLowerCase() !== expectedAddress.toLowerCase()) continue;
+      const decoded = decodeEventLog({
+        abi: [definition.event],
+        data: log.data,
+        topics: log.topics as [Hex, ...Hex[]],
+      });
+      await tx.unsafe(
+        "INSERT INTO governance_control_events (chain_id,transaction_hash,log_index,block_number,block_hash,address,source,event_name,payload) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb) ON CONFLICT (chain_id,transaction_hash,log_index) DO NOTHING",
+        [
+          manifest.chainId,
+          log.transaction_hash.toLowerCase(),
+          log.log_index,
+          log.block_number,
+          log.block_hash.toLowerCase(),
+          log.address.toLowerCase(),
+          definition.source,
+          decoded.eventName,
+          rewardPayload(decoded.args),
+        ],
+      );
+    }
+    const [captured] = await tx.unsafe<{ hash: string }[]>(
+      "SELECT hash FROM chain_blocks WHERE chain_id=$1 AND number=$2 AND canonical=true",
+      [manifest.chainId, asOfBlock.toString()],
+    );
+    if (!captured)
+      throw new Error(
+        "Schema-17 governance projection target is not canonical",
+      );
+    await tx.unsafe(
+      "INSERT INTO indexer_checkpoints (service,chain_id,last_block,last_hash) VALUES ('schema17-governance-projector',$1,$2,$3) ON CONFLICT (service,chain_id) DO UPDATE SET last_block=EXCLUDED.last_block,last_hash=EXCLUDED.last_hash,updated_at=now()",
+      [manifest.chainId, asOfBlock.toString(), captured.hash.toLowerCase()],
+    );
+  });
+  return logs.length;
+}
+
 async function resetCanonical() {
   await sql.begin(async (tx) => {
     await tx.unsafe("DELETE FROM launch_traders WHERE chain_id=$1", [
@@ -1237,8 +1338,11 @@ async function resetCanonical() {
     await tx.unsafe("DELETE FROM reward_stream_events WHERE chain_id=$1", [
       manifest.chainId,
     ]);
+    await tx.unsafe("DELETE FROM governance_control_events WHERE chain_id=$1", [
+      manifest.chainId,
+    ]);
     await tx.unsafe(
-      "DELETE FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector','king-of-forest-projector','reward-stream-projector') AND chain_id=$1",
+      "DELETE FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector','king-of-forest-projector','reward-stream-projector','schema17-governance-projector') AND chain_id=$1",
       [manifest.chainId],
     );
     await tx.unsafe(
@@ -1445,7 +1549,11 @@ async function projectOnce() {
         manifest.chainId,
       ]);
       await tx.unsafe(
-        "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector','reward-stream-projector') AND chain_id=$1",
+        "DELETE FROM governance_control_events WHERE chain_id=$1",
+        [manifest.chainId],
+      );
+      await tx.unsafe(
+        "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector','reward-stream-projector','schema17-governance-projector') AND chain_id=$1",
         [manifest.chainId],
       );
     });
@@ -1459,6 +1567,7 @@ async function projectOnce() {
   let projectedLaunches = 0;
   let kingProjection = { processedLogs: 0, awarded: 0 };
   let projectedRewardEvents = 0;
+  let projectedGovernanceEvents = 0;
   if (window) {
     let ids: bigint[];
     let atomicLaunches: Map<string, AtomicLaunchProjection> | undefined;
@@ -1489,6 +1598,9 @@ async function projectOnce() {
         await reconcileMetadataBindings();
         kingProjection = await projectKingOfForest(BigInt(ingested.last_block));
         projectedRewardEvents = await projectRewardStreams(
+          BigInt(ingested.last_block),
+        );
+        projectedGovernanceEvents = await projectSchema17Governance(
           BigInt(ingested.last_block),
         );
       },
@@ -1703,7 +1815,11 @@ async function projectOnce() {
               [manifest.chainId],
             );
             await tx.unsafe(
-              "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector','reward-stream-projector') AND chain_id=$1",
+              "DELETE FROM governance_control_events WHERE chain_id=$1",
+              [manifest.chainId],
+            );
+            await tx.unsafe(
+              "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector','reward-stream-projector','schema17-governance-projector') AND chain_id=$1",
               [manifest.chainId],
             );
           });
@@ -1719,6 +1835,9 @@ async function projectOnce() {
     projectedRewardEvents = await projectRewardStreams(
       BigInt(ingested.last_block),
     );
+    projectedGovernanceEvents = await projectSchema17Governance(
+      BigInt(ingested.last_block),
+    );
   }
   const cycleMs = Math.round((performance.now() - began) * 100) / 100;
   process.stdout.write(
@@ -1730,6 +1849,7 @@ async function projectOnce() {
       kingProcessedLogs: kingProjection.processedLogs,
       kingAwards: kingProjection.awarded,
       projectedRewardEvents,
+      projectedGovernanceEvents,
       cycleMs,
     }) + "\n",
   );
@@ -1737,6 +1857,7 @@ async function projectOnce() {
     checkpoint: ingested.last_block,
     projectedLaunches,
     projectedRewardEvents,
+    projectedGovernanceEvents,
     cycleMs,
   };
 }

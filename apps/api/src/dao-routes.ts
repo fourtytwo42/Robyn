@@ -10,6 +10,7 @@ import {
 import { SingleFlightTtlCache } from "./single-flight-cache.js";
 
 type DaoDeployment = {
+  schemaVersion?: number;
   deploymentBlock: number;
   liquidityVenue?: "uniswap-v4" | "uniswap-v3";
   rewardStreams?: {
@@ -62,8 +63,17 @@ const governorAbi = parseAbi([
   "function state(uint256) view returns (uint8)",
   "function proposalVotes(uint256) view returns (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes)",
   "function hasVoted(uint256,address) view returns (bool)",
+  "function unanimousNonce() view returns (uint256)",
 ]);
-const timelockAbi = parseAbi(["function getMinDelay() view returns (uint256)"]);
+const timelockAbi = parseAbi([
+  "function getMinDelay() view returns (uint256)",
+  "function bootstrapActive() view returns (bool)",
+  "function bootstrapDeadline() view returns (uint48)",
+  "function nextBootstrapStep() view returns (uint8)",
+  "function bootstrapFinalized() view returns (bool)",
+  "function bootstrapFinalizationReason() view returns (bytes32)",
+  "function bootstrapPlanHash(uint8) view returns (bytes32)",
+]);
 const proposalCreatedEvent = parseAbiItem(
   "event ProposalCreated(uint256 proposalId, address proposer, address[] targets, uint256[] values, string[] signatures, bytes[] calldatas, uint256 voteStart, uint256 voteEnd, string description)",
 );
@@ -308,6 +318,53 @@ export function registerDaoRoutes(
       fromBlock: BigInt(deployment.deploymentBlock),
       strict: true,
     });
+    const bootstrapPromise =
+      deployment.schemaVersion === 17
+        ? Promise.all([
+            rpcClient.readContract({
+              address: timelock,
+              abi: timelockAbi,
+              functionName: "bootstrapActive",
+            }),
+            rpcClient.readContract({
+              address: timelock,
+              abi: timelockAbi,
+              functionName: "bootstrapDeadline",
+            }),
+            rpcClient.readContract({
+              address: timelock,
+              abi: timelockAbi,
+              functionName: "nextBootstrapStep",
+            }),
+            rpcClient.readContract({
+              address: timelock,
+              abi: timelockAbi,
+              functionName: "bootstrapFinalized",
+            }),
+            rpcClient.readContract({
+              address: timelock,
+              abi: timelockAbi,
+              functionName: "bootstrapFinalizationReason",
+            }),
+            rpcClient.readContract({
+              address: timelock,
+              abi: timelockAbi,
+              functionName: "bootstrapPlanHash",
+              args: [0],
+            }),
+            rpcClient.readContract({
+              address: timelock,
+              abi: timelockAbi,
+              functionName: "bootstrapPlanHash",
+              args: [1],
+            }),
+            rpcClient.readContract({
+              address: governor,
+              abi: governorAbi,
+              functionName: "unanimousNonce",
+            }),
+          ])
+        : Promise.resolve(null);
     const [
       totalSupply,
       eligibleRewardSupply,
@@ -333,6 +390,7 @@ export function registerDaoRoutes(
       executionDelay,
       proposalThreshold,
       currentQuorum,
+      bootstrapValues,
       accountValues,
       registeredLogs,
     ] = await Promise.all([
@@ -453,6 +511,7 @@ export function registerDaoRoutes(
         functionName: "quorum",
         args: [checkpoint],
       }),
+      bootstrapPromise,
       accountCalls,
       registeredLogsPromise,
     ]);
@@ -592,6 +651,17 @@ export function registerDaoRoutes(
           proposalThreshold: proposalThreshold.toString(),
           currentQuorum: currentQuorum.toString(),
         },
+        bootstrap: bootstrapValues
+          ? {
+              active: bootstrapValues[0],
+              deadline: bootstrapValues[1].toString(),
+              nextStep: Number(bootstrapValues[2]),
+              finalized: bootstrapValues[3],
+              finalizationReason: bootstrapValues[4],
+              planHashes: [bootstrapValues[5], bootstrapValues[6]],
+              unanimousNonce: bootstrapValues[7].toString(),
+            }
+          : null,
         account: account
           ? {
               address: account,

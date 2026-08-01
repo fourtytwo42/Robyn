@@ -1,5 +1,32 @@
 # Project Memory
 
+### 2026-08-01 - Schema-17 bootstrap governance implementation begins
+
+- Context: The unused Schema-16 Mainnet deployment remains fully Paused and
+  archived. No Schema-17 Mainnet transaction is authorized. The owner selected
+  a fresh Schema-17 deployment with two plan-bound bootstrap steps, hour-scale
+  governance, and a Timelocked unanimous-owner path.
+- Decision: Bootstrap expires after 48 hours and ends irreversibly after step
+  two, owner finalization, guardian abort, expiry, or the first nonzero RDAO
+  transfer from the deployer. Reacquiring all RDAO cannot reactivate it. A
+  unanimous owner may skip voting only after bootstrap and only with current
+  full ownership plus full prior-timestamp delegated voting power; execution
+  still waits the Timelock delay.
+- Files: `packages/contracts/src/dao/RobynBootstrapTimelock.sol`,
+  `packages/contracts/src/dao/RobynDaoTokenV2.sol`,
+  `packages/contracts/src/dao/RobynGovernorV2.sol`, and
+  `packages/contracts/test/Schema17BootstrapGovernance.t.sol`.
+- Commands/tests: Focused Schema-17 tests pass 8/8. Adjacent DAO token, DAO fee,
+  governance matrix, lifecycle, and Testnet Governor tests pass 20/20. The new
+  contracts compile without via-IR.
+- Result: Core contract work is in progress on
+  `codex/schema17-hour-governance`. Deployment tooling, application exposure,
+  full qualification, fresh Testnet deployment, and exact Mainnet fork/funding
+  evidence remain open.
+- Follow-up: Harden remaining edge cases, add Schema-17 deployment and verifier
+  tooling, expose bootstrap state in API/UI, and run the complete qualification
+  gates before requesting approval for any Mainnet transaction.
+
 ### 2026-08-01 - Restart-safe production canary runner qualified; authorization pending
 
 - Context: Schema-16 runtime

@@ -39,6 +39,8 @@
     "verify:mainnet-deployment": "node scripts/run-schema16-mainnet-live.mjs verify",
     "rehearse:mainnet-canary": "node scripts/run-schema16-mainnet-canary.mjs",
     "prepare:mainnet-canary": "node scripts/prepare-schema16-mainnet-canary.mjs",
+    "prepare:schema17-governance": "node scripts/prepare-schema17-governance.mjs",
+    "test:schema17-governance": "node --test scripts/test/schema17-governance.test.mjs",
     "run:mainnet-canary": "node scripts/run-schema16-mainnet-canary-live.mjs",
     "observe:mainnet-canary": "node scripts/observe-schema16-mainnet-canary.mjs",
     "validate:mainnet-governance": "node scripts/validate-mainnet-governance-inputs.mjs",

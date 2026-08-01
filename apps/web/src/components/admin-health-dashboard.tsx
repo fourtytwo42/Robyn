@@ -164,6 +164,33 @@ export function AdminHealthDashboard({
                 snapshot.protocol.rewardStreamMismatchCount,
               ],
               ["Token sink", snapshot.protocol.tokenSink],
+              ...(snapshot.protocol.bootstrapControl
+                ? [
+                    [
+                      "Bootstrap",
+                      snapshot.protocol.bootstrapControl.active
+                        ? `Active, step ${snapshot.protocol.bootstrapControl.nextStep + 1} of 2`
+                        : snapshot.protocol.bootstrapControl.finalized
+                          ? "Finalized"
+                          : "Inactive",
+                    ],
+                    [
+                      "Bootstrap deadline",
+                      new Date(
+                        Number(snapshot.protocol.bootstrapControl.deadline) *
+                          1_000,
+                      ).toISOString(),
+                    ],
+                    [
+                      "Governance clocks",
+                      `${snapshot.protocol.bootstrapControl.votingDelaySeconds}s delay / ${snapshot.protocol.bootstrapControl.votingPeriodSeconds}s vote / ${snapshot.protocol.bootstrapControl.timelockDelaySeconds}s Timelock`,
+                    ],
+                    [
+                      "Unanimous operations",
+                      snapshot.protocol.bootstrapControl.unanimousNonce,
+                    ],
+                  ]
+                : []),
             ],
           },
         ]

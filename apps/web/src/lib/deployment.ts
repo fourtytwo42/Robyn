@@ -1,4 +1,4 @@
-import type { Address } from "viem";
+import type { Address, Hex } from "viem";
 
 export type Deployment = {
   schemaVersion?: number;
@@ -90,6 +90,9 @@ export type Deployment = {
       executionDelaySeconds: number;
       quorumBps: number;
       proposalThresholdBps: number;
+      bootstrapWindowSeconds?: number;
+      bootstrapPlanHashes?: [Hex, Hex];
+      unanimousTimelockRequired?: boolean;
     };
   };
   genesis?: {

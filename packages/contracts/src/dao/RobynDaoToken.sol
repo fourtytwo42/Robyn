@@ -209,7 +209,11 @@ contract RobynDaoToken is ERC20, ERC20Permit, ERC20Votes, ReentrancyGuard {
         return "mode=timestamp";
     }
 
-    function _update(address from, address to, uint256 value) internal override(ERC20, ERC20Votes) {
+    function _update(address from, address to, uint256 value)
+        internal
+        virtual
+        override(ERC20, ERC20Votes)
+    {
         _updateReward(from);
         if (to != from) _updateReward(to);
         super._update(from, to, value);

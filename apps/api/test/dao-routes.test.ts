@@ -135,3 +135,58 @@ describe("DAO proposals", () => {
     expect(getLogs).toHaveBeenCalledTimes(5);
   });
 });
+
+describe("Schema-17 DAO overview", () => {
+  it("reports bootstrap state and unanimous operation identity", async () => {
+    const firstPlan = ("0x" + "44".repeat(32)) as Hex;
+    const secondPlan = ("0x" + "55".repeat(32)) as Hex;
+    const finalizationReason = ("0x" + "00".repeat(32)) as Hex;
+    const readContract = vi
+      .fn()
+      .mockImplementation(({ functionName, args }) => {
+        if (functionName === "bootstrapActive") return Promise.resolve(true);
+        if (functionName === "bootstrapDeadline")
+          return Promise.resolve(172_800n);
+        if (functionName === "nextBootstrapStep") return Promise.resolve(1);
+        if (functionName === "bootstrapFinalized")
+          return Promise.resolve(false);
+        if (functionName === "bootstrapFinalizationReason")
+          return Promise.resolve(finalizationReason);
+        if (functionName === "bootstrapPlanHash")
+          return Promise.resolve(args?.[0] === 0 ? firstPlan : secondPlan);
+        if (functionName === "unanimousNonce") return Promise.resolve(3n);
+        if (functionName === "paused") return Promise.resolve(true);
+        return Promise.resolve(0n);
+      });
+    const app = Fastify();
+    openApps.push(app);
+    registerDaoRoutes(
+      app,
+      {
+        getBlock: vi.fn().mockResolvedValue({ timestamp: 100n }),
+        getBalance: vi.fn().mockResolvedValue(0n),
+        getLogs: vi.fn().mockResolvedValue([]),
+        readContract,
+      } as unknown as PublicClient,
+      {
+        schemaVersion: 17,
+        deploymentBlock: 100,
+        liquidityVenue: "uniswap-v4",
+        contracts: addresses,
+      },
+    );
+
+    const response = await app.inject({ method: "GET", url: "/dao" });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().data.bootstrap).toEqual({
+      active: true,
+      deadline: "172800",
+      nextStep: 1,
+      finalized: false,
+      finalizationReason,
+      planHashes: [firstPlan, secondPlan],
+      unanimousNonce: "3",
+    });
+  });
+});
