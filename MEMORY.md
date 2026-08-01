@@ -4,29 +4,20 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
-- Last verified 2026-08-01: mainnet RPC `192.168.50.173:8547` remains
-  synchronized and has had no service restart or watchdog action since the
-  controlled 2026-07-30 hardening restart. Testnet
-  `192.168.50.117:8547` entered a sequencer-feed stall at
-  `2026-08-01T20:35:57Z`; its head remained canonical but stopped advancing.
-  The watchdog restarted Nitro at `20:47:35Z`, producing about 47 seconds of
-  HTTP unavailability and rapid partial catch-up, but the feed stalled again.
-  At `20:53:49Z`, testnet was syncing 1,336 blocks behind and the Robyn RPC
-  gateway correctly marked LAN unhealthy, but operator policy still had paid
-  fallback traffic disabled. Treat this as an active upstream testnet-feed
-  incident until `eth_syncing=false` and lag is back within 10 blocks.
-- Last verified 2026-07-30: both LAN Robinhood RPC nodes are synchronized and
-  hardened against sequencer-feed hash incidents. Testnet
-  `192.168.50.117:8547` and mainnet `192.168.50.173:8547` run Nitro with
-  `shutdown-on-blockhash-mismatch=false`, trusting their independently sourced
-  L1 execution over the optional feed. The shared two-minute watchdog validates
-  a common block 1,000 blocks deep against Robinhood's public RPC; Alchemy is
-  queried only to adjudicate a mismatch. Two public-plus-Alchemy-confirmed
-  local mismatches create a persistent quarantine and stop the node rather
-  than serving or restart-looping on a wrong chain. The watchdog's empty or
-  malformed `eth_syncing` JSON bug is fixed. Both nodes returned
-  `eth_syncing=false`, zero lag, identical canonical hashes, active watchdog
-  timers, and no quarantine after deployment.
+- Last verified 2026-08-01: testnet `192.168.50.117:8547` and mainnet
+  `192.168.50.173:8547` are synchronized, canonical, and served through a
+  public-only resilience stack with no active Alchemy or other paid endpoint.
+  Nitro is loopback-only on port `18547`; LAN port `8547` prefers local Nitro
+  and automatically falls through validated public Robinhood RPCs. Each host
+  has two simultaneous sequencer-feed connections through a loopback relay,
+  multiple free Ethereum execution providers, multiple free beacon APIs, and
+  the existing canonical-safe two-minute watchdog. Final samples returned
+  `eth_syncing=false`, practical zero lag, and matching hashes 1,000 blocks
+  deep. A controlled testnet Nitro restart proved uninterrupted LAN reads,
+  immediate public fallback, and automatic local switchback. All six required
+  services/timers per node are active with no failed units. Prometheus now
+  scrapes the correct host and Nitro targets for both machines. Source and
+  example configuration live under `infrastructure/robinhood-rpc/`.
 - Token creation UX and atomic creator purchase work is implemented but not yet live. The launch modal no longer exposes separate wallet-proof, artwork-sanitization, wallet-refresh, or faucet controls. Artwork is optional, reward assets use the catalog/custom-address picker with icon controls, creators may add immutable website/X links, and a payable coordinator can atomically launch plus buy for the creator. Portfolio now has a dedicated profile editor with avatar/name/bio/links, token pages use creator identity and project links, sell balance fills the exact sell amount, and manual onchain-refresh buttons are removed. Migration `0009_token_launch_links.sql` is additive. Full repository tests pass with 132 Foundry tests; lint, format, typecheck, API/web tests, clean devnet build, and protected testnet build pass. Existing public contracts are incompatible with the payable launch call, so do not promote this UI onto schema v8. Carry the checkpoint into `codex/schema9-guaranteed-fee`, deploy fresh contracts, migrate/reindex, then perform browser acceptance.
 - King of the Forest release `101bb38a543ad41f15520b1cfda458c6ecbec2b4` is live at `https://testnet.sherwoodforest.trade`. The manifest policy activates at testnet block `93576793`, requires 5,000 bps bonding progress plus 10 distinct lifetime traders, and only awards on fresh post-activation activity. The newest canonical award reigns; former winners retain their badge and history. Migration `0008_king_of_forest.sql`, projector/API/status work, homepage spotlight, Markets history, token progress, card badges, admin health, tests, and documentation are deployed. The release passed the immutable builder and all 490 promotion checks. At promotion, all six PM2 processes were online with zero restarts, all three projection lags were zero, no Prometheus alert was firing, and root disk had 21 GiB free. The initial state correctly has no winner because historical launches are not awarded retroactively. In-app-browser acceptance remains pending because the desktop browser runtime listed the IAB backend but returned no bindable session; do not substitute another browser and claim this gate. The same implementation is pushed on schema9 commit `db48086`.
 - Exact public testnet release
@@ -1357,6 +1348,41 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-08-01 - Public-only RPC resilience deployed
+
+- Context: testnet repeatedly entered a silent sequencer-feed stall after an
+  apparently successful WebSocket reconnect. The existing application gateway
+  still probed Alchemy every 30 seconds even though paid fallback traffic was
+  disabled, and Prometheus targeted obsolete node addresses.
+- Decision: no paid provider is permitted in any automatic path. Both nodes
+  now use two upstream feed connections through a local Nitro relay, a
+  loopback public-only L1 execution failover proxy, a loopback public-only
+  beacon failover proxy, and a LAN RPC gateway that prefers raw local Nitro
+  then uses validated public L2 endpoints. Each proxy refuses to start if any
+  provider is marked paid. The watchdog observes raw Nitro on port `18547` and
+  uses a second free public RPC for canonical disagreement confirmation.
+- Deployment: testnet has local plus official, dRPC, and Blockscout L2;
+  four Sepolia execution and four Sepolia beacon providers. Mainnet has local
+  plus official, NodeFlare, and Blockscout L2; five Ethereum execution and four
+  Ethereum beacon providers. Rate-limited L2 providers remain last-resort
+  attempts when their probes are unhealthy. The `.250` PM2 gateways now point
+  only to free fallbacks and the saved process state was refreshed.
+- Verification: both nodes returned `eth_syncing=false`, correct chain IDs,
+  zero practical lag, and identical 1,000-block-deep hashes versus Robinhood's
+  official RPC. A controlled testnet Nitro restart kept LAN port `8547`
+  available at every sample, selected `robinhood-official-public`, then
+  returned to `local-nitro` after catch-up. Both feed relays showed two live
+  upstream connections. L1 status reported zero paid requests. All Prometheus
+  host and Nitro targets for `.117` and `.173` were up after correction.
+- Files: `infrastructure/robinhood-rpc/`,
+  `infrastructure/monitoring/prometheus.yml`; deployed runtime under
+  `/usr/local/sbin`, `/etc/robinhood*`, and `/etc/systemd/system` on each node.
+- Limitation: duplicate connections to Robinhood's single logical feed protect
+  connection-specific stalls but not a network-wide feed outage. Without more
+  hardware, public L2 fallback preserves reads while local Nitro continues
+  canonical L1 derivation. No design can promise literal zero downtime across
+  simultaneous local, Robinhood, and third-party outages.
+
 ### 2026-08-01 - RPC availability review and active testnet feed stall
 
 - Context: live status and historical availability were reviewed from the
@@ -1376,9 +1402,9 @@ Durable project context lives here. Update this file whenever information should
   `192.168.50.117:16071` instead of the mainnet host. Therefore exact mainnet
   uptime and historical lag percentages cannot be claimed from Prometheus;
   current conclusions use systemd, Nitro, watchdog, and gateway evidence.
-- Follow-up: diagnose or bypass the silent testnet sequencer-feed connection,
-  decide whether to authorize temporary Alchemy fallback during LAN
-  degradation, and correct Prometheus targets for both current nodes.
+- Resolved 2026-08-01: redundant feed relays, public-only L1/beacon/L2
+  failover, corrected Prometheus targets, and no-Alchemy policy were deployed
+  and live-verified as described above.
 
 ### 2026-07-30 - Canonical-safe RPC watchdog hardening
 
@@ -2332,6 +2358,17 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-08-01: Robinhood RPC public-only resilience passed live service,
+  canonical, and failover checks. Testnet and mainnet returned chain IDs 46630
+  and 4663, `eth_syncing=false`, zero practical lag, and matching hashes 1,000
+  blocks behind the common head. Testnet's controlled Nitro restart produced
+  uninterrupted LAN RPC responses through the official public fallback and
+  automatically switched back to local Nitro. Each feed relay logged two
+  connected upstream WebSockets; every L1, beacon, L2 gateway, Nitro, and
+  watchdog unit was active; `systemctl --failed` was empty on both hosts; all
+  four corrected Prometheus node/Nitro targets were up. Active node configs and
+  saved PM2 gateway environments contained no Alchemy URL.
 
 - 2026-07-26: ETH-native/USD-display release
   `82e1dc4e3f7d2280217593c21bf250537907feeb` passed formatting, lint, all

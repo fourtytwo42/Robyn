@@ -1,0 +1,1 @@
+{"listenHost":"127.0.0.1","listenPort":18545,"providers":[{"name":"tenderly-public","url":"https://mainnet.gateway.tenderly.co"},{"name":"mevblocker-public","url":"https://rpc.mevblocker.io"},{"name":"publicnode-public","url":"https://ethereum-rpc.publicnode.com"},{"name":"drpc-public","url":"https://eth.drpc.org"},{"name":"1rpc-public","url":"https://1rpc.io/eth"}]}

@@ -1,0 +1,19 @@
+[Unit]
+Description=Robinhood redundant sequencer feed relay
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/robinhood/node.env
+ExecStartPre=-/usr/bin/docker rm -f robinhood-feed-relay
+ExecStart=/usr/bin/docker run --rm --name robinhood-feed-relay --network host --memory=384m --memory-swap=512m --pids-limit=512 --entrypoint relay offchainlabs/nitro-node@sha256:ebc985e3b105980734630744981e1542001c22d74cba57509fe0d5ed8bb84c14 --chain.id=${ROBINHOOD_CHAIN_ID} --node.feed.input.url=${ROBINHOOD_UPSTREAM_FEED_URL},${ROBINHOOD_UPSTREAM_FEED_URL} --node.feed.input.timeout=12s --node.feed.input.reconnect-initial-backoff=500ms --node.feed.input.reconnect-maximum-backoff=16s --node.feed.output.enable=true --node.feed.output.addr=127.0.0.1 --node.feed.output.port=9642 --node.feed.output.enable-compression=true --node.feed.output.log-connect=true --node.feed.output.log-disconnect=true
+ExecStop=/usr/bin/docker stop --timeout 30 robinhood-feed-relay
+Restart=always
+RestartSec=3s
+TimeoutStopSec=45s
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target

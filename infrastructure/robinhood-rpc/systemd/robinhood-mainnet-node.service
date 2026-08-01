@@ -1,0 +1,23 @@
+[Unit]
+Description=Robinhood Chain Mainnet Nitro full node
+Documentation=https://docs.robinhood.com/chain/run-a-full-node/
+Wants=network-online.target docker.service chrony.service robinhood-rpc-failover.service
+After=network-online.target docker.service chrony.service robinhood-mainnet-snapshot.service robinhood-l1-failover.service robinhood-beacon-failover.service robinhood-feed-relay.service
+Requires=docker.service robinhood-mainnet-snapshot.service robinhood-l1-failover.service robinhood-beacon-failover.service robinhood-feed-relay.service
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/robinhood/mainnet/node.env
+ExecStartPre=/usr/bin/test -f /etc/robinhood/mainnet/snapshot.ready
+ExecStartPre=-/usr/bin/docker rm -f robinhood-mainnet-node
+ExecStart=/usr/bin/docker run --rm --name robinhood-mainnet-node --network host --memory=86g --memory-swap=90g --pids-limit=4096 --env GOMEMLIMIT=78GiB --env GOGC=200 --volume /srv/robinhood/mainnet/data:/home/user/.arbitrum --volume /etc/robinhood/mainnet/robinhood-chain-info.json:/home/user/config/robinhood-chain-info.json:ro --volume /etc/robinhood/mainnet/robinhood-genesis.json:/home/user/config/robinhood-genesis.json:ro offchainlabs/nitro-node@sha256:ebc985e3b105980734630744981e1542001c22d74cba57509fe0d5ed8bb84c14 --chain.info-files=/home/user/config/robinhood-chain-info.json --parent-chain.connection.url=${L1_EXECUTION_URL} --parent-chain.connection.retries=12 --parent-chain.connection.retry-delay=1s --parent-chain.connection.retry-errors='(?i).*(block range extends beyond current head block|408 request timeout|too many requests|timeout|connection reset by peer|connection refused).*' --parent-chain.blob-client.beacon-url=${L1_BEACON_URL} --init.genesis-json-file=/home/user/config/robinhood-genesis.json --node.feed.input.url=${ROBINHOOD_FEED_URL} --execution.forwarding-target=${ROBINHOOD_SEQUENCER_URL} --node.transaction-streamer.shutdown-on-blockhash-mismatch=false --node.staker.enable=false --node.resource-mgmt.mem-free-limit=8GB --http.addr=127.0.0.1 --http.port=18547 --http.api=net,web3,eth --http.vhosts=* --metrics --metrics-server.addr=0.0.0.0 --metrics-server.port=16070
+ExecStop=/usr/bin/docker stop --timeout 300 robinhood-mainnet-node
+Restart=on-failure
+RestartSec=15s
+TimeoutStartSec=infinity
+TimeoutStopSec=330s
+LimitNOFILE=1048576
+OOMScoreAdjust=-500
+
+[Install]
+WantedBy=multi-user.target

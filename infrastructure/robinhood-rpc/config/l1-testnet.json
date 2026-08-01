@@ -1,0 +1,1 @@
+{"listenHost":"127.0.0.1","listenPort":18545,"providers":[{"name":"publicnode-public","url":"https://ethereum-sepolia-rpc.publicnode.com"},{"name":"drpc-public","url":"https://sepolia.drpc.org"},{"name":"tenderly-public","url":"https://sepolia.gateway.tenderly.co"},{"name":"1rpc-public","url":"https://1rpc.io/sepolia"}]}
