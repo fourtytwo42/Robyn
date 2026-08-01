@@ -1,5 +1,15 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 Mainnet readiness manifest sealed
+
+- Context: Frozen contract candidate `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4` and application release `8327b250122cd9050a7da6a44e12859e3cf521aa` advanced through the no-broadcast Mainnet readiness gates on exact pushed operational tooling `5afada00cbd2ae9252ecdb4fd882aa9da3c3e203`.
+- Fork: Isolated chain-4663 Anvil fork at block `25303741` used the LAN gateway exclusively. All 107 local transactions passed, all six required routes executed both directions with real fork liquidity, guardian shutdown reconciled, and gross canary recovery was 78.99%.
+- RPC: LAN-only acceptance passed with two-block lag. Alchemy was limited to chain ID, synchronization, and block-height probes; no application traffic or automatic fallback occurred.
+- Funding: Existing L2 balance is `0.031268344574712 ETH`; exact additional bridge requirement is `0.000941832567858 ETH`. The strict funding gate passes with zero shortfall while preserving the `0.01 ETH` L1 reserve, `0.02 ETH` L2 reserve, canary principal, and 150% transaction headroom.
+- Evidence: Manifest `/home/hendo420/robyn-evidence/schema18-mainnet-go/manifest/4728cb5-5afada0-20260801-01/schema18-mainnet-deployment-manifest.json` has SHA-256 `41308344202b578744f71d60a28fe411918c435860e2046a0eba10c4a922a8c6d`; all bundle checksums pass.
+- Authorization: Manifest is eligible for review, but bridge, Paused deployment, bootstrap step one/Canary, bootstrap step two/Public, application writes, and every Mainnet broadcast remain unauthorized.
+- Follow-up: Obtain explicit authorization for gate one before bridging exactly the sealed amount or deploying Schema-18 Paused. Later gates remain separately authorized.
+
 ### 2026-08-01 - Schema-18 Mainnet no-broadcast tooling implemented
 
 - Context: Schema-18 Testnet qualification is complete. The Mainnet preparation path still pointed at archived Schema-16 rehearsal, funding, bridge, and deployment tooling.
