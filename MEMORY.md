@@ -18,6 +18,23 @@
 - This is an application/infrastructure policy change only. It does not modify
   Schema-16 contracts and does not authorize a bridge, Mainnet deployment,
   Canary activation, or Public activation.
+- Implementation is clean and pushed at
+  `17338466f55b3b5559d2248f3510681820d95834`. Its immutable release passed the
+  complete build gate, including 369 Foundry tests with zero failures, and is
+  checksum-verified under `/opt/robyn/testnet-releases/17338466f55b3b5559d2248f3510681820d95834`.
+- The Testnet and Mainnet loopback gateways now run that exact RPC-gateway
+  artifact. Live status verifies network-specific identity, operator-selected
+  LAN, `fallbackTrafficAuthorized:false`, `providerChanges:0`, and
+  `paidFallbackCu:0`. Bounded Alchemy comparison probes remain healthy.
+- Isolated live smoke tests forced each LAN endpoint offline and proved the
+  gateway reported `degraded`, kept `activeProvider:primary`, returned HTTP 503
+  for application reads, and did not route those reads to Alchemy. PM2 state is
+  saved for restart persistence.
+- The previously sealed Mainnet authorization manifest
+  `030a049fb902bbce1fe78bff773aec3835ae99b7cdeb6337d69f8f19bd9fc980`
+  predates this owner-required RPC policy and is superseded. Before any bridge
+  authorization, reseal the manifest with the exact gateway-policy release and
+  manual-fallback emergency controls. No prior fork receipt needs replay.
 
 ### 2026-08-01 - Mainnet local-fork receipt and funding gates pass
 
