@@ -109,8 +109,10 @@ routes remain disabled individually.
 
 ## Gate 4: RPC and funding
 
-Observe `192.168.50.173:8547` for 48 consecutive healthy hours with Alchemy
-comparison/fallback. Require chain 4663, `eth_syncing=false`, normal lag at
+Observe `192.168.50.173:8547` for 48 consecutive healthy hours with bounded
+Alchemy chain/head/sync comparison probes. LAN is the sole active application
+upstream and automatic fallback is prohibited. Require chain 4663,
+`eth_syncing=false`, normal lag at
 most 50 blocks, no corruption/OOM/unplanned restart, canonical agreement,
 healthy recovery, and sufficient disk runway.
 
@@ -181,8 +183,10 @@ launches and conversions, disables affected routes, and the app disables
 transactions. Existing claims and safe exits remain available. Preserve
 evidence and never replay confirmed transactions.
 
-For RPC/application failure, pause automated writes and use Alchemy only after
-chain/head checks pass. Repair through Devnet, Testnet, then Mainnet. A
+For RPC/application failure, pause automated writes and mark the application
+connection degraded. Do not route application traffic to Alchemy unless the
+owner explicitly authorizes the protected operator selection after chain/head
+checks pass. Repair through Devnet, Testnet, then Mainnet. A
 contract correction requires a fresh schema and every contract-dependent gate.
 
 Final GO requires exact reconciliation, zero insolvency, exact fee/reward

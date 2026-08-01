@@ -45,6 +45,11 @@ module.exports = {
               EXPECTED_CHAIN_ID: "46630",
               PRIMARY_RPC_URL: primaryRpcUrl,
               FALLBACK_RPC_URL: rpcUrl,
+              RPC_ACTIVE_PROVIDER:
+                process.env.ROBYN_TESTNET_RPC_ACTIVE_PROVIDER || "primary",
+              RPC_FALLBACK_TRAFFIC_AUTHORIZED:
+                process.env.ROBYN_TESTNET_RPC_FALLBACK_TRAFFIC_AUTHORIZED ||
+                "false",
               RPC_PROBE_INTERVAL_MS: "30000",
               RPC_MAX_HEAD_LAG_BLOCKS: "50",
               RPC_RECOVERY_HEAD_LAG_BLOCKS: "10",

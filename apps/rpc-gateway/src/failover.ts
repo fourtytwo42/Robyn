@@ -35,6 +35,9 @@ export type FailoverSnapshot = {
   status: "ok" | "degraded" | "unavailable";
   expectedChainId: number;
   activeProvider: Provider;
+  providerSelection: "operator";
+  fallbackTrafficAuthorized: boolean;
+  trafficAvailable: boolean;
   primary: PublicUpstreamState & { name: "lan" };
   fallback: PublicUpstreamState & { name: "alchemy" };
   headLagBlocks: string | null;
@@ -67,6 +70,8 @@ export type FailoverOptions = {
   now?: () => number;
   statusFile?: string | null;
   serviceName?: string;
+  selectedProvider?: Provider;
+  fallbackTrafficAuthorized?: boolean;
 };
 
 function parseQuantity(value: unknown, label: string): bigint {
@@ -192,7 +197,8 @@ export class TestnetRpcFailover {
   private readonly statusFile: string | null;
   private readonly serviceName: string;
   private readonly startedAtMs: number;
-  private activeProvider: Provider = "fallback";
+  private readonly activeProvider: Provider;
+  private readonly fallbackTrafficAuthorized: boolean;
   private primary: UpstreamState = {
     chainId: null,
     head: null,
@@ -230,6 +236,13 @@ export class TestnetRpcFailover {
     this.now = options.now ?? Date.now;
     this.statusFile = options.statusFile ?? null;
     this.serviceName = options.serviceName ?? "robyn-testnet-rpc-failover";
+    this.activeProvider = options.selectedProvider ?? "primary";
+    this.fallbackTrafficAuthorized = options.fallbackTrafficAuthorized ?? false;
+    if (this.activeProvider === "fallback" && !this.fallbackTrafficAuthorized) {
+      throw new Error(
+        "fallback RPC traffic requires explicit operator authorization",
+      );
+    }
     this.startedAtMs = this.now();
     this.lastProviderChangeAtMs = this.startedAtMs;
   }
@@ -295,18 +308,9 @@ export class TestnetRpcFailover {
     }
   }
 
-  private use(provider: Provider): void {
-    if (provider === this.activeProvider) return;
-    this.activeProvider = provider;
-    this.lastProviderChangeAtMs = this.now();
-    this.providerChanges += 1;
-  }
-
   async probe(): Promise<FailoverSnapshot> {
     if (this.probePromise) return this.probePromise;
     this.probePromise = (async () => {
-      const initialProbe =
-        this.primary.checkedAt === null && this.fallback.checkedAt === null;
       const [primary, fallback] = await Promise.all([
         this.inspect(this.primaryUrl, false),
         this.inspect(this.fallbackUrl, true),
@@ -323,28 +327,8 @@ export class TestnetRpcFailover {
       const primaryWithinMaximum =
         primary.healthy &&
         (headLag === null || headLag <= BigInt(this.maximumHeadLagBlocks));
-      const primaryRecovered =
-        primary.healthy &&
-        fallback.healthy &&
-        headLag !== null &&
-        headLag <= BigInt(this.recoveryHeadLagBlocks);
-
-      if (initialProbe && primaryWithinMaximum) {
+      if (primaryWithinMaximum) {
         this.recoveryHealthyProbes = this.recoveryHealthyProbeTarget;
-        this.use("primary");
-      } else if (!primaryWithinMaximum && fallback.healthy) {
-        this.recoveryHealthyProbes = 0;
-        this.use("fallback");
-      } else if (this.activeProvider === "primary" && primaryWithinMaximum) {
-        this.recoveryHealthyProbes = this.recoveryHealthyProbeTarget;
-      } else if (this.activeProvider === "fallback" && primaryRecovered) {
-        this.recoveryHealthyProbes += 1;
-        if (this.recoveryHealthyProbes >= this.recoveryHealthyProbeTarget) {
-          this.use("primary");
-        }
-      } else if (primaryWithinMaximum && !fallback.healthy) {
-        this.recoveryHealthyProbes = this.recoveryHealthyProbeTarget;
-        this.use("primary");
       } else {
         this.recoveryHealthyProbes = 0;
       }
@@ -378,7 +362,6 @@ export class TestnetRpcFailover {
           error: "request failed",
         };
         this.recoveryHealthyProbes = 0;
-        this.use("fallback");
         if (!isReadOnlyBody(payload)) {
           await this.persist(this.snapshot());
           throw new Error(
@@ -386,37 +369,11 @@ export class TestnetRpcFailover {
             { cause: error },
           );
         }
-        const cost = bodyComputeUnits(payload);
-        this.paidFallbackCu += cost;
-        try {
-          const response = await this.upstreamRequest(
-            this.fallbackUrl,
-            payload,
-          );
-          await this.persist(this.snapshot());
-          return response;
-        } catch (fallbackError) {
-          this.fallback = {
-            ...this.fallback,
-            healthy: false,
-            checkedAt: new Date(this.now()).toISOString(),
-            error: "request failed",
-          };
-          try {
-            const response = await this.upstreamRequest(
-              this.primaryUrl,
-              payload,
-            );
-            if (hasUnavailableStateError(response)) {
-              throw new Error("primary state unavailable");
-            }
-            await this.persist(this.snapshot());
-            return response;
-          } catch {
-            await this.persist(this.snapshot());
-            throw fallbackError;
-          }
-        }
+        await this.persist(this.snapshot());
+        throw new Error(
+          "primary RPC unavailable; Alchemy fallback requires operator authorization",
+          { cause: error },
+        );
       }
     }
     const cost = bodyComputeUnits(payload);
@@ -432,28 +389,8 @@ export class TestnetRpcFailover {
         checkedAt: new Date(this.now()).toISOString(),
         error: "request failed",
       };
-      if (!isReadOnlyBody(payload)) {
-        await this.persist(this.snapshot());
-        throw fallbackError;
-      }
-      try {
-        const response = await this.upstreamRequest(this.primaryUrl, payload);
-        if (hasUnavailableStateError(response)) {
-          throw new Error("primary state unavailable");
-        }
-        await this.persist(this.snapshot());
-        return response;
-      } catch {
-        this.primaryRequestFailures += 1;
-        this.primary = {
-          ...this.primary,
-          healthy: false,
-          checkedAt: new Date(this.now()).toISOString(),
-          error: "request failed",
-        };
-        await this.persist(this.snapshot());
-        throw fallbackError;
-      }
+      await this.persist(this.snapshot());
+      throw fallbackError;
     }
   }
 
@@ -482,27 +419,36 @@ export class TestnetRpcFailover {
     );
     const paidProjectedDailyCu =
       probeProjectedDailyCu + fallbackProjectedDailyCu;
-    const serving =
-      this.activeProvider === "primary"
-        ? this.primary.healthy
-        : this.fallback.healthy;
-    const status: FailoverSnapshot["status"] = !serving
-      ? "unavailable"
-      : this.activeProvider === "primary" && this.fallback.healthy
-        ? "ok"
-        : "degraded";
     const headLag =
       this.primary.head !== null && this.fallback.head !== null
         ? this.fallback.head > this.primary.head
           ? this.fallback.head - this.primary.head
           : 0n
         : null;
+    const primaryWithinMaximum =
+      this.primary.healthy &&
+      (headLag === null || headLag <= BigInt(this.maximumHeadLagBlocks));
+    const trafficAvailable =
+      this.activeProvider === "primary"
+        ? primaryWithinMaximum
+        : this.fallback.healthy;
+    const status: FailoverSnapshot["status"] =
+      this.activeProvider === "fallback"
+        ? this.fallback.healthy
+          ? "degraded"
+          : "unavailable"
+        : primaryWithinMaximum
+          ? "ok"
+          : "degraded";
     return {
       schemaVersion: 1,
       service: this.serviceName,
       status,
       expectedChainId: this.expectedChainId,
       activeProvider: this.activeProvider,
+      providerSelection: "operator",
+      fallbackTrafficAuthorized: this.fallbackTrafficAuthorized,
+      trafficAvailable,
       primary: {
         ...this.primary,
         head: this.primary.head?.toString() ?? null,

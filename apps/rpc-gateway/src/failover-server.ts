@@ -25,6 +25,16 @@ if (host !== "127.0.0.1") {
   throw new Error("The backend RPC failover gateway must bind to loopback");
 }
 const port = positiveInteger("PORT", "18548");
+const selectedProviderValue = process.env.RPC_ACTIVE_PROVIDER ?? "primary";
+if (
+  selectedProviderValue !== "primary" &&
+  selectedProviderValue !== "fallback"
+) {
+  throw new Error("RPC_ACTIVE_PROVIDER must be primary or fallback");
+}
+const selectedProvider: "primary" | "fallback" = selectedProviderValue;
+const fallbackTrafficAuthorized =
+  process.env.RPC_FALLBACK_TRAFFIC_AUTHORIZED === "true";
 const controller = new TestnetRpcFailover({
   primaryUrl: required("PRIMARY_RPC_URL"),
   fallbackUrl: required("FALLBACK_RPC_URL"),
@@ -45,6 +55,8 @@ const controller = new TestnetRpcFailover({
   statusFile:
     process.env.RPC_STATUS_FILE ??
     "/var/lib/robyn/testnet-rpc-gateway/status.json",
+  selectedProvider,
+  fallbackTrafficAuthorized,
 });
 
 await controller.probe();
@@ -70,7 +82,10 @@ app.post("/", async (request, reply) => {
     return reply.code(503).send({
       jsonrpc: "2.0",
       id: null,
-      error: { code: -32000, message: "Both RPC upstreams are unavailable" },
+      error: {
+        code: -32000,
+        message: "Selected RPC upstream unavailable; fallback is not automatic",
+      },
     });
   }
 });

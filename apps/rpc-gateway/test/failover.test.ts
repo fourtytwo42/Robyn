@@ -22,15 +22,16 @@ function createUpstream(options?: {
   primaryHead?: bigint;
   fallbackHead?: bigint;
   primaryOnline?: boolean;
+  fallbackOnline?: boolean;
   primaryChainId?: number;
   primarySyncing?: boolean;
 }) {
   let primaryHead = options?.primaryHead ?? 1_000n;
-  let fallbackHead = options?.fallbackHead ?? 1_000n;
+  const fallbackHead = options?.fallbackHead ?? 1_000n;
   let primaryOnline = options?.primaryOnline ?? true;
-  let fallbackOnline = true;
-  let primaryChainId = options?.primaryChainId ?? 46_630;
-  let primarySyncing = options?.primarySyncing ?? false;
+  let fallbackOnline = options?.fallbackOnline ?? true;
+  const primaryChainId = options?.primaryChainId ?? 46_630;
+  const primarySyncing = options?.primarySyncing ?? false;
   const request = vi.fn<UpstreamRequest>((url, payload) => {
     if (url === primaryUrl && !primaryOnline) {
       return Promise.reject(new Error("primary offline"));
@@ -67,17 +68,8 @@ function createUpstream(options?: {
     setPrimaryHead: (value: bigint) => {
       primaryHead = value;
     },
-    setFallbackHead: (value: bigint) => {
-      fallbackHead = value;
-    },
     setPrimaryOnline: (value: boolean) => {
       primaryOnline = value;
-    },
-    setPrimaryChainId: (value: number) => {
-      primaryChainId = value;
-    },
-    setPrimarySyncing: (value: boolean) => {
-      primarySyncing = value;
     },
     setFallbackOnline: (value: boolean) => {
       fallbackOnline = value;
@@ -85,7 +77,13 @@ function createUpstream(options?: {
   };
 }
 
-function controller(request: UpstreamRequest) {
+function controller(
+  request: UpstreamRequest,
+  options?: {
+    selectedProvider?: "primary" | "fallback";
+    authorizeFallback?: boolean;
+  },
+) {
   return new TestnetRpcFailover({
     primaryUrl,
     fallbackUrl,
@@ -96,115 +94,175 @@ function controller(request: UpstreamRequest) {
     recoveryHealthyProbeTarget: 2,
     request,
     now: () => 1_000_000,
+    ...(options?.selectedProvider
+      ? { selectedProvider: options.selectedProvider }
+      : {}),
+    ...(options?.authorizeFallback !== undefined
+      ? { fallbackTrafficAuthorized: options.authorizeFallback }
+      : {}),
   });
 }
 
-describe("testnet RPC failover", () => {
-  it("uses the LAN provider immediately when the initial comparison is healthy", async () => {
+describe("operator-selected RPC policy", () => {
+  it("serves application traffic only from the LAN provider by default", async () => {
     const upstream = createUpstream();
-    const failover = controller(upstream.request);
+    const gateway = controller(upstream.request);
 
-    await failover.probe();
-    expect(failover.snapshot()).toMatchObject({
+    await gateway.probe();
+    expect(gateway.snapshot()).toMatchObject({
       status: "ok",
       activeProvider: "primary",
+      providerSelection: "operator",
+      fallbackTrafficAuthorized: false,
+      trafficAvailable: true,
       headLagBlocks: "0",
     });
 
-    await failover.request({
-      jsonrpc: "2.0",
+    const payload = {
+      jsonrpc: "2.0" as const,
       id: 1,
-      method: "eth_blockNumber",
-      params: [],
-    });
-    expect(upstream.request).toHaveBeenLastCalledWith(
-      primaryUrl,
-      expect.objectContaining({ method: "eth_blockNumber" }),
-    );
+      method: "eth_getBalance",
+      params: ["0x0000000000000000000000000000000000000001", "latest"],
+    };
+    await gateway.request(payload);
+    expect(upstream.request).toHaveBeenLastCalledWith(primaryUrl, payload);
+    expect(upstream.request).not.toHaveBeenCalledWith(fallbackUrl, payload);
   });
 
-  it("fails over when the LAN provider is unreachable", async () => {
+  it("uses Alchemy only for bounded health probes while LAN is selected", async () => {
     const upstream = createUpstream();
-    const failover = controller(upstream.request);
-    await failover.probe();
-    await failover.probe();
-    upstream.setPrimaryOnline(false);
+    const gateway = controller(upstream.request);
 
-    await failover.probe();
+    await gateway.probe();
 
-    expect(failover.snapshot()).toMatchObject({
+    const fallbackMethods = upstream.request.mock.calls
+      .filter(([url]) => url === fallbackUrl)
+      .map(([, body]) => (Array.isArray(body) ? body[0]?.method : body.method));
+    expect(fallbackMethods.sort()).toEqual([
+      "eth_blockNumber",
+      "eth_chainId",
+      "eth_syncing",
+    ]);
+  });
+
+  it("reports degraded without switching when LAN is unreachable", async () => {
+    const upstream = createUpstream({ primaryOnline: false });
+    const gateway = controller(upstream.request);
+
+    await gateway.probe();
+
+    expect(gateway.snapshot()).toMatchObject({
       status: "degraded",
-      activeProvider: "fallback",
+      activeProvider: "primary",
+      fallbackTrafficAuthorized: false,
+      trafficAvailable: false,
       primary: { healthy: false },
       fallback: { healthy: true },
+      providerChanges: 0,
     });
   });
 
-  it("fails over when the LAN provider is more than 50 blocks behind", async () => {
+  it("reports degraded without switching when LAN is too far behind", async () => {
     const upstream = createUpstream({
       primaryHead: 900n,
       fallbackHead: 1_000n,
     });
-    const failover = controller(upstream.request);
+    const gateway = controller(upstream.request);
 
-    await failover.probe();
+    await gateway.probe();
 
-    expect(failover.snapshot()).toMatchObject({
-      activeProvider: "fallback",
+    expect(gateway.snapshot()).toMatchObject({
+      status: "degraded",
+      activeProvider: "primary",
+      trafficAvailable: false,
       headLagBlocks: "100",
     });
   });
 
-  it("rejects a LAN endpoint on the wrong chain", async () => {
-    const upstream = createUpstream({ primaryChainId: 4_663 });
-    const failover = controller(upstream.request);
-
-    await failover.probe();
-
-    expect(failover.snapshot()).toMatchObject({
-      activeProvider: "fallback",
+  it("reports degraded without switching for wrong-chain or syncing LAN state", async () => {
+    const wrongChain = createUpstream({ primaryChainId: 4_663 });
+    const wrongChainGateway = controller(wrongChain.request);
+    await wrongChainGateway.probe();
+    expect(wrongChainGateway.snapshot()).toMatchObject({
+      status: "degraded",
+      activeProvider: "primary",
       primary: { healthy: false },
     });
-  });
 
-  it("fails over while the LAN provider reports active synchronization", async () => {
-    const upstream = createUpstream({ primarySyncing: true });
-    const failover = controller(upstream.request);
-
-    await failover.probe();
-
-    expect(failover.snapshot()).toMatchObject({
+    const syncing = createUpstream({ primarySyncing: true });
+    const syncingGateway = controller(syncing.request);
+    await syncingGateway.probe();
+    expect(syncingGateway.snapshot()).toMatchObject({
       status: "degraded",
-      activeProvider: "fallback",
-      primary: {
-        syncing: true,
-        healthy: false,
-        error: "upstream is still syncing",
-      },
-      fallback: { syncing: false, healthy: true },
+      activeProvider: "primary",
+      primary: { syncing: true, healthy: false },
     });
   });
 
-  it("returns to LAN only after two recovery probes", async () => {
-    const upstream = createUpstream({
-      primaryHead: 900n,
-      fallbackHead: 1_000n,
-    });
-    const failover = controller(upstream.request);
-    await failover.probe();
-    upstream.setPrimaryHead(995n);
-
-    await failover.probe();
-    expect(failover.snapshot().activeProvider).toBe("fallback");
-    await failover.probe();
-    expect(failover.snapshot().activeProvider).toBe("primary");
-  });
-
-  it("does not replay a signed transaction after an ambiguous primary transport failure", async () => {
+  it("never sends a failed LAN read to Alchemy", async () => {
     const upstream = createUpstream();
-    const failover = controller(upstream.request);
-    await failover.probe();
-    await failover.probe();
+    const gateway = controller(upstream.request);
+    await gateway.probe();
+    upstream.setPrimaryOnline(false);
+    const payload = {
+      jsonrpc: "2.0" as const,
+      id: 7,
+      method: "eth_getCode",
+      params: ["0x0000000000000000000000000000000000000001", "latest"],
+    };
+
+    await expect(gateway.request(payload)).rejects.toThrow(
+      "Alchemy fallback requires operator authorization",
+    );
+    expect(upstream.request).not.toHaveBeenCalledWith(fallbackUrl, payload);
+    expect(gateway.snapshot()).toMatchObject({
+      status: "degraded",
+      activeProvider: "primary",
+      primaryRequestFailures: 1,
+      paidFallbackCu: 0,
+    });
+  });
+
+  it("never sends unavailable historical state to Alchemy", async () => {
+    const request = vi.fn<UpstreamRequest>((url, payload) => {
+      const entry = (Array.isArray(payload) ? payload[0] : payload) as {
+        id?: unknown;
+        method: string;
+      };
+      if (entry.method === "eth_chainId")
+        return Promise.resolve(result(entry.id, "0xb626"));
+      if (entry.method === "eth_blockNumber")
+        return Promise.resolve(result(entry.id, "0x3e8"));
+      if (entry.method === "eth_syncing")
+        return Promise.resolve(result(entry.id, false));
+      if (url === primaryUrl) {
+        return Promise.resolve({
+          jsonrpc: "2.0",
+          id: entry.id,
+          error: { code: -32_603, message: "missing trie node" },
+        });
+      }
+      return Promise.resolve(result(entry.id, "0x6000"));
+    });
+    const gateway = controller(request);
+    await gateway.probe();
+    const payload = {
+      jsonrpc: "2.0" as const,
+      id: 8,
+      method: "eth_getCode",
+      params: ["0x0000000000000000000000000000000000000001", "latest"],
+    };
+
+    await expect(gateway.request(payload)).rejects.toThrow(
+      "Alchemy fallback requires operator authorization",
+    );
+    expect(request).not.toHaveBeenCalledWith(fallbackUrl, payload);
+  });
+
+  it("does not replay a signed transaction after an ambiguous LAN failure", async () => {
+    const upstream = createUpstream();
+    const gateway = controller(upstream.request);
+    await gateway.probe();
     upstream.setPrimaryOnline(false);
     const payload = {
       jsonrpc: "2.0" as const,
@@ -213,66 +271,13 @@ describe("testnet RPC failover", () => {
       params: ["0x1234"],
     };
 
-    await expect(failover.request(payload)).rejects.toThrow(
+    await expect(gateway.request(payload)).rejects.toThrow(
       "primary write outcome is unknown; reconcile before retry",
     );
-
-    expect(failover.snapshot()).toMatchObject({
-      activeProvider: "fallback",
-      primaryRequestFailures: 1,
-      paidFallbackCu: 0,
-    });
     expect(upstream.request).not.toHaveBeenCalledWith(fallbackUrl, payload);
   });
 
-  it("falls back for read-only requests when the LAN node cannot serve state", async () => {
-    const request = vi.fn<UpstreamRequest>((url, payload) => {
-      const entry = (Array.isArray(payload) ? payload[0] : payload) as {
-        id?: unknown;
-        method: string;
-      };
-      if (entry.method === "eth_chainId") {
-        return Promise.resolve(result(entry.id, "0xb626"));
-      }
-      if (entry.method === "eth_blockNumber") {
-        return Promise.resolve(result(entry.id, "0x3e8"));
-      }
-      if (entry.method === "eth_syncing") {
-        return Promise.resolve(result(entry.id, false));
-      }
-      if (url === primaryUrl && entry.method === "eth_getCode") {
-        return Promise.resolve({
-          jsonrpc: "2.0",
-          id: entry.id,
-          error: {
-            code: -32_603,
-            message: "missing trie node: state is not available",
-          },
-        });
-      }
-      return Promise.resolve(result(entry.id, "0x6000"));
-    });
-    const failover = controller(request);
-    await failover.probe();
-    const payload = {
-      jsonrpc: "2.0" as const,
-      id: 10,
-      method: "eth_getCode",
-      params: ["0x0000000000000000000000000000000000000001", "latest"],
-    };
-
-    await expect(failover.request(payload)).resolves.toEqual(
-      result(10, "0x6000"),
-    );
-    expect(failover.snapshot()).toMatchObject({
-      activeProvider: "fallback",
-      primaryRequestFailures: 1,
-      paidFallbackCu: 10,
-    });
-    expect(request).toHaveBeenLastCalledWith(fallbackUrl, payload);
-  });
-
-  it("does not replay a signed transaction after a primary JSON-RPC rejection", async () => {
+  it("returns a LAN JSON-RPC rejection without sending it to Alchemy", async () => {
     const rejection = {
       jsonrpc: "2.0",
       id: 11,
@@ -283,173 +288,129 @@ describe("testnet RPC failover", () => {
         id?: unknown;
         method: string;
       };
-      if (entry.method === "eth_chainId") {
+      if (entry.method === "eth_chainId")
         return Promise.resolve(result(entry.id, "0xb626"));
-      }
-      if (entry.method === "eth_blockNumber") {
+      if (entry.method === "eth_blockNumber")
         return Promise.resolve(result(entry.id, "0x3e8"));
-      }
-      if (entry.method === "eth_syncing") {
+      if (entry.method === "eth_syncing")
         return Promise.resolve(result(entry.id, false));
-      }
-      if (url === primaryUrl && entry.method === "eth_sendRawTransaction") {
-        return Promise.resolve(rejection);
-      }
-      return Promise.resolve(result(entry.id, "0xfeed"));
+      return Promise.resolve(
+        url === primaryUrl ? rejection : result(entry.id, "0xfeed"),
+      );
     });
-    const failover = controller(request);
-    await failover.probe();
+    const gateway = controller(request);
+    await gateway.probe();
+    const payload = {
+      jsonrpc: "2.0" as const,
+      id: 11,
+      method: "eth_sendRawTransaction",
+      params: ["0x1234"],
+    };
 
-    await expect(
-      failover.request({
-        jsonrpc: "2.0",
-        id: 11,
-        method: "eth_sendRawTransaction",
-        params: ["0x1234"],
-      }),
-    ).resolves.toEqual(rejection);
-    expect(request).not.toHaveBeenCalledWith(
-      fallbackUrl,
-      expect.objectContaining({ method: "eth_sendRawTransaction" }),
-    );
-    expect(failover.snapshot().activeProvider).toBe("primary");
+    await expect(gateway.request(payload)).resolves.toEqual(rejection);
+    expect(request).not.toHaveBeenCalledWith(fallbackUrl, payload);
   });
 
-  it("projects only paid probes while LAN serves application traffic", async () => {
+  it("requires a second explicit authorization flag to select Alchemy", () => {
     const upstream = createUpstream();
-    const failover = controller(upstream.request);
-    await failover.probe();
-    await failover.probe();
+    expect(() =>
+      controller(upstream.request, { selectedProvider: "fallback" }),
+    ).toThrow("fallback RPC traffic requires explicit operator authorization");
+  });
 
-    expect(failover.snapshot()).toMatchObject({
+  it("uses only Alchemy application traffic after an explicit operator selection", async () => {
+    const upstream = createUpstream();
+    const gateway = controller(upstream.request, {
+      selectedProvider: "fallback",
+      authorizeFallback: true,
+    });
+    await gateway.probe();
+    const payload = {
+      jsonrpc: "2.0" as const,
+      id: 12,
+      method: "eth_getBalance",
+      params: ["0x0000000000000000000000000000000000000001", "latest"],
+    };
+
+    await gateway.request(payload);
+
+    expect(upstream.request).toHaveBeenLastCalledWith(fallbackUrl, payload);
+    expect(upstream.request).not.toHaveBeenCalledWith(primaryUrl, payload);
+    expect(gateway.snapshot()).toMatchObject({
+      status: "degraded",
+      activeProvider: "fallback",
+      fallbackTrafficAuthorized: true,
+      trafficAvailable: true,
+      paidFallbackCu: 10,
+    });
+  });
+
+  it("does not silently return to LAN if the operator-selected fallback fails", async () => {
+    const upstream = createUpstream();
+    const gateway = controller(upstream.request, {
+      selectedProvider: "fallback",
+      authorizeFallback: true,
+    });
+    await gateway.probe();
+    upstream.setFallbackOnline(false);
+    const payload = {
+      jsonrpc: "2.0" as const,
+      id: 13,
+      method: "eth_blockNumber",
+      params: [],
+    };
+
+    await expect(gateway.request(payload)).rejects.toThrow("fallback offline");
+    expect(upstream.request).not.toHaveBeenCalledWith(primaryUrl, payload);
+  });
+
+  it("keeps paid usage limited to probes while LAN serves", async () => {
+    const upstream = createUpstream();
+    const gateway = controller(upstream.request);
+    await gateway.probe();
+    await gateway.probe();
+
+    expect(gateway.snapshot()).toMatchObject({
       activeProvider: "primary",
+      paidFallbackCu: 0,
       paidProjectedDailyCu: 86_400,
       paidProjectedMonthlyCu: 2_592_000,
     });
   });
 
-  it("uses a network-specific service identity in persisted health state", () => {
+  it("keeps the operator selection while LAN health recovers", async () => {
+    const upstream = createUpstream({
+      primaryHead: 900n,
+      fallbackHead: 1_000n,
+    });
+    const gateway = controller(upstream.request);
+    await gateway.probe();
+    upstream.setPrimaryHead(1_000n);
+    await gateway.probe();
+
+    expect(gateway.snapshot()).toMatchObject({
+      status: "ok",
+      activeProvider: "primary",
+      trafficAvailable: true,
+      providerChanges: 0,
+    });
+  });
+
+  it("uses a network-specific service identity", () => {
     const upstream = createUpstream();
-    const failover = new TestnetRpcFailover({
+    const gateway = new TestnetRpcFailover({
       primaryUrl,
       fallbackUrl,
       expectedChainId: 4_663,
       request: upstream.request,
-      serviceName: "robyn-mainnet-rpc-failover",
+      serviceName: "robyn-mainnet-rpc-gateway",
     });
 
-    expect(failover.snapshot()).toMatchObject({
-      service: "robyn-mainnet-rpc-failover",
+    expect(gateway.snapshot()).toMatchObject({
+      service: "robyn-mainnet-rpc-gateway",
       expectedChainId: 4_663,
+      activeProvider: "primary",
     });
-  });
-
-  it("reports unavailable when both request paths fail", async () => {
-    const upstream = createUpstream();
-    const failover = controller(upstream.request);
-    await failover.probe();
-    upstream.setPrimaryOnline(false);
-    upstream.setFallbackOnline(false);
-
-    await expect(
-      failover.request({
-        jsonrpc: "2.0",
-        id: 3,
-        method: "eth_blockNumber",
-        params: [],
-      }),
-    ).rejects.toThrow("fallback offline");
-    expect(failover.snapshot()).toMatchObject({
-      status: "unavailable",
-      primary: { healthy: false },
-      fallback: { healthy: false },
-    });
-  });
-
-  it("uses the LAN node for a read when the active fallback request fails", async () => {
-    const upstream = createUpstream({ primaryOnline: false });
-    const failover = controller(upstream.request);
-    await failover.probe();
-    expect(failover.snapshot().activeProvider).toBe("fallback");
-
-    upstream.setPrimaryOnline(true);
-    upstream.setFallbackOnline(false);
-    const payload = {
-      jsonrpc: "2.0" as const,
-      id: 4,
-      method: "eth_blockNumber",
-      params: [],
-    };
-
-    await expect(failover.request(payload)).resolves.toEqual(
-      result(4, "0x3e8"),
-    );
-    expect(upstream.request).toHaveBeenCalledWith(fallbackUrl, payload);
-    expect(upstream.request).toHaveBeenCalledWith(primaryUrl, payload);
-    expect(failover.snapshot()).toMatchObject({
-      activeProvider: "fallback",
-      primary: { healthy: false },
-      fallback: { healthy: false },
-    });
-  });
-
-  it("rechecks the LAN node when both sides of an in-flight read fail transiently", async () => {
-    let applicationPrimaryAttempts = 0;
-    const request = vi.fn<UpstreamRequest>((url, payload) => {
-      const entry = (Array.isArray(payload) ? payload[0] : payload) as {
-        id?: unknown;
-        method: string;
-      };
-      if (entry.method === "eth_chainId") {
-        return Promise.resolve(result(entry.id, "0xb626"));
-      }
-      if (entry.method === "eth_syncing") {
-        return Promise.resolve(result(entry.id, false));
-      }
-      if (entry.method === "eth_blockNumber" && entry.id === "health-head") {
-        return Promise.resolve(result(entry.id, "0x3e8"));
-      }
-      if (entry.method === "eth_blockNumber" && url === primaryUrl) {
-        applicationPrimaryAttempts += 1;
-        if (applicationPrimaryAttempts === 1) {
-          return Promise.reject(new Error("transient primary failure"));
-        }
-        return Promise.resolve(result(entry.id, "0x3e8"));
-      }
-      if (url === fallbackUrl) {
-        return Promise.reject(new Error("transient fallback failure"));
-      }
-      return Promise.resolve(result(entry.id, "0xfeed"));
-    });
-    const failover = controller(request);
-    await failover.probe();
-
-    await expect(
-      failover.request({
-        jsonrpc: "2.0",
-        id: 6,
-        method: "eth_blockNumber",
-        params: [],
-      }),
-    ).resolves.toEqual(result(6, "0x3e8"));
-    expect(applicationPrimaryAttempts).toBe(2);
-  });
-
-  it("does not retry a failed fallback write against the LAN node", async () => {
-    const upstream = createUpstream({ primaryOnline: false });
-    const failover = controller(upstream.request);
-    await failover.probe();
-    upstream.setPrimaryOnline(true);
-    upstream.setFallbackOnline(false);
-    const payload = {
-      jsonrpc: "2.0" as const,
-      id: 5,
-      method: "eth_sendRawTransaction",
-      params: ["0x1234"],
-    };
-
-    await expect(failover.request(payload)).rejects.toThrow("fallback offline");
-    expect(upstream.request).not.toHaveBeenCalledWith(primaryUrl, payload);
   });
 });
 

@@ -21,6 +21,10 @@ process.env.ROBYN_TESTNET_RELEASE_ROOT = releaseRoot;
 process.env.ROBYN_TESTNET_MANIFEST = manifest;
 process.env.ROBYN_TESTNET_PRIMARY_RPC_URL = primaryRpcUrl;
 process.env.ROBYN_TESTNET_SERVER_RPC_URL = fallbackRpcUrl;
+process.env.ROBYN_TESTNET_RPC_ACTIVE_PROVIDER =
+  process.env.ROBYN_MAINNET_RPC_ACTIVE_PROVIDER || "primary";
+process.env.ROBYN_TESTNET_RPC_FALLBACK_TRAFFIC_AUTHORIZED =
+  process.env.ROBYN_MAINNET_RPC_FALLBACK_TRAFFIC_AUTHORIZED || "false";
 process.env.ROBYN_TESTNET_WS_RPC_URL = wsRpcUrl;
 process.env.ROBYN_OPERATOR_KEY_FILE = operatorKeyFile;
 process.env.ROBYN_TESTNET_DATABASE = database;
@@ -80,6 +84,10 @@ module.exports = {
         EXPECTED_CHAIN_ID: "4663",
         PRIMARY_RPC_URL: primaryRpcUrl,
         FALLBACK_RPC_URL: fallbackRpcUrl,
+        RPC_ACTIVE_PROVIDER:
+          process.env.ROBYN_MAINNET_RPC_ACTIVE_PROVIDER || "primary",
+        RPC_FALLBACK_TRAFFIC_AUTHORIZED:
+          process.env.ROBYN_MAINNET_RPC_FALLBACK_TRAFFIC_AUTHORIZED || "false",
         RPC_SERVICE_NAME: "robyn-mainnet-rpc-failover",
         RPC_STATUS_FILE: "/var/lib/robyn/mainnet-rpc-gateway/status.json",
       });

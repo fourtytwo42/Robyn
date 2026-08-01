@@ -233,11 +233,21 @@ rehearsal and is intentionally not repeatable against the same genesis market.
 
 ## Alchemy compute budget
 
-The protected testnet backend uses a loopback failover gateway. The LAN node at
-`192.168.50.117:8547` is primary; protected Alchemy HTTPS is the paid comparison
-and fallback. The gateway compares chain ID and head every 30 seconds, fails
-over when LAN is unreachable, on the wrong chain, or more than 50 blocks
-behind, and requires two healthy comparisons within 10 blocks before recovery.
+The protected testnet backend uses a loopback operator-selected RPC gateway.
+The LAN node at `192.168.50.117:8547` is the only active application upstream
+by default. Protected Alchemy HTTPS remains configured as an emergency
+upstream, but automatic failover is prohibited. The gateway may query Alchemy
+only for bounded `eth_chainId`, `eth_blockNumber`, and `eth_syncing` comparison
+probes while LAN is selected. It must not send ordinary reads, writes, retries,
+or state-history fallbacks to Alchemy. LAN outage, wrong-chain state, active
+syncing, or lag beyond 50 blocks produces explicit degraded status and fails
+application traffic closed.
+
+Selecting Alchemy requires a documented owner instruction followed by a
+protected configuration change setting both `RPC_ACTIVE_PROVIDER=fallback` and
+`RPC_FALLBACK_TRAFFIC_AUTHORIZED=true`, then a controlled gateway restart.
+Setting only one value fails closed. Returning to LAN is also an explicit
+operator selection; the gateway never changes providers by itself.
 The filtered Alchemy WebSocket remains only an ingestion wake signal. Browser
 RPC remains on the public keyless endpoint. Canonical HTTP logs, block hashes,
 and PostgreSQL checkpoints remain authoritative. In quiet periods, the
@@ -263,10 +273,10 @@ A bounded individual-call fallback is allowed only after that runtime check.
 
 Operational budgets are 250,000 paid compute units per idle day and 30 million
 paid compute units per normal month. The gateway reports comparison-probe and
-actual fallback CU separately; service-level request estimates remain
+operator-authorized fallback CU separately; service-level request estimates remain
 diagnostic workload volume and are not counted as paid usage while LAN serves
 them. Prometheus alerts on either paid projection, LAN failure or lag, paid
-fallback failure, a 15-minute scan backlog, a stale protocol audit, or
+selected-provider failure, a 15-minute scan backlog, a stale protocol audit, or
 simultaneous WebSocket and HTTP-ingestion degradation. Provider keys are
 network-specific protected secrets and must never appear in Git, release
 evidence, logs, status responses, or browser bundles.

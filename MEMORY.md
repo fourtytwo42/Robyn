@@ -1,5 +1,24 @@
 # Project Memory
 
+### 2026-08-01 - LAN-only RPC traffic with owner-authorized Alchemy selection
+
+- Decision: LAN RPC is the only active Testnet and Mainnet application
+  upstream. Automatic Alchemy failover is prohibited until the product owner
+  explicitly directs an operator switch.
+- Alchemy may receive only bounded chain identity, block-height, and syncing
+  comparison probes while LAN is selected. It must not receive application
+  reads, writes, retries, or historical-state fallback traffic.
+- LAN outage, wrong-chain state, syncing, or excessive lag must leave LAN
+  selected, report connection degradation to the frontend, and fail financial
+  traffic closed. The gateway must never switch providers autonomously.
+- An authorized Alchemy switch requires both protected settings
+  `RPC_ACTIVE_PROVIDER=fallback` and
+  `RPC_FALLBACK_TRAFFIC_AUTHORIZED=true`, followed by a controlled restart.
+  Either setting alone fails closed. Returning to LAN is also explicit.
+- This is an application/infrastructure policy change only. It does not modify
+  Schema-16 contracts and does not authorize a bridge, Mainnet deployment,
+  Canary activation, or Public activation.
+
 ### 2026-08-01 - Mainnet local-fork receipt and funding gates pass
 
 - Exact runtime candidate remains the clean, pushed, Testnet-validated
