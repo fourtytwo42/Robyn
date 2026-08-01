@@ -33,6 +33,18 @@ test("runner refuses replay, ambiguous nonces, fee drift, and reserve breaches",
   assert.match(runner,/const RESERVE = 20_000_000_000_000_000n/);
 });
 
+test("preflight failures are persisted and force shutdown before resume",()=>{
+  const runStart = runner.indexOf("const run = async () => {");
+  const outerTry = runner.lastIndexOf("try {\n  await run();");
+  assert.ok(runStart >= 0 && outerTry > runStart);
+  assert.ok(runner.indexOf("await assertGateway();",runStart) < outerTry);
+  assert.ok(runner.indexOf("await assertRuntimeIdentities();",runStart) < outerTry);
+  assert.match(runner,/shutdownRequired: true/);
+  assert.match(runner,/failedRun: true/);
+  assert.match(runner,/lifecycle is invalidated after a prior failure; use a new manifest and evidence identity/);
+  assert.match(runner,/shutdownRequired: false/);
+});
+
 test("runner binds bootstrap, claims, recovery, accounting, and shutdown",()=>{
   assert.match(runner,/fewer than six bootstrap hours remain/);
   assert.match(runner,/bootstrap step one plan hash mismatch/);

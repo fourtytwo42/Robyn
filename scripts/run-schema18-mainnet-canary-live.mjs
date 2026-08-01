@@ -123,32 +123,35 @@ const chain = {
   rpcUrls: { default: { http: [rpc] } },
 };
 const client = createPublicClient({ chain, transport: http(rpc, { timeout: 30_000, retryCount: 0 }) });
-if (
-  (await client.getChainId()) !== CHAIN_ID ||
-  (await client.request({ method: "eth_syncing", params: [] })) !== false
-) {
-  throw new Error("Schema-18 lifecycle RPC is wrong-chain or syncing");
-}
-const gateway = localRehearsal
-  ? (await client.request({ method: "anvil_nodeInfo", params: [] }),
-    {
-      status: "ok",
-      activeProvider: "primary",
-      providerSelection: "operator",
-      fallbackTrafficAuthorized: false,
-    })
-  : await fetch(new URL("/health", rpc)).then(async (response) => {
-      if (!response.ok) throw new Error(`gateway health ${response.status}`);
-      return response.json();
-    });
-if (
-  gateway.status !== "ok" ||
-  gateway.activeProvider !== "primary" ||
-  gateway.providerSelection !== "operator" ||
-  gateway.fallbackTrafficAuthorized !== false
-) {
-  throw new Error("Schema-18 gateway is not healthy LAN-only with probe-only fallback");
-}
+let gateway;
+const assertGateway = async () => {
+  if (
+    (await client.getChainId()) !== CHAIN_ID ||
+    (await client.request({ method: "eth_syncing", params: [] })) !== false
+  ) {
+    throw new Error("Schema-18 lifecycle RPC is wrong-chain or syncing");
+  }
+  gateway = localRehearsal
+    ? (await client.request({ method: "anvil_nodeInfo", params: [] }),
+      {
+        status: "ok",
+        activeProvider: "primary",
+        providerSelection: "operator",
+        fallbackTrafficAuthorized: false,
+      })
+    : await fetch(new URL("/health", rpc)).then(async (response) => {
+        if (!response.ok) throw new Error(`gateway health ${response.status}`);
+        return response.json();
+      });
+  if (
+    gateway.status !== "ok" ||
+    gateway.activeProvider !== "primary" ||
+    gateway.providerSelection !== "operator" ||
+    gateway.fallbackTrafficAuthorized !== false
+  ) {
+    throw new Error("Schema-18 gateway is not healthy LAN-only with probe-only fallback");
+  }
+};
 
 let account;
 let wallet;
@@ -433,12 +436,14 @@ const external = {
   permit2: checksum(manifest.contracts.permit2),
   positionManager: checksum(manifest.contracts.positionManager),
 };
-for (const identity of manifest.runtimeIdentities ?? []) {
-  const code = await client.getCode({ address: checksum(identity.address) });
-  if (!code || code === "0x" || keccak256(code).toLowerCase() !== identity.runtimeCodeHash.toLowerCase()) {
-    throw new Error(`${identity.name} runtime identity changed`);
+const assertRuntimeIdentities = async () => {
+  for (const identity of manifest.runtimeIdentities ?? []) {
+    const code = await client.getCode({ address: checksum(identity.address) });
+    if (!code || code === "0x" || keccak256(code).toLowerCase() !== identity.runtimeCodeHash.toLowerCase()) {
+      throw new Error(`${identity.name} runtime identity changed`);
+    }
   }
-}
+};
 const read = (address, abi, functionName, args = []) =>
   client.readContract({ address, abi, functionName, args });
 const write = (phase, label, address, abi, functionName, args = [], value = 0n) =>
@@ -506,10 +511,23 @@ const shutdown = async () => {
     );
   }
   if (!(await paused())) throw new Error("guardian shutdown did not restore Paused state");
-  await mark("shutdown", { shutdownAt: new Date().toISOString() });
+  await mark("shutdown", {
+    shutdownAt: new Date().toISOString(),
+    shutdownRequired: false,
+  });
 };
 
 const run = async () => {
+  await assertGateway();
+  await assertRuntimeIdentities();
+  if (state.failedRun && !readOnly.has(stage) && stage !== "shutdown") {
+    if (state.shutdownRequired) await shutdown();
+    const invalidated = new Error(
+      "lifecycle is invalidated after a prior failure; use a new manifest and evidence identity",
+    );
+    invalidated.canaryRunInvalidated = true;
+    throw invalidated;
+  }
   if (stage === "verify" || stage === "status") {
     process.stdout.write(
       `${json({
@@ -994,7 +1012,15 @@ try {
     `${json({ stage, failedAt: new Date().toISOString(), error: error.stack ?? error.message })}\n`,
     { mode: 0o600 },
   ).catch(() => {});
-  if (!readOnly.has(stage) && stage !== "shutdown") {
+  if (!readOnly.has(stage) && stage !== "shutdown" && !error.canaryRunInvalidated) {
+    Object.assign(state, {
+      failedRun: true,
+      shutdownRequired: true,
+      failedStage: stage,
+      failedAt: new Date().toISOString(),
+      failure: String(error?.message ?? error).slice(0, 500),
+    });
+    await saveState().catch(() => {});
     try {
       if (!(await paused())) await shutdown();
     } catch (shutdownError) {

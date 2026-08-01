@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 Gate-2 attempt safely shuts down after LAN degradation
+
+- Authorization: The owner authorized manifest SHA-256 `6d0a01a631f5ad40ba18f65fd163e6b52519972c9af45ace4559f2a7fa70dab0` from bootstrap step one through final guardian shutdown. Gate 3, Public mode, application writes, and further bridging remain unauthorized.
+- Live result: Bootstrap step one and all six bounded bidirectional route tests completed. The `launch` stage then stopped before signing because the LAN node temporarily returned JSON-RPC method unavailable for `eth_syncing`; the gateway correctly became degraded and used zero Alchemy fallback traffic.
+- Safety: After two required LAN recovery probes, nine Safe transactions restored launch mode Paused, paused both conversion systems, and disabled GOOGL, MSFT, NVDA, SPCX, SPY, and WETH. All 28 Gate-2 receipts succeeded, no launch was created, no transaction is ambiguous, and the deployer retains `0.031225808606767392 ETH`.
+- Bootstrap state: Step one is consumed, bootstrap remains active at step one of two, and guardian shutdown cannot be reversed by the Safe. The interrupted canary cannot be resumed or replayed. A newly sealed and separately authorized recovery path is required; unanimous scheduling is unavailable until bootstrap is finalized.
+- Runner correction: Move LAN/runtime preflight inside the protected failure boundary, persist `shutdownRequired`, and force shutdown before any attempted resume. Focused runner/journal tests pass 7/7. This operational-tooling change requires a new pushed SHA and replacement manifest before further Mainnet mutation.
+- Evidence: `/home/hendo420/robyn-evidence/schema18-mainnet-canary/gate2-live-6d0a01-20260801T212718Z/` is checksum-sealed; `SHA256SUMS` hashes to `4d1c9185e624e234486f14dc41440cca0aad791d0311e982e0d8be257e67fe94`.
+- Follow-up: Qualify the runner correction, choose and rehearse a governance recovery path, reseal exact funding and transaction evidence, and request explicit authorization. Keep Mainnet Paused.
 ### 2026-08-01 - Gate-2 manifest resealed after authorization-handshake correction
 
 - Tooling: Exact pushed operational SHA is `727a5db`; the change is authorization plumbing only and does not alter contracts, routes, economics, reserves, or application artifacts.
