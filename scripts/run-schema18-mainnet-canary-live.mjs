@@ -87,12 +87,33 @@ if (manifest.schemaVersion !== 18 || manifest.chainId !== CHAIN_ID || manifest.c
   throw new Error("Schema-18 Mainnet canary manifest identity mismatch");
 }
 if (manifest.operationalToolingSha !== toolingSha && !localRehearsal) throw new Error("canary manifest is not bound to this tooling SHA");
-if (manifest.authorization?.additionalBridgeAuthorized !== false || manifest.authorization?.publicActivationAuthorized !== false || manifest.authorization?.applicationWritesAuthorized !== false) {
-  throw new Error("Gate 2 manifest exceeds canary authorization scope");
+if (
+  manifest.authorizationEligible !== true ||
+  manifest.authorization?.additionalBridgeAuthorized !== false ||
+  manifest.authorization?.bootstrapStepOneAuthorized !== false ||
+  manifest.authorization?.canaryTransactionsAuthorized !== false ||
+  manifest.authorization?.publicActivationAuthorized !== false ||
+  manifest.authorization?.applicationWritesAuthorized !== false
+) {
+  throw new Error("Gate 2 manifest scope or pre-authorization state is invalid");
 }
 if (!localRehearsal && !readOnly.has(stage)) {
-  if (manifest.authorization?.bootstrapStepOneAuthorized !== true || manifest.authorization?.canaryTransactionsAuthorized !== true || process.env.ROBYN_SCHEMA18_MAINNET_CANARY_AUTHORIZED !== manifestSha) {
-    throw new Error("exact Gate 2 manifest is not explicitly authorized");
+  const authorizationPath = path.resolve(required("ROBYN_SCHEMA18_MAINNET_CANARY_AUTHORIZATION_RECEIPT"));
+  const authorizationRaw = await readFile(authorizationPath, "utf8");
+  const authorization = JSON.parse(authorizationRaw);
+  if (
+    process.env.ROBYN_SCHEMA18_MAINNET_CANARY_AUTHORIZED !== manifestSha ||
+    process.env.ROBYN_SCHEMA18_MAINNET_CANARY_AUTHORIZATION_RECEIPT_SHA256 !== sha256(authorizationRaw) ||
+    authorization.schemaVersion !== 18 ||
+    authorization.gate !== "schema18-gate2" ||
+    authorization.authorized !== true ||
+    authorization.manifestSha256 !== manifestSha ||
+    authorization.scope !== "bootstrap1-through-final-guardian-shutdown" ||
+    authorization.additionalBridgeAuthorized !== false ||
+    authorization.publicActivationAuthorized !== false ||
+    authorization.applicationWritesAuthorized !== false
+  ) {
+    throw new Error("exact Gate 2 manifest lacks a matching protected authorization receipt");
   }
 }
 const chain = {

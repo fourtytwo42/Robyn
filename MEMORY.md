@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-01 - Gate-2 authorization handshake stopped before signing
+
+- Context: The owner explicitly authorized Gate 2 for manifest SHA-256 `32d61dd04e179970ab8a1a16c674f59752b77c254de9c49b737509ac784b5dc6`.
+- Preflight finding: The live runner required the sealed manifest's immutable pre-authorization flags to be true even though the sealer correctly emitted them false. Changing those fields would change the approved hash. No transaction was signed or broadcast; Mainnet remains fully Paused and deployer nonce remains 70.
+- Fix: Keep authorization flags false as immutable scope boundaries. A live mutation now requires the exact manifest hash in the environment plus a separately checksummed protected authorization receipt bound to Schema-18 Gate 2 and scope `bootstrap1-through-final-guardian-shutdown`. Additional bridge, Public activation, and application writes must remain false.
+- Follow-up: Commit/push the operational correction, rerun the exact-state rehearsal, reseal a replacement Gate-2 manifest, and obtain explicit approval for its new exact hash before any Mainnet transaction.
+
+
 ### 2026-08-01 - Schema-18 Gate-2 canary manifest sealed, authorization pending
 
 - Tooling: Exact production canary tooling `f550c0b64e67cf62b98210281874f2d24156a9f3` is clean and pushed on `codex/schema18-mainnet-canary`. The validated contract and application identities remain `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4` and `8327b250122cd9050a7da6a44e12859e3cf521aa`.

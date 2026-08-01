@@ -11,8 +11,12 @@ test("Gate 2 runner is exact-release, LAN-only, and separately authorized",()=>{
   assert.match(runner,/8327b250122cd9050a7da6a44e12859e3cf521aa/);
   assert.match(runner,/ROBYN_SCHEMA18_MAINNET_CANARY_AUTHORIZED/);
   assert.match(runner,/sealed canary manifest SHA-256 mismatch/);
-  assert.match(runner,/bootstrapStepOneAuthorized !== true/);
-  assert.match(runner,/canaryTransactionsAuthorized !== true/);
+  assert.match(runner,/bootstrapStepOneAuthorized !== false/);
+  assert.match(runner,/canaryTransactionsAuthorized !== false/);
+  assert.match(runner,/ROBYN_SCHEMA18_MAINNET_CANARY_AUTHORIZATION_RECEIPT/);
+  assert.match(runner,/ROBYN_SCHEMA18_MAINNET_CANARY_AUTHORIZATION_RECEIPT_SHA256/);
+  assert.match(runner,/bootstrap1-through-final-guardian-shutdown/);
+  assert.match(runner,/matching protected authorization receipt/);
   assert.match(runner,/publicActivationAuthorized !== false/);
   assert.match(runner,/applicationWritesAuthorized !== false/);
   assert.doesNotMatch(runner,/bootstrap2/);

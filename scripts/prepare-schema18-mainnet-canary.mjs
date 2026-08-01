@@ -76,7 +76,7 @@ const balance = await client.getBalance({address:getAddress(source.deployer)});
 const requiredBalance = RESERVE + PRINCIPAL + ROUTE_CAPITAL + gasAllowance;
 if (balance < requiredBalance) throw new Error(`Gate 2 funding shortfall ${requiredBalance-balance} wei`);
 const manifest = {
-  schemaVersion:18, chainId:CHAIN_ID, generatedAt:new Date().toISOString(), contractReleaseSha:CONTRACT_SHA, applicationReleaseSha:APP_SHA, operationalToolingSha:toolingSha,
+  schemaVersion:18, chainId:CHAIN_ID, generatedAt:new Date().toISOString(), authorizationEligible:true, contractReleaseSha:CONTRACT_SHA, applicationReleaseSha:APP_SHA, operationalToolingSha:toolingSha,
   deployer:getAddress(source.deployer), guardianSafe:getAddress(source.guardianSafe), contracts:source.contracts, bootstrap:source.bootstrap, routes:source.routes, runtimeIdentities,
   sourceGate1:{manifestPath:gate1Path,manifestSha256:sha256(gate1Raw),lifecyclePath:sourcePath,lifecycleSha256:sha256(sourceRaw)},
   rehearsal:{forkBlock:rehearsalState.forkBlock,receiptCount:receipts.length,journalSha256:sha256(journalRaw),stateSha256:sha256(stateRaw),recoveryBps:rehearsalState.recoveryBps},
