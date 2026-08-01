@@ -1,5 +1,12 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 fast gate 02 reaches coverage threshold check
+
+- Context: Fast gate 02 passed compilation, the full deterministic/unit suite at 1,024 fuzz cases, both invariant suites at 256 runs/depth 128, the 512-wallet 25,000-action simulation, isolated Anvil broadcast, and valid non-via-IR coverage instrumentation.
+- Result: The gate failed closed only at its coverage threshold: 91.35% lines passed, while 75.11% branches remained below the fixed 80% requirement. Evidence is checksummed under the exact `03f9e0e` release and is not a pass.
+- Fix: Add focused Schema-18 boundary coverage for RDAO bootstrap construction, controller binding, first distribution, malformed bootstrap plans, authorization, expiry, and repeat finalization. Correct two remaining Schema-16 constants in the Schema-18 evidence validator and its static regression.
+- Follow-up: Commit/push a new exact SHA and restart fast from the beginning. Do not lower thresholds or exclude active contracts.
+
 ### 2026-08-01 - Schema-18 fast gate 01 fails closed on scope metadata
 
 - Context: Fast gate evidence `20260801-schema18-fast-01` stopped after compilation and before protocol scenarios because the new coverage definition still declared schema 16 and referenced a missing Schema-18 coverage-matrix copy.

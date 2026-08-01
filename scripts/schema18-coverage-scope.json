@@ -13,6 +13,7 @@
     "DaoGovernance.t.sol",
     "DaoTokenMatrix.t.sol",
     "Schema18BootstrapGovernance.t.sol",
+    "Schema18CoverageBranches.t.sol",
     "Schema18ProtocolLifecycle.t.sol",
     "Schema18RewardAccounting.t.sol",
     "FeeBasketAccounting.t.sol",

@@ -15,7 +15,7 @@ const testLog = readFileSync(option("test-log"), "utf8");
 const lcov = readFileSync(option("lcov"), "utf8");
 const output = option("output");
 if (
-  scope.schema !== 16 ||
+  scope.schema !== 18 ||
   scope.thresholds?.aggregateLinePercent !== 90 ||
   scope.thresholds?.aggregateBranchPercent !== 80
 ) {
@@ -132,7 +132,7 @@ const passed =
   branchPercent >= scope.thresholds.aggregateBranchPercent;
 const result = {
   schemaVersion: 2,
-  schema: 16,
+  schema: 18,
   releaseSha: scope.releaseSha,
   scopeSha256: scope.scopeSha256,
   viaIrMinimumCoverage: false,

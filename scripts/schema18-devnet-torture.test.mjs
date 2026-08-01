@@ -64,7 +64,7 @@ test("evidence validator enforces action and coverage gates", () => {
 });
 
 test("coverage scope is artifact-derived and cannot include retired contracts", () => {
-  assert.equal(scope.schema, 16);
+  assert.equal(scope.schema, 18);
   assert.equal(scope.thresholds.aggregateLinePercent, 90);
   assert.equal(scope.thresholds.aggregateBranchPercent, 80);
   assert.match(scopeBuilder, /artifact\.metadata\?\.sources/);
