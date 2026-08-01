@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 fast and deep torture gates pass
+
+- Context: Exact clean pushed candidate `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4` completed both mandatory Schema-18 Devnet torture tiers. Schema-17 remains guardian-paused and Mainnet remains untouched.
+- Fast: Seed `18012031` passed 1,024-case fuzzing, both invariant suites at 256 runs/depth 128, the 512-wallet 25,000-action simulation, isolated Anvil broadcast, and active-closure coverage.
+- Deep: Seed range `18013000` through `18013019` passed 10,000-case fuzzing, both invariant suites for all 20 seeds at 1,024 runs/depth 256, the 512-wallet/64-launch/100,000-action simulation across 50 seeds, isolated broadcast, and evidence validation.
+- Coverage: 2,179/2,359 lines (92.37%) and 376/470 branches (80.00%), with no missing actions, missing active sources, retired sources, or invalid branch instrumentation.
+- Evidence: Checksums pass under `/home/hendo420/robyn-evidence/devnet-torture/4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4/20260801-schema18-fast-06/` and `/home/hendo420/robyn-evidence/devnet-torture/4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4/20260801-schema18-deep-01/`.
+- Follow-up: Rerun security and reproducibility gates, then prepare and execute an isolated chain-46630 Schema-18 Paused deployment rehearsal and exact funding preflight before considering a live Testnet deployment.
+
 ### 2026-08-01 - Schema-18 fast gate 05 is one branch below threshold
 
 - Context: Fast gate 05 passed all execution phases and reached 92.37% lines and 79.79% branches, missing the fixed branch threshold by one covered branch.
