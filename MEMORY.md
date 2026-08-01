@@ -8,7 +8,7 @@
 - Verification: The first development rehearsal pinned LAN-sourced chain-4663 block 25380963 and passed 73/73 local-fork transactions, all six routes, the one-hour Timelock, canary lifecycle, one-hour rewards, 78.99% recovery, reconciliation, and guardian shutdown with zero Mainnet broadcasts. Focused tests pass 12/12; lint and typecheck pass.
 - Reproducibility tooling: The first two-build attempt stopped during the second fresh install because retaining both pnpm stores exhausted the VM root filesystem. The verifier now deletes the completed first store only after recording all first-build hashes, then creates the independent second store; comparison scope and fresh-store guarantees are unchanged.
 - RPC policy: A live preflight again found the PM2 fallback-authorization flag true while LAN remained primary and paid fallback CU remained zero. The gateway was restarted with fallback authorization false, persisted with pm2 save, and verified healthy across recovery probes. Do not run process-mutating tests against the live PM2 namespace.
-- Follow-up: Commit and push a clean tooling SHA, repeat the exact-state fork rehearsal, run reproducibility and final LAN/funding checks, seal the exact recovery-and-canary manifest, and stop for explicit owner authorization before any further Mainnet transaction.
+- Follow-up: Use the newest checksum-sealed recovery manifest under `/home/hendo420/robyn-evidence/schema18-mainnet-recovery/` and stop for exact owner authorization before any recovery or canary Mainnet transaction. After authorization, execute owner finalization, unanimous scheduling, the one-hour Timelock, reactivation, canary, reconciliation, and guardian shutdown. Public activation remains separately unauthorized.
 
 ### 2026-08-01 - Schema-18 Gate-2 attempt safely shuts down after LAN degradation
 
@@ -7549,7 +7549,7 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Prepare a separately sealed bootstrap-step-one and controlled-Canary manifest from the verified Paused state, then request explicit owner authorization. Do not enable routes or conversions, execute bootstrap, create a launch, or enable application writes before that approval.
+- Obtain explicit owner authorization for the checksum-sealed Schema-18 owner-finalization and unanimous-recovery Canary manifest. Do not finalize bootstrap, schedule or execute reactivation, create a launch, or enable application writes before exact-hash approval.
 
 
 - Run the exact Schema-18 chain-4663 no-broadcast Mainnet fork rehearsal through the LAN-only gateway using real GOOGL, MSFT, NVDA, SPCX, SPY, and WETH liquidity. Produce the local-fork receipt ledger, exact bridge/deployment/canary funding calculation, predicted addresses, bootstrap plan hashes, and a new sealed manifest for explicit authorization. Previous Schema-16/17 approvals do not transfer.
