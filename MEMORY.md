@@ -1,5 +1,21 @@
 # Project Memory
 
+### 2026-08-01 - Schema-17 canary capital ledger corrected
+
+- Context: After the route-cap remediation, the funded local rehearsal passed
+  settlement and all holder, creator, and DAO claims, then confirmed its final
+  canary sale before the runner reported recovery below 75%.
+- Diagnosis: The Testnet runner measured only the final unwind against the
+  displayed 0.01 ETH target. The already-qualified Schema-16 capital ledger
+  correctly includes the earlier graduated-market round-trip recovery and
+  divides by the curve's derived `actualGraduationNative` principal.
+- Decision: Persist the round-trip recovery at launch, combine it with the
+  final unwind recovery, use the snapshotted actual graduation principal, and
+  save the measured result before enforcing the 75% threshold.
+- Follow-up: Repeat the complete local rehearsal from a fresh state. This is a
+  runner evidence correction, not a protocol-bytecode or accounting change;
+  live Testnet and Mainnet remain untouched and Paused.
+
 ### 2026-08-01 - Schema-17 lifecycle route-cap remediation
 
 - Context: The fully funded, local-only chain-46630 rehearsal reached the

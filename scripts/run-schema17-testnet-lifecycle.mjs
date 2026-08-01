@@ -626,10 +626,16 @@ const run = async () => {
     const amount = balance / 50n;
     await write("launch", "sherwood-approve", token, erc20, "approve", [market, amount]);
     const quote = await read(market, marketAbi, "quoteSell", [amount]);
-    await write("launch", "sherwood-sell", market, marketAbi, "sell", [
+    const roundTripBefore = await client.getBalance({ address: account.address });
+    const roundTripReceipt = await write("launch", "sherwood-sell", market, marketAbi, "sell", [
       amount,
       (quote[1] * 99n) / 100n,
     ]);
+    const roundTripAfter = await client.getBalance({ address: account.address });
+    const roundTripRecovered =
+      roundTripAfter -
+      roundTripBefore +
+      roundTripReceipt.gasUsed * roundTripReceipt.effectiveGasPrice;
     await write(
       "launch",
       "creator-split-lock",
@@ -708,6 +714,8 @@ const run = async () => {
       locker,
       lockedPrincipal: lockedPrincipal.toString(),
       canaryTargetWei: launchProfile.targetGraduationNative.toString(),
+      canaryPrincipalWei: launchProfile.actualGraduationNative.toString(),
+      roundTripRecoveredWei: roundTripRecovered.toString(),
       graduatedAt: (await latestTime()).toString(),
     });
     return;
@@ -842,14 +850,19 @@ const run = async () => {
       (quote[1] * 99n) / 100n,
     ]);
     const after = await client.getBalance({ address: account.address });
-    const recovered = after - before + receipt.gasUsed * receipt.effectiveGasPrice;
-    if (recovered * 10_000n < BigInt(state.canaryTargetWei) * 7_500n) {
+    const unwindRecovered = after - before + receipt.gasUsed * receipt.effectiveGasPrice;
+    const recovered = BigInt(state.roundTripRecoveredWei) + unwindRecovered;
+    const recoveryBps = (recovered * 10_000n) / BigInt(state.canaryPrincipalWei);
+    Object.assign(state, {
+      unwindRecoveredWei: unwindRecovered.toString(),
+      recoveredWei: recovered.toString(),
+      recoveryBps: recoveryBps.toString(),
+    });
+    await saveState();
+    if (recoveryBps < 7_500n) {
       throw new Error("canary unwind recovered less than 75% of gross principal");
     }
-    await mark("unwind", {
-      recoveredWei: recovered.toString(),
-      recoveryBps: ((recovered * 10_000n) / BigInt(state.canaryTargetWei)).toString(),
-    });
+    await mark("unwind");
     return;
   }
   if (stage === "reconcile") {
