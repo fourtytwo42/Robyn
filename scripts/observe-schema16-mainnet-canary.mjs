@@ -9,6 +9,7 @@ const manifestPath = path.resolve(required("ROBYN_MAINNET_CANARY_MANIFEST"));
 const expectedHash = required("ROBYN_MAINNET_CANARY_MANIFEST_SHA256").toLowerCase();
 const evidenceRoot = path.resolve(required("ROBYN_MAINNET_CANARY_LIVE_EVIDENCE"));
 const rpc = process.env.ROBYN_MAINNET_GATEWAY_RPC_URL ?? "http://127.0.0.1:18549";
+const localRehearsal = process.env.ROBYN_MAINNET_CANARY_LOCAL_REHEARSAL === "true";
 const samples = process.argv.includes("--once") ? 1 : Number(process.env.ROBYN_CANARY_OBSERVATION_SAMPLES ?? "144");
 const intervalMs = Number(process.env.ROBYN_CANARY_OBSERVATION_INTERVAL_MS ?? "600000");
 const raw = await readFile(manifestPath, "utf8");
@@ -19,14 +20,19 @@ const chain = { id: 4663, name: "Robinhood Chain Mainnet", nativeCurrency: { nam
 const client = createPublicClient({ chain, transport: http(rpc, { timeout: 30_000, retryCount: 0 }) });
 const contracts = Object.fromEntries(Object.entries(manifest.contracts).map(([name, address]) => [name, getAddress(address)]));
 const coordinatorAbi = parseAbi(["function launchMode() view returns (uint8)"]);
-const assetAbi = parseAbi(["function conversionsPaused() view returns (bool)", "function executionRouteStatus(address) view returns (bool enabled,bool ready,bytes32 disabledReason)"]);
+const assetAbi = parseAbi([
+  "function conversionsPaused() view returns (bool)",
+  "function executionRouteStatus(address) view returns (uint8 kind,uint128 maximumNativeInput,uint128 maximumAssetInput,bytes32 disabledReason,bool enabled,bool runtimeVerified,bool ready,bytes32 reason)",
+]);
 const feeAbi = parseAbi(["function paused() view returns (bool)", "function totalNativeLiabilities() view returns (uint256)"]);
 const out = path.join(evidenceRoot, "observation-samples.jsonl");
 await mkdir(evidenceRoot, { recursive: true, mode: 0o700 });
 let lastBlock = 0n;
 for (let index = 0; index < samples; index += 1) {
   const started = new Date().toISOString();
-  const health = await fetch(new URL("/health", rpc)).then(async (response) => { if (!response.ok) throw new Error(`gateway health ${response.status}`); return response.json(); });
+  const health = localRehearsal
+    ? { status: "ok", activeProvider: "primary", fallbackTrafficAuthorized: false }
+    : await fetch(new URL("/health", rpc)).then(async (response) => { if (!response.ok) throw new Error(`gateway health ${response.status}`); return response.json(); });
   const [chainId, syncing, blockNumber, launchMode, assetPaused, feePaused, liabilities, feeBalance, deployerBalance] = await Promise.all([
     client.getChainId(), client.request({ method: "eth_syncing", params: [] }), client.getBlockNumber(),
     client.readContract({ address: contracts.coordinator, abi: coordinatorAbi, functionName: "launchMode" }),
@@ -43,7 +49,7 @@ for (let index = 0; index < samples; index += 1) {
   if (chainId !== 4663 || syncing !== false) failures.push("chain");
   if (health.status !== "ok" || health.activeProvider !== "primary" || health.fallbackTrafficAuthorized !== false) failures.push("gateway");
   if (Number(launchMode) !== 0 || !assetPaused || !feePaused) failures.push("paused-state");
-  if (routeStates.some((route) => route.status.enabled || route.status.ready || route.status[0] || route.status[1])) failures.push("route-enabled");
+  if (routeStates.some((route) => route.status.enabled || route.status.ready || route.status[4] || route.status[6])) failures.push("route-enabled");
   if (liabilities !== feeBalance) failures.push("solvency");
   if (runtimeChanges.length) failures.push("runtime");
   if (index > 0 && blockNumber <= lastBlock) failures.push("head-stalled");
