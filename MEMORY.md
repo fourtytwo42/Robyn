@@ -1,5 +1,17 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 Mainnet bridge and Paused deployment complete
+
+- Authorization: The owner authorized only the exact `0.000941832567858 ETH` canonical bridge and a fully Paused Schema-18 deployment. Canary, bootstrap execution, route enablement, conversions, application writes, and Public mode remain unauthorized.
+- Bridge: Ethereum transaction `0xb5c27e4ac3a4052e2c7d94905e862f86ce55671e8eefa37498a7295dde122b497` confirmed and credited the same deployer on chain 4663. The post-bridge L1 balance is `0.014015378592662947 ETH`.
+- Deployment: All 35 Schema-18 deployment and binding transactions confirmed successfully with no duplicate or ambiguous journal entries. The coordinator is Paused, both conversion systems are Paused, all six routes are disabled, application writes are disabled, launches and liabilities are zero, and all new contracts have zero native balances.
+- Governance: Reused Safe `0xE6CD65E3039fCbb7fD8fb992E5388247d9627549` remains one owner, threshold one, and module-free. Fresh Timelock `0x7bfF926aeef64932327720Fafe19091AB47E7FB2`, Governor `0x6a6a02F900f63f7493eA589f8A4E6bE1BF79c687`, and RDAO `0x498472DF199920DfA926012ec06fdb607cAfa23d` pass wiring, roles, fixed-supply, bootstrap-plan, and hour-scale governance verification.
+- Verification: All raw runtime hashes match the fork evidence except the Timelock, whose deployment-time `bootstrapDeadline` immutable necessarily changes. Masking every compiler-declared immutable slot produces an exact qualified-artifact match; every live immutable and state value passes the Schema-18 verifier.
+- Balances: The deployer retains `0.031313463126868 ETH` on Robinhood Mainnet. The LAN gateway is healthy, primary-only, one block behind its comparison probe, with Alchemy fallback unauthorized and zero fallback CU.
+- Evidence: Protected live evidence is sealed under `/home/hendo420/robyn-evidence/schema18-mainnet-live/gate1-20260801/`. The authorized-manifest SHA is `7f9e8748b084b52eeb9317c76bb6caa19991e78dc413dfa721d6711b99f0666cd`; 21 files verify and `SHA256SUMS` hashes to `86cbe227e2e6facd6f8a33da72eba88f4a0959a75de381b3e49ee7efdd3d2c4b`.
+- Follow-up: Present the reconciled Paused state. Bootstrap step one and the controlled canary require a new exact manifest and separate explicit authorization.
+
+
 ### 2026-08-01 - Schema-18 Mainnet readiness manifest sealed
 
 - Context: Frozen contract candidate `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4` and application release `8327b250122cd9050a7da6a44e12859e3cf521aa` advanced through the no-broadcast Mainnet readiness gates on exact pushed operational tooling `5afada00cbd2ae9252ecdb4fd882aa9da3c3e203`.
@@ -2784,6 +2796,9 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-08-01: Schema-18 is fully deployed on Robinhood Mainnet and independently verified in the owner-authorized Paused state. The exact bridge and all 35 L2 deployment/binding receipts succeeded; the journal contains no ambiguity or replay. Gate-one evidence is checksum-sealed. Launches, conversions, routes, and application writes remain disabled. Stop for a separately sealed bootstrap-step-one/Canary manifest and explicit authorization.
+
+
 - 2026-08-01: Schema-18 focused Testnet qualification is complete on served application release `8327b250122cd9050a7da6a44e12859e3cf521aa` and unchanged contract candidate `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4`. The full lifecycle, real-hour claims, corrected empty-database rebuild, responsive browser acceptance, final reconciliation, reproducibility, promotion, and evidence checksums pass. Testnet is guardian-paused with all routes disabled and application writes off. Advance to the exact no-broadcast chain-4663 Mainnet rehearsal and funding manifest; Mainnet remains untouched and unauthorized.
 
 - 2026-08-01: Schema-17 contracts are fully deployed and Paused on Testnet, but
@@ -4843,6 +4858,14 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-08-01 - Schema-18 is deployed and Paused on Mainnet
+
+- Fresh Schema-18 governance and protocol contracts are deployed on chain 4663; Schema-16 and Schema-17 remain archived and Paused.
+- Coordinator and both conversion systems are Paused, all six routes are disabled, application writes are disabled, and there are zero launches, liabilities, unexpected balances, residual allowances, or unattributed assets.
+- LAN RPC is the only application and transaction path. Alchemy remains probe-only, automatic fallback is unauthorized, and degraded LAN state must disable financial submissions.
+- Bootstrap step one, Canary, bootstrap step two, Public mode, and application writes are not authorized.
+
+
 ### 2026-08-01 - Schema-18 is qualified and Paused on Testnet
 
 - Testnet serves `8327b250122cd9050a7da6a44e12859e3cf521aa` against the Schema-18 deployment at block `95977560` and database `robyn_testnet_schema18_95977560`.
@@ -6627,6 +6650,9 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-08-01: Schema-18 Mainnet gate one passed. The canonical bridge confirmed once, all 35 deployment/binding receipts succeeded, 26 verifier identities and six disabled routes passed, the journal reconciles 36 unique intents to 36 unique successful receipts, the 1-of-1 Safe has no modules, and all new contract native balances are zero. Timelock source equivalence passes after masking compiler-declared immutable slots; the raw hash difference is solely deployment-time immutable data.
+
+
 - 2026-08-01: Schema-17 release `fb7a2a6` built successfully, but promotion was
   correctly rejected because its deployment verifier reached the wrong
   loopback chain through an environment-variable mismatch. Traced verification
@@ -7467,6 +7493,9 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- Prepare a separately sealed bootstrap-step-one and controlled-Canary manifest from the verified Paused state, then request explicit owner authorization. Do not enable routes or conversions, execute bootstrap, create a launch, or enable application writes before that approval.
+
+
 - Run the exact Schema-18 chain-4663 no-broadcast Mainnet fork rehearsal through the LAN-only gateway using real GOOGL, MSFT, NVDA, SPCX, SPY, and WETH liquidity. Produce the local-fork receipt ledger, exact bridge/deployment/canary funding calculation, predicted addresses, bootstrap plan hashes, and a new sealed manifest for explicit authorization. Previous Schema-16/17 approvals do not transfer.
 
 - Commit and push the Schema-17 release rollback/verifier correction, rerun
@@ -7710,6 +7739,9 @@ When sources conflict, use this order:
   fork RPC are supplied. No Mainnet deployment is authorized.
 
 ## Do Not Forget
+
+- Schema-18 Mainnet is deployed but strictly Paused. Canary, bootstrap steps, routes, conversions, application writes, and Public mode remain unauthorized until explicitly approved against a new sealed manifest.
+
 
 - Read `AGENTS.md` and `MEMORY.md` before making future changes in this workspace.
 - `/home/hendo420/Robyn` on VM `robyn` is authoritative. Never run project code, builds, tests, services, databases, migrations, workers, RPC nodes, deployments or Git operations on the Windows workstation.
