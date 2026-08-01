@@ -12,7 +12,7 @@ const paths = [baselineArg, verifiedArg, preparedArg, inputArg, safeBroadcastArg
 const evidenceDir = path.resolve(evidenceDirArg);
 const outputPath = path.resolve(outputArg);
 const [baseline, verified, prepared, input, safeBroadcast, stackBroadcast] = await Promise.all(paths.map(async (file) => JSON.parse(await readFile(file, "utf8"))));
-if (baseline.schemaVersion !== 17 || verified.schemaVersion !== 18 || prepared.schemaVersion !== 18 || input.schemaVersion !== 18) throw new Error("Schema-18 baseline and Schema-18 inputs required");
+if (baseline.schemaVersion !== 16 || verified.schemaVersion !== 18 || prepared.schemaVersion !== 18 || input.schemaVersion !== 18) throw new Error("Schema-16 application baseline and Schema-18 inputs required");
 if (verified.chainId !== 46630 || prepared.chainId !== 46630 || input.chainId !== 46630) throw new Error("chain 46630 required");
 if (verified.releaseSha !== prepared.releaseSha || verified.releaseSha !== input.releaseSha) throw new Error("release mismatch");
 
