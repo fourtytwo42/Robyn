@@ -4,6 +4,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { createWriteStream } from "node:fs";
 import {
   access,
+  copyFile,
   mkdir,
   readFile,
   rm,
@@ -196,6 +197,10 @@ await local.request({ method: "anvil_impersonateAccount", params: [deployer] });
 
 const prepareRoot = path.join(outputRoot, "prepared");
 const lifecycleRoot = path.join(outputRoot, "lifecycle");
+const foundryInput = path.join(
+  repoRoot,
+  "packages/contracts/tmp/schema18-mainnet-deployment-input.json",
+);
 const env = {
   ...commandEnv,
   ROBYN_MAINNET_DEPLOYER_ADDRESS: deployer,
@@ -211,8 +216,10 @@ try {
   const prepared = JSON.parse(
     await readFile(path.join(prepareRoot, "deployment-prepared.json"), "utf8"),
   );
+  await mkdir(path.dirname(foundryInput), { recursive: true, mode: 0o700 });
+  await copyFile(path.join(prepareRoot, "deployment-prepared.json"), foundryInput);
   env.ROBYN_SCHEMA18_MAINNET_MANIFEST = path.join(prepareRoot, "lifecycle-manifest.json");
-  env.SCHEMA18_DEPLOYMENT_INPUT = path.join(prepareRoot, "deployment-prepared.json");
+  env.SCHEMA18_DEPLOYMENT_INPUT = "tmp/schema18-mainnet-deployment-input.json";
 
   command("forge", ["build", "--root", "packages/contracts"], { env });
   command(
@@ -486,5 +493,6 @@ try {
   throw error;
 } finally {
   await stopAnvil();
+  await rm(foundryInput, { force: true });
   await rm(path.join(outputRoot, "anvil.pid"), { force: true });
 }
