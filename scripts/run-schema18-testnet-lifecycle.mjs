@@ -25,8 +25,13 @@ import { parseCastDecryptedPrivateKey } from "./lib/campaign-keystore.mjs";
 import { classifyCanaryJournal } from "./lib/mainnet-canary-journal.mjs";
 import { encodeUniversalV4SingleSwap } from "./lib/v4-universal-router.mjs";
 
-const CHAIN_ID = 46630;
-const RESERVE = 1_500_000_000_000_000n;
+const NETWORK = process.env.ROBYN_SCHEMA18_NETWORK ?? "testnet";
+if (!new Set(["testnet", "mainnet-fork"]).has(NETWORK)) {
+  throw new Error("ROBYN_SCHEMA18_NETWORK must be testnet or mainnet-fork");
+}
+const mainnetFork = NETWORK === "mainnet-fork";
+const CHAIN_ID = mainnetFork ? 4663 : 46630;
+const RESERVE = mainnetFork ? 0n : 1_500_000_000_000_000n;
 const L1_FEE_RESERVE = 25_000_000_000_000n;
 const stages = new Set([
   "verify",
@@ -36,6 +41,7 @@ const stages = new Set([
   "settle",
   "claims",
   "unwind",
+  "post-settle",
   "bootstrap2",
   "shutdown",
   "reconcile",
@@ -52,16 +58,36 @@ const required = (name) => {
   return value;
 };
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const releaseSha = required("ROBYN_SCHEMA18_TESTNET_RELEASE_SHA");
-const manifestPath = path.resolve(
-  process.env.ROBYN_SCHEMA18_TESTNET_MANIFEST ??
-    "/opt/robyn/testnet-current/deployments/46630-v4-schema18.json",
+const releaseSha = required(
+  mainnetFork
+    ? "ROBYN_SCHEMA18_MAINNET_RELEASE_SHA"
+    : "ROBYN_SCHEMA18_TESTNET_RELEASE_SHA",
 );
-const evidenceRoot = path.resolve(required("ROBYN_SCHEMA18_TESTNET_EVIDENCE"));
-const rpc = process.env.ROBYN_SCHEMA18_TESTNET_RPC_URL ?? "http://127.0.0.1:18548";
-const localRehearsal = process.env.ROBYN_SCHEMA18_TESTNET_LOCAL_REHEARSAL === "true";
+const manifestPath = path.resolve(
+  (mainnetFork
+    ? process.env.ROBYN_SCHEMA18_MAINNET_MANIFEST
+    : process.env.ROBYN_SCHEMA18_TESTNET_MANIFEST) ??
+    (mainnetFork
+      ? "/dev/null"
+      : "/opt/robyn/testnet-current/deployments/46630-v4-schema18.json"),
+);
+const evidenceRoot = path.resolve(
+  required(
+    mainnetFork
+      ? "ROBYN_SCHEMA18_MAINNET_EVIDENCE"
+      : "ROBYN_SCHEMA18_TESTNET_EVIDENCE",
+  ),
+);
+const rpc =
+  (mainnetFork
+    ? process.env.ROBYN_SCHEMA18_MAINNET_RPC_URL
+    : process.env.ROBYN_SCHEMA18_TESTNET_RPC_URL) ??
+  (mainnetFork ? "http://127.0.0.1:28548" : "http://127.0.0.1:18548");
+const localRehearsal =
+  mainnetFork ||
+  process.env.ROBYN_SCHEMA18_TESTNET_LOCAL_REHEARSAL === "true";
 if (!/^http:\/\/(127\.0\.0\.1|localhost):[0-9]+$/.test(rpc)) {
-  throw new Error("Schema-18 Testnet lifecycle requires the loopback LAN gateway");
+  throw new Error("Schema-18 lifecycle requires a loopback RPC");
 }
 
 const json = (value) =>
@@ -83,13 +109,21 @@ if (git("status", "--porcelain") !== "" || git("rev-parse", "@{upstream}") !== t
 const manifestRaw = await readFile(manifestPath, "utf8");
 const manifest = JSON.parse(manifestRaw);
 if (manifest.schemaVersion !== 18 || manifest.chainId !== CHAIN_ID) {
-  throw new Error("Schema-18 Testnet manifest identity mismatch");
+  throw new Error("Schema-18 lifecycle manifest identity mismatch");
 }
-const releaseManifest = JSON.parse(
-  await readFile(path.join(path.dirname(path.dirname(manifestPath)), "testnet-release-manifest.json"), "utf8"),
-);
-if (releaseManifest.gitSha !== releaseSha) {
-  throw new Error("Schema-18 served runtime release identity mismatch");
+if (!mainnetFork) {
+  const releaseManifest = JSON.parse(
+    await readFile(
+      path.join(
+        path.dirname(path.dirname(manifestPath)),
+        "testnet-release-manifest.json",
+      ),
+      "utf8",
+    ),
+  );
+  if (releaseManifest.gitSha !== releaseSha) {
+    throw new Error("Schema-18 served runtime release identity mismatch");
+  }
 }
 const chain = {
   id: CHAIN_ID,
@@ -102,7 +136,7 @@ if (
   (await client.getChainId()) !== CHAIN_ID ||
   (await client.request({ method: "eth_syncing", params: [] })) !== false
 ) {
-  throw new Error("Testnet LAN RPC is wrong-chain or syncing");
+  throw new Error("Schema-18 lifecycle RPC is wrong-chain or syncing");
 }
 const gateway = localRehearsal
   ? (await client.request({ method: "anvil_nodeInfo", params: [] }),
@@ -122,12 +156,12 @@ if (
   gateway.providerSelection !== "operator" ||
   gateway.fallbackTrafficAuthorized !== false
 ) {
-  throw new Error("Testnet gateway is not healthy LAN-only with probe-only fallback");
+  throw new Error("Schema-18 gateway is not healthy LAN-only with probe-only fallback");
 }
 
 let account;
 let wallet;
-if (!readOnly.has(stage)) {
+if (!readOnly.has(stage) && !mainnetFork) {
   const keystore = path.resolve(required("ROBYN_TESTNET_KEYSTORE"));
   const password = (await readFile(path.resolve(required("ROBYN_TESTNET_PASSWORD_FILE")), "utf8")).trimEnd();
   const cast = path.join(process.env.HOME ?? "/home/hendo420", ".foundry", "bin", "cast");
@@ -141,6 +175,13 @@ if (!readOnly.has(stage)) {
     throw new Error("Testnet keystore does not match Schema-18 deployer");
   }
   wallet = createWalletClient({ account, chain, transport: http(rpc, { timeout: 30_000, retryCount: 0 }) });
+} else if (!readOnly.has(stage)) {
+  account = { address: getAddress(manifest.deployer) };
+  wallet = createWalletClient({
+    account: account.address,
+    chain,
+    transport: http(rpc, { timeout: 30_000, retryCount: 0 }),
+  });
 }
 
 await mkdir(evidenceRoot, { recursive: true, mode: 0o700 });
@@ -210,7 +251,7 @@ const receiptDigest = (receipt) =>
 const missing = (error) => /not found|could not be found/i.test(String(error?.shortMessage ?? error?.message ?? error));
 
 const submit = async ({ phase, label, to, data, value = 0n }) => {
-  const key = `schema18-testnet:${phase}:${label}`;
+  const key = `schema18-${mainnetFork ? "mainnet-fork" : "testnet"}:${phase}:${label}`;
   const records = await journal();
   const classified = classifyCanaryJournal(records, key);
   if (classified.receipt) {
@@ -272,9 +313,50 @@ const submit = async ({ phase, label, to, data, value = 0n }) => {
     maxPriorityFeePerGas,
     type: "eip1559",
   };
+  const idempotencyKey = keccak256(stringToHex(key));
+  if (mainnetFork) {
+    await append({
+      type: "intent",
+      recordedAt: new Date().toISOString(),
+      logicalKey: key,
+      idempotencyKey,
+      phase,
+      label,
+      chainId: CHAIN_ID,
+      nonce: String(latest),
+      to,
+      valueWei: value.toString(),
+      calldataHash: keccak256(data),
+      gasEstimate: estimate.toString(),
+      gasLimit: gas.toString(),
+      maxFeePerGasWei: maxFeePerGas.toString(),
+      maxPriorityFeePerGasWei: maxPriorityFeePerGas.toString(),
+      localForkUnsigned: true,
+    });
+    const transactionHash = await wallet.sendTransaction(request);
+    const receipt = await client.waitForTransactionReceipt({
+      hash: transactionHash,
+      timeout: 180_000,
+    });
+    if (receipt.status !== "success") throw new Error(`${key} reverted`);
+    await append({
+      type: "receipt",
+      recordedAt: new Date().toISOString(),
+      logicalKey: key,
+      idempotencyKey,
+      phase,
+      label,
+      transactionHash,
+      blockNumber: receipt.blockNumber.toString(),
+      status: receipt.status,
+      gasUsed: receipt.gasUsed.toString(),
+      effectiveGasPriceWei: receipt.effectiveGasPrice.toString(),
+      receiptDigest: receiptDigest(receipt),
+    });
+    return receipt;
+  }
   const serialized = await wallet.signTransaction(request);
   const transactionHash = keccak256(serialized);
-  const idempotencyKey = keccak256(stringToHex(key));
   await append({
     type: "intent",
     recordedAt: new Date().toISOString(),
@@ -399,7 +481,13 @@ const safeExec = (label, target, data) =>
     safeSignature(),
   ]);
 const shutdown = async () => {
-  const reason = keccak256(stringToHex("SCHEMA18_TESTNET_LIFECYCLE_COMPLETE"));
+  const reason = keccak256(
+    stringToHex(
+      mainnetFork
+        ? "SCHEMA18_MAINNET_FORK_LIFECYCLE_COMPLETE"
+        : "SCHEMA18_TESTNET_LIFECYCLE_COMPLETE",
+    ),
+  );
   await safeExec(
     "guardian-pause-launches",
     contracts.coordinator,
@@ -463,8 +551,15 @@ const run = async () => {
   }
   if (stage === "bootstrap1" || stage === "bootstrap2") {
     const step = stage === "bootstrap1" ? 0 : 1;
-    if (step === 1 && !state.completedStages.includes("unwind")) {
-      throw new Error("bootstrap step two requires completed claims and unwind");
+    if (
+      step === 1 &&
+      !state.completedStages.includes(
+        mainnetFork ? "post-settle" : "unwind",
+      )
+    ) {
+      throw new Error(
+        "bootstrap step two requires completed claims, unwind, and Mainnet post-unwind settlement",
+      );
     }
     const plan = manifest.bootstrap.steps[step];
     await write("bootstrap", stage, contracts.timelock, built.timelock.abi, "executeBootstrapStep", [
@@ -576,12 +671,14 @@ const run = async () => {
   if (stage === "launch") {
     if (!state.completedStages.includes("routes")) throw new Error("launch requires route coverage");
     const request = {
-      name: "Schema 18 Testnet Canary",
-      symbol: "S18TC",
+      name: mainnetFork ? "Schema 18 Mainnet Canary" : "Schema 18 Testnet Canary",
+      symbol: mainnetFork ? "S18MC" : "S18TC",
       assets: [external.weth],
       weights: [10_000],
       metadataUri: "ipfs://bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
-      userSalt: keccak256(stringToHex(`schema18-testnet-${releaseSha}`)),
+      userSalt: keccak256(
+        stringToHex(`schema18-${mainnetFork ? "mainnet-fork" : "testnet"}-${releaseSha}`),
+      ),
       expectedGraduationProfileVersion: 1,
     };
     const predicted = await read(
@@ -863,6 +960,14 @@ const run = async () => {
       throw new Error("canary unwind recovered less than 75% of gross principal");
     }
     await mark("unwind");
+    return;
+  }
+  if (stage === "post-settle") {
+    if (!state.completedStages.includes("unwind")) {
+      throw new Error("post-settle requires completed unwind");
+    }
+    await settleFees("post-settle");
+    await mark("post-settle");
     return;
   }
   if (stage === "reconcile") {

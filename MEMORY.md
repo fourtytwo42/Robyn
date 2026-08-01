@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 Mainnet no-broadcast tooling implemented
+
+- Context: Schema-18 Testnet qualification is complete. The Mainnet preparation path still pointed at archived Schema-16 rehearsal, funding, bridge, and deployment tooling.
+- Decision: Freeze contract candidate `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4` and application release `8327b250122cd9050a7da6a44e12859e3cf521aa`. Reuse the verified Mainnet Safe `0xE6CD65E3039fCbb7fD8fb992E5388247d9627549`; deploy fresh Schema-18 governance and protocol contracts.
+- Files: Schema-18 Mainnet preparation, local-fork receipt runner, LAN-only RPC verifier, funding and bridge calculators, manifest sealer, and restart-safe bridge/Paused-deployment runner are now active package defaults. The Schema-18 lifecycle runner supports isolated chain-4663 forks and post-unwind settlement.
+- Commands/tests: Mainnet funding and receipt-ledger tests pass 16/16; Schema-18 governance, deployment, verifier, and new Mainnet tooling tests pass; every JavaScript script passes syntax validation.
+- Result: Tooling remains non-broadcast and fail-closed. Alchemy is probe-only, LAN is the sole application/transaction path, and all Mainnet authorization flags remain false.
+- Follow-up: Commit and push the operational tooling, run the exact chain-4663 local-fork receipt rehearsal, refresh RPC/funding/reproducibility evidence, and seal the authorization manifest. Mainnet remains untouched.
+
 ### 2026-08-01 - Schema-18 focused Testnet qualification is complete
 
 - Result: Exact application release `8327b250122cd9050a7da6a44e12859e3cf521aa` is reproducible, promoted, and serving the unchanged Schema-18 deployment at block `95977560` from `robyn_testnet_schema18_95977560`. All seven Testnet processes are online with zero post-promotion restarts.

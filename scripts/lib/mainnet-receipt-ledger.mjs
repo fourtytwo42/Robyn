@@ -128,6 +128,17 @@ export function validateMainnetReceiptLedger(evidence, expected = {}) {
     if (!HASH.test(String(transaction.calldataHash ?? ""))) {
       throw new Error(`transaction ${key} is missing its calldata hash`);
     }
+    if (Number(evidence.schemaVersion) === 18) {
+      if (!/^0x(?:[0-9a-f]{2})*$/i.test(String(transaction.data ?? ""))) {
+        throw new Error(`transaction ${key} is missing exact calldata`);
+      }
+      if (
+        transaction.to !== null &&
+        !/^0x[0-9a-f]{40}$/i.test(String(transaction.to ?? ""))
+      ) {
+        throw new Error(`transaction ${key} has an invalid destination`);
+      }
+    }
     const receipt = transaction.normalizedReceipt;
     if (
       receipt?.transactionHash?.toLowerCase() !== hash ||
