@@ -1,5 +1,38 @@
 # Project Memory
 
+### 2026-08-01 - Schema-17 Testnet deployment is partial and stopped
+
+- Context: Exact clean pushed candidate
+  `c2009ab9c626d530a7777de8331380c08ca62ad2` passed 424 Foundry tests,
+  security review, and two-build reproducibility. The exact paused deployment
+  passed on isolated chain-46630 and chain-4663 forks before the authorized
+  fresh Testnet deployment began. No Mainnet transaction occurred.
+- Result: Canonical Testnet Safe
+  `0x1a40192140b2EdD9C3c18D25A0c913647d7c6aDC` deployed successfully. The
+  protocol broadcaster then confirmed 32 transactions and deployed all 15
+  predicted contracts. Transaction
+  `0x0bcca77e5572ed1252c8962a4a7530c654f7b41dece0c21d241b6fd539115f11`
+  reverted after consuming its exact 34,372 gas limit while renouncing the
+  deployer Timelock administrator role. The two subsequent Safe pause calls
+  were never submitted.
+- Current state: Coordinator launch mode is Paused; there are no launches or
+  configured routes; all one billion RDAO remains owned and delegated by the
+  deployer; Governor proposer, Safe canceller, and open executor roles are
+  configured. Asset-router and fee-router conversions are not explicitly
+  paused, and the deployer still holds Timelock administrator authority. The
+  Testnet deployer nonce is 2519 and balance is approximately 0.020083 ETH.
+- Diagnosis: Fresh live estimates are 35,946 gas for administrator renunciation,
+  109,218 gas for the asset-router Safe pause, and 91,366 gas for the fee-router
+  Safe pause. The original renunciation limit was underestimated; there is no
+  contract or accounting finding and no ambiguous transaction.
+- Evidence: Protected partial-deployment evidence is under
+  `/home/hendo420/robyn-evidence/schema17-testnet/c2009ab-paused-deployment/`.
+- Follow-up: Do not replay the failed or confirmed transactions. Obtain owner
+  direction before submitting three new journaled corrective transactions with
+  refreshed nonces and conservative gas ceilings: renounce Timelock admin,
+  Safe-pause asset conversions, and Safe-pause fee conversions. Then run the
+  complete Schema-17 deployment verifier before any bootstrap action.
+
 ### 2026-08-01 - Schema-17 exact paused-deployment rehearsals pass
 
 - Context: Schema-16 Mainnet remains unused, fully Paused, and archived. No
