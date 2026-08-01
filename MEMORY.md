@@ -1,5 +1,12 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 release verification accepts the sealed lifecycle state
+
+- Context: The first promotion of the corrected Schema-18 indexer release rolled back safely because the deployment verifier still required the pre-lifecycle zero state even though the focused lifecycle had finalized both bootstrap steps, created one launch, and returned the stack to the guardian-paused state.
+- Fix: `scripts/lib/schema18-verifier.mjs` now keeps the default fresh-deployment checks fail-closed and honors the existing `ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS=true` release-verification mode only for a fully finalized two-step bootstrap, at least one launch, zero unattributed native value, and fee-router liabilities fully covered by its native balance.
+- Safety: The failed promotion submitted no chain transaction, the release script restored `2654306dd8ea9244e74e7131d7fd88ad45d9c0be`, and all Schema-18 contracts remained Paused. Mainnet was untouched.
+- Follow-up: Run focused and full regressions, commit and push the verifier correction, rebuild reproducibly, promote the exact application release, and seal final Testnet evidence.
+
 ### 2026-08-01 - Schema-18 focused lifecycle passes and rebuild gap is corrected
 
 - Context: Fresh Schema-18 Testnet release `2654306dd8ea9244e74e7131d7fd88ad45d9c0be` completed both bootstrap steps, all six route round trips, controlled launch and graduation, fee conversion and settlement, the real one-hour reward interval, all three claims, bounded unwind, guardian shutdown, and final contract reconciliation through the LAN-only gateway.

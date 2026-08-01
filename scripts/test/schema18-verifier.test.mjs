@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { encodeFunctionData, keccak256, parseAbi, stringToHex } from "viem";
 import { buildSchema18GovernanceManifest } from "../lib/schema18-governance.mjs";
-import { validateSchema18DeploymentManifest } from "../lib/schema18-verifier.mjs";
+import {
+  validateSchema18DeploymentManifest,
+  validateSchema18LifecycleState,
+} from "../lib/schema18-verifier.mjs";
 
 const address = (suffix) => `0x${suffix.toString(16).padStart(40, "0")}`;
 const contracts = {
@@ -93,5 +96,65 @@ test("rejects missing runtime identity and any enabled initial state", () => {
   assert.throws(
     () => validateSchema18DeploymentManifest(enabled),
     /writes must be disabled/,
+  );
+});
+
+test("lifecycle verifier distinguishes a fresh deployment from a completed paused launch", () => {
+  assert.equal(
+    validateSchema18LifecycleState({
+      allowLifecycleProgress: false,
+      bootstrapActive: true,
+      bootstrapFinalized: false,
+      nextStep: 0,
+      liabilities: 0n,
+      unattributed: 0n,
+      launchCount: 0n,
+      feeRouterBalance: 0n,
+    }),
+    "fresh",
+  );
+  assert.equal(
+    validateSchema18LifecycleState({
+      allowLifecycleProgress: true,
+      bootstrapActive: false,
+      bootstrapFinalized: true,
+      nextStep: 2,
+      liabilities: 7n,
+      unattributed: 0n,
+      launchCount: 1n,
+      feeRouterBalance: 7n,
+    }),
+    "completed",
+  );
+});
+
+test("lifecycle verifier rejects partial bootstrap and unbacked liabilities", () => {
+  assert.throws(
+    () =>
+      validateSchema18LifecycleState({
+        allowLifecycleProgress: true,
+        bootstrapActive: true,
+        bootstrapFinalized: false,
+        nextStep: 1,
+        liabilities: 0n,
+        unattributed: 0n,
+        launchCount: 1n,
+        feeRouterBalance: 0n,
+      }),
+    /not finalized/,
+  );
+  assert.throws(
+    () =>
+      validateSchema18LifecycleState({
+        allowLifecycleProgress: true,
+        bootstrapActive: false,
+        bootstrapFinalized: true,
+        nextStep: 2,
+        liabilities: 8n,
+        unattributed: 0n,
+        launchCount: 1n,
+        feeRouterBalance: 7n,
+      }),
+    /liabilities exceed backing/,
   );
 });

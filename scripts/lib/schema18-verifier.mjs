@@ -57,6 +57,41 @@ const assert = (condition, message) => {
   if (!condition) throw new Error(message);
 };
 
+export function validateSchema18LifecycleState({
+  allowLifecycleProgress,
+  bootstrapActive,
+  bootstrapFinalized,
+  nextStep,
+  liabilities,
+  unattributed,
+  launchCount,
+  feeRouterBalance,
+}) {
+  if (!allowLifecycleProgress) {
+    assert(
+      bootstrapActive && !bootstrapFinalized && Number(nextStep) === 0,
+      "bootstrap is not fresh and active",
+    );
+    assert(
+      liabilities === 0n && unattributed === 0n && launchCount === 0n,
+      "Schema-18 zero state mismatch",
+    );
+    return "fresh";
+  }
+
+  assert(
+    !bootstrapActive && bootstrapFinalized && Number(nextStep) === 2,
+    "bootstrap lifecycle is not finalized",
+  );
+  assert(launchCount > 0n, "completed lifecycle has no launch");
+  assert(unattributed === 0n, "Schema-18 has unattributed native value");
+  assert(
+    feeRouterBalance >= liabilities,
+    "Schema-18 fee-router liabilities exceed backing",
+  );
+  return "completed";
+}
+
 export function validateSchema18DeploymentManifest(manifest) {
   validateSchema18GovernanceManifest(manifest, { requireUnauthorized: false });
   assert(
@@ -274,10 +309,6 @@ export async function verifySchema18Deployment({ manifest, rpcUrl }) {
     "Timelock guardian mismatch",
   );
   assert(
-    bootstrapActive && !bootstrapFinalized && Number(nextStep) === 0,
-    "bootstrap is not fresh and active",
-  );
-  assert(
     firstPlan === manifest.governance.bootstrapPlanHashes[0],
     "bootstrap step one hash mismatch",
   );
@@ -306,6 +337,7 @@ export async function verifySchema18Deployment({ manifest, rpcUrl }) {
     liabilities,
     unattributed,
     launchCount,
+    feeRouterBalance,
   ] = await Promise.all([
     client.readContract({
       address: getAddress(manifest.contracts.atomicLaunchCoordinator),
@@ -337,13 +369,23 @@ export async function verifySchema18Deployment({ manifest, rpcUrl }) {
       abi: launchFactoryAbi,
       functionName: "launchCount",
     }),
+    client.getBalance({
+      address: getAddress(manifest.contracts.protocolFeeRouter),
+    }),
   ]);
   assert(Number(launchMode) === 0, "launch mode is not Paused");
   assert(assetPaused && feePaused, "conversion systems are not Paused");
-  assert(
-    liabilities === 0n && unattributed === 0n && launchCount === 0n,
-    "Schema-18 zero state mismatch",
-  );
+  const lifecycleState = validateSchema18LifecycleState({
+    allowLifecycleProgress:
+      process.env.ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS === "true",
+    bootstrapActive,
+    bootstrapFinalized,
+    nextStep,
+    liabilities,
+    unattributed,
+    launchCount,
+    feeRouterBalance,
+  });
   for (const route of manifest.routes) {
     const status = await client.readContract({
       address: getAddress(manifest.contracts.assetRouter),
@@ -412,6 +454,7 @@ export async function verifySchema18Deployment({ manifest, rpcUrl }) {
   return {
     chainId: manifest.chainId,
     deploymentBlock: manifest.deploymentBlock,
+    lifecycleState,
     contractsVerified: Object.keys(manifest.runtimeCodeHashes).length,
     routesDisabled: manifest.routes.length,
     passed: true,
