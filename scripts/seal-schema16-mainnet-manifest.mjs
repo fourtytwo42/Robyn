@@ -118,7 +118,14 @@ const gasCeilings = Object.fromEntries(
 );
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const evidenceChecksums = Object.fromEntries(
-  Object.entries(raw).map(([name, value]) => [name, { file: paths[name], sha256: sha256(value) }]),
+  Object.entries(raw).map(([name, value]) => [
+    name,
+    {
+      sourceFile: paths[name],
+      sealedFile: `evidence-${name}-${basename(paths[name])}`,
+      sha256: sha256(value),
+    },
+  ]),
 );
 const allocationHash = keccak256(stringToHex(JSON.stringify(evidence.governance.allocations)));
 const manifest = {
@@ -196,14 +203,18 @@ const manifest = {
   publicActivationAuthorized: false,
 };
 await mkdir(outputDirectory, { recursive: false, mode: 0o700 });
+for (const [name, value] of Object.entries(raw)) {
+  await writeFile(resolve(outputDirectory, evidenceChecksums[name].sealedFile), value, {
+    mode: 0o600,
+    flag: "wx",
+  });
+}
 const manifestPath = resolve(outputDirectory, "schema16-mainnet-deployment-manifest.json");
 const manifestRaw = `${JSON.stringify(manifest, null, 2)}\n`;
 await writeFile(manifestPath, manifestRaw, { mode: 0o600, flag: "wx" });
 const checksumLines = [
   `${sha256(manifestRaw)}  ${basename(manifestPath)}`,
-  ...Object.entries(evidenceChecksums).map(
-    ([name, item]) => `${item.sha256}  evidence-${name}-${basename(item.file)}`,
-  ),
+  ...Object.values(evidenceChecksums).map((item) => `${item.sha256}  ${item.sealedFile}`),
 ];
 await writeFile(resolve(outputDirectory, "SHA256SUMS"), `${checksumLines.join("\n")}\n`, {
   mode: 0o600,
