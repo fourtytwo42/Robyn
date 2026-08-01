@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-01 - Gate-2 manifest resealed after authorization-handshake correction
+
+- Tooling: Exact pushed operational SHA is `727a5db`; the change is authorization plumbing only and does not alter contracts, routes, economics, reserves, or application artifacts.
+- Rehearsal: Exact-state LAN fork block `25357488` passed 71/71 local transactions, all Gate-2 stages, 78.99% recovery, guardian shutdown, and reconciliation with zero Mainnet broadcasts.
+- Replacement manifest: `/home/hendo420/robyn-evidence/schema18-mainnet-canary/gate2-manifest-727a5db-20260801T212101Z/schema18-mainnet-gate2-canary-manifest.json`, SHA-256 `6d0a01a631f5ad40ba18f65fd163e6b52519972c9af45ace4559f2a7fa70dab0`.
+- Funding: Live balance remains `0.031313463126868 ETH`; required is `0.031125138465912502 ETH`; projected margin is `0.000188324660955498 ETH` while preserving the fixed `0.02 ETH` reserve.
+- Authorization: The prior approval for `32d61d...b5dc6` cannot apply to the replacement exact hash. All authorization flags remain false and Mainnet remains fully Paused. Obtain explicit Gate-2 approval for `6d0a01...0dab0` before creating the protected authorization receipt or broadcasting.
+
+
 ### 2026-08-01 - Gate-2 authorization handshake stopped before signing
 
 - Context: The owner explicitly authorized Gate 2 for manifest SHA-256 `32d61dd04e179970ab8a1a16c674f59752b77c254de9c49b737509ac784b5dc6`.
