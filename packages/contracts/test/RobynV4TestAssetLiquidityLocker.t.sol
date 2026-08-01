@@ -61,6 +61,9 @@ contract RobynV4TestAssetLiquidityLockerTest is Test {
         assertEq(asset.balanceOf(address(locker)), 0);
         assertEq(locker.position(poolId).asset, address(asset));
 
+        vm.expectRevert(RobynV4TestAssetLiquidityLocker.InvalidConfiguration.selector);
+        locker.seed{ value: 1 }(address(asset), 1, 1);
+
         (bool removed,) = address(locker)
             .call(
                 abi.encodeWithSignature(

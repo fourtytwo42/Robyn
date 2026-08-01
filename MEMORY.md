@@ -1,5 +1,11 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 fast gate 05 is one branch below threshold
+
+- Context: Fast gate 05 passed all execution phases and reached 92.37% lines and 79.79% branches, missing the fixed branch threshold by one covered branch.
+- Fix: Add the real duplicate-pool seed rejection to the Testnet liquidity-locker lifecycle test. The locker must reject a second position for an already locked pool before transferring funds or touching pool state.
+- Follow-up: Run the complete fast gate again on a fresh pushed SHA. Deep remains blocked until fast passes.
+
 ### 2026-08-01 - Schema-18 fast gate 04 narrows final coverage gap
 
 - Context: Fast gate 04 passed all execution phases and produced valid active-closure coverage at 91.73% lines and 78.72% branches. It failed only the unchanged 80% branch threshold.
