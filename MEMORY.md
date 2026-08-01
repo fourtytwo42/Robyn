@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-01 - Schema-18 focused Testnet qualification is complete
+
+- Result: Exact application release `8327b250122cd9050a7da6a44e12859e3cf521aa` is reproducible, promoted, and serving the unchanged Schema-18 deployment at block `95977560` from `robyn_testnet_schema18_95977560`. All seven Testnet processes are online with zero post-promotion restarts.
+- Qualification: The focused lifecycle passed all six routes, launch and graduation, overlapping rewards, the real one-hour interval, holder/creator/DAO claims, 78.99% unwind recovery, guardian shutdown, contract reconciliation, browser acceptance, and corrected independent empty-database rebuild.
+- Health: Launches and conversions are Paused, all six routes are disabled, application writes are disabled, reward and 50/25/20/5 conservation are exact, DAO deficit and unattributed native value are zero, the router is solvent, queues are empty, LAN RPC is primary, and Alchemy fallback traffic remains unauthorized with zero fallback CU.
+- Verification: Full regression passed 563 Foundry tests with zero failures, focused indexer tests passed 24/24, the final two-build reproducibility report passed, and final evidence checksum `f3a8d76cd3f9c5f748bf175bdb7255beaeb7a418eca97ef42b0ce9a37b86d5c6` is sealed under `/home/hendo420/robyn-evidence/schema18-testnet/focused-live-2654306-01/`.
+- Follow-up: Schema-18 may advance to the no-broadcast chain-4663 Mainnet rehearsal, real-route qualification, receipt-ledger funding calculation, and a new sealed Mainnet manifest. No Schema-18 Mainnet transaction is authorized.
+
 ### 2026-08-01 - Schema-18 release verification accepts the sealed lifecycle state
 
 - Context: The first promotion of the corrected Schema-18 indexer release rolled back safely because the deployment verifier still required the pre-lifecycle zero state even though the focused lifecycle had finalized both bootstrap steps, created one launch, and returned the stack to the guardian-paused state.
@@ -2757,6 +2765,8 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-08-01: Schema-18 focused Testnet qualification is complete on served application release `8327b250122cd9050a7da6a44e12859e3cf521aa` and unchanged contract candidate `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4`. The full lifecycle, real-hour claims, corrected empty-database rebuild, responsive browser acceptance, final reconciliation, reproducibility, promotion, and evidence checksums pass. Testnet is guardian-paused with all routes disabled and application writes off. Advance to the exact no-broadcast chain-4663 Mainnet rehearsal and funding manifest; Mainnet remains untouched and unauthorized.
+
 - 2026-08-01: Schema-17 contracts are fully deployed and Paused on Testnet, but
   the first application promotion was rejected by a verifier environment-name
   bug. Public Schema-16 is restored and healthy. The rollback and verifier
@@ -4813,6 +4823,12 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+
+### 2026-08-01 - Schema-18 is qualified and Paused on Testnet
+
+- Testnet serves `8327b250122cd9050a7da6a44e12859e3cf521aa` against the Schema-18 deployment at block `95977560` and database `robyn_testnet_schema18_95977560`.
+- The focused lifecycle and final acceptance pass. New launches, both conversion systems, every route, and application transaction submission are Paused or disabled.
+- LAN Testnet RPC is the sole application transaction path. Alchemy is probe-only and fallback traffic is unauthorized.
 
 ### 2026-08-01 - Public Testnet restored after failed Schema-17 promotion
 
@@ -7431,6 +7447,8 @@ When sources conflict, use this order:
 - Follow-up: Build and promote the exact pushed documentation commit, complete automated browser and real-wallet acceptance, then start the ten-hour endurance gate.
 
 ## Open Follow-ups
+
+- Run the exact Schema-18 chain-4663 no-broadcast Mainnet fork rehearsal through the LAN-only gateway using real GOOGL, MSFT, NVDA, SPCX, SPY, and WETH liquidity. Produce the local-fork receipt ledger, exact bridge/deployment/canary funding calculation, predicted addresses, bootstrap plan hashes, and a new sealed manifest for explicit authorization. Previous Schema-16/17 approvals do not transfer.
 
 - Commit and push the Schema-17 release rollback/verifier correction, rerun
   release gates, build an immutable artifact, and promote it into a new unused
