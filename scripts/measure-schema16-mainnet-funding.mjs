@@ -16,6 +16,9 @@ const required = (name) => {
 
 const gasEvidencePath = resolve(required("ROBYN_MAINNET_GAS_EVIDENCE"));
 const bridgeEstimatePath = resolve(required("ROBYN_MAINNET_BRIDGE_ESTIMATE"));
+const bridgeAmountReportPath = resolve(
+  required("ROBYN_MAINNET_BRIDGE_AMOUNT_REPORT"),
+);
 const outputPath = resolve(required("ROBYN_MAINNET_FUNDING_REPORT"));
 const deployer = getAddress(required("ROBYN_MAINNET_DEPLOYER_ADDRESS"));
 const ethereumRpc = required("ROBYN_ETHEREUM_MAINNET_RPC_URL");
@@ -35,19 +38,46 @@ if (robinhoodChainId !== 4663) {
   throw new Error("Robinhood RPC must return chain ID 4663");
 }
 
-const [gasEvidence, bridgeEstimate, currentL1BalanceWei, currentL2BalanceWei, l2GasPriceWei] =
+const [
+  gasEvidence,
+  bridgeEstimate,
+  bridgeAmountReport,
+  currentL1BalanceWei,
+  currentL2BalanceWei,
+  liveL2GasPriceWei,
+] =
   await Promise.all([
     readFile(gasEvidencePath, "utf8").then(JSON.parse),
     readFile(bridgeEstimatePath, "utf8").then(JSON.parse),
+    readFile(bridgeAmountReportPath, "utf8").then(JSON.parse),
     ethereum.getBalance({ address: deployer }),
     robinhood.getBalance({ address: deployer }),
     robinhood.getGasPrice(),
   ]);
+if (
+  bridgeAmountReport.schemaVersion !== 16 ||
+  Number(bridgeAmountReport.chainId) !== 4663 ||
+  bridgeAmountReport.releaseSha !== gasEvidence.releaseSha ||
+  getAddress(bridgeAmountReport.deployer) !== deployer ||
+  bridgeAmountReport.receiptOrBroadcast !== false
+) {
+  throw new Error("bridge amount report does not match the frozen rehearsal");
+}
+const l2GasPriceWei = BigInt(bridgeAmountReport.gasPriceWei);
+if (l2GasPriceWei <= 0n || liveL2GasPriceWei * 10_000n > l2GasPriceWei * 12_500n) {
+  throw new Error("pinned L2 gas price is missing or stale");
+}
 if (Number(bridgeEstimate.chainId) !== 1) {
   throw new Error("bridge estimate must be for Ethereum chain ID 1");
 }
 if (getAddress(bridgeEstimate.sender) !== deployer) {
   throw new Error("bridge estimate sender does not match the protected deployer");
+}
+if (
+  BigInt(bridgeEstimate.bridgeAmountWei) !==
+  BigInt(bridgeAmountReport.bridgeAmountWei)
+) {
+  throw new Error("bridge estimate does not use the exact derived bridge amount");
 }
 if (
   getAddress(bridgeEstimate.target) !==
@@ -78,6 +108,9 @@ const report = {
   deployer,
   gasEvidencePath,
   bridgeEstimatePath,
+  bridgeAmountReportPath,
+  pinnedL2GasPriceWei: l2GasPriceWei.toString(),
+  observedL2GasPriceWei: liveL2GasPriceWei.toString(),
   ...jsonMainnetFundingGate(result),
   broadcastAuthorized: false,
 };

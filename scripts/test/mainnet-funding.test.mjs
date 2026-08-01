@@ -15,8 +15,15 @@ function evidence({ deploymentGas = 1_000_000n, canaryGas = 2_000_000n } = {}) {
     forkBlock: "123456",
     releaseSha: "a".repeat(40),
     productionConfigHash: `0x${"b".repeat(64)}`,
+    runtimeIdentities: [
+      {
+        name: "poolManager",
+        address: `0x${"1".repeat(40)}`,
+        runtimeCodeHash: `0x${"c".repeat(64)}`,
+      },
+    ],
     transactions: REQUIRED_MAINNET_GAS_PHASES.map((phase, index) => ({
-      idempotencyKey: `phase-${index}`,
+      idempotencyKey: `phase-key-${index}`,
       transactionHash: `0x${(index + 1).toString(16).padStart(64, "0")}`,
       blockNumber: (123457 + index).toString(),
       phase,
@@ -25,7 +32,21 @@ function evidence({ deploymentGas = 1_000_000n, canaryGas = 2_000_000n } = {}) {
         index < 2
           ? (deploymentGas / 2n).toString()
           : (canaryGas / BigInt(canaryPhases)).toString(),
+      effectiveGasPriceWei: "100000000",
+      valueWei: "0",
+      nonce: index.toString(),
+      calldataHash: `0x${(index + 101).toString(16).padStart(64, "0")}`,
       receiptStatus: "success",
+      normalizedReceipt: {
+        transactionHash: `0x${(index + 1).toString(16).padStart(64, "0")}`,
+        blockNumber: (123457 + index).toString(),
+        status: "success",
+        gasUsed:
+          index < 2
+            ? (deploymentGas / 2n).toString()
+            : (canaryGas / BigInt(canaryPhases)).toString(),
+        effectiveGasPriceWei: "100000000",
+      },
     })),
   };
 }
@@ -99,7 +120,7 @@ test("gas evidence requires every lifecycle phase and unique successful receipts
     duplicate.transactions[0].idempotencyKey;
   assert.throws(
     () => summarizeMainnetGasEvidence(duplicate),
-    /duplicate or missing/,
+    /duplicate or invalid/,
   );
   const failed = evidence();
   failed.transactions[0].receiptStatus = "failed";
@@ -108,7 +129,25 @@ test("gas evidence requires every lifecycle phase and unique successful receipts
   delete synthetic.transactions[0].transactionHash;
   assert.throws(
     () => summarizeMainnetGasEvidence(synthetic),
-    /missing a fork receipt identity/,
+    /invalid transaction hash/,
+  );
+});
+
+test("gas evidence rejects wrong release identity and incomplete normalized receipts", () => {
+  const wrongRelease = evidence();
+  assert.throws(
+    () =>
+      summarizeMainnetGasEvidence({
+        ...wrongRelease,
+        releaseSha: "not-a-release",
+      }),
+    /release SHA is invalid/,
+  );
+  const incomplete = evidence();
+  delete incomplete.transactions[0].effectiveGasPriceWei;
+  assert.throws(
+    () => summarizeMainnetGasEvidence(incomplete),
+    /effectiveGasPriceWei/,
   );
 });
 

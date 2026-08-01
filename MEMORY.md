@@ -1,5 +1,40 @@
 # Project Memory
 
+### 2026-08-01 - Mainnet local-fork receipt and funding gates pass
+
+- Exact runtime candidate remains the clean, pushed, Testnet-validated
+  `a8d54bb125d091be0cea010262a68a2baaceda30`; this change is operational
+  tooling and evidence only and does not modify its contracts or application
+  artifacts.
+- A fresh isolated chain-4663 Anvil fork at block `24638347` completed the
+  broadcast-style rehearsal with 105 successful locally signed receipts across
+  all 11 required phases. The strict ledger records transaction identity,
+  normalized receipts, gas economics, value, phase, and unique idempotency keys.
+  No Mainnet transaction was signed or broadcast.
+- GOOGL, MSFT, NVDA, SPCX, SPY, and WETH executed in both directions against
+  real fork liquidity. The rehearsal verified Safe/Timelock/Governor bootstrap,
+  controlled graduation, direct and Sherwood trading, settlements, one-hour
+  claims, creator locking, profile governance, unwind, and final pause.
+- Capital recovery measured 78.20%, locked principal was unchanged, and the
+  broadcast final state matched the independent in-process fork result within
+  the bounded rounding tolerance. Exact fee, reward, solvency, supply,
+  allowance, and unattributed-asset checks passed.
+- Fresh application-level RPC acceptance passed with LAN primary one block
+  behind Alchemy, verified failover semantics, and zero broadcasts. The exact
+  non-broadcast bridge estimate used 92,957 gas.
+- The strict funding gate passes at the confirmed `0.04707292 ETH` L1 balance:
+  required funding is `0.042117271585715384 ETH`, the calculated bridge amount
+  is `0.032107112992656 ETH`, projected L1 remainder is
+  `0.014955648414284616 ETH`, and shortfall is zero while preserving every
+  reserve and headroom rule.
+- Full repository validation passes, including 369 Foundry tests with zero
+  failures and one intentional protected-fork skip. Receipt-ledger rejection,
+  funding, scripts, lint, and typecheck gates pass.
+- Follow-up: commit and push the operational tooling, seal the manifest from
+  that exact clean pushed tooling SHA, and request explicit authorization.
+  Bridging, paused deployment, Canary activation, and Public activation remain
+  separate unauthorized stages.
+
 ### 2026-08-01 - Final a8d54bb Mainnet rehearsal passes; receipt ledger blocks funding certification
 
 - Exact Testnet-validated release

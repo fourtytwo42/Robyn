@@ -1,18 +1,11 @@
+import {
+  REQUIRED_MAINNET_RECEIPT_PHASES,
+  validateMainnetReceiptLedger,
+} from "./mainnet-receipt-ledger.mjs";
+
 const BPS = 10_000n;
 
-export const REQUIRED_MAINNET_GAS_PHASES = Object.freeze([
-  "deployment",
-  "bindings",
-  "canary-activation",
-  "canary-launch",
-  "bonding-graduation",
-  "post-graduation-trades",
-  "fee-settlement",
-  "reward-claims",
-  "profile-governance",
-  "canary-unwind",
-  "post-unwind-settlement",
-]);
+export const REQUIRED_MAINNET_GAS_PHASES = REQUIRED_MAINNET_RECEIPT_PHASES;
 
 function asNonNegativeBigInt(value, name) {
   let parsed;
@@ -30,25 +23,7 @@ function multiplyBpsCeil(value, multiplierBps) {
 }
 
 export function summarizeMainnetGasEvidence(evidence) {
-  if (Number(evidence?.chainId) !== 4663) {
-    throw new Error("gas evidence must be for Robinhood Mainnet chain 4663");
-  }
-  if (
-    evidence?.executionMode !== "local-fork-broadcast" ||
-    !/^[1-9][0-9]*$/.test(String(evidence?.forkBlock ?? "")) ||
-    !/^[0-9a-f]{40}$/i.test(String(evidence?.releaseSha ?? "")) ||
-    !/^0x[0-9a-f]{64}$/i.test(String(evidence?.productionConfigHash ?? ""))
-  ) {
-    throw new Error(
-      "gas evidence is not an exact pinned-release fork rehearsal",
-    );
-  }
-  if (
-    !Array.isArray(evidence?.transactions) ||
-    evidence.transactions.length === 0
-  ) {
-    throw new Error("gas evidence must contain real fork transaction receipts");
-  }
+  validateMainnetReceiptLedger(evidence);
   const identities = new Set();
   const phases = new Set();
   let deploymentGas = 0n;
