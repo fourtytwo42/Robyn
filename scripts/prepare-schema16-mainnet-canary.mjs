@@ -42,6 +42,8 @@ const planRaw = await readFile(path.join(rehearsalRoot, "canary-plan.json"), "ut
 const plan = JSON.parse(planRaw);
 const capitalRaw = await readFile(path.join(rehearsalRoot, "capital-ledger.json"), "utf8");
 const capital = JSON.parse(capitalRaw);
+const localDeployment = JSON.parse(await readFile(path.join(rehearsalRoot, "local-deployment.json"), "utf8"));
+const productionConfig = JSON.parse(await readFile(path.join(repoRoot, "config/protocol/robinhood-mainnet-rehearsal.json"), "utf8"));
 if (
   deployment.releaseSha !== RELEASE_SHA ||
   deployment.chainId !== CHAIN_ID ||
@@ -100,8 +102,15 @@ const descriptionHash = keccak256(stringToHex(plan.activation.description));
 const proposalId = await read(contracts.governor, governorAbi, "hashProposal", [
   plan.activation.targets, plan.activation.values.map(BigInt), plan.activation.calldatas, descriptionHash,
 ]);
-const phaseGas = Object.fromEntries(canaryPhases.map((phase) => {
-  const measured = evidence.transactions.filter((transaction) => transaction.phase === phase).reduce((sum, transaction) => sum + BigInt(transaction.gasUsed), 0n);
+const budgetPhases = [...canaryPhases, "routes", "shutdown"];
+const phaseGas = Object.fromEntries(budgetPhases.map((phase) => {
+  const measured = evidence.transactions.filter((transaction) => {
+    if (phase === "shutdown") return transaction.phase === "post-unwind-settlement" && transaction.label.startsWith("guardian-");
+    if (phase === "post-unwind-settlement") return transaction.phase === phase && !transaction.label.startsWith("guardian-");
+    if (phase === "routes") return transaction.phase === "post-graduation-trades" && transaction.label.startsWith("route-");
+    if (phase === "post-graduation-trades") return transaction.phase === phase && !transaction.label.startsWith("route-");
+    return transaction.phase === phase;
+  }).reduce((sum, transaction) => sum + BigInt(transaction.gasUsed), 0n);
   return [phase, { measuredGas: measured.toString(), ceilingGas: ((measured * 3n + 1n) / 2n).toString() }];
 }));
 const measuredGas = evidence.transactions.reduce((sum, transaction) => sum + BigInt(transaction.gasUsed), 0n);
@@ -119,6 +128,8 @@ const manifest = {
   generatedAt: new Date().toISOString(),
   releaseSha: RELEASE_SHA,
   canaryToolingSha: toolingSha,
+  productionRunnerSha: toolingSha,
+  deployer,
   sourceDeploymentManifest: { path: deploymentManifestPath, sha256: sha256(deploymentRaw) },
   sourcePostdeploymentVerification: { path: postdeploymentPath, sha256: sha256(postdeploymentRaw) },
   rehearsal: {
@@ -141,7 +152,10 @@ const manifest = {
     gatewayBlock: (await client.getBlockNumber()).toString(),
   },
   contracts,
-  routes: plan.shutdown.routes,
+  externalContracts: Object.fromEntries(Object.entries(productionConfig.venue).map(([name, entry]) => [name, entry.address])),
+  runtimeIdentities: deployment.runtimeIdentities,
+  qualifiedRoutes: localDeployment.routes,
+  canaryLaunchRequest: plan.launch.request,
   activationProposal: { ...plan.activation, descriptionHash, proposalId: proposalId.toString() },
   constraints: {
     stockRouteInputWei: plan.routeInputs.stockRoundTripInputWei,
@@ -161,6 +175,7 @@ const manifest = {
     routeWorkingCapitalWei: ROUTE_WORKING_CAPITAL_WEI.toString(),
     measuredGas: measuredGas.toString(),
     sampledGasPriceWei: liveGasPrice.toString(),
+    maxFeePerGasWei: liveGasPrice.toString(),
     gasAllowanceWei: gasAllowance.toString(),
     requiredBalanceWei: requiredBalance.toString(),
     projectedMarginWei: (balance - requiredBalance).toString(),

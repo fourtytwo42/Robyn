@@ -698,7 +698,7 @@ try {
     assets: [external.weth],
     weights: [10_000],
     metadataUri: "ipfs://bafkreif2akiscaildcwr6zeux4w6i2s5kmibuf6j4jvcrbozme2q",
-    userSalt: keccak256(stringToHex(`schema16-mainnet-canary:${forkBlock}:${RELEASE_SHA}`)),
+    userSalt: keccak256(stringToHex(`schema16-mainnet-canary:production:${RELEASE_SHA}`)),
     expectedGraduationProfileVersion: profileVersion,
   };
   const predicted = await read(coordinator.address, coordinator.abi, "predictLaunchAddresses", [deployer, request]);
@@ -759,6 +759,8 @@ try {
   const directSellQuote = await read(external.quoter, quoterAbi, "quoteExactInputSingle", [{ poolKey, zeroForOne: false, exactAmount: directTokens, hookData: "0x" }]);
   const directSell = encodeUniversalV4SingleSwap({ poolKey, zeroForOne: false, amount: directTokens, limit: (directSellQuote[0] * 99n) / 100n, refundRecipient: deployer });
   await write("post-graduation-trades", "universal-router-direct-sell", external.universalRouter, universalAbi, "execute", [directSell.commands, directSell.inputs, await deadline()]);
+  await write("post-graduation-trades", "universal-permit2-router-clear", external.permit2, permit2Abi, "approve", [tokenAddress, external.universalRouter, 0n, 0n]);
+  await write("post-graduation-trades", "universal-token-permit2-clear", tokenAddress, tokenBalanceAbi, "approve", [external.permit2, 0n]);
 
   const pendingNative = await read(hook.address, hook.abi, "pendingNativeFees", [tokenAddress]);
   if (pendingNative > 0n) await write("fee-settlement", "settle-hook-native", hook.address, hook.abi, "settleNativeFees", [tokenAddress, pendingNative]);
@@ -845,6 +847,7 @@ try {
   const finalLocked = await read(external.positionManager, positionManagerAbi, "getPositionLiquidity", [tokenId]);
   if (finalLocked !== lockedPrincipal) throw new Error("locked principal changed");
   if ((await read(tokenAddress, tokenBalanceAbi, "totalSupply")) !== 1_000_000_000n * 10n ** 18n) throw new Error("launch supply drifted");
+  if ((await read(tokenAddress, tokenBalanceAbi, "allowance", [deployer, market.address])) !== 0n || (await read(tokenAddress, tokenBalanceAbi, "allowance", [deployer, external.permit2])) !== 0n) throw new Error("canary left a residual allowance");
   if ((await read(dao.address, dao.abi, "totalSupply")) !== 1_000_000_000n * 10n ** 18n) throw new Error("RDAO supply drifted");
   const liabilities = await read(feeRouter.address, feeRouter.abi, "totalNativeLiabilities");
   const routerBalance = await publicClient.getBalance({ address: feeRouter.address });
@@ -957,6 +960,7 @@ try {
       targetGraduationNativeWei: "10000000000000000",
       maximumCurvePurchaseWei: "1000000000000000",
       bondingSpendWei: bondingSpend.toString(),
+      request,
     },
     unwind: {
       minimumOutputBps: 9900,
