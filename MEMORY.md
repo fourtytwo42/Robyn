@@ -4,6 +4,17 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Last verified 2026-08-01: mainnet RPC `192.168.50.173:8547` remains
+  synchronized and has had no service restart or watchdog action since the
+  controlled 2026-07-30 hardening restart. Testnet
+  `192.168.50.117:8547` entered a sequencer-feed stall at
+  `2026-08-01T20:35:57Z`; its head remained canonical but stopped advancing.
+  The watchdog restarted Nitro at `20:47:35Z`, producing about 47 seconds of
+  HTTP unavailability and rapid partial catch-up, but the feed stalled again.
+  At `20:53:49Z`, testnet was syncing 1,336 blocks behind and the Robyn RPC
+  gateway correctly marked LAN unhealthy, but operator policy still had paid
+  fallback traffic disabled. Treat this as an active upstream testnet-feed
+  incident until `eth_syncing=false` and lag is back within 10 blocks.
 - Last verified 2026-07-30: both LAN Robinhood RPC nodes are synchronized and
   hardened against sequencer-feed hash incidents. Testnet
   `192.168.50.117:8547` and mainnet `192.168.50.173:8547` run Nitro with
@@ -1345,6 +1356,29 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Complete desktop/mobile Codex in-app-browser acceptance when the listed IAB backend returns a bindable session. The browser runtime failure is tooling-side and is not counted as a passed UI gate.
 
 ## Current State
+
+### 2026-08-01 - RPC availability review and active testnet feed stall
+
+- Context: live status and historical availability were reviewed from the
+  July 30 hardening checkpoint through August 1.
+- Result: mainnet stayed active from `2026-07-30T16:55:08Z` with zero service
+  restarts, zero watchdog actions, `eth_syncing=false`, zero current lag, and
+  canonical hash agreement. Its feed experienced brief reconnects and one
+  `2026-07-30T22:38:52Z` to `22:49:04Z` block-log gap during clustered feed
+  EOFs, but no process downtime; exact historical head lag is unavailable.
+  Testnet had earlier self-recovering lag windows at `01:32Z` (max 345
+  blocks), `16:17Z` (max 349), and `18:00Z` (max 144), followed by the active
+  `20:35Z` feed stall. The watchdog restart at `20:47:35Z` restored HTTP at
+  `20:48:22Z`, caught up most of the backlog, then the node stalled again.
+- Monitoring gap: Prometheus retains useful Robyn gateway time series for
+  testnet, but the Nitro scrape configuration is stale: it has no testnet
+  Nitro target and the `robinhood-mainnet-nitro` job still points to obsolete
+  `192.168.50.117:16071` instead of the mainnet host. Therefore exact mainnet
+  uptime and historical lag percentages cannot be claimed from Prometheus;
+  current conclusions use systemd, Nitro, watchdog, and gateway evidence.
+- Follow-up: diagnose or bypass the silent testnet sequencer-feed connection,
+  decide whether to authorize temporary Alchemy fallback during LAN
+  degradation, and correct Prometheus targets for both current nodes.
 
 ### 2026-07-30 - Canonical-safe RPC watchdog hardening
 
