@@ -88,7 +88,7 @@ try {
 } catch {
   throw new Error("qualified Schema-18 contract sources changed after Testnet");
 }
-await mkdir(outputRoot, { recursive: false, mode: 0o700 });
+await mkdir(outputRoot, { recursive: true, mode: 0o700 });
 const metadata = {
   schemaVersion: 18,
   contractReleaseSha: SCHEMA18_CONTRACT_SHA,
