@@ -27,6 +27,7 @@ function requireUint(value, label, { positive = false } = {}) {
 }
 
 export function validateMainnetReceiptLedger(evidence, expected = {}) {
+  const requiredPhases = expected.requiredPhases ?? REQUIRED_MAINNET_RECEIPT_PHASES;
   if (Number(evidence?.chainId) !== 4663) {
     throw new Error("receipt ledger must be for Robinhood Mainnet chain 4663");
   }
@@ -100,7 +101,7 @@ export function validateMainnetReceiptLedger(evidence, expected = {}) {
     }
     hashes.add(hash);
     const phase = String(transaction?.phase ?? "");
-    if (!REQUIRED_MAINNET_RECEIPT_PHASES.includes(phase)) {
+    if (!requiredPhases.includes(phase)) {
       throw new Error(`transaction ${key} has an invalid phase`);
     }
     phases.add(phase);
@@ -140,7 +141,7 @@ export function validateMainnetReceiptLedger(evidence, expected = {}) {
       );
     }
   }
-  const missing = REQUIRED_MAINNET_RECEIPT_PHASES.filter(
+  const missing = requiredPhases.filter(
     (phase) => !phases.has(phase),
   );
   if (missing.length > 0) {

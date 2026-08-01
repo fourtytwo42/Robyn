@@ -1,5 +1,30 @@
 # Project Memory
 
+### 2026-08-01 - Controlled Mainnet canary exact-state rehearsal passes
+
+- Context: Schema-16 remains fully deployed and Paused on Robinhood Mainnet;
+  the owner requested a separately authorized controlled canary while keeping
+  the public application disabled.
+- Decision: The canary excludes the later `6 ETH / 0.5 ETH` production-profile
+  proposal. After the unwind and final settlements, the 1-of-1 Safe guardian
+  immediately pauses launches and both conversion systems and disables every
+  canary route. Alchemy remains comparison-probe-only with no application
+  fallback.
+- Files: `scripts/run-schema16-mainnet-canary.mjs`,
+  `scripts/prepare-schema16-mainnet-canary.mjs`, and
+  `scripts/lib/mainnet-receipt-ledger.mjs`.
+- Commands/tests: A fresh local-fork broadcast rehearsal from the actual live
+  Paused deployment at block `24711242` completed 72/72 transactions, all
+  required route and lifecycle checks, exact guardian shutdown, and 78.20%
+  capital recovery. Receipt-ledger focused tests pass 5/5.
+- Result: No Mainnet transaction was submitted. The rehearsal evidence is
+  protected under
+  `/home/hendo420/robyn-evidence/schema16-mainnet-go/fork/a8d54bb1-broadcast-20260801T031958739Z/`.
+- Follow-up: Commit and push the operational tooling, seal the exact canary
+  manifest from that clean pushed SHA, refresh funding/RPC evidence, and request
+  explicit authorization before submitting the governance proposal. Public
+  mode and application writes remain unauthorized.
+
 ### 2026-08-01 - LAN-only RPC traffic with owner-authorized Alchemy selection
 
 - Decision: LAN RPC is the only active Testnet and Mainnet application
@@ -2316,6 +2341,17 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+
+- 2026-08-01: Controlled Schema-16 Mainnet canary preparation is at the final
+  manifest gate. A fresh exact-state chain-4663 Anvil rehearsal forked the
+  fully deployed live Paused stack at block `24711242`; 72/72 local receipts,
+  five stock routes plus WETH, one-hour claims, fee settlement, bounded unwind,
+  78.20% recovery, and immediate Safe guardian shutdown all passed. No Mainnet
+  transaction was submitted. Commit/push the operational tooling, run the
+  manifest sealer from that exact clean pushed SHA, then request explicit
+  authorization for the sealed activation proposal. The later production
+  profile, Public mode, application writes, and any additional bridge remain
+  separately unauthorized.
 
 - 2026-08-01: Schema-16 is deployed and independently verified on Robinhood
   Mainnet in the strictly Paused state authorized by the owner. The canonical

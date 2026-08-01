@@ -54,6 +54,19 @@ test("accepts an exact complete local-fork receipt ledger", () => {
   });
 });
 
+test("accepts an explicitly scoped postdeployment canary ledger", () => {
+  const evidence = ledger();
+  const requiredPhases = ["canary-activation", "canary-launch"];
+  evidence.transactions = evidence.transactions.filter((transaction) =>
+    requiredPhases.includes(transaction.phase),
+  );
+  assert.deepEqual(validateMainnetReceiptLedger(evidence, { requiredPhases }), {
+    transactionCount: 2,
+    phaseCount: 2,
+    runtimeIdentityCount: 1,
+  });
+});
+
 test("rejects wrong chain, release, and production configuration identities", () => {
   const wrongChain = ledger();
   wrongChain.chainId = 46630;
