@@ -246,7 +246,29 @@ const run = async () => {
     return;
   }
   if (stage === "claims") { if (!state.streamStartedAt || await latestTime() < BigInt(state.streamStartedAt) + 3_600n) throw new Error("one-hour reward release is not complete"); await write("reward-claims", "holder", token, tokenAbi, "claimAll"); await write("reward-claims", "creator", contracts.feeRouter, built.feeRouter.abi, "claimCreatorFees", [token]); await write("reward-claims", "dao", contracts.daoToken, built.dao.abi, "claimRewards"); await mark("claims"); return; }
-  if (stage === "unwind") { if (!state.completedStages.includes("claims")) throw new Error("unwind requires completed claims"); const balance = await read(token, tokenAbi, "balanceOf", [account.address]); const quote = await read(market, marketAbi, "quoteSell", [balance]); await write("canary-unwind", "approve", token, tokenAbi, "approve", [market, balance]); const receipt = await write("canary-unwind", "sale", market, marketAbi, "sell", [balance, quote[1] * 99n / 100n]); const before = await client.getBalance({ address: account.address, blockNumber: receipt.blockNumber - 1n }); const after = await client.getBalance({ address: account.address, blockNumber: receipt.blockNumber }); const recovered = BigInt(state.roundTripRecoveredWei) + after - before + receipt.gasUsed * receipt.effectiveGasPrice; const recoveryBps = recovered * 10_000n / BigInt(manifest.funding.canaryPrincipalWei); if (recoveryBps < BigInt(manifest.constraints.minimumRecoveryBps)) throw new Error(`recovery ${recoveryBps} bps is below the sealed minimum`); if ((await read(token, tokenAbi, "allowance", [account.address, market])) !== 0n) throw new Error("unwind allowance remained"); await settleFees("post-unwind-settlement"); await mark("unwind", { recoveredWei: recovered.toString(), recoveryBps: recoveryBps.toString() }); await shutdown(); return; }
+  if (stage === "unwind") {
+    if (!state.completedStages.includes("claims")) throw new Error("unwind requires completed claims");
+    if (!state.unwindSaleConfirmed) {
+      const balance = await read(token, tokenAbi, "balanceOf", [account.address]);
+      const quote = await read(market, marketAbi, "quoteSell", [balance]);
+      await write("canary-unwind", "approve", token, tokenAbi, "approve", [market, balance]);
+      const receipt = await write("canary-unwind", "sale", market, marketAbi, "sell", [balance, quote[1] * 99n / 100n]);
+      const before = await client.getBalance({ address: account.address, blockNumber: receipt.blockNumber - 1n });
+      const after = await client.getBalance({ address: account.address, blockNumber: receipt.blockNumber });
+      const recovered = BigInt(state.roundTripRecoveredWei) + after - before + receipt.gasUsed * receipt.effectiveGasPrice;
+      const recoveryBps = recovered * 10_000n / BigInt(manifest.funding.canaryPrincipalWei);
+      if (recoveryBps < BigInt(manifest.constraints.minimumRecoveryBps)) throw new Error(`recovery ${recoveryBps} bps is below the sealed minimum`);
+      if ((await read(token, tokenAbi, "allowance", [account.address, market])) !== 0n) throw new Error("unwind allowance remained");
+      Object.assign(state, { unwindSaleConfirmed: true, unwindSaleAt: (await latestTime()).toString(), recoveredWei: recovered.toString(), recoveryBps: recoveryBps.toString() });
+      await saveState();
+    }
+    const readyAt = BigInt(state.unwindSaleAt) + 301n;
+    if (await latestTime() < readyAt) { process.stdout.write(`${json({ stage, status: "waiting-for-post-unwind-stabilization", readyAt })}\n`); return; }
+    await settleFees("post-unwind-settlement");
+    await mark("unwind");
+    await shutdown();
+    return;
+  }
   if (stage === "reconcile") { if (!(await verifyPaused())) throw new Error("reconciliation requires Paused state"); const positionAbi = parseAbi(["function getPositionLiquidity(uint256 tokenId) view returns (uint128)"]); const tokenId = await read(locker, lockerAbi, "positionTokenId"); const locked = await read(external.positionManager, positionAbi, "getPositionLiquidity", [tokenId]); if (locked !== BigInt(state.lockedPrincipal)) throw new Error("locked principal changed"); if ((await read(token, tokenAbi, "totalSupply")) !== 1_000_000_000n * 10n ** 18n || (await read(contracts.daoToken, built.dao.abi, "totalSupply")) !== 1_000_000_000n * 10n ** 18n) throw new Error("fixed supply changed"); if ((await read(token, tokenAbi, "allowance", [account.address, market])) !== 0n || (await read(token, tokenAbi, "allowance", [account.address, external.permit2])) !== 0n) throw new Error("canary left a residual ERC-20 allowance"); const liabilities = await read(contracts.feeRouter, built.feeRouter.abi, "totalNativeLiabilities"); if (liabilities !== await client.getBalance({ address: contracts.feeRouter })) throw new Error("fee router is not exactly solvent"); const accountState = await read(contracts.feeRouter, built.feeRouter.abi, "launchAccount", [token]); if ((await read(contracts.feeRouter, built.feeRouter.abi, "totalBasketNative")) + accountState.cumulativeCreatorNative + (await read(contracts.feeRouter, built.feeRouter.abi, "totalDaoNativeRewards")) + (await read(contracts.feeRouter, built.feeRouter.abi, "totalTreasuryNative")) !== accountState.cumulativeNativeFees) throw new Error("50/25/20/5 conservation failed"); await mark("reconcile", { reconciledAt: new Date().toISOString(), finalBalanceWei: (await client.getBalance({ address: account.address })).toString() }); return; }
 };
 
