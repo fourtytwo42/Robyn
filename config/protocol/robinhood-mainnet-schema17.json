@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 17,
+  "chainId": 4663,
+  "baseProductionConfiguration": "config/protocol/robinhood-mainnet-rehearsal.json",
+  "routeSupportPolicy": "config/protocol/robinhood-mainnet-support-policy.json",
+  "archivedDeploymentSchema": 16,
+  "reuseExistingSafe": true,
+  "governance": {
+    "bootstrapWindowSeconds": 172800,
+    "votingDelaySeconds": 3600,
+    "votingPeriodSeconds": 14400,
+    "timelockSeconds": 3600,
+    "proposalThresholdBps": 100,
+    "quorumBps": 1000,
+    "unanimousVotingBypass": true,
+    "unanimousTimelockBypass": false
+  },
+  "bootstrap": {
+    "stepCount": 2,
+    "nativeValueAllowed": false,
+    "arbitraryCallsAllowed": false,
+    "finalizeOnFirstDistribution": true,
+    "reactivationAllowed": false
+  },
+  "requiredSymbols": ["GOOGL", "MSFT", "NVDA", "SPCX", "SPY", "WETH"],
+  "initialState": {
+    "launchMode": "Paused",
+    "assetConversionsPaused": true,
+    "feeConversionsPaused": true,
+    "applicationWritesEnabled": false
+  }
+}

@@ -304,6 +304,46 @@ contract Schema17BootstrapGovernanceTest is Test {
         assertEq(timelock.getMinDelay(), 2 hours);
     }
 
+    function testFuzzChangedBootstrapPayloadNeverExecutes(uint256 changedValue) external {
+        vm.assume(changedValue != 1);
+        bytes[] memory changedPayloads = new bytes[](1);
+        changedPayloads[0] = abi.encodeCall(Schema17GovernedTarget.setValue, (changedValue));
+        bytes32 expectedPlan = timelock.bootstrapPlanHash(0);
+        bytes32 suppliedPlan =
+            timelock.hashBootstrapStep(0, step0Targets, step0Values, changedPayloads);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RobynBootstrapTimelock.BootstrapPlanMismatch.selector, expectedPlan, suppliedPlan
+            )
+        );
+        timelock.executeBootstrapStep(0, step0Targets, step0Values, changedPayloads);
+        assertEq(target.value(), 0);
+        assertEq(timelock.nextBootstrapStep(), 0);
+    }
+
+    function testFuzzFirstDistributionAlwaysFinalizes(uint256 amount) external {
+        amount = bound(amount, 1, token.totalSupply());
+        token.transfer(RECIPIENT, amount);
+        assertTrue(timelock.bootstrapFinalized());
+        assertEq(timelock.bootstrapFinalizationReason(), timelock.REASON_RDAO_DISTRIBUTED());
+        assertFalse(timelock.bootstrapActive());
+    }
+
+    function testFuzzUnanimousPathRejectsAnyMissingPriorVote(uint256 missing) external {
+        missing = bound(missing, 1, token.totalSupply());
+        timelock.finalizeBootstrap();
+        token.delegate(address(this));
+        token.transfer(RECIPIENT, missing);
+        vm.warp(block.timestamp + 2);
+        vm.expectRevert(RobynGovernorV2.UnanimousOwnershipRequired.selector);
+        governor.scheduleUnanimous(
+            step0Targets,
+            step0Values,
+            step0Payloads,
+            keccak256(abi.encode("missing prior votes", missing))
+        );
+    }
+
     function _newToken() private returns (RobynDaoTokenV2 created) {
         address[] memory recipients = new address[](1);
         recipients[0] = address(this);

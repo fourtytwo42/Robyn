@@ -172,7 +172,10 @@ export function buildSchema17GovernanceManifest(input) {
   };
 }
 
-export function validateSchema17GovernanceManifest(manifest) {
+export function validateSchema17GovernanceManifest(
+  manifest,
+  { requireUnauthorized = true } = {},
+) {
   const rebuilt = buildSchema17GovernanceManifest({
     ...manifest,
     bootstrap: {
@@ -184,9 +187,11 @@ export function validateSchema17GovernanceManifest(manifest) {
     JSON.stringify(rebuilt.governance) === JSON.stringify(manifest.governance),
     "Schema-17 governance settings or bootstrap hashes differ from the canonical derivation",
   );
-  assert(
-    manifest.authorization?.mainnetTransactionsAuthorized === false,
-    "preparation manifest cannot authorize Mainnet transactions",
-  );
+  if (requireUnauthorized) {
+    assert(
+      manifest.authorization?.mainnetTransactionsAuthorized === false,
+      "preparation manifest cannot authorize Mainnet transactions",
+    );
+  }
   return rebuilt;
 }

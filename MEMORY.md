@@ -1,5 +1,36 @@
 # Project Memory
 
+### 2026-08-01 - Schema-17 core, lifecycle, and deployment tooling qualify
+
+- Context: Schema-16 Mainnet remains unused, fully Paused, and archived. No
+  Schema-17 Mainnet transaction is authorized. Schema-17 work continues on
+  `codex/schema17-hour-governance` in the authoritative
+  `/home/hendo420/Robyn-run06-funding` worktree.
+- Decision: The exact two-step bootstrap, irreversible first-distribution
+  cutoff, 1-hour/4-hour/1-hour governance defaults, and prior-checkpoint
+  unanimous-owner Timelock path are retained. The deployment verifier fails
+  closed unless all runtime identities and initial Paused/disabled/zero-state
+  conditions match.
+- Files: `packages/contracts/test/Schema17ProtocolLifecycle.t.sol`,
+  `scripts/lib/schema17-deployment.mjs`,
+  `scripts/lib/schema17-verifier.mjs`,
+  `scripts/verify-schema17-deployment.mjs`, and
+  `config/protocol/robinhood-mainnet-schema17.json`.
+- Commands/tests: The complete Schema-17 lifecycle passes from Paused through
+  exact bootstrap step one, controlled 0.01 ETH graduation, exact step two,
+  6 ETH future profile, Public mode, immutable canary snapshot, and guardian
+  abort. The bootstrap fuzz targets pass 10,000 cases each. Deployment,
+  governance, and verifier tooling tests pass 8/8. Full lint, typecheck, Anvil
+  smoke, repository, economic simulation, and invariant gates pass with 424
+  Foundry tests, zero failures, and one intentional protected-fork skip.
+- Result: Core contract and application exposure commit `5a00505` is pushed.
+  The deployment planner/verifier and full lifecycle harness are ready to be
+  committed after this checkpoint.
+- Follow-up: Run static analysis and reproducible-build checks, commit and push
+  the second checkpoint, then create the exact Schema-17 Testnet deployment and
+  chain-4663 no-broadcast rehearsal tooling. Fresh Testnet deployment and the
+  exact Mainnet manifest remain mandatory before any transaction approval.
+
 ### 2026-08-01 - Schema-17 bootstrap governance implementation begins
 
 - Context: The unused Schema-16 Mainnet deployment remains fully Paused and
