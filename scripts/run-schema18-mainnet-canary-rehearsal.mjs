@@ -4,7 +4,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createPublicClient, http } from "viem";
+import { createPublicClient, http, keccak256 } from "viem";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const required = (name) => { const value=process.env[name]; if (!value) throw new Error(`${name} is required`); return value; };
@@ -25,7 +25,8 @@ if (health.status!=="ok" || health.activeProvider!=="primary" || health.provider
 const forkBlock=await live.getBlockNumber();
 await mkdir(output,{recursive:true,mode:0o700});
 const toolingSha=execFileSync("git",["-C",repoRoot,"rev-parse","HEAD"],{encoding:"utf8"}).trim();
-const manifest={schemaVersion:18,chainId:4663,contractReleaseSha:source.releaseSha,applicationReleaseSha:source.applicationReleaseSha,operationalToolingSha:toolingSha,deployer:source.deployer,guardianSafe:source.guardianSafe,contracts:source.contracts,bootstrap:source.bootstrap,routes:source.routes,runtimeIdentities:gate1.runtimeIdentities,gas:{phaseCeilings:Object.fromEntries(["bootstrap","routes","launch","settle","claims","unwind","post-settle","shutdown"].map((p)=>[p,"30000000"])),maxFeePerGasWei:"1000000000000"},authorization:{additionalBridgeAuthorized:false,bootstrapStepOneAuthorized:false,canaryTransactionsAuthorized:false,publicActivationAuthorized:false,applicationWritesAuthorized:false}};
+const runtimeIdentities=await Promise.all(gate1.runtimeIdentities.map(async (identity)=>{const code=await live.getCode({address:identity.address});if(!code||code==="0x")throw new Error(`missing live runtime ${identity.name}`);return {...identity,qualifiedRuntimeCodeHash:identity.runtimeCodeHash,runtimeCodeHash:keccak256(code)};}));
+const manifest={schemaVersion:18,chainId:4663,contractReleaseSha:source.releaseSha,applicationReleaseSha:source.applicationReleaseSha,operationalToolingSha:toolingSha,deployer:source.deployer,guardianSafe:source.guardianSafe,contracts:source.contracts,bootstrap:source.bootstrap,routes:source.routes,runtimeIdentities,gas:{phaseCeilings:Object.fromEntries(["bootstrap","routes","launch","settle","claims","unwind","post-settle","shutdown"].map((p)=>[p,"30000000"])),maxFeePerGasWei:"1000000000000"},authorization:{additionalBridgeAuthorized:false,bootstrapStepOneAuthorized:false,canaryTransactionsAuthorized:false,publicActivationAuthorized:false,applicationWritesAuthorized:false}};
 const manifestPath=path.join(output,"rehearsal-input-manifest.json"); const raw=`${json(manifest)}\n`; await writeFile(manifestPath,raw,{mode:0o600});
 const env={...process.env,ROBYN_SCHEMA18_MAINNET_CANARY_LOCAL_REHEARSAL:"true",ROBYN_SCHEMA18_MAINNET_CANARY_MANIFEST:manifestPath,ROBYN_SCHEMA18_MAINNET_CANARY_MANIFEST_SHA256:sha256(raw),ROBYN_SCHEMA18_MAINNET_CANARY_EVIDENCE:output,ROBYN_MAINNET_GATEWAY_RPC_URL:anvilRpc};
 const anvil=spawn(path.join(process.env.HOME??"/home/hendo420",".foundry/bin/anvil"),["--fork-url",gateway,"--fork-block-number",forkBlock.toString(),"--chain-id","4663","--port","28618","--silent"],{stdio:["ignore","pipe","pipe"]});

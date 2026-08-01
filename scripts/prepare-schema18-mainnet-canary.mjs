@@ -29,6 +29,7 @@ const toolingSha = git("rev-parse", "HEAD");
 if (toolingSha !== git("rev-parse", "@{upstream}")) throw new Error("tooling must be pushed before sealing");
 const sourceRaw = await readFile(sourcePath, "utf8"); const source = JSON.parse(sourceRaw);
 const gate1Raw = await readFile(gate1Path, "utf8"); const gate1 = JSON.parse(gate1Raw);
+const postdeployment = JSON.parse(await readFile(path.join(path.dirname(gate1Path), "live/postdeployment-verification.json"), "utf8"));
 const stateRaw = await readFile(path.join(rehearsalRoot, "state.json"), "utf8"); const rehearsalState = JSON.parse(stateRaw);
 const journalRaw = await readFile(path.join(rehearsalRoot, "transactions.jsonl"), "utf8");
 const records = journalRaw.trim().split("\n").map(JSON.parse);
@@ -61,7 +62,13 @@ const bootstrapDeadline = BigInt(await read(c.timelock,timelockAbi,"bootstrapDea
 if (!(await read(c.timelock,timelockAbi,"bootstrapActive")) || Number(await read(c.timelock,timelockAbi,"nextBootstrapStep")) !== 0 || bootstrapDeadline < now + 21600n) throw new Error("bootstrap is not Gate-2 ready with six hours remaining");
 if ((await read(c.timelock,timelockAbi,"bootstrapPlanHash",[0])).toLowerCase() !== source.bootstrap.steps[0].planHash.toLowerCase()) throw new Error("immutable bootstrap step one hash changed");
 if (Number(await read(c.atomicLaunchCoordinator,coordinatorAbi,"launchMode")) !== 0 || !(await read(c.assetRouter,assetAbi,"conversionsPaused")) || !(await read(c.protocolFeeRouter,feeAbi,"paused")) || (await read(c.protocolFeeRouter,feeAbi,"totalNativeLiabilities")) !== 0n) throw new Error("Mainnet is not zero-liability Paused");
-for (const identity of gate1.runtimeIdentities) { const code = await client.getCode({address:getAddress(identity.address)}); if (!code || keccak256(code).toLowerCase() !== identity.runtimeCodeHash.toLowerCase()) throw new Error(`${identity.name} runtime changed`); }
+const runtimeIdentities=[];
+for (const identity of gate1.runtimeIdentities) {
+  const code = await client.getCode({address:getAddress(identity.address)}); const actual = code && code !== "0x" ? keccak256(code).toLowerCase() : "0x";
+  const expected = identity.name === "timelock" ? postdeployment.timelock.rawLiveHash.toLowerCase() : identity.runtimeCodeHash.toLowerCase();
+  if (actual !== expected) throw new Error(`${identity.name} runtime changed`);
+  runtimeIdentities.push({...identity,qualifiedRuntimeCodeHash:identity.runtimeCodeHash,runtimeCodeHash:actual});
+}
 const fees = await client.estimateFeesPerGas(); const sampledMaxFee = fees.maxFeePerGas ?? fees.gasPrice; const maxFeePerGas = (sampledMaxFee * 3n + 1n) / 2n;
 const measuredGas = receipts.reduce((sum, receipt) => sum + BigInt(receipt.gasUsed), 0n);
 const gasAllowance = (measuredGas * maxFeePerGas * 3n + 1n) / 2n;
@@ -70,7 +77,7 @@ const requiredBalance = RESERVE + PRINCIPAL + ROUTE_CAPITAL + gasAllowance;
 if (balance < requiredBalance) throw new Error(`Gate 2 funding shortfall ${requiredBalance-balance} wei`);
 const manifest = {
   schemaVersion:18, chainId:CHAIN_ID, generatedAt:new Date().toISOString(), contractReleaseSha:CONTRACT_SHA, applicationReleaseSha:APP_SHA, operationalToolingSha:toolingSha,
-  deployer:getAddress(source.deployer), guardianSafe:getAddress(source.guardianSafe), contracts:source.contracts, bootstrap:source.bootstrap, routes:source.routes, runtimeIdentities:gate1.runtimeIdentities,
+  deployer:getAddress(source.deployer), guardianSafe:getAddress(source.guardianSafe), contracts:source.contracts, bootstrap:source.bootstrap, routes:source.routes, runtimeIdentities,
   sourceGate1:{manifestPath:gate1Path,manifestSha256:sha256(gate1Raw),lifecyclePath:sourcePath,lifecycleSha256:sha256(sourceRaw)},
   rehearsal:{forkBlock:rehearsalState.forkBlock,receiptCount:receipts.length,journalSha256:sha256(journalRaw),stateSha256:sha256(stateRaw),recoveryBps:rehearsalState.recoveryBps},
   rpcPolicy:{applicationAndTransactionUpstream:"lan",lan:"192.168.50.173:8547",alchemyProbeOnly:true,automaticFallback:false,degradedLanDisablesFinancialSubmission:true,gatewayBlock:(await client.getBlockNumber()).toString()},
