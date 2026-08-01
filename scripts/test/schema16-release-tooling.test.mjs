@@ -87,11 +87,17 @@ test("Testnet release pipeline binds the Schema-17 manifest", async () => {
     build,
     /ROBYN_DEPLOYMENT_PATH="\$staging\/\$deployment_manifest"/,
   );
+  assert.match(promote, /old_manifest=""/);
+  assert.match(promote, /pm2_env\.env\.ROBYN_TESTNET_MANIFEST/);
+  assert.match(promote, /start_stack\(\)/);
+  assert.match(promote, /ROBYN_TESTNET_MANIFEST="\$selected_manifest"/);
   assert.match(
     promote,
-    /ROBYN_TESTNET_MANIFEST="\$selected\/deployments\/46630-v4-schema17\.json"/,
+    /start_stack[\s\\\n]+"\$old"[\s\\\n]+"\$\{old_database/,
   );
   assert.match(verify, /\.schemaVersion == 17/);
+  assert.match(verify, /ROBYN_SCHEMA17_RPC_URL="\$server_rpc_url"/);
+  assert.doesNotMatch(verify, /ROBYN_TESTNET_RPC_URL="\$server_rpc_url"/);
   assert.match(verify, /verify-schema17-deployment\.mjs "\$manifest"/);
   assert.match(verify, /fallbackTrafficAuthorized/);
   assert.match(promote, /ROBYN_TESTNET_CREATE_DATABASE/);

@@ -98,7 +98,7 @@ public_observed_head="$(jq -r .observedHeadBlock <<<"$public_status")"
 observed_head_gap=$(( local_observed_head - public_observed_head ))
 [[ "$observed_head_gap" -lt 0 ]] && observed_head_gap=$(( -observed_head_gap ))
 [[ "$observed_head_gap" -le 100 ]]
-ROBYN_TESTNET_RPC_URL="$server_rpc_url" \
+ROBYN_SCHEMA17_RPC_URL="$server_rpc_url" \
   ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS=true \
   node scripts/verify-schema17-deployment.mjs "$manifest" \
   > /tmp/robyn-testnet-deployment-verify.json

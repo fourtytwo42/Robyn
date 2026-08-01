@@ -33,6 +33,7 @@ install -o root -g root -m 0644 \
 
 old=""
 old_database=""
+old_manifest=""
 [[ -L "$current" ]] && old="$(readlink -f "$current")"
 link_atomically() { local next="$2.next.$$"; ln -s "$1" "$next"; mv -Tf "$next" "$2"; }
 as_operator() { runuser -u "$operator" -- env PM2_HOME="$pm2_home" "$@"; }
@@ -40,6 +41,11 @@ if [[ -n "$old" ]]; then
   old_database="$(
     as_operator "$old/node_modules/.bin/pm2" jlist |
       jq -r '.[] | select(.name=="robyn-indexer-testnet") | (.pm2_env.PGDATABASE // .pm2_env.env.PGDATABASE // empty)' |
+      head -n 1
+  )"
+  old_manifest="$(
+    as_operator "$old/node_modules/.bin/pm2" jlist |
+      jq -r '.[] | select(.name=="robyn-indexer-testnet") | (.pm2_env.env.ROBYN_TESTNET_MANIFEST // empty)' |
       head -n 1
   )"
 fi
@@ -96,6 +102,7 @@ prepare_database() {
 start_stack() {
   local selected="$1"
   local selected_database="$2"
+  local selected_manifest="$3"
   local pm2="$selected/node_modules/.bin/pm2"
   for name in robyn-web-testnet robyn-rpc-gateway-testnet robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet robyn-artifacts-testnet; do
     as_operator "$pm2" delete "$name" >/dev/null 2>&1 || true
@@ -113,7 +120,7 @@ start_stack() {
     ROBYN_TESTNET_RPC_ACTIVE_PROVIDER="primary" \
     ROBYN_TESTNET_RPC_FALLBACK_TRAFFIC_AUTHORIZED="false" \
     ROBYN_TESTNET_RELEASE_ROOT="$selected" \
-    ROBYN_TESTNET_MANIFEST="$selected/deployments/46630-v4-schema17.json" \
+    ROBYN_TESTNET_MANIFEST="$selected_manifest" \
     ROBYN_TESTNET_DATABASE="$selected_database" \
     ROBYN_OPERATOR_KEY_FILE="$operator_key" \
     ROBYN_TESTNET_AUTH_ORIGINS="https://testnet.sherwoodforest.trade" \
@@ -124,14 +131,23 @@ start_stack() {
 rollback() {
   if [[ -n "$old" ]]; then
     link_atomically "$old" "$current"
-    start_stack "$old" "${old_database:-robyn_testnet_schema8_abe90dc}"
+    [[ -n "$old_manifest" && -r "$old_manifest" ]] || {
+      echo "cannot safely restore previous release without its recorded manifest: $old_manifest" >&2
+      return 1
+    }
+    start_stack \
+      "$old" \
+      "${old_database:-robyn_testnet_schema8_abe90dc}" \
+      "$old_manifest"
   fi
   as_operator "$target/node_modules/.bin/pm2" save --force
 }
 
 prepare_database
 link_atomically "$target" "$current"
-if ! start_stack "$target" "$database"; then rollback; exit 1; fi
+target_manifest="$target/deployments/46630-v4-schema17.json"
+[[ -r "$target_manifest" ]]
+if ! start_stack "$target" "$database" "$target_manifest"; then rollback; exit 1; fi
 healthy=false
 for _ in $(seq 1 60); do
   if as_operator "$target/scripts/verify-testnet-release.sh" "$current" >/tmp/robyn-testnet-release-verify.json 2>/dev/null; then healthy=true; break; fi

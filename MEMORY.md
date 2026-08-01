@@ -1,5 +1,31 @@
 # Project Memory
 
+### 2026-08-01 - Schema-17 promotion rollback and verifier defects fixed
+
+- Context: The first immutable Schema-17 Testnet application promotion used a
+  fresh isolated database but failed its release verifier. The public stack
+  rolled back; no protocol transaction was submitted and Schema-17 contracts
+  remained fully Paused.
+- Diagnosis: `verify-testnet-release.sh` exported
+  `ROBYN_TESTNET_RPC_URL`, while the Schema-17 verifier reads
+  `ROBYN_SCHEMA17_RPC_URL`; it therefore queried the Mainnet loopback port and
+  correctly rejected the chain. The rollback path also hardcoded the new
+  Schema-17 manifest when restarting the old Schema-16 artifact.
+- Fix: The verifier now passes the protected Testnet loopback gateway through
+  the correct Schema-17 environment variable. Promotion records the prior
+  process manifest and supplies it explicitly to rollback; rollback refuses to
+  proceed when that identity cannot be verified.
+- Commands/tests: The focused release-tooling suite passes 6/6, both shell
+  scripts pass syntax checks, and the corrected rollback restored all seven
+  Schema-16 Testnet processes against
+  `robyn_testnet_schema16_95508008`. The public status returned chain 46630,
+  healthy ingestion/projection, and 28 archived launches.
+- Follow-up: Commit and push the operational correction, rebuild an immutable
+  release, promote into a new unused Schema-17 database, then verify the exact
+  served SHA before any bootstrap lifecycle transaction. Preserve
+  `robyn_testnet_schema17_95844126` as failed-promotion diagnostic state and do
+  not reuse it.
+
 ### 2026-08-01 - Schema-17 Testnet paused deployment completes
 
 - Context: The owner explicitly authorized three corrective Testnet
@@ -2549,6 +2575,14 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-08-01: Schema-17 contracts are fully deployed and Paused on Testnet, but
+  the first application promotion was rejected by a verifier environment-name
+  bug. Public Schema-16 is restored and healthy. The rollback and verifier
+  fixes pass focused tests but are not yet committed. Freeze a new clean
+  operational SHA, rebuild immutably, and promote into a new Schema-17 database;
+  never reuse `robyn_testnet_schema17_95844126`. No Mainnet transaction is
+  authorized.
+
 - 2026-08-01: Controlled Schema-16 Mainnet canary preparation is at the final
   manifest gate. A fresh exact-state chain-4663 Anvil rehearsal forked the
   fully deployed live Paused stack at block `24711242`; 72/72 local receipts,
@@ -4598,6 +4632,16 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-08-01 - Public Testnet restored after failed Schema-17 promotion
+
+- Schema-17 contracts remain Paused with conversions Paused, routes disabled,
+  zero launches, and zero liabilities.
+- Public Testnet currently serves the validated Schema-16 artifact
+  `a8d54bb125d091be0cea010262a68a2baaceda30` from
+  `robyn_testnet_schema16_95508008`; all seven processes are online.
+- The failed Schema-17 application database is preserved for diagnosis and may
+  not be selected as the fresh qualification database.
+
 ### 2026-07-31 - Focused Testnet acceptance complete; no endurance required
 
 - Exact release `a8d54bb125d091be0cea010262a68a2baaceda30` is served on
@@ -6366,6 +6410,13 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-08-01: Schema-17 release `fb7a2a6` built successfully, but promotion was
+  correctly rejected because its deployment verifier reached the wrong
+  loopback chain through an environment-variable mismatch. Traced verification
+  proved the Schema-17 app itself was healthy, Paused, at zero launch/liability
+  state, and using LAN-primary with Alchemy probe-only. Corrected rollback and
+  verifier tooling pass 6/6 focused tests; a new exact release is required.
+
 - 2026-08-01: Exact `a8d54bb` final Mainnet preparation passes reproducibility,
   canonical Safe control/signing, required real-route execution, the complete
   fork lifecycle, 78.20% capital recovery, and fresh LAN/Alchemy equivalence.
@@ -7198,6 +7249,11 @@ When sources conflict, use this order:
 - Follow-up: Build and promote the exact pushed documentation commit, complete automated browser and real-wallet acceptance, then start the ten-hour endurance gate.
 
 ## Open Follow-ups
+
+- Commit and push the Schema-17 release rollback/verifier correction, rerun
+  release gates, build an immutable artifact, and promote it into a new unused
+  Schema-17 database. Verify exact served SHA and Paused zero state before the
+  plan-bound Testnet bootstrap lifecycle.
 
 - Complete the remaining no-broadcast Mainnet prerequisites: protected
   sole-owner bootstrap allocation/Safe inputs, address-control and 1-of-1 Safe
