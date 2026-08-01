@@ -284,7 +284,10 @@ const submit = async ({ client, wallet, chain, chainId, phase, label, to, data, 
     }
   } else {
     if (confirmedNonce !== pendingNonce) throw new Error(`${idempotencyKey} has an unresolved pending nonce`);
-    const fees = await client.estimateFeesPerGas({ type: "eip1559" });
+    const fees =
+      chainId === CHAIN_ID
+        ? { maxFeePerGas: maxFeeCap, maxPriorityFeePerGas: 0n }
+        : await client.estimateFeesPerGas({ type: "eip1559" });
     const maxFeePerGas = fees.maxFeePerGas ?? 0n;
     const maxPriorityFeePerGas = fees.maxPriorityFeePerGas ?? 0n;
     if (maxFeePerGas <= 0n || maxFeePerGas > maxFeeCap) throw new Error(`${idempotencyKey} fee ceiling exceeded`);
