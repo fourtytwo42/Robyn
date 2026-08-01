@@ -2317,6 +2317,20 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-08-01: The authorized canonical Mainnet bridge of exactly
+  `0.032107112992656 ETH` succeeded as Ethereum transaction
+  `0xdf7c5ab957f4b331e43614b75df98f239d1a90bb57b930658dbefc693ba7818b`;
+  exact L2 credit is verified and no second bridge is permitted. The Paused
+  deployment confirmed the canonical Safe, Timelock, and RDAO at nonces 0-2.
+  The Governor transaction at nonce 3 was rejected before node admission;
+  latest and pending nonce remain 3 and its hash is absent. A runner-only
+  remediation now supports partial-balance resume and durably classifies
+  synchronous admission rejection before a fresh attempt. Contract bytecode,
+  calldata, addresses, funding ceilings, and authorization are unchanged.
+  Rehearse, reseal the tooling identity, then resume from nonce 3 without
+  replaying the three confirmed contracts. Canary, routes, conversions,
+  application writes, and Public mode remain unauthorized.
+
 - 2026-08-01: Final `a8d54bb` reproducibility, protected sole-owner Safe,
   current real routes, complete no-broadcast lifecycle, 78.20% unwind, RPC
   equivalence, and provisional bridge estimate pass. Funding certification is

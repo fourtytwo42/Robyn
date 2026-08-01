@@ -206,7 +206,7 @@ const receiptDigest = (receipt) =>
 
 const phaseUsage = new Map();
 const submit = async ({ client, wallet, chain, chainId, phase, label, to, data, value = 0n, maxFeeCap, phaseGasCap }) => {
-  const idempotencyKey = `schema16-live:${phase}:${label}`;
+  const logicalKey = `schema16-live:${phase}:${label}`;
   if (chainId === CHAIN_ID && ["deployment", "bindings"].includes(phase)) {
     const rehearsed = rehearsedTransactions.get(label);
     if (
@@ -215,16 +215,20 @@ const submit = async ({ client, wallet, chain, chainId, phase, label, to, data, 
       rehearsed.calldataHash.toLowerCase() !== keccak256(data).toLowerCase() ||
       rehearsed.valueWei !== value.toString()
     ) {
-      throw new Error(`${idempotencyKey} differs from the sealed local-fork transaction`);
+      throw new Error(`${logicalKey} differs from the sealed local-fork transaction`);
     }
   }
   const records = await loadJournal();
-  const priorIntent = records.find((record) => record.type === "intent" && record.idempotencyKey === idempotencyKey);
-  const priorReceipt = records.find((record) => record.type === "receipt" && record.idempotencyKey === idempotencyKey);
+  const matching = records.filter((record) => record.logicalKey === logicalKey || record.idempotencyKey === logicalKey || record.idempotencyKey?.startsWith(`${logicalKey}:attempt-`));
+  const priorReceipt = matching.find((record) => record.type === "receipt");
+  const rejectedKeys = new Set(matching.filter((record) => record.type === "submission-rejected").map((record) => record.idempotencyKey));
+  const intents = matching.filter((record) => record.type === "intent");
+  const priorIntent = intents.findLast((record) => !rejectedKeys.has(record.idempotencyKey));
+  const idempotencyKey = priorIntent?.idempotencyKey ?? (intents.length === 0 ? logicalKey : `${logicalKey}:attempt-${intents.length + 1}`);
   if (priorReceipt) {
     const receipt = await client.getTransactionReceipt({ hash: priorReceipt.transactionHash });
     if (receipt.status !== "success" || receiptDigest(receipt) !== priorReceipt.receiptDigest) {
-      throw new Error(`${idempotencyKey} receipt reconciliation failed`);
+      throw new Error(`${logicalKey} receipt reconciliation failed`);
     }
     phaseUsage.set(phase, (phaseUsage.get(phase) ?? 0n) + receipt.gasUsed);
     return receipt;
@@ -310,16 +314,56 @@ const submit = async ({ client, wallet, chain, chainId, phase, label, to, data, 
     }
     serialized = await wallet.signTransaction(request);
     transactionHash = keccak256(serialized);
-    await appendJournal({ type: "intent", recordedAt: new Date().toISOString(), idempotencyKey, phase, label, chainId, nonce: String(confirmedNonce), to: to ?? null, valueWei: value.toString(), calldataHash: keccak256(data), gasEstimate: estimate.toString(), gasLimit: gas.toString(), maxFeePerGasWei: maxFeePerGas.toString(), maxPriorityFeePerGasWei: maxPriorityFeePerGas.toString(), transactionHash });
+    await appendJournal({ type: "intent", recordedAt: new Date().toISOString(), logicalKey, idempotencyKey, phase, label, chainId, nonce: String(confirmedNonce), to: to ?? null, valueWei: value.toString(), calldataHash: keccak256(data), gasEstimate: estimate.toString(), gasLimit: gas.toString(), maxFeePerGasWei: maxFeePerGas.toString(), maxPriorityFeePerGasWei: maxPriorityFeePerGas.toString(), transactionHash });
   }
-  const published = await client.sendRawTransaction({ serializedTransaction: serialized });
+  let published;
+  try {
+    published = await client.sendRawTransaction({ serializedTransaction: serialized });
+  } catch (error) {
+    try {
+      const receipt = await client.getTransactionReceipt({ hash: transactionHash });
+      if (receipt.status !== "success") throw new Error(`${logicalKey} reverted`);
+      await appendJournal({ type: "receipt", recordedAt: new Date().toISOString(), logicalKey, idempotencyKey, phase, label, chainId, transactionHash, blockNumber: receipt.blockNumber.toString(), status: receipt.status, gasUsed: receipt.gasUsed.toString(), effectiveGasPriceWei: receipt.effectiveGasPrice.toString(), contractAddress: receipt.contractAddress, receiptDigest: receiptDigest(receipt) });
+      phaseUsage.set(phase, (phaseUsage.get(phase) ?? 0n) + receipt.gasUsed);
+      return receipt;
+    } catch (receiptError) {
+      if (!String(receiptError).toLowerCase().includes("not found")) throw receiptError;
+    }
+    try {
+      await client.getTransaction({ hash: transactionHash });
+      throw new Error(`${logicalKey} submission response failed but the transaction exists; manual reconciliation required`);
+    } catch (transactionError) {
+      if (!String(transactionError).toLowerCase().includes("not found")) throw transactionError;
+    }
+    const [latestAfter, pendingAfter] = await Promise.all([
+      client.getTransactionCount({ address: account.address, blockTag: "latest" }),
+      client.getTransactionCount({ address: account.address, blockTag: "pending" }),
+    ]);
+    if (latestAfter !== request.nonce || pendingAfter !== request.nonce) {
+      throw new Error(`${logicalKey} submission failed with changed nonce state; manual reconciliation required`);
+    }
+    await appendJournal({
+      type: "submission-rejected",
+      recordedAt: new Date().toISOString(),
+      logicalKey,
+      idempotencyKey,
+      phase,
+      label,
+      chainId,
+      nonce: String(request.nonce),
+      transactionHash,
+      errorName: error?.name ?? "Error",
+      errorMessage: String(error?.shortMessage ?? error?.message ?? error).slice(0, 500),
+    });
+    throw new Error(`${logicalKey} was rejected before admission; nonce and hash absence were verified`);
+  }
   if (published !== transactionHash) throw new Error(`${idempotencyKey} RPC returned a different transaction hash`);
   const receipt = await client.waitForTransactionReceipt({ hash: transactionHash, confirmations: chainId === 1 ? 2 : 1, timeout: chainId === 1 ? 600_000 : 180_000 });
   if (receipt.status !== "success") throw new Error(`${idempotencyKey} reverted`);
   const usage = (phaseUsage.get(phase) ?? 0n) + receipt.gasUsed;
   if (usage > phaseGasCap) throw new Error(`${idempotencyKey} confirmed beyond the phase gas ceiling`);
   phaseUsage.set(phase, usage);
-  await appendJournal({ type: "receipt", recordedAt: new Date().toISOString(), idempotencyKey, phase, label, chainId, transactionHash, blockNumber: receipt.blockNumber.toString(), status: receipt.status, gasUsed: receipt.gasUsed.toString(), effectiveGasPriceWei: receipt.effectiveGasPrice.toString(), contractAddress: receipt.contractAddress, receiptDigest: receiptDigest(receipt) });
+  await appendJournal({ type: "receipt", recordedAt: new Date().toISOString(), logicalKey, idempotencyKey, phase, label, chainId, transactionHash, blockNumber: receipt.blockNumber.toString(), status: receipt.status, gasUsed: receipt.gasUsed.toString(), effectiveGasPriceWei: receipt.effectiveGasPrice.toString(), contractAddress: receipt.contractAddress, receiptDigest: receiptDigest(receipt) });
   return receipt;
 };
 
@@ -462,9 +506,9 @@ if (localRehearsal) {
   const bridgeResult = JSON.parse(await readFile(path.join(evidenceRoot, "bridge-result.json"), "utf8"));
   if (bridgeResult.status !== "passed" || BigInt(bridgeResult.bridgeAmountWei) !== BRIDGE_AMOUNT_WEI) throw new Error("verified bridge result is required before deployment");
 }
-if ((await l2.getBalance({ address: account.address })) < BRIDGE_AMOUNT_WEI) throw new Error("bridged L2 funds are not available");
 const journal = await loadJournal();
 const hasDeploymentReceipts = journal.some((record) => record.type === "receipt" && record.phase === "deployment");
+if (!hasDeploymentReceipts && (await l2.getBalance({ address: account.address })) < BRIDGE_AMOUNT_WEI) throw new Error("bridged L2 funds are not available");
 const startingNonce = await l2.getTransactionCount({ address: account.address, blockTag: "latest" });
 if (!hasDeploymentReceipts && startingNonce !== 0) throw new Error("fresh Paused deployment requires L2 deployer nonce zero");
 if (!hasDeploymentReceipts) {
