@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-02 - Gate-2 claims and unwind pass; post-settlement stops safely
+
+- Live result: Holder, creator, and DAO claims each confirmed once after the real reward hour. The bounded full canary unwind recovered 78.99 percent and left the project wallet at 0.028492844074667526 ETH, above the fixed 0.02 ETH reserve.
+- Failure: Immediate post-unwind token-fee conversion reverted during gas estimation with SpotTwapDeviation(23876). No post-settlement transaction was signed or submitted. The runner omitted the planned five-minute post-unwind oracle stabilization wait.
+- Safety: Automatic Safe shutdown completed. Launch mode and both conversion systems are Paused, all six routes are disabled, application writes remain disabled, LAN is the sole active RPC, Alchemy fallback remains unauthorized, and the consumed manifest 101e547d00722a32690f20c39b2feb3ffad4c14028e934848c4f9ebc32593802 must never be reused.
+- Evidence: The failed-safe bundle is sealed at /home/hendo420/robyn-evidence/schema18-mainnet-postgrad/live-366cb1d-101e547-01; SHA256SUMS hash e62f5e27a77e76eac6c578e31d9547608223c18d40d6bd01fef3ce59365d2022.
+- Follow-up: Prepare an exact-state, non-broadcast recovery that enforces oracle-readiness as a read-only gate, schedules one unanimous reactivation, completes only the remaining final settlement, guardian shutdown, and reconciliation, and seals a new manifest before any further Mainnet broadcast. Gate 3 and application writes remain unauthorized.
+
 ### 2026-08-02 - Schema-18 scoped indexer qualified for Mainnet read-only rebuild
 
 - Context: The stopped broad Mainnet indexer retained 9,420,034 logs in a 733,117,463-byte partial database while indexing global WETH, PoolManager, Permit2, and PositionManager activity. Mainnet application writes remain disabled and the Mainnet indexer remains stopped.
