@@ -2873,6 +2873,15 @@ Durable project context lives here. Update this file whenever information should
   the next gate.
 ## Active Handoff
 
+- 2026-08-01: Schema-18 Gate 2 exact-state Mainnet recovery is authorized under
+  manifest SHA `f59b49d96d8b9eee8d84b01b37718d36b16aa22f4f8fc550e1b9d9f9a75eaf29`.
+  The unanimous reactivation schedule confirmed once as transaction
+  `0x41458fe85cb605409f0d8f5edd5418a1ce52940d1ddfdb2f2ebb6d8e85894a47` and
+  becomes executable at `2026-08-02T01:23:32Z`. Mainnet remains guardian-Paused,
+  routes and conversions remain disabled, the LAN gateway is healthy with
+  fallback unauthorized, and application writes remain disabled. Continue only
+  from the restart-safe journal; never execute early or replay the schedule.
+
 - 2026-08-01: Schema-18 remains fully deployed and guardian-Paused on Robinhood Mainnet after the authorized Gate-2 attempt stopped before launch signing. Bootstrap step one and six route round trips confirmed, then all routes and conversions were disabled through Safe shutdown. Bootstrap remains unfinalized at next step 1; no canary launch exists. Prepare, rehearse, and seal the owner-finalization plus unanimous one-hour-Timelock recovery manifest, then stop for exact authorization before any further Mainnet broadcast.
 
 
@@ -4935,6 +4944,21 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-08-01 - Schema-18 Gate 2 recovery is Timelock-scheduled
+
+- The exact recovery manifest is authorized and its unanimous operation is
+  scheduled for `2026-08-02T01:23:32Z`. The schedule receipt is confirmed and
+  unanimous nonce advanced to two.
+- Coordinator, conversions, and all six routes remain guardian-Paused during the
+  Timelock. The incident launch remains at `0.0099 ETH` raised against its
+  immutable `0.01 ETH` threshold and is not graduated.
+- LAN RPC remains the sole application and transaction path. Alchemy is
+  probe-only, automatic fallback is unauthorized, and application writes remain
+  disabled.
+- Gate 2 covers recovery through final guardian shutdown. Additional bridge,
+  production-profile activation, Public mode, and application writes remain
+  outside that authorization.
+
 ### 2026-08-01 - Schema-18 is deployed and Paused on Mainnet
 
 - Fresh Schema-18 governance and protocol contracts are deployed on chain 4663; Schema-16 and Schema-17 remain archived and Paused.
@@ -6727,6 +6751,13 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-08-01: Schema-18 Mainnet contingency documentation was isolated from the
+  exact live Gate-2 worktree on branch `codex/schema18-contingency-playbooks`.
+  The runbook records the five-minute containment sequence, authority limits,
+  severity classification, scenario-specific containment and recovery,
+  communication, reopening gates, and required drills. `git diff --check` and
+  Prettier checks pass. The live `fbfa446` Gate-2 worktree remains clean.
+
 - 2026-08-01: Schema-18 Mainnet gate one passed. The canonical bridge confirmed once, all 35 deployment/binding receipts succeeded, 26 verifier identities and six disabled routes passed, the journal reconciles 36 unique intents to 36 unique successful receipts, the 1-of-1 Safe has no modules, and all new contract native balances are zero. Timelock source equivalence passes after masking compiler-declared immutable slots; the raw hash difference is solely deployment-time immutable data.
 
 
@@ -7570,7 +7601,12 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
-- Obtain explicit owner authorization for the checksum-sealed Schema-18 owner-finalization and unanimous-recovery Canary manifest. Do not finalize bootstrap, schedule or execute reactivation, create a launch, or enable application writes before exact-hash approval.
+- At or after `2026-08-02T01:23:32Z`, revalidate the exact Gate-2 manifest,
+  authorization receipt, journal, LAN gateway, runtime hashes, balance, reserve,
+  nonce, and scheduled operation before executing reactivation. Continue
+  `execute-resume`, `graduate`, `settle`, the real reward-hour wait, `claims`,
+  `unwind`, `post-settle`, `shutdown`, and `reconcile` in order. Never replay a
+  confirmed or ambiguous transaction.
 
 
 - Run the exact Schema-18 chain-4663 no-broadcast Mainnet fork rehearsal through the LAN-only gateway using real GOOGL, MSFT, NVDA, SPCX, SPY, and WETH liquidity. Produce the local-fork receipt ledger, exact bridge/deployment/canary funding calculation, predicted addresses, bootstrap plan hashes, and a new sealed manifest for explicit authorization. Previous Schema-16/17 approvals do not transfer.
