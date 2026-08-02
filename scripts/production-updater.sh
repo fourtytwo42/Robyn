@@ -86,11 +86,15 @@ mv -Tf "${temporary}" /opt/robyn/current
 
 start_release() {
   local root="${1}"
+  local pm2_config=/var/lib/robynapp/.pm2/ecosystem.mainnet.production.config.cjs
   set -a
   # shellcheck disable=SC1091
   source /etc/robyn/mainnet/runtime.env
   set +a
   export ROBYN_PRODUCTION_RELEASE_ROOT="${root}"
+  runuser -u robynapp -- ln -sfn \
+    "${root}/infrastructure/pm2/ecosystem.mainnet.production.cjs" \
+    "${pm2_config}"
   runuser -u robynapp -- env \
     HOME=/var/lib/robynapp \
     PM2_HOME=/var/lib/robynapp/.pm2 \
@@ -102,7 +106,7 @@ start_release() {
     ROBYN_MAINNET_AUTH_ORIGINS="${ROBYN_MAINNET_AUTH_ORIGINS}" \
     ROBYN_MAINNET_TRANSACTION_SUBMISSION_AUTHORIZED="${ROBYN_MAINNET_TRANSACTION_SUBMISSION_AUTHORIZED}" \
     ROBYN_RELEASE_SHA="$(basename "${root}")" \
-    /usr/local/bin/pm2 startOrReload "${root}/infrastructure/pm2/ecosystem.mainnet.production.cjs" --update-env
+    /usr/local/bin/pm2 startOrReload "${pm2_config}" --update-env
 }
 
 rollback() {

@@ -254,6 +254,14 @@ test("production updater follows authenticated asset redirects under the hardene
   assert.match(updaterService, /^WorkingDirectory=\/$/m);
   assert.match(updater, /HOME=\/var\/lib\/robynapp/);
   assert.match(
+    updater,
+    /ecosystem\.mainnet\.production\.config\.cjs/,
+  );
+  assert.match(
+    updater,
+    /ecosystem\.mainnet\.production\.cjs" \\\n+    "\$\{pm2_config\}"/,
+  );
+  assert.match(
     installer,
     /install -d -o root -g robyn-release -m 0750 \/var\/lib\/robyn-release \/var\/lib\/robyn-release\/downloads/,
   );
