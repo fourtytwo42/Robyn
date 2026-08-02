@@ -205,6 +205,15 @@ test("production updater follows authenticated asset redirects under the hardene
     path.join(repositoryRoot, "scripts", "install-production-mainnet-host.sh"),
     "utf8",
   );
+  const updaterService = readFileSync(
+    path.join(
+      repositoryRoot,
+      "infrastructure",
+      "systemd",
+      "robyn-prod-updater.service",
+    ),
+    "utf8",
+  );
 
   assert.match(
     updater,
@@ -234,6 +243,11 @@ test("production updater follows authenticated asset redirects under the hardene
   const moveIndex = updater.indexOf('mv "${staging}" "${target}"');
   const immutableIndex = updater.indexOf('chmod -R a-w "${target}"');
   assert.ok(moveIndex >= 0 && immutableIndex > moveIndex);
+  assert.match(
+    updaterService,
+    /^CapabilityBoundingSet=CAP_SETUID CAP_SETGID$/m,
+  );
+  assert.doesNotMatch(updaterService, /CAP_DAC_OVERRIDE|CAP_CHOWN|CAP_NET_ADMIN/);
   assert.match(
     installer,
     /install -d -o root -g robyn-release -m 0750 \/var\/lib\/robyn-release \/var\/lib\/robyn-release\/downloads/,

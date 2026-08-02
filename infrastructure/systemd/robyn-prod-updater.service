@@ -11,5 +11,5 @@ PrivateTmp=true
 ProtectHome=true
 ProtectSystem=strict
 ReadWritePaths=/opt/robyn /var/lib/robyn-release /var/lib/robynapp /run/lock
-CapabilityBoundingSet=
+CapabilityBoundingSet=CAP_SETUID CAP_SETGID
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
