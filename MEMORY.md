@@ -2,18 +2,22 @@
 
 ## Active Handoff
 
-- Schema-18 Mainnet is reconciled and guardian-Paused after final Gate-2 settlement recovery. Claims and the 78.99% unwind are final and must never be repeated.
-- Gate-3 preparation is non-broadcast only. Public scheduling, Public mode, production profile activation, and application writes remain unauthorized until an exact manifest hash is approved.
-- Frozen identities: contracts `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4`, scoped application `5ea50ed836d81416a7a6a32c8078a864fca28d0b`, policy `5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1`.
+- Schema-18 is publicly operational on Robinhood Mainnet at `https://sherwoodforest.trade`. Public mode, the `6 ETH / 0.5 ETH` profile, six qualified routes, both conversion systems, and application transaction submission are active.
+- Exact identities: contracts `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4`, application `5ea50ed836d81416a7a6a32c8078a864fca28d0b`, tooling `e2e2be924f1ec432c2b3eebeb79c7c814b82a32c`, policy `5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1`.
+- First-24-hour native monitoring is active through PM2/systemd, Prometheus, Alertmanager, Grafana, and the 30-second metrics timer. LAN is the sole application and transaction RPC; Alchemy remains probe-only with automatic fallback disabled.
 
 ## Current State
 
-- Mainnet launch mode and both conversion systems are Paused, all six routes are disabled, application writes are disabled, and the keeper is stopped.
-- Scoped Mainnet indexing is caught up through the LAN-only gateway with one launch, five permanent dynamic contracts, one Sherwood pool ID, 533 retained logs, zero duplicates/missing/global logs, and a 12.27 MB database.
-- Independent scoped-indexer acceptance passed with evidence SHA-256 `4818567b80019aceff297a027c7141db0a341230909fde842f8c130835ec3fbe`; about 28.77 GB disk remains free.
+- Gate-3 manifest `2554c9c971630dc6a8399a0868201908e313c6ab89e299e2b544100cd7ca3bda` executed exactly once as transaction `0xb9cea03d314c66c0f6afda3613e183fe9228f6652ed8345e6f033419610fc67c` at block `26011510`.
+- Mainnet launch mode is Public; profile version 2 targets 6 ETH with a 0.5 ETH maximum purchase; all six sealed routes and both conversion systems are enabled. The canary retains its immutable profile-1 snapshot.
+- Scoped indexing is current with zero ingestion/projection lag, one launch, 20 tracked addresses, one pool, excluded global sources, and a 12.9 MB database. API audit, reward backing, router solvency, supplies, locked principal, and keeper queues are healthy.
+- The last verified operator balance was `0.028372369252761679 ETH`, above the protected `0.02 ETH` reserve. Requery before any future financial operation.
 
 ## Verification Ledger
 
+- Gate-3 Public live evidence is sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-public/live-e2e2be9-2554c9c-01`. The journal contains two unique intents and two unique successful receipts with zero failures or ambiguity.
+- Public browser acceptance passed at desktop and 390x844 mobile viewports. The exact public domain serves the qualified application, transaction submission is enabled, LAN remains primary, fallback traffic is unauthorized, and paid fallback CU is zero.
+- PM2 state is saved and all Mainnet processes are online. `pm2-hendo420`, metrics collection, alert receiver, Prometheus, Alertmanager, Grafana, Nginx, and Cloudflared are active with zero firing alerts at monitoring start.
 - Final Gate-2 recovery evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-final-settlement/live-bf8c377-1ea83d5-01`.
 - Qualified read-only manifest is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-indexer-remediation/mainnet-scoped-readonly-qualified-5ea50ed-01`; `contracts.factory` equals `contracts.launchFactory`.
 - Scoped application activation evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-public-prep/application-5ea50ed-v2`; it binds the database, PM2, Nginx, stopped keeper, disabled writes, and LAN-only RPC identities.
@@ -21,8 +25,16 @@
 
 ## Open Follow-ups
 
-- Commit and push the final evidence-binding tooling, repeat the LAN-sourced exact-state Public rehearsal on that SHA, and seal the authorization-false Gate-3 manifest.
-- Stop before any live Public scheduling transaction and provide the exact manifest SHA-256 plus copy/paste authorization.
+- Continue observing the first 24 public hours through native monitoring. On any contract, accounting, solvency, supply, principal, route, or LAN-RPC anomaly, disable application submissions and use the verified guardian controls.
+- Alchemy's probe currently reports an invalid `eth_syncing` response. It has received probe traffic only, zero fallback traffic, and is not an application dependency; rotate any previously exposed provider credential during routine credential hygiene.
+
+### 2026-08-02 - Schema-18 Public Mainnet activation complete
+
+- Context: The owner authorized exact Gate-3 manifest SHA-256 `2554c9c971630dc6a8399a0868201908e313c6ab89e299e2b544100cd7ca3bda` after Gate-2 reconciliation and scoped-indexer qualification.
+- Result: The unanimous Public operation scheduled and executed once. Transaction `0xb9cea03d314c66c0f6afda3613e183fe9228f6652ed8345e6f033419610fc67c` installed profile version 2, enabled the six sealed routes, resumed both conversion systems, and entered Public mode. The canary snapshot is unchanged.
+- Application: Exact release `5ea50ed836d81416a7a6a32c8078a864fca28d0b` is live at `https://sherwoodforest.trade` with transaction submission enabled. Desktop and mobile acceptance passed; the scoped indexer and projections have zero lag.
+- Operations: LAN RPC remains the sole application and transaction upstream. Alchemy is probe-only with fallback unauthorized and zero fallback CU. PM2 state is saved and native 24-hour monitoring is active with zero firing alerts at start.
+- Safety: The protected 0.02 ETH reserve is intact, accounting and reward backing are exact, the router is solvent, keeper queues are empty, and rehearsed application-disable, guardian-pause, route-disable, and Timelock-cancellation controls remain available.
 
 ### 2026-08-02 - Final-settlement recovery rehearsal passes
 
