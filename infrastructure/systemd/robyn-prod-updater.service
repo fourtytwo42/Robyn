@@ -5,6 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
+WorkingDirectory=/
 ExecStart=/usr/local/lib/robyn/production-updater.sh
 NoNewPrivileges=true
 PrivateTmp=true

@@ -91,6 +91,7 @@ start_release() {
   set +a
   export ROBYN_PRODUCTION_RELEASE_ROOT="${root}"
   runuser -u robynapp -- env \
+    HOME=/var/lib/robynapp \
     PM2_HOME=/var/lib/robynapp/.pm2 \
     ROBYN_PRODUCTION_RELEASE_ROOT="${root}" \
     ROBYN_MAINNET_MANIFEST="${ROBYN_MAINNET_MANIFEST}" \
@@ -132,7 +133,7 @@ for _ in $(seq 1 60); do
   sleep 2
 done
 [[ "${healthy}" == true ]] || { echo "production release health failed" >&2; false; }
-runuser -u robynapp -- env PM2_HOME=/var/lib/robynapp/.pm2 /usr/local/bin/pm2 save --force
+runuser -u robynapp -- env HOME=/var/lib/robynapp PM2_HOME=/var/lib/robynapp/.pm2 /usr/local/bin/pm2 save --force
 printf '%s\n' "${tag}" >"${state}"
 jq -n --arg deployedAt "$(date -u +%FT%TZ)" --arg tag "${tag}" --arg sourceSha "${source_sha}" '{deployedAt:$deployedAt,tag:$tag,sourceSha:$sourceSha}' >"/var/lib/robyn-release/${tag}.json"
 trap - ERR

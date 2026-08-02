@@ -248,6 +248,8 @@ test("production updater follows authenticated asset redirects under the hardene
     /^CapabilityBoundingSet=CAP_SETUID CAP_SETGID$/m,
   );
   assert.doesNotMatch(updaterService, /CAP_DAC_OVERRIDE|CAP_CHOWN|CAP_NET_ADMIN/);
+  assert.match(updaterService, /^WorkingDirectory=\/$/m);
+  assert.match(updater, /HOME=\/var\/lib\/robynapp/);
   assert.match(
     installer,
     /install -d -o root -g robyn-release -m 0750 \/var\/lib\/robyn-release \/var\/lib\/robyn-release\/downloads/,
