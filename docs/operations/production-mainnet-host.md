@@ -63,6 +63,20 @@ branch. The explicit promotion command is:
 
     pnpm release:promote:mainnet --sha <qualified-sha>
 
+Generate each exact-SHA acceptance record with the candidate gateway itself:
+
+    ROBYN_ACCEPTANCE_ENVIRONMENT=devnet \
+    ROBYN_ACCEPTANCE_PRIMARY_RPC_URL=<lan-rpc> \
+    ROBYN_ACCEPTANCE_FALLBACK_RPC_URL=<comparison-probe-rpc> \
+    ROBYN_ACCEPTANCE_CHANGE_SCOPE=<classified-scope> \
+    ROBYN_ACCEPTANCE_OUTPUT=/tmp/devnet.json \
+    pnpm release:accept:mainnet
+
+Use `ROBYN_ACCEPTANCE_REQUIRE_FALLBACK_HEALTHY=true` for Testnet and Mainnet
+staging. Install the three resulting files as `devnet.json`, `testnet.json`,
+and `mainnet-staging.json` under the protected acceptance directory for the
+exact source SHA. The command never prints either RPC URL.
+
 The SHA must be clean, pushed, and reachable from protected origin/main.
 Devnet, Testnet, and LAN-Mainnet staging acceptance records must exist for the
 same SHA. Scope classification selects the minimum safe gate:
