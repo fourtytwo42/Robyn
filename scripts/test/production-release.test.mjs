@@ -261,6 +261,12 @@ test("production updater follows authenticated asset redirects under the hardene
     updater,
     /ecosystem\.mainnet\.production\.cjs" \\\n+    "\$\{pm2_config\}"/,
   );
+  assert.match(updater, /apply_migrations "\$\{target\}"/);
+  assert.match(
+    updater,
+    /SELECT EXISTS \(SELECT 1 FROM schema_migrations WHERE version = '\$\{version\}'\)/,
+  );
+  assert.doesNotMatch(updater, /packages\/db\/dist\/migrate\.js/);
   assert.match(
     installer,
     /install -d -o root -g robyn-release -m 0750 \/var\/lib\/robyn-release \/var\/lib\/robyn-release\/downloads/,

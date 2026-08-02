@@ -109,6 +109,36 @@ start_release() {
     /usr/local/bin/pm2 startOrReload "${pm2_config}" --update-env
 }
 
+apply_migrations() {
+  local root="${1}"
+  local migrations_dir="${root}/packages/db/migrations"
+  local migration version table_exists applied
+  local -a migrations
+  mapfile -t migrations < <(find "${migrations_dir}" -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sort)
+  [[ "${#migrations[@]}" -gt 0 ]] || { echo "release contains no database migrations" >&2; return 1; }
+  for migration in "${migrations[@]}"; do
+    version="${migration%.sql}"
+    [[ "${version}" =~ ^[0-9]{4}_[a-z0-9_]+$ ]] || { echo "invalid migration filename: ${migration}" >&2; return 1; }
+    table_exists="$(runuser -u robynapp -- env \
+      PGHOST=/var/run/postgresql PGDATABASE="${ROBYN_MAINNET_DATABASE}" PGUSER=robynapp \
+      psql -Atqc "SELECT to_regclass('public.schema_migrations') IS NOT NULL")"
+    applied=false
+    if [[ "${table_exists}" == t ]]; then
+      applied="$(runuser -u robynapp -- env \
+        PGHOST=/var/run/postgresql PGDATABASE="${ROBYN_MAINNET_DATABASE}" PGUSER=robynapp \
+        psql -Atqc "SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version = '${version}')")"
+    fi
+    if [[ "${applied}" != t ]]; then
+      runuser -u robynapp -- env \
+        PGHOST=/var/run/postgresql PGDATABASE="${ROBYN_MAINNET_DATABASE}" PGUSER=robynapp \
+        psql -v ON_ERROR_STOP=1 -f "${migrations_dir}/${migration}"
+    fi
+    runuser -u robynapp -- env \
+      PGHOST=/var/run/postgresql PGDATABASE="${ROBYN_MAINNET_DATABASE}" PGUSER=robynapp \
+      psql -Atqc "SELECT 1 FROM schema_migrations WHERE version = '${version}'" | grep -qx 1
+  done
+}
+
 rollback() {
   if [[ -n "${old_target}" ]]; then
     local back="/opt/robyn/current.rollback.$$"
@@ -123,7 +153,7 @@ set -a
 # shellcheck disable=SC1091
 source /etc/robyn/mainnet/runtime.env
 set +a
-runuser -u robynapp -- env PGHOST=/var/run/postgresql PGDATABASE="${ROBYN_MAINNET_DATABASE}" PGUSER=robynapp /opt/node-v24.18.0-linux-x64/bin/node "${target}/packages/db/dist/migrate.js"
+apply_migrations "${target}"
 start_release "${target}"
 
 healthy=false
