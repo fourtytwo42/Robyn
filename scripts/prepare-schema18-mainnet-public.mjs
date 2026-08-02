@@ -20,6 +20,12 @@ const DEPLOYMENT_APP_SHA = "8327b250122cd9050a7da6a44e12859e3cf521aa";
 const APP_SHA = "5ea50ed836d81416a7a6a32c8078a864fca28d0b";
 const INDEXING_POLICY_HASH =
   "5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1";
+const PM2_TOPOLOGY_HASH =
+  "cfccbd20897b53acac16e9f9dd17efe7798f5ac2f489713048e16f84b86919d1";
+const NGINX_CONFIG_HASH =
+  "8e436366086b723696a3cbad1e1912578d5b0e4d811fc91a556432399fd25cbdd";
+const MAINNET_DATABASE = "robyn_mainnet";
+const DEPLOYMENT_BLOCK = "25321851";
 const CHAIN_ID = 4663;
 const RESERVE = 20_000_000_000_000_000n;
 const required = (name) => {
@@ -112,7 +118,15 @@ if (
   !evidenceHash(applicationEvidence.releaseRootSha256) ||
   !evidenceHash(applicationEvidence.buildValidationSha256) ||
   !evidenceHash(applicationEvidence.reproducibilitySummarySha256) ||
-  !evidenceHash(applicationEvidence.serveValidationSha256)
+  !evidenceHash(applicationEvidence.serveValidationSha256) ||
+  applicationEvidence.pm2TopologySha256 !== PM2_TOPOLOGY_HASH ||
+  applicationEvidence.nginxConfigSha256 !== NGINX_CONFIG_HASH ||
+  applicationEvidence.keeperStarted !== false ||
+  applicationEvidence.publicIngressInitiallyEnabled !== false ||
+  applicationEvidence.databaseIdentity?.name !== MAINNET_DATABASE ||
+  applicationEvidence.databaseIdentity?.schemaVersion !== 18 ||
+  applicationEvidence.databaseIdentity?.deploymentBlock !== DEPLOYMENT_BLOCK ||
+  !evidenceHash(applicationEvidence.databaseIdentity?.qualifiedManifestSha256)
 ) {
   throw new Error("exact Mainnet application evidence is incomplete");
 }

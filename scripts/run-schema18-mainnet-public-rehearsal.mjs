@@ -243,6 +243,17 @@ const manifest = {
     applicationWritesEnabled: false,
     financialSubmissionProcessesStarted: false,
     alchemyApplicationTrafficConfigured: false,
+    pm2TopologySha256:
+      "cfccbd20897b53acac16e9f9dd17efe7798f5ac2f489713048e16f84b86919d1",
+    nginxConfigSha256:
+      "8e436366086b723696a3cbad1e1912578d5b0e4d811fc91a556432399fd25cbdd",
+    keeperStarted: false,
+    publicIngressInitiallyEnabled: false,
+    databaseIdentity: {
+      name: "robyn_mainnet",
+      schemaVersion: 18,
+      deploymentBlock: "25321851",
+    },
   },
   indexingPolicy: {
     policyHash: INDEXING_POLICY_HASH,

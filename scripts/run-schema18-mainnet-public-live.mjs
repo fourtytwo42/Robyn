@@ -28,6 +28,10 @@ const CONTRACT_RELEASE_SHA = "4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4";
 const APPLICATION_RELEASE_SHA = "5ea50ed836d81416a7a6a32c8078a864fca28d0b";
 const INDEXING_POLICY_HASH =
   "5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1";
+const PM2_TOPOLOGY_HASH =
+  "cfccbd20897b53acac16e9f9dd17efe7798f5ac2f489713048e16f84b86919d1";
+const NGINX_CONFIG_HASH =
+  "8e436366086b723696a3cbad1e1912578d5b0e4d811fc91a556432399fd25cbdd";
 const RESERVE = 20_000_000_000_000_000n;
 const L1_FEE_RESERVE = 25_000_000_000_000n;
 const localRehearsal = process.env.ROBYN_SCHEMA18_MAINNET_PUBLIC_LOCAL_REHEARSAL === "true";
@@ -88,6 +92,13 @@ if (
   manifest.application?.applicationWritesEnabled !== false ||
   manifest.application?.financialSubmissionProcessesStarted !== false ||
   manifest.application?.alchemyApplicationTrafficConfigured !== false ||
+  manifest.application?.pm2TopologySha256 !== PM2_TOPOLOGY_HASH ||
+  manifest.application?.nginxConfigSha256 !== NGINX_CONFIG_HASH ||
+  manifest.application?.keeperStarted !== false ||
+  manifest.application?.publicIngressInitiallyEnabled !== false ||
+  manifest.application?.databaseIdentity?.name !== "robyn_mainnet" ||
+  manifest.application?.databaseIdentity?.schemaVersion !== 18 ||
+  manifest.application?.databaseIdentity?.deploymentBlock !== "25321851" ||
   manifest.contracts?.factory?.toLowerCase() !== manifest.contracts?.launchFactory?.toLowerCase()
 ) {
   throw new Error("Gate 3 scoped application or indexer identity mismatch");
