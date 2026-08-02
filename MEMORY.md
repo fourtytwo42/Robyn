@@ -5,7 +5,7 @@
 - Schema-18 is publicly operational on Robinhood Mainnet at `https://sherwoodforest.trade`. Public mode, the `6 ETH / 0.5 ETH` profile, six qualified routes, both conversion systems, and application transaction submission are active.
 - Exact identities: contracts `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4`, application `5ea50ed836d81416a7a6a32c8078a864fca28d0b`, tooling `e2e2be924f1ec432c2b3eebeb79c7c814b82a32c`, policy `5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1`.
 - First-24-hour native monitoring is active through PM2/systemd, Prometheus, Alertmanager, Grafana, and the 30-second metrics timer. LAN is the sole application and transaction RPC; Alchemy remains probe-only with automatic fallback disabled.
-- UI-only release `af608585ce0909d3878ea7b17f76794ac4b322aa` is live on Devnet, Testnet, and Mainnet. It changes no contract, route, RPC, indexer, keeper, or financial configuration.
+- Token-workspace release `c11ce965825fad150c3d1f694fe76f0d159c9046` is live on Devnet, Testnet, and Mainnet. Schema-18 contracts, routes, indexers, keepers, and financial configuration are unchanged.
 
 ## Current State
 
@@ -19,7 +19,7 @@
 - Gate-3 Public live evidence is sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-public/live-e2e2be9-2554c9c-01`. The journal contains two unique intents and two unique successful receipts with zero failures or ambiguity.
 - Public browser acceptance passed at desktop and 390x844 mobile viewports. The exact public domain serves the qualified application, transaction submission is enabled, LAN remains primary, fallback traffic is unauthorized, and paid fallback CU is zero.
 - PM2 state is saved and all Mainnet processes are online. `pm2-hendo420`, metrics collection, alert receiver, Prometheus, Alertmanager, Grafana, Nginx, and Cloudflared are active with zero firing alerts at monitoring start.
-- Devnet, Testnet, and Mainnet web processes serve UI release `af608585ce0909d3878ea7b17f76794ac4b322aa`; all 17 non-web PM2 processes retained their exact online/restart state through the isolated cutovers.
+- Devnet, Testnet, and Mainnet web processes serve token-workspace release `c11ce965825fad150c3d1f694fe76f0d159c9046`. Mainnet API serves the same release for corrected canonical asset symbols; all 20 PM2 processes are online and the process list is saved.
 - Final Gate-2 recovery evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-final-settlement/live-bf8c377-1ea83d5-01`.
 - Qualified read-only manifest is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-indexer-remediation/mainnet-scoped-readonly-qualified-5ea50ed-01`; `contracts.factory` equals `contracts.launchFactory`.
 - Scoped application activation evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-public-prep/application-5ea50ed-v2`; it binds the database, PM2, Nginx, stopped keeper, disabled writes, and LAN-only RPC identities.
@@ -29,6 +29,17 @@
 
 - Continue observing the first 24 public hours through native monitoring. On any contract, accounting, solvency, supply, principal, route, or LAN-RPC anomaly, disable application submissions and use the verified guardian controls.
 - Alchemy's probe currently reports an invalid `eth_syncing` response. It has received probe traffic only, zero fallback traffic, and is not an application dependency; rotate any previously exposed provider credential during routine credential hygiene.
+
+### 2026-08-02 - Compact token workspace and canonical quote repair
+
+- Context: The token page repeated market data across separate cards, spread lifecycle/reward information vertically, separated ownership from the market tape, and showed `Quote unavailable` after graduation. Mainnet catalog responses also displayed test-style `tm` symbols and generic verification copy.
+- Decision: Consolidate launch identity, market cap, price, actions, and the live snapshot into one header; keep the canonical chart and trade panel; move compact lifecycle/King status below trading; combine the reward basket and 50/25/20/5 economy; and present ownership/market tape as accessible tabs. Website and X actions remain metadata-driven.
+- Files: `apps/web/src/app/launches/[token]/page.tsx`, `apps/web/src/app/globals.css`, `apps/web/src/components/token-market-data-tabs.tsx`, basket/trade components, reward-asset helpers, `apps/api/src/asset-catalog.ts`, and local artwork under `apps/web/public/assets/launchpad/`.
+- Quote fix: Graduated launch quotes and swaps now use the canonical market contract, which forwards to the launch's v4 adapter and preserves canonical trade events. The live Nginx `/rpc` proxy was corrected to strip the public prefix before forwarding to the LAN-only gateway; a public `quoteBuy(0.0001 ETH)` and the in-app browser now return approximately 46.61 million S18MC instead of `Quote unavailable`.
+- Asset identity: Mainnet GOOGL, MSFT, NVDA, SPCX, and SPY now use canonical display symbols and `Runtime + route verified`; WETH uses `Canonical WETH`. Local transparent artwork covers WETH, MSFT, NVDA, SPCX, and SPY, while GOOGL retains its curated catalog artwork.
+- Verification: 57 web tests, 70 API tests, typecheck, lint, production builds, full immutable Devnet/Testnet/Mainnet release gates, 563 Foundry tests, security checks, and live desktop in-app-browser acceptance passed. The recent-activity link selects the Market tape tab, all public and internal health endpoints return HTTP 200, and the Mainnet catalog reports canonical symbols.
+- Deployment: Immutable artifacts are `/opt/robyn/releases/c11ce964b3c15de0f24f3bc4971156fa1dcc1e7a`, `/opt/robyn/testnet-releases/c11ce965825fad150c3d1f694fe76f0d159c9046`, and `/opt/robyn/mainnet-releases/c11ce965825fad150c3d1f694fe76f0d159c9046`. The three web processes and Mainnet API were cut over independently; PM2 remains 20/20 online and saved.
+- Operational note: The first Mainnet API cutover omitted protected pinning variables and failed closed before serving. The exact prior PM2 environment restored service, then the corrected cutover reused the protected environment without logging credentials. Final status is healthy with zero chain transaction and no RPC fallback change.
 
 ### 2026-08-02 - Token-page market snapshot refresh
 
