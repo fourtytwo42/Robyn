@@ -42,7 +42,16 @@ const policy = JSON.parse(
 const acceptanceRoot = path.join("/var/lib/robyn-release/acceptance", sha);
 for (const environment of ["devnet", "testnet", "mainnet-staging"]) {
   const evidence = JSON.parse(
-    readFileSync(path.join(acceptanceRoot, environment + ".json"), "utf8"),
+    execFileSync(
+      "sudo",
+      [
+        "-u",
+        "robyn-release",
+        "cat",
+        path.join(acceptanceRoot, environment + ".json"),
+      ],
+      { encoding: "utf8" },
+    ),
   );
   validateProductionAcceptance(evidence, {
     environment,
