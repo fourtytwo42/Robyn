@@ -78,6 +78,8 @@ if (!["ui", "data", "infrastructure", "mixed", "contracts"].includes(changeScope
 }
 const requireFallbackHealthy =
   process.env.ROBYN_ACCEPTANCE_REQUIRE_FALLBACK_HEALTHY === "true";
+const requireFallbackReachable =
+  process.env.ROBYN_ACCEPTANCE_REQUIRE_FALLBACK_REACHABLE === "true";
 const sourceSha = execFileSync("git", ["rev-parse", "HEAD"], {
   cwd: repo,
   encoding: "utf8",
@@ -148,6 +150,23 @@ try {
       check(
         "comparison provider probe is healthy and receives no application traffic",
         health.fallback?.healthy === true && Number(health.paidFallbackCu) === 0,
+      ),
+    );
+  }
+  if (requireFallbackReachable) {
+    const comparisonChain = await rpc(fallbackUrl, "eth_chainId");
+    const comparisonHead = await rpc(fallbackUrl, "eth_blockNumber");
+    checks.push(
+      check(
+        "comparison provider chain identity matched",
+        comparisonChain.result === `0x${expectedChainId.toString(16)}`,
+        comparisonChain.result,
+      ),
+      check(
+        "comparison provider block-height probe succeeded without application traffic",
+        typeof comparisonHead.result === "string" &&
+          /^0x[0-9a-f]+$/i.test(comparisonHead.result) &&
+          Number(health.paidFallbackCu) === 0,
       ),
     );
   }

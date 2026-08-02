@@ -73,9 +73,13 @@ Generate each exact-SHA acceptance record with the candidate gateway itself:
     pnpm release:accept:mainnet
 
 Use `ROBYN_ACCEPTANCE_REQUIRE_FALLBACK_HEALTHY=true` for Testnet and Mainnet
-staging. Install the three resulting files as `devnet.json`, `testnet.json`,
-and `mainnet-staging.json` under the protected acceptance directory for the
-exact source SHA. The command never prints either RPC URL.
+staging when the comparison provider implements the complete health surface.
+Use `ROBYN_ACCEPTANCE_REQUIRE_FALLBACK_REACHABLE=true` to restrict the
+comparison provider to the owner-approved chain-ID and block-height probes.
+Neither setting authorizes fallback traffic. Install the three resulting files
+as `devnet.json`, `testnet.json`, and `mainnet-staging.json` under the protected
+acceptance directory for the exact source SHA. The command never prints either
+RPC URL.
 
 The SHA must be clean, pushed, and reachable from protected origin/main.
 Devnet, Testnet, and LAN-Mainnet staging acceptance records must exist for the
