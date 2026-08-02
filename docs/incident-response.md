@@ -1,5 +1,9 @@
 # Incident response
 
+For Robinhood Mainnet financial incidents, use
+[`operations/schema18-mainnet-contingency-playbooks.md`](operations/schema18-mainnet-contingency-playbooks.md)
+as the controlling containment and recovery runbook.
+
 Every alert is scoped to chain, component, launch and asset labels and links to one of these procedures. Capture the alert start time, current release SHA, last good indexed block, affected transaction/launch/asset when applicable, commands run and resolution evidence. Never delete canonical data or retry a financial action until its onchain state is reconciled.
 
 ## Component down
