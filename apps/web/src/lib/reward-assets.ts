@@ -30,7 +30,25 @@ export function assetVerificationLabel(verification: string) {
   if (verification === "robyn-token-list") {
     return "Sherwood listed";
   }
+  if (verification === "canonical-weth-runtime") {
+    return "Canonical WETH";
+  }
+  if (verification === "robinhood-mainnet-token-runtime-and-v4-route") {
+    return "Runtime + route verified";
+  }
   return "Unverified ERC-20";
+}
+
+function offeredAssetLogo(symbol: string) {
+  const canonical = symbol.replace(/^(tm|t|m)(?=[A-Z])/, "");
+  const logos: Record<string, string> = {
+    WETH: "/assets/launchpad/asset-meth.webp",
+    MSFT: "/assets/launchpad/asset-msft.png",
+    NVDA: "/assets/launchpad/asset-nvda.png",
+    SPCX: "/assets/launchpad/asset-spcx.png",
+    SPY: "/assets/launchpad/asset-mspy.webp",
+  };
+  return logos[canonical] ?? null;
 }
 
 function assetDescription(asset: {
@@ -48,12 +66,16 @@ function assetDescription(asset: {
   }
   if (
     asset.verification === "robyn-controlled-testnet-dex" ||
+    asset.verification === "canonical-weth-runtime" ||
     asset.symbol === "WETH"
   ) {
     return `${asset.name} (${asset.symbol}) is the wrapped native asset used for onchain routing and basket rewards.`;
   }
   if (asset.verification === "official-robinhood-current-chain") {
     return `${asset.name} (${asset.symbol}) is identified by its current-chain contract address and canonical Robinhood metadata.`;
+  }
+  if (asset.verification === "robinhood-mainnet-token-runtime-and-v4-route") {
+    return `${asset.name} (${asset.symbol}) is verified by its Mainnet runtime and qualified Sherwood v4 route.`;
   }
   return `${asset.name} (${asset.symbol}) is identified by its onchain contract metadata. Review the linked contract before relying on it.`;
 }
@@ -77,10 +99,14 @@ export function rewardAssetMetadata(
     (candidate) => candidate.address.toLowerCase() === address.toLowerCase(),
   );
   if (catalogAsset) {
+    const symbol =
+      catalogAsset.mockOnly && catalogAsset.mockSymbol
+        ? catalogAsset.mockSymbol
+        : catalogAsset.symbol;
     const metadata = {
-      symbol: catalogAsset.mockSymbol ?? catalogAsset.symbol,
+      symbol,
       name: catalogAsset.name,
-      logoUrl: catalogAsset.logoUrl ?? null,
+      logoUrl: offeredAssetLogo(symbol) ?? catalogAsset.logoUrl ?? null,
       category: catalogAsset.category ?? "custom",
       verification: catalogAsset.verification ?? "unverified-erc20",
       mockOnly: catalogAsset.mockOnly ?? false,

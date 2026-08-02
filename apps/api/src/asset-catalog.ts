@@ -17,6 +17,8 @@ export type AssetVerification =
   | "robyn-testnet-mock"
   | "robyn-controlled-testnet-dex"
   | "robyn-token-list"
+  | "canonical-weth-runtime"
+  | "robinhood-mainnet-token-runtime-and-v4-route"
   | "unverified-erc20";
 
 export type AssetRoute = {
@@ -328,7 +330,10 @@ export class AssetCatalogService {
       return {
         chainId: this.chainId,
         address,
-        symbol: cleanText(known.mockSymbol ?? known.symbol, "TOKEN"),
+        symbol: cleanText(
+          known.mockOnly ? (known.mockSymbol ?? known.symbol) : known.symbol,
+          "TOKEN",
+        ),
         name: cleanText(known.name, "Unnamed token"),
         decimals: known.decimals,
         totalSupply: "0",

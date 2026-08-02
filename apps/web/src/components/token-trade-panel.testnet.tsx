@@ -310,28 +310,8 @@ export function NetworkTokenTradePanel({
             }
             return;
           }
-          if (isGraduatedV4 && !assetRouter) {
-            throw new Error("Graduated swap router is not configured.");
-          }
-          const quotedOutput = isGraduatedV4
-            ? side === "buy"
-              ? (
-                  await publicClient.simulateContract({
-                    address: assetRouter!,
-                    abi: v4AssetRouterAbi,
-                    functionName: "quoteNativeToAsset",
-                    args: [token, amount],
-                  })
-                ).result[0]
-              : (
-                  await publicClient.simulateContract({
-                    address: assetRouter!,
-                    abi: v4AssetRouterAbi,
-                    functionName: "quoteAssetToNative",
-                    args: [token, amount],
-                  })
-                ).result[0]
-            : side === "buy"
+          const quotedOutput =
+            side === "buy"
               ? (
                   await publicClient.simulateContract({
                     address: market,
@@ -371,16 +351,13 @@ export function NetworkTokenTradePanel({
       window.clearTimeout(timer);
     };
   }, [
-    assetRouter,
     input,
-    isGraduatedV4,
     isNativeV4,
     market,
     maximumNativeInput,
     parsed,
     publicClient,
     side,
-    token,
   ]);
 
   async function refresh(address: Address) {
@@ -446,12 +423,9 @@ export function NetworkTokenTradePanel({
         setStatus(`Maximum ${formatEther(maximumNativeInput)} ETH per swap.`);
         return;
       }
-      if (isGraduatedV4 && !assetRouter) {
-        throw new Error("Graduated swap router is not configured.");
-      }
       if (!isNativeV4 || side === "sell") {
         const asset = side === "buy" ? deployment.contracts.baseAsset : token;
-        const spender = isGraduatedV4 ? assetRouter! : market;
+        const spender = market;
         setStatus(`Approving ${side === "buy" ? "mUSD" : symbol}…`);
         const approval = await walletClient.writeContract({
           address: asset,
@@ -468,63 +442,43 @@ export function NetworkTokenTradePanel({
       }
       setStatus(`${side === "buy" ? "Buying" : "Selling"} ${symbol}…`);
       let hash;
-      if (isGraduatedV4) {
+      if (isNativeV4) {
         const quote =
           side === "buy"
             ? await publicClient.simulateContract({
-                address: assetRouter!,
-                abi: v4AssetRouterAbi,
-                functionName: "quoteNativeToAsset",
-                args: [token, amount],
+                address: market,
+                abi: nativeMarketAbi,
+                functionName: "quoteBuy",
+                args: [amount],
               })
             : await publicClient.simulateContract({
-                address: assetRouter!,
-                abi: v4AssetRouterAbi,
-                functionName: "quoteAssetToNative",
-                args: [token, amount],
+                address: market,
+                abi: nativeMarketAbi,
+                functionName: "quoteSell",
+                args: [amount],
               });
-        const minimumOutput = (quote.result[0] * 99n) / 100n;
+        const minimumOutput = (quote.result[1] * 99n) / 100n;
         if (minimumOutput === 0n) throw new Error("Quote output is too small.");
-        const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
         if (side === "buy") {
           const simulation = await publicClient.simulateContract({
             account,
-            address: assetRouter!,
-            abi: v4AssetRouterAbi,
-            functionName: "swapExactNativeForAsset",
-            args: [token, minimumOutput, account, deadline],
+            address: market,
+            abi: nativeMarketAbi,
+            functionName: "buy",
+            args: [minimumOutput],
             value: amount,
           });
           hash = await walletClient.writeContract(simulation.request);
         } else {
           const simulation = await publicClient.simulateContract({
             account,
-            address: assetRouter!,
-            abi: v4AssetRouterAbi,
-            functionName: "swapExactAssetForNative",
-            args: [token, amount, minimumOutput, account, deadline],
+            address: market,
+            abi: nativeMarketAbi,
+            functionName: "sell",
+            args: [amount, minimumOutput],
           });
           hash = await walletClient.writeContract(simulation.request);
         }
-      } else if (isNativeV4 && side === "buy") {
-        const simulation = await publicClient.simulateContract({
-          account,
-          address: market,
-          abi: nativeMarketAbi,
-          functionName: "buy",
-          args: [1n],
-          value: amount,
-        });
-        hash = await walletClient.writeContract(simulation.request);
-      } else if (isNativeV4) {
-        const simulation = await publicClient.simulateContract({
-          account,
-          address: market,
-          abi: nativeMarketAbi,
-          functionName: "sell",
-          args: [amount, 1n],
-        });
-        hash = await walletClient.writeContract(simulation.request);
       } else {
         const simulation = await publicClient.simulateContract({
           account,

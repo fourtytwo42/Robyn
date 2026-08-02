@@ -17,6 +17,7 @@ import { TokenArt } from "@/components/launchpad-visuals";
 import type { Deployment } from "@/lib/deployment";
 import { rewardAssetMetadata } from "@/lib/reward-assets";
 import { TokenActions } from "@/components/token-actions";
+import { TokenMarketDataTabs } from "@/components/token-market-data-tabs";
 import { publicEnvironment } from "@/lib/public-environment";
 import { getEthUsdPrice } from "@/lib/eth-usd";
 
@@ -36,10 +37,6 @@ function quantity(value: string, maximumFractionDigits = 2) {
 
 function metric(value: string, symbol = "mUSD") {
   return `${quantity(value, 4)} ${symbol}`;
-}
-
-function priceMetric(value: string, symbol = "mUSD") {
-  return `${quantity(value, 8)} ${symbol}`;
 }
 
 function changeLabel(value: number | null) {
@@ -112,118 +109,72 @@ export default async function LaunchDetail({
           <span>${launch.symbol}</span>
         </nav>
 
-        <header className="detail-hero token-detail-hero">
-          <TokenArt
-            symbol={launch.symbol}
-            className="detail-token-art"
-            priority
-            {...(launch.metadata?.media_status === "active"
-              ? {
-                  artworkSrc: `/api/media/${launch.metadata.media_id}?cid=${launch.metadata.optimized_webp_cid ?? "active"}`,
-                }
-              : {})}
-          />
-          <div className="token-identity-copy">
-            <div className="token-title-line">
-              <p className="eyebrow">Canonical launch #{launch.launch_id}</p>
-              <span className="live-chip">
-                {marketPhaseLabel(market.marketPhase)}
-              </span>
-              {isMainnetCanary ? (
-                <span
-                  className="campaign-test-chip"
-                  title="Controlled Schema-13 Mainnet canary launch"
-                >
-                  Mainnet Canary
+        <header className="token-overview-card">
+          <div className="token-overview-identity">
+            <TokenArt
+              symbol={launch.symbol}
+              className="detail-token-art"
+              priority
+              {...(launch.metadata?.media_status === "active"
+                ? {
+                    artworkSrc: `/api/media/${launch.metadata.media_id}?cid=${launch.metadata.optimized_webp_cid ?? "active"}`,
+                  }
+                : {})}
+            />
+            <div className="token-identity-copy">
+              <div className="token-title-line">
+                <p className="eyebrow">Canonical launch #{launch.launch_id}</p>
+                <span className="live-chip">
+                  {marketPhaseLabel(market.marketPhase)}
                 </span>
-              ) : null}
-              {launch.kingOfForest?.awarded ? (
-                <span
-                  className={`king-card-chip ${launch.kingOfForest.isCurrent ? "current" : "former"}`}
-                >
-                  <span aria-hidden="true">♛</span>
-                  {launch.kingOfForest.isCurrent
-                    ? "King of the Forest"
-                    : "Former King"}
-                </span>
-              ) : null}
-              {launch.automated_test_launch ? (
-                <span
-                  className="campaign-test-chip"
-                  title={`Campaign ${launch.campaign_id ?? "unavailable"} · release ${launch.campaign_release_sha ?? "unavailable"}`}
-                >
-                  Automated test launch
-                </span>
-              ) : null}
-            </div>
-            <h1>
-              {launch.name} <span>${launch.symbol}</span>
-            </h1>
-            <div className="identity-links">
-              <code>{short(launch.token)}</code>
-              <Link
-                className="creator-identity-link"
-                href={`/users/${launch.creator}`}
-              >
-                {launch.metadata?.avatar_media_id ? (
-                  <Image
-                    src={`/api/media/${launch.metadata.avatar_media_id}`}
-                    width={24}
-                    height={24}
-                    alt=""
-                    unoptimized
-                  />
+                {isMainnetCanary ? (
+                  <span className="campaign-test-chip">Mainnet Canary</span>
                 ) : null}
-                <span>
-                  Created by{" "}
-                  {launch.metadata?.display_name ?? short(launch.creator)}
-                </span>
-              </Link>
-              <span>Block {launch.created_block}</span>
-            </div>
-            <TokenBasketPreviewChips
-              assets={basket}
-              explorerUrl={publicEnvironment.explorerUrl}
-            />
-          </div>
-          <div className="token-hero-quote">
-            <TokenMarketQuote
-              marketCapBase={market.marketCapBase}
-              priceBasePerToken={market.priceBasePerToken}
-              baseSymbol={quoteSymbol}
-              tokenSymbol={launch.symbol}
-              ethUsdPrice={ethUsdPrice}
-            />
-            <span
-              className={`market-change ${
-                market.change24hBps === null || market.change24hBps === 0
-                  ? "neutral"
-                  : market.change24hBps > 0
-                    ? "positive"
-                    : "negative"
-              }`}
-            >
-              {changeLabel(market.change24hBps)} 24h
-            </span>
-            <span className="risk-badge">
-              {publicEnvironment.isMainnet
-                ? "Onchain assets"
-                : isTestnet
-                  ? "Testnet assets"
-                  : "Controlled devnet"}
-            </span>
-          </div>
-        </header>
-
-        <section
-          className="market-snapshot-panel"
-          aria-labelledby="market-snapshot-heading"
-        >
-          <div className="market-snapshot-heading">
-            <div>
-              <p className="card-label">Live onchain market</p>
-              <h2 id="market-snapshot-heading">Market snapshot</h2>
-              <p>Price, activity, and lifecycle signals at a glance.</p>
+                {launch.kingOfForest?.awarded ? (
+                  <span
+                    className={`king-card-chip ${launch.kingOfForest.isCurrent ? "current" : "former"}`}
+                  >
+                    <span aria-hidden="true">♛</span>
+                    {launch.kingOfForest.isCurrent
+                      ? "King of the Forest"
+                      : "Former King"}
+                  </span>
+                ) : null}
+                {launch.automated_test_launch ? (
+                  <span className="campaign-test-chip">
+                    Automated test launch
+                  </span>
+                ) : null}
+              </div>
+              <h1>
+                {launch.name} <span>${launch.symbol}</span>
+              </h1>
+              <div className="identity-links">
+                <code>{short(launch.token)}</code>
+                <Link
+                  className="creator-identity-link"
+                  href={`/users/${launch.creator}`}
+                >
+                  {launch.metadata?.avatar_media_id ? (
+                    <Image
+                      src={`/api/media/${launch.metadata.avatar_media_id}`}
+                      width={24}
+                      height={24}
+                      alt=""
+                      unoptimized
+                    />
+                  ) : null}
+                  <span>
+                    Created by{" "}
+                    {launch.metadata?.display_name ?? short(launch.creator)}
+                  </span>
+                </Link>
+                <span>Block {launch.created_block}</span>
+              </div>
+              <TokenBasketPreviewChips
+                assets={basket}
+                explorerUrl={publicEnvironment.explorerUrl}
+              />
             </div>
             <TokenActions
               chainId={deployment.chainId}
@@ -259,217 +210,75 @@ export default async function LaunchDetail({
                 : {})}
             />
           </div>
-
-          <div className="token-metric-grid" aria-label="Token market metrics">
-            {[
-              {
-                label: "Price",
-                value: priceMetric(market.priceBasePerToken, quoteSymbol),
-                detail: "per token",
-                tone: "featured",
-              },
-              {
-                label: "24h change",
-                value: changeLabel(market.change24hBps),
-                detail: "rolling window",
-                tone:
-                  market.change24hBps === null
-                    ? "neutral"
-                    : market.change24hBps >= 0
-                      ? "positive"
-                      : "negative",
-              },
-              {
-                label: "24h volume",
-                value: metric(market.volume24hBase, quoteSymbol),
-                detail: "settled onchain",
-                tone: "neutral",
-              },
-              {
-                label: "Buy / sell",
-                value:
-                  buyShare === null
-                    ? "No window trades"
-                    : `${buyShare.toFixed(0)}% / ${(100 - buyShare).toFixed(0)}%`,
-                detail: "24h order flow",
-                tone: "flow",
-              },
-              {
-                label: "Lifecycle",
-                value: marketPhaseLabel(market.marketPhase),
-                detail:
-                  market.marketPhase === "graduated"
-                    ? "pool trading live"
-                    : "curve trading live",
-                tone: "lifecycle",
-              },
-              {
-                label: "Trading fees",
-                value:
-                  market.marketPhase === "graduated" &&
-                  market.liquidityVenue === "uniswap-v4"
-                    ? "1% LP + 1% rewards"
-                    : `${(market.protocolFeeBps / 100).toFixed(2)}% rewards`,
-                detail: "aligned incentives",
-                tone: "fees",
-              },
-              {
-                label: "24h traders",
-                value: market.uniqueTraders24h.toLocaleString(),
-                detail: "unique wallets",
-                tone: "traders",
-              },
-            ].map(({ label, value, detail, tone }) => (
-              <article className={`token-metric-card ${tone}`} key={label}>
-                <span>{label}</span>
-                <strong>{value}</strong>
-                <small>{detail}</small>
-              </article>
-            ))}
+          <div className="token-overview-market">
+            <div className="token-hero-quote">
+              <TokenMarketQuote
+                marketCapBase={market.marketCapBase}
+                priceBasePerToken={market.priceBasePerToken}
+                baseSymbol={quoteSymbol}
+                tokenSymbol={launch.symbol}
+                ethUsdPrice={ethUsdPrice}
+              />
+              <span className="risk-badge">
+                {publicEnvironment.isMainnet
+                  ? "Onchain assets"
+                  : isTestnet
+                    ? "Testnet assets"
+                    : "Controlled devnet"}
+              </span>
+            </div>
+            <div
+              className="token-overview-stats"
+              aria-label="Live market snapshot"
+            >
+              {[
+                {
+                  label: "24h change",
+                  value: changeLabel(market.change24hBps),
+                  tone:
+                    market.change24hBps === null
+                      ? "neutral"
+                      : market.change24hBps >= 0
+                        ? "positive"
+                        : "negative",
+                },
+                {
+                  label: "24h volume",
+                  value: metric(market.volume24hBase, quoteSymbol),
+                  tone: "neutral",
+                },
+                {
+                  label: "Buy / sell",
+                  value:
+                    buyShare === null
+                      ? "No window trades"
+                      : `${buyShare.toFixed(0)}% / ${(100 - buyShare).toFixed(0)}%`,
+                  tone: "flow",
+                },
+                {
+                  label: "24h traders",
+                  value: market.uniqueTraders24h.toLocaleString(),
+                  tone: "traders",
+                },
+                {
+                  label: "Lifecycle",
+                  value: marketPhaseLabel(market.marketPhase),
+                  tone: "lifecycle",
+                },
+              ].map(({ label, value, tone }) => (
+                <div className={`token-overview-stat ${tone}`} key={label}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
+            </div>
           </div>
-        </section>
+        </header>
 
         <NetworkCreatorRewardsPanel
           token={launch.token as Address}
           creator={launch.creator as Address}
         />
-
-        {deployment.kingOfForestPolicy ? (
-          <section
-            className={`king-progress-card ${launch.kingOfForest?.awarded ? "awarded" : ""}`}
-            aria-labelledby="king-progress-heading"
-          >
-            <div>
-              <p className="card-label">King of the Forest</p>
-              <h2 id="king-progress-heading">
-                {launch.kingOfForest?.isCurrent
-                  ? "Reigning over Sherwood"
-                  : launch.kingOfForest?.awarded
-                    ? "Crowned once, remembered forever"
-                    : "Climb toward the crown"}
-              </h2>
-              <p>
-                {launch.kingOfForest?.awarded
-                  ? `This token earned its permanent crown with ${launch.kingOfForest.uniqueTradersAtAward ?? launch.kingOfForest.uniqueTraders} distinct traders.`
-                  : `Reach ${(deployment.kingOfForestPolicy.progressThresholdBps / 100).toFixed(0)}% progress and ${deployment.kingOfForestPolicy.minimumUniqueTraders} distinct lifetime traders. Graduated tokens remain eligible.`}
-              </p>
-            </div>
-            <div className="king-progress-meters">
-              <div>
-                <span>Market growth</span>
-                <strong>
-                  {Math.min(
-                    100,
-                    ((launch.kingOfForest?.progressBps ??
-                      market.graduationProgressBps) /
-                      deployment.kingOfForestPolicy.progressThresholdBps) *
-                      100,
-                  ).toFixed(0)}
-                  %
-                </strong>
-                <div className="graduation-track" aria-hidden="true">
-                  <i
-                    style={{
-                      width: `${Math.min(100, ((launch.kingOfForest?.progressBps ?? market.graduationProgressBps) / deployment.kingOfForestPolicy.progressThresholdBps) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <small>
-                  {(
-                    (launch.kingOfForest?.progressBps ??
-                      market.graduationProgressBps) / 100
-                  ).toFixed(1)}
-                  % of curve
-                </small>
-              </div>
-              <div>
-                <span>Distinct traders</span>
-                <strong>
-                  {Math.min(
-                    100,
-                    ((launch.kingOfForest?.uniqueTraders ??
-                      market.uniqueTraderCount) /
-                      deployment.kingOfForestPolicy.minimumUniqueTraders) *
-                      100,
-                  ).toFixed(0)}
-                  %
-                </strong>
-                <div className="graduation-track" aria-hidden="true">
-                  <i
-                    style={{
-                      width: `${Math.min(100, ((launch.kingOfForest?.uniqueTraders ?? market.uniqueTraderCount) / deployment.kingOfForestPolicy.minimumUniqueTraders) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <small>
-                  {launch.kingOfForest?.uniqueTraders ??
-                    market.uniqueTraderCount}{" "}
-                  of {deployment.kingOfForestPolicy.minimumUniqueTraders}{" "}
-                  traders
-                </small>
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        {market.marketPhase !== "legacy_fixed" ? (
-          <section
-            className="graduation-card"
-            aria-labelledby="graduation-heading"
-          >
-            <div className="graduation-copy">
-              <p className="card-label">Launch lifecycle</p>
-              <h2 id="graduation-heading">
-                {market.marketPhase === "graduated"
-                  ? "Graduated to locked Uniswap liquidity"
-                  : "Climbing the bonding curve"}
-              </h2>
-              <p>
-                {market.marketPhase === "graduated"
-                  ? market.liquidityVenue === "uniswap-v4"
-                    ? `The curve sold out atomically. Native ${publicEnvironment.isMainnet ? "ETH" : "test ETH"} and reserved tokens now trade in a full-range Uniswap position whose NFT and principal cannot be withdrawn. Fees continue funding the basket, creator, DAO members, and treasury.`
-                    : market.liquidityVenue === "uniswap-v3"
-                      ? "The curve sold out atomically. Its reserved tokens and quote liquidity now trade in a locked Uniswap position whose NFT cannot be withdrawn. Quote-side fees continue funding this token's reward basket."
-                      : "The curve sold out atomically. Its remaining token allocation and raised mUSD now trade in a permanently locked local pool."
-                  : `Every buy moves the price along the curve. When the curve allocation sells out, the market automatically moves its reserved tokens and raised ${market.baseSymbol} into locked liquidity.`}
-              </p>
-            </div>
-            <div className="graduation-rail">
-              <div>
-                <span>{metric(market.baseRaised, quoteSymbol)} raised</span>
-                <strong>
-                  {(market.graduationProgressBps / 100).toFixed(1)}%
-                </strong>
-              </div>
-              <div
-                className="graduation-track"
-                role="progressbar"
-                aria-label="Graduation progress"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={market.graduationProgressBps / 100}
-              >
-                <i
-                  style={{
-                    width: `${Math.min(100, market.graduationProgressBps / 100)}%`,
-                  }}
-                />
-              </div>
-              <small>
-                Target {metric(market.graduationThresholdBase, quoteSymbol)}
-                {launch.graduation_profile_version
-                  ? ` · profile v${launch.graduation_profile_version}`
-                  : ""}
-                {launch.maximum_curve_purchase
-                  ? ` · max buy ${metric(launch.maximum_curve_purchase, quoteSymbol)}`
-                  : ""}
-                {market.marketPhase === "bonding"
-                  ? ` · ${quantity(market.remainingCurveTokens)} ${launch.symbol} remain on curve`
-                  : " · migration complete and irreversible"}
-              </small>
-            </div>
-          </section>
-        ) : null}
 
         <div className="token-market-layout">
           <TokenMarketChart
@@ -477,61 +286,153 @@ export default async function LaunchDetail({
             symbol={launch.symbol}
             ethUsdPrice={ethUsdPrice}
           />
-          <NetworkTokenTradePanel
-            deployment={deployment as Deployment}
-            token={launch.token as Address}
-            market={launch.market as Address}
-            symbol={launch.symbol}
-            feeBps={market.feeBps}
-            basePerToken={market.priceBasePerToken}
-            marketPhase={market.marketPhase}
-          />
+          <div className="token-trade-stack">
+            <NetworkTokenTradePanel
+              deployment={deployment as Deployment}
+              token={launch.token as Address}
+              market={launch.market as Address}
+              symbol={launch.symbol}
+              feeBps={market.feeBps}
+              basePerToken={market.priceBasePerToken}
+              marketPhase={market.marketPhase}
+            />
+
+            {market.marketPhase !== "legacy_fixed" ? (
+              <section className="compact-market-status lifecycle-compact">
+                <div className="compact-status-heading">
+                  <span>Launch lifecycle</span>
+                  <strong>
+                    {(market.graduationProgressBps / 100).toFixed(1)}%
+                  </strong>
+                </div>
+                <h3>
+                  {market.marketPhase === "graduated"
+                    ? "Locked liquidity live"
+                    : "Climbing the bonding curve"}
+                </h3>
+                <div className="graduation-track" aria-hidden="true">
+                  <i
+                    style={{
+                      width: `${Math.min(100, market.graduationProgressBps / 100)}%`,
+                    }}
+                  />
+                </div>
+                <p>
+                  {metric(market.baseRaised, quoteSymbol)} raised · target{" "}
+                  {metric(market.graduationThresholdBase, quoteSymbol)}
+                  {launch.graduation_profile_version
+                    ? ` · profile v${launch.graduation_profile_version}`
+                    : ""}
+                </p>
+              </section>
+            ) : null}
+
+            {deployment.kingOfForestPolicy ? (
+              <section
+                className={`compact-market-status king-compact ${launch.kingOfForest?.awarded ? "awarded" : ""}`}
+              >
+                <div className="compact-status-heading">
+                  <span>King of the Forest</span>
+                  <strong aria-label="Crown progress">♛</strong>
+                </div>
+                <h3>
+                  {launch.kingOfForest?.isCurrent
+                    ? "Reigning over Sherwood"
+                    : launch.kingOfForest?.awarded
+                      ? "Crowned forever"
+                      : "Climb toward the crown"}
+                </h3>
+                <div className="king-compact-metrics">
+                  <span>
+                    <b>
+                      {(
+                        (launch.kingOfForest?.progressBps ??
+                          market.graduationProgressBps) / 100
+                      ).toFixed(0)}
+                      %
+                    </b>
+                    market growth
+                  </span>
+                  <span>
+                    <b>
+                      {launch.kingOfForest?.uniqueTraders ??
+                        market.uniqueTraderCount}
+                    </b>
+                    of {deployment.kingOfForestPolicy.minimumUniqueTraders}{" "}
+                    traders
+                  </span>
+                </div>
+              </section>
+            ) : null}
+          </div>
         </div>
 
-        <div className="token-reward-layout">
-          <section
-            className="detail-card basket-detail"
-            aria-labelledby="basket-heading"
-          >
-            <div className="section-heading compact-heading">
-              <div>
-                <p className="card-label">Immutable reward basket</p>
-                <h2 id="basket-heading">What ${launch.symbol} holders earn</h2>
-              </div>
-              <span className="live-chip">{launch.assets.length} assets</span>
+        <section
+          className="detail-card reward-hub-card"
+          aria-labelledby="basket-heading"
+        >
+          <div className="reward-hub-heading">
+            <div>
+              <p className="card-label">Reward economy</p>
+              <h2 id="basket-heading">
+                Trading activity grows a holder-owned basket
+              </h2>
+              <p>
+                Sherwood routes every reward fee through a fixed, transparent
+                split. Basket rewards unlock over one hour while you hold $
+                {launch.symbol}.
+              </p>
             </div>
-            <TokenBasketAssets
-              assets={basket}
-              explorerUrl={publicEnvironment.explorerUrl}
-            />
-            <p className="muted">
-              Converted basket rewards unlock linearly over one hour. Holders
-              earn the portion that unlocks while they hold the token, and
-              accrued rewards remain theirs after a transfer.
-            </p>
-          </section>
+            <span className="live-chip">
+              {launch.assets.length} basket assets
+            </span>
+          </div>
 
-          <section
-            className="detail-card reward-economy-card"
-            aria-labelledby="reward-economy-heading"
-          >
-            <p className="card-label">Reward economy</p>
-            <h2 id="reward-economy-heading">Fees become holder assets</h2>
-            <dl className="economy-metrics">
+          <div className="reward-split" aria-label="Fee allocation">
+            {[
+              ["50%", "Reward basket", "holder assets"],
+              ["25%", "Creator", "aligned builder"],
+              ["20%", "DAO members", "governance rewards"],
+              ["5%", "Treasury", "protocol operations"],
+            ].map(([share, label, detail]) => (
+              <div key={label}>
+                <strong>{share}</strong>
+                <span>{label}</span>
+                <small>{detail}</small>
+              </div>
+            ))}
+          </div>
+
+          <div className="reward-hub-body">
+            <div>
+              <div className="reward-subheading">
+                <span>Immutable basket</span>
+                <small>Not redeemable · earned as streamed rewards</small>
+              </div>
+              <TokenBasketAssets
+                assets={basket}
+                explorerUrl={publicEnvironment.explorerUrl}
+              />
+            </div>
+            <dl className="reward-pulse-metrics">
               <div>
-                <dt>Total fees generated</dt>
+                <dt>Fees generated</dt>
                 <dd>{metric(market.totalFeesBase, quoteSymbol)}</dd>
               </div>
               <div>
-                <dt>Buy volume</dt>
-                <dd>{metric(market.buyVolumeBase, quoteSymbol)}</dd>
+                <dt>Total volume</dt>
+                <dd>
+                  {metric(
+                    (
+                      BigInt(market.buyVolumeBase) +
+                      BigInt(market.sellVolumeBase)
+                    ).toString(),
+                    quoteSymbol,
+                  )}
+                </dd>
               </div>
               <div>
-                <dt>Sell volume</dt>
-                <dd>{metric(market.sellVolumeBase, quoteSymbol)}</dd>
-              </div>
-              <div>
-                <dt>Unique traders</dt>
+                <dt>Lifetime traders</dt>
                 <dd>{market.uniqueTraderCount}</dd>
               </div>
               <div>
@@ -540,115 +441,21 @@ export default async function LaunchDetail({
                   {quantity(market.circulatingSupply)} {launch.symbol}
                 </dd>
               </div>
-              <div>
-                <dt>Market inventory</dt>
-                <dd>
-                  {quantity(market.tokenReserve)} {launch.symbol}
-                </dd>
-              </div>
             </dl>
-            <p className="metric-source">
-              Derived from canonical indexed events and current onchain balances
-              through block {analytics.asOfBlock ?? "unavailable"}.
-            </p>
-          </section>
-        </div>
+          </div>
+          <p className="metric-source">
+            Canonical events and current balances through block{" "}
+            {analytics.asOfBlock ?? "unavailable"}.
+          </p>
+        </section>
 
-        <div className="token-data-grid">
-          <section
-            className="market-table-card"
-            aria-labelledby="holders-heading"
-          >
-            <div className="section-heading compact-heading">
-              <div>
-                <p className="card-label">Ownership</p>
-                <h2 id="holders-heading">Top holders</h2>
-              </div>
-              <span className="live-chip">
-                {market.holderCount} holder{" "}
-                {market.holderCount === 1 ? "wallet" : "wallets"}
-              </span>
-            </div>
-            <div className="token-table-wrap">
-              <table className="token-data-table">
-                <thead>
-                  <tr>
-                    <th>Holder</th>
-                    <th>Balance</th>
-                    <th>Supply</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {market.topHolders.map((holder, index) => (
-                    <tr key={holder.address}>
-                      <td>
-                        <span className="holder-rank">{index + 1}</span>
-                        <code>{short(holder.address)}</code>
-                        <small>{holder.label}</small>
-                      </td>
-                      <td>
-                        {quantity(holder.balance)} {launch.symbol}
-                      </td>
-                      <td>{(Number(holder.shareBps) / 100).toFixed(2)}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section
-            className="market-table-card"
-            aria-labelledby="trades-heading"
-            id="recent-trades"
-          >
-            <div className="section-heading compact-heading">
-              <div>
-                <p className="card-label">Market tape</p>
-                <h2 id="trades-heading">Recent trades</h2>
-              </div>
-              <span className="live-chip">Canonical</span>
-            </div>
-            {market.recentTrades.length === 0 ? (
-              <p className="empty-state">
-                No indexed trades yet. Be the first participant.
-              </p>
-            ) : (
-              <div className="token-table-wrap">
-                <table className="token-data-table trade-table">
-                  <thead>
-                    <tr>
-                      <th>Side</th>
-                      <th>Trader</th>
-                      <th>Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {market.recentTrades.slice(0, 10).map((trade) => (
-                      <tr key={trade.transactionHash + trade.blockNumber}>
-                        <td>
-                          <span className={`trade-side ${trade.side}`}>
-                            {trade.side}
-                          </span>
-                        </td>
-                        <td>
-                          <code>{short(trade.trader)}</code>
-                          <small>Block {trade.blockNumber}</small>
-                        </td>
-                        <td>
-                          {metric(trade.baseAmount, quoteSymbol)}
-                          <small>
-                            {quantity(trade.tokenAmount)} {launch.symbol}
-                          </small>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        </div>
+        <TokenMarketDataTabs
+          holders={market.topHolders}
+          holderCount={market.holderCount}
+          trades={market.recentTrades}
+          symbol={launch.symbol}
+          quoteSymbol={quoteSymbol}
+        />
 
         <section className="notice" aria-label="Reward disclosure">
           {publicEnvironment.isMainnet

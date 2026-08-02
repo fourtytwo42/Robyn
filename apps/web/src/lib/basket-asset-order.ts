@@ -4,6 +4,8 @@ export type BasketAssetVerification =
   | "robyn-testnet-mock"
   | "robyn-controlled-testnet-dex"
   | "robyn-token-list"
+  | "canonical-weth-runtime"
+  | "robinhood-mainnet-token-runtime-and-v4-route"
   | "unverified-erc20";
 
 type SortableBasketAsset = {
@@ -14,7 +16,9 @@ type SortableBasketAsset = {
 function assetSortPriority(asset: SortableBasketAsset) {
   if (
     asset.verification === "robinhood-testnet-faucet-stock" ||
-    asset.verification === "official-robinhood-current-chain"
+    asset.verification === "official-robinhood-current-chain" ||
+    asset.verification === "canonical-weth-runtime" ||
+    asset.verification === "robinhood-mainnet-token-runtime-and-v4-route"
   )
     return 0;
   if (asset.verification === "robyn-token-list") return 1;

@@ -136,14 +136,17 @@ export function TokenBasketAssets({
               <b>{(asset.weight / 100).toFixed(0)}%</b>
             </div>
             <p>{asset.description}</p>
-            <a
-              href={`${explorerUrl}/address/${asset.address}`}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={`View ${asset.name} contract ${asset.address}`}
-            >
-              {short(asset.address)}
-            </a>
+            <div className="token-basket-meta">
+              <span>{assetVerificationLabel(asset.verification)}</span>
+              <a
+                href={`${explorerUrl}/address/${asset.address}`}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`View ${asset.name} contract ${asset.address}`}
+              >
+                {short(asset.address)}
+              </a>
+            </div>
           </div>
         </article>
       ))}
