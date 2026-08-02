@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-02 - Gate-2 reactivation and reward settlement confirmed
+
+- Authorization: Exact post-graduation recovery manifest `101e547d00722a32690f20c39b2feb3ffad4c14028e934848c4f9ebc32593802` remains the sole live scope; no bridge, Public mode, production profile, or application writes are authorized.
+- Result: The matured unanimous reactivation executed successfully at block `25584100`. Canary mode and the six bounded routes were restored, then the settlement stage confirmed all required transactions and started the reward streams at chain timestamp `1785641994`.
+- Journal: 12 intents have 12 unique successful receipts, with zero failures or ambiguity. Latest deployer balance is `0.021310845571913123 ETH`, above the fixed `0.02 ETH` reserve. LAN is primary and Alchemy fallback authorization remains false.
+- Timing: Holder, creator, and DAO claims become ready at chain timestamp `1785645594`, approximately one real hour after settlement. Do not claim early.
+- Follow-up: At maturity, revalidate state and execute claims, bounded unwind, post-settlement, guardian shutdown, reconciliation, and two healthy samples. Continue the scoped-indexer Testnet qualification while waiting.
+
 ### 2026-08-02 - Replacement Gate-2 post-graduation manifest reaches sealing
 
 - Tooling: Clean pushed post-graduation recovery branch reached `b9980066f0cebb7108749f6ce59271d9c7d3cf58` after merging the contingency playbooks.
