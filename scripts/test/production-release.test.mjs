@@ -223,6 +223,14 @@ test("production updater follows authenticated asset redirects under the hardene
     /-H "Accept: application\/octet-stream" "\$\{url\}"/,
   );
   assert.match(
+    updater,
+    /tar --no-same-owner --zstd -xf "\$\{work\}\/runtime\.tar\.zst"/,
+  );
+  assert.match(
+    updater,
+    /case "\$\{staging\}" in \/opt\/robyn\/staging\/\*\) rm -rf -- "\$\{staging\}"/,
+  );
+  assert.match(
     installer,
     /install -d -o root -g robyn-release -m 0750 \/var\/lib\/robyn-release \/var\/lib\/robyn-release\/downloads/,
   );

@@ -32,12 +32,16 @@ state=/var/lib/robyn-release/deployed-tag
 [[ ! -r "${state}" || "$(<"${state}")" != "${tag}" ]] || exit 0
 
 work="$(mktemp -d "${ROBYN_RELEASE_DOWNLOAD_ROOT}/${tag}.XXXXXX")"
+staging=""
 case "${work}" in
   "${ROBYN_RELEASE_DOWNLOAD_ROOT}/${tag}."*) ;;
   *) echo "unsafe updater work path" >&2; exit 1 ;;
 esac
 cleanup() {
   case "${work}" in "${ROBYN_RELEASE_DOWNLOAD_ROOT}/${tag}."*) rm -rf -- "${work}" ;; esac
+  if [[ -n "${staging}" ]]; then
+    case "${staging}" in /opt/robyn/staging/*) rm -rf -- "${staging}" ;; esac
+  fi
 }
 trap cleanup EXIT
 for asset in production-release.json production-release.json.sig runtime.tar.zst runtime.tar.zst.sha256; do
@@ -63,7 +67,7 @@ target="${ROBYN_RELEASE_ROOT}/${source_sha}"
 [[ ! -e "${target}" ]] || { echo "release source SHA already exists" >&2; exit 1; }
 staging="/opt/robyn/staging/${source_sha}.$$"
 mkdir -p "${staging}"
-tar --zstd -xf "${work}/runtime.tar.zst" -C "${staging}"
+tar --no-same-owner --zstd -xf "${work}/runtime.tar.zst" -C "${staging}"
 cp "${work}/production-release.json" "${staging}/production-release.json"
 current_source=""
 [[ -L /opt/robyn/current ]] && current_source="$(basename "$(readlink -f /opt/robyn/current)")"
