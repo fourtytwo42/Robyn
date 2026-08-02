@@ -251,20 +251,24 @@ describe("launch analytics", () => {
     });
 
     expect(result.change1hBps).toBe(10_202);
+    expect(result.change5mBps).toBeNull();
     expect(result.change6hBps).toBe(10_202);
     expect(result.change24hBps).toBe(10_202);
     expect(result.change7dBps).toBe(30_404);
     expect(result.volume1hBase).toBe(parseEther("300").toString());
+    expect(result.volume5mBase).toBe("0");
     expect(result.volume6hBase).toBe(parseEther("300").toString());
     expect(result.volume24hBase).toBe(parseEther("300").toString());
     expect(result.volume7dBase).toBe(parseEther("500").toString());
     expect(result.buyVolume24hBase).toBe("0");
     expect(result.sellVolume24hBase).toBe(parseEther("300").toString());
     expect(result.tradeCount1h).toBe(1);
+    expect(result.tradeCount5m).toBe(0);
     expect(result.tradeCount6h).toBe(1);
     expect(result.tradeCount24h).toBe(1);
     expect(result.tradeCount7d).toBe(2);
     expect(result.uniqueTraders1h).toBe(1);
+    expect(result.uniqueTraders5m).toBe(0);
     expect(result.uniqueTraders6h).toBe(1);
     expect(result.uniqueTraders24h).toBe(1);
     expect(result.uniqueTraders7d).toBe(1);
@@ -273,6 +277,10 @@ describe("launch analytics", () => {
       side: "sell",
       baseAmount: parseEther("300").toString(),
     });
+    expect(result.allTimeHighPriceBasePerToken).toBe(
+      parseEther("0.004").toString(),
+    );
+    expect(result.allTimeHighMarketCapBase).toBe(parseEther("4000").toString());
   });
 
   it("returns null window changes without timestamped trade history", () => {
@@ -287,10 +295,12 @@ describe("launch analytics", () => {
     });
 
     expect(result.change1hBps).toBeNull();
+    expect(result.change5mBps).toBeNull();
     expect(result.change6hBps).toBeNull();
     expect(result.change24hBps).toBeNull();
     expect(result.change7dBps).toBeNull();
     expect(result.volume1hBase).toBe("0");
+    expect(result.volume5mBase).toBe("0");
     expect(result.volume6hBase).toBe("0");
     expect(result.volume24hBase).toBe("0");
   });

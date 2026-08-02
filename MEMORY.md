@@ -33,6 +33,14 @@
 
 - Root storage has 8.6 GiB free after retaining the immutable three-environment UI builds and removing only the three superseded `39c2e77rewardtab` bundles after cutover verification. Expand storage before a future release that requires the earlier 12 GiB runway gate.
 
+### 2026-08-02 - Token-page market hierarchy implementation qualified
+
+- Context: The token page kept price, volume, and window changes in the identity header instead of organizing identity first and market performance around the chart.
+- Decision: Keep name, symbol, creator, project links, basket, and actions in the top section. Present market cap, 24-hour movement, indexed all-time-high market cap, and an ATH progress bar above the canonical chart; place price, 24-hour volume, and 5-minute, 1-hour, and 6-hour movement below it. Put creator rewards in the trading rail and open creator reward assignment in an accessible modal.
+- Files: `apps/api/src/launch-analytics.ts`, `apps/api/src/server.ts`, `apps/api/test/launch-analytics.test.ts`, `apps/web/src/app/launches/[token]/page.tsx`, `apps/web/src/components/token-market-chart.tsx`, `apps/web/src/components/creator-rewards-panel.tsx`, `apps/web/src/lib/data-api.ts`, and `apps/web/src/app/globals.css`.
+- Verification: API tests 71/71, web tests 63/63, workspace lint and typecheck, API build, web production build, formatting, and changed-file checks pass. ATH and 5-minute metrics derive from canonical indexed trade history; disconnected viewers receive a read-only creator reward summary while wallet actions remain disabled.
+- Follow-up: Commit and push the exact source, build immutable Devnet/Testnet/Mainnet releases, cut over only the shared web/API processes with environment preservation, and complete desktop/mobile in-app-browser acceptance.
+
 ### 2026-08-02 - Token data pagination and embedded tabs deployed
 
 - Context: The canonical data tabs still looked like detached pills, Market tape used internal terminology, and both market trades and holder ownership could grow into unbounded tables.

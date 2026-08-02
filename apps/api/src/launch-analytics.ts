@@ -545,10 +545,17 @@ export function deriveLaunchAnalytics({
       uniqueTraders: windowTraders.size,
     };
   };
+  const metrics5m = windowMetrics(5 * 60 * 1000);
   const metrics1h = windowMetrics(60 * 60 * 1000);
   const metrics6h = windowMetrics(6 * 60 * 60 * 1000);
   const metrics24h = windowMetrics(24 * 60 * 60 * 1000);
   const metrics7d = windowMetrics(7 * 24 * 60 * 60 * 1000);
+
+  const allTimeHighPrice = chart.reduce((highest, point) => {
+    const price = BigInt(point.price);
+    return price > highest ? price : highest;
+  }, basePerToken);
+  const allTimeHighMarketCap = (totalSupply * allTimeHighPrice) / 10n ** 18n;
 
   return {
     formula: "canonical-events-plus-onchain-state-v1",
@@ -585,25 +592,31 @@ export function deriveLaunchAnalytics({
     feeBps,
     priceBasePerToken: basePerToken.toString(),
     priceChangeBps,
+    change5mBps: metrics5m.changeBps,
     change1hBps: metrics1h.changeBps,
     change6hBps: metrics6h.changeBps,
     change24hBps: metrics24h.changeBps,
     change7dBps: metrics7d.changeBps,
     marketCapBase: marketCapBase.toString(),
+    allTimeHighPriceBasePerToken: allTimeHighPrice.toString(),
+    allTimeHighMarketCapBase: allTimeHighMarketCap.toString(),
     liquidityBase: liquidityBase.toString(),
     totalVolumeBase: totalVolume.toString(),
     buyVolumeBase: buyVolume.toString(),
     sellVolumeBase: sellVolume.toString(),
+    volume5mBase: metrics5m.volumeBase,
     volume1hBase: metrics1h.volumeBase,
     volume6hBase: metrics6h.volumeBase,
     volume24hBase: metrics24h.volumeBase,
     volume7dBase: metrics7d.volumeBase,
     buyVolume24hBase: metrics24h.buyVolumeBase,
     sellVolume24hBase: metrics24h.sellVolumeBase,
+    tradeCount5m: metrics5m.tradeCount,
     tradeCount1h: metrics1h.tradeCount,
     tradeCount6h: metrics6h.tradeCount,
     tradeCount24h: metrics24h.tradeCount,
     tradeCount7d: metrics7d.tradeCount,
+    uniqueTraders5m: metrics5m.uniqueTraders,
     uniqueTraders1h: metrics1h.uniqueTraders,
     uniqueTraders6h: metrics6h.uniqueTraders,
     uniqueTraders24h: metrics24h.uniqueTraders,

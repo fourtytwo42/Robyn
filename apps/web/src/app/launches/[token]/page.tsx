@@ -6,7 +6,6 @@ import { NetworkTokenTradePanel } from "@robyn/network-token-trade";
 import { NetworkCreatorRewardsPanel } from "@robyn/network-creator-rewards";
 import deployment from "@robyn/deployment";
 import { TokenMarketChart } from "@/components/token-market-chart";
-import { TokenMarketQuote } from "@/components/token-market-quote";
 import {
   TokenBasketAssets,
   TokenBasketPreviewChips,
@@ -37,11 +36,6 @@ function quantity(value: string, maximumFractionDigits = 2) {
 
 function metric(value: string, symbol = "mUSD") {
   return `${quantity(value, 4)} ${symbol}`;
-}
-
-function changeLabel(value: number | null) {
-  if (value === null) return "Insufficient history";
-  return `${value > 0 ? "+" : ""}${(value / 100).toFixed(2)}%`;
 }
 
 function marketPhaseLabel(phase: "legacy_fixed" | "bonding" | "graduated") {
@@ -91,13 +85,6 @@ export default async function LaunchDetail({
     address: asset,
     weight: launch.weights_bps[index] ?? 0,
   }));
-  const windowVolume = BigInt(market.volume24hBase);
-  const buyShare =
-    windowVolume === 0n
-      ? null
-      : Number((BigInt(market.buyVolume24hBase) * 10_000n) / windowVolume) /
-        100;
-
   return (
     <main id="main">
       <div className="ambient ambient-right" aria-hidden="true" />
@@ -210,75 +197,7 @@ export default async function LaunchDetail({
                 : {})}
             />
           </div>
-          <div className="token-overview-market">
-            <div className="token-hero-quote">
-              <TokenMarketQuote
-                marketCapBase={market.marketCapBase}
-                priceBasePerToken={market.priceBasePerToken}
-                baseSymbol={quoteSymbol}
-                tokenSymbol={launch.symbol}
-                ethUsdPrice={ethUsdPrice}
-              />
-              <span className="risk-badge">
-                {publicEnvironment.isMainnet
-                  ? "Onchain assets"
-                  : isTestnet
-                    ? "Testnet assets"
-                    : "Controlled devnet"}
-              </span>
-            </div>
-            <div
-              className="token-overview-stats"
-              aria-label="Live market snapshot"
-            >
-              {[
-                {
-                  label: "24h change",
-                  value: changeLabel(market.change24hBps),
-                  tone:
-                    market.change24hBps === null
-                      ? "neutral"
-                      : market.change24hBps >= 0
-                        ? "positive"
-                        : "negative",
-                },
-                {
-                  label: "24h volume",
-                  value: metric(market.volume24hBase, quoteSymbol),
-                  tone: "neutral",
-                },
-                {
-                  label: "Buy / sell",
-                  value:
-                    buyShare === null
-                      ? "No window trades"
-                      : `${buyShare.toFixed(0)}% / ${(100 - buyShare).toFixed(0)}%`,
-                  tone: "flow",
-                },
-                {
-                  label: "24h traders",
-                  value: market.uniqueTraders24h.toLocaleString(),
-                  tone: "traders",
-                },
-                {
-                  label: "Lifecycle",
-                  value: marketPhaseLabel(market.marketPhase),
-                  tone: "lifecycle",
-                },
-              ].map(({ label, value, tone }) => (
-                <div className={`token-overview-stat ${tone}`} key={label}>
-                  <span>{label}</span>
-                  <strong>{value}</strong>
-                </div>
-              ))}
-            </div>
-          </div>
         </header>
-
-        <NetworkCreatorRewardsPanel
-          token={launch.token as Address}
-          creator={launch.creator as Address}
-        />
 
         <div className="token-market-layout">
           <div className="token-market-primary">
@@ -385,6 +304,11 @@ export default async function LaunchDetail({
               feeBps={market.feeBps}
               basePerToken={market.priceBasePerToken}
               marketPhase={market.marketPhase}
+            />
+
+            <NetworkCreatorRewardsPanel
+              token={launch.token as Address}
+              creator={launch.creator as Address}
             />
 
             {market.marketPhase !== "legacy_fixed" ? (

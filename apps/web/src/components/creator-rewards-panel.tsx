@@ -87,19 +87,17 @@ export function CreatorRewardsPanel({
     { recipient: string; percent: string }[]
   >([]);
   const [lockConfiguration, setLockConfiguration] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
   const isCreator =
     account?.toLowerCase() === creator.toLowerCase() && Boolean(walletClient);
 
   const refresh = useCallback(async () => {
-    if (!account) {
-      setData(undefined);
-      return;
-    }
+    const viewer = account ?? creator;
     const [rewardResponse, daoResponse] = await Promise.all([
-      fetch(`/api/launches/${token}/creator-rewards?account=${account}`, {
+      fetch(`/api/launches/${token}/creator-rewards?account=${viewer}`, {
         cache: "no-store",
       }),
-      fetch(`/api/dao?account=${account}`, { cache: "no-store" }),
+      fetch(`/api/dao?account=${viewer}`, { cache: "no-store" }),
     ]);
     if (!rewardResponse.ok || !daoResponse.ok) {
       throw new Error("Creator reward state is unavailable.");
@@ -123,7 +121,7 @@ export function CreatorRewardsPanel({
       setLockConfiguration(false);
     }
     setRouter(daoPayload.data.contracts.protocolFeeRouter);
-  }, [account, token]);
+  }, [account, creator, token]);
 
   useEffect(() => {
     void refresh().catch((error) =>
@@ -140,13 +138,20 @@ export function CreatorRewardsPanel({
     };
   }, [refresh]);
 
-  if (
-    !data ||
-    (!isCreator &&
-      BigInt(data.claimableNative) === 0n &&
-      BigInt(data.unlockingNative) === 0n)
-  )
-    return null;
+  useEffect(() => {
+    if (!editorOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !working) setEditorOpen(false);
+    };
+    document.body.classList.add("modal-open");
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.classList.remove("modal-open");
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [editorOpen, working]);
+
+  if (!data) return null;
   const creatorSplit = data.creatorSplit;
 
   async function claim() {
@@ -226,6 +231,7 @@ export function CreatorRewardsPanel({
           ? "Creator reward split is permanently locked."
           : "Creator reward split saved for future fees.",
       );
+      setEditorOpen(false);
     } catch (error) {
       setStatus(
         error instanceof BaseError
@@ -245,14 +251,13 @@ export function CreatorRewardsPanel({
       aria-labelledby="creator-earnings-heading"
     >
       <div>
-        <p className="card-label">Creator earnings</p>
+        <p className="card-label">Creator rewards</p>
         <h2 id="creator-earnings-heading">
           {amount(data.claimableNative)} ETH claimable
         </h2>
         <p>
-          Assigned fees unlock linearly over{" "}
-          {governanceDuration(String(data.rewardStreamDurationSeconds))}. You
-          can claim any unlocked amount now, and the remainder keeps unlocking.
+          The 25% creator share unlocks over{" "}
+          {governanceDuration(String(data.rewardStreamDurationSeconds))}.
         </p>
       </div>
       <dl className="creator-earnings-metrics">
@@ -281,132 +286,165 @@ export function CreatorRewardsPanel({
       </p>
       <button
         className="button primary"
-        disabled={working || BigInt(data.claimableNative) === 0n}
+        disabled={
+          !walletClient || working || BigInt(data.claimableNative) === 0n
+        }
         onClick={() => void claim()}
       >
         {working ? "Claiming…" : "Claim this token"}
       </button>
       {isCreator && creatorSplit ? (
-        <div className="creator-split-editor">
-          <div>
-            <p className="card-label">Future creator fees</p>
-            <h3>
-              {creatorSplit.locked
-                ? "Reward split locked"
-                : "Assign the 25% creator share"}
-            </h3>
-            <p>
-              Changes apply only to future fees. Rewards already assigned to an
-              address stay with that address.
-            </p>
-          </div>
-          <div className="creator-split-rows">
-            {splitRows.map((row, index) => (
-              <div className="creator-split-row" key={index}>
-                <label>
-                  <span>Recipient {index + 1}</span>
-                  <input
-                    value={row.recipient}
-                    disabled={creatorSplit.locked || working}
-                    onChange={(event) =>
-                      setSplitRows((rows) =>
-                        rows.map((entry, rowIndex) =>
-                          rowIndex === index
-                            ? { ...entry, recipient: event.target.value }
-                            : entry,
-                        ),
-                      )
-                    }
-                    placeholder="0x…"
-                  />
-                </label>
-                <label>
-                  <span>Percent</span>
-                  <input
-                    type="number"
-                    min="0.01"
-                    max="100"
-                    step="0.01"
-                    value={row.percent}
-                    disabled={creatorSplit.locked || working}
-                    onChange={(event) =>
-                      setSplitRows((rows) =>
-                        rows.map((entry, rowIndex) =>
-                          rowIndex === index
-                            ? { ...entry, percent: event.target.value }
-                            : entry,
-                        ),
-                      )
-                    }
-                  />
-                </label>
-                {!creatorSplit.locked && splitRows.length > 1 ? (
-                  <button
-                    className="icon-button"
-                    type="button"
-                    aria-label={`Remove recipient ${index + 1}`}
-                    onClick={() =>
-                      setSplitRows((rows) =>
-                        rows.filter((_, rowIndex) => rowIndex !== index),
-                      )
-                    }
-                  >
-                    ×
-                  </button>
-                ) : null}
-              </div>
-            ))}
-          </div>
-          <div className="creator-earnings-metrics">
-            {creatorSplit.recipientRewards.map((reward) => (
-              <article key={reward.recipient}>
-                <strong>{reward.shareBps / 100}%</strong>
-                <span>{reward.recipient}</span>
-                <small>
-                  {amount(reward.claimable)} ETH claimable,{" "}
-                  {amount(reward.unvested)} ETH unlocking
-                </small>
-                <small>Completes {completion(reward.streamEnd)}</small>
-              </article>
-            ))}
-          </div>
-          {!creatorSplit.locked ? (
-            <div className="creator-split-actions">
-              <button
-                className="button"
-                type="button"
-                disabled={
-                  working || splitRows.length >= creatorSplit.maxRecipients
-                }
-                onClick={() =>
-                  setSplitRows((rows) => [
-                    ...rows,
-                    { recipient: "", percent: "" },
-                  ])
-                }
-              >
-                Add recipient
-              </button>
-              <label className="creator-split-lock">
-                <input
-                  type="checkbox"
-                  checked={lockConfiguration}
-                  onChange={(event) =>
-                    setLockConfiguration(event.target.checked)
-                  }
-                />
-                Lock permanently after saving
-              </label>
-              <button
-                className="button primary"
-                type="button"
-                disabled={working}
-                onClick={() => void saveSplit()}
-              >
-                Save split
-              </button>
+        <button
+          className="button creator-assignment-trigger"
+          type="button"
+          onClick={() => setEditorOpen(true)}
+        >
+          {creatorSplit.locked ? "View assignment" : "Assign creator rewards"}
+        </button>
+      ) : null}
+      {editorOpen && isCreator && creatorSplit ? (
+        <div
+          className="creator-reward-modal-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !working)
+              setEditorOpen(false);
+          }}
+        >
+          <div
+            className="creator-split-editor creator-reward-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="creator-split-heading"
+          >
+            <button
+              className="icon-button creator-reward-modal-close"
+              type="button"
+              aria-label="Close creator reward assignment"
+              disabled={working}
+              onClick={() => setEditorOpen(false)}
+            >
+              ×
+            </button>
+            <div>
+              <p className="card-label">Future creator fees</p>
+              <h3 id="creator-split-heading">
+                {creatorSplit.locked
+                  ? "Reward split locked"
+                  : "Assign the 25% creator share"}
+              </h3>
+              <p>
+                Changes apply only to future fees. Rewards already assigned to
+                an address stay with that address.
+              </p>
             </div>
-          ) : null}
+            <div className="creator-split-rows">
+              {splitRows.map((row, index) => (
+                <div className="creator-split-row" key={index}>
+                  <label>
+                    <span>Recipient {index + 1}</span>
+                    <input
+                      value={row.recipient}
+                      disabled={creatorSplit.locked || working}
+                      onChange={(event) =>
+                        setSplitRows((rows) =>
+                          rows.map((entry, rowIndex) =>
+                            rowIndex === index
+                              ? { ...entry, recipient: event.target.value }
+                              : entry,
+                          ),
+                        )
+                      }
+                      placeholder="0x…"
+                    />
+                  </label>
+                  <label>
+                    <span>Percent</span>
+                    <input
+                      type="number"
+                      min="0.01"
+                      max="100"
+                      step="0.01"
+                      value={row.percent}
+                      disabled={creatorSplit.locked || working}
+                      onChange={(event) =>
+                        setSplitRows((rows) =>
+                          rows.map((entry, rowIndex) =>
+                            rowIndex === index
+                              ? { ...entry, percent: event.target.value }
+                              : entry,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  {!creatorSplit.locked && splitRows.length > 1 ? (
+                    <button
+                      className="icon-button"
+                      type="button"
+                      aria-label={`Remove recipient ${index + 1}`}
+                      onClick={() =>
+                        setSplitRows((rows) =>
+                          rows.filter((_, rowIndex) => rowIndex !== index),
+                        )
+                      }
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+            <div className="creator-earnings-metrics">
+              {creatorSplit.recipientRewards.map((reward) => (
+                <article key={reward.recipient}>
+                  <strong>{reward.shareBps / 100}%</strong>
+                  <span>{reward.recipient}</span>
+                  <small>
+                    {amount(reward.claimable)} ETH claimable,{" "}
+                    {amount(reward.unvested)} ETH unlocking
+                  </small>
+                  <small>Completes {completion(reward.streamEnd)}</small>
+                </article>
+              ))}
+            </div>
+            {!creatorSplit.locked ? (
+              <div className="creator-split-actions">
+                <button
+                  className="button"
+                  type="button"
+                  disabled={
+                    working || splitRows.length >= creatorSplit.maxRecipients
+                  }
+                  onClick={() =>
+                    setSplitRows((rows) => [
+                      ...rows,
+                      { recipient: "", percent: "" },
+                    ])
+                  }
+                >
+                  Add recipient
+                </button>
+                <label className="creator-split-lock">
+                  <input
+                    type="checkbox"
+                    checked={lockConfiguration}
+                    onChange={(event) =>
+                      setLockConfiguration(event.target.checked)
+                    }
+                  />
+                  Lock permanently after saving
+                </label>
+                <button
+                  className="button primary"
+                  type="button"
+                  disabled={working}
+                  onClick={() => void saveSplit()}
+                >
+                  Save split
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       ) : null}
       {status ? (

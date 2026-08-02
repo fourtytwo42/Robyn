@@ -27,6 +27,16 @@ function timeLabel(timestamp: string | null, blockNumber: string) {
   });
 }
 
+function changeLabel(value: number | null) {
+  if (value === null) return "N/A";
+  return `${value > 0 ? "+" : ""}${(value / 100).toFixed(2)}%`;
+}
+
+function changeTone(value: number | null) {
+  if (value === null || value === 0) return "neutral";
+  return value > 0 ? "positive" : "negative";
+}
+
 export function TokenMarketChart({
   analytics,
   symbol,
@@ -113,6 +123,15 @@ export function TokenMarketChart({
     activeIndex === null ? null : (chart.points[activeIndex] ?? null);
   const current = chart.points.at(-1)?.value ?? 0;
   const marketCap = baseUnits(analytics.marketCapBase) * currencyMultiplier;
+  const allTimeHighMarketCap =
+    baseUnits(analytics.allTimeHighMarketCapBase) * currencyMultiplier;
+  const currentPrice =
+    baseUnits(analytics.priceBasePerToken) * currencyMultiplier;
+  const volume24h = baseUnits(analytics.volume24hBase) * currencyMultiplier;
+  const athProgress =
+    allTimeHighMarketCap <= 0
+      ? 0
+      : Math.min(100, Math.max(0, (marketCap / allTimeHighMarketCap) * 100));
   const insufficient =
     range !== "all" &&
     chart.points.filter((point) => point.eventType === "trade").length === 0;
@@ -129,15 +148,41 @@ export function TokenMarketChart({
       aria-labelledby="market-chart-heading"
     >
       <div className="chart-heading-row">
-        <div>
+        <div className="market-cap-heading">
           <p className="card-label">Canonical market activity</p>
-          <h2 id="market-chart-heading">
-            {mode === "price" ? `${symbol} price` : "Window volume"}
-          </h2>
-          <strong className="chart-current">{displayValue(current)}</strong>
-          <span className="chart-market-cap">
-            Market cap <b>{displayValue(marketCap, marketCap < 1 ? 6 : 2)}</b>
-          </span>
+          <span className="market-cap-kicker">Market cap</span>
+          <div className="market-cap-value-row">
+            <h2 id="market-chart-heading">
+              {displayValue(marketCap, marketCap < 1 ? 6 : 2)}
+            </h2>
+            <span
+              className={`market-change ${changeTone(analytics.change24hBps)}`}
+            >
+              {changeLabel(analytics.change24hBps)} 24h
+            </span>
+          </div>
+          <div className="market-ath-row">
+            <span>
+              ATH{" "}
+              <strong>
+                {displayValue(
+                  allTimeHighMarketCap,
+                  allTimeHighMarketCap < 1 ? 6 : 2,
+                )}
+              </strong>
+            </span>
+            <span>{athProgress.toFixed(1)}% of ATH</span>
+          </div>
+          <div
+            className="market-ath-progress"
+            role="progressbar"
+            aria-label={`${symbol} market cap progress toward all-time high`}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Number(athProgress.toFixed(1))}
+          >
+            <span style={{ width: `${athProgress}%` }} />
+          </div>
         </div>
         <div className="chart-controls">
           <div
@@ -180,6 +225,10 @@ export function TokenMarketChart({
             ))}
           </div>
         </div>
+      </div>
+      <div className="chart-mode-context" aria-live="polite">
+        <span>{mode === "price" ? `${symbol} price` : "Window volume"}</span>
+        <strong>{displayValue(current)}</strong>
       </div>
       <div className="chart-range-tabs" aria-label="Chart time range">
         {(["1h", "24h", "7d", "all"] as const).map((period) => (
@@ -299,6 +348,28 @@ export function TokenMarketChart({
           </output>
         ) : null}
       </div>
+      <dl className="chart-window-stats" aria-label="Market window statistics">
+        <div>
+          <dt>Price</dt>
+          <dd>{displayValue(currentPrice)}</dd>
+        </div>
+        <div>
+          <dt>24h volume</dt>
+          <dd>{displayValue(volume24h, volume24h < 1 ? 6 : 2)}</dd>
+        </div>
+        {[
+          ["5m", analytics.change5mBps],
+          ["1h", analytics.change1hBps],
+          ["6h", analytics.change6hBps],
+        ].map(([label, value]) => (
+          <div key={label as string}>
+            <dt>{label}</dt>
+            <dd className={changeTone(value as number | null)}>
+              {changeLabel(value as number | null)}
+            </dd>
+          </div>
+        ))}
+      </dl>
       <div className="chart-foot">
         <span>
           {timeLabel(
