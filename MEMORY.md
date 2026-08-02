@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-02 - Gate-2 reactivation scheduled and Gate-3 preparation advanced
+
+- Live Gate-2: Exact manifest `101e547d00722a32690f20c39b2feb3ffad4c14028e934848c4f9ebc32593802` was authorized. The unanimous reactivation schedule confirmed once; operation `0x2df756afa5eba5adc70d2c934f336a90f3d98961d3bb8a089ee5feefba2152970` matures at chain timestamp `1785640168` (`2026-08-02T03:09:28Z`).
+- Safety: Mainnet remains Paused, conversions Paused, all six routes disabled, application writes disabled, LAN gateway primary, Alchemy fallback unauthorized, and balance `0.021381091447839221 ETH`.
+- Gate-3 prep: A separate `codex/schema18-gate3-postgrad` worktree now validates the post-graduation Gate-2 stage set, rejects duplicate receipt hashes, and binds immutable application evidence. Public focused tests pass 8/8; PM2 validation, lint, and typecheck pass.
+- Application evidence: Exact immutable release `8327b250122cd9050a7da6a44e12859e3cf521aa` build checksums pass; protected activation evidence SHA-256 is `d41071fe1981a815421960888c64c35efc2b4760a5a8605e0befef17b0fe7a8b`. No production process or application writes were enabled.
+- Follow-up: After Timelock maturity, execute reactivation and settlement, record the stream timestamp, wait the real reward hour, then claims, bounded unwind, post-settlement, guardian shutdown, reconciliation, and two healthy samples. Only after Gate-2 sealing may the exact Public rehearsal and manifest be sealed for separate authorization.
+
 ### 2026-08-02 - Replacement Gate-2 post-graduation manifest reaches sealing
 
 - Tooling: Clean pushed post-graduation recovery branch reached `b9980066f0cebb7108749f6ce59271d9c7d3cf58` after merging the contingency playbooks.

@@ -67,22 +67,45 @@ if (source.schemaVersion !== 18 || source.chainId !== CHAIN_ID || source.release
 if (gate1.contractReleaseSha !== CONTRACT_SHA || gate1.applicationReleaseSha !== APP_SHA) {
   throw new Error("Gate-1 identity mismatch");
 }
-for (const stage of ["execute-reactivation", "routes", "launch", "settle", "claims", "unwind", "post-settle", "shutdown", "reconcile"]) {
+for (const stage of ["schedule-reactivation", "execute-reactivation", "settle", "claims", "unwind", "post-settle", "shutdown", "reconcile"]) {
   if (!gate2State.completedStages?.includes(stage)) throw new Error(`Gate 2 missing ${stage}`);
 }
-if (gate2State.failedRun || BigInt(gate2State.recoveryBps) < 7500n || !gate2State.launchToken) {
-  throw new Error("Gate-2 Canary did not finish cleanly");
+if (gate2State.failedRun || BigInt(gate2State.recoveryBps) < 7500n || !gate2State.token) {
+  throw new Error("post-graduation Gate-2 recovery did not finish cleanly");
 }
 const gate2Records = gate2JournalRaw.trim().split("\n").map(JSON.parse);
 const gate2Intents = gate2Records.filter((record) => record.type === "intent");
 const gate2Receipts = gate2Records.filter((record) => record.type === "receipt");
 if (gate2Intents.length === 0 || gate2Receipts.length !== gate2Intents.length) throw new Error("Gate-2 journal is incomplete");
 const receiptKeys = new Set();
+const receiptHashes = new Set();
 for (const receipt of gate2Receipts) {
-  if (receipt.status !== "success" || receiptKeys.has(receipt.idempotencyKey)) throw new Error("Gate-2 receipt failure or duplicate");
+  const hash = receipt.transactionHash?.toLowerCase();
+  if (
+    receipt.status !== "success" ||
+    !hash ||
+    receiptKeys.has(receipt.idempotencyKey) ||
+    receiptHashes.has(hash)
+  ) throw new Error("Gate-2 receipt failure, duplicate key, or reused hash");
   receiptKeys.add(receipt.idempotencyKey);
+  receiptHashes.add(hash);
 }
-if (applicationEvidence.releaseSha !== APP_SHA || applicationEvidence.chainId !== CHAIN_ID || applicationEvidence.reproducible !== true || applicationEvidence.transactionSubmissionInitiallyDisabled !== true) {
+const evidenceHash = (value) => typeof value === "string" && /^[0-9a-f]{64}$/.test(value);
+if (
+  applicationEvidence.releaseSha !== APP_SHA ||
+  applicationEvidence.contractSha !== CONTRACT_SHA ||
+  applicationEvidence.chainId !== CHAIN_ID ||
+  applicationEvidence.releasePath !== "/opt/robyn/mainnet-releases/" + APP_SHA ||
+  applicationEvidence.immutable !== true ||
+  applicationEvidence.reproducible !== true ||
+  applicationEvidence.transactionSubmissionInitiallyDisabled !== true ||
+  applicationEvidence.productionProcessesStarted !== false ||
+  applicationEvidence.alchemyCredentialOrHostPresent !== false ||
+  !evidenceHash(applicationEvidence.releaseRootSha256) ||
+  !evidenceHash(applicationEvidence.buildValidationSha256) ||
+  !evidenceHash(applicationEvidence.reproducibilitySummarySha256) ||
+  !evidenceHash(applicationEvidence.serveValidationSha256)
+) {
   throw new Error("exact Mainnet application evidence is incomplete");
 }
 
@@ -153,7 +176,7 @@ const ownerBalance = await read(c.daoToken,daoArtifact.abi,"balanceOf",[source.d
 const clock = BigInt(await read(c.daoToken,daoArtifact.abi,"clock"));
 if (supply === 0n || ownerBalance !== supply || clock === 0n || (await read(c.daoToken,daoArtifact.abi,"getPastVotes",[source.deployer,clock-1n])) !== supply) throw new Error("deployer is not checkpointed unanimous owner");
 const unanimousNonce = await read(c.governor,governorAbi,"unanimousNonce");
-const canaryProfile = await read(c.marketFactory,marketArtifact.abi,"graduationProfileByToken",[gate2State.launchToken]);
+const canaryProfile = await read(c.marketFactory,marketArtifact.abi,"graduationProfileByToken",[gate2State.token]);
 if (canaryProfile.targetGraduationNative !== 10_000_000_000_000_000n || canaryProfile.maximumCurvePurchase !== 1_000_000_000_000_000n) throw new Error("Canary profile snapshot changed");
 const currentProfile = await read(c.marketFactory,marketArtifact.abi,"currentGraduationProfile");
 if (currentProfile.targetGraduationNative !== 10_000_000_000_000_000n) throw new Error("production profile was installed before authorization");
@@ -184,7 +207,7 @@ const manifest={
   schemaVersion:18,chainId:CHAIN_ID,generatedAt:new Date().toISOString(),authorizationEligible:true,
   contractReleaseSha:CONTRACT_SHA,applicationReleaseSha:APP_SHA,operationalToolingSha:toolingSha,
   deployer:getAddress(source.deployer),guardianSafe:getAddress(source.guardianSafe),contracts:source.contracts,routes:source.routes,runtimeIdentities,
-  canary:{launchToken:getAddress(gate2State.launchToken),profileVersion:canaryProfile.version.toString(),targetGraduationNativeWei:canaryProfile.targetGraduationNative.toString(),maximumCurvePurchaseWei:canaryProfile.maximumCurvePurchase.toString(),recoveryBps:gate2State.recoveryBps,reconciledAt:gate2State.reconciledAt},
+  canary:{launchToken:getAddress(gate2State.token),profileVersion:canaryProfile.version.toString(),targetGraduationNativeWei:canaryProfile.targetGraduationNative.toString(),maximumCurvePurchaseWei:canaryProfile.maximumCurvePurchase.toString(),recoveryBps:gate2State.recoveryBps,reconciledAt:gate2State.reconciledAt},
   publicActivation:{expectedUnanimousNonce:unanimousNonce.toString(),batch,batchHash,profile:{version:(currentProfile.version+1n).toString(),targetGraduationNativeWei:"6000000000000000000",maximumCurvePurchaseWei:"500000000000000000"},routes:expectedRoutes},
   sourceGate1:{manifestPath:gate1Path,manifestSha256:sha256(gate1Raw),lifecyclePath:sourcePath,lifecycleSha256:sha256(sourceRaw)},
   gate2:{evidenceRoot:gate2Root,stateSha256:sha256(gate2StateRaw),journalSha256:sha256(gate2JournalRaw),receiptCount:gate2Receipts.length},

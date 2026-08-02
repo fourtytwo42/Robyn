@@ -36,6 +36,7 @@ const gate1Raw = await readFile(gate1Path, "utf8");
 const gate1 = JSON.parse(gate1Raw);
 const gate2StateRaw = await readFile(path.join(gate2Root, "state.json"), "utf8");
 const gate2State = JSON.parse(gate2StateRaw);
+const gate2JournalRaw = await readFile(path.join(gate2Root, "transactions.jsonl"), "utf8");
 if (
   source.schemaVersion !== 18 ||
   source.chainId !== 4663 ||
@@ -45,9 +46,8 @@ if (
   throw new Error("Schema-18 Gate 1 or Gate 2 evidence mismatch");
 }
 for (const stage of [
+  "schedule-reactivation",
   "execute-reactivation",
-  "routes",
-  "launch",
   "settle",
   "claims",
   "unwind",
@@ -57,8 +57,24 @@ for (const stage of [
 ]) {
   if (!gate2State.completedStages?.includes(stage)) throw new Error(`Gate 2 missing ${stage}`);
 }
-if (gate2State.failedRun || BigInt(gate2State.recoveryBps) < 7500n || !gate2State.launchToken) {
-  throw new Error("Gate 2 did not finish cleanly");
+if (gate2State.failedRun || BigInt(gate2State.recoveryBps) < 7500n || !gate2State.token) {
+  throw new Error("post-graduation Gate 2 did not finish cleanly");
+}
+const gate2Records = gate2JournalRaw.trim().split("\n").map(JSON.parse);
+const gate2Intents = gate2Records.filter((record) => record.type === "intent");
+const gate2Receipts = gate2Records.filter((record) => record.type === "receipt");
+const gate2Keys = new Set();
+const gate2Hashes = new Set();
+if (gate2Intents.length === 0 || gate2Receipts.length !== gate2Intents.length) {
+  throw new Error("Gate-2 journal is incomplete");
+}
+for (const receipt of gate2Receipts) {
+  const hash = receipt.transactionHash?.toLowerCase();
+  if (receipt.status !== "success" || !hash || gate2Keys.has(receipt.idempotencyKey) || gate2Hashes.has(hash)) {
+    throw new Error("Gate-2 receipt failure, duplicate key, or reused hash");
+  }
+  gate2Keys.add(receipt.idempotencyKey);
+  gate2Hashes.add(hash);
 }
 
 const live = createPublicClient({ transport: http(gateway, { timeout: 30_000, retryCount: 0 }) });
@@ -176,7 +192,7 @@ const canaryProfile = await live.readContract({
   address: getAddress(source.contracts.marketFactory),
   abi: marketArtifact.abi,
   functionName: "graduationProfileByToken",
-  args: [getAddress(gate2State.launchToken)],
+  args: [getAddress(gate2State.token)],
 });
 const currentProfile = await live.readContract({
   address: getAddress(source.contracts.marketFactory),
@@ -196,7 +212,7 @@ const manifest = {
   routes: source.routes,
   runtimeIdentities,
   canary: {
-    launchToken: getAddress(gate2State.launchToken),
+    launchToken: getAddress(gate2State.token),
     profileVersion: canaryProfile.version.toString(),
     targetGraduationNativeWei: canaryProfile.targetGraduationNative.toString(),
     maximumCurvePurchaseWei: canaryProfile.maximumCurvePurchase.toString(),
