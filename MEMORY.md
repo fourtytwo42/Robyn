@@ -5,7 +5,7 @@
 - Schema-18 is publicly operational on Robinhood Mainnet at `https://sherwoodforest.trade`. Public mode, the `6 ETH / 0.5 ETH` profile, six qualified routes, both conversion systems, and application transaction submission are active.
 - Exact identities: contracts `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4`, application `5ea50ed836d81416a7a6a32c8078a864fca28d0b`, tooling `e2e2be924f1ec432c2b3eebeb79c7c814b82a32c`, policy `5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1`.
 - First-24-hour native monitoring is active through PM2/systemd, Prometheus, Alertmanager, Grafana, and the 30-second metrics timer. LAN is the sole application and transaction RPC; Alchemy remains probe-only with automatic fallback disabled.
-- Token-workspace release `c11ce965825fad150c3d1f694fe76f0d159c9046` is live on Devnet, Testnet, and Mainnet. Schema-18 contracts, routes, indexers, keepers, and financial configuration are unchanged.
+- Asset-catalog release `6f6686e199f9568e5c50f32e2b5cdd35de12fc36` is live on Devnet, Testnet, and Mainnet web/API processes. Schema-18 contracts, routes, indexers, keepers, and financial configuration are unchanged.
 
 ## Current State
 
@@ -19,7 +19,7 @@
 - Gate-3 Public live evidence is sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-public/live-e2e2be9-2554c9c-01`. The journal contains two unique intents and two unique successful receipts with zero failures or ambiguity.
 - Public browser acceptance passed at desktop and 390x844 mobile viewports. The exact public domain serves the qualified application, transaction submission is enabled, LAN remains primary, fallback traffic is unauthorized, and paid fallback CU is zero.
 - PM2 state is saved and all Mainnet processes are online. `pm2-hendo420`, metrics collection, alert receiver, Prometheus, Alertmanager, Grafana, Nginx, and Cloudflared are active with zero firing alerts at monitoring start.
-- Devnet, Testnet, and Mainnet web processes serve token-workspace release `c11ce965825fad150c3d1f694fe76f0d159c9046`. Mainnet API serves the same release for corrected canonical asset symbols; all 20 PM2 processes are online and the process list is saved.
+- Devnet, Testnet, and Mainnet web/API processes serve asset-catalog release `6f6686e199f9568e5c50f32e2b5cdd35de12fc36`; all 20 PM2 processes are online and the process list is saved.
 - Final Gate-2 recovery evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-final-settlement/live-bf8c377-1ea83d5-01`.
 - Qualified read-only manifest is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-indexer-remediation/mainnet-scoped-readonly-qualified-5ea50ed-01`; `contracts.factory` equals `contracts.launchFactory`.
 - Scoped application activation evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-public-prep/application-5ea50ed-v2`; it binds the database, PM2, Nginx, stopped keeper, disabled writes, and LAN-only RPC identities.
@@ -29,6 +29,15 @@
 
 - Continue observing the first 24 public hours through native monitoring. On any contract, accounting, solvency, supply, principal, route, or LAN-RPC anomaly, disable application submissions and use the verified guardian controls.
 - Alchemy's probe currently reports an invalid `eth_syncing` response. It has received probe traffic only, zero fallback traffic, and is not an application dependency; rotate any previously exposed provider credential during routine credential hygiene.
+
+### 2026-08-02 - Canonical asset catalog and live route pricing deployed
+
+- Context: Mainnet catalog cards leaked Testnet `tm*` aliases, treated current verification codes as unverified ERC-20s, and conflated missing static USD snapshots with route-price availability.
+- Decision: Mainnet always renders canonical symbols; `tm*` is reserved for actual Testnet mocks. Static USD references and fresh bounded v4 pool-implied ETH prices are separate fields. WETH reports exact native parity, and unavailable routes surface their contract readiness reason.
+- Files: `apps/api/src/asset-catalog.ts`, `apps/api/src/server.ts`, `apps/api/test/asset-catalog.test.ts`, `apps/web/src/lib/asset-catalog-presentation.ts`, `apps/web/src/components/basket-asset-picker.tsx`, reward-asset helpers, CSS, and focused tests.
+- Verification: API tests 71/71, web tests 60/60, lint, typecheck, formatting, production builds, complete immutable Devnet/Testnet/Mainnet release gates, 563 Foundry tests, security checks, and live Mainnet/Testnet in-app-browser acceptance passed. Mainnet shows WETH `1 ETH`, SPCX with a pool-implied ETH value despite no static reference, and GOOGL as unavailable because its conversion pool has insufficient liquidity. Testnet retains `tm*` mock aliases. Browser consoles were clean.
+- Deployment: Immutable artifacts are `/opt/robyn/releases/6f6686eacatalog`, `/opt/robyn/testnet-releases/6f6686eacatalog`, and `/opt/robyn/mainnet-releases/6f6686eacatalog`. The six web/API processes were cut over independently with exact environment preservation; all 20 PM2 processes are online and saved. No onchain transaction, route change, indexer/keeper restart, or RPC-policy change occurred.
+- Operational note: Devnet's aggregate `/health` remains sensitive to its older local contract deployment, so deployment acceptance used the exact `/assets` surface plus live page readiness; Testnet/Mainnet aggregate health status was already degraded before this release for unrelated checks. Asset catalog endpoints and public pages return successfully.
 
 ### 2026-08-02 - Compact token workspace and canonical quote repair
 
