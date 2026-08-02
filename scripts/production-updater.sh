@@ -43,7 +43,8 @@ trap cleanup EXIT
 for asset in production-release.json production-release.json.sig runtime.tar.zst runtime.tar.zst.sha256; do
   url="$(jq -r --arg name "${asset}" '.assets[] | select(.name == $name) | .url' <<<"${release_json}")"
   [[ -n "${url}" && "${url}" != "null" ]] || { echo "missing release asset: ${asset}" >&2; exit 1; }
-  curl -fsS "${headers[@]}" -H "Accept: application/octet-stream" "${url}" -o "${work}/${asset}"
+  curl -fsSL --proto '=https' --proto-redir '=https' --max-redirs 3 \
+    "${headers[@]}" -H "Accept: application/octet-stream" "${url}" -o "${work}/${asset}"
 done
 (
   cd "${work}"

@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   assertAdditiveMigrations,
   assertReleaseTreeIntegrity,
@@ -37,6 +38,12 @@ const valid = {
   ],
   rpcPolicy: { primary: "lan-only", probeOnly: true, automaticFallback: false },
 };
+
+const repositoryRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+);
 
 test("classifies UI-only work without invoking contract qualification", () => {
   assert.equal(classifyProductionChanges(["apps/web/src/a.tsx"]), "ui");
@@ -186,5 +193,25 @@ test("binds every runtime file and acceptance record to the signed manifest", ()
   assert.throws(
     () => assertReleaseTreeIntegrity(root, manifest),
     /Release file checksum mismatch/,
+  );
+});
+
+test("production updater follows authenticated asset redirects under the hardened service", () => {
+  const updater = readFileSync(
+    path.join(repositoryRoot, "scripts", "production-updater.sh"),
+    "utf8",
+  );
+  const installer = readFileSync(
+    path.join(repositoryRoot, "scripts", "install-production-mainnet-host.sh"),
+    "utf8",
+  );
+
+  assert.match(
+    updater,
+    /curl -fsSL --proto '=https' --proto-redir '=https' --max-redirs 3/,
+  );
+  assert.match(
+    installer,
+    /install -d -o root -g robyn-release -m 0750 \/var\/lib\/robyn-release \/var\/lib\/robyn-release\/downloads/,
   );
 });
