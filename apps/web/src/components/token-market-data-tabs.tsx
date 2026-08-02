@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { formatEther } from "viem";
 
 type Holder = {
@@ -37,14 +37,20 @@ export function TokenMarketDataTabs({
   trades,
   symbol,
   quoteSymbol,
+  rewardEconomy,
+  rewardAssetCount,
 }: {
   holders: Holder[];
   holderCount: number;
   trades: Trade[];
   symbol: string;
   quoteSymbol: string;
+  rewardEconomy: ReactNode;
+  rewardAssetCount: number;
 }) {
-  const [active, setActive] = useState<"holders" | "trades">("holders");
+  const [active, setActive] = useState<"holders" | "trades" | "rewards">(
+    "holders",
+  );
 
   useEffect(() => {
     const syncHash = () => {
@@ -60,7 +66,13 @@ export function TokenMarketDataTabs({
       <div className="token-data-tab-heading">
         <div>
           <p className="card-label">Canonical market data</p>
-          <h2>{active === "holders" ? "Ownership" : "Market tape"}</h2>
+          <h2>
+            {active === "holders"
+              ? "Ownership"
+              : active === "trades"
+                ? "Market tape"
+                : "Reward economy"}
+          </h2>
         </div>
         <div
           className="token-data-tablist"
@@ -86,6 +98,16 @@ export function TokenMarketDataTabs({
           >
             Market tape
             <span>{trades.length}</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={active === "rewards"}
+            aria-controls="token-rewards-panel"
+            onClick={() => setActive("rewards")}
+          >
+            Reward economy
+            <span>{rewardAssetCount}</span>
           </button>
         </div>
       </div>
@@ -120,6 +142,14 @@ export function TokenMarketDataTabs({
               ))}
             </tbody>
           </table>
+        </div>
+      ) : active === "rewards" ? (
+        <div
+          id="token-rewards-panel"
+          role="tabpanel"
+          className="reward-economy-panel"
+        >
+          {rewardEconomy}
         </div>
       ) : trades.length === 0 ? (
         <p id="token-trades-panel" role="tabpanel" className="empty-state">

@@ -281,11 +281,101 @@ export default async function LaunchDetail({
         />
 
         <div className="token-market-layout">
-          <TokenMarketChart
-            analytics={market}
-            symbol={launch.symbol}
-            ethUsdPrice={ethUsdPrice}
-          />
+          <div className="token-market-primary">
+            <TokenMarketChart
+              analytics={market}
+              symbol={launch.symbol}
+              ethUsdPrice={ethUsdPrice}
+            />
+
+            <TokenMarketDataTabs
+              holders={market.topHolders}
+              holderCount={market.holderCount}
+              trades={market.recentTrades}
+              symbol={launch.symbol}
+              quoteSymbol={quoteSymbol}
+              rewardAssetCount={launch.assets.length}
+              rewardEconomy={
+                <div className="reward-economy-content">
+                  <div className="reward-hub-heading">
+                    <div>
+                      <h3>Trading activity grows a holder-owned basket</h3>
+                      <p>
+                        Sherwood routes every reward fee through a fixed,
+                        transparent split. Basket rewards unlock over one hour
+                        while you hold ${launch.symbol}.
+                      </p>
+                    </div>
+                    <span className="live-chip">
+                      {launch.assets.length} basket assets
+                    </span>
+                  </div>
+
+                  <div className="reward-split" aria-label="Fee allocation">
+                    {[
+                      ["50%", "Reward basket", "holder assets"],
+                      ["25%", "Creator", "aligned builder"],
+                      ["20%", "DAO members", "governance rewards"],
+                      ["5%", "Treasury", "protocol operations"],
+                    ].map(([share, label, detail]) => (
+                      <div key={label}>
+                        <strong>{share}</strong>
+                        <span>{label}</span>
+                        <small>{detail}</small>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="reward-hub-body">
+                    <div>
+                      <div className="reward-subheading">
+                        <span>Immutable basket</span>
+                        <small>
+                          Not redeemable · earned as streamed rewards
+                        </small>
+                      </div>
+                      <TokenBasketAssets
+                        assets={basket}
+                        explorerUrl={publicEnvironment.explorerUrl}
+                      />
+                    </div>
+                    <dl className="reward-pulse-metrics">
+                      <div>
+                        <dt>Fees generated</dt>
+                        <dd>{metric(market.totalFeesBase, quoteSymbol)}</dd>
+                      </div>
+                      <div>
+                        <dt>Total volume</dt>
+                        <dd>
+                          {metric(
+                            (
+                              BigInt(market.buyVolumeBase) +
+                              BigInt(market.sellVolumeBase)
+                            ).toString(),
+                            quoteSymbol,
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Lifetime traders</dt>
+                        <dd>{market.uniqueTraderCount}</dd>
+                      </div>
+                      <div>
+                        <dt>Circulating supply</dt>
+                        <dd>
+                          {quantity(market.circulatingSupply)} {launch.symbol}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                  <p className="metric-source">
+                    Canonical events and current balances through block{" "}
+                    {analytics.asOfBlock ?? "unavailable"}.
+                  </p>
+                </div>
+              }
+            />
+          </div>
           <div className="token-trade-stack">
             <NetworkTokenTradePanel
               deployment={deployment as Deployment}
@@ -366,96 +456,6 @@ export default async function LaunchDetail({
             ) : null}
           </div>
         </div>
-
-        <section
-          className="detail-card reward-hub-card"
-          aria-labelledby="basket-heading"
-        >
-          <div className="reward-hub-heading">
-            <div>
-              <p className="card-label">Reward economy</p>
-              <h2 id="basket-heading">
-                Trading activity grows a holder-owned basket
-              </h2>
-              <p>
-                Sherwood routes every reward fee through a fixed, transparent
-                split. Basket rewards unlock over one hour while you hold $
-                {launch.symbol}.
-              </p>
-            </div>
-            <span className="live-chip">
-              {launch.assets.length} basket assets
-            </span>
-          </div>
-
-          <div className="reward-split" aria-label="Fee allocation">
-            {[
-              ["50%", "Reward basket", "holder assets"],
-              ["25%", "Creator", "aligned builder"],
-              ["20%", "DAO members", "governance rewards"],
-              ["5%", "Treasury", "protocol operations"],
-            ].map(([share, label, detail]) => (
-              <div key={label}>
-                <strong>{share}</strong>
-                <span>{label}</span>
-                <small>{detail}</small>
-              </div>
-            ))}
-          </div>
-
-          <div className="reward-hub-body">
-            <div>
-              <div className="reward-subheading">
-                <span>Immutable basket</span>
-                <small>Not redeemable · earned as streamed rewards</small>
-              </div>
-              <TokenBasketAssets
-                assets={basket}
-                explorerUrl={publicEnvironment.explorerUrl}
-              />
-            </div>
-            <dl className="reward-pulse-metrics">
-              <div>
-                <dt>Fees generated</dt>
-                <dd>{metric(market.totalFeesBase, quoteSymbol)}</dd>
-              </div>
-              <div>
-                <dt>Total volume</dt>
-                <dd>
-                  {metric(
-                    (
-                      BigInt(market.buyVolumeBase) +
-                      BigInt(market.sellVolumeBase)
-                    ).toString(),
-                    quoteSymbol,
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt>Lifetime traders</dt>
-                <dd>{market.uniqueTraderCount}</dd>
-              </div>
-              <div>
-                <dt>Circulating supply</dt>
-                <dd>
-                  {quantity(market.circulatingSupply)} {launch.symbol}
-                </dd>
-              </div>
-            </dl>
-          </div>
-          <p className="metric-source">
-            Canonical events and current balances through block{" "}
-            {analytics.asOfBlock ?? "unavailable"}.
-          </p>
-        </section>
-
-        <TokenMarketDataTabs
-          holders={market.topHolders}
-          holderCount={market.holderCount}
-          trades={market.recentTrades}
-          symbol={launch.symbol}
-          quoteSymbol={quoteSymbol}
-        />
 
         <section className="notice" aria-label="Reward disclosure">
           {publicEnvironment.isMainnet

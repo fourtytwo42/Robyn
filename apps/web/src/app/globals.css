@@ -413,10 +413,19 @@
   font-size: 0.86rem;
 }
 
-.reward-hub-card {
+.reward-hub-card,
+.reward-economy-panel {
   position: relative;
   overflow: hidden;
+}
+
+.reward-hub-card {
   margin-top: 1rem;
+}
+
+.reward-economy-panel {
+  border: 1px solid rgba(53, 208, 186, 0.14);
+  border-radius: 0.9rem;
   background:
     radial-gradient(
       circle at 88% 0%,
@@ -424,6 +433,11 @@
       transparent 34%
     ),
     linear-gradient(140deg, rgba(11, 24, 33, 0.98), rgba(11, 17, 31, 0.94));
+  padding: 0.85rem;
+}
+
+.reward-economy-content {
+  min-width: 0;
 }
 
 .reward-hub-heading {
@@ -433,7 +447,8 @@
   gap: 1rem;
 }
 
-.reward-hub-heading h2 {
+.reward-hub-heading h2,
+.reward-hub-heading h3 {
   margin: 0.25rem 0;
 }
 .reward-hub-heading p {
@@ -504,26 +519,32 @@
   color: var(--muted);
   font-size: 0.58rem;
 }
-.reward-hub-card .token-basket-assets {
+.reward-hub-card .token-basket-assets,
+.reward-economy-panel .token-basket-assets {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
   margin-top: 0.55rem;
 }
-.reward-hub-card .token-basket-assets article {
+.reward-hub-card .token-basket-assets article,
+.reward-economy-panel .token-basket-assets article {
   grid-template-columns: 46px minmax(0, 1fr);
   gap: 0.65rem;
   padding: 0.62rem;
 }
 .reward-hub-card .token-basket-assets img,
-.reward-hub-card .token-basket-identicon {
+.reward-hub-card .token-basket-identicon,
+.reward-economy-panel .token-basket-assets img,
+.reward-economy-panel .token-basket-identicon {
   width: 46px;
   height: 46px;
   border-radius: 12px;
 }
-.reward-hub-card .token-basket-identity h3 {
+.reward-hub-card .token-basket-identity h3,
+.reward-economy-panel .token-basket-identity h3 {
   font-size: 0.82rem;
 }
-.reward-hub-card .token-basket-identity > p {
+.reward-hub-card .token-basket-identity > p,
+.reward-economy-panel .token-basket-identity > p {
   display: -webkit-box;
   overflow: hidden;
   margin: 0.28rem 0;
@@ -573,7 +594,7 @@
 }
 
 .token-data-tabs {
-  margin-top: 1rem;
+  margin-top: 0;
 }
 .token-data-tab-heading h2 {
   margin: 0.2rem 0 0;
@@ -617,7 +638,8 @@
     padding-top: 0.85rem;
     padding-left: 0;
   }
-  .reward-hub-card .token-basket-assets {
+  .reward-hub-card .token-basket-assets,
+  .reward-economy-panel .token-basket-assets {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -643,6 +665,7 @@
   .token-overview-stats,
   .reward-split,
   .reward-hub-card .token-basket-assets,
+  .reward-economy-panel .token-basket-assets,
   .reward-pulse-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -663,7 +686,8 @@
 @media (max-width: 460px) {
   .token-overview-stats,
   .reward-split,
-  .reward-hub-card .token-basket-assets {
+  .reward-hub-card .token-basket-assets,
+  .reward-economy-panel .token-basket-assets {
     grid-template-columns: 1fr;
   }
   .reward-subheading {
@@ -3870,6 +3894,13 @@ main > .notice {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
   align-items: start;
+  gap: 1rem;
+}
+
+.token-market-primary {
+  display: grid;
+  min-width: 0;
+  align-content: start;
   gap: 1rem;
 }
 
