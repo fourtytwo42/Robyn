@@ -36,7 +36,7 @@
 - Files: `config/schema18-contract-freeze.json`, `scripts/verify-schema18-contract-freeze.mjs`, `scripts/build-web-release.sh`, focused tests, package commands, and `docs/operations/application-only-releases.md`.
 - Freeze: The verifier binds the Schema-18 source tree and Foundry configuration Git objects, six direct Solidity dependency versions, the immutable full-gate security report, and its release manifest. Any mismatch rejects the web-only build.
 - Web gate: The fast path runs web formatting, lint, typecheck, unit tests, gitleaks, dependency audit, and the protected Devnet/Testnet/Mainnet Next build. It never invokes Forge, Slither, contract deployment, or an onchain transaction.
-- Verification: Freeze verification and focused tests pass. A clean pushed release build must prove the full operator path before it becomes the default for future visual-only work.
+- Verification: Freeze verification and focused tests pass. Clean pushed web-only builds passed for Devnet, Testnet, and Mainnet at `f793618cfa8756ec8c4362c1d4dc7b04c5af666d` without invoking Forge, Slither, Anvil, or contract tests. Proof-only artifacts were removed after verification because no PM2 process referenced them.
 
 - Alchemy's probe currently reports an invalid `eth_syncing` response. It has received probe traffic only, zero fallback traffic, and is not an application dependency; rotate any previously exposed provider credential during routine credential hygiene.
 
