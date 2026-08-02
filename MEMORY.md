@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-02 - Post-graduation Gate-2 recovery tooling passes development rehearsal
+
+- Context: The authorized Gate-2 resume graduated the Mainnet Canary, then an early settlement-readiness rejection triggered successful guardian shutdown. The consumed manifest is permanently invalid and no settlement transaction was signed.
+- Decision: Use a dedicated post-graduation recovery manifest and runner. Readiness before Timelock or reward maturity returns a read-only not-ready result and never invalidates the lifecycle or triggers shutdown.
+- Files: Added post-graduation runner, LAN-sourced exact-state Anvil rehearsal, fail-closed manifest sealer, focused tests, package commands, and merged the Schema-18 contingency playbooks.
+- Verification: Development fork block 25522038 passed 33/33 local-fork receipts across unanimous reactivation, settlement, one-hour claims, 78.99% recovery, post-settlement, guardian shutdown, and reconciliation. Minimum simulated balance was 0.021343686286722257 ETH and no Mainnet transaction was broadcast. All 563 Foundry tests, focused runner/public/resume tests, syntax, lint, typecheck, and changed-file secret scan pass.
+- Safety: Mainnet remains Paused, both conversion systems are Paused, all six routes are disabled, application writes are disabled, and the live balance remains subject to the fixed 0.02 ETH reserve.
+- Follow-up: Push one clean tooling SHA, repeat the exact-state rehearsal on that SHA, seal the consumed evidence and replacement Gate-2 manifest, then stop for exact-hash authorization before any live scheduling. Use the Timelock hour to prepare the read-only Mainnet application lane. Public activation remains separately unauthorized.
+
 ### 2026-08-01 - Exact-state Gate-2 resume rehearsal passes
 
 - Context: The authorized Gate-2 run stopped safely before its tenth bonding purchase because the runner attempted another full `0.001 ETH` buy at 99% progress. Mainnet remained guardian-paused with no ambiguous transaction.
