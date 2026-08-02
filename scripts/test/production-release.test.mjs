@@ -211,6 +211,18 @@ test("production updater follows authenticated asset redirects under the hardene
     /curl -fsSL --proto '=https' --proto-redir '=https' --max-redirs 3/,
   );
   assert.match(
+    updater,
+    /headers=\(-H "X-GitHub-Api-Version: 2022-11-28"\)/,
+  );
+  assert.match(
+    updater,
+    /-H "Accept: application\/vnd\.github\+json" "\$\{api\}\/releases\?per_page=30"/,
+  );
+  assert.match(
+    updater,
+    /-H "Accept: application\/octet-stream" "\$\{url\}"/,
+  );
+  assert.match(
     installer,
     /install -d -o root -g robyn-release -m 0750 \/var\/lib\/robyn-release \/var\/lib\/robyn-release\/downloads/,
   );

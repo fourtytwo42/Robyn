@@ -18,12 +18,12 @@ set +a
 : "${ROBYN_RELEASE_ROOT:=/opt/robyn/releases}"
 
 api="https://api.github.com/repos/${ROBYN_GITHUB_REPOSITORY}"
-headers=(-H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+headers=(-H "X-GitHub-Api-Version: 2022-11-28")
 if [[ -n "${ROBYN_GITHUB_TOKEN_FILE:-}" ]]; then
   [[ -r "${ROBYN_GITHUB_TOKEN_FILE}" ]] || { echo "GitHub token file missing" >&2; exit 1; }
   headers+=(-H "Authorization: Bearer $(<"${ROBYN_GITHUB_TOKEN_FILE}")")
 fi
-release_json="$(curl -fsS "${headers[@]}" "${api}/releases?per_page=30" |
+release_json="$(curl -fsS "${headers[@]}" -H "Accept: application/vnd.github+json" "${api}/releases?per_page=30" |
   jq -c --arg prefix "${ROBYN_RELEASE_TAG_PREFIX}" '[.[] | select(.draft == false and .prerelease == false and (.tag_name | startswith($prefix)))] | sort_by(.published_at) | last')"
 [[ "${release_json}" != "null" ]] || exit 0
 tag="$(jq -r .tag_name <<<"${release_json}")"
