@@ -52,6 +52,14 @@ declare module "@robyn/network-creator-rewards" {
   }): JSX.Element | null;
 }
 
+declare module "@robyn/network-holder-rewards" {
+  import type { Address } from "viem";
+  export function NetworkHolderRewardsPanel(props: {
+    token: Address;
+    symbol: string;
+  }): JSX.Element;
+}
+
 declare module "@robyn/network-dao" {
   import type { Deployment } from "@/lib/deployment";
   export function NetworkDaoView(props: {

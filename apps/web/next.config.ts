@@ -109,6 +109,10 @@ const nextConfig: NextConfig = {
       webRoot,
       `src/components/network-creator-rewards.${suffix}.tsx`,
     );
+    config.resolve.alias["@robyn/network-holder-rewards"] = path.resolve(
+      webRoot,
+      `src/components/network-holder-rewards.${suffix}.tsx`,
+    );
     config.resolve.alias["@robyn/network-dao"] = path.resolve(
       webRoot,
       `src/components/network-dao.${suffix}.tsx`,

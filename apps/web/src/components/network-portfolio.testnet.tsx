@@ -46,6 +46,13 @@ const tokenAbi = [
     inputs: [{ type: "address" }, { type: "uint256" }],
     outputs: [{ type: "uint256" }],
   },
+  {
+    type: "function",
+    name: "claimAll",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
+  },
 ] as const;
 
 const vaultAbi = [
@@ -145,11 +152,15 @@ export function NetworkPortfolioView({
   const {
     account: connectedWallet,
     publicClient: client,
+    walletClient,
     connect,
+    isWrongChain,
+    switchToRobinhoodTestnet,
   } = useRobynTestnetWallet();
   const wallet = requestedAccount ?? connectedWallet;
   const publicView = readOnly || Boolean(requestedAccount);
   const [positions, setPositions] = useState<Position[]>();
+  const [claimingToken, setClaimingToken] = useState<Address>();
   const [indexedBlock, setIndexedBlock] = useState<string | null>(null);
   const [status, setStatus] = useState(
     `Reading the connected wallet on ${publicEnvironment.networkLabel}.`,
@@ -261,6 +272,56 @@ export function NetworkPortfolioView({
     );
   }, [client, publicView, wallet]);
 
+  const claimRewards = useCallback(
+    async (position: Position) => {
+      if (publicView || !wallet || !client) return;
+      if (isWrongChain) {
+        setStatus(`Switching to ${publicEnvironment.networkLabel}...`);
+        await switchToRobinhoodTestnet();
+        return;
+      }
+      if (!walletClient) {
+        setStatus("Reconnect the wallet before claiming rewards.");
+        return;
+      }
+      const token = position.launch.token as Address;
+      setClaimingToken(token);
+      setStatus(`Simulating ${position.launch.symbol} reward claim...`);
+      try {
+        const { request } = await client.simulateContract({
+          account: walletClient.account ?? wallet,
+          address: token,
+          abi: tokenAbi,
+          functionName: "claimAll",
+        });
+        const hash = await walletClient.writeContract(request);
+        setStatus(`Claim submitted: ${hash.slice(0, 12)}...`);
+        const receipt = await client.waitForTransactionReceipt({ hash });
+        if (receipt.status !== "success")
+          throw new Error("Reward claim reverted.");
+        await refresh();
+        setStatus(
+          `${position.launch.symbol} basket rewards claimed to the connected wallet.`,
+        );
+      } catch (error) {
+        setStatus(
+          error instanceof Error ? error.message : "Reward claim failed.",
+        );
+      } finally {
+        setClaimingToken(undefined);
+      }
+    },
+    [
+      client,
+      isWrongChain,
+      publicView,
+      refresh,
+      switchToRobinhoodTestnet,
+      wallet,
+      walletClient,
+    ],
+  );
+
   useEffect(() => {
     void refresh().catch(() => {
       setStatus("Portfolio state is temporarily unavailable.");
@@ -357,6 +418,23 @@ export function NetworkPortfolioView({
               >
                 Inspect allocation evidence
               </Link>
+              {!publicView ? (
+                <button
+                  className="button primary"
+                  disabled={
+                    claimingToken !== undefined ||
+                    (!isWrongChain &&
+                      !position.rewards.some((reward) => reward.claimable > 0n))
+                  }
+                  onClick={() => void claimRewards(position)}
+                >
+                  {claimingToken === position.launch.token
+                    ? "Claiming..."
+                    : isWrongChain
+                      ? `Switch to ${publicEnvironment.networkLabel}`
+                      : `Claim ${position.launch.symbol} rewards`}
+                </button>
+              ) : null}
             </article>
           ))}
         </section>

@@ -370,6 +370,96 @@
   padding: 0.9rem;
 }
 
+.holder-earnings-panel {
+  display: grid;
+  gap: 0.75rem;
+  overflow: hidden;
+  border: 1px solid rgba(244, 201, 93, 0.24);
+  border-radius: 1.1rem;
+  background:
+    radial-gradient(
+      circle at 88% 0%,
+      rgba(244, 201, 93, 0.14),
+      transparent 42%
+    ),
+    linear-gradient(145deg, rgba(31, 28, 14, 0.94), rgba(6, 17, 13, 0.97));
+  padding: 0.9rem;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.holder-earnings-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.holder-earnings-heading h2 {
+  margin: 0.18rem 0 0;
+  font-size: 1.15rem;
+}
+
+.holder-earnings-heading > span {
+  flex: 0 0 auto;
+  border: 1px solid rgba(244, 201, 93, 0.25);
+  border-radius: 999px;
+  background: rgba(244, 201, 93, 0.08);
+  padding: 0.3rem 0.48rem;
+  color: var(--reward);
+  font:
+    700 0.6rem/1 "IBM Plex Mono",
+    ui-monospace,
+    monospace;
+}
+
+.holder-earnings-panel > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.holder-reward-assets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.holder-reward-assets > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.15rem 0.5rem;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.72rem;
+  background: rgba(7, 14, 20, 0.58);
+  padding: 0.52rem;
+}
+
+.holder-reward-assets span,
+.holder-reward-assets strong {
+  font-size: 0.72rem;
+}
+
+.holder-reward-assets strong {
+  color: var(--reward);
+  font-variant-numeric: tabular-nums;
+}
+
+.holder-reward-assets small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.58rem;
+}
+
+.holder-earnings-panel .button {
+  width: 100%;
+}
+
+.holder-earnings-panel .holder-reward-note {
+  font-size: 0.64rem;
+}
+
 .token-trade-stack .creator-earnings-panel h2 {
   font-size: 1.15rem;
 }

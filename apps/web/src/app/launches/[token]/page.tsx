@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { formatEther, type Address } from "viem";
 import { NetworkTokenTradePanel } from "@robyn/network-token-trade";
 import { NetworkCreatorRewardsPanel } from "@robyn/network-creator-rewards";
+import { NetworkHolderRewardsPanel } from "@robyn/network-holder-rewards";
 import deployment from "@robyn/deployment";
 import { TokenMarketChart } from "@/components/token-market-chart";
 import {
@@ -304,6 +305,11 @@ export default async function LaunchDetail({
               feeBps={market.feeBps}
               basePerToken={market.priceBasePerToken}
               marketPhase={market.marketPhase}
+            />
+
+            <NetworkHolderRewardsPanel
+              token={launch.token as Address}
+              symbol={launch.symbol}
             />
 
             <NetworkCreatorRewardsPanel
