@@ -1,9 +1,17 @@
 # Project Memory
 
+### 2026-08-02 - Final-settlement recovery rehearsal passes
+
+- Context: Gate-2 claims and the 78.99 percent unwind remain final. The exact failed-safe state is Paused with a zero project canary-token balance and 27 unique successful prior receipts.
+- Decision: Recover the stale oracle with a separately journaled 0.0000001 ETH direct-v4 buy, a complete 300-second observation window, and an exact full-balance sale before the remaining fee settlement. Claim, launch, graduation, and unwind stages are absent and rejected.
+- Files: `scripts/run-schema18-mainnet-final-settlement-live.mjs`, `scripts/run-schema18-mainnet-final-settlement-rehearsal.mjs`, `scripts/prepare-schema18-mainnet-final-settlement.mjs`, focused tests, and package commands.
+- Verification: LAN-sourced fork block 25644751 passed 26 of 26 local transactions: two recovery, six oracle-refresh, nine final-settlement, and nine shutdown receipts. Reconciliation preserved 78.99 percent recovery, exact reward backing and 50/25/20/5 conservation, zero project launch tokens and allowances, fixed supplies, locked principal, and zero Mainnet broadcasts. Full repository tests passed, including 563 Foundry tests; lint, typecheck, security smoke, gitleaks, dependency audit, and reviewed Slither gates passed.
+- Follow-up: Commit and push one clean tooling SHA, run reproducibility, repeat the exact-state fork on that SHA, seal a new authorization-false recovery manifest, and stop for exact-hash authorization. Mainnet remains Paused; Public mode and application writes remain unauthorized.
+
 ### 2026-08-02 - Gate-2 claims and unwind pass; post-settlement stops safely
 
 - Live result: Holder, creator, and DAO claims each confirmed once after the real reward hour. The bounded full canary unwind recovered 78.99 percent and left the project wallet at 0.028492844074667526 ETH, above the fixed 0.02 ETH reserve.
-- Failure: Immediate post-unwind token-fee conversion reverted during gas estimation with SpotTwapDeviation(23876). No post-settlement transaction was signed or submitted. The runner omitted the planned five-minute post-unwind oracle stabilization wait.
+- Failure: The first post-unwind native-fee settlement confirmed successfully, then token-fee conversion reverted during gas estimation with SpotTwapDeviation(23876). No token-fee conversion transaction was signed or submitted. The runner omitted the planned post-unwind oracle stabilization wait; all 27 prior receipts remain final and must not be replayed.
 - Safety: Automatic Safe shutdown completed. Launch mode and both conversion systems are Paused, all six routes are disabled, application writes remain disabled, LAN is the sole active RPC, Alchemy fallback remains unauthorized, and the consumed manifest 101e547d00722a32690f20c39b2feb3ffad4c14028e934848c4f9ebc32593802 must never be reused.
 - Evidence: The failed-safe bundle is sealed at /home/hendo420/robyn-evidence/schema18-mainnet-postgrad/live-366cb1d-101e547-01; SHA256SUMS hash e62f5e27a77e76eac6c578e31d9547608223c18d40d6bd01fef3ce59365d2022.
 - Follow-up: Prepare an exact-state, non-broadcast recovery that enforces oracle-readiness as a read-only gate, schedules one unanimous reactivation, completes only the remaining final settlement, guardian shutdown, and reconciliation, and seals a new manifest before any further Mainnet broadcast. Gate 3 and application writes remain unauthorized.
