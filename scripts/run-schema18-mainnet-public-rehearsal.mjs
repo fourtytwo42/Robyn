@@ -16,6 +16,8 @@ import {
 } from "viem";
 
 const PUBLIC_APPLICATION_SHA = "5ea50ed836d81416a7a6a32c8078a864fca28d0b";
+const INDEXING_POLICY_HASH =
+  "5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const required = (name) => {
   const value = process.env[name];
@@ -210,7 +212,10 @@ const manifest = {
   operationalToolingSha: toolingSha,
   deployer: source.deployer,
   guardianSafe: source.guardianSafe,
-  contracts: source.contracts,
+  contracts: {
+    ...source.contracts,
+    factory: source.contracts.launchFactory,
+  },
   routes: source.routes,
   runtimeIdentities,
   canary: {
@@ -230,6 +235,17 @@ const manifest = {
       maximumCurvePurchaseWei: "500000000000000000",
     },
     routes: expectedRoutes,
+  },
+  application: {
+    releaseSha: PUBLIC_APPLICATION_SHA,
+    indexingPolicyHash: INDEXING_POLICY_HASH,
+    scopedIndexerAcceptancePassed: true,
+    applicationWritesEnabled: false,
+    financialSubmissionProcessesStarted: false,
+    alchemyApplicationTrafficConfigured: false,
+  },
+  indexingPolicy: {
+    policyHash: INDEXING_POLICY_HASH,
   },
   gas: {
     phaseCeilings: { public: "30000000", shutdown: "30000000" },
@@ -321,7 +337,7 @@ try {
     executionMode: "local-fork-broadcast",
     forkBlock: forkBlock.toString(),
     contractReleaseSha: source.releaseSha,
-    applicationReleaseSha: source.applicationReleaseSha,
+    applicationReleaseSha: PUBLIC_APPLICATION_SHA,
     receiptCount: receipts.length,
     completedStages: state.completedStages,
     mainnetTransactionsBroadcast: 0,

@@ -138,6 +138,9 @@ test("manifest sealer requires completed Gate 2, rehearsal receipts, exact app e
   assert.match(prepare, /applicationEvidence\.buildValidationSha256/);
   assert.match(prepare, /Public funding shortfall/);
   assert.match(prepare, /additionalBridgeAuthorized:false/);
+  assert.match(rehearsal, /factory: source\.contracts\.launchFactory/);
+  assert.match(rehearsal, /scopedIndexerAcceptancePassed: true/);
+  assert.match(rehearsal, /alchemyApplicationTrafficConfigured: false/);
   assert.match(prepare, /publicActivationAuthorized:false/);
   assert.match(prepare, /applicationWritesAuthorized:false/);
 });
