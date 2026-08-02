@@ -2545,7 +2545,9 @@ app.get<{
 app.get<{ Params: { address: string } }>(
   "/assets/:address",
   async (request, reply) => {
-    const asset = await assetCatalog.resolve(request.params.address);
+    const asset = await assetCatalog.resolveWithLivePrice(
+      request.params.address,
+    );
     if (!asset) return reply.code(404).send({ error: "asset_not_found" });
     return { data: asset, ...(await freshness()) };
   },

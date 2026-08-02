@@ -5677,8 +5677,23 @@ main > .notice {
 }
 
 .asset-picker-market {
-  min-width: 150px;
+  min-width: 220px;
   text-align: right;
+}
+
+.asset-price-pair {
+  align-items: baseline;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.asset-price-pair > span {
+  white-space: nowrap;
+}
+
+.asset-price-pair.live strong {
+  color: #8ff8dc;
 }
 
 .route-ready {

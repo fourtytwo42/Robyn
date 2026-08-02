@@ -160,6 +160,78 @@ describe("AssetCatalogService", () => {
       },
     });
     await expect(service.quote(asset, 10n)).resolves.toBe(25n);
+    await expect(service.list()).resolves.toEqual([
+      expect.objectContaining({
+        livePrice: expect.objectContaining({
+          kind: "pool-implied",
+          status: "available",
+          quoteAmountNative: "1000000",
+          quoteAmountAsset: "25",
+        }),
+      }),
+    ]);
+  });
+
+  it("keeps canonical symbols for verified Mainnet assets with mock aliases", async () => {
+    const mainnetManifest = manifest();
+    mainnetManifest.assets[0] = {
+      ...mainnetManifest.assets[0]!,
+      chainId: 4663,
+      mockOnly: false,
+      verification: "robinhood-mainnet-token-runtime-and-v4-route",
+    };
+    const client = {
+      getCode: async () => "0x01",
+      readContract: async ({ functionName }: { functionName: string }) => {
+        if (functionName === "routeStatus")
+          return {
+            poolId: `0x${"1".repeat(64)}`,
+            liquidity: 0n,
+            minimumLiquidity: 1n,
+            maximumNativeInput: 1_000_000n,
+            spotTick: 0,
+            referenceTick: 0,
+            maximumReferenceTickDeviation: 0,
+            enforceReferencePrice: false,
+            verificationClass: `0x${"0".repeat(64)}`,
+            fee: 10_000,
+            tickSpacing: 200,
+            hooks: native,
+            ready: false,
+            reason: keccak256(stringToHex("INSUFFICIENT_LIQUIDITY")),
+          };
+        if (functionName === "executionRouteStatus")
+          return {
+            kind: 1,
+            maximumNativeInput: 1_000_000n,
+            maximumAssetInput: 1_000_000n,
+            disabledReason: `0x${"0".repeat(64)}`,
+            enabled: true,
+            runtimeVerified: true,
+            ready: false,
+            reason: keccak256(stringToHex("INSUFFICIENT_LIQUIDITY")),
+          };
+        throw new Error(`unexpected ${functionName}`);
+      },
+    } as unknown as PublicClient;
+    const service = new AssetCatalogService(
+      client,
+      4663,
+      native,
+      registry,
+      mainnetManifest,
+    );
+    await expect(service.list()).resolves.toEqual([
+      expect.objectContaining({
+        symbol: "NVDA",
+        verification: "robinhood-mainnet-token-runtime-and-v4-route",
+        route: expect.objectContaining({
+          ready: false,
+          reason: "Conversion pool has insufficient liquidity",
+        }),
+        livePrice: expect.objectContaining({ status: "unavailable" }),
+      }),
+    ]);
   });
 
   it("classifies an unknown contract as unverified even when its symbol spoofs a curated asset", async () => {

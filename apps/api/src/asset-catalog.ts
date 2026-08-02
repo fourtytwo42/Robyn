@@ -1,5 +1,6 @@
 import {
   bytesToString,
+  formatUnits,
   getAddress,
   hexToBytes,
   isAddress,
@@ -35,6 +36,16 @@ export type AssetRoute = {
   disabledReason?: string | null;
 };
 
+export type AssetLivePrice = {
+  kind: "exact-native" | "pool-implied";
+  status: "available" | "unavailable";
+  nativePerAsset: string | null;
+  quoteAmountNative: string | null;
+  quoteAmountAsset: string | null;
+  quotedAt: string | null;
+  reason: string | null;
+};
+
 export type CatalogAsset = {
   chainId: number;
   address: Address;
@@ -51,6 +62,7 @@ export type CatalogAsset = {
   referencePriceUsd: string | null;
   referencePriceAt: string | null;
   route: AssetRoute;
+  livePrice?: AssetLivePrice;
 };
 
 type ManifestAsset = {
@@ -301,7 +313,7 @@ export class AssetCatalogService {
         )),
       );
     }
-    return assets.filter(
+    const filtered = assets.filter(
       (asset): asset is CatalogAsset =>
         asset !== null &&
         (!category || category === "all" || asset.category === category) &&
@@ -310,6 +322,22 @@ export class AssetCatalogService {
           asset.name.toLowerCase().includes(needle) ||
           asset.address.toLowerCase().includes(needle)),
     );
+    const priced: CatalogAsset[] = [];
+    for (let offset = 0; offset < filtered.length; offset += 3) {
+      priced.push(
+        ...(await Promise.all(
+          filtered
+            .slice(offset, offset + 3)
+            .map((asset) => this.withLivePrice(asset)),
+        )),
+      );
+    }
+    return priced;
+  }
+
+  async resolveWithLivePrice(value: string) {
+    const asset = await this.resolve(value);
+    return asset ? this.withLivePrice(asset) : null;
   }
 
   async resolve(value: string): Promise<CatalogAsset | null> {
@@ -406,6 +434,93 @@ export class AssetCatalogService {
       functionName: "quoteExactInput",
       args: [this.baseAsset, address, amount],
     });
+  }
+
+  private async withLivePrice(asset: CatalogAsset): Promise<CatalogAsset> {
+    if (!asset.route.ready) {
+      return {
+        ...asset,
+        livePrice: {
+          kind:
+            asset.route.kind === "wrapped-native"
+              ? "exact-native"
+              : "pool-implied",
+          status: "unavailable",
+          nativePerAsset: null,
+          quoteAmountNative: null,
+          quoteAmountAsset: null,
+          quotedAt: null,
+          reason: asset.route.reason ?? "Route is not executable",
+        },
+      };
+    }
+
+    const standardProbe = 1_000_000_000_000n;
+    const maximum = asset.route.maximumNativeInput
+      ? BigInt(asset.route.maximumNativeInput)
+      : standardProbe;
+    const quoteAmount = maximum < standardProbe ? maximum : standardProbe;
+    if (quoteAmount <= 0n) {
+      return {
+        ...asset,
+        livePrice: {
+          kind: "pool-implied",
+          status: "unavailable",
+          nativePerAsset: null,
+          quoteAmountNative: null,
+          quoteAmountAsset: null,
+          quotedAt: null,
+          reason: "Route has no executable quote capacity",
+        },
+      };
+    }
+
+    if (asset.route.kind === "wrapped-native") {
+      return {
+        ...asset,
+        livePrice: {
+          kind: "exact-native",
+          status: "available",
+          nativePerAsset: "1",
+          quoteAmountNative: quoteAmount.toString(),
+          quoteAmountAsset: quoteAmount.toString(),
+          quotedAt: new Date().toISOString(),
+          reason: null,
+        },
+      };
+    }
+
+    try {
+      const output = await this.quote(asset.address, quoteAmount);
+      if (!output || output <= 0n) throw new Error("empty quote");
+      const nativePerAssetWei =
+        (quoteAmount * 10n ** BigInt(asset.decimals)) / output;
+      return {
+        ...asset,
+        livePrice: {
+          kind: "pool-implied",
+          status: "available",
+          nativePerAsset: formatUnits(nativePerAssetWei, 18),
+          quoteAmountNative: quoteAmount.toString(),
+          quoteAmountAsset: output.toString(),
+          quotedAt: new Date().toISOString(),
+          reason: null,
+        },
+      };
+    } catch {
+      return {
+        ...asset,
+        livePrice: {
+          kind: "pool-implied",
+          status: "unavailable",
+          nativePerAsset: null,
+          quoteAmountNative: quoteAmount.toString(),
+          quoteAmountAsset: null,
+          quotedAt: null,
+          reason: "Fresh bounded route quote is unavailable",
+        },
+      };
+    }
   }
 
   private async readText(

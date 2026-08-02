@@ -7,6 +7,10 @@ import {
   compareBasketAssets,
   type BasketAssetVerification,
 } from "@/lib/basket-asset-order";
+import {
+  assetCatalogVerificationLabel,
+  compactNativePrice,
+} from "@/lib/asset-catalog-presentation";
 
 export type BasketAsset = {
   chainId: number;
@@ -36,6 +40,15 @@ export type BasketAsset = {
     lastSuccessfulExecution?: string | null;
     disabledReason?: string | null;
   };
+  livePrice?: {
+    kind: "exact-native" | "pool-implied";
+    status: "available" | "unavailable";
+    nativePerAsset: string | null;
+    quoteAmountNative: string | null;
+    quoteAmountAsset: string | null;
+    quotedAt: string | null;
+    reason: string | null;
+  };
 };
 
 type AssetResponse = {
@@ -45,21 +58,6 @@ type AssetResponse = {
 
 function shortAddress(address: string) {
   return `${address.slice(0, 8)}...${address.slice(-6)}`;
-}
-
-function verificationLabel(asset: BasketAsset) {
-  if (asset.verification === "robinhood-testnet-faucet-stock")
-    return "Robinhood faucet stock";
-  if (asset.verification === "official-robinhood-current-chain")
-    return "Official on this chain";
-  if (asset.verification === "robyn-testnet-mock") return "Robyn testnet mock";
-  if (asset.verification === "robyn-controlled-testnet-dex")
-    return "Robyn test DEX";
-  if (asset.verification === "robyn-token-list") return "Robyn verified";
-  if (asset.verification === "canonical-weth-runtime") return "Canonical WETH";
-  if (asset.verification === "robinhood-mainnet-token-runtime-and-v4-route")
-    return "Runtime + route verified";
-  return "Unverified ERC-20";
 }
 
 function AssetLogo({ asset }: { asset: BasketAsset }) {
@@ -286,7 +284,8 @@ export function BasketAssetPicker({
               <strong>{asset.symbol}</strong>
               <span>{asset.name}</span>
               <small>
-                {verificationLabel(asset)} / {shortAddress(asset.address)}
+                {assetCatalogVerificationLabel(asset)} /{" "}
+                {shortAddress(asset.address)}
               </small>
             </div>
             <label className="basket-weight-input">
@@ -502,17 +501,33 @@ function AssetRow({
       <AssetLogo asset={asset} />
       <div className="basket-asset-identity">
         <strong>
-          {asset.symbol} <small>{verificationLabel(asset)}</small>
+          {asset.symbol} <small>{assetCatalogVerificationLabel(asset)}</small>
         </strong>
         <span>{asset.name}</span>
         <code>{shortAddress(asset.address)}</code>
       </div>
       <div className="asset-picker-market">
-        <strong>
-          {asset.referencePriceUsd
-            ? `$${asset.referencePriceUsd}`
-            : "No reference price"}
-        </strong>
+        <div className="asset-price-pair">
+          <span>Static reference</span>
+          <strong>
+            {asset.referencePriceUsd
+              ? `$${asset.referencePriceUsd} USD`
+              : "Not published"}
+          </strong>
+        </div>
+        <div className="asset-price-pair live">
+          <span>
+            {asset.livePrice?.kind === "exact-native"
+              ? "Native value"
+              : "Live route · pool-implied"}
+          </span>
+          <strong>
+            {asset.livePrice?.status === "available" &&
+            compactNativePrice(asset.livePrice.nativePerAsset)
+              ? `${compactNativePrice(asset.livePrice.nativePerAsset)} ETH`
+              : "Unavailable"}
+          </strong>
+        </div>
         <span
           className={asset.route.ready ? "route-ready" : "route-unavailable"}
         >
@@ -524,6 +539,9 @@ function AssetRow({
                 : "Live Uniswap v4 route"
             : (asset.route.reason ?? "No route")}
         </span>
+        {asset.route.ready && asset.livePrice?.status === "unavailable" ? (
+          <span className="route-unavailable">{asset.livePrice.reason}</span>
+        ) : null}
       </div>
       <button
         className="button compact"

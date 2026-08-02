@@ -34,7 +34,7 @@ export function assetVerificationLabel(verification: string) {
     return "Canonical WETH";
   }
   if (verification === "robinhood-mainnet-token-runtime-and-v4-route") {
-    return "Runtime + route verified";
+    return "Mainnet runtime + route verified";
   }
   return "Unverified ERC-20";
 }

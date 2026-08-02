@@ -70,6 +70,15 @@ describe("assetVerificationLabel", () => {
     );
   });
 
+  it("distinguishes verified Mainnet routes and canonical WETH", () => {
+    expect(
+      assetVerificationLabel("robinhood-mainnet-token-runtime-and-v4-route"),
+    ).toBe("Mainnet runtime + route verified");
+    expect(assetVerificationLabel("canonical-weth-runtime")).toBe(
+      "Canonical WETH",
+    );
+  });
+
   it("fails closed for unknown verification classes", () => {
     expect(assetVerificationLabel("unknown")).toBe("Unverified ERC-20");
   });
