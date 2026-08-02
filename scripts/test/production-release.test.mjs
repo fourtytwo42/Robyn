@@ -241,8 +241,11 @@ test("production updater follows authenticated asset redirects under the hardene
   );
   assert.match(updater, /release-agent config must use LF line endings/);
   const moveIndex = updater.indexOf('mv "${staging}" "${target}"');
+  const readableIndex = updater.indexOf('chmod -R a+rX,go-w "${target}"');
   const immutableIndex = updater.indexOf('chmod -R a-w "${target}"');
-  assert.ok(moveIndex >= 0 && immutableIndex > moveIndex);
+  assert.ok(
+    moveIndex >= 0 && readableIndex > moveIndex && immutableIndex > readableIndex,
+  );
   assert.match(
     updaterService,
     /^CapabilityBoundingSet=CAP_SETUID CAP_SETGID$/m,
