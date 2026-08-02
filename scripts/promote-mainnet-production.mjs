@@ -73,9 +73,21 @@ execFileSync("pnpm", ["test:production-release"], { cwd: repo, stdio: "inherit" 
 
 const tag = `mainnet-prod-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${sha.slice(0, 7)}`;
 const buildRoot = path.join("/var/lib/robyn-release/builds", sha);
-const outputRoot = path.join("/var/lib/robyn-release/out", tag);
-execFileSync("sudo", ["rm", "-rf", buildRoot, outputRoot], { stdio: "inherit" });
-execFileSync("sudo", ["install", "-d", "-o", "robyn-release", "-g", "robyn-release", buildRoot, outputRoot], { stdio: "inherit" });
+const outputRoot = path.join("/var/tmp/robyn-release-out", tag);
+execFileSync("sudo", ["rm", "-rf", buildRoot], { stdio: "inherit" });
+execFileSync("sudo", ["-u", "robyn-release", "rm", "-rf", outputRoot], {
+  stdio: "inherit",
+});
+execFileSync(
+  "sudo",
+  ["install", "-d", "-o", "robyn-release", "-g", "robyn-release", buildRoot],
+  { stdio: "inherit" },
+);
+execFileSync(
+  "sudo",
+  ["-u", "robyn-release", "install", "-d", "-m", "0755", outputRoot],
+  { stdio: "inherit" },
+);
 const bundleDirectory = mkdtempSync(
   path.join(tmpdir(), "robyn-release-bundle-"),
 );

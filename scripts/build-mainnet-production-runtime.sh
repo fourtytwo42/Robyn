@@ -74,4 +74,5 @@ jq -n --arg sourceSha "${source_sha}" --arg applicationArtifactHash "${applicati
   acceptanceReferences:$acceptanceReferences,
   rpcPolicy:{primary:"lan-only",probeOnly:true,automaticFallback:false,transactionSubmissionDefault:false}
 }' >"${output_root}/production-release.json"
+rm -rf "${runtime}"
 chmod 0444 "${output_root}/production-release.json" "${output_root}/runtime.tar.zst" "${output_root}/runtime.tar.zst.sha256"

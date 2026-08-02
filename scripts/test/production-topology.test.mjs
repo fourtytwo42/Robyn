@@ -84,4 +84,6 @@ test("production build consumes a hash-pinned builder-readable deployment manife
   assert.match(buildScript, /chmod 0444/);
   assert.match(promotionScript, /robyn-release-signing-/);
   assert.match(promotionScript, /production-release\.json\.sig/);
+  assert.match(promotionScript, /\/var\/tmp\/robyn-release-out/);
+  assert.match(buildScript, /rm -rf "\$\{runtime\}"/);
 });
