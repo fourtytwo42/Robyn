@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-02 - Replacement Gate-2 post-graduation manifest reaches sealing
+
+- Tooling: Clean pushed post-graduation recovery branch reached `b9980066f0cebb7108749f6ce59271d9c7d3cf58` after merging the contingency playbooks.
+- Final rehearsal: LAN-sourced fork block `25526516` passed 33/33 local transactions, 78.99% gross recovery, exact reward and fee conservation, unchanged fixed supplies and locked principal, final guardian shutdown, and reconciliation with zero Mainnet broadcasts.
+- Funding: Live balance `0.021385693455199221 ETH`; requirement `0.020434613933884800 ETH`; projected margin `0.000951079521314421 ETH` while preserving the fixed `0.02 ETH` reserve. No bridge is required or authorized.
+- Safety: The consumed `f59b49d...` manifest remains permanently invalid. Mainnet is Paused with conversions paused, routes disabled, and application writes disabled.
+- Follow-up: Commit this handoff, rerun the exact-state rehearsal on the resulting clean pushed SHA, seal the replacement manifest, and stop for exact-hash authorization before scheduling reactivation.
+
 ### 2026-08-02 - Post-graduation Gate-2 recovery tooling passes development rehearsal
 
 - Context: The authorized Gate-2 resume graduated the Mainnet Canary, then an early settlement-readiness rejection triggered successful guardian shutdown. The consumed manifest is permanently invalid and no settlement transaction was signed.
