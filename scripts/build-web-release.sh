@@ -68,7 +68,8 @@ trap cleanup EXIT
 [[ ! -e "$target" ]] || { echo "release exists: $target" >&2; exit 1; }
 
 node scripts/verify-schema18-contract-freeze.mjs > "$freeze_evidence"
-pnpm exec prettier --check apps/web config/schema18-contract-freeze.json scripts/build-web-release.sh scripts/verify-schema18-contract-freeze.mjs scripts/test/schema18-contract-freeze.test.mjs
+pnpm exec prettier --check apps/web config/schema18-contract-freeze.json scripts/verify-schema18-contract-freeze.mjs scripts/test/schema18-contract-freeze.test.mjs
+bash -n scripts/build-web-release.sh
 pnpm --filter @robyn/web lint
 pnpm --filter @robyn/web typecheck
 pnpm --filter @robyn/web test
