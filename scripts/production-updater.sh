@@ -7,6 +7,7 @@ flock -n 9 || exit 0
 
 config=/etc/robyn/release-agent/config.env
 [[ -r "${config}" ]] || { echo "missing release-agent config" >&2; exit 1; }
+LC_ALL=C grep -q $'\r' "${config}" && { echo "release-agent config must use LF line endings" >&2; exit 1; }
 set -a
 # shellcheck disable=SC1090
 source "${config}"
@@ -75,8 +76,9 @@ node "${staging}/scripts/validate-production-release.mjs" "${staging}/production
 
 old_target=""
 [[ -L /opt/robyn/current ]] && old_target="$(readlink -f /opt/robyn/current)"
-chmod -R a-w "${staging}"
 mv "${staging}" "${target}"
+staging=""
+chmod -R a-w "${target}"
 temporary="/opt/robyn/current.next.$$"
 ln -s "${target}" "${temporary}"
 mv -Tf "${temporary}" /opt/robyn/current

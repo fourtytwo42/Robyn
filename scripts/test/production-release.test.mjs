@@ -230,6 +230,10 @@ test("production updater follows authenticated asset redirects under the hardene
     updater,
     /case "\$\{staging\}" in \/opt\/robyn\/staging\/\*\) rm -rf -- "\$\{staging\}"/,
   );
+  assert.match(updater, /release-agent config must use LF line endings/);
+  const moveIndex = updater.indexOf('mv "${staging}" "${target}"');
+  const immutableIndex = updater.indexOf('chmod -R a-w "${target}"');
+  assert.ok(moveIndex >= 0 && immutableIndex > moveIndex);
   assert.match(
     installer,
     /install -d -o root -g robyn-release -m 0750 \/var\/lib\/robyn-release \/var\/lib\/robyn-release\/downloads/,
