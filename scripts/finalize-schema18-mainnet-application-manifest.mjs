@@ -26,16 +26,17 @@ const lifecycle = JSON.parse(lifecycleRaw);
 const gate1 = JSON.parse(gate1Raw);
 const postdeployment = JSON.parse(postdeploymentRaw);
 const CONTRACT_SHA = "4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4";
-const APPLICATION_SHA = "8327b250122cd9050a7da6a44e12859e3cf521aa";
+const DEPLOYMENT_APPLICATION_SHA = "8327b250122cd9050a7da6a44e12859e3cf521aa";
+const APPLICATION_SHA = "5ea50ed836d81416a7a6a32c8078a864fca28d0b";
 if (
   baseline.schemaVersion !== 18 ||
   baseline.chainId !== 46630 ||
   lifecycle.schemaVersion !== 18 ||
   lifecycle.chainId !== 4663 ||
   lifecycle.releaseSha !== CONTRACT_SHA ||
-  lifecycle.applicationReleaseSha !== APPLICATION_SHA ||
+  lifecycle.applicationReleaseSha !== DEPLOYMENT_APPLICATION_SHA ||
   gate1.contractReleaseSha !== CONTRACT_SHA ||
-  gate1.applicationReleaseSha !== APPLICATION_SHA ||
+  gate1.applicationReleaseSha !== DEPLOYMENT_APPLICATION_SHA ||
   postdeployment.schemaVersion !== 18 ||
   postdeployment.chainId !== 4663
 ) {
@@ -150,6 +151,7 @@ const contracts = {
   conversionRouter: lifecycle.contracts.assetRouter,
   routeRegistry: lifecycle.contracts.assetRouter,
   launchFactory: lifecycle.contracts.launchFactory,
+  factory: lifecycle.contracts.launchFactory,
   feeRouter: lifecycle.contracts.protocolFeeRouter,
   coordinator: lifecycle.contracts.atomicLaunchCoordinator,
   guardian: lifecycle.guardianSafe,
@@ -176,6 +178,7 @@ const result = {
   environment: "robinhood-mainnet",
   releaseSha: CONTRACT_SHA,
   gitCommit: CONTRACT_SHA,
+  contractReleaseSha: CONTRACT_SHA,
   applicationReleaseSha: APPLICATION_SHA,
   venueProvenance: "qualified-robinhood-mainnet-uniswap-v4-and-canonical-weth",
   deployer: lifecycle.deployer,

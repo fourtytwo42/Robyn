@@ -18,6 +18,10 @@ const applicationManifest = await readFile(
   "scripts/finalize-schema18-mainnet-application-manifest.mjs",
   "utf8",
 );
+const scopedIndexerVerifier = await readFile(
+  "scripts/verify-schema18-mainnet-scoped-indexer.mjs",
+  "utf8",
+);
 const publicNginx = await readFile(
   "infrastructure/nginx/robyn-schema18-mainnet-public.conf",
   "utf8",
@@ -34,7 +38,7 @@ const keyPipe = await readFile("scripts/pipe-keystore-private-key.mjs", "utf8");
 
 test("Gate 3 tooling is exact-release, LAN-only, and separately authorized", () => {
   assert.match(runner, /4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4/);
-  assert.match(runner, /8327b250122cd9050a7da6a44e12859e3cf521aa/);
+  assert.match(runner, /5ea50ed836d81416a7a6a32c8078a864fca28d0b/);
   assert.match(runner, /ROBYN_SCHEMA18_MAINNET_PUBLIC_AUTHORIZED/);
   assert.match(
     runner,
@@ -50,6 +54,11 @@ test("Gate 3 tooling is exact-release, LAN-only, and separately authorized", () 
   );
   assert.match(runner, /publicActivationAuthorized !== false/);
   assert.match(runner, /applicationWritesAuthorized !== false/);
+  assert.match(
+    runner,
+    /Gate 3 scoped application or indexer identity mismatch/,
+  );
+  assert.match(runner, /alchemyApplicationTrafficConfigured !== false/);
   assert.doesNotMatch(runner, /alchemy\.com|automaticAlchemyFallback/);
 });
 
@@ -87,11 +96,12 @@ test("runner binds the exact Public batch, route state, profile, and emergency s
 
 test("manifest sealer requires completed Gate 2, rehearsal receipts, exact app evidence, and no preauthorization", () => {
   for (const stage of [
-    "schedule-reactivation",
-    "execute-reactivation",
-    "settle",
     "claims",
     "unwind",
+    "schedule-reactivation",
+    "execute-reactivation",
+    "refresh-start",
+    "refresh-finish",
     "post-settle",
     "shutdown",
     "reconcile",
@@ -111,11 +121,19 @@ test("manifest sealer requires completed Gate 2, rehearsal receipts, exact app e
   assert.match(prepare, /exact Mainnet application evidence is incomplete/);
   assert.match(
     prepare,
-    /applicationEvidence\.productionProcessesStarted !== false/,
+    /applicationEvidence\.readOnlyProcessesStarted !== true/,
   );
   assert.match(
     prepare,
-    /applicationEvidence\.alchemyCredentialOrHostPresent !== false/,
+    /applicationEvidence\.financialSubmissionProcessesStarted !== false/,
+  );
+  assert.match(
+    prepare,
+    /applicationEvidence\.applicationWritesEnabled !== false/,
+  );
+  assert.match(
+    prepare,
+    /applicationEvidence\.alchemyApplicationTrafficConfigured !== false/,
   );
   assert.match(prepare, /applicationEvidence\.buildValidationSha256/);
   assert.match(prepare, /Public funding shortfall/);
@@ -138,11 +156,39 @@ test("Public rehearsal pins the LAN fork and broadcasts only to Anvil", () => {
 test("application manifest binds the exact releases and strips test-only route identity", () => {
   assert.match(applicationManifest, /4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4/);
   assert.match(applicationManifest, /8327b250122cd9050a7da6a44e12859e3cf521aa/);
+  assert.match(applicationManifest, /5ea50ed836d81416a7a6a32c8078a864fca28d0b/);
+  assert.match(
+    applicationManifest,
+    /factory: lifecycle\.contracts\.launchFactory/,
+  );
+  assert.match(
+    prepare,
+    /5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1/,
+  );
   assert.match(applicationManifest, /robinhood-mainnet-real-liquidity/);
   assert.match(applicationManifest, /canonical-weth-runtime/);
   assert.match(applicationManifest, /mockOnly: false/);
   assert.match(applicationManifest, /applicationWritesEnabled: true/);
   assert.match(applicationManifest, /publicActivationAuthorized: false/);
+});
+
+test("scoped indexer acceptance independently proves retained log scope and runway", () => {
+  assert.match(scopedIndexerVerifier, /manifest\.contracts\?\.factory/);
+  assert.match(scopedIndexerVerifier, /manifest\.contracts\?\.launchFactory/);
+  assert.match(scopedIndexerVerifier, /duplicate retained Sherwood log/);
+  assert.match(
+    scopedIndexerVerifier,
+    /excluded or unrelated global source entered raw_logs/,
+  );
+  assert.match(scopedIndexerVerifier, /unscoped PoolManager log retained/);
+  assert.match(
+    scopedIndexerVerifier,
+    /launch projection differs from direct contract state/,
+  );
+  assert.match(scopedIndexerVerifier, /scoped log mismatch/);
+  assert.match(scopedIndexerVerifier, /MAXIMUM_DATABASE_BYTES/);
+  assert.match(scopedIndexerVerifier, /MINIMUM_FREE_BYTES/);
+  assert.match(scopedIndexerVerifier, /fallbackTrafficAuthorized !== false/);
 });
 
 test("Public ingress keeps browser RPC on the LAN-only loopback gateway", () => {

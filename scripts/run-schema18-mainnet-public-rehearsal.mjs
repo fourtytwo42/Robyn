@@ -15,6 +15,7 @@ import {
   stringToHex,
 } from "viem";
 
+const PUBLIC_APPLICATION_SHA = "5ea50ed836d81416a7a6a32c8078a864fca28d0b";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const required = (name) => {
   const value = process.env[name];
@@ -46,11 +47,12 @@ if (
   throw new Error("Schema-18 Gate 1 or Gate 2 evidence mismatch");
 }
 for (const stage of [
-  "schedule-reactivation",
-  "execute-reactivation",
-  "settle",
   "claims",
   "unwind",
+  "schedule-reactivation",
+  "execute-reactivation",
+  "refresh-start",
+  "refresh-finish",
   "post-settle",
   "shutdown",
   "reconcile",
@@ -204,7 +206,7 @@ const manifest = {
   chainId: 4663,
   authorizationEligible: true,
   contractReleaseSha: source.releaseSha,
-  applicationReleaseSha: source.applicationReleaseSha,
+  applicationReleaseSha: PUBLIC_APPLICATION_SHA,
   operationalToolingSha: toolingSha,
   deployer: source.deployer,
   guardianSafe: source.guardianSafe,

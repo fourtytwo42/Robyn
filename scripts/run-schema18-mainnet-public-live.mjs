@@ -25,7 +25,9 @@ import { classifyCanaryJournal } from "./lib/mainnet-canary-journal.mjs";
 
 const CHAIN_ID = 4663;
 const CONTRACT_RELEASE_SHA = "4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4";
-const APPLICATION_RELEASE_SHA = "8327b250122cd9050a7da6a44e12859e3cf521aa";
+const APPLICATION_RELEASE_SHA = "5ea50ed836d81416a7a6a32c8078a864fca28d0b";
+const INDEXING_POLICY_HASH =
+  "5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1";
 const RESERVE = 20_000_000_000_000_000n;
 const L1_FEE_RESERVE = 25_000_000_000_000n;
 const localRehearsal = process.env.ROBYN_SCHEMA18_MAINNET_PUBLIC_LOCAL_REHEARSAL === "true";
@@ -78,6 +80,17 @@ const manifestSha = sha256(manifestRaw);
 if (manifestSha !== expectedManifestSha) throw new Error("sealed Public manifest SHA-256 mismatch");
 if (manifest.schemaVersion !== 18 || manifest.chainId !== CHAIN_ID || manifest.contractReleaseSha !== CONTRACT_RELEASE_SHA || manifest.applicationReleaseSha !== APPLICATION_RELEASE_SHA) {
   throw new Error("Schema-18 Mainnet Public activation manifest identity mismatch");
+}
+if (
+  manifest.indexingPolicy?.policyHash !== INDEXING_POLICY_HASH ||
+  manifest.application?.indexingPolicyHash !== INDEXING_POLICY_HASH ||
+  manifest.application?.scopedIndexerAcceptancePassed !== true ||
+  manifest.application?.applicationWritesEnabled !== false ||
+  manifest.application?.financialSubmissionProcessesStarted !== false ||
+  manifest.application?.alchemyApplicationTrafficConfigured !== false ||
+  manifest.contracts?.factory?.toLowerCase() !== manifest.contracts?.launchFactory?.toLowerCase()
+) {
+  throw new Error("Gate 3 scoped application or indexer identity mismatch");
 }
 if (manifest.operationalToolingSha !== toolingSha && !localRehearsal) throw new Error("Public manifest is not bound to this tooling SHA");
 if (

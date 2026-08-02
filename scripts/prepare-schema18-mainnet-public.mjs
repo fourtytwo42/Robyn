@@ -16,7 +16,10 @@ import {
 } from "viem";
 
 const CONTRACT_SHA = "4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4";
-const APP_SHA = "8327b250122cd9050a7da6a44e12859e3cf521aa";
+const DEPLOYMENT_APP_SHA = "8327b250122cd9050a7da6a44e12859e3cf521aa";
+const APP_SHA = "5ea50ed836d81416a7a6a32c8078a864fca28d0b";
+const INDEXING_POLICY_HASH =
+  "5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1";
 const CHAIN_ID = 4663;
 const RESERVE = 20_000_000_000_000_000n;
 const required = (name) => {
@@ -61,13 +64,13 @@ const rehearsalState = JSON.parse(rehearsalStateRaw);
 const rehearsalJournalRaw = await readFile(path.join(rehearsalRoot, "transactions.jsonl"), "utf8");
 const applicationRaw = await readFile(applicationEvidencePath, "utf8");
 const applicationEvidence = JSON.parse(applicationRaw);
-if (source.schemaVersion !== 18 || source.chainId !== CHAIN_ID || source.releaseSha !== CONTRACT_SHA || source.applicationReleaseSha !== APP_SHA) {
-  throw new Error("Schema-18 source identity mismatch");
+if (source.schemaVersion !== 18 || source.chainId !== CHAIN_ID || source.releaseSha !== CONTRACT_SHA || source.applicationReleaseSha !== DEPLOYMENT_APP_SHA) {
+  throw new Error("Schema-18 deployment source identity mismatch");
 }
-if (gate1.contractReleaseSha !== CONTRACT_SHA || gate1.applicationReleaseSha !== APP_SHA) {
+if (gate1.contractReleaseSha !== CONTRACT_SHA || gate1.applicationReleaseSha !== DEPLOYMENT_APP_SHA) {
   throw new Error("Gate-1 identity mismatch");
 }
-for (const stage of ["schedule-reactivation", "execute-reactivation", "settle", "claims", "unwind", "post-settle", "shutdown", "reconcile"]) {
+for (const stage of ["claims", "unwind", "schedule-reactivation", "execute-reactivation", "refresh-start", "refresh-finish", "post-settle", "shutdown", "reconcile"]) {
   if (!gate2State.completedStages?.includes(stage)) throw new Error(`Gate 2 missing ${stage}`);
 }
 if (gate2State.failedRun || BigInt(gate2State.recoveryBps) < 7500n || !gate2State.token) {
@@ -99,8 +102,13 @@ if (
   applicationEvidence.immutable !== true ||
   applicationEvidence.reproducible !== true ||
   applicationEvidence.transactionSubmissionInitiallyDisabled !== true ||
-  applicationEvidence.productionProcessesStarted !== false ||
-  applicationEvidence.alchemyCredentialOrHostPresent !== false ||
+  applicationEvidence.readOnlyProcessesStarted !== true ||
+  applicationEvidence.financialSubmissionProcessesStarted !== false ||
+  applicationEvidence.applicationWritesEnabled !== false ||
+  applicationEvidence.alchemyApplicationTrafficConfigured !== false ||
+  applicationEvidence.indexingPolicyHash !== INDEXING_POLICY_HASH ||
+  applicationEvidence.scopedIndexerAcceptancePassed !== true ||
+  !evidenceHash(applicationEvidence.scopedIndexerEvidenceSha256) ||
   !evidenceHash(applicationEvidence.releaseRootSha256) ||
   !evidenceHash(applicationEvidence.buildValidationSha256) ||
   !evidenceHash(applicationEvidence.reproducibilitySummarySha256) ||
@@ -112,6 +120,10 @@ if (
 const routerArtifact = JSON.parse(await readFile(path.join(repoRoot, "packages/contracts/out/RobynV4AssetRouter.sol/RobynV4AssetRouter.json"), "utf8"));
 const marketArtifact = JSON.parse(await readFile(path.join(repoRoot, "packages/contracts/out/RobynV4MarketFactory.sol/RobynV4MarketFactory.json"), "utf8"));
 const daoArtifact = JSON.parse(await readFile(path.join(repoRoot, "packages/contracts/out/RobynDaoTokenV3.sol/RobynDaoTokenV3.json"), "utf8"));
+const publicContracts = {
+  ...source.contracts,
+  factory: source.contracts.launchFactory,
+};
 const resumeCalls = source.bootstrap.steps[0].calls.filter((call) => ["resume-asset-conversions", "resume-fee-conversions"].includes(call.label));
 const qualifiedStepTwo = source.bootstrap.steps[1];
 if (resumeCalls.length !== 2 || qualifiedStepTwo.planHash !== source.bootstrap.steps[1].planHash) throw new Error("qualified Public plan source is incomplete");
@@ -159,7 +171,7 @@ const client = createPublicClient({ transport:http(rpc,{timeout:30_000,retryCoun
 if ((await client.getChainId()) !== CHAIN_ID || (await client.request({method:"eth_syncing",params:[]})) !== false) throw new Error("LAN gateway is wrong-chain or syncing");
 const gateway = await fetch(new URL("/health",rpc)).then(async (response) => { if (!response.ok) throw new Error(`gateway health ${response.status}`); return response.json(); });
 if (gateway.status !== "ok" || gateway.activeProvider !== "primary" || gateway.providerSelection !== "operator" || gateway.fallbackTrafficAuthorized !== false) throw new Error("LAN-only policy is not healthy");
-const c = source.contracts;
+const c = publicContracts;
 const read = (address,abi,functionName,args=[]) => client.readContract({address:getAddress(address),abi,functionName,args});
 const timelockAbi = parseAbi(["function bootstrapFinalized() view returns (bool)","function bootstrapFinalizationReason() view returns (bytes32)","function getMinDelay() view returns (uint256)"]);
 const governorAbi = parseAbi(["function unanimousNonce() view returns (uint256)"]);
@@ -206,13 +218,14 @@ if (balance<requiredBalance) throw new Error(`Public funding shortfall ${require
 const manifest={
   schemaVersion:18,chainId:CHAIN_ID,generatedAt:new Date().toISOString(),authorizationEligible:true,
   contractReleaseSha:CONTRACT_SHA,applicationReleaseSha:APP_SHA,operationalToolingSha:toolingSha,
-  deployer:getAddress(source.deployer),guardianSafe:getAddress(source.guardianSafe),contracts:source.contracts,routes:source.routes,runtimeIdentities,
+  deployer:getAddress(source.deployer),guardianSafe:getAddress(source.guardianSafe),contracts:publicContracts,routes:source.routes,runtimeIdentities,
   canary:{launchToken:getAddress(gate2State.token),profileVersion:canaryProfile.version.toString(),targetGraduationNativeWei:canaryProfile.targetGraduationNative.toString(),maximumCurvePurchaseWei:canaryProfile.maximumCurvePurchase.toString(),recoveryBps:gate2State.recoveryBps,reconciledAt:gate2State.reconciledAt},
   publicActivation:{expectedUnanimousNonce:unanimousNonce.toString(),batch,batchHash,profile:{version:(currentProfile.version+1n).toString(),targetGraduationNativeWei:"6000000000000000000",maximumCurvePurchaseWei:"500000000000000000"},routes:expectedRoutes},
   sourceGate1:{manifestPath:gate1Path,manifestSha256:sha256(gate1Raw),lifecyclePath:sourcePath,lifecycleSha256:sha256(sourceRaw)},
   gate2:{evidenceRoot:gate2Root,stateSha256:sha256(gate2StateRaw),journalSha256:sha256(gate2JournalRaw),receiptCount:gate2Receipts.length},
   rehearsal:{evidenceRoot:rehearsalRoot,stateSha256:sha256(rehearsalStateRaw),journalSha256:sha256(rehearsalJournalRaw),receiptCount:rehearsalReceipts.length},
   application:{...applicationEvidence,evidencePath:applicationEvidencePath,evidenceSha256:sha256(applicationRaw),domain:"https://sherwoodforest.trade",transactionSubmissionInitiallyDisabled:true},
+  indexingPolicy:{policyHash:INDEXING_POLICY_HASH,evidenceSha256:applicationEvidence.scopedIndexerEvidenceSha256},
   rpcPolicy:{applicationAndTransactionUpstream:"lan",lan:"192.168.50.173:8547",alchemyProbeOnly:true,automaticFallback:false,degradedLanDisablesFinancialSubmission:true,gatewayBlock:(await client.getBlockNumber()).toString()},
   gas:{phaseCeilings,maxFeePerGasWei:maxFeePerGas.toString(),measuredGas:measuredGas.toString(),allowanceWei:gasAllowance.toString()},
   funding:{liveBalanceWei:balance.toString(),operationalReserveWei:RESERVE.toString(),requiredBalanceWei:requiredBalance.toString(),projectedMarginWei:(balance-requiredBalance).toString()},

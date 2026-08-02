@@ -1,5 +1,28 @@
 # Project Memory
 
+## Active Handoff
+
+- Schema-18 Mainnet is reconciled and guardian-Paused after final Gate-2 settlement recovery. Claims and the 78.99% unwind are final and must never be repeated.
+- Gate-3 preparation is non-broadcast only. Public scheduling, Public mode, production profile activation, and application writes remain unauthorized until an exact manifest hash is approved.
+- Frozen identities: contracts `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4`, scoped application `5ea50ed836d81416a7a6a32c8078a864fca28d0b`, policy `5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1`.
+
+## Current State
+
+- Mainnet launch mode and both conversion systems are Paused, all six routes are disabled, application writes are disabled, and the keeper is stopped.
+- Scoped Mainnet indexing is caught up through the LAN-only gateway with one launch, five permanent dynamic contracts, one Sherwood pool ID, 533 retained logs, zero duplicates/missing/global logs, and a 12.27 MB database.
+- Independent scoped-indexer acceptance passed with evidence SHA-256 `4818567b80019aceff297a027c7141db0a341230909fde842f8c130835ec3fbe`; about 28.77 GB disk remains free.
+
+## Verification Ledger
+
+- Final Gate-2 recovery evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-final-settlement/live-bf8c377-1ea83d5-01`.
+- Qualified read-only manifest is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-indexer-remediation/mainnet-scoped-readonly-qualified-5ea50ed-01`; `contracts.factory` equals `contracts.launchFactory`.
+- Scoped application activation evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-public-prep/application-5ea50ed`; read-only services are running while all financial submissions and application writes remain disabled.
+
+## Open Follow-ups
+
+- Finish Gate-3 tooling validation, commit and push one clean tooling SHA, repeat the LAN-sourced exact-state Public rehearsal, and seal the authorization-false Gate-3 manifest.
+- Stop before any live Public scheduling transaction and provide the exact manifest SHA-256 plus copy/paste authorization.
+
 ### 2026-08-02 - Final-settlement recovery rehearsal passes
 
 - Context: Gate-2 claims and the 78.99 percent unwind remain final. The exact failed-safe state is Paused with a zero project canary-token balance and 27 unique successful prior receipts.
