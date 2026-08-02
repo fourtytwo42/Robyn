@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { formatEther } from "viem";
+import { pageWindow } from "@/lib/token-market-pagination";
 
 type Holder = {
   address: string;
@@ -51,6 +52,10 @@ export function TokenMarketDataTabs({
   const [active, setActive] = useState<"holders" | "trades" | "rewards">(
     "holders",
   );
+  const [holderPage, setHolderPage] = useState(1);
+  const [tradePage, setTradePage] = useState(1);
+  const holderWindow = pageWindow(holders, holderPage);
+  const tradeWindow = pageWindow(trades, tradePage);
 
   useEffect(() => {
     const syncHash = () => {
@@ -70,7 +75,7 @@ export function TokenMarketDataTabs({
             {active === "holders"
               ? "Ownership"
               : active === "trades"
-                ? "Market tape"
+                ? "Trades"
                 : "Reward economy"}
           </h2>
         </div>
@@ -96,7 +101,7 @@ export function TokenMarketDataTabs({
             aria-controls="token-trades-panel"
             onClick={() => setActive("trades")}
           >
-            Market tape
+            Trades
             <span>{trades.length}</span>
           </button>
           <button
@@ -127,10 +132,12 @@ export function TokenMarketDataTabs({
               </tr>
             </thead>
             <tbody>
-              {holders.map((holder, index) => (
+              {holderWindow.items.map((holder, index) => (
                 <tr key={holder.address}>
                   <td>
-                    <span className="holder-rank">{index + 1}</span>
+                    <span className="holder-rank">
+                      {holderWindow.startIndex + index + 1}
+                    </span>
                     <code>{short(holder.address)}</code>
                     <small>{holder.label}</small>
                   </td>
@@ -142,6 +149,20 @@ export function TokenMarketDataTabs({
               ))}
             </tbody>
           </table>
+          <DataPagination
+            label="Ownership"
+            page={holderWindow.page}
+            totalPages={holderWindow.totalPages}
+            start={holderWindow.startIndex + 1}
+            end={holderWindow.endIndex}
+            total={holders.length}
+            onPrevious={() => setHolderPage((page) => Math.max(1, page - 1))}
+            onNext={() =>
+              setHolderPage((page) =>
+                Math.min(holderWindow.totalPages, page + 1),
+              )
+            }
+          />
         </div>
       ) : active === "rewards" ? (
         <div
@@ -170,7 +191,7 @@ export function TokenMarketDataTabs({
               </tr>
             </thead>
             <tbody>
-              {trades.slice(0, 10).map((trade) => (
+              {tradeWindow.items.map((trade) => (
                 <tr key={`${trade.transactionHash}-${trade.blockNumber}`}>
                   <td>
                     <span className={`trade-side ${trade.side}`}>
@@ -191,8 +212,59 @@ export function TokenMarketDataTabs({
               ))}
             </tbody>
           </table>
+          <DataPagination
+            label="Trades"
+            page={tradeWindow.page}
+            totalPages={tradeWindow.totalPages}
+            start={tradeWindow.startIndex + 1}
+            end={tradeWindow.endIndex}
+            total={trades.length}
+            onPrevious={() => setTradePage((page) => Math.max(1, page - 1))}
+            onNext={() =>
+              setTradePage((page) => Math.min(tradeWindow.totalPages, page + 1))
+            }
+          />
         </div>
       )}
     </section>
+  );
+}
+
+function DataPagination({
+  label,
+  page,
+  totalPages,
+  start,
+  end,
+  total,
+  onPrevious,
+  onNext,
+}: {
+  label: string;
+  page: number;
+  totalPages: number;
+  start: number;
+  end: number;
+  total: number;
+  onPrevious: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <nav className="token-data-pagination" aria-label={`${label} pagination`}>
+      <span aria-live="polite">
+        {total === 0 ? "No entries" : `${start}–${end} of ${total}`}
+      </span>
+      <div>
+        <button type="button" onClick={onPrevious} disabled={page <= 1}>
+          Previous
+        </button>
+        <small>
+          Page {page} of {totalPages}
+        </small>
+        <button type="button" onClick={onNext} disabled={page >= totalPages}>
+          Next
+        </button>
+      </div>
+    </nav>
   );
 }
