@@ -1,14 +1,14 @@
 # Project Memory
 
-### 2026-08-02 - Schema-18 scoped indexer remediation in progress
+### 2026-08-02 - Schema-18 scoped indexer qualified for Mainnet read-only rebuild
 
 - Context: The stopped broad Mainnet indexer retained 9,420,034 logs in a 733,117,463-byte partial database while indexing global WETH, PoolManager, Permit2, and PositionManager activity. Mainnet application writes remain disabled and the Mainnet indexer remains stopped.
 - Decision: Schema-18 application ingestion is fail-closed on a versioned policy hash. It tracks only explicit protocol roots, coordinator-discovered launch token/vault/market/adapter/locker addresses, and exact PoolManager event topics filtered by permanent Sherwood pool IDs. Global external contracts and unrelated pool IDs are excluded.
 - Files: Added `apps/indexer/src/indexing-policy.ts`, scoped ingestion and disk telemetry in `apps/indexer/src/server.ts`, policy generation/finalizer integration, API health fields, 60/75/85 percent disk alerts, unit tests, and an isolated noisy-Anvil integration fixture.
 - Verification: Indexer unit tests pass 29/29. The Anvil test generated unrelated token and PoolManager noise, retained only the three Sherwood same-block lifecycle logs, restarted, reconstructed the dynamic token/pool scope, and retained two later Sherwood logs with zero duplicates.
 - Evidence: Broad-index diagnostic aggregates, address distribution, relation sizes, checkpoints, heartbeats, and failure logs are checksum-sealed at `/home/hendo420/robyn-evidence/schema18-indexer-remediation/broad-mainnet-diagnostic-20260802T031544Z/`.
-- Capacity: Root disk remains 61 GiB with about 1.2 GiB free. Do not restart a backfill at this utilization; the new indexer disables material backfills at 85 percent utilization. Safe cache cleanup or minimal VM disk expansion is still required to restore at least 12 GiB and 15 percent free.
-- Follow-up: Finish full validation and reproducible builds, commit/push a new application SHA, perform focused empty Testnet rebuild/lifecycle acceptance, then replace the partial broad Mainnet database with a fresh scoped rebuild and reconcile it before sealing a replacement Gate-3 manifest. Do not enable Mainnet writes.
+- Capacity: Root disk was expanded to 91 GiB and now has about 32 GiB free, satisfying the 12 GiB and 15 percent gates. The indexer still disables material backfills at 85 percent utilization.
+- Follow-up: Exact scoped application SHA 5ea50ed836d81416a7a6a32c8078a864fca28d0b is clean and pushed. Fresh Testnet rebuild retained 484 Sherwood logs, one launch, 19 tracked addresses, one pool ID, zero forbidden global logs, zero duplicates, and a 9.7 MB database; restart reconstruction and desktop/mobile browser acceptance passed. Mainnet scoped manifest aa0dced6967f44ee441f4f3b02ae3f0c4221ef3d75d982edca5eb45700825b860 is prepared, but the Mainnet indexer stays stopped until Gate-2 shutdown. Preserve the broad diagnostic database until evidence verification, then rebuild a fresh scoped Mainnet database and reconcile before Gate 3. Do not enable Mainnet writes.
 
 ### 2026-08-02 - Gate-2 reactivation scheduled and Gate-3 preparation advanced
 
