@@ -21,7 +21,7 @@ source_sha="$(git rev-parse HEAD)"
 [[ "$(git rev-parse HEAD:packages/contracts/src)" == "$(jq -r .contractClosureHash config/production-mainnet.json)" ]]
 [[ -r "${manifest_input}" ]] || { echo "release manifest input is not readable" >&2; exit 1; }
 [[ "$(sha256sum "${manifest_input}" | cut -d' ' -f1)" == "$(jq -r .deploymentManifestHash config/production-mainnet.json)" ]] || { echo "release manifest input hash mismatch" >&2; exit 1; }
-COREPACK_DEFAULT_TO_LATEST=0 pnpm install --frozen-lockfile --package-import-method=copy
+COREPACK_DEFAULT_TO_LATEST=0 pnpm install --frozen-lockfile
 pnpm --filter @robyn/db --filter @robyn/api --filter @robyn/indexer --filter @robyn/artifacts --filter @robyn/rpc-gateway --recursive run build
 ROBYN_BUILD_ID="${source_sha}" ROBYN_NETWORK_MODE=mainnet NEXT_PUBLIC_ROBYN_NETWORK_MODE=mainnet ROBYN_DEPLOYMENT_PATH="${manifest_input}" NEXT_PUBLIC_ROBYN_RPC_URL=https://sherwoodforest.trade/rpc NEXT_PUBLIC_DATA_API_URL=https://sherwoodforest.trade/api NEXT_PUBLIC_ROBYN_EXPLORER_URL=https://explorer.chain.robinhood.com NEXT_PUBLIC_APP_URL=https://sherwoodforest.trade pnpm --filter @robyn/web build
 rm -rf apps/web/.next/cache

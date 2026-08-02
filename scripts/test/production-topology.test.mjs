@@ -80,4 +80,5 @@ test("production build consumes a hash-pinned builder-readable deployment manife
     promotionScript,
     /ROBYN_RELEASE_MANIFEST_INPUT=\/var\/lib\/robyn-release\/inputs\/4663-mainnet\.json/,
   );
+  assert.doesNotMatch(buildScript, /package-import-method=copy/);
 });
