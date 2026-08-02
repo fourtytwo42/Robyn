@@ -16,11 +16,12 @@
 
 - Final Gate-2 recovery evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-final-settlement/live-bf8c377-1ea83d5-01`.
 - Qualified read-only manifest is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-indexer-remediation/mainnet-scoped-readonly-qualified-5ea50ed-01`; `contracts.factory` equals `contracts.launchFactory`.
-- Scoped application activation evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-public-prep/application-5ea50ed`; read-only services are running while all financial submissions and application writes remain disabled.
+- Scoped application activation evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-public-prep/application-5ea50ed-v2`; it binds the database, PM2, Nginx, stopped keeper, disabled writes, and LAN-only RPC identities.
+- The full repository gate passed 563 Foundry tests, focused script/Anvil tests, lint, typecheck, dependency and secret checks, and reviewed security analysis. The exact-state Public rehearsal must be repeated once on the final clean pushed tooling SHA.
 
 ## Open Follow-ups
 
-- Finish Gate-3 tooling validation, commit and push one clean tooling SHA, repeat the LAN-sourced exact-state Public rehearsal, and seal the authorization-false Gate-3 manifest.
+- Commit and push the final evidence-binding tooling, repeat the LAN-sourced exact-state Public rehearsal on that SHA, and seal the authorization-false Gate-3 manifest.
 - Stop before any live Public scheduling transaction and provide the exact manifest SHA-256 plus copy/paste authorization.
 
 ### 2026-08-02 - Final-settlement recovery rehearsal passes
