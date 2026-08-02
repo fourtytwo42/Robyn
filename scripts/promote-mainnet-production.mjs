@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { chmodSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { chmodSync, copyFileSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -105,7 +105,31 @@ execFileSync("sudo", [
 ], { stdio: "inherit" });
 
 const signingKey = "/home/hendo420/.config/robyn/release-signing/id_ed25519";
-execFileSync("ssh-keygen", ["-Y", "sign", "-f", signingKey, "-n", "file", path.join(outputRoot, "production-release.json")], { stdio: "inherit" });
+const signingDirectory = mkdtempSync(
+  path.join(tmpdir(), "robyn-release-signing-"),
+);
+try {
+  chmodSync(signingDirectory, 0o755);
+  const signingManifest = path.join(signingDirectory, "production-release.json");
+  copyFileSync(path.join(outputRoot, "production-release.json"), signingManifest);
+  execFileSync(
+    "ssh-keygen",
+    ["-Y", "sign", "-f", signingKey, "-n", "file", signingManifest],
+    { stdio: "inherit" },
+  );
+  chmodSync(`${signingManifest}.sig`, 0o444);
+  execFileSync("sudo", [
+    "-u",
+    "robyn-release",
+    "install",
+    "-m",
+    "0444",
+    `${signingManifest}.sig`,
+    path.join(outputRoot, "production-release.json.sig"),
+  ]);
+} finally {
+  rmSync(signingDirectory, { force: true, recursive: true });
+}
 execFileSync("git", [
   "-c", "gpg.format=ssh", "-c", `user.signingkey=${signingKey}`,
   "tag", "-s", "-m", `Sherwood Forest production release ${sha}`, tag, sha,
