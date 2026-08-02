@@ -4,7 +4,10 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { classifyProductionChanges } from "./lib/production-release.mjs";
+import {
+  classifyProductionChanges,
+  validateProductionAcceptance,
+} from "./lib/production-release.mjs";
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -33,12 +36,20 @@ const changed = execFileSync("git", ["diff", "--name-only", `${base}..${sha}`], 
   cwd: repo, encoding: "utf8",
 }).trim().split("\n").filter(Boolean);
 const scope = classifyProductionChanges(changed);
+const policy = JSON.parse(
+  readFileSync(path.join(repo, "config/production-mainnet.json"), "utf8"),
+);
 const acceptanceRoot = path.join("/var/lib/robyn-release/acceptance", sha);
 for (const environment of ["devnet", "testnet", "mainnet-staging"]) {
-  const evidence = JSON.parse(readFileSync(path.join(acceptanceRoot, `${environment}.json`), "utf8"));
-  if (evidence.passed !== true || evidence.sourceSha !== sha) {
-    throw new Error(`Missing passing ${environment} acceptance for ${sha}`);
-  }
+  const evidence = JSON.parse(
+    readFileSync(path.join(acceptanceRoot, environment + ".json"), "utf8"),
+  );
+  validateProductionAcceptance(evidence, {
+    environment,
+    sourceSha: sha,
+    changeScope: scope,
+    contractClosureHash: policy.contractClosureHash,
+  });
 }
 const gate = {
   ui: ["pnpm", ["test:ui-scope"]],

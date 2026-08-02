@@ -9,6 +9,7 @@ import {
   assertReleaseTreeIntegrity,
   assertSecretFreeTree,
   classifyProductionChanges,
+  validateProductionAcceptance,
   validateProductionRelease,
 } from "../lib/production-release.mjs";
 
@@ -116,6 +117,39 @@ test("rejects secret-bearing runtime bundles and destructive migrations", () => 
   assert.doesNotThrow(() => assertAdditiveMigrations(migrations));
   writeFileSync(path.join(migrations, "0002_bad.sql"), "DROP TABLE ok;");
   assert.throws(() => assertAdditiveMigrations(migrations), /Non-additive/);
+});
+
+test("requires exact, passing, fail-closed environment acceptance", () => {
+  const expected = {
+    environment: "mainnet-staging",
+    sourceSha: valid.sourceSha,
+    changeScope: "infrastructure",
+    contractClosureHash: policy.contractClosureHash,
+  };
+  const acceptance = {
+    schemaVersion: 1,
+    ...expected,
+    passed: true,
+    completedAt: "2026-08-02T22:00:00Z",
+    checks: [{ name: "read-only RPC policy", passed: true }],
+    rpcPolicy: {
+      automaticFallback: false,
+      transactionSubmissionDefault: false,
+    },
+  };
+  assert.equal(validateProductionAcceptance(acceptance, expected), acceptance);
+  assert.throws(
+    () =>
+      validateProductionAcceptance(
+        { ...acceptance, sourceSha: "0".repeat(40) },
+        expected,
+      ),
+    /sourceSha/,
+  );
+  assert.throws(
+    () => validateProductionAcceptance({ ...acceptance, checks: [] }, expected),
+    /checks/,
+  );
 });
 
 test("binds every runtime file and acceptance record to the signed manifest", () => {

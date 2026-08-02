@@ -168,6 +168,45 @@ export function validateProductionRelease(manifest, policy, options = {}) {
   return manifest;
 }
 
+export function validateProductionAcceptance(evidence, expected) {
+  const errors = [];
+  if (evidence.schemaVersion !== 1) errors.push("schemaVersion");
+  if (evidence.environment !== expected.environment) errors.push("environment");
+  if (evidence.sourceSha !== expected.sourceSha) errors.push("sourceSha");
+  if (evidence.changeScope !== expected.changeScope) errors.push("changeScope");
+  if (evidence.contractClosureHash !== expected.contractClosureHash)
+    errors.push("contractClosureHash");
+  if (evidence.passed !== true) errors.push("passed");
+  if (
+    typeof evidence.completedAt !== "string" ||
+    !Number.isFinite(Date.parse(evidence.completedAt))
+  ) {
+    errors.push("completedAt");
+  }
+  if (
+    !Array.isArray(evidence.checks) ||
+    evidence.checks.length === 0 ||
+    evidence.checks.some(
+      (check) =>
+        typeof check?.name !== "string" ||
+        check.name.length === 0 ||
+        check.passed !== true,
+    )
+  ) {
+    errors.push("checks");
+  }
+  if (
+    evidence.rpcPolicy?.automaticFallback !== false ||
+    evidence.rpcPolicy?.transactionSubmissionDefault !== false
+  ) {
+    errors.push("rpcPolicy");
+  }
+  if (errors.length > 0) {
+    throw new Error("Invalid production acceptance: " + errors.join(", "));
+  }
+  return evidence;
+}
+
 export function assertReleaseTreeIntegrity(root, manifest) {
   const checksumFile = path.join(root, "release-files.sha256");
   if (sha256File(checksumFile) !== manifest.applicationArtifactHash) {
