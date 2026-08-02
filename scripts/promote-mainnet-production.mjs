@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -75,7 +76,25 @@ const buildRoot = path.join("/var/lib/robyn-release/builds", sha);
 const outputRoot = path.join("/var/lib/robyn-release/out", tag);
 execFileSync("sudo", ["rm", "-rf", buildRoot, outputRoot], { stdio: "inherit" });
 execFileSync("sudo", ["install", "-d", "-o", "robyn-release", "-g", "robyn-release", buildRoot, outputRoot], { stdio: "inherit" });
-execFileSync("sudo", ["-u", "robyn-release", "git", "clone", "--no-local", "--no-checkout", "https://github.com/fourtytwo42/Robyn.git", buildRoot], { stdio: "inherit" });
+const bundleDirectory = mkdtempSync(
+  path.join(tmpdir(), "robyn-release-bundle-"),
+);
+const bundle = path.join(bundleDirectory, "source.bundle");
+try {
+  chmodSync(bundleDirectory, 0o755);
+  execFileSync("git", ["bundle", "create", bundle, "HEAD"], {
+    cwd: repo,
+    stdio: "inherit",
+  });
+  execFileSync("git", ["bundle", "verify", bundle], {
+    cwd: repo,
+    stdio: "inherit",
+  });
+  chmodSync(bundle, 0o444);
+  execFileSync("sudo", ["-u", "robyn-release", "git", "clone", "--no-checkout", bundle, buildRoot], { stdio: "inherit" });
+} finally {
+  rmSync(bundleDirectory, { force: true, recursive: true });
+}
 execFileSync("sudo", ["-u", "robyn-release", "git", "-C", buildRoot, "checkout", "--detach", sha], { stdio: "inherit" });
 execFileSync("sudo", [
   "-u", "robyn-release", "env",
