@@ -99,6 +99,7 @@ execFileSync("sudo", ["-u", "robyn-release", "git", "-C", buildRoot, "checkout",
 execFileSync("sudo", [
   "-u", "robyn-release", "env",
   `ROBYN_REQUIRED_PREVIOUS_RELEASE=${previous?.sourceSha || ""}`,
+  "ROBYN_RELEASE_MANIFEST_INPUT=/var/lib/robyn-release/inputs/4663-mainnet.json",
   "bash", path.join(buildRoot, "scripts/build-mainnet-production-runtime.sh"),
   buildRoot, outputRoot, scope, acceptanceRoot,
 ], { stdio: "inherit" });

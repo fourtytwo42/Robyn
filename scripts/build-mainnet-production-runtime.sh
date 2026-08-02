@@ -11,16 +11,19 @@ set -a
 # shellcheck disable=SC1090
 source "${build_env}"
 set +a
-: "${ROBYN_MAINNET_MANIFEST:?}"
+manifest_input="${ROBYN_RELEASE_MANIFEST_INPUT:-${ROBYN_MAINNET_MANIFEST:-}}"
+: "${manifest_input:?release manifest input is required}"
 : "${NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:?}"
 : "${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:?}"
 cd "${source_root}"
 source_sha="$(git rev-parse HEAD)"
 [[ -z "$(git status --porcelain)" ]]
 [[ "$(git rev-parse HEAD:packages/contracts/src)" == "$(jq -r .contractClosureHash config/production-mainnet.json)" ]]
+[[ -r "${manifest_input}" ]] || { echo "release manifest input is not readable" >&2; exit 1; }
+[[ "$(sha256sum "${manifest_input}" | cut -d' ' -f1)" == "$(jq -r .deploymentManifestHash config/production-mainnet.json)" ]] || { echo "release manifest input hash mismatch" >&2; exit 1; }
 COREPACK_DEFAULT_TO_LATEST=0 pnpm install --frozen-lockfile --package-import-method=copy
 pnpm --filter @robyn/db --filter @robyn/api --filter @robyn/indexer --filter @robyn/artifacts --filter @robyn/rpc-gateway --recursive run build
-ROBYN_BUILD_ID="${source_sha}" ROBYN_NETWORK_MODE=mainnet NEXT_PUBLIC_ROBYN_NETWORK_MODE=mainnet ROBYN_DEPLOYMENT_PATH="${ROBYN_MAINNET_MANIFEST}" NEXT_PUBLIC_ROBYN_RPC_URL=https://sherwoodforest.trade/rpc NEXT_PUBLIC_DATA_API_URL=https://sherwoodforest.trade/api NEXT_PUBLIC_ROBYN_EXPLORER_URL=https://explorer.chain.robinhood.com NEXT_PUBLIC_APP_URL=https://sherwoodforest.trade pnpm --filter @robyn/web build
+ROBYN_BUILD_ID="${source_sha}" ROBYN_NETWORK_MODE=mainnet NEXT_PUBLIC_ROBYN_NETWORK_MODE=mainnet ROBYN_DEPLOYMENT_PATH="${manifest_input}" NEXT_PUBLIC_ROBYN_RPC_URL=https://sherwoodforest.trade/rpc NEXT_PUBLIC_DATA_API_URL=https://sherwoodforest.trade/api NEXT_PUBLIC_ROBYN_EXPLORER_URL=https://explorer.chain.robinhood.com NEXT_PUBLIC_APP_URL=https://sherwoodforest.trade pnpm --filter @robyn/web build
 rm -rf apps/web/.next/cache
 runtime="${output_root}/runtime"
 rm -rf "${output_root}"
@@ -39,7 +42,7 @@ cp infrastructure/pm2/ecosystem.mainnet.production.cjs "${runtime}/infrastructur
 cp scripts/start-production-api.sh scripts/start-production-artifacts.sh scripts/validate-production-release.mjs "${runtime}/scripts/"
 cp scripts/lib/production-release.mjs "${runtime}/scripts/lib/"
 cp config/production-mainnet.json "${runtime}/config/"
-cp "${ROBYN_MAINNET_MANIFEST}" "${runtime}/deployments/4663-mainnet.json"
+cp "${manifest_input}" "${runtime}/deployments/4663-mainnet.json"
 cp "${acceptance_root}"/{devnet,testnet,mainnet-staging}.json "${runtime}/release-evidence/"
 pnpm list --depth Infinity --json >"${output_root}/dependencies.json"
 node scripts/generate-cyclonedx-sbom.mjs "${output_root}/dependencies.json" "${runtime}/release-evidence/cyclonedx-sbom.json" "${source_sha}"

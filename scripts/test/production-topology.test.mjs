@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -11,6 +12,14 @@ const repo = path.resolve(
 const ecosystem = path.join(
   repo,
   "infrastructure/pm2/ecosystem.mainnet.production.cjs",
+);
+const buildScript = readFileSync(
+  path.join(repo, "scripts/build-mainnet-production-runtime.sh"),
+  "utf8",
+);
+const promotionScript = readFileSync(
+  path.join(repo, "scripts/promote-mainnet-production.mjs"),
+  "utf8",
 );
 const baseEnv = {
   ...process.env,
@@ -60,5 +69,15 @@ test("production topology refuses signer-bearing environments", () => {
   assert.throws(
     () => load({ ...baseEnv, DEPLOYER_PRIVATE_KEY: "forbidden" }),
     /Forbidden signer setting/,
+  );
+});
+
+test("production build consumes a hash-pinned builder-readable deployment manifest", () => {
+  assert.match(buildScript, /ROBYN_RELEASE_MANIFEST_INPUT/);
+  assert.match(buildScript, /deploymentManifestHash/);
+  assert.match(buildScript, /release manifest input hash mismatch/);
+  assert.match(
+    promotionScript,
+    /ROBYN_RELEASE_MANIFEST_INPUT=\/var\/lib\/robyn-release\/inputs\/4663-mainnet\.json/,
   );
 });
