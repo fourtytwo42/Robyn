@@ -6,6 +6,7 @@
 - Exact identities: contracts `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4`, application `5ea50ed836d81416a7a6a32c8078a864fca28d0b`, tooling `e2e2be924f1ec432c2b3eebeb79c7c814b82a32c`, policy `5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1`.
 - First-24-hour native monitoring is active through PM2/systemd, Prometheus, Alertmanager, Grafana, and the 30-second metrics timer. LAN is the sole application and transaction RPC; Alchemy remains probe-only with automatic fallback disabled.
 - Token-page UI/API release `0284e146f9e1cddc3166d3db54e45fab567db596` is live on Devnet, Testnet, and Mainnet. Identity and project links remain in the compact header; market cap, 24-hour change, indexed ATH, and ATH progress frame the chart; price/volume/window changes sit below it; creator rewards are in the trading rail with creator-only modal assignment. Embedded Trades and Ownership remain paginated. Schema-18 contracts, routes, indexers, keepers, gateways, and financial configuration are unchanged.
+- Holder-claim web release `0624abcc699c82df2026505cbfb92e2a63708353` is live on Devnet, Testnet, and Mainnet. Token pages expose per-launch holder reward balances and `claimAll()` through the existing simulated wallet path; public-network Portfolio pages also expose per-position claims. No contract or non-web service changed.
 
 ## Current State
 
@@ -29,6 +30,13 @@
 ## Open Follow-ups
 
 - Continue observing the first 24 public hours through native monitoring. On any contract, accounting, solvency, supply, principal, route, or LAN-RPC anomaly, disable application submissions and use the verified guardian controls.
+### 2026-08-02 - Holder rewards deployed on token pages
+
+- Context: Holders could not claim a launch token streamed basket rewards from its token page, and Testnet/Mainnet Portfolio remained view-only.
+- Decision: Reuse the existing per-launch `claimAll()` method and simulated wallet transaction path. Require an explicit wallet click and approval; never submit automatically.
+- Verification: Web tests passed 69/69 with lint, typecheck, security checks, protected Devnet/Testnet/Mainnet builds, and artifact checksums. Browser acceptance passed on Mainnet and Testnet at desktop and 390x844 with zero console errors and no wallet connection or transaction.
+- Deployment: Only `robyn-web`, `robyn-web-testnet`, and `robyn-web-mainnet` moved to immutable release `0624abcholderclaims`; all 20 PM2 processes are online and saved. Contracts, APIs, indexers, keepers, routes, RPC policy, wallets, and onchain state were untouched.
+
 ### 2026-08-02 - Schema-18 contract qualification frozen for web-only releases
 
 - Context: Presentation-only releases were spending roughly 30 minutes recompiling, testing, and analyzing unchanged Schema-18 contracts.
