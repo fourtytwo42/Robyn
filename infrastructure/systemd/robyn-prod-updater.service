@@ -1,0 +1,15 @@
+[Unit]
+Description=Sherwood Forest signed production release updater
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/robyn/production-updater.sh
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/robyn /var/lib/robyn-release /var/lib/robynapp /run/lock
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX

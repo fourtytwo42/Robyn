@@ -7,6 +7,7 @@
 - First-24-hour native monitoring is active through PM2/systemd, Prometheus, Alertmanager, Grafana, and the 30-second metrics timer. LAN is the sole application and transaction RPC; Alchemy remains probe-only with automatic fallback disabled.
 - Token-page UI/API release `0284e146f9e1cddc3166d3db54e45fab567db596` is live on Devnet, Testnet, and Mainnet. Identity and project links remain in the compact header; market cap, 24-hour change, indexed ATH, and ATH progress frame the chart; price/volume/window changes sit below it; creator rewards are in the trading rail with creator-only modal assignment. Embedded Trades and Ownership remain paginated. Schema-18 contracts, routes, indexers, keepers, gateways, and financial configuration are unchanged.
 - Holder-claim web release `0624abcc699c82df2026505cbfb92e2a63708353` is live on Devnet, Testnet, and Mainnet. Token pages expose per-launch holder reward balances and `claimAll()` through the existing simulated wallet path; public-network Portfolio pages also expose per-position claims. No contract or non-web service changed.
+- Production migration is in progress on keyless host 192.168.50.108. The existing public host remains authoritative until signed-release deployment, scoped rebuild, preview acceptance, and Cloudflare cutover all pass. Ordinary pushes never deploy production.
 
 ## Current State
 
@@ -14,7 +15,7 @@
 - Mainnet launch mode is Public; profile version 2 targets 6 ETH with a 0.5 ETH maximum purchase; all six sealed routes and both conversion systems are enabled. The canary retains its immutable profile-1 snapshot.
 - Scoped indexing is current with zero ingestion/projection lag, one launch, 20 tracked addresses, one pool, excluded global sources, and a 12.9 MB database. API audit, reward backing, router solvency, supplies, locked principal, and keeper queues are healthy.
 - The last verified operator balance was `0.028372369252761679 ETH`, above the protected `0.02 ETH` reserve. Requery before any future financial operation.
-- GitHub promotion target is to fast-forward both `origin/codex/token-page-market-snapshot` and `origin/main` to this deployment record containing deployed UI/API source `0284e146f9e1cddc3166d3db54e45fab567db596`. No force push or historical-worktree mutation is permitted.
+- Production architecture work is isolated in /home/hendo420/Robyn-prod-architecture on branch codex/production-mainnet-host. Host 192.168.50.108 has one 248 GiB root LV, about 225 GiB free, and no blockchain signer material. The signed updater remains disabled until an exact main SHA passes Devnet, Testnet, and LAN-Mainnet staging acceptance.
 
 ## Verification Ledger
 
@@ -26,10 +27,21 @@
 - Qualified read-only manifest is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-indexer-remediation/mainnet-scoped-readonly-qualified-5ea50ed-01`; `contracts.factory` equals `contracts.launchFactory`.
 - Scoped application activation evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-public-prep/application-5ea50ed-v2`; it binds the database, PM2, Nginx, stopped keeper, disabled writes, and LAN-only RPC identities.
 - The full repository gate passed 563 Foundry tests, focused script/Anvil tests, lint, typecheck, dependency and secret checks, and reviewed security analysis. The exact-state Public rehearsal must be repeated once on the final clean pushed tooling SHA.
+- Production host storage expansion survived reboot: /dev/ubuntu-vg/ubuntu-lv consumes the full 248 GiB VG and ext4 reports roughly 244 GiB total with 225 GiB available.
+- Encrypted pgBackRest backup 20260802-223353F completed to //192.168.50.102/Q/Sherwood-DBbackups. WAL archive checks and an isolated PostgreSQL restore/query passed. Retention is exactly three full backup sets with daily incrementals, weekly fulls, and a monthly isolated restore test.
 
 ## Open Follow-ups
 
 - Continue observing the first 24 public hours through native monitoring. On any contract, accounting, solvency, supply, principal, route, or LAN-RPC anomaly, disable application submissions and use the verified guardian controls.
+### 2026-08-02 - Keyless production-host migration checkpoint
+
+- Context: Move the public Mainnet application to 192.168.50.108 while keeping all keeper, deployer, governance, and recovery signing on private host 192.168.50.250.
+- Storage: Root now consumes the full 250 GB virtual disk instead of reserving 100 GB for root and 140 GB separately. Future disks can be added to ubuntu-vg and ubuntu-lv extended online.
+- Backups: The dedicated NAS share at 192.168.50.102 is the active encrypted PostgreSQL/WAL repository. pgBackRest retains three full backup sets and expires the oldest after a fourth full succeeds. The former staging-MinIO backup ingress is no longer active.
+- Security: Production runs only web, API, scoped indexer, projector, artifacts, and the allowlisted RPC gateway. Signed raw transaction relay is independently disabled by default. Alchemy is probe-only and never an automatic fallback.
+- Release: A separate SSH release key signs production-release.json and mainnet-prod tags. The updater verifies the signed runtime hash, per-file checksums, exact acceptance evidence, chain, Schema-18 contract closure, migrations, topology, and previous release before atomic cutover.
+- Verification: Production release tests, 33 RPC-gateway tests, workspace lint/typecheck, shell syntax, encrypted backup, isolated restore, Prometheus rules, and host service checks pass.
+- Follow-up: Commit/push the tooling, qualify the exact SHA across Devnet/Testnet/LAN Mainnet, publish the first signed release with writes disabled, rebuild the production scoped database, complete preview acceptance, and only then cut Cloudflare to the new host.
 ### 2026-08-02 - Holder rewards deployed on token pages
 
 - Context: Holders could not claim a launch token streamed basket rewards from its token page, and Testnet/Mainnet Portfolio remained view-only.

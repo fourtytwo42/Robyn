@@ -1,0 +1,20 @@
+[Unit]
+Description=Sherwood Forest production Kubo
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=robynapp
+Group=robynapp
+Environment=IPFS_PATH=/srv/robyn-data/ipfs
+ExecStart=/usr/local/bin/ipfs daemon --enable-gc
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/srv/robyn-data/ipfs
+
+[Install]
+WantedBy=multi-user.target

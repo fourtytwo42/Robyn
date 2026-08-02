@@ -1,0 +1,1 @@
+//192.168.50.102/Q/Sherwood-DBbackups /mnt/robyn-backups cifs credentials=/etc/robyn/backup/nas-credentials,vers=3.1.1,uid=postgres,gid=postgres,forceuid,forcegid,dir_mode=0700,file_mode=0600,noperm,noserverino,nodev,nosuid,noexec,_netdev,x-systemd.automount,x-systemd.device-timeout=10s,x-systemd.mount-timeout=30s,nofail 0 0

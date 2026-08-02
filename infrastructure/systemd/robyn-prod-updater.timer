@@ -1,0 +1,11 @@
+[Unit]
+Description=Poll for signed Sherwood Forest production releases
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=15s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

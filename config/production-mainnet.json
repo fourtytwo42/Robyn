@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "chainId": 4663,
+  "contractSchema": 18,
+  "qualifiedContractGitSha": "4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4",
+  "contractClosureHash": "d3d44b862a9d6c1e5361bbf3cb72602116ef05aa",
+  "deploymentManifestHash": "aa0dced6967f44e441f4f3b02ae3f0c4221ef3d75d982edca5eb45700825b860",
+  "indexingPolicyHash": "5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1",
+  "deploymentBlock": 25321851,
+  "releaseTagPrefix": "mainnet-prod-",
+  "processes": [
+    "robyn-web-mainnet-prod",
+    "robyn-api-mainnet-prod",
+    "robyn-indexer-mainnet-prod",
+    "robyn-projector-mainnet-prod",
+    "robyn-artifacts-mainnet-prod",
+    "robyn-rpc-gateway-mainnet-prod"
+  ],
+  "rpcPolicy": {
+    "primary": "lan-only",
+    "probeOnly": true,
+    "automaticFallback": false,
+    "transactionSubmissionDefault": false
+  }
+}

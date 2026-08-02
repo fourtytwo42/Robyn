@@ -1,0 +1,25 @@
+[Unit]
+Description=Sherwood Forest keyless production PM2 topology
+After=network-online.target postgresql.service redis-server.service
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=robynapp
+Group=robynapp
+Environment=PM2_HOME=/var/lib/robynapp/.pm2
+EnvironmentFile=/etc/robyn/mainnet/runtime.env
+ExecStart=/usr/local/bin/pm2 resurrect
+ExecReload=/usr/local/bin/pm2 reload all --update-env
+ExecStop=/usr/local/bin/pm2 kill
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/robynapp /var/lib/robyn /srv/robyn-data
+
+[Install]
+WantedBy=multi-user.target

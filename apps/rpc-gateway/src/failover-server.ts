@@ -5,6 +5,10 @@ import {
   TestnetRpcFailover,
   type RpcBody,
 } from "./failover.js";
+import {
+  publicRpcPolicyError,
+  publicRpcPolicySnapshot,
+} from "./public-policy.js";
 
 function required(name: string): string {
   const value = process.env[name]?.trim();
@@ -35,6 +39,8 @@ if (
 const selectedProvider: "primary" | "fallback" = selectedProviderValue;
 const fallbackTrafficAuthorized =
   process.env.RPC_FALLBACK_TRAFFIC_AUTHORIZED === "true";
+const transactionSubmissionAuthorized =
+  process.env.RPC_TRANSACTION_SUBMISSION_AUTHORIZED === "true";
 const controller = new TestnetRpcFailover({
   primaryUrl: required("PRIMARY_RPC_URL"),
   fallbackUrl: required("FALLBACK_RPC_URL"),
@@ -69,14 +75,21 @@ const app = Fastify({
 
 app.get("/health", async (_request, reply) => {
   const snapshot = controller.snapshot();
-  return reply
-    .code(snapshot.status === "unavailable" ? 503 : 200)
-    .send(snapshot);
+  return reply.code(snapshot.status === "unavailable" ? 503 : 200).send({
+    ...snapshot,
+    publicRpcPolicy: publicRpcPolicySnapshot(transactionSubmissionAuthorized),
+  });
 });
 
 app.post("/", async (request, reply) => {
   try {
-    const result = await controller.request(request.body as RpcBody);
+    const body = request.body as RpcBody;
+    const policyError = publicRpcPolicyError(
+      body,
+      transactionSubmissionAuthorized,
+    );
+    if (policyError) return reply.code(200).send(policyError);
+    const result = await controller.request(body);
     return reply.code(200).send(result);
   } catch {
     return reply.code(503).send({

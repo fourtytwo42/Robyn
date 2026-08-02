@@ -1,0 +1,15 @@
+[Unit]
+Description=Full encrypted Sherwood Forest production backup
+After=postgresql.service network-online.target
+Wants=network-online.target
+RequiresMountsFor=/mnt/robyn-backups
+
+[Service]
+Type=oneshot
+User=postgres
+ExecStart=/usr/bin/pgbackrest --stanza=robyn-mainnet --type=full backup
+ExecStartPost=/usr/bin/pgbackrest --stanza=robyn-mainnet expire
+ExecStartPost=/usr/bin/touch /var/lib/robyn/backup/last-success
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

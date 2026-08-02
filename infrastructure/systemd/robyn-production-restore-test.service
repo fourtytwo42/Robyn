@@ -1,0 +1,13 @@
+[Unit]
+Description=Verify Sherwood Forest production backup with an isolated restore
+After=postgresql.service network-online.target
+Wants=network-online.target
+RequiresMountsFor=/mnt/robyn-backups
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/robyn/verify-production-restore.sh
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+TimeoutStartSec=30min

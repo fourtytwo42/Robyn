@@ -1,0 +1,39 @@
+groups:
+  - name: sherwood-production-capacity
+    rules:
+      - alert: SherwoodProductionDiskForecast
+        expr: robyn_production_disk_percent >= 60
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: Production storage crossed 60 percent; update the growth forecast.
+      - alert: SherwoodProductionDiskExpansion
+        expr: robyn_production_disk_percent >= 75
+        for: 10m
+        labels: { severity: high }
+        annotations:
+          summary: Production storage crossed 75 percent; schedule disk and LVM expansion.
+      - alert: SherwoodProductionBackfillStop
+        expr: robyn_production_disk_percent >= 85
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: Production storage crossed 85 percent; stop nonessential backfills.
+      - alert: SherwoodProductionBackupStale
+        expr: robyn_production_backup_age_seconds < 0 or robyn_production_backup_age_seconds > 129600
+        for: 15m
+        labels: { severity: critical }
+        annotations:
+          summary: Production backup is absent or more than 36 hours old.
+      - alert: SherwoodProductionBackupNasUnavailable
+        expr: robyn_production_backup_nas_mounted != 1
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: The dedicated production NAS backup path is unavailable.
+      - alert: SherwoodProductionRestoreTestStale
+        expr: robyn_production_restore_test_age_seconds < 0 or robyn_production_restore_test_age_seconds > 3024000
+        for: 30m
+        labels: { severity: high }
+        annotations:
+          summary: No successful isolated production restore has completed within 35 days.

@@ -1,0 +1,21 @@
+[Unit]
+Description=Sherwood Forest production artifact object store
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=robynapp
+Group=robynapp
+EnvironmentFile=/etc/robyn/mainnet/minio.env
+ExecStart=/usr/local/bin/minio server --address 127.0.0.1:9000 --console-address 127.0.0.1:9001 /srv/robyn-data/minio
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/srv/robyn-data/minio
+
+[Install]
+WantedBy=multi-user.target
