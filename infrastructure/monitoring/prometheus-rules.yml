@@ -360,6 +360,22 @@ groups:
           summary: "Robyn custom metrics are stale"
           description: 'Collector is stale. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#monitoring-stale"
+      - alert: RobynDiskUtilization60
+        expr: node_filesystem_avail_bytes{mountpoint="/",fstype!=""} / node_filesystem_size_bytes{mountpoint="/",fstype!=""} < 0.40
+        for: 10m
+        labels: { severity: warning, component: vm-disk, runbook: capacity }
+        annotations:
+          summary: "Sherwood VM disk utilization exceeded 60 percent"
+          description: "Review scoped index growth and disk runway before increasing traffic."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#capacity"
+      - alert: RobynDiskUtilization75
+        expr: node_filesystem_avail_bytes{mountpoint="/",fstype!=""} / node_filesystem_size_bytes{mountpoint="/",fstype!=""} < 0.25
+        for: 5m
+        labels: { severity: critical, component: vm-disk, runbook: capacity }
+        annotations:
+          summary: "Sherwood VM disk utilization exceeded 75 percent"
+          description: "Stop optional evidence growth and prepare bounded capacity remediation."
+          runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#capacity"
       - alert: RobynDiskHeadroomLow
         expr: node_filesystem_avail_bytes{mountpoint="/",fstype!=""} / node_filesystem_size_bytes{mountpoint="/",fstype!=""} < 0.15 or robyn_assurance_drill{alert="RobynDiskHeadroomLow"} == 1
         for: 5m
@@ -373,7 +389,7 @@ groups:
             runbook: capacity,
           }
         annotations:
-          summary: "Robyn VM root disk has less than 15 percent free"
+          summary: "Sherwood VM disk utilization exceeded 85 percent; indexer backfills are disabled"
           description: 'Free ratio is {{ $value }}. Last good block: {{ with query "robyn_indexer_last_good_block" }}{{ . | first | value }}{{ end }}.'
           runbook_url: "https://github.com/fourtytwo42/Robyn/blob/main/docs/incident-response.md#capacity"
       - alert: RobynMemoryHeadroomLow

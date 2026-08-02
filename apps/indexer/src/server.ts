@@ -1,8 +1,9 @@
-import { readFile } from "node:fs/promises";
+import { readFile, statfs } from "node:fs/promises";
 import {
   createPublicClient,
   decodeEventLog,
   http,
+  numberToHex,
   parseAbiItem,
   toEventSelector,
   type Address,
@@ -23,6 +24,13 @@ import {
   uniqueLaunchIds,
 } from "./pipeline.js";
 import {
+  backfillAllowed,
+  chunkValues,
+  uniqueLogs,
+  validateIndexingPolicy,
+  type IndexingPolicy,
+} from "./indexing-policy.js";
+import {
   qualifiesForKingOfForest,
   shouldCountKingTrader,
   validateKingOfForestPolicy,
@@ -41,6 +49,7 @@ type Manifest = {
   liquidityVenue?: "uniswap-v4" | "uniswap-v3";
   deploymentBlock: number;
   kingOfForestPolicy?: KingOfForestPolicy;
+  indexingPolicy?: IndexingPolicy;
   contracts: {
     [key: string]: Address | Address[] | undefined;
     factory: Address;
@@ -89,7 +98,10 @@ const blockReadConcurrency = Number(
 const maximumConsecutiveFailures = Number(
   process.env.INDEXER_MAXIMUM_CONSECUTIVE_FAILURES ?? "24",
 );
+const storagePath = process.env.ROBYN_STORAGE_PATH ?? "/var/lib/postgresql";
+const diskBackfillDisablePercent = 85;
 let stopping = false;
+let databaseSizeObservation: { bytes: number; at: number } | null = null;
 const ingesterWake = new WakeCoordinator();
 const debouncedIngesterWake = createDebouncedWake(
   () => ingesterWake.trigger(),
@@ -97,13 +109,7 @@ const debouncedIngesterWake = createDebouncedWake(
 );
 let filteredLogWakeClient: FilteredLogWakeClient | undefined;
 
-const indexedAddresses = [
-  ...new Set(
-    Object.values(manifest.contracts)
-      .filter((value): value is Address => typeof value === "string")
-      .map((address) => address.toLowerCase() as Address),
-  ),
-];
+const indexingPolicy = validateIndexingPolicy(manifest);
 
 async function loadBlocks(numbers: bigint[]) {
   const blocks = [];
@@ -339,7 +345,7 @@ const schema18GovernanceEventTopics = [
   ...schema18GovernanceEventByTopic.keys(),
 ];
 
-async function currentIndexedAddresses() {
+async function currentIndexedScope() {
   const launches = await sql.unsafe<
     {
       token: string;
@@ -347,9 +353,10 @@ async function currentIndexedAddresses() {
       market: string;
       adapter: string | null;
       locker: string | null;
+      pool_id: string | null;
     }[]
   >(
-    "SELECT token,vault,market,adapter,locker FROM launches WHERE chain_id=$1",
+    "SELECT token,vault,market,adapter,locker,pool_id FROM launches WHERE chain_id=$1",
     [manifest.chainId],
   );
   const coordinator = manifest.contracts.atomicLaunchCoordinator?.toLowerCase();
@@ -365,7 +372,7 @@ async function currentIndexedAddresses() {
         [manifest.chainId, coordinator],
       )
     : [];
-  const createdAddresses = newlyCreatedLaunchAddresses(
+  const discovered = newlyCreatedLaunchArtifacts(
     coordinatorLogs.map((log) => ({
       address: coordinator as Address,
       blockNumber: BigInt(log.block_number),
@@ -373,18 +380,28 @@ async function currentIndexedAddresses() {
       topics: log.topics as [] | [Hex, ...Hex[]],
     })),
   );
-  return mergeIndexedAddresses(
-    indexedAddresses,
-    launches.flatMap(({ token, vault, market, adapter, locker }) =>
-      [token, vault, market, adapter, locker].filter((value): value is string =>
-        Boolean(value),
+  return {
+    addresses: mergeIndexedAddresses(
+      indexingPolicy.protocolRoots,
+      launches.flatMap(({ token, vault, market, adapter, locker }) =>
+        [token, vault, market, adapter, locker].filter(
+          (value): value is string => Boolean(value),
+        ),
       ),
-    ),
-    createdAddresses.keys(),
-  ) as Address[];
+      discovered.addresses.keys(),
+    ) as Address[],
+    poolIds: [
+      ...new Set([
+        ...launches
+          .map(({ pool_id }) => pool_id?.toLowerCase())
+          .filter((value): value is Hex => Boolean(value)),
+        ...discovered.poolIds.keys(),
+      ]),
+    ].sort() as Hex[],
+  };
 }
 
-function newlyCreatedLaunchAddresses(
+function newlyCreatedLaunchArtifacts(
   logs: {
     address: Address;
     blockNumber: bigint | null;
@@ -393,12 +410,18 @@ function newlyCreatedLaunchAddresses(
   }[],
 ) {
   const coordinator = manifest.contracts.atomicLaunchCoordinator?.toLowerCase();
-  if (!coordinator) return new Map<Address, bigint>();
+  if (!coordinator) {
+    return {
+      addresses: new Map<Address, bigint>(),
+      poolIds: new Map<Hex, bigint>(),
+    };
+  }
   const event =
     manifest.liquidityVenue === "uniswap-v4"
       ? atomicV4LaunchEvent
       : atomicLaunchEvent;
   const addresses = new Map<Address, bigint>();
+  const poolIds = new Map<Hex, bigint>();
   for (const log of logs) {
     if (log.address.toLowerCase() !== coordinator) continue;
     if (log.blockNumber === null) continue;
@@ -424,11 +447,95 @@ function newlyCreatedLaunchAddresses(
           addresses.set(address, log.blockNumber);
         }
       }
+      const poolId = receipt?.poolId;
+      if (typeof poolId === "string" && /^0x[0-9a-fA-F]{64}$/.test(poolId)) {
+        const normalized = poolId.toLowerCase() as Hex;
+        const previous = poolIds.get(normalized);
+        if (previous === undefined || log.blockNumber < previous) {
+          poolIds.set(normalized, log.blockNumber);
+        }
+      }
     } catch {
       continue;
     }
   }
-  return addresses;
+  return { addresses, poolIds };
+}
+
+type RpcLog = {
+  address: Address;
+  blockHash: Hex | null;
+  blockNumber: Hex | null;
+  data: Hex;
+  logIndex: Hex | null;
+  removed: boolean;
+  topics: [] | [Hex, ...Hex[]];
+  transactionHash: Hex | null;
+  transactionIndex: Hex | null;
+};
+
+async function scopedAddressLogs(
+  addresses: Address[],
+  fromBlock: bigint,
+  toBlock: bigint,
+) {
+  let queryCount = 0;
+  const logs = [];
+  for (const addressBatch of chunkValues(
+    addresses,
+    indexingPolicy.addressBatchSize,
+  )) {
+    logs.push(
+      ...(await client.getLogs({
+        address: addressBatch,
+        fromBlock,
+        toBlock,
+      })),
+    );
+    queryCount += 1;
+  }
+  return { logs, queryCount };
+}
+
+async function scopedPoolLogs(
+  poolIds: Hex[],
+  fromBlock: bigint,
+  toBlock: bigint,
+) {
+  let queryCount = 0;
+  const logs = [];
+  for (const poolBatch of chunkValues(
+    poolIds,
+    indexingPolicy.poolIdBatchSize,
+  )) {
+    const response = (await client.request({
+      method: "eth_getLogs",
+      params: [
+        {
+          address: indexingPolicy.poolManager,
+          topics: [indexingPolicy.poolEventTopics, poolBatch],
+          fromBlock: numberToHex(fromBlock),
+          toBlock: numberToHex(toBlock),
+        },
+      ],
+    })) as RpcLog[];
+    queryCount += 1;
+    logs.push(
+      ...response.map((log) => ({
+        address: log.address,
+        blockHash: log.blockHash,
+        blockNumber: log.blockNumber === null ? null : BigInt(log.blockNumber),
+        data: log.data,
+        logIndex: log.logIndex === null ? null : Number(log.logIndex),
+        removed: log.removed,
+        topics: log.topics,
+        transactionHash: log.transactionHash,
+        transactionIndex:
+          log.transactionIndex === null ? null : Number(log.transactionIndex),
+      })),
+    );
+  }
+  return { logs, queryCount };
 }
 const marketStateAbi = [
   {
@@ -1264,8 +1371,8 @@ async function projectRewardStreams(asOfBlock: bigint) {
   return logs.length;
 }
 
-async function projectSchema17Governance(asOfBlock: bigint) {
-  if ((manifest.schemaVersion ?? 0) !== 17) return 0;
+async function projectSchema18Governance(asOfBlock: bigint) {
+  if ((manifest.schemaVersion ?? 0) !== 18) return 0;
   const timelock = manifest.contracts.timelock;
   const governor = manifest.contracts.governor;
   if (typeof timelock !== "string" || typeof governor !== "string") {
@@ -1408,43 +1515,75 @@ async function syncOnce() {
       }
     }
   }
+  const storage = await statfs(storagePath);
+  const diskTotalBytes = Number(storage.blocks) * Number(storage.bsize);
+  const diskAvailableBytes = Number(storage.bavail) * Number(storage.bsize);
+  const diskUtilizationPercent =
+    diskTotalBytes === 0
+      ? 100
+      : ((diskTotalBytes - diskAvailableBytes) / diskTotalBytes) * 100;
+  if (
+    !backfillAllowed(
+      start,
+      head,
+      diskUtilizationPercent,
+      maximumObservedLagBlocks,
+    )
+  ) {
+    throw new Error(
+      "Scoped backfill disabled at " +
+        diskUtilizationPercent.toFixed(2) +
+        "% disk utilization",
+    );
+  }
   let logCount = 0;
   let rangeCount = 0;
+  let addressQueryCount = 0;
+  let poolQueryCount = 0;
   for (let rangeStart = start; rangeStart <= head; rangeStart += blockRange) {
     const rangeEnd = boundedRangeEnd(rangeStart, head, blockRange);
-    const knownAddresses = await currentIndexedAddresses();
-    const primaryLogs = await client.getLogs({
-      address: knownAddresses,
-      fromBlock: rangeStart,
-      toBlock: rangeEnd,
-    });
-    const newAddresses = newlyCreatedLaunchAddresses(primaryLogs);
-    const supplementalAddresses = [...newAddresses.keys()].filter(
-      (address) => !knownAddresses.includes(address),
+    const knownScope = await currentIndexedScope();
+    const primary = await scopedAddressLogs(
+      knownScope.addresses,
+      rangeStart,
+      rangeEnd,
     );
-    const supplementalLogs =
+    addressQueryCount += primary.queryCount;
+    const discovered = newlyCreatedLaunchArtifacts(primary.logs);
+    const supplementalAddresses = [...discovered.addresses.keys()].filter(
+      (address) => !knownScope.addresses.includes(address),
+    );
+    const supplemental =
       supplementalAddresses.length === 0
-        ? []
-        : await client.getLogs({
-            address: supplementalAddresses,
-            fromBlock: [...newAddresses.values()].reduce(
+        ? { logs: [], queryCount: 0 }
+        : await scopedAddressLogs(
+            supplementalAddresses,
+            [...discovered.addresses.values()].reduce(
               (minimum, block) => (block < minimum ? block : minimum),
               rangeEnd,
             ),
-            toBlock: rangeEnd,
-          });
-    const logs = [
-      ...new Map(
-        [...primaryLogs, ...supplementalLogs].map((log) => [
-          `${log.transactionHash}:${log.logIndex}`,
-          log,
-        ]),
-      ).values(),
-    ].sort(
-      (left, right) =>
-        Number(left.blockNumber - right.blockNumber) ||
-        Number((left.logIndex ?? 0) - (right.logIndex ?? 0)),
-    );
+            rangeEnd,
+          );
+    addressQueryCount += supplemental.queryCount;
+    const poolIds = [
+      ...new Set([...knownScope.poolIds, ...discovered.poolIds.keys()]),
+    ].sort() as Hex[];
+    const pool = await scopedPoolLogs(poolIds, rangeStart, rangeEnd);
+    poolQueryCount += pool.queryCount;
+    const logs = uniqueLogs([
+      ...primary.logs,
+      ...supplemental.logs,
+      ...pool.logs,
+    ])
+      .filter(
+        (log): log is typeof log & { blockNumber: bigint } =>
+          log.blockNumber !== null,
+      )
+      .sort(
+        (left, right) =>
+          Number(left.blockNumber - right.blockNumber) ||
+          Number((left.logIndex ?? 0) - (right.logIndex ?? 0)),
+      );
     const blocks = await loadBlocks(
       requiredBlockNumbers(
         logs.map((log) => log.blockNumber),
@@ -1512,6 +1651,29 @@ async function syncOnce() {
   }
   const checkpoint =
     start > head ? (rows[0]?.last_block ?? null) : head.toString();
+  const scope = await currentIndexedScope();
+  const [databaseStats] = await sql.unsafe<
+    {
+      database_size_bytes: string;
+      retained_logs: string;
+      tracked_launches: string;
+    }[]
+  >(
+    "SELECT pg_database_size(current_database())::text database_size_bytes,(SELECT count(*)::text FROM raw_logs WHERE chain_id=$1) retained_logs,(SELECT count(*)::text FROM launches WHERE chain_id=$1) tracked_launches",
+    [manifest.chainId],
+  );
+  const databaseSizeBytes = Number(databaseStats?.database_size_bytes ?? "0");
+  const now = Date.now();
+  const dailyGrowthBytes = databaseSizeObservation
+    ? Math.max(
+        0,
+        Math.round(
+          ((databaseSizeBytes - databaseSizeObservation.bytes) * 86_400_000) /
+            Math.max(1, now - databaseSizeObservation.at),
+        ),
+      )
+    : 0;
+  databaseSizeObservation = { bytes: databaseSizeBytes, at: now };
   const cycleMs = Math.round((performance.now() - began) * 100) / 100;
   process.stdout.write(
     JSON.stringify({
@@ -1521,10 +1683,41 @@ async function syncOnce() {
       checkpoint,
       rangeCount,
       logCount,
+      addressQueryCount,
+      poolQueryCount,
       cycleMs,
     }) + "\n",
   );
-  return ingestionCycleResult(head, checkpoint, rangeCount, logCount, cycleMs);
+  return {
+    ...ingestionCycleResult(head, checkpoint, rangeCount, logCount, cycleMs),
+    indexingScopeVersion: indexingPolicy.version,
+    indexingScopeHash: indexingPolicy.policyHash,
+    trackedLaunches: Number(databaseStats?.tracked_launches ?? "0"),
+    trackedAddresses: scope.addresses.length,
+    trackedPoolIds: scope.poolIds.length,
+    retainedLogs: Number(databaseStats?.retained_logs ?? "0"),
+    excludedGlobalSources: [
+      "WETH",
+      "Permit2",
+      "PositionManager",
+      "UniversalRouter",
+      "stockTokens",
+      "unfilteredPoolManager",
+    ],
+    addressQueryCount,
+    poolQueryCount,
+    databaseSizeBytes,
+    dailyGrowthBytes,
+    estimatedDiskRunwayDays:
+      dailyGrowthBytes > 0
+        ? Math.floor(diskAvailableBytes / dailyGrowthBytes)
+        : null,
+    diskTotalBytes,
+    diskAvailableBytes,
+    diskUtilizationPercent: Math.round(diskUtilizationPercent * 100) / 100,
+    diskAlertThresholdsPercent: [60, 75, diskBackfillDisablePercent],
+    backfillsEnabled: diskUtilizationPercent < diskBackfillDisablePercent,
+  };
 }
 
 async function reconcileMetadataBindings() {
@@ -1626,7 +1819,7 @@ async function projectOnce() {
         projectedRewardEvents = await projectRewardStreams(
           BigInt(ingested.last_block),
         );
-        projectedGovernanceEvents = await projectSchema17Governance(
+        projectedGovernanceEvents = await projectSchema18Governance(
           BigInt(ingested.last_block),
         );
       },
@@ -1861,7 +2054,7 @@ async function projectOnce() {
     projectedRewardEvents = await projectRewardStreams(
       BigInt(ingested.last_block),
     );
-    projectedGovernanceEvents = await projectSchema17Governance(
+    projectedGovernanceEvents = await projectSchema18Governance(
       BigInt(ingested.last_block),
     );
   }
@@ -1971,7 +2164,7 @@ async function runIngesterPipeline() {
   if (wakeRpcUrl) {
     filteredLogWakeClient = new FilteredLogWakeClient({
       url: wakeRpcUrl,
-      addresses: await currentIndexedAddresses(),
+      addresses: (await currentIndexedScope()).addresses,
       onNotification: () => debouncedIngesterWake.notify(),
     });
     filteredLogWakeClient.start();
@@ -1985,7 +2178,9 @@ async function runIngesterPipeline() {
       completedSyncCycles += 1;
       failures = 0;
       if (filteredLogWakeClient) {
-        filteredLogWakeClient.updateAddresses(await currentIndexedAddresses());
+        filteredLogWakeClient.updateAddresses(
+          (await currentIndexedScope()).addresses,
+        );
       }
       const heartbeatMetadata = {
         ...result,

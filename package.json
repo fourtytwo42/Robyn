@@ -15,7 +15,7 @@
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "lint": "turbo run lint",
-    "test": "turbo run test && pnpm test:scripts && pnpm test:anvil && pnpm test:contracts && pnpm test:deployment-nonce && pnpm test:deployment-verifier && pnpm test:schema18-mainnet-resume && pnpm test:schema18-mainnet-postgrad && pnpm test:schema18-mainnet-public",
+    "test": "turbo run test && pnpm test:scripts && pnpm test:anvil && pnpm test:scoped-indexer && pnpm test:contracts && pnpm test:deployment-nonce && pnpm test:deployment-verifier && pnpm test:schema18-mainnet-resume && pnpm test:schema18-mainnet-postgrad && pnpm test:schema18-mainnet-public",
     "test:anvil": "bash scripts/smoke-anvil.sh",
     "test:campaign": "node --test scripts/test/testnet-assurance-campaign.test.mjs",
     "test:contracts": "PATH=$HOME/.foundry/bin:$PATH forge test --root packages/contracts -vv",
@@ -79,7 +79,8 @@
     "rehearse:mainnet-postgrad": "node scripts/run-schema18-mainnet-postgrad-rehearsal.mjs",
     "prepare:mainnet-postgrad": "node scripts/prepare-schema18-mainnet-postgrad.mjs",
     "run:mainnet-postgrad": "node scripts/run-schema18-mainnet-postgrad-live.mjs",
-    "test:schema18-mainnet-postgrad": "node --test scripts/test/schema18-mainnet-postgrad-live.test.mjs"
+    "test:schema18-mainnet-postgrad": "node --test scripts/test/schema18-mainnet-postgrad-live.test.mjs",
+    "test:scoped-indexer": "node --test scripts/test/schema18-indexing-policy.test.mjs scripts/test/scoped-indexer-anvil.test.mjs"
   },
   "devDependencies": {
     "@openzeppelin/contracts": "5.4.0",

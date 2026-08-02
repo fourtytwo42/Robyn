@@ -1178,6 +1178,40 @@ async function freshness() {
     indexerProjectedDailyCu: Number(
       ingestionHeartbeat?.metadata.projectedDailyCu ?? 0,
     ),
+    indexingScopeVersion: Number(
+      ingestionHeartbeat?.metadata.indexingScopeVersion ?? 0,
+    ),
+    indexingScopeHash:
+      typeof ingestionHeartbeat?.metadata.indexingScopeHash === "string"
+        ? ingestionHeartbeat.metadata.indexingScopeHash
+        : null,
+    trackedLaunches: Number(ingestionHeartbeat?.metadata.trackedLaunches ?? 0),
+    trackedAddresses: Number(
+      ingestionHeartbeat?.metadata.trackedAddresses ?? 0,
+    ),
+    trackedPoolIds: Number(ingestionHeartbeat?.metadata.trackedPoolIds ?? 0),
+    indexerAddressQueryCount: Number(
+      ingestionHeartbeat?.metadata.addressQueryCount ?? 0,
+    ),
+    indexerPoolQueryCount: Number(
+      ingestionHeartbeat?.metadata.poolQueryCount ?? 0,
+    ),
+    retainedLogs: Number(ingestionHeartbeat?.metadata.retainedLogs ?? 0),
+    excludedGlobalSources:
+      ingestionHeartbeat?.metadata.excludedGlobalSources ?? null,
+    indexerDatabaseSizeBytes: Number(
+      ingestionHeartbeat?.metadata.databaseSizeBytes ?? 0,
+    ),
+    indexerDailyGrowthBytes: Number(
+      ingestionHeartbeat?.metadata.dailyGrowthBytes ?? 0,
+    ),
+    indexerEstimatedDiskRunwayDays:
+      ingestionHeartbeat?.metadata.estimatedDiskRunwayDays ?? null,
+    diskUtilizationPercent: Number(
+      ingestionHeartbeat?.metadata.diskUtilizationPercent ?? 0,
+    ),
+    indexerBackfillsEnabled:
+      ingestionHeartbeat?.metadata.backfillsEnabled === true,
     rpcRetryCount:
       Number(ingestionHeartbeat?.metadata.rpcRetryCount ?? 0) +
       Number(projectionHeartbeat?.metadata.rpcRetryCount ?? 0),

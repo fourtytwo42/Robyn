@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { buildSchema18IndexingPolicy } from "./lib/schema18-indexing-policy.mjs";
 
 const [baselineArg, verifiedArg, preparedArg, inputArg, safeBroadcastArg, stackBroadcastArg, evidenceDirArg, outputArg] =
   process.argv.slice(2);
@@ -61,6 +62,10 @@ const correctiveTransactions = await Promise.all(correctiveFiles.map(async (file
 const successfulConfiguration = confirmed.filter((transaction) => transaction.transactionType === "CALL").map((transaction) => transaction.hash);
 const deploymentBlock = Math.min(...stackBroadcast.receipts.filter((receipt) => receipt.status === "0x1").map((receipt) => Number(BigInt(receipt.blockNumber))));
 const baselineSha256 = createHash("sha256").update(await readFile(paths[0])).digest("hex");
+const indexingPolicy = buildSchema18IndexingPolicy({
+  schemaVersion: 18,
+  contracts,
+});
 const result = {
   ...baseline,
   schemaVersion: 18,
@@ -75,6 +80,7 @@ const result = {
   gitCommit: verified.releaseSha,
   archivedPredecessorManifestSha256: baselineSha256,
   contracts,
+  indexingPolicy,
   runtimeCodeHashes,
   deploymentTransactions,
   configurationTransactions: [...successfulConfiguration, ...correctiveTransactions],

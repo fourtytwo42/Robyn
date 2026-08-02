@@ -99,12 +99,24 @@ test("manifest sealer requires completed Gate 2, rehearsal receipts, exact app e
     assert.match(prepare, new RegExp(`"${stage}"`));
   }
   assert.match(prepare, /Gate-2 journal is incomplete/);
-  assert.match(prepare, /Gate-2 receipt failure, duplicate key, or reused hash/);
-  assert.match(prepare, /post-graduation Gate-2 recovery did not finish cleanly/);
+  assert.match(
+    prepare,
+    /Gate-2 receipt failure, duplicate key, or reused hash/,
+  );
+  assert.match(
+    prepare,
+    /post-graduation Gate-2 recovery did not finish cleanly/,
+  );
   assert.match(prepare, /Public rehearsal receipt ledger is incomplete/);
   assert.match(prepare, /exact Mainnet application evidence is incomplete/);
-  assert.match(prepare, /applicationEvidence\.productionProcessesStarted !== false/);
-  assert.match(prepare, /applicationEvidence\.alchemyCredentialOrHostPresent !== false/);
+  assert.match(
+    prepare,
+    /applicationEvidence\.productionProcessesStarted !== false/,
+  );
+  assert.match(
+    prepare,
+    /applicationEvidence\.alchemyCredentialOrHostPresent !== false/,
+  );
   assert.match(prepare, /applicationEvidence\.buildValidationSha256/);
   assert.match(prepare, /Public funding shortfall/);
   assert.match(prepare, /additionalBridgeAuthorized:false/);

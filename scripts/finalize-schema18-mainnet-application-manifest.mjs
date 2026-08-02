@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { decodeFunctionData, getAddress } from "viem";
+import { buildSchema18IndexingPolicy } from "./lib/schema18-indexing-policy.mjs";
 
 const [baselineArg, lifecycleArg, gate1Arg, postdeploymentArg, outputArg] = process.argv.slice(2);
 if (![baselineArg, lifecycleArg, gate1Arg, postdeploymentArg, outputArg].every(Boolean)) {
@@ -164,6 +165,10 @@ const runtimeCodeHashes = Object.fromEntries(
 );
 
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+const indexingPolicy = buildSchema18IndexingPolicy({
+  schemaVersion: 18,
+  contracts,
+});
 const result = {
   ...baseline,
   schemaVersion: 18,
@@ -185,6 +190,7 @@ const result = {
   },
   deploymentBlock: postdeployment.deploymentBlock,
   contracts,
+  indexingPolicy,
   runtimeCodeHashes,
   deploymentTransactions: {},
   configurationTransactions: [],

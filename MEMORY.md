@@ -1,5 +1,15 @@
 # Project Memory
 
+### 2026-08-02 - Schema-18 scoped indexer remediation in progress
+
+- Context: The stopped broad Mainnet indexer retained 9,420,034 logs in a 733,117,463-byte partial database while indexing global WETH, PoolManager, Permit2, and PositionManager activity. Mainnet application writes remain disabled and the Mainnet indexer remains stopped.
+- Decision: Schema-18 application ingestion is fail-closed on a versioned policy hash. It tracks only explicit protocol roots, coordinator-discovered launch token/vault/market/adapter/locker addresses, and exact PoolManager event topics filtered by permanent Sherwood pool IDs. Global external contracts and unrelated pool IDs are excluded.
+- Files: Added `apps/indexer/src/indexing-policy.ts`, scoped ingestion and disk telemetry in `apps/indexer/src/server.ts`, policy generation/finalizer integration, API health fields, 60/75/85 percent disk alerts, unit tests, and an isolated noisy-Anvil integration fixture.
+- Verification: Indexer unit tests pass 29/29. The Anvil test generated unrelated token and PoolManager noise, retained only the three Sherwood same-block lifecycle logs, restarted, reconstructed the dynamic token/pool scope, and retained two later Sherwood logs with zero duplicates.
+- Evidence: Broad-index diagnostic aggregates, address distribution, relation sizes, checkpoints, heartbeats, and failure logs are checksum-sealed at `/home/hendo420/robyn-evidence/schema18-indexer-remediation/broad-mainnet-diagnostic-20260802T031544Z/`.
+- Capacity: Root disk remains 61 GiB with about 1.2 GiB free. Do not restart a backfill at this utilization; the new indexer disables material backfills at 85 percent utilization. Safe cache cleanup or minimal VM disk expansion is still required to restore at least 12 GiB and 15 percent free.
+- Follow-up: Finish full validation and reproducible builds, commit/push a new application SHA, perform focused empty Testnet rebuild/lifecycle acceptance, then replace the partial broad Mainnet database with a fresh scoped rebuild and reconcile it before sealing a replacement Gate-3 manifest. Do not enable Mainnet writes.
+
 ### 2026-08-02 - Gate-2 reactivation scheduled and Gate-3 preparation advanced
 
 - Live Gate-2: Exact manifest `101e547d00722a32690f20c39b2feb3ffad4c14028e934848c4f9ebc32593802` was authorized. The unanimous reactivation schedule confirmed once; operation `0x2df756afa5eba5adc70d2c934f336a90f3d98961d3bb8a089ee5feefba2152970` matures at chain timestamp `1785640168` (`2026-08-02T03:09:28Z`).
