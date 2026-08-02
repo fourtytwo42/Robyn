@@ -5,7 +5,7 @@
 - Schema-18 is publicly operational on Robinhood Mainnet at `https://sherwoodforest.trade`. Public mode, the `6 ETH / 0.5 ETH` profile, six qualified routes, both conversion systems, and application transaction submission are active.
 - Exact identities: contracts `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4`, application `5ea50ed836d81416a7a6a32c8078a864fca28d0b`, tooling `e2e2be924f1ec432c2b3eebeb79c7c814b82a32c`, policy `5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1`.
 - First-24-hour native monitoring is active through PM2/systemd, Prometheus, Alertmanager, Grafana, and the 30-second metrics timer. LAN is the sole application and transaction RPC; Alchemy remains probe-only with automatic fallback disabled.
-- A UI-only token-page market-snapshot refresh is in qualification on `codex/token-page-market-snapshot`. It changes no contract, route, RPC, or financial configuration.
+- UI-only release `af608585ce0909d3878ea7b17f76794ac4b322aa` is live on Devnet, Testnet, and Mainnet. It changes no contract, route, RPC, indexer, keeper, or financial configuration.
 
 ## Current State
 
@@ -19,6 +19,7 @@
 - Gate-3 Public live evidence is sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-public/live-e2e2be9-2554c9c-01`. The journal contains two unique intents and two unique successful receipts with zero failures or ambiguity.
 - Public browser acceptance passed at desktop and 390x844 mobile viewports. The exact public domain serves the qualified application, transaction submission is enabled, LAN remains primary, fallback traffic is unauthorized, and paid fallback CU is zero.
 - PM2 state is saved and all Mainnet processes are online. `pm2-hendo420`, metrics collection, alert receiver, Prometheus, Alertmanager, Grafana, Nginx, and Cloudflared are active with zero firing alerts at monitoring start.
+- Devnet, Testnet, and Mainnet web processes serve UI release `af608585ce0909d3878ea7b17f76794ac4b322aa`; all 17 non-web PM2 processes retained their exact online/restart state through the isolated cutovers.
 - Final Gate-2 recovery evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-final-settlement/live-bf8c377-1ea83d5-01`.
 - Qualified read-only manifest is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-indexer-remediation/mainnet-scoped-readonly-qualified-5ea50ed-01`; `contracts.factory` equals `contracts.launchFactory`.
 - Scoped application activation evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-public-prep/application-5ea50ed-v2`; it binds the database, PM2, Nginx, stopped keeper, disabled writes, and LAN-only RPC identities.
@@ -34,8 +35,9 @@
 - Context: The public token page rendered five disconnected action pills and seven equal metric cards, leaving the final metric orphaned on desktop.
 - Decision: Consolidate the actions and metrics into one responsive market-snapshot panel with a clear featured price, semantic metric tones, supporting labels, inline action icons, and a highlighted Recent activity action.
 - Files: `apps/web/src/app/launches/[token]/page.tsx`, `apps/web/src/components/token-actions.tsx`, and `apps/web/src/app/globals.css`.
-- Verification: Web lint, typecheck, all 57 web tests, `git diff --check`, and an explicit Mainnet-environment production build pass.
-- Follow-up: Complete desktop/mobile browser acceptance, publish an immutable UI-only release, verify the public artifact and services, then replace this in-progress note with the deployed application identity.
+- Verification: Web lint, typecheck, all 57 web tests, `git diff --check`, full Mainnet and Testnet immutable release gates, and environment-specific production builds pass. Mainnet desktop and 390x844 in-app-browser acceptance verified the responsive panel, all five actions, the recent-activity anchor, and zero horizontal overflow. Testnet browser acceptance and a Devnet live-page probe verified the same release and component.
+- Deployment: Environment-specific immutable artifacts are `/opt/robyn/releases/af60858d1d3b7f197579811994afcd7db5c3d76b`, `/opt/robyn/testnet-releases/af60858d1d3b7f197579811994afcd7db5c3d76b`, and `/opt/robyn/mainnet-releases/af60858d1d3b7f197579811994afcd7db5c3d76b`. Only the three web processes were replaced; all five health endpoints and the Mainnet LAN gateway returned HTTP 200, fallback traffic remains unauthorized, and the 20-process PM2 topology is saved.
+- Operational lesson: Never run the generic all-stack promotion script against the shared multi-environment host. An attempted generic promotion selected the six-process Devnet topology and briefly caused a public 502; its automatic rollback was incomplete for this topology. The exact prior 20-process PM2 dump restored service immediately with zero financial transaction or non-web process-state change. Future cross-environment UI releases must use independent immutable builds and web-only delete/start cutovers with a verified PM2 snapshot.
 
 ### 2026-08-02 - Schema-18 Public Mainnet activation complete
 
