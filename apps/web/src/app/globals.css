@@ -2877,19 +2877,135 @@ main > .notice {
   color: var(--secondary);
 }
 
-.token-metric-grid {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 0.75rem;
+.market-snapshot-panel {
+  position: relative;
+  overflow: hidden;
   margin-bottom: 1rem;
+  border: 1px solid rgba(53, 208, 186, 0.22);
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(
+      circle at 92% -20%,
+      rgba(53, 208, 186, 0.16),
+      transparent 38%
+    ),
+    linear-gradient(145deg, rgba(13, 22, 38, 0.96), rgba(8, 16, 28, 0.9));
+  padding: 1rem;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.035),
+    0 18px 50px rgba(0, 0, 0, 0.18);
 }
 
-.token-metric-grid article {
+.market-snapshot-panel::before {
+  position: absolute;
+  top: -90px;
+  right: -70px;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: rgba(119, 218, 75, 0.08);
+  filter: blur(45px);
+  content: "";
+  pointer-events: none;
+}
+
+.market-snapshot-heading {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(210px, 0.72fr) minmax(0, 1.8fr);
+  align-items: end;
+  gap: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 0.15rem 0.15rem 0.9rem;
+}
+
+.market-snapshot-heading h2 {
+  margin: 0.18rem 0 0.25rem;
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  line-height: 1.05;
+}
+
+.market-snapshot-heading > div:first-child > p:last-child {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.token-metric-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+}
+
+.token-metric-card {
+  position: relative;
   min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: 0.9rem;
-  background: rgba(18, 26, 47, 0.76);
-  padding: 0.85rem;
+  min-height: 110px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.95rem;
+  background: linear-gradient(
+    160deg,
+    rgba(25, 36, 59, 0.82),
+    rgba(13, 21, 37, 0.72)
+  );
+  padding: 0.85rem 0.8rem 0.75rem;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.token-metric-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(53, 208, 186, 0.24);
+  background: linear-gradient(
+    160deg,
+    rgba(29, 43, 68, 0.9),
+    rgba(14, 24, 40, 0.82)
+  );
+}
+
+.token-metric-card.featured {
+  grid-column: span 2;
+  border-color: rgba(53, 208, 186, 0.2);
+  background:
+    linear-gradient(135deg, rgba(53, 208, 186, 0.13), transparent 72%),
+    rgba(14, 27, 42, 0.9);
+}
+
+.token-metric-card.featured::after,
+.token-metric-card.flow::after {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.7rem;
+  left: 0.8rem;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  content: "";
+  opacity: 0.72;
+}
+
+.token-metric-card.negative strong {
+  color: #ff8f9a;
+}
+
+.token-metric-card.positive strong,
+.token-metric-card.lifecycle strong {
+  color: var(--primary);
+}
+
+.token-metric-card.lifecycle {
+  border-color: rgba(119, 218, 75, 0.18);
+}
+
+.token-metric-card.fees {
+  border-color: rgba(242, 184, 75, 0.16);
 }
 
 .token-metric-grid span,
@@ -2898,17 +3014,32 @@ main > .notice {
 .trade-receive small {
   display: block;
   color: var(--muted);
-  font-size: 0.66rem;
+  font-size: 0.62rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
 }
 
 .token-metric-grid strong {
   display: block;
-  margin-top: 0.38rem;
-  font-size: clamp(0.88rem, 1.5vw, 1.1rem);
+  margin-top: 0.52rem;
+  font-size: clamp(0.9rem, 1.35vw, 1.1rem);
+  line-height: 1.22;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
+}
+
+.token-metric-card.featured strong {
+  color: #f2fff9;
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+}
+
+.token-metric-grid small {
+  display: block;
+  margin-top: 0.45rem;
+  color: color-mix(in srgb, var(--muted) 72%, transparent);
+  font-size: 0.61rem;
+  line-height: 1.25;
 }
 
 .decision-basket {
@@ -3097,23 +3228,30 @@ main > .notice {
 
 .token-actions {
   position: relative;
-  margin: -0.25rem 0 0.85rem;
+  justify-self: end;
+  width: 100%;
+  margin: 0;
 }
 
 .token-actions > div {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  justify-content: flex-end;
+  gap: 0.42rem;
 }
 
 .token-actions button,
 .token-actions a,
 .creator-proof button {
-  min-height: 34px;
-  border: 1px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.38rem;
+  min-height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
-  background: rgba(11, 17, 31, 0.72);
-  padding: 0.42rem 0.7rem;
+  background: rgba(7, 14, 26, 0.68);
+  padding: 0.48rem 0.72rem;
   color: var(--muted);
   font:
     700 0.66rem/1 "IBM Plex Mono",
@@ -3121,6 +3259,12 @@ main > .notice {
     monospace;
   text-decoration: none;
   cursor: pointer;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.025);
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease;
 }
 
 .token-actions button:hover,
@@ -3128,8 +3272,38 @@ main > .notice {
 .token-actions a:hover,
 .token-actions a:focus-visible,
 .token-actions button[aria-pressed="true"] {
+  transform: translateY(-1px);
   border-color: rgba(53, 208, 186, 0.4);
+  background: rgba(53, 208, 186, 0.08);
   color: var(--primary);
+}
+
+.token-actions .token-action-primary {
+  border-color: rgba(53, 208, 186, 0.28);
+  background: linear-gradient(
+    135deg,
+    rgba(53, 208, 186, 0.18),
+    rgba(119, 218, 75, 0.09)
+  );
+  color: #dffff7;
+}
+
+.token-action-icon {
+  width: 0.88rem;
+  height: 0.88rem;
+  flex: 0 0 auto;
+  opacity: 0.88;
+}
+
+.token-actions .creator-proof,
+.token-actions .media-report-form {
+  justify-content: initial;
+}
+
+.market-snapshot-heading .creator-proof,
+.market-snapshot-heading .media-report-form,
+.market-snapshot-heading .action-status {
+  margin-left: auto;
 }
 
 .creator-proof {
@@ -3736,8 +3910,20 @@ main > .notice {
 }
 
 @media (max-width: 1050px) {
+  .market-snapshot-heading {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 0.85rem;
+  }
+
+  .token-actions,
+  .token-actions > div {
+    justify-self: start;
+    justify-content: flex-start;
+  }
+
   .token-metric-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .token-market-layout,
@@ -3751,6 +3937,11 @@ main > .notice {
 }
 
 @media (max-width: 760px) {
+  .market-snapshot-panel {
+    border-radius: 1rem;
+    padding: 0.75rem;
+  }
+
   .token-page-shell {
     width: min(100% - 2rem, 1280px);
   }
@@ -3791,6 +3982,26 @@ main > .notice {
 }
 
 @media (max-width: 480px) {
+  .token-actions button,
+  .token-actions a {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+  }
+
+  .token-actions .token-action-primary {
+    flex-basis: 100%;
+  }
+
+  .token-actions .creator-proof,
+  .token-actions .media-report-form,
+  .token-actions .action-status {
+    flex-basis: 100%;
+  }
+
+  .token-metric-card {
+    min-height: 104px;
+  }
+
   .token-data-grid,
   .economy-metrics {
     grid-template-columns: 1fr;

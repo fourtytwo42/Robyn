@@ -25,6 +25,66 @@ function readWatchlist() {
   }
 }
 
+type TokenActionIconName =
+  | "copy"
+  | "share"
+  | "watch"
+  | "proof"
+  | "website"
+  | "x"
+  | "activity"
+  | "report";
+
+function TokenActionIcon({ name }: { name: TokenActionIconName }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className="token-action-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {name === "copy" ? (
+        <>
+          <rect x="8" y="8" width="11" height="11" rx="2" />
+          <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+        </>
+      ) : name === "share" ? (
+        <>
+          <circle cx="18" cy="5" r="2.5" />
+          <circle cx="6" cy="12" r="2.5" />
+          <circle cx="18" cy="19" r="2.5" />
+          <path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5" />
+        </>
+      ) : name === "watch" ? (
+        <path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z" />
+      ) : name === "proof" ? (
+        <>
+          <path d="M12 3 5.5 5.7v5.6c0 4.1 2.7 7.8 6.5 9.7 3.8-1.9 6.5-5.6 6.5-9.7V5.7L12 3Z" />
+          <path d="m9 12 2 2 4-4" />
+        </>
+      ) : name === "website" ? (
+        <>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3 12h18M12 3c2.2 2.5 3.3 5.5 3.3 9S14.2 18.5 12 21c-2.2-2.5-3.3-5.5-3.3-9S9.8 5.5 12 3Z" />
+        </>
+      ) : name === "x" ? (
+        <path d="M5 4 19 20M19 4 5 20" />
+      ) : name === "activity" ? (
+        <path d="M3 12h4l2.2-5 4.1 10 2.2-5H21" />
+      ) : (
+        <>
+          <path d="M5 21V4" />
+          <path d="M5 5h11l-2 3 2 3H5" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export function TokenActions({
   chainId,
   token,
@@ -145,12 +205,15 @@ export function TokenActions({
           type="button"
           onClick={() => copy(canonicalToken, "Token address copied.")}
         >
+          <TokenActionIcon name="copy" />
           Copy token
         </button>
         <button type="button" onClick={share}>
+          <TokenActionIcon name="share" />
           Share
         </button>
         <button type="button" aria-pressed={watched} onClick={toggleWatchlist}>
+          <TokenActionIcon name="watch" />
           {watched ? "Watching" : "Watchlist"}
         </button>
         <button
@@ -158,25 +221,30 @@ export function TokenActions({
           aria-expanded={proofOpen}
           onClick={() => setProofOpen((value) => !value)}
         >
+          <TokenActionIcon name="proof" />
           Creator proof
         </button>
         {projectLinks?.website ? (
           <a href={projectLinks.website} target="_blank" rel="noreferrer">
+            <TokenActionIcon name="website" />
             Website
           </a>
         ) : null}
         {projectLinks?.xUrl ? (
           <a href={projectLinks.xUrl} target="_blank" rel="noreferrer">
-            X / Twitter
+            <TokenActionIcon name="x" />X / Twitter
           </a>
         ) : null}
-        <a href="#recent-trades">Recent activity</a>
+        <a className="token-action-primary" href="#recent-trades">
+          <TokenActionIcon name="activity" /> Recent activity
+        </a>
         {mediaId ? (
           <button
             type="button"
             aria-expanded={reportOpen}
             onClick={() => setReportOpen((value) => !value)}
           >
+            <TokenActionIcon name="report" />
             Report artwork
           </button>
         ) : null}

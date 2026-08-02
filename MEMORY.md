@@ -5,6 +5,7 @@
 - Schema-18 is publicly operational on Robinhood Mainnet at `https://sherwoodforest.trade`. Public mode, the `6 ETH / 0.5 ETH` profile, six qualified routes, both conversion systems, and application transaction submission are active.
 - Exact identities: contracts `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4`, application `5ea50ed836d81416a7a6a32c8078a864fca28d0b`, tooling `e2e2be924f1ec432c2b3eebeb79c7c814b82a32c`, policy `5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1`.
 - First-24-hour native monitoring is active through PM2/systemd, Prometheus, Alertmanager, Grafana, and the 30-second metrics timer. LAN is the sole application and transaction RPC; Alchemy remains probe-only with automatic fallback disabled.
+- A UI-only token-page market-snapshot refresh is in qualification on `codex/token-page-market-snapshot`. It changes no contract, route, RPC, or financial configuration.
 
 ## Current State
 
@@ -27,6 +28,14 @@
 
 - Continue observing the first 24 public hours through native monitoring. On any contract, accounting, solvency, supply, principal, route, or LAN-RPC anomaly, disable application submissions and use the verified guardian controls.
 - Alchemy's probe currently reports an invalid `eth_syncing` response. It has received probe traffic only, zero fallback traffic, and is not an application dependency; rotate any previously exposed provider credential during routine credential hygiene.
+
+### 2026-08-02 - Token-page market snapshot refresh
+
+- Context: The public token page rendered five disconnected action pills and seven equal metric cards, leaving the final metric orphaned on desktop.
+- Decision: Consolidate the actions and metrics into one responsive market-snapshot panel with a clear featured price, semantic metric tones, supporting labels, inline action icons, and a highlighted Recent activity action.
+- Files: `apps/web/src/app/launches/[token]/page.tsx`, `apps/web/src/components/token-actions.tsx`, and `apps/web/src/app/globals.css`.
+- Verification: Web lint, typecheck, all 57 web tests, `git diff --check`, and an explicit Mainnet-environment production build pass.
+- Follow-up: Complete desktop/mobile browser acceptance, publish an immutable UI-only release, verify the public artifact and services, then replace this in-progress note with the deployed application identity.
 
 ### 2026-08-02 - Schema-18 Public Mainnet activation complete
 

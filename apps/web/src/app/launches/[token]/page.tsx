@@ -215,74 +215,124 @@ export default async function LaunchDetail({
           </div>
         </header>
 
-        <TokenActions
-          chainId={deployment.chainId}
-          token={launch.token}
-          symbol={launch.symbol}
-          creator={launch.creator}
-          createdBlock={launch.created_block}
-          {...(launch.metadata?.media_status === "active" &&
-          launch.metadata.media_id
-            ? { mediaId: launch.metadata.media_id }
-            : {})}
-          {...(launch.metadata?.project_website ||
-          launch.metadata?.project_x_url
-            ? {
-                projectLinks: {
-                  website: launch.metadata.project_website,
-                  xUrl: launch.metadata.project_x_url,
-                },
-              }
-            : {})}
-          {...(launch.metadata?.display_name
-            ? {
-                creatorProfile: {
-                  displayName: launch.metadata.display_name,
-                  bio: launch.metadata.bio ?? "",
-                  website: launch.metadata.website,
-                  xUrl: launch.metadata.x_url,
-                  telegramUrl: launch.metadata.telegram_url,
-                  discordUrl: launch.metadata.discord_url,
-                  avatarMediaId: launch.metadata.avatar_media_id,
-                },
-              }
-            : {})}
-        />
+        <section
+          className="market-snapshot-panel"
+          aria-labelledby="market-snapshot-heading"
+        >
+          <div className="market-snapshot-heading">
+            <div>
+              <p className="card-label">Live onchain market</p>
+              <h2 id="market-snapshot-heading">Market snapshot</h2>
+              <p>Price, activity, and lifecycle signals at a glance.</p>
+            </div>
+            <TokenActions
+              chainId={deployment.chainId}
+              token={launch.token}
+              symbol={launch.symbol}
+              creator={launch.creator}
+              createdBlock={launch.created_block}
+              {...(launch.metadata?.media_status === "active" &&
+              launch.metadata.media_id
+                ? { mediaId: launch.metadata.media_id }
+                : {})}
+              {...(launch.metadata?.project_website ||
+              launch.metadata?.project_x_url
+                ? {
+                    projectLinks: {
+                      website: launch.metadata.project_website,
+                      xUrl: launch.metadata.project_x_url,
+                    },
+                  }
+                : {})}
+              {...(launch.metadata?.display_name
+                ? {
+                    creatorProfile: {
+                      displayName: launch.metadata.display_name,
+                      bio: launch.metadata.bio ?? "",
+                      website: launch.metadata.website,
+                      xUrl: launch.metadata.x_url,
+                      telegramUrl: launch.metadata.telegram_url,
+                      discordUrl: launch.metadata.discord_url,
+                      avatarMediaId: launch.metadata.avatar_media_id,
+                    },
+                  }
+                : {})}
+            />
+          </div>
+
+          <div className="token-metric-grid" aria-label="Token market metrics">
+            {[
+              {
+                label: "Price",
+                value: priceMetric(market.priceBasePerToken, quoteSymbol),
+                detail: "per token",
+                tone: "featured",
+              },
+              {
+                label: "24h change",
+                value: changeLabel(market.change24hBps),
+                detail: "rolling window",
+                tone:
+                  market.change24hBps === null
+                    ? "neutral"
+                    : market.change24hBps >= 0
+                      ? "positive"
+                      : "negative",
+              },
+              {
+                label: "24h volume",
+                value: metric(market.volume24hBase, quoteSymbol),
+                detail: "settled onchain",
+                tone: "neutral",
+              },
+              {
+                label: "Buy / sell",
+                value:
+                  buyShare === null
+                    ? "No window trades"
+                    : `${buyShare.toFixed(0)}% / ${(100 - buyShare).toFixed(0)}%`,
+                detail: "24h order flow",
+                tone: "flow",
+              },
+              {
+                label: "Lifecycle",
+                value: marketPhaseLabel(market.marketPhase),
+                detail:
+                  market.marketPhase === "graduated"
+                    ? "pool trading live"
+                    : "curve trading live",
+                tone: "lifecycle",
+              },
+              {
+                label: "Trading fees",
+                value:
+                  market.marketPhase === "graduated" &&
+                  market.liquidityVenue === "uniswap-v4"
+                    ? "1% LP + 1% rewards"
+                    : `${(market.protocolFeeBps / 100).toFixed(2)}% rewards`,
+                detail: "aligned incentives",
+                tone: "fees",
+              },
+              {
+                label: "24h traders",
+                value: market.uniqueTraders24h.toLocaleString(),
+                detail: "unique wallets",
+                tone: "traders",
+              },
+            ].map(({ label, value, detail, tone }) => (
+              <article className={`token-metric-card ${tone}`} key={label}>
+                <span>{label}</span>
+                <strong>{value}</strong>
+                <small>{detail}</small>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <NetworkCreatorRewardsPanel
           token={launch.token as Address}
           creator={launch.creator as Address}
         />
-
-        <section
-          className="token-metric-grid"
-          aria-label="Token market metrics"
-        >
-          {[
-            ["Price", priceMetric(market.priceBasePerToken, quoteSymbol)],
-            ["24h change", changeLabel(market.change24hBps)],
-            ["24h volume", metric(market.volume24hBase, quoteSymbol)],
-            [
-              "24h buy / sell",
-              buyShare === null
-                ? "No window trades"
-                : `${buyShare.toFixed(0)}% / ${(100 - buyShare).toFixed(0)}%`,
-            ],
-            ["Lifecycle", marketPhaseLabel(market.marketPhase)],
-            [
-              "Trading fees",
-              market.marketPhase === "graduated" &&
-              market.liquidityVenue === "uniswap-v4"
-                ? "1% LP + 1% rewards"
-                : `${(market.protocolFeeBps / 100).toFixed(2)}% rewards`,
-            ],
-            ["24h traders", market.uniqueTraders24h.toLocaleString()],
-          ].map(([label, value]) => (
-            <article key={label}>
-              <span>{label}</span>
-              <strong>{value}</strong>
-            </article>
-          ))}
-        </section>
 
         {deployment.kingOfForestPolicy ? (
           <section
