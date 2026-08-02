@@ -13,6 +13,7 @@
 - Mainnet launch mode is Public; profile version 2 targets 6 ETH with a 0.5 ETH maximum purchase; all six sealed routes and both conversion systems are enabled. The canary retains its immutable profile-1 snapshot.
 - Scoped indexing is current with zero ingestion/projection lag, one launch, 20 tracked addresses, one pool, excluded global sources, and a 12.9 MB database. API audit, reward backing, router solvency, supplies, locked principal, and keeper queues are healthy.
 - The last verified operator balance was `0.028372369252761679 ETH`, above the protected `0.02 ETH` reserve. Requery before any future financial operation.
+- GitHub `origin/main` was fast-forwarded to the exact clean deployed-source history at `6929bb6bcd6b33f979ccc23cfa5709a8ec42ccf3`; no force push or historical-worktree mutation was used.
 
 ## Verification Ledger
 
