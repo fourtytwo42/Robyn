@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "contractSchema": 18,
+  "qualifiedContractGitSha": "4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4",
+  "fullGateGitSha": "0624abcc699c82df2026505cbfb92e2a63708353",
+  "qualificationReleaseId": "0624abcholderclaims",
+  "sourceTreeGitObject": "d3d44b862a9d6c1e5361bbf3cb72602116ef05aa",
+  "foundryConfigGitObject": "de6592071e3143935ecb45231ee5882c27b92f63",
+  "securityEvidenceSha256": "9e84a67f97906823cbc57cd06679d43c68027f091430f5eaef78287e9b6f2b98",
+  "releaseManifestSha256": "20234ec19c582e3c8fd0f371bee1e9bb122daf33b8d124eca056a0afba298c1a",
+  "contractDependencies": {
+    "@openzeppelin/contracts": "5.4.0",
+    "@uniswap/universal-router": "2.1.0",
+    "@uniswap/v3-core": "1.0.0",
+    "@uniswap/v3-periphery": "1.4.4",
+    "@uniswap/v4-core": "1.0.2",
+    "@uniswap/v4-periphery": "1.0.3"
+  }
+}

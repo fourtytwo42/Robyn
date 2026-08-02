@@ -29,6 +29,15 @@
 ## Open Follow-ups
 
 - Continue observing the first 24 public hours through native monitoring. On any contract, accounting, solvency, supply, principal, route, or LAN-RPC anomaly, disable application submissions and use the verified guardian controls.
+### 2026-08-02 - Schema-18 contract qualification frozen for web-only releases
+
+- Context: Presentation-only releases were spending roughly 30 minutes recompiling, testing, and analyzing unchanged Schema-18 contracts.
+- Decision: Preserve the full contract gate for any contract or uncertain-scope change, while allowing a dedicated web-only builder to reuse a fail-closed contract attestation.
+- Files: `config/schema18-contract-freeze.json`, `scripts/verify-schema18-contract-freeze.mjs`, `scripts/build-web-release.sh`, focused tests, package commands, and `docs/operations/application-only-releases.md`.
+- Freeze: The verifier binds the Schema-18 source tree and Foundry configuration Git objects, six direct Solidity dependency versions, the immutable full-gate security report, and its release manifest. Any mismatch rejects the web-only build.
+- Web gate: The fast path runs web formatting, lint, typecheck, unit tests, gitleaks, dependency audit, and the protected Devnet/Testnet/Mainnet Next build. It never invokes Forge, Slither, contract deployment, or an onchain transaction.
+- Verification: Freeze verification and focused tests pass. A clean pushed release build must prove the full operator path before it becomes the default for future visual-only work.
+
 - Alchemy's probe currently reports an invalid `eth_syncing` response. It has received probe traffic only, zero fallback traffic, and is not an application dependency; rotate any previously exposed provider credential during routine credential hygiene.
 
 - Root storage has about 14 GiB free after retaining the active immutable three-environment build and removing only superseded reproducible Devnet/Testnet/Mainnet web/API artifacts after proving no PM2 process referenced them. Deleted artifacts are recoverable by rebuilding their Git SHAs. Preserve the 12 GiB runway gate for future releases.

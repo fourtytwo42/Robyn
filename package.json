@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "turbo run build",
+    "build:web-release": "bash scripts/build-web-release.sh",
     "campaign:testnet": "node scripts/testnet-assurance-campaign.mjs",
     "dev": "turbo run dev",
     "endurance:testnet": "node scripts/testnet-endurance.mjs",
@@ -19,6 +20,7 @@
     "test:anvil": "bash scripts/smoke-anvil.sh",
     "test:campaign": "node --test scripts/test/testnet-assurance-campaign.test.mjs",
     "test:contracts": "PATH=$HOME/.foundry/bin:$PATH forge test --root packages/contracts -vv",
+    "test:contracts:freeze": "node --test scripts/test/schema18-contract-freeze.test.mjs",
     "test:contracts:torture:fast": "bash scripts/run-schema16-devnet-torture.sh --tier fast --seed 160001 --release-sha $(git rev-parse HEAD)",
     "test:contracts:torture:deep": "bash scripts/run-schema16-devnet-torture.sh --tier deep --seed 160001 --release-sha $(git rev-parse HEAD)",
     "test:contracts:torture:schema18:fast": "bash scripts/run-schema18-devnet-torture.sh --tier fast --seed 180001 --release-sha $(git rev-parse HEAD)",
