@@ -5,7 +5,7 @@
 - Schema-18 is publicly operational on Robinhood Mainnet at `https://sherwoodforest.trade`. Public mode, the `6 ETH / 0.5 ETH` profile, six qualified routes, both conversion systems, and application transaction submission are active.
 - Exact identities: contracts `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4`, application `5ea50ed836d81416a7a6a32c8078a864fca28d0b`, tooling `e2e2be924f1ec432c2b3eebeb79c7c814b82a32c`, policy `5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1`.
 - First-24-hour native monitoring is active through PM2/systemd, Prometheus, Alertmanager, Grafana, and the 30-second metrics timer. LAN is the sole application and transaction RPC; Alchemy remains probe-only with automatic fallback disabled.
-- Token-page UI release `39c2e7711bfd9051e071f6e54595c925d8ada8e5` is live on the Devnet, Testnet, and Mainnet web processes. Schema-18 contracts, APIs, routes, indexers, keepers, gateways, and financial configuration are unchanged.
+- Token-page UI release `2ac04f56c31d475e02768c5f77fcee7406e3e823` is live on the Devnet, Testnet, and Mainnet web processes. The canonical data tabs are embedded into their container, Market tape is renamed Trades, and Trades and Ownership paginate independently at 10 rows per page. Schema-18 contracts, APIs, routes, indexers, keepers, gateways, and financial configuration are unchanged.
 
 ## Current State
 
@@ -13,14 +13,14 @@
 - Mainnet launch mode is Public; profile version 2 targets 6 ETH with a 0.5 ETH maximum purchase; all six sealed routes and both conversion systems are enabled. The canary retains its immutable profile-1 snapshot.
 - Scoped indexing is current with zero ingestion/projection lag, one launch, 20 tracked addresses, one pool, excluded global sources, and a 12.9 MB database. API audit, reward backing, router solvency, supplies, locked principal, and keeper queues are healthy.
 - The last verified operator balance was `0.028372369252761679 ETH`, above the protected `0.02 ETH` reserve. Requery before any future financial operation.
-- GitHub `origin/main` and `origin/codex/token-page-market-snapshot` point to the exact clean deployed UI source at `39c2e7711bfd9051e071f6e54595c925d8ada8e5`; no force push or historical-worktree mutation was used.
+- GitHub `origin/main` and `origin/codex/token-page-market-snapshot` point to the exact clean deployed UI source at `2ac04f56c31d475e02768c5f77fcee7406e3e823`; no force push or historical-worktree mutation was used.
 
 ## Verification Ledger
 
 - Gate-3 Public live evidence is sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-public/live-e2e2be9-2554c9c-01`. The journal contains two unique intents and two unique successful receipts with zero failures or ambiguity.
 - Public browser acceptance passed at desktop and 390x844 mobile viewports. The exact public domain serves the qualified application, transaction submission is enabled, LAN remains primary, fallback traffic is unauthorized, and paid fallback CU is zero.
 - PM2 state is saved and all Mainnet processes are online. `pm2-hendo420`, metrics collection, alert receiver, Prometheus, Alertmanager, Grafana, Nginx, and Cloudflared are active with zero firing alerts at monitoring start.
-- Devnet, Testnet, and Mainnet web processes serve token-page UI release `39c2e7711bfd9051e071f6e54595c925d8ada8e5`; all 20 PM2 processes are online and the process list is saved.
+- Devnet, Testnet, and Mainnet web processes serve token-page UI release `2ac04f56c31d475e02768c5f77fcee7406e3e823`; all 20 PM2 processes are online with zero web restarts and the process list is saved. Live Mainnet acceptance verified Trades pages 1 and 2 (`1-10` and `11-20` of 24), independently bounded Ownership, embedded square tabs, and Testnet parity.
 - Final Gate-2 recovery evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-final-settlement/live-bf8c377-1ea83d5-01`.
 - Qualified read-only manifest is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-indexer-remediation/mainnet-scoped-readonly-qualified-5ea50ed-01`; `contracts.factory` equals `contracts.launchFactory`.
 - Scoped application activation evidence is checksum-sealed at `/home/hendo420/robyn-evidence/schema18-mainnet-public-prep/application-5ea50ed-v2`; it binds the database, PM2, Nginx, stopped keeper, disabled writes, and LAN-only RPC identities.
@@ -31,7 +31,15 @@
 - Continue observing the first 24 public hours through native monitoring. On any contract, accounting, solvency, supply, principal, route, or LAN-RPC anomaly, disable application submissions and use the verified guardian controls.
 - Alchemy's probe currently reports an invalid `eth_syncing` response. It has received probe traffic only, zero fallback traffic, and is not an application dependency; rotate any previously exposed provider credential during routine credential hygiene.
 
-- Root storage has 8.7 GiB free after retaining the immutable three-environment UI builds. Reclaim only verified obsolete artifacts or expand storage before a future release that requires the earlier 12 GiB runway gate.
+- Root storage has 8.6 GiB free after retaining the immutable three-environment UI builds and removing only the three superseded `39c2e77rewardtab` bundles after cutover verification. Expand storage before a future release that requires the earlier 12 GiB runway gate.
+
+### 2026-08-02 - Token data pagination and embedded tabs deployed
+
+- Context: The canonical data tabs still looked like detached pills, Market tape used internal terminology, and both market trades and holder ownership could grow into unbounded tables.
+- Decision: Rename Market tape to Trades, embed Ownership, Trades, and Reward economy as a full-width segmented header in the data container, and paginate Ownership and Trades independently at 10 rows per page with clamped state and explicit item/page counts.
+- Files: `apps/web/src/components/token-market-data-tabs.tsx`, `apps/web/src/lib/token-market-pagination.ts`, `apps/web/src/lib/token-market-pagination.test.ts`, and `apps/web/src/app/globals.css`.
+- Verification: Web tests passed 63/63, including 10/10/4 pagination and stale-page clamping. Formatting, lint, typecheck, production builds, the complete repository release gates, 563 Foundry tests, security checks, and immutable Devnet/Testnet/Mainnet builds passed. Mainnet browser acceptance verified `#recent-trades`, Trades page 2, independently bounded Ownership, zero-radius embedded tabs, and no desktop horizontal overflow; Testnet exposed the same shared interface.
+- Deployment: Immutable artifacts are `/opt/robyn/releases/2ac04f5paged`, `/opt/robyn/testnet-releases/2ac04f5paged`, and `/opt/robyn/mainnet-releases/2ac04f5paged`. Only the three web processes were replaced with bounded readiness and rollback; all 20 PM2 services are online and saved. No onchain transaction or non-web service restart occurred.
 
 ### 2026-08-02 - Reward economy moved into canonical market tabs
 
