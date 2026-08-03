@@ -4,7 +4,7 @@
   "contractSchema": 18,
   "qualifiedContractGitSha": "4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4",
   "contractClosureHash": "d3d44b862a9d6c1e5361bbf3cb72602116ef05aa",
-  "deploymentManifestHash": "134185806f602989ce4e04f7ce9736d51a9601d0289aefb18190f969fd9772b4",
+  "deploymentManifestHash": "26772d351a6b5599b659145e4a74e2d93c7dff8f2f33f59226faa3aefe9f1ee8",
   "indexingPolicyHash": "5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1",
   "deploymentBlock": 25321851,
   "releaseTagPrefix": "mainnet-prod-",

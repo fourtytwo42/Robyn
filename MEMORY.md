@@ -1,6 +1,7 @@
 # Project Memory
 
 ## Active Handoff
+- Policy-v2 application manifest is deterministically regenerated at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/application-policy-v2-242b635/deployments-4663-mainnet.json`, SHA-256 `26772d351a6b5599b659145e4a74e2d93c7dff8f2f33f59226faa3aefe9f1ee8`. The protected release input and `config/production-mainnet.json` now bind this hash.
 - Signed release `mainnet-prod-20260803-1879955` is live, but its API exposed a production-topology defect: processes still consumed the old root-managed deployment manifest, so policy v1 remained visible. The topology now binds API, indexer, and projector to the signed release's `deployments/4663-mainnet.json`; promote a superseding release and verify policy v2 before resealing route governance.
 - Exact current-state route-governance tooling is committed and pushed. Its final run must bind the clean pushed commit and preserve 14 unique successful local receipts for unanimous scheduling, the simulated one-hour Timelock, twelve route configurations, and twelve guardian rollback disables. The authorization-false manifest is stored under `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/governance-current-state`; never schedule it without the user's exact-hash authorization.
 - Signed release `mainnet-prod-20260803-cb352ca` is live on the keyless production host. The additive API/UI separates Chainlink references, pool-implied prices, and route selectability while preserving the existing onchain routes.
@@ -68,6 +69,13 @@
 - Decision: Bind all application processes to the checksum-verified manifest inside their immutable release directory. Keep RPC, database, Cloudflare, and keyless security configuration root-managed.
 - Verification: Production topology and release-security tests pass, including signer-bearing environment rejection and the frozen Schema-18 contract attestation. No contract compilation, onchain transaction, or route change occurred.
 - Follow-up: Commit/push, repeat exact-SHA environment acceptance and signed promotion, verify policy v2 publicly, then regenerate the authorization-false route manifest.
+
+### 2026-08-03 - Policy-v2 release input regenerated
+
+- Context: Binding processes to the release directory was necessary but insufficient because the protected release input itself still contained policy v1.
+- Decision: Regenerate the application manifest from the sealed Schema-18 lifecycle, Gate-1, postdeployment, and Testnet baseline evidence using policy v2. Bind output hash `26772d351a6b5599b659145e4a74e2d93c7dff8f2f33f59226faa3aefe9f1ee8` in production configuration and the protected builder input.
+- Verification: The output binds application identity `242b635`, policy hash `ec5c8f9c...`, and canonical USDG decimals 6. Release/topology tests pass and the frozen contract closure remains unchanged.
+- Follow-up: Promote a superseding signed release and verify public policy/version/prices before route-governance resealing.
 
 ### 2026-08-03 - USDG decimal metadata corrected before governance
 
