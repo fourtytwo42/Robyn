@@ -559,11 +559,13 @@ const run = async () => {
     process.stdout.write(`${json({ stage, status: "already-completed" })}\n`);
     return;
   }
-  if (Number(await read(contracts.coordinator, built.coordinator.abi, "launchMode")) !== 2) {
-    throw new Error(`${stage} requires Schema-19 Public mode`);
-  }
-  if (await read(contracts.assetRouter, built.assetRouter.abi, "conversionsPaused")) {
-    throw new Error(`${stage} requires active Schema-19 conversions`);
+  if (!new Set(["shutdown", "reconcile"]).has(stage)) {
+    if (Number(await read(contracts.coordinator, built.coordinator.abi, "launchMode")) !== 2) {
+      throw new Error(`${stage} requires Schema-19 Public mode`);
+    }
+    if (await read(contracts.assetRouter, built.assetRouter.abi, "conversionsPaused")) {
+      throw new Error(`${stage} requires active Schema-19 conversions`);
+    }
   }
 
   const erc20 = parseAbi([

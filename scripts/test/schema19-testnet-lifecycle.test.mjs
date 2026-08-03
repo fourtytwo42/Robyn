@@ -23,6 +23,7 @@ test("Schema-19 lifecycle is LAN-only, immutable-release-bound, and restart safe
 });
 
 test("Schema-19 lifecycle starts Public without bootstrap or a live activation vote", () => {
+  assert.match(source, /new Set\(\["shutdown", "reconcile"\]\)\.has\(stage\)/);
   assert.match(source, /requires Schema-19 Public mode/);
   assert.match(source, /requires active Schema-19 conversions/);
   assert.doesNotMatch(source, /executeBootstrapStep|bootstrap1|bootstrap2/);
