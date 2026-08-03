@@ -84,6 +84,7 @@ module.exports = {
         ROBYN_MANIFEST: manifest,
         ROBYN_RELEASE_SHA: required("ROBYN_RELEASE_SHA"),
         ROBYN_PROTOCOL_AUDIT_INTERVAL_MS: "900000",
+        ROBYN_KEEPER_EXPECTED: "false",
         ROBYN_ENDURANCE_STATUS_FILE: "",
         ROBYN_CAMPAIGN_OPERATOR_TOKEN_FILE: "",
         REDIS_URL: "redis://127.0.0.1:6379/2",

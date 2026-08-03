@@ -41,6 +41,11 @@ import {
 } from "./asset-catalog.js";
 import { rewardStreamConservation } from "./reward-conservation.js";
 import { projectionCheckpointsHealthy } from "./projection-health.js";
+import {
+  keeperExpectedFromEnvironment,
+  keeperHealthSatisfied,
+  keeperStatusForHealth,
+} from "./service-health.js";
 
 const app = Fastify({
   logger: { level: process.env.LOG_LEVEL ?? "info" },
@@ -54,6 +59,9 @@ app.addContentTypeParser(
 );
 const { sql } = createDatabase();
 const chainId = Number(process.env.CHAIN_ID ?? "31337");
+const keeperExpected = keeperExpectedFromEnvironment(
+  process.env.ROBYN_KEEPER_EXPECTED,
+);
 const demoMarketChangesEnabled = isDemoMarketChangeEnabled(
   chainId,
   process.env.ROBYN_DEMO_MARKET_CHANGES,
@@ -1257,7 +1265,10 @@ async function keeperState() {
   );
   const metadata = rows[0]?.metadata;
   return {
-    keeperStatus: rows[0]?.status === "ok" && rows[0].fresh ? "ok" : "degraded",
+    keeperStatus:
+      rows[0]?.status === "ok" && rows[0].fresh
+        ? ("ok" as const)
+        : ("degraded" as const),
     keeperUpdatedAt: rows[0]?.updated_at ?? null,
     keeperQueueCounts: metadata?.queueCounts ?? null,
     keeperScanRequestCounts: metadata?.scanRequestCounts ?? null,
@@ -1302,7 +1313,7 @@ app.get("/health", async (_request, reply) => {
     state.projectionAsOfBlock !== null &&
     state.ingestionStatus === "ok" &&
     state.projectionStatus === "ok" &&
-    keeper.keeperStatus === "ok" &&
+    keeperHealthSatisfied(keeperExpected, keeper.keeperStatus) &&
     artifact.artifactStatus === "ok";
   return reply.code(healthy ? 200 : 503).send({
     service: "robyn-api",
@@ -1310,6 +1321,11 @@ app.get("/health", async (_request, reply) => {
     chainId,
     ...state,
     ...keeper,
+    keeperExpected,
+    keeperStatus: keeperStatusForHealth(
+      keeperExpected,
+      keeper.keeperStatus,
+    ),
     ...artifact,
   });
 });

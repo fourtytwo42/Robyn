@@ -59,6 +59,8 @@ test("production topology is six keyless services with no keeper", () => {
     topology.apps.some((app) => app.name.includes("keeper")),
     false,
   );
+  const api = topology.apps.find((app) => app.name === "robyn-api-mainnet-prod");
+  assert.equal(api.env.ROBYN_KEEPER_EXPECTED, "false");
   const gateway = topology.apps.find((app) => app.name.includes("rpc-gateway"));
   assert.equal(gateway.env.RPC_ACTIVE_PROVIDER, "primary");
   assert.equal(gateway.env.RPC_FALLBACK_TRAFFIC_AUTHORIZED, "false");
