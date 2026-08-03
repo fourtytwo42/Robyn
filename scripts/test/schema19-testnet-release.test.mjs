@@ -31,10 +31,8 @@ test("Schema-19 application releases attest frozen contracts without protocol re
   assert.match(source, /test:testnet-application-scope/);
   assert.match(source, /contractMode:\"frozen-schema19\"/);
   assert.match(source, /two-build-reproducibility/);
-  assert.match(
-    source,
-    /cmp \"\$staging\/release-evidence\/runtime-build-a\.sha256\"/,
-  );
+  assert.match(source, /cmp \"\$runtime_a\" \"\$runtime_b\"/);
+  assert.match(source, /! -path '\*\/\.next\/cache\/\*' ! -name trace/);
   assert.doesNotMatch(source, /pnpm test(?:\s|$)/m);
   assert.doesNotMatch(source, /forge (?:build|test)/);
   assert.doesNotMatch(source, /--filter @robyn\/keeper/);

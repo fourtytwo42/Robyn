@@ -9,7 +9,6 @@ git_sha="$(git rev-parse HEAD)"
 release_id="${1:-$git_sha}"
 target="/opt/robyn/testnet-releases/$release_id"
 staging="/opt/robyn/testnet-staging/$release_id.$$"
-repro_staging="/opt/robyn/testnet-staging/$release_id.repro.$$"
 archive="/tmp/robyn-testnet-source-$$.tar"
 deployment_manifest="${ROBYN_TESTNET_DEPLOYMENT_MANIFEST:-deployments/46630-v4-schema19.json}"
 gate_log="/tmp/robyn-testnet-gates-$$.log"
@@ -17,13 +16,14 @@ security_json="/tmp/robyn-testnet-security-$$.json"
 gitleaks_json="/tmp/robyn-testnet-gitleaks-$$.json"
 dependency_audit_json="/tmp/robyn-testnet-dependency-audit-$$.json"
 freeze_evidence="/tmp/robyn-testnet-contract-freeze-$$.json"
+runtime_a="/tmp/robyn-testnet-runtime-a-$$.sha256"
+runtime_b="/tmp/robyn-testnet-runtime-b-$$.sha256"
 release_env="${ROBYN_TESTNET_RELEASE_ENV:-/home/hendo420/.config/robyn/testnet/release.env}"
 next_secrets="${ROBYN_NEXT_BUILD_SECRETS_FILE:-/home/hendo420/.config/robyn/next-build-secrets.json}"
 cleanup() {
   rm -f "$archive" "$gate_log" "$security_json" "$gitleaks_json" \
-    "$dependency_audit_json" "$freeze_evidence"
+    "$dependency_audit_json" "$freeze_evidence" "$runtime_a" "$runtime_b"
   if [[ -d "$staging" ]]; then chmod -R u+w "$staging" 2>/dev/null || true; rm -rf "$staging"; fi
-  if [[ -d "$repro_staging" ]]; then chmod -R u+w "$repro_staging" 2>/dev/null || true; rm -rf "$repro_staging"; fi
 }
 trap cleanup EXIT
 
@@ -72,9 +72,8 @@ NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(
 
 git archive --format=tar "$git_sha" -o "$archive"
 source_sha="$(sha256sum "$archive" | cut -d' ' -f1)"
-mkdir -p "$staging/release-evidence" "$repro_staging"
+mkdir -p "$staging/release-evidence"
 tar -xf "$archive" -C "$staging"
-tar -xf "$archive" -C "$repro_staging"
 cp "$gate_log" "$staging/release-evidence/release-gates.log"
 cp "$security_json" "$staging/release-evidence/static-security-audit.json"
 cp "$freeze_evidence" "$staging/release-evidence/frozen-contract-qualification.json"
@@ -122,21 +121,43 @@ runtime_checksums() {
   local output="$2"
   (
     cd "$build_root"
-    {
-      find apps -type f \( -path '*/.next/*' -o -path '*/dist/*' \) -print0
-      find packages -type f -path '*/dist/*' -print0
-    } | sort -z | xargs -0 sha256sum > "$output"
+    find apps packages -type f \
+      \( -path '*/dist/*' -o -path '*/.next/*' \) \
+      ! -path '*/.next/cache/*' ! -name trace -print0 | sort -z |
+      while IFS= read -r -d '' runtime_file; do
+        case "$runtime_file" in
+          *.json)
+            if jq -e . "$runtime_file" >/dev/null 2>&1; then
+              digest="$(jq -cS . "$runtime_file" | sha256sum | cut -d' ' -f1)"
+            else
+              digest="$(sha256sum "$runtime_file" | cut -d' ' -f1)"
+            fi
+            ;;
+          *client-reference-manifest.js)
+            manifest_json="$(sed -E 's/^.*]=//' "$runtime_file")"
+            digest="$(jq -cS . <<<"$manifest_json" | sha256sum | cut -d' ' -f1)"
+            ;;
+          *) digest="$(sha256sum "$runtime_file" | cut -d' ' -f1)" ;;
+        esac
+        printf '%s  %s\n' "$digest" "$runtime_file"
+      done > "$output"
   )
 }
 
 build_runtime "$staging"
-build_runtime "$repro_staging"
-runtime_checksums "$staging" "$staging/release-evidence/runtime-build-a.sha256"
-runtime_checksums "$repro_staging" "$staging/release-evidence/runtime-build-b.sha256"
-cmp "$staging/release-evidence/runtime-build-a.sha256" \
-  "$staging/release-evidence/runtime-build-b.sha256"
-rm -rf "$repro_staging"
-repro_staging=""
+runtime_checksums "$staging" "$runtime_a"
+chmod -R u+w "$staging"
+rm -rf "$staging"
+mkdir -p "$staging/release-evidence"
+tar -xf "$archive" -C "$staging"
+cp "$gate_log" "$staging/release-evidence/release-gates.log"
+cp "$security_json" "$staging/release-evidence/static-security-audit.json"
+cp "$freeze_evidence" "$staging/release-evidence/frozen-contract-qualification.json"
+build_runtime "$staging"
+runtime_checksums "$staging" "$runtime_b"
+cmp "$runtime_a" "$runtime_b"
+cp "$runtime_a" "$staging/release-evidence/runtime-build-a.sha256"
+cp "$runtime_b" "$staging/release-evidence/runtime-build-b.sha256"
 
 (
   cd "$staging"
