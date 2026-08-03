@@ -15,7 +15,7 @@
 - Mainnet launch mode is Public; profile version 2 targets 6 ETH with a 0.5 ETH maximum purchase; all six sealed routes and both conversion systems are enabled. The canary retains its immutable profile-1 snapshot.
 - Scoped indexing is current with zero ingestion/projection lag, one launch, 20 tracked addresses, one pool, excluded global sources, and a 12.9 MB database. API audit, reward backing, router solvency, supplies, locked principal, and keeper queues are healthy.
 - The last verified operator balance was `0.028372369252761679 ETH`, above the protected `0.02 ETH` reserve. Requery before any future financial operation.
-- Production runtime release `296f4a3268a58b7549e4efb712487362ad716651` is active on all six keyless services with signed-transaction relay enabled. Infrastructure source is clean and pushed through `c45b996` on protected `main`; root-managed Cloudflare/Nginx/retention fixes from that source are applied without changing the application artifact.
+- Production runtime release `296f4a3268a58b7549e4efb712487362ad716651` is active on all six keyless services with signed-transaction relay enabled. Infrastructure source is clean and pushed through `dfff263` on protected `main`; root-managed Cloudflare/Nginx/retention fixes from that source are applied without changing the application artifact.
 - Host `192.168.50.108` has one 248 GiB root LV with roughly 219 GiB free and no blockchain signer material. Its signed-release updater polls every two minutes and accepts only signed `mainnet-prod-*` releases; the deployed predecessor remains `296f4a3` until a later qualified signed release is intentionally published.
 
 ## Verification Ledger
@@ -34,6 +34,7 @@
 - Keyless boundary verification: six PM2 services run from `/opt/robyn/releases/296f4a...`, no deployer/signer material is present, keeper status is external, the public gateway blocks unlocked-account namespaces, and only signed raw transactions are relayed when submission authorization is enabled.
 - Production RPC verification: chain ID is `4663`, LAN is primary, Alchemy is probe-only, fallback authorization is false, paid fallback CU is zero, and malformed signed-transaction probing was rejected upstream without a transaction. The scoped database is about 10.5 MB with one launch, 20 tracked addresses, one pool, 588 retained logs, and bounded zero/near-zero lag.
 - Automatic updater verification: the timer is enabled and has completed repeated two-minute no-op polls successfully against the current signed release. Nginx `/rpc` path translation, `www` redirect behavior, tunnel command ordering, LAN staging ingress, and backup marker permissions have focused regression assertions.
+- Public boundary verification: `/admin`, `/metrics`, `/debug`, and `/internal/health` return 404 through Cloudflare; Prometheus scrapes the API directly on loopback and reported zero firing alerts at cutover.
 - Mainnet staging retention is enabled nightly on `192.168.50.250`; it retains seven days of bounded raw/log/audit history and its first execution completed with zero eligible rows.
 
 ## Open Follow-ups
