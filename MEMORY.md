@@ -2,8 +2,8 @@
 
 ## Active Handoff
 - Asset-route remediation is in progress on `codex/schema18-asset-route-pricing-remediation`. Additive API/UI work separates Chainlink reference prices, raw v4 pool-implied prices, and final selectability; Mainnet routes and Schema-18 contracts are unchanged.
-- Schema-18 asset policy `schema18-assets-v1` hashes to `8be877361baee8ca633287758ff8ae5f44d9f7470bc85a103ed41837a5d8e542`. Contract-compatible full-history qualification and the 65-receipt/13-invariant LAN-sourced fork rehearsal passed; the final one-hour observation is active at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/one-hour-20260803T042538Z`.
-- No route-governance operation has been sealed, authorized, scheduled, or broadcast. Additive application candidate `f05d9fc305c272bb730e64ce92d797d89f331980` preserves the six existing onchain routes; its deterministic Mainnet manifest hashes to `88b0a6ca7acac27a984604b7381c32611cddffbcf415b8d9b95b5732132e8f1a`.
+- Schema-18 asset policy `schema18-assets-v1` hashes to `de5d61f253c9ae8a53a2e6663ebf87069ef1b74072c4d8e368b978ff0064fe52`. Contract-compatible discovery, 65-receipt/13-invariant LAN-sourced fork execution, and 13 samples spanning 3,752 seconds all passed; final qualification is sealed at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/final-qualification-de5d61f`.
+- No route-governance operation has been authorized, scheduled, or broadcast. Additive application candidate `19e207c1d1ef1defd55d2ff8cf73c01a306a4a3b` preserves the six existing onchain routes; its deterministic Mainnet manifest hashes to `134185806f602989ce4e04f7ce9736d51a9601d0289aefb18190f969fd9772b4`.
 
 
 - Schema-18 is publicly operational on Robinhood Mainnet at `https://sherwoodforest.trade`. Public mode, the `6 ETH / 0.5 ETH` profile, six qualified routes, both conversion systems, and application transaction submission are active.
@@ -15,7 +15,7 @@
 - Production migration is complete. Keyless host `192.168.50.108` now serves the canonical public domain through Cloudflare tunnel `sherwoodforest-mainnet-prod`; host `192.168.50.250` retains Devnet, Testnet, keeper/signing operations, and LAN-only Mainnet staging at `http://192.168.50.250:3082`. Ordinary pushes never deploy production.
 
 ## Current State
-- Schema-18 asset policy `schema18-assets-v1` hashes to `8be877361baee8ca633287758ff8ae5f44d9f7470bc85a103ed41837a5d8e542` and catalogs WETH plus twelve stock or ETF candidates. Selected safe caps are 0.05 ETH for WETH, GOOGL, MSFT, NVDA, SPCX, SPY, USDG, and USAR; 0.01 ETH for AMZN, INTC, and SLV; 0.0025 ETH for GME; and 0.001 ETH for QQQ. NVDA uses the zero-hook 0.05% pool, SPY the zero-hook 0.30% pool, and USDG the router-compatible zero-hook fee-460 pool; zero-fee or hooked pools are rejected.
+- Schema-18 asset policy `schema18-assets-v1` hashes to `de5d61f253c9ae8a53a2e6663ebf87069ef1b74072c4d8e368b978ff0064fe52` and catalogs WETH plus twelve stock or ETF candidates. Selected safe caps are 0.05 ETH for WETH, GOOGL, MSFT, NVDA, SPCX, SPY, USDG, and USAR; 0.01 ETH for AMZN, INTC, and SLV; 0.0025 ETH for GME; and 0.001 ETH for QQQ. NVDA uses the zero-hook 0.05% pool, SPY the zero-hook 0.30% pool, and USDG the router-compatible zero-hook fee-460 pool; zero-fee or hooked pools are rejected.
 
 
 - Gate-3 manifest `2554c9c971630dc6a8399a0868201908e313c6ab89e299e2b544100cd7ca3bda` executed exactly once as transaction `0xb9cea03d314c66c0f6afda3613e183fe9228f6652ed8345e6f033419610fc67c` at block `26011510`.
@@ -52,6 +52,15 @@
 - Correct the raw `/api/assets/catalog-manifest` snapshot's stale per-asset Testnet chain/provenance metadata in a future application release. The live `/api/assets` endpoint and transaction builder already use chain `4663`, so this is a catalog hygiene follow-up rather than a wallet-safety blocker.
 - Rotate the previously exposed comparison-provider credential during routine credential hygiene. Alchemy remains probe-only and is not a production dependency.
 - Add a true second-site encrypted backup target when available; the NAS copy is off-host but remains in the same LAN/failure domain.
+
+
+### 2026-08-03 - Schema-18 one-hour route qualification sealed
+
+- Context: The route policy required a complete one-hour observation plus broadcast-style fork execution before any governance batch could be prepared.
+- Decision: Use 90% of the minimum observed active liquidity as the nonzero onchain floor, retain the 198-tick deviation bound, and use the latest observed tick. Selected caps remain limited to amounts already executed in the 65-receipt fork ledger.
+- Verification: Thirteen samples spanning 3,752 seconds passed with healthy Chainlink feeds and two-sided quotes. The final qualification report binds all samples, 65 unique successful local-fork receipts, 13 asset invariants, zero residual allowances, and no Mainnet transaction.
+- Evidence: `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/final-qualification-de5d61f`; policy hash `de5d61f253c9ae8a53a2e6663ebf87069ef1b74072c4d8e368b978ff0064fe52`.
+- Follow-up: Qualify additive application `19e207c1d1ef1defd55d2ff8cf73c01a306a4a3b` across Devnet, Testnet, LAN Mainnet, and production preview with routes unchanged. Then rehearse and seal the exact unanimous route operation and stop for exact-hash authorization.
 
 ### 2026-08-03 - Schema-18 asset policy and fork route qualification
 

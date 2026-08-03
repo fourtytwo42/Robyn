@@ -21,5 +21,6 @@
     "probeOnly": true,
     "automaticFallback": false,
     "transactionSubmissionDefault": false
-  }
+  },
+  "deploymentManifestSha256": "134185806f602989ce4e04f7ce9736d51a9601d0289aefb18190f969fd9772b4"
 }
