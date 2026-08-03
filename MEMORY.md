@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-03 - Focused Testnet lifecycle gains live failed-leg proof
+
+- Context: The focused lifecycle exercised three healthy assets but did not mechanically prove on a public chain that a failed basket leg leaves a user trade successful or that accelerated fallback resets the leg.
+- Decision: On Testnet only, bind MSFT as a controlled one-tick-deviation fixture at the live spot tick, use 60-second observations and a 180-second fallback delay, validate it with two-sided quotes before launch, then deliberately move it outside the bound after fees are attributed. Align the scheduler so a real user buy carries the first failed leg attempt, record three spaced objective observations, execute canonical-WETH fallback, unwind the fixture through the raw canonical pool, clear allowances, and continue claims/reconciliation. Production remains 24-hour observations and 72-hour fallback.
+- Files: Schema-19 Testnet input/preparer/finalizer, focused lifecycle runner, and focused tests.
+- Tests: Sixteen deployment/input/finalizer/lifecycle policy tests pass with script syntax and diff checks. The exact clean-pushed isolated Testnet-fork deployment and lifecycle rehearsal remains required before any live transaction.
+- Safety: The fixture is Testnet-only metadata and constructor configuration. It does not change Schema-19 bytecode or Mainnet route policy.
+
 ### 2026-08-03 - Schema-19 user-facing trade paths bound to maintenance
 
 - Context: Claims already used `RobynClaimsRouter`, but the shared public-network token panel still sent native trades directly to the market. That bypassed Schema-19 best-effort maintenance after graduated trades. The Devnet panel also lacked a native Schema-19 transaction path.

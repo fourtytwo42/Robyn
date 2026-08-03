@@ -452,6 +452,19 @@ const write = (phase, label, address, abi, functionName, args = [], value = 0n) 
   submit({ phase, label, to: address, data: encodeFunctionData({ abi, functionName, args }), value });
 const latestTime = async () => (await client.getBlock({ blockTag: "latest" })).timestamp;
 const deadline = async () => (await latestTime()) + 120n;
+const waitUntil = async (target) => {
+  if (localRehearsal) {
+    await client.request({
+      method: "evm_setNextBlockTimestamp",
+      params: [Number(target)],
+    });
+    await client.request({ method: "evm_mine", params: [] });
+    return;
+  }
+  while ((await latestTime()) < target) {
+    await new Promise((resolve) => setTimeout(resolve, 10_000));
+  }
+};
 const mark = async (name, extra = {}) => {
   if (!state.completedStages.includes(name)) state.completedStages.push(name);
   Object.assign(state, extra);
@@ -566,6 +579,21 @@ const run = async () => {
         token,
         input,
       ]);
+      const detailedRoute = manifest.assetRoutes.find(
+        (item) => item.symbol === route.symbol,
+      );
+      if (detailedRoute?.testFailureFixture === true) {
+        const reverse = await read(
+          contracts.assetRouter,
+          built.assetRouter.abi,
+          "quoteAssetToNative",
+          [token, quote[0] / 2n],
+        );
+        if (quote[0] === 0n || reverse[0] === 0n) {
+          throw new Error(`${route.symbol} fixture quotes are unavailable`);
+        }
+        continue;
+      }
       const before = await read(token, erc20, "balanceOf", [account.address]);
       await write(
         "routes",
@@ -627,10 +655,24 @@ const run = async () => {
     if (!state.completedStages.includes("routes")) throw new Error("launch requires route coverage");
     const basketRoutes = manifest.assetRoutes.filter((item) => item.enabled && item.symbol !== "WETH");
     if (basketRoutes.length < 2) throw new Error("three-asset lifecycle requires two stock routes plus WETH");
+    const failureFixture = basketRoutes.find((item) => item.testFailureFixture === true);
+    const healthyBasketRoute = basketRoutes.find(
+      (item) => item.testFailureFixture !== true,
+    );
+    if (!mainnetFork && (!failureFixture || !healthyBasketRoute)) {
+      throw new Error("Testnet lifecycle requires one controlled failed leg");
+    }
+    const selectedBasketRoutes = mainnetFork
+      ? basketRoutes.slice(0, 2)
+      : [healthyBasketRoute, failureFixture];
     const request = {
       name: mainnetFork ? "Schema 19 Mainnet Rehearsal" : "Schema 19 Testnet Lifecycle",
       symbol: mainnetFork ? "S19MR" : "S19TL",
-      assets: [external.weth, checksum(basketRoutes[0].address), checksum(basketRoutes[1].address)],
+      assets: [
+        external.weth,
+        checksum(selectedBasketRoutes[0].address),
+        checksum(selectedBasketRoutes[1].address),
+      ],
       weights: [4_000, 3_000, 3_000],
       metadataUri: "ipfs://bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
       userSalt: keccak256(
@@ -769,6 +811,8 @@ const run = async () => {
       canaryPrincipalWei: launchProfile.actualGraduationNative.toString(),
       roundTripRecoveredWei: roundTripRecovered.toString(),
       graduatedAt: (await latestTime()).toString(),
+      failureFixtureAsset: failureFixture?.address ?? null,
+      failureFixtureSymbol: failureFixture?.symbol ?? null,
     });
     return;
   }
@@ -807,10 +851,234 @@ const run = async () => {
       throw new Error("fee settlement delay is not complete");
     }
     await write("maintenance", "create-convertible-token-fees", contracts.tradeRouter, built.tradeRouter.abi, "buy", [market, 1n], 1_000_000_000_000n);
+    let fallbackEvidence = null;
+    if (!mainnetFork) {
+      const fixture = manifest.assetRoutes.find(
+        (item) => item.testFailureFixture === true,
+      );
+      if (!fixture || checksum(fixture.address) !== checksum(state.failureFixtureAsset)) {
+        throw new Error("controlled failed-leg identity changed");
+      }
+      const fixtureAsset = checksum(fixture.address);
+      const fixtureIndex = 2n;
+      let fixtureLeg = await read(vault, vaultAbi, "leg", [fixtureIndex]);
+      for (let attempt = 0; fixtureLeg.pendingNative === 0n && attempt < 18; attempt += 1) {
+        await processMaintenance("maintenance", 1);
+        fixtureLeg = await read(vault, vaultAbi, "leg", [fixtureIndex]);
+      }
+      if (fixtureLeg.pendingNative === 0n) {
+        throw new Error("controlled failed leg never received its attributed value");
+      }
+
+      const disturbanceInput =
+        BigInt(fixture.maximumNativeInput) < 1_000_000_000_000_000n
+          ? BigInt(fixture.maximumNativeInput)
+          : 1_000_000_000_000_000n;
+      const disturbanceQuote = await read(
+        contracts.assetRouter,
+        built.assetRouter.abi,
+        "quoteNativeToAsset",
+        [fixtureAsset, disturbanceInput],
+      );
+      const beforeFixture = await read(fixtureAsset, erc20, "balanceOf", [
+        account.address,
+      ]);
+      await write(
+        "maintenance",
+        "disturb-failure-fixture",
+        contracts.assetRouter,
+        built.assetRouter.abi,
+        "swapExactNativeForAsset",
+        [
+          fixtureAsset,
+          (disturbanceQuote[0] * 99n) / 100n,
+          account.address,
+          await deadline(),
+        ],
+        disturbanceInput,
+      );
+      const disturbanceTokens =
+        (await read(fixtureAsset, erc20, "balanceOf", [account.address])) -
+        beforeFixture;
+      const failedStatus = await read(
+        contracts.assetRouter,
+        built.assetRouter.abi,
+        "routeStatus",
+        [fixtureAsset],
+      );
+      if (failedStatus.ready) {
+        throw new Error("controlled route did not enter objective deviation failure");
+      }
+
+      for (let attempt = 0; attempt < 36; attempt += 1) {
+        const [nextTask, nextLeg] = await Promise.all([
+          read(contracts.maintenance, built.maintenance.abi, "nextTask", [
+            token,
+          ]),
+          read(vault, vaultAbi, "nextLegCursor"),
+        ]);
+        if (Number(nextTask) === 8 && Number(nextLeg) === Number(fixtureIndex)) {
+          break;
+        }
+        await processMaintenance("maintenance", 1);
+        if (attempt === 35) {
+          throw new Error("unable to align failed leg with a user-carried task");
+        }
+      }
+      const tokenBeforeFailedMaintenance = await read(token, tokenAbi, "balanceOf", [
+        account.address,
+      ]);
+      const observationsBeforeUserTrade = fixtureLeg.failureObservations;
+      await write(
+        "maintenance",
+        "user-buy-with-failed-maintenance",
+        contracts.tradeRouter,
+        built.tradeRouter.abi,
+        "buy",
+        [market, 1n],
+        1_000_000_000_000n,
+      );
+      fixtureLeg = await read(vault, vaultAbi, "leg", [fixtureIndex]);
+      if (
+        (await read(token, tokenAbi, "balanceOf", [account.address])) <=
+          tokenBeforeFailedMaintenance ||
+        fixtureLeg.failureObservations !== observationsBeforeUserTrade + 1
+      ) {
+        throw new Error("failed maintenance did not preserve the user trade");
+      }
+
+      const observeFailure = async (minimumObservations) => {
+        for (let attempt = 0; attempt < 36; attempt += 1) {
+          await processMaintenance("maintenance", 1);
+          const leg = await read(vault, vaultAbi, "leg", [fixtureIndex]);
+          if (leg.failureObservations >= minimumObservations) return leg;
+        }
+        throw new Error(`failed leg did not record observation ${minimumObservations}`);
+      };
+      await waitUntil(
+        BigInt(fixtureLeg.lastFailureAt) +
+          BigInt(manifest.settings.failureObservationSpacing),
+      );
+      fixtureLeg = await observeFailure(2);
+      await waitUntil(
+        BigInt(fixtureLeg.lastFailureAt) +
+          BigInt(manifest.settings.failureObservationSpacing),
+      );
+      fixtureLeg = await observeFailure(3);
+      const fallbackReadyAt =
+        BigInt(fixtureLeg.firstFailureAt) + BigInt(manifest.settings.fallbackDelay) >
+        BigInt(fixtureLeg.lastFailureAt) +
+          BigInt(manifest.settings.failureObservationSpacing)
+          ? BigInt(fixtureLeg.firstFailureAt) +
+            BigInt(manifest.settings.fallbackDelay)
+          : BigInt(fixtureLeg.lastFailureAt) +
+            BigInt(manifest.settings.failureObservationSpacing);
+      await waitUntil(fallbackReadyAt);
+      const fallbackBefore = fixtureLeg.fallbackNativeConsumed;
+      for (let attempt = 0; attempt < 36; attempt += 1) {
+        await processMaintenance("maintenance", 1);
+        fixtureLeg = await read(vault, vaultAbi, "leg", [fixtureIndex]);
+        if (fixtureLeg.fallbackNativeConsumed > fallbackBefore) break;
+      }
+      if (
+        fixtureLeg.fallbackNativeConsumed <= fallbackBefore ||
+        fixtureLeg.failureObservations !== 0 ||
+        fixtureLeg.pendingNative !== 0n
+      ) {
+        throw new Error("controlled failed leg did not complete and reset WETH fallback");
+      }
+
+      const currency0 =
+        BigInt(external.weth) < BigInt(fixtureAsset)
+          ? external.weth
+          : fixtureAsset;
+      const currency1 =
+        currency0 === external.weth ? fixtureAsset : external.weth;
+      const fixturePoolKey = {
+        currency0,
+        currency1,
+        fee: Number(fixture.fee),
+        tickSpacing: Number(fixture.tickSpacing),
+        hooks: checksum(fixture.hooks),
+      };
+      const fixtureQuoterAbi = parseAbi([
+        "function quoteExactInputSingle(((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) poolKey,bool zeroForOne,uint128 exactAmount,bytes hookData) params) returns (uint256 amountOut,uint256 gasEstimate)",
+      ]);
+      const fixtureSellQuote = await read(
+        external.quoter,
+        fixtureQuoterAbi,
+        "quoteExactInputSingle",
+        [
+          {
+            poolKey: fixturePoolKey,
+            zeroForOne: currency0 !== external.weth,
+            exactAmount: disturbanceTokens,
+            hookData: "0x",
+          },
+        ],
+      );
+      await write("maintenance", "fixture-permit2-approve", fixtureAsset, erc20, "approve", [
+        external.permit2,
+        disturbanceTokens,
+      ]);
+      await write(
+        "maintenance",
+        "fixture-router-approve",
+        external.permit2,
+        permit2Abi,
+        "approve",
+        [fixtureAsset, external.universalRouter, maxUint160, 2n ** 48n - 1n],
+      );
+      const fixtureSell = encodeUniversalV4SingleSwap({
+        poolKey: fixturePoolKey,
+        zeroForOne: currency0 !== external.weth,
+        amount: disturbanceTokens,
+        limit: (fixtureSellQuote[0] * 99n) / 100n,
+        refundRecipient: account.address,
+      });
+      await write(
+        "maintenance",
+        "fixture-unwind",
+        external.universalRouter,
+        universalAbi,
+        "execute",
+        [fixtureSell.commands, fixtureSell.inputs, await deadline()],
+      );
+      await write(
+        "maintenance",
+        "fixture-router-clear",
+        external.permit2,
+        permit2Abi,
+        "approve",
+        [fixtureAsset, external.universalRouter, 0n, 0n],
+      );
+      await write("maintenance", "fixture-permit2-clear", fixtureAsset, erc20, "approve", [
+        external.permit2,
+        0n,
+      ]);
+      if (
+        (await read(fixtureAsset, erc20, "allowance", [
+          account.address,
+          external.permit2,
+        ])) !== 0n
+      ) {
+        throw new Error("controlled fixture left a residual allowance");
+      }
+      fallbackEvidence = {
+        symbol: fixture.symbol,
+        asset: fixtureAsset,
+        fallbackNativeConsumed: fixtureLeg.fallbackNativeConsumed.toString(),
+        observationsReset: fixtureLeg.failureObservations === 0,
+      };
+    }
     await processMaintenance("maintenance");
     const daoEpochs = await read(contracts.daoRewards, built.daoRewards.abi, "epochCount");
     if (daoEpochs === 0n) throw new Error("maintenance did not create a DAO reward epoch");
-    await mark("maintenance", { streamStartedAt: (await latestTime()).toString(), daoEpochs: daoEpochs.toString() });
+    await mark("maintenance", {
+      streamStartedAt: (await latestTime()).toString(),
+      daoEpochs: daoEpochs.toString(),
+      fallbackEvidence,
+    });
     return;
   }
   if (stage === "claims") {

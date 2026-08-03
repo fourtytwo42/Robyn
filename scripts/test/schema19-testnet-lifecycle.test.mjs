@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const source = await readFile("scripts/run-schema19-testnet-lifecycle.mjs", "utf8");
+const source = await readFile(
+  "scripts/run-schema19-testnet-lifecycle.mjs",
+  "utf8",
+);
 
 test("Schema-19 lifecycle is LAN-only, immutable-release-bound, and restart safe", () => {
   for (const pattern of [
@@ -14,7 +17,8 @@ test("Schema-19 lifecycle is LAN-only, immutable-release-bound, and restart safe
     /unresolved signed intent; automatic replay is prohibited/,
     /submission is ambiguous; manual reconciliation required/,
     /would breach the fixed Testnet reserve/,
-  ]) assert.match(source, pattern);
+  ])
+    assert.match(source, pattern);
   assert.doesNotMatch(source, /alchemy\.com|automatic fallback/i);
 });
 
@@ -26,7 +30,10 @@ test("Schema-19 lifecycle starts Public without bootstrap or a live activation v
 
 test("Schema-19 lifecycle covers three assets, user-driven maintenance, and all pull claims", () => {
   assert.match(source, /weights: \[4_000, 3_000, 3_000\]/);
-  assert.match(source, /three-asset lifecycle requires two stock routes plus WETH/);
+  assert.match(
+    source,
+    /three-asset lifecycle requires two stock routes plus WETH/,
+  );
   for (const action of [
     "swapExactNativeForAsset",
     "swapExactAssetForNative",
@@ -39,9 +46,20 @@ test("Schema-19 lifecycle covers three assets, user-driven maintenance, and all 
     "pauseLaunches",
     "pauseConversions",
     "disableRoute",
-  ]) assert.match(source, new RegExp(`"${action}"`));
+  ])
+    assert.match(source, new RegExp(`"${action}"`));
   assert.match(source, /did not advance one deterministic task per call/);
   assert.match(source, /reward release is not complete/);
+  assert.match(
+    source,
+    /controlled route did not enter objective deviation failure/,
+  );
+  assert.match(source, /user-buy-with-failed-maintenance/);
+  assert.match(source, /failed maintenance did not preserve the user trade/);
+  assert.match(source, /failed leg did not record observation/);
+  assert.match(source, /did not complete and reset WETH fallback/);
+  assert.match(source, /fixture-unwind/);
+  assert.match(source, /testFailureFixture/);
 });
 
 test("Schema-19 lifecycle proves unwind, supply, principal, allowance, solvency, and allocation", () => {

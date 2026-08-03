@@ -33,8 +33,8 @@ test("Testnet input uses LAN-only live runtime and route reads", () => {
 
 test("Testnet profile is accelerated but gas policy remains qualified", () => {
   assert.match(source, /rewardDuration: 600/);
-  assert.match(source, /failureObservationSpacing: 300/);
-  assert.match(source, /fallbackDelay: 1200/);
+  assert.match(source, /failureObservationSpacing: 60/);
+  assert.match(source, /fallbackDelay: 180/);
   assert.match(source, /targetGraduationNative: "10000000000000000"/);
   assert.match(source, /maximumCurvePurchase: "1000000000000000"/);
   assert.match(source, /maintenanceTaskGas: 1500000/);
@@ -48,4 +48,6 @@ test("Testnet input uses fresh hook domain and exactly the required six routes",
   }
   assert.match(source, /symbol: "WETH"/);
   assert.match(source, /routes: routes.length/);
+  assert.match(source, /failureFixtureSymbol = "MSFT"/);
+  assert.match(source, /testFailureFixture: symbol === failureFixtureSymbol/);
 });

@@ -115,7 +115,8 @@ test("preparer is secret rejecting and chain-profile bound", async () => {
   assert.match(source, /deployment input contains forbidden field/);
   assert.match(source, /rewardDuration: 600/);
   assert.match(source, /rewardDuration: 3600/);
-  assert.match(source, /fallbackDelay: 1200/);
+  assert.match(source, /failureObservationSpacing: 60/);
+  assert.match(source, /fallbackDelay: 180/);
   assert.match(source, /fallbackDelay: 259200/);
   assert.match(source, /unqualified maintenance gas policy/);
   assert.match(source, /oracle hook CREATE2 prediction mismatch/);
@@ -206,8 +207,8 @@ test("preparer emits an exact accelerated Testnet deployment input", async () =>
         hookDomain: `0x${"33".repeat(32)}`,
         settings: {
           rewardDuration: 600,
-          failureObservationSpacing: 300,
-          fallbackDelay: 1200,
+          failureObservationSpacing: 60,
+          fallbackDelay: 180,
           targetGraduationNative: "10000000000000000",
           maximumCurvePurchase: "1000000000000000",
           maintenanceTaskGas: 1500000,

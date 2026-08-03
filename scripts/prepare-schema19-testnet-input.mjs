@@ -70,6 +70,7 @@ const routeAbi = parseAbi([
 ]);
 const routeRouter = getAddress(routeSource.contracts.assetRouter);
 const requiredSymbols = ["GOOGL", "MSFT", "NVDA", "SPCX", "SPY"];
+const failureFixtureSymbol = "MSFT";
 const sourceBySymbol = new Map(routeSource.assetRoutes.map((route) => [route.symbol, route]));
 const routes = [];
 for (const symbol of requiredSymbols) {
@@ -90,11 +91,14 @@ for (const symbol of requiredSymbols) {
     hooks: route.hooks,
     minimumLiquidity: route.minimumLiquidity.toString(),
     maximumNativeInput: route.maximumNativeInput.toString(),
-    referenceTick: route.referenceTick,
-    maximumReferenceTickDeviation: route.maximumReferenceTickDeviation,
+    referenceTick:
+      symbol === failureFixtureSymbol ? route.spotTick : route.referenceTick,
+    maximumReferenceTickDeviation:
+      symbol === failureFixtureSymbol ? 1 : route.maximumReferenceTickDeviation,
     enforceReferencePrice: route.enforceReferencePrice,
     verificationClass: route.verificationClass,
     enabled: true,
+    testFailureFixture: symbol === failureFixtureSymbol,
   });
 }
 const wethStatus = await client.readContract({
@@ -141,8 +145,8 @@ const result = {
   hookDomain: keccak256(stringToHex("ROByn Schema-19 Testnet")),
   settings: {
     rewardDuration: 600,
-    failureObservationSpacing: 300,
-    fallbackDelay: 1200,
+    failureObservationSpacing: 60,
+    fallbackDelay: 180,
     targetGraduationNative: "10000000000000000",
     maximumCurvePurchase: "1000000000000000",
     maintenanceTaskGas: 1500000,

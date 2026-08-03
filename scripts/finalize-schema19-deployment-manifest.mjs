@@ -102,6 +102,7 @@ const assetRoutes = input.routes.map((route) => ({
   referenceTick: route.referenceTick ?? null,
   maximumReferenceTickDeviation: route.maximumReferenceTickDeviation ?? null,
   verificationClass: route.verificationClass,
+  testFailureFixture: route.testFailureFixture === true,
 }));
 const result = {
   schemaVersion: 19,

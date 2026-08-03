@@ -90,8 +90,8 @@ const expected =
       }
     : {
         rewardDuration: 600,
-        failureObservationSpacing: 300,
-        fallbackDelay: 1200,
+        failureObservationSpacing: 60,
+        fallbackDelay: 180,
         targetGraduationNative: "10000000000000000",
         maximumCurvePurchase: "1000000000000000",
       };
@@ -204,6 +204,10 @@ const result = {
     symbols: input.routes.map((route) => route.symbol),
     assets: routes.assets,
     configurationCalldata: routes.configurationCalldata,
+    testFailureFixture:
+      input.chainId === 46630
+        ? input.routes.find((route) => route.testFailureFixture === true) ?? null
+        : null,
   },
 };
 const serialized = `${JSON.stringify(result, null, 2)}\n`;
