@@ -15,6 +15,10 @@
 - Replacement fast run `20260803-schema19-fast-02` for `8a26c70` is also permanently failed and preserved: line coverage passed at 90.14%, while branch coverage improved to 75.56% but remained below 80%.
 - The second focused branch increment adds fee-router binding/pause/per-launch settlement rejection, vault conversion admission and attribution boundaries, claims-router invalid-token rejection, and coordinator Paused/Canary creation rejection.
 - Safety: Mainnet remains Schema-18 and must not be mutated until Schema-19 qualification, exact replacement-manifest sealing, and explicit hash authorization. Do not reuse Schema-18 launches, journals, addresses, or databases.
+- Replacement fast run `20260803-schema19-fast-03` for `3333344` is permanently failed and preserved: line coverage reached 90.61%, while branch coverage reached 78.16% and remained below 80%.
+- Commit `12c9c4a4db9035819a25eef774be5ac68898ae5f` adds the remaining surgical branch cases, makes treasury settlement pull-based, and prevents guardian-supplied labels from manufacturing fallback observations.
+- Full regression passes 721 Foundry tests with zero failures and one protected fork skip. Mainnet and Testnet remain untouched.
+- Follow-up: run a fresh fast gate on the next clean documentation-bound SHA; if 90/80 passes, run the complete deep gate before Testnet work.
 
 ### 2026-08-03 - Schema-19 implementation started
 
@@ -32,6 +36,11 @@
 
 
 ## Active Handoff
+- Schema-19 is the active development handoff on `codex/schema19-user-driven-fees` in `/home/hendo420/Robyn-schema19`. Code commit `12c9c4a` passes 721 Foundry tests with one protected fork skip.
+- Fast torture attempts 01 through 03 are permanently failed evidence; the latest reached 90.61% lines and 78.16% branches. Never relabel or reuse those runs.
+- Treasury settlement is now pull-based: maintenance makes the exact 5% assignment claimable, and the treasury pays for its own withdrawal. Creator, DAO, holder, and treasury custody remain pull-oriented.
+- Only directly observed pool initialization, liquidity, reference-deviation, and protected-quote failures advance fallback. A guardian-supplied stale-oracle label alone cannot manufacture the three-observation history.
+- Mainnet remains Schema-18. Do not deploy, retire Schema-18, or mutate Mainnet until Devnet, focused Testnet, exact fork, funding, sealed replacement manifest, and explicit exact-hash authorization all pass.
 - Route-governance tooling must bind current policy hash `ec5c8f9c...` and the immutable route-qualification policy hash `de5d61f...` separately. Policy v2 changed canonical decimal metadata only; the 65-receipt route execution evidence remains sealed and unmodified.
 - Signed production release `mainnet-prod-20260803-2e91482` is live and browser-accepted. It serves Schema-18 asset policy v2, Chainlink references, pool-implied prices, precise route readiness, canonical symbols, and six-decimal USDG pricing from the release-bound manifest.
 - Policy-v2 application manifest is sealed at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/application-policy-v2-242b635/deployments-4663-mainnet.json`, SHA-256 `26772d351a6b5599b659145e4a74e2d93c7dff8f2f33f59226faa3aefe9f1ee8`.
