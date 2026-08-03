@@ -1,5 +1,12 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 Testnet application releases stop requalifying frozen contracts
+
+- Context: The scoped-indexer correction changed application and manifest code only, but the protected Testnet builder still ran the complete Foundry suite and compiled the frozen protocol again in its clean room.
+- Decision: Testnet application releases now fail closed against `config/schema19-contract-freeze.json`, run the affected service/script/indexer gates, omit the keeper, and produce two independently built runtime trees with identical checksums. The builder contains no protocol `forge build`, `forge test`, or broad `pnpm test` invocation.
+- Verification: Contract-freeze, all service tests, the scoped-indexer unit and isolated Anvil noise/restart proof, Schema-19 deployment/input/release tests, typecheck, lint, Bash syntax, ShellCheck, and the release-policy regression pass. The isolated indexer fixture compiles only its dedicated test emitter; the qualified Schema-19 protocol closure is neither compiled nor retested.
+- Follow-up: Commit/push, build the corrected immutable Testnet release, promote it into a third fresh Schema-19 database, and require one launch, five dynamic contracts, one pool ID, zero lag, direct-state equality, and responsive browser acceptance.
+
 ### 2026-08-03 - Schema-19 Testnet v4 projection identity corrected
 
 - Context: Corrected release `schema19-4c8dd52` promoted successfully into fresh database `robyn_testnet_schema19_96800800_4c8dd52`, but acceptance inspection found zero projected launches despite the canonical launch log being retained and direct onchain verification confirming one graduated launch.

@@ -23,3 +23,19 @@ test("Schema-19 Testnet release verifier persists qualified state evidence", asy
     /verify-schema19-qualified-testnet\.mjs "\$manifest"\s*>/,
   );
 });
+
+test("Schema-19 application releases attest frozen contracts without protocol recompilation", async () => {
+  const source = await readFile("scripts/build-testnet-release.sh", "utf8");
+
+  assert.match(source, /verify-schema19-contract-freeze\.mjs/);
+  assert.match(source, /test:testnet-application-scope/);
+  assert.match(source, /contractMode:\"frozen-schema19\"/);
+  assert.match(source, /two-build-reproducibility/);
+  assert.match(
+    source,
+    /cmp \"\$staging\/release-evidence\/runtime-build-a\.sha256\"/,
+  );
+  assert.doesNotMatch(source, /pnpm test(?:\s|$)/m);
+  assert.doesNotMatch(source, /forge (?:build|test)/);
+  assert.doesNotMatch(source, /--filter @robyn\/keeper/);
+});
