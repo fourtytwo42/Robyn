@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-03 - Corrected Schema-19 qualification and focused lifecycle tooling
+
+- Context: The administrative-route fallback correction changed bytecode after the first Schema-19 qualification, so the earlier candidate and Testnet deployment evidence cannot authorize a live deployment.
+- Decision: Freeze corrected contract candidate `54e4c5d728616371373d945dd0e6c887ab87102c`; bind Universal Router as an independently hashed external dependency; finalize fresh deployments into an active Schema-19 scoped-indexer manifest; and use a restart-safe three-asset lifecycle runner with Public-at-construction state, deterministic user-funded maintenance, pull claims, bounded unwind, shutdown, and reconciliation.
+- Files: `scripts/finalize-schema19-deployment-manifest.mjs`, `scripts/run-schema19-testnet-lifecycle.mjs`, deployment/input preparation, and focused tests.
+- Tests: Fresh fast torture run `20260803-schema19-fast-06` passed on exact corrected candidate `54e4c5d`. Thirty Schema-19 deployment, verifier, finalizer, funding, indexing-policy, lifecycle, and restart-policy tests pass. The complete deep gate is running on the same exact candidate and must not be duplicated.
+- Result: No live Testnet or Mainnet transaction occurred. Mainnet remains Schema-18; Alchemy remains probe-only.
+- Follow-up: Require the complete corrected deep gate, security and reproducibility refresh, regenerate a clean-pushed exact Testnet deployment/rehearsal/funding bundle, then execute the live focused Testnet deployment and lifecycle only if every reserve and LAN-only gate passes.
+
 ### 2026-08-03 - Administrative route labels cannot advance fallback
 
 - Context: While designing the live three-asset Testnet lifecycle, an adversarial review found that a guardian could disable a route with the same reason hash used for an objective thin-liquidity failure.
@@ -91,8 +100,10 @@
 
 ## Active Handoff
 - A pre-Testnet adversarial review found and fixed an administrative-label fallback edge case in `RobynNativeBasketVaultV2`. The previous `4a39cf4` contract candidate is superseded and must not be deployed; the corrected candidate requires fresh fast/deep torture and reproducibility evidence.
+- Corrected candidate `54e4c5d728616371373d945dd0e6c887ab87102c` passed fresh fast torture run `20260803-schema19-fast-06`; deep run `20260803-schema19-deep-02` is active in `/home/hendo420/Robyn-schema19-qual-54e4` and must not be duplicated.
+- Operational branch `codex/schema19-user-driven-fees` now binds Universal Router, produces a fail-closed active Schema-19 manifest, and contains the restart-safe focused three-asset lifecycle runner. Regenerate all local Testnet deployment evidence after the tooling is committed and clean; predecessor addresses and receipts are diagnostic only.
 - The pinned chain-46630 local-fork deployment from Testnet block `96760889` passed with 36/36 unique successful transactions and independent postdeployment verification. Its evidence is under `/home/hendo420/robyn-evidence/schema19-testnet/preflight-cada1cd-01`. Live Testnet remains unchanged.
-- Schema-19 is the active development handoff on `codex/schema19-user-driven-fees` in `/home/hendo420/Robyn-schema19`. Exact contract candidate `4a39cf470f0870c1757b2ead8730bf0209eabbc4` passed fast and deep Devnet torture, including 20 invariant seeds, 50 simulation seeds, 100,000 actions, isolated broadcast, 90.81% lines, and 80.14% branches.
+- Schema-19 is the active development handoff on `codex/schema19-user-driven-fees` in `/home/hendo420/Robyn-schema19`. Exact active contract candidate is `54e4c5d728616371373d945dd0e6c887ab87102c`; the old `4a39cf4` qualification is archived and non-deployable.
 - Fast torture attempts 01 through 04 are permanently failed evidence and must never be relabeled. Fast run 05 and deep run 01 on exact SHA `4a39cf4` passed and are checksum-sealed under `/home/hendo420/robyn-evidence/devnet-torture/4a39cf470f0870c1757b2ead8730bf0209eabbc4`.
 - Treasury settlement is now pull-based: maintenance makes the exact 5% assignment claimable, and the treasury pays for its own withdrawal. Creator, DAO, holder, and treasury custody remain pull-oriented.
 - Only directly observed pool initialization, liquidity, reference-deviation, and protected-quote failures advance fallback. A guardian-supplied stale-oracle label alone cannot manufacture the three-observation history.

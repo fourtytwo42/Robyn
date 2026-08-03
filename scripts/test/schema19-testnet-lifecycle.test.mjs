@@ -1,0 +1,53 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+const source = await readFile("scripts/run-schema19-testnet-lifecycle.mjs", "utf8");
+
+test("Schema-19 lifecycle is LAN-only, immutable-release-bound, and restart safe", () => {
+  for (const pattern of [
+    /const CHAIN_ID = mainnetFork \? 4663 : 46630/,
+    /ROBYN_SCHEMA19_TESTNET_RELEASE_SHA/,
+    /exact clean pushed tooling/,
+    /gateway\.fallbackTrafficAuthorized !== false/,
+    /unresolved signed intent; automatic replay is prohibited/,
+    /submission is ambiguous; manual reconciliation required/,
+    /would breach the fixed Testnet reserve/,
+  ]) assert.match(source, pattern);
+  assert.doesNotMatch(source, /alchemy\.com|automatic fallback/i);
+});
+
+test("Schema-19 lifecycle starts Public without bootstrap or a live activation vote", () => {
+  assert.match(source, /requires Schema-19 Public mode/);
+  assert.match(source, /requires active Schema-19 conversions/);
+  assert.doesNotMatch(source, /executeBootstrapStep|bootstrap1|bootstrap2/);
+});
+
+test("Schema-19 lifecycle covers three assets, user-driven maintenance, and all pull claims", () => {
+  assert.match(source, /weights: \[4_000, 3_000, 3_000\]/);
+  assert.match(source, /three-asset lifecycle requires two stock routes plus WETH/);
+  for (const action of [
+    "swapExactNativeForAsset",
+    "swapExactAssetForNative",
+    "createLaunch",
+    "setCreatorFeeSplit",
+    "processRewards",
+    "claimAll",
+    "claimCreatorFees",
+    "claimFor",
+    "pauseLaunches",
+    "pauseConversions",
+    "disableRoute",
+  ]) assert.match(source, new RegExp(`"${action}"`));
+  assert.match(source, /did not advance one deterministic task per call/);
+  assert.match(source, /reward release is not complete/);
+});
+
+test("Schema-19 lifecycle proves unwind, supply, principal, allowance, solvency, and allocation", () => {
+  assert.match(source, /recovered less than 75% of gross principal/);
+  assert.match(source, /50\/25\/20\/5 conservation failed/);
+  assert.match(source, /locked principal changed/);
+  assert.match(source, /fixed supply changed/);
+  assert.match(source, /residual allowance/);
+  assert.match(source, /fee router is not exactly solvent/);
+});
