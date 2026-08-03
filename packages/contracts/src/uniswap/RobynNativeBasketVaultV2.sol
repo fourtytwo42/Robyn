@@ -298,6 +298,15 @@ contract RobynNativeBasketVaultV2 is ReentrancyGuard {
             return (false, legIndex, false);
         }
 
+        // Administrative state is never evidence that the underlying route
+        // objectively failed. In particular, a guardian-supplied disable
+        // reason must not be able to imitate a pool, quote, or oracle failure
+        // and advance the irreversible fallback clock.
+        if (assetRouter.conversionsPaused()) return (false, legIndex, false);
+        RobynV4AssetRouter.ExecutionRoute memory execution =
+            assetRouter.executionRoute(address(selected.asset));
+        if (!execution.enabled) return (false, legIndex, false);
+
         RobynV4AssetRouter.RouteStatus memory status =
             assetRouter.routeStatus(address(selected.asset));
         if (!status.ready) {

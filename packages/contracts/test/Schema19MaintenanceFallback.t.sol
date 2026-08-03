@@ -231,13 +231,13 @@ contract Schema19MaintenanceFallbackTest is RobynV4NativeProtocolTest {
         (, RobynNativeBasketVaultV2 vault,) =
             coordinator.createLaunch(_request(keccak256("schema19-stale-oracle")));
         vault.recordFees{ value: 0.01 ether }();
-        bytes32 staleOracle = keccak256("STALE_REFERENCE_PRICE");
+        bytes32 manufacturedObjectiveReason = keccak256("INSUFFICIENT_LIQUIDITY");
 
         vm.prank(GUARDIAN);
-        assetRouter.disableRoute(address(basketAsset), staleOracle);
+        assetRouter.disableRoute(address(basketAsset), manufacturedObjectiveReason);
         RobynV4AssetRouter.RouteStatus memory status = assetRouter.routeStatus(address(basketAsset));
         assertFalse(status.ready);
-        assertEq(status.reason, staleOracle);
+        assertEq(status.reason, manufacturedObjectiveReason);
 
         vault.processNextLeg();
         RobynNativeBasketVaultV2.BasketLeg memory failedLeg = vault.leg(0);

@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-03 - Administrative route labels cannot advance fallback
+
+- Context: While designing the live three-asset Testnet lifecycle, an adversarial review found that a guardian could disable a route with the same reason hash used for an objective thin-liquidity failure.
+- Decision: Before inspecting route health, each vault leg now returns without recording a failure whenever conversions are globally paused or the execution route is administratively disabled. Pool initialization, live liquidity, reference deviation, and protected-quote failures still count when the route is enabled.
+- Tests: The adversarial test supplies the exact `INSUFFICIENT_LIQUIDITY` hash through guardian disable and proves zero observations, zero failure reason, and fully preserved pending value. The 49-test focused lifecycle suite and complete 721-test Foundry regression pass.
+- Result: This is a contract-bytecode correction discovered before live Schema-19 Testnet deployment. The previous `4a39cf4` candidate and its torture evidence remain archived but are no longer deployable.
+- Follow-up: Freeze the corrected contract commit, update the artifact-derived closure, rerun fast then complete deep qualification without weakening any gate, and only then regenerate Testnet deployment evidence.
+
 ### 2026-08-03 - Schema-19 pinned Testnet-fork deployment passes
 
 - Context: The first local broadcast invocation never submitted because Foundry resolved the script/input path incorrectly; the pinned chain-46630 Anvil fork remained unchanged.
@@ -82,6 +90,7 @@
 - Follow-up: Commit/push, generate the exact protected input, prepare the deterministic deployment manifest, run a LAN-sourced isolated-fork broadcast/verification rehearsal, and measure the complete deployment gas before deciding whether live Testnet funding passes.
 
 ## Active Handoff
+- A pre-Testnet adversarial review found and fixed an administrative-label fallback edge case in `RobynNativeBasketVaultV2`. The previous `4a39cf4` contract candidate is superseded and must not be deployed; the corrected candidate requires fresh fast/deep torture and reproducibility evidence.
 - The pinned chain-46630 local-fork deployment from Testnet block `96760889` passed with 36/36 unique successful transactions and independent postdeployment verification. Its evidence is under `/home/hendo420/robyn-evidence/schema19-testnet/preflight-cada1cd-01`. Live Testnet remains unchanged.
 - Schema-19 is the active development handoff on `codex/schema19-user-driven-fees` in `/home/hendo420/Robyn-schema19`. Exact contract candidate `4a39cf470f0870c1757b2ead8730bf0209eabbc4` passed fast and deep Devnet torture, including 20 invariant seeds, 50 simulation seeds, 100,000 actions, isolated broadcast, 90.81% lines, and 80.14% branches.
 - Fast torture attempts 01 through 04 are permanently failed evidence and must never be relabeled. Fast run 05 and deep run 01 on exact SHA `4a39cf4` passed and are checksum-sealed under `/home/hendo420/robyn-evidence/devnet-torture/4a39cf470f0870c1757b2ead8730bf0209eabbc4`.
