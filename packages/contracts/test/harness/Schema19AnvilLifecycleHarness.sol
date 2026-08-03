@@ -59,7 +59,7 @@ contract Schema19AnvilLifecycleHarness {
         productionDeployer = new RobynNativeLaunchDeployerV4(1 hours);
         acceleratedDeployer = new RobynNativeLaunchDeployerV4(10 minutes);
         maintenance = new Schema19BroadcastMaintenance(address(this));
-        claimsRouter = new RobynClaimsRouter(maintenance, maintenance.taskGasLimit());
+        claimsRouter = new RobynClaimsRouter(maintenance, maintenance.taskGasLimit() + 50_000);
     }
 
     function initialize() external {

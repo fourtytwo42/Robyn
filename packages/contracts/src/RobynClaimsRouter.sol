@@ -8,6 +8,8 @@ import {IRobynMaintenanceCoordinator} from "./interfaces/IRobynMaintenanceCoordi
 /// @notice Holder-paid claim entry point that never lets maintenance failure undo a claim.
 contract RobynClaimsRouter is ReentrancyGuard {
     string public constant CONTRACT_VERSION = "1.0.0-schema19";
+    uint256 public constant MAINTENANCE_CALL_OVERHEAD = 50_000;
+    uint256 public constant MAXIMUM_MAINTENANCE_TASK_GAS = 2_000_000;
 
     error InvalidConfiguration();
 
@@ -19,9 +21,13 @@ contract RobynClaimsRouter is ReentrancyGuard {
     );
 
     constructor(IRobynMaintenanceCoordinator maintenanceCoordinator_, uint256 maintenanceCallGasLimit_) {
+        uint256 taskGas = maintenanceCoordinator_.taskGasLimit();
         if (
             address(maintenanceCoordinator_) == address(0) || address(maintenanceCoordinator_).code.length == 0
-                || maintenanceCallGasLimit_ < 50_000
+                || taskGas < 100_000 || taskGas > MAXIMUM_MAINTENANCE_TASK_GAS
+                || maintenanceCallGasLimit_ < taskGas + MAINTENANCE_CALL_OVERHEAD
+                || maintenanceCallGasLimit_
+                    > MAXIMUM_MAINTENANCE_TASK_GAS + MAINTENANCE_CALL_OVERHEAD
         ) revert InvalidConfiguration();
         maintenanceCoordinator = maintenanceCoordinator_;
         maintenanceCallGasLimit = maintenanceCallGasLimit_;

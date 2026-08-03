@@ -25,7 +25,7 @@ contract Schema19GasExhaustingMaintenance is IRobynMaintenanceCoordinator {
 contract Schema19MaintenanceFallbackTest is RobynV4NativeProtocolTest {
     function testSchema19CoordinatorStartsPublicOnlyWithBoundMaintenance() public {
         RobynMaintenanceCoordinator maintenance =
-            new RobynMaintenanceCoordinator(feeRouter, assetRouter, 500_000);
+            new RobynMaintenanceCoordinator(feeRouter, assetRouter, 1_500_000);
         feeRouter.bindMaintenanceCoordinator(address(maintenance));
         RobynDaoRewardDistributor daoRewards =
             new RobynDaoRewardDistributor(IVotes(address(daoToken)), 1 hours);
@@ -72,7 +72,7 @@ contract Schema19MaintenanceFallbackTest is RobynV4NativeProtocolTest {
 
     function testSchedulerVisitsEveryTaskAndSettlesAssignedLiabilities() public {
         RobynMaintenanceCoordinator maintenance =
-            new RobynMaintenanceCoordinator(feeRouter, assetRouter, 500_000);
+            new RobynMaintenanceCoordinator(feeRouter, assetRouter, 1_500_000);
         feeRouter.bindMaintenanceCoordinator(address(maintenance));
         RobynDaoRewardDistributor daoRewards =
             new RobynDaoRewardDistributor(IVotes(address(daoToken)), 1 hours);
@@ -95,7 +95,7 @@ contract Schema19MaintenanceFallbackTest is RobynV4NativeProtocolTest {
 
         assertEq(maintenance.nextTask(address(token)), initialTask, "scheduler wrapped");
         assertEq(maintenance.attemptCount(address(token)), initialAttempts + maintenance.TASK_COUNT());
-        assertTrue(maintenance.successCount(address(token)) >= 3, "assigned liabilities settled");
+        assertTrue(maintenance.successCount(address(token)) >= 4, "assigned liabilities converted");
         assertEq(feeRouter.totalBasketNativeLiability(), 0, "basket settled");
         assertEq(feeRouter.totalDaoNativeLiability(), 0, "DAO settled");
         assertEq(feeRouter.totalTreasuryNativeLiability(), 0, "treasury settled");

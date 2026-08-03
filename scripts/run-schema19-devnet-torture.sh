@@ -272,6 +272,14 @@ for ((offset=0; offset<invariant_seed_count; ++offset)); do
       FOUNDRY_FUZZ_SEED="$current_seed" \
       forge test --root packages/contracts \
         --match-path test/RobynV4ProtocolInvariant.t.sol -vv
+  run_phase "invariant_schema19_maintenance_${offset}" \
+    "Schema-19 maintenance invariants runs=${invariant_runs} depth=${invariant_depth} seed=${current_seed}" \
+    env FOUNDRY_INVARIANT_RUNS="$invariant_runs" \
+      FOUNDRY_INVARIANT_DEPTH="$invariant_depth" \
+      FOUNDRY_FUZZ_SEED="$current_seed" \
+      forge test --root packages/contracts \
+        --match-path test/Schema19MaintenanceInvariant.t.sol -vv
+
 done
 
 run_phase economic_simulation \

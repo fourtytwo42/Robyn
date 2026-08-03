@@ -92,7 +92,7 @@ contract RobynMaintenanceCoordinator is ReentrancyGuard {
             address(feeRouter_) == address(0) || address(assetRouter_) == address(0)
                 || address(feeRouter_).code.length == 0 || address(assetRouter_).code.length == 0
                 || address(feeRouter_.assetRouter()) != address(assetRouter_)
-                || taskGasLimit_ < 100_000
+                || taskGasLimit_ < 100_000 || taskGasLimit_ > 2_000_000
         ) revert InvalidConfiguration();
         feeRouter = feeRouter_;
         assetRouter = assetRouter_;

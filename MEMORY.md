@@ -8,6 +8,8 @@
 - Commands/tests: Full `forge test` passed 614/614 with one protected fork skip; API/web typecheck, web lint, indexer build/policy tests, torture-tooling tests, artifact-derived scope generation, and the eight-receipt isolated Schema-19 Anvil claim/maintenance rehearsal passed.
 - Result: Contract/application development checkpoint is green. No Testnet or Mainnet transaction occurred.
 - Follow-up: Extend Schema-19-specific stateful invariants and the 512-wallet simulation, pass 90/80 coverage and reproducibility/security gates, then deploy a fresh Schema-19 Testnet stack only if the reserve-preserving funding preflight passes.
+- 2026-08-03 verification update: The Schema-19 invariant handler and 512-wallet/32-launch/25,000-action simulation now exercise user-driven maintenance. A 500k task envelope was proven insufficient for basket conversion; contracts now fail closed above 2m or below 100k, claims require 50k forwarding overhead, and the qualified test envelope is 1.5m task plus 50k call overhead.
+- Full regression after the gas-policy correction passes 660 Foundry tests with zero failures and one protected fork skip. Fast/deep torture evidence has not yet been generated for the new SHA.
 - Safety: Mainnet remains Schema-18 and must not be mutated until Schema-19 qualification, exact replacement-manifest sealing, and explicit hash authorization. Do not reuse Schema-18 launches, journals, addresses, or databases.
 
 ### 2026-08-03 - Schema-19 implementation started

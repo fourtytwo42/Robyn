@@ -4,7 +4,7 @@ import test from "node:test";
 
 const runner = readFileSync("scripts/run-schema19-devnet-torture.sh", "utf8");
 const broadcast = readFileSync(
-  "scripts/run-schema15-anvil-broadcast.mjs",
+  "scripts/run-schema19-anvil-broadcast.mjs",
   "utf8",
 );
 const validator = readFileSync(
@@ -29,6 +29,7 @@ test("Schema-19 torture runner is isolated, reproducible, and fail closed", () =
   assert.match(runner, /--port 28546/);
   assert.match(runner, /--chain-id 31337/);
   assert.match(runner, /\/tmp\/robyn-schema19-torture\.\*/);
+  assert.match(runner, /invariant_schema19_maintenance_/);
   assert.match(runner, /fuzz_runs=1024/);
   assert.match(runner, /fuzz_runs=10000/);
   assert.match(runner, /invariant_runs=1024/);
@@ -48,7 +49,9 @@ test("Schema-19 torture runner is isolated, reproducible, and fail closed", () =
 test("broadcast sequence cannot leave isolated Anvil", () => {
   assert.match(broadcast, /rpcUrl !== "http:\/\/127\.0\.0\.1:28546"/);
   assert.match(broadcast, /getChainId\(\)\) !== 31337/);
-  assert.match(broadcast, /disposable development key/);
+  assert.match(broadcast, /Published disposable Anvil keys/);
+  assert.match(broadcast, /holder-claim-survives-maintenance-failure/);
+  assert.match(broadcast, /permissionless-user-funded-maintenance/);
   assert.doesNotMatch(broadcast, /ALCHEMY|ROBYN_TESTNET|ROBYN_MAINNET/);
 });
 

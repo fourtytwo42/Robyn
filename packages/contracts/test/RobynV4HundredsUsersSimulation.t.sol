@@ -2,6 +2,9 @@
 pragma solidity 0.8.30;
 
 import { TimelockController } from "@openzeppelin/contracts/governance/TimelockController.sol";
+import { RobynClaimsRouter } from "../src/RobynClaimsRouter.sol";
+import { RobynMaintenanceCoordinator } from "../src/RobynMaintenanceCoordinator.sol";
+import { IRobynMaintenanceCoordinator } from "../src/interfaces/IRobynMaintenanceCoordinator.sol";
 import { RobynLaunchToken } from "../src/RobynLaunchToken.sol";
 import { RobynTestnetGovernor } from "../src/dao/RobynTestnetGovernor.sol";
 import { RobynNativeBasketVaultV2 } from "../src/uniswap/RobynNativeBasketVaultV2.sol";
@@ -34,6 +37,8 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
     uint256 private actionCount;
     uint256 private seedCount;
     uint256 private baseSeed;
+    RobynMaintenanceCoordinator private maintenance;
+    RobynClaimsRouter private claimsRouter;
 
     V4TestAsset[] private assets;
     RobynLaunchToken[] private tokens;
@@ -42,6 +47,10 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
 
     function setUp() public override {
         super.setUp();
+        maintenance = new RobynMaintenanceCoordinator(feeRouter, assetRouter, 1_500_000);
+        claimsRouter = new RobynClaimsRouter(
+            IRobynMaintenanceCoordinator(address(maintenance)), 1_550_000
+        );
         launchCount = vm.envOr("ROBYN_TORTURE_LAUNCH_COUNT", uint256(32));
         actionCount = vm.envOr("ROBYN_TORTURE_ACTION_COUNT", uint256(25_000));
         seedCount = vm.envOr("ROBYN_TORTURE_SEED_COUNT", uint256(20));
@@ -83,6 +92,7 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
     }
 
     function testNativeV4Campaign512Wallets32Launches25000Actions20Seeds() public {
+        feeRouter.bindMaintenanceCoordinator(address(maintenance));
         uint256 successfulActions;
         for (uint256 seed; seed < seedCount; ++seed) {
             for (uint256 offset; offset < actionCount / seedCount; ++offset) {
@@ -143,21 +153,14 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
     function _convertAllBasketRewards() private {
         for (uint256 launchIndex; launchIndex < launchCount; ++launchIndex) {
             RobynNativeBasketVaultV2 vault = vaults[launchIndex];
-            for (uint256 legIndex; legIndex < 3; ++legIndex) {
-                RobynNativeBasketVaultV2.BasketLeg memory selected = vault.leg(legIndex);
-                if (selected.pendingNative != 0) {
-                    (uint256 quote,) = assetRouter.quoteNativeToAsset(
-                        address(selected.asset), uint128(selected.pendingNative)
-                    );
-                    vault.convertLeg(
-                        legIndex,
-                        selected.pendingNative,
-                        (quote * 99) / 100,
-                        block.timestamp + 1 hours
-                    );
-                }
+            // Permissionless calls use the same one-task scheduler as user actions.
+            // Six complete cycles settle newly assigned liabilities and visit each
+            // of the three independent basket legs without a privileged keeper.
+            for (uint256 task; task < uint256(maintenance.TASK_COUNT()) * 6; ++task) {
+                maintenance.processRewards(address(tokens[launchIndex]));
             }
             assertEq(vault.totalPendingNative(), 0);
+            assertGt(maintenance.attemptCount(address(tokens[launchIndex])), 0);
         }
     }
 
@@ -170,11 +173,9 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
         for (uint256 index; index < 128; ++index) {
             address actor = _actor(index);
             uint256 launchIndex = index % launchCount;
-            for (uint256 legIndex; legIndex < 3; ++legIndex) {
-                if (tokens[launchIndex].withdrawableRewardOf(actor, legIndex) != 0) {
-                    vm.prank(actor);
-                    tokens[launchIndex].claim(legIndex);
-                }
+            if (_claimableRewards(tokens[launchIndex], actor) != 0) {
+                vm.prank(actor);
+                claimsRouter.claimAll(tokens[launchIndex]);
             }
             if (daoToken.claimableRewardOf(actor) != 0) {
                 vm.prank(actor);
@@ -249,6 +250,10 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
             cumulativeFees += account.cumulativeNativeFees;
             basketFees += vaults[index].totalFeesReceived();
             creatorFees += account.cumulativeCreatorNative;
+            assertGt(maintenance.attemptCount(address(tokens[index])), 0);
+            assertLe(
+                maintenance.successCount(address(tokens[index])),
+                maintenance.attemptCount(address(tokens[index])));
         }
         assertEq(
             cumulativeFees,
@@ -281,6 +286,16 @@ contract RobynV4HundredsUsersSimulationTest is RobynV4NativeProtocolTest {
             userSalt: keccak256(abi.encode("sherwood-assurance", index)),
             expectedGraduationProfileVersion: 1
         });
+    }
+
+    function _claimableRewards(RobynLaunchToken token, address account)
+        private
+        view
+        returns (uint256 total)
+    {
+        for (uint256 index; index < token.rewardAssetCount(); ++index) {
+            total += token.withdrawableRewardOf(account, index);
+        }
     }
 
     function _actor(uint256 index) private pure returns (address) {

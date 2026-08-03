@@ -50,6 +50,16 @@
             "testGlobalConversionPauseNeverCountsAsLegFailure()",
             "testGuardianSealedOracleFailureCountsAsObjectiveObservation()"
           ]
+        },
+        {
+          "id": "stateful-maintenance-accounting",
+          "tests": [
+            "invariantSchema19FeeAllocationAndBackingRemainExact()",
+            "invariantSchema19BasketLegsConserveIndependentValue()",
+            "invariantSchema19RewardCustodyIsSolvent()",
+            "invariantSchema19MaintenanceIsBoundedAndLaunchLocal()",
+            "invariantSchema19SupplyAndBindingsRemainImmutable()"
+          ]
         }
       ]
     },

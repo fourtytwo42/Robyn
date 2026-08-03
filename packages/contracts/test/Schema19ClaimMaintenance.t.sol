@@ -45,7 +45,7 @@ contract Schema19ClaimMaintenanceTest {
     function testClaimSurvivesMaintenanceRevert() external {
         (RobynLaunchToken token, Schema19RewardAsset reward) = _fundedToken();
         Schema19RevertingMaintenance maintenance = new Schema19RevertingMaintenance();
-        RobynClaimsRouter router = new RobynClaimsRouter(maintenance, 100_000);
+        RobynClaimsRouter router = new RobynClaimsRouter(maintenance, 150_000);
         vm.warp(block.timestamp + 1 hours);
         vm.prank(HOLDER);
         (uint256 claimed, bool maintenanceCallSucceeded) = router.claimAll(token);
@@ -53,6 +53,20 @@ contract Schema19ClaimMaintenanceTest {
         require(!maintenanceCallSucceeded, "maintenance unexpectedly succeeded");
         require(reward.balanceOf(HOLDER) == claimed, "holder paid");
     }
+    function testClaimsRouterRejectsMismatchedGasPolicy() external {
+        Schema19RevertingMaintenance maintenance = new Schema19RevertingMaintenance();
+        try new RobynClaimsRouter(maintenance, 149_999) {
+            revert("undersized gas policy accepted");
+        } catch (bytes memory reason) {
+            require(reason.length >= 4, "missing selector");
+            bytes4 selector;
+            assembly ("memory-safe") {
+                selector := mload(add(reason, 0x20))
+            }
+            require(selector == RobynClaimsRouter.InvalidConfiguration.selector, "wrong selector");
+        }
+    }
+
 
     function _fundedToken() private returns (RobynLaunchToken token, Schema19RewardAsset reward) {
         reward = new Schema19RewardAsset();
