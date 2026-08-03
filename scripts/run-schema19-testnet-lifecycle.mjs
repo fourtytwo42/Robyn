@@ -859,7 +859,18 @@ const run = async () => {
         throw new Error("controlled failed-leg identity changed");
       }
       const fixtureAsset = checksum(fixture.address);
-      const fixtureIndex = 2n;
+      const legCount = Number(await read(vault, vaultAbi, "legCount"));
+      let fixtureIndex = null;
+      for (let index = 0; index < legCount; index += 1) {
+        const candidate = await read(vault, vaultAbi, "leg", [BigInt(index)]);
+        if (checksum(candidate.asset) === fixtureAsset) {
+          fixtureIndex = BigInt(index);
+          break;
+        }
+      }
+      if (fixtureIndex === null) {
+        throw new Error("controlled failed leg is absent from the launch vault");
+      }
       let fixtureLeg = await read(vault, vaultAbi, "leg", [fixtureIndex]);
       for (let attempt = 0; fixtureLeg.pendingNative === 0n && attempt < 18; attempt += 1) {
         await processMaintenance("maintenance", 1);

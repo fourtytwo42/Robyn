@@ -65,6 +65,8 @@ test("Schema-19 lifecycle covers three assets, user-driven maintenance, and all 
   assert.match(source, /user-buy-with-failed-maintenance/);
   assert.match(source, /failed maintenance did not preserve the user trade/);
   assert.match(source, /failed leg did not record observation/);
+  assert.match(source, /checksum\(candidate\.asset\) === fixtureAsset/);
+  assert.match(source, /controlled failed leg is absent from the launch vault/);
   assert.match(source, /did not complete and reset WETH fallback/);
   assert.match(source, /fixture-unwind/);
   assert.match(source, /testFailureFixture/);
