@@ -214,6 +214,15 @@ test("production updater follows authenticated asset redirects under the hardene
     ),
     "utf8",
   );
+  const tunnelService = readFileSync(
+    path.join(
+      repositoryRoot,
+      "infrastructure",
+      "systemd",
+      "robyn-production-tunnel.service",
+    ),
+    "utf8",
+  );
 
   assert.match(
     updater,
@@ -281,6 +290,10 @@ test("production updater follows authenticated asset redirects under the hardene
   assert.match(
     installer,
     /install -d -o root -g root -m 0751 \/var\/lib\/robyn/,
+  );
+  assert.match(
+    tunnelService,
+    /^ExecStart=\/usr\/bin\/cloudflared tunnel --no-autoupdate run --token \$\{TUNNEL_TOKEN\}$/m,
   );
 });
 
