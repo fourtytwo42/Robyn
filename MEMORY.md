@@ -46,6 +46,15 @@
 - Follow-up: Commit and push the application/tooling correction, run exact-SHA security and two-build reproducibility gates, then implement fresh Schema-19 Testnet deployment and funding tooling.
 
 
+### 2026-08-03 - Schema-19 deployment manifest tooling
+
+- Context: The qualified Schema-19 broadcaster had no active manifest preparer; existing preparation paths were archived Schema-18 bootstrap tooling.
+- Decision: Predict the exact 19 nonce-consuming deployment steps, bind the CREATE2 hook and constructor init-code hash, encode only approved v4/WETH route selectors, and enforce distinct accelerated-Testnet and production-Mainnet profiles.
+- Files: `scripts/lib/schema19-deployment.mjs`, `scripts/prepare-schema19-deployment.mjs`, `scripts/test/schema19-deployment.test.mjs`, and `package.json`.
+- Commands/tests: Five focused tests pass, including end-to-end preparation of an accelerated chain-46630 input. Formatting, lint, typecheck, and diff checks pass.
+- Result: Testnet is read-only preflighted at chain 46630 with healthy LAN RPC, exact reused 1-of-1 Safe/RDAO/Governor/one-hour Timelock state, deployer nonce 2683, and balance 0.057580513587846098 ETH. No transaction occurred.
+- Follow-up: Commit/push the preparer, add postdeployment verification and restart-safe focused-lifecycle tooling, rehearse locally from the current Testnet state, and calculate the reserve-preserving live budget before deployment.
+
 ## Active Handoff
 - Schema-19 is the active development handoff on `codex/schema19-user-driven-fees` in `/home/hendo420/Robyn-schema19`. Exact contract candidate `4a39cf470f0870c1757b2ead8730bf0209eabbc4` passed fast and deep Devnet torture, including 20 invariant seeds, 50 simulation seeds, 100,000 actions, isolated broadcast, 90.81% lines, and 80.14% branches.
 - Fast torture attempts 01 through 04 are permanently failed evidence and must never be relabeled. Fast run 05 and deep run 01 on exact SHA `4a39cf4` passed and are checksum-sealed under `/home/hendo420/robyn-evidence/devnet-torture/4a39cf470f0870c1757b2ead8730bf0209eabbc4`.
