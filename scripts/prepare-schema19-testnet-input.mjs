@@ -31,7 +31,7 @@ const toolingSha = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8"
 if (execFileSync("git", ["status", "--porcelain"], { encoding: "utf8" }).trim()) throw new Error("dirty Schema-19 checkout");
 const upstreamSha = execFileSync("git", ["rev-parse", "@{u}"], { encoding: "utf8" }).trim();
 if (toolingSha !== upstreamSha) throw new Error("unpushed Schema-19 tooling");
-const contractReleaseSha = "4a39cf470f0870c1757b2ead8730bf0209eabbc4";
+const contractReleaseSha = "54e4c5d728616371373d945dd0e6c887ab87102c";
 const rpcUrl = process.env.ROBYN_SCHEMA19_TESTNET_RPC_URL ?? "http://127.0.0.1:18548";
 const parsedRpc = new URL(rpcUrl);
 if (!["127.0.0.1", "localhost"].includes(parsedRpc.hostname)) throw new Error("Testnet input requires loopback LAN gateway");

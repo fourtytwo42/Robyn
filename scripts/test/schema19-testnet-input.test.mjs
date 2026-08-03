@@ -17,7 +17,7 @@ test("Testnet input is generated only from exact clean pushed identities", () =>
   assert.match(source, /chain 46630 manifests required/);
   assert.match(source, /dirty Schema-19 checkout/);
   assert.match(source, /unpushed Schema-19 tooling/);
-  assert.match(source, /4a39cf470f0870c1757b2ead8730bf0209eabbc4/);
+  assert.match(source, /54e4c5d728616371373d945dd0e6c887ab87102c/);
 });
 
 test("Testnet input uses LAN-only live runtime and route reads", () => {
