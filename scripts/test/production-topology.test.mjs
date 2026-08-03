@@ -23,6 +23,7 @@ const promotionScript = readFileSync(
 );
 const baseEnv = {
   ...process.env,
+  ROBYN_PRODUCTION_RELEASE_ROOT: "/opt/robyn/releases/candidate",
   ROBYN_MAINNET_MANIFEST: "/opt/robyn/current/deployments/4663-mainnet.json",
   ROBYN_MAINNET_PRIMARY_RPC_URL: "http://192.168.50.173:8547",
   ROBYN_MAINNET_PROBE_RPC_URL: "https://probe.invalid",
@@ -61,6 +62,14 @@ test("production topology is six keyless services with no keeper", () => {
   );
   const api = topology.apps.find((app) => app.name === "robyn-api-mainnet-prod");
   assert.equal(api.env.ROBYN_KEEPER_EXPECTED, "false");
+  assert.equal(
+    api.env.ROBYN_MANIFEST,
+    "/opt/robyn/releases/candidate/deployments/4663-mainnet.json",
+  );
+  const indexer = topology.apps.find(
+    (app) => app.name === "robyn-indexer-mainnet-prod",
+  );
+  assert.equal(indexer.env.ROBYN_MANIFEST, api.env.ROBYN_MANIFEST);
   const gateway = topology.apps.find((app) => app.name.includes("rpc-gateway"));
   assert.equal(gateway.env.RPC_ACTIVE_PROVIDER, "primary");
   assert.equal(gateway.env.RPC_FALLBACK_TRAFFIC_AUTHORIZED, "false");

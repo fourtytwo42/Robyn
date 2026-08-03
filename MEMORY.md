@@ -1,6 +1,7 @@
 # Project Memory
 
 ## Active Handoff
+- Signed release `mainnet-prod-20260803-1879955` is live, but its API exposed a production-topology defect: processes still consumed the old root-managed deployment manifest, so policy v1 remained visible. The topology now binds API, indexer, and projector to the signed release's `deployments/4663-mainnet.json`; promote a superseding release and verify policy v2 before resealing route governance.
 - Exact current-state route-governance tooling is committed and pushed. Its final run must bind the clean pushed commit and preserve 14 unique successful local receipts for unanimous scheduling, the simulated one-hour Timelock, twelve route configurations, and twelve guardian rollback disables. The authorization-false manifest is stored under `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/governance-current-state`; never schedule it without the user's exact-hash authorization.
 - Signed release `mainnet-prod-20260803-cb352ca` is live on the keyless production host. The additive API/UI separates Chainlink references, pool-implied prices, and route selectability while preserving the existing onchain routes.
 - Schema-18 asset policy `schema18-assets-v2` hashes to `ec5c8f9c444623f2303504416bf5192c951bc17d6af191c3bf08a2c52cc483c0`. It adds explicit canonical token decimals; USDG is six decimals and every other catalog asset is eighteen. This corrects USDG pool-price scaling without changing qualified pool execution or contract bytecode.
@@ -17,7 +18,7 @@
 - Production migration is complete. Keyless host `192.168.50.108` now serves the canonical public domain through Cloudflare tunnel `sherwoodforest-mainnet-prod`; host `192.168.50.250` retains Devnet, Testnet, keeper/signing operations, and LAN-only Mainnet staging at `http://192.168.50.250:3082`. Ordinary pushes never deploy production.
 
 ## Current State
-- Live production application source is `cb352cacd6ef6e5e45d586900cf7c18e3838c33f`. The next policy-v2 release is application-only and must preserve frozen contract attestation `ed382d44515b833641e76e78c6a168a1a63f00e4c4266f75b1b45ecfa2977685`.
+- Live production application source is `1879955e67db2ea43cdc0fee8482daac850cf064`, but it still presents the external policy-v1 manifest. The superseding policy-v2 release must use its signed release-bound manifest and preserve frozen contract attestation `ed382d44515b833641e76e78c6a168a1a63f00e4c4266f75b1b45ecfa2977685`.
 - Schema-18 asset policy `schema18-assets-v2` hashes to `ec5c8f9c444623f2303504416bf5192c951bc17d6af191c3bf08a2c52cc483c0` and catalogs WETH plus twelve stock, ETF, commodity, or stablecoin candidates. Selected safe caps are 0.05 ETH for WETH, GOOGL, MSFT, NVDA, SPCX, SPY, USDG, and USAR; 0.01 ETH for AMZN, INTC, and SLV; 0.0025 ETH for GME; and 0.001 ETH for QQQ. NVDA uses the zero-hook 0.05% pool, SPY the zero-hook 0.30% pool, and USDG the router-compatible zero-hook fee-460 pool; zero-fee or hooked pools are rejected.
 
 
@@ -52,12 +53,21 @@
 
 - Commit and push the policy-v2 decimal correction, run scope-appropriate application qualification and a signed production release, then rerun the exact current-state route rehearsal and stop for exact-hash authorization before any live schedule transaction.
 
+- Promote the release-bound-manifest topology fix, verify policy v2 and six-decimal USDG pricing on the public API/UI, then reseal route governance. Release `mainnet-prod-20260803-d65c23b` is preserved as an undeployable predecessor-mismatch artifact and must never be selected.
+
 - Continue observing the first 24 public hours through native monitoring. On any contract, accounting, solvency, supply, principal, route, or LAN-RPC anomaly, disable application submissions and use the verified guardian controls.
 - GOOGL remains unavailable in the live catalog until the additive application release and a separately authorized route-governance operation recalibrate its nonzero liquidity floor. Do not bypass the current fail-closed readiness result.
 - Correct the raw `/api/assets/catalog-manifest` snapshot's stale per-asset Testnet chain/provenance metadata in a future application release. The live `/api/assets` endpoint and transaction builder already use chain `4663`, so this is a catalog hygiene follow-up rather than a wallet-safety blocker.
 - Rotate the previously exposed comparison-provider credential during routine credential hygiene. Alchemy remains probe-only and is not a production dependency.
 - Add a true second-site encrypted backup target when available; the NAS copy is off-host but remains in the same LAN/failure domain.
 
+
+### 2026-08-03 - Production manifest binding corrected
+
+- Context: Policy-v2 source `1879955` deployed successfully, but the production topology supplied the old root-managed manifest to API/indexer/projector, so the API continued reporting policy v1.
+- Decision: Bind all application processes to the checksum-verified manifest inside their immutable release directory. Keep RPC, database, Cloudflare, and keyless security configuration root-managed.
+- Verification: Production topology and release-security tests pass, including signer-bearing environment rejection and the frozen Schema-18 contract attestation. No contract compilation, onchain transaction, or route change occurred.
+- Follow-up: Commit/push, repeat exact-SHA environment acceptance and signed promotion, verify policy v2 publicly, then regenerate the authorization-false route manifest.
 
 ### 2026-08-03 - USDG decimal metadata corrected before governance
 

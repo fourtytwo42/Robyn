@@ -24,7 +24,7 @@ for (const name of [
 
 const releaseRoot =
   process.env.ROBYN_PRODUCTION_RELEASE_ROOT || "/opt/robyn/current";
-const manifest = required("ROBYN_MAINNET_MANIFEST");
+const manifest = path.join(releaseRoot, "deployments/4663-mainnet.json");
 const primaryRpcUrl = required("ROBYN_MAINNET_PRIMARY_RPC_URL");
 const probeRpcUrl = required("ROBYN_MAINNET_PROBE_RPC_URL");
 const database = process.env.ROBYN_MAINNET_DATABASE || "robyn_mainnet_prod";
