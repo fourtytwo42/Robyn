@@ -36,6 +36,15 @@
 - Tests: The genuine full Foundry suite passes from `packages/contracts`; focused tests cover permissionless account-directed claims, claim/trade maintenance failure isolation, exhausted subcall gas, 72-hour fallback, recovery reset, future primary reuse, routed buy/sell cleanup, Public construction, and reused-RDAO rewards.
 - Safety: No Mainnet or Testnet transaction occurred. Schema-18 remains the active public protocol during development.
 
+### 2026-08-03 - Schema-19 repository and scoped-indexer gate
+
+- Context: The full repository gate still invoked the active scoped-indexer suite with a Schema-18 policy fixture, and an archived Schema-18 Public test asserted an obsolete application SHA.
+- Decision: Add a fail-closed Schema-19 indexing-policy builder and tests, bind the isolated Anvil scoped-ingestion test to schema 19, and update only the stale archived release assertion to the finalizer's current default.
+- Files: `scripts/lib/schema19-indexing-policy.mjs`, `scripts/test/schema19-indexing-policy.test.mjs`, `scripts/test/scoped-indexer-anvil.test.mjs`, `scripts/test/schema18-mainnet-public-live.test.mjs`, and `package.json`.
+- Commands/tests: Formatting, lint, typecheck, five scoped-indexer tests, the isolated Anvil noise-filter/restart test, the 721-test Foundry gate, and the complete `pnpm test` repository suite pass.
+- Result: Active indexing tests reject archived schemas and exclude global dependencies while reconstructing Schema-19 launch scope. The contract closure remains exact candidate `4a39cf4`; no Solidity, Testnet, or Mainnet state changed.
+- Follow-up: Commit and push the application/tooling correction, run exact-SHA security and two-build reproducibility gates, then implement fresh Schema-19 Testnet deployment and funding tooling.
+
 
 ## Active Handoff
 - Schema-19 is the active development handoff on `codex/schema19-user-driven-fees` in `/home/hendo420/Robyn-schema19`. Exact contract candidate `4a39cf470f0870c1757b2ead8730bf0209eabbc4` passed fast and deep Devnet torture, including 20 invariant seeds, 50 simulation seeds, 100,000 actions, isolated broadcast, 90.81% lines, and 80.14% branches.

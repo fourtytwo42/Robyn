@@ -99,7 +99,7 @@
     "prepare:mainnet-final-settlement": "node scripts/prepare-schema18-mainnet-final-settlement.mjs",
     "run:mainnet-final-settlement": "node scripts/run-schema18-mainnet-final-settlement-live.mjs",
     "test:schema18-mainnet-final-settlement": "node --test scripts/test/schema18-mainnet-final-settlement-live.test.mjs",
-    "test:scoped-indexer": "node --test scripts/test/schema18-indexing-policy.test.mjs scripts/test/scoped-indexer-anvil.test.mjs",
+    "test:scoped-indexer": "node --test scripts/test/schema19-indexing-policy.test.mjs scripts/test/scoped-indexer-anvil.test.mjs",
     "finalize:mainnet-asset-qualification": "node scripts/finalize-schema18-route-qualification.mjs",
     "prepare:mainnet-route-governance": "node scripts/prepare-schema18-route-governance.mjs"
   },

@@ -165,7 +165,7 @@ test("Public rehearsal pins the LAN fork and broadcasts only to Anvil", () => {
 test("application manifest binds the exact releases and strips test-only route identity", () => {
   assert.match(applicationManifest, /4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4/);
   assert.match(applicationManifest, /8327b250122cd9050a7da6a44e12859e3cf521aa/);
-  assert.match(applicationManifest, /5ea50ed836d81416a7a6a32c8078a864fca28d0b/);
+  assert.match(applicationManifest, /19e207c1d1ef1defd55d2ff8cf73c01a306a4a3b/);
   assert.match(
     applicationManifest,
     /factory: lifecycle\.contracts\.launchFactory/,

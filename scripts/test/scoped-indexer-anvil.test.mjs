@@ -5,7 +5,7 @@ import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import test from "node:test";
 import { parseAbiItem, toEventSelector } from "viem";
-import { schema18IndexingPolicyHash } from "../lib/schema18-indexing-policy.mjs";
+import { schema19IndexingPolicyHash } from "../lib/schema19-indexing-policy.mjs";
 
 const repo = path.resolve(new URL("../..", import.meta.url).pathname);
 const foundryPath = path.join(os.homedir(), ".foundry", "bin");
@@ -192,7 +192,7 @@ test(
         poolIdBatchSize: 8,
       };
       const manifest = {
-        schemaVersion: 18,
+        schemaVersion: 19,
         chainId: 31337,
         deploymentBlock: 0,
         liquidityVenue: "uniswap-v4",
@@ -206,7 +206,7 @@ test(
         },
         indexingPolicy: {
           ...unsignedPolicy,
-          policyHash: schema18IndexingPolicyHash(unsignedPolicy),
+          policyHash: schema19IndexingPolicyHash(unsignedPolicy),
         },
       };
       const manifestPath = path.join(temporary, "manifest.json");
