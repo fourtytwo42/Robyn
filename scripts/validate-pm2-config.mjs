@@ -16,8 +16,10 @@ function loadConfig(relativePath, environment = {}) {
 const devnet = loadConfig("infrastructure/pm2/ecosystem.config.cjs");
 const testnet = loadConfig("infrastructure/pm2/ecosystem.testnet.config.cjs", {
   ROBYN_TESTNET_RELEASE_ROOT: "/opt/robyn/releases/validation",
-  ROBYN_TESTNET_MANIFEST: "/etc/robyn/testnet-validation.json",
-  ROBYN_OPERATOR_KEY_FILE: "/etc/robyn/testnet-operator-key",
+  ROBYN_TESTNET_MANIFEST: path.join(
+    repoRoot,
+    "deployments/46630-v4-schema19.json",
+  ),
   ROBYN_TESTNET_AUTH_ORIGINS: "https://testnet.sherwoodforest.trade",
   ROBYN_TESTNET_PRIMARY_RPC_URL: "http://192.0.2.20:8547",
   ROBYN_TESTNET_SERVER_RPC_URL: "http://192.0.2.10:8547",
@@ -36,7 +38,6 @@ const minimums = new Map([
   ["robyn-api-testnet", 384],
   ["robyn-indexer-testnet", 384],
   ["robyn-projector-testnet", 384],
-  ["robyn-keeper-testnet", 512],
   ["robyn-artifacts-testnet", 384],
 ]);
 
@@ -103,13 +104,15 @@ for (const app of apps) {
 for (const name of minimums.keys()) {
   if (!names.has(name)) throw new Error(`reviewed PM2 app is missing: ${name}`);
 }
+if (names.has("robyn-keeper-testnet")) {
+  throw new Error("Schema-19 Testnet must not run a routine keeper");
+}
 
 const privateTestnetRpc = "http://127.0.0.1:18548";
 for (const name of [
   "robyn-api-testnet",
   "robyn-indexer-testnet",
   "robyn-projector-testnet",
-  "robyn-keeper-testnet",
 ]) {
   const app = testnet.apps.find((candidate) => candidate.name === name);
   if (app?.env?.ROBYN_OPERATOR_RPC_URL !== privateTestnetRpc) {
@@ -149,7 +152,10 @@ const mainnetPrimaryRpc = "http://192.0.2.30:8547";
 const mainnet = loadConfig("infrastructure/pm2/ecosystem.mainnet.config.cjs", {
   ROBYN_MAINNET_PRIMARY_RPC_URL: mainnetPrimaryRpc,
   ROBYN_MAINNET_RELEASE_ROOT: "/opt/robyn/mainnet-releases/validation",
-  ROBYN_MAINNET_MANIFEST: "/etc/robyn/mainnet-validation.json",
+  ROBYN_MAINNET_MANIFEST: path.join(
+    repoRoot,
+    "deployments/46630-v4-schema18.json",
+  ),
   ROBYN_MAINNET_SERVER_RPC_URL: mainnetHttpRpc,
   ROBYN_MAINNET_WS_RPC_URL: mainnetWebSocketRpc,
   ROBYN_MAINNET_TOOLING_ROOT: "/opt/robyn/mainnet-operations/validation",

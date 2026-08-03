@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 Testnet manifest and frozen-contract release boundary
+
+- Context: The successful live Testnet receipt journal needed a canonical active manifest, and future application-only work needed to stop invoking the retired Schema-18 contract freeze.
+- Decision: Finalize exactly 36 admitted/confirmed deployment transactions plus all eight reconciled lifecycle stages into `deployments/46630-v4-schema19.json`; bind the one qualified launch and final accounting state; make Schema-19 the active contract freeze; and omit the routine Testnet keeper from the Schema-19 PM2 topology.
+- Verification: Direct loopback-LAN verification passes 32 fixed/dynamic runtimes, one graduated launch, fixed supply, locked principal `1414213548230959354360`, backed pending basket value, backed fee and DAO liabilities, three backed reward assets, Paused conversions, and six disabled routes. Application tests, 82 API tests, 74 web tests, 29 indexer tests, typecheck, lint, release-security tests, Schema-19 tooling tests, PM2 validation, and script syntax pass without recompiling or retesting the frozen Solidity closure.
+- Safety: Mainnet remains Schema-18 and unchanged. Schema-19 Testnet remains guardian-Paused and has no routine keeper.
+- Follow-up: Build/promote an immutable Testnet application release into a fresh Schema-19 database, rebuild projections from block `96800800`, complete degradation and responsive browser acceptance, then begin the exact Mainnet replacement rehearsal.
+
 ### 2026-08-03 - Schema-19 live Testnet qualification passes
 
 - Context: The exact Schema-19 contract candidate and deployment tooling completed a fresh live chain-46630 deployment and focused lifecycle after the full Devnet qualification.

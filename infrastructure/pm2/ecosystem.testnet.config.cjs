@@ -1,4 +1,5 @@
 const path = require("node:path");
+const fs = require("node:fs");
 
 function required(name) {
   const value = process.env[name];
@@ -9,6 +10,12 @@ function required(name) {
 const releaseRoot = required("ROBYN_TESTNET_RELEASE_ROOT");
 const releaseSha = path.basename(releaseRoot);
 const manifest = required("ROBYN_TESTNET_MANIFEST");
+const schemaVersion = JSON.parse(
+  fs.readFileSync(manifest, "utf8"),
+).schemaVersion;
+if (![18, 19].includes(schemaVersion)) {
+  throw new Error(`Unsupported Testnet schema: ${String(schemaVersion)}`);
+}
 const rpcUrl =
   process.env.ROBYN_TESTNET_SERVER_RPC_URL ||
   process.env.ROBYN_TESTNET_RPC_URL ||
@@ -17,7 +24,8 @@ const primaryRpcUrl = process.env.ROBYN_TESTNET_PRIMARY_RPC_URL || "";
 const failoverEnabled = primaryRpcUrl.length > 0;
 const backendRpcUrl = failoverEnabled ? "http://127.0.0.1:18548" : rpcUrl;
 const wsRpcUrl = process.env.ROBYN_TESTNET_WS_RPC_URL || "";
-const operatorKeyFile = required("ROBYN_OPERATOR_KEY_FILE");
+const operatorKeyFile =
+  schemaVersion < 19 ? required("ROBYN_OPERATOR_KEY_FILE") : "";
 const nodeBinary = "/opt/node-v24.18.0-linux-x64/bin/node";
 const database = process.env.ROBYN_TESTNET_DATABASE || "robyn_testnet";
 const queueName =
@@ -182,33 +190,37 @@ module.exports = {
       max_memory_restart: "384M",
       time: true,
     },
-    {
-      name: "robyn-keeper-testnet",
-      cwd: releaseRoot,
-      script: nodeBinary,
-      args: path.join(releaseRoot, "apps/keeper/dist/server.js"),
-      env: {
-        NODE_ENV: "production",
-        ROBYN_ENV: "robinhood-testnet",
-        ROBYN_OPERATOR_RPC_URL: backendRpcUrl,
-        ROBYN_OPERATOR_KEY_FILE: operatorKeyFile,
-        ROBYN_MANIFEST: manifest,
-        ROBYN_QUEUE_NAME: queueName,
-        REDIS_URL: "redis://127.0.0.1:6379/1",
-        KEEPER_SCAN_MS: "900000",
-        KEEPER_REQUEST_POLL_MS: "1000",
-        KEEPER_HEARTBEAT_MS: "10000",
-        ROBYN_RPC_RETRY_COUNT: "5",
-        ROBYN_RPC_RETRY_DELAY_MS: "500",
-        ROBYN_RPC_TIMEOUT_MS: "15000",
-        PGHOST: "/var/run/postgresql",
-        PGDATABASE: database,
-        PGUSER: "hendo420",
-      },
-      autorestart: true,
-      max_memory_restart: "512M",
-      time: true,
-    },
+    ...(schemaVersion < 19
+      ? [
+          {
+            name: "robyn-keeper-testnet",
+            cwd: releaseRoot,
+            script: nodeBinary,
+            args: path.join(releaseRoot, "apps/keeper/dist/server.js"),
+            env: {
+              NODE_ENV: "production",
+              ROBYN_ENV: "robinhood-testnet",
+              ROBYN_OPERATOR_RPC_URL: backendRpcUrl,
+              ROBYN_OPERATOR_KEY_FILE: operatorKeyFile,
+              ROBYN_MANIFEST: manifest,
+              ROBYN_QUEUE_NAME: queueName,
+              REDIS_URL: "redis://127.0.0.1:6379/1",
+              KEEPER_SCAN_MS: "900000",
+              KEEPER_REQUEST_POLL_MS: "1000",
+              KEEPER_HEARTBEAT_MS: "10000",
+              ROBYN_RPC_RETRY_COUNT: "5",
+              ROBYN_RPC_RETRY_DELAY_MS: "500",
+              ROBYN_RPC_TIMEOUT_MS: "15000",
+              PGHOST: "/var/run/postgresql",
+              PGDATABASE: database,
+              PGUSER: "hendo420",
+            },
+            autorestart: true,
+            max_memory_restart: "512M",
+            time: true,
+          },
+        ]
+      : []),
     {
       name: "robyn-artifacts-testnet",
       cwd: releaseRoot,

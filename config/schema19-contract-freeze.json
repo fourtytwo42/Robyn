@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "contractSchema": 19,
+  "qualifiedContractGitSha": "a67288133f09bce68b7386009d702c14dfb8bbab",
+  "sourceTreeGitObject": "8b4b591bebc896fe58ff4457cc72ecb6518862d8",
+  "scriptTreeGitObject": "e483e03e72209112ca1dc16f251ec12ffd4116d2",
+  "foundryConfigGitObject": "de6592071e3143935ecb45231ee5882c27b92f63",
+  "deepEvidence": {
+    "directory": "/home/hendo420/robyn-evidence/devnet-torture/a67288133f09bce68b7386009d702c14dfb8bbab/20260803-schema19-deep-03",
+    "summarySha256": "f812a3e9fde0457d69d93223f76844ad5a6fdb9f2c071c43d72d526b9b3eee7b",
+    "checksumsSha256": "87294e83f5c98660a1804cfaeb050e6ac3ce1abdcf038cd6e04092208f9d4284",
+    "coverageScopeSha256": "d559ab73289a87efdeaa091b6961696387a7aad580672ea56cbe6c584eb87628"
+  },
+  "securityEvidence": {
+    "path": "/home/hendo420/robyn-evidence/schema19-qualification/8c5d6e1-01/security-audit.json",
+    "sha256": "c67aad433b9cd1114859f8d95fd5f945b65ecccb339e14b3b5e97d07ff880a8b"
+  },
+  "reproducibilityEvidence": {
+    "path": "/home/hendo420/robyn-evidence/schema19-qualification/8c5d6e1-01/reproducibility/two-build-01/summary.json",
+    "sha256": "399e75aad88bb530a05a6511195ff14c13c9a3c02ff4a24b6284d75442e4c745"
+  },
+  "contractDependencies": {
+    "@openzeppelin/contracts": "5.4.0",
+    "@uniswap/universal-router": "2.1.0",
+    "@uniswap/v3-core": "1.0.0",
+    "@uniswap/v3-periphery": "1.4.4",
+    "@uniswap/v4-core": "1.0.2",
+    "@uniswap/v4-periphery": "1.0.3"
+  }
+}

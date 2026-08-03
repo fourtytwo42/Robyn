@@ -145,7 +145,7 @@ rollback() {
 
 prepare_database
 link_atomically "$target" "$current"
-target_manifest="$target/deployments/46630-v4-schema18.json"
+target_manifest="$target/deployments/46630-v4-schema19.json"
 [[ -r "$target_manifest" ]]
 if ! start_stack "$target" "$database" "$target_manifest"; then rollback; exit 1; fi
 healthy=false

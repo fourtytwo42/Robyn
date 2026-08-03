@@ -120,6 +120,23 @@ const result = {
     liveTransactionHashes: receipts.map((record) => record.transactionHash),
     qualificationPassed: true,
   },
+  qualification: {
+    completedStages: [...requiredStages],
+    token: lifecycle.token,
+    vault: lifecycle.vault,
+    market: lifecycle.market,
+    adapter: lifecycle.adapter,
+    locker: lifecycle.locker,
+    lockedPrincipal: lifecycle.lockedPrincipal,
+    streamStartedAt: lifecycle.streamStartedAt,
+    daoEpochs: lifecycle.daoEpochs,
+    recoveryBps: lifecycle.recoveryBps,
+    recoveredWei: lifecycle.recoveredWei,
+    fallbackEvidence: lifecycle.fallbackEvidence,
+    shutdownAt: lifecycle.shutdownAt,
+    reconciledAt: lifecycle.reconciledAt,
+    finalBalanceWei: lifecycle.finalBalanceWei,
+  },
 };
 const serialized = `${JSON.stringify(result, null, 2)}\n`;
 await writeFile(path.resolve(outputArg), serialized, { flag: "wx", mode: 0o600 });

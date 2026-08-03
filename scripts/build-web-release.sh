@@ -17,7 +17,7 @@ case "$network" in
   testnet)
     release_root=/opt/robyn/testnet-releases
     staging_root=/opt/robyn/testnet-staging
-    deployment_manifest="${ROBYN_TESTNET_DEPLOYMENT_MANIFEST:-deployments/46630-v4-schema18.json}"
+    deployment_manifest="${ROBYN_TESTNET_DEPLOYMENT_MANIFEST:-deployments/46630-v4-schema19.json}"
     release_env="${ROBYN_TESTNET_RELEASE_ENV:-/home/hendo420/.config/robyn/testnet/release.env}"
     chain_id=46630
     ;;
@@ -67,13 +67,13 @@ cleanup() {
 trap cleanup EXIT
 [[ ! -e "$target" ]] || { echo "release exists: $target" >&2; exit 1; }
 
-node scripts/verify-schema18-contract-freeze.mjs > "$freeze_evidence"
-pnpm exec prettier --check apps/web config/schema18-contract-freeze.json scripts/verify-schema18-contract-freeze.mjs scripts/test/schema18-contract-freeze.test.mjs
+node scripts/verify-schema19-contract-freeze.mjs > "$freeze_evidence"
+pnpm exec prettier --check apps/web config/schema19-contract-freeze.json scripts/verify-schema19-contract-freeze.mjs scripts/test/schema19-contract-freeze.test.mjs
 bash -n scripts/build-web-release.sh
 pnpm --filter @robyn/web lint
 pnpm --filter @robyn/web typecheck
 pnpm --filter @robyn/web test
-node --test scripts/test/schema18-contract-freeze.test.mjs
+node --test scripts/test/schema19-contract-freeze.test.mjs
 gitleaks git --redact . >/dev/null
 pnpm audit --audit-level high --json > "$audit_json"
 
@@ -116,7 +116,7 @@ NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(node scripts/prepare-next-build-inputs.mjs
     --arg createdAt "$(date -u +%FT%TZ)" \
     --arg network "$network" \
     --argjson chainId "$chain_id" \
-    --arg contractFreezeSha256 "$(sha256sum config/schema18-contract-freeze.json | cut -d' ' -f1)" \
+    --arg contractFreezeSha256 "$(sha256sum config/schema19-contract-freeze.json | cut -d' ' -f1)" \
     --arg deploymentManifestSha256 "$(sha256sum "$deployment_manifest" | cut -d' ' -f1)" \
     '{schemaVersion:1,releaseId:$releaseId,gitSha:$gitSha,createdAt:$createdAt,scope:"web-only",network:$network,chainId:$chainId,contractFreezeSha256:$contractFreezeSha256,deploymentManifestSha256:$deploymentManifestSha256,gates:["frozen-contract-attestation","web-format","web-lint","web-typecheck","web-tests","gitleaks","dependency-audit","protected-web-build"]}' > web-release-manifest.json
   sha256sum web-release-manifest.json > web-release-manifest.json.sha256
@@ -127,4 +127,4 @@ find "$staging" -mindepth 1 -exec chmod a-w {} +
 mv "$staging" "$target"
 staging=""
 chmod a-w "$target"
-printf 'webRelease=%s\ngitSha=%s\ncontractMode=frozen-schema18\n' "$target" "$git_sha"
+printf 'webRelease=%s\ngitSha=%s\ncontractMode=frozen-schema19\n' "$target" "$git_sha"

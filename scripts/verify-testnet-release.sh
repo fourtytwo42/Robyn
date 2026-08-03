@@ -7,13 +7,14 @@ cd "$release_real"
 sha256sum -c testnet-release-manifest.json.sha256 >/dev/null
 sha256sum -c testnet-release-files.sha256 >/dev/null
 git_sha="$(jq -r .gitSha testnet-release-manifest.json)"
-manifest="$release_real/deployments/46630-v4-schema18.json"
-jq -e '.schemaVersion == 18 and .chainId == 46630 and .launchControl.initialMode == "Paused"' "$manifest" >/dev/null
+manifest="$release_real/deployments/46630-v4-schema19.json"
+jq -e '.schemaVersion == 19 and .chainId == 46630 and .initialState.launchMode == "Paused" and .deploymentEvidence.qualificationPassed == true' "$manifest" >/dev/null
 
 pm2_json="$(PM2_HOME=/home/hendo420/.pm2 "$release_real/node_modules/.bin/pm2" jlist)"
 testnet="$(jq '[.[]|select(.name|endswith("-testnet"))]' <<<"$pm2_json")"
-[[ "$(jq length <<<"$testnet")" -eq 7 ]]
-[[ "$(jq '[.[]|select(.pm2_env.status=="online")]|length' <<<"$testnet")" -eq 7 ]]
+[[ "$(jq length <<<"$testnet")" -eq 6 ]]
+[[ "$(jq '[.[]|select(.pm2_env.status=="online")]|length' <<<"$testnet")" -eq 6 ]]
+[[ "$(jq '[.[]|select(.name=="robyn-keeper-testnet")]|length' <<<"$testnet")" -eq 0 ]]
 [[ "$(jq --arg root "$release_real" '[.[]|select((.name=="robyn-web-testnet" and .pm2_env.pm_cwd!=($root+"/apps/web")) or (.name!="robyn-web-testnet" and .pm2_env.pm_cwd!=$root))]|length' <<<"$testnet")" -eq 0 ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_INDEXER_ROLE' <<<"$testnet")" == "ingester" ]]
 [[ "$(jq -r '.[]|select(.name=="robyn-projector-testnet")|.pm2_env.env.ROBYN_INDEXER_ROLE' <<<"$testnet")" == "projector" ]]
@@ -26,7 +27,7 @@ indexer_ws_url="$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env
 
 server_rpc_url="$(jq -r '.[]|select(.name=="robyn-indexer-testnet")|.pm2_env.env.ROBYN_OPERATOR_RPC_URL' <<<"$testnet")"
 [[ "$server_rpc_url" == "http://127.0.0.1:18548" ]]
-for process_name in robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet; do
+for process_name in robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet; do
   [[ "$(jq -r --arg name "$process_name" '.[]|select(.name==$name)|.pm2_env.env.ROBYN_OPERATOR_RPC_URL' <<<"$testnet")" == "$server_rpc_url" ]]
 done
 primary_rpc_url="$(jq -r '.[]|select(.name=="robyn-rpc-gateway-testnet")|.pm2_env.env.PRIMARY_RPC_URL' <<<"$testnet")"
@@ -98,9 +99,8 @@ public_observed_head="$(jq -r .observedHeadBlock <<<"$public_status")"
 observed_head_gap=$(( local_observed_head - public_observed_head ))
 [[ "$observed_head_gap" -lt 0 ]] && observed_head_gap=$(( -observed_head_gap ))
 [[ "$observed_head_gap" -le 100 ]]
-ROBYN_SCHEMA18_RPC_URL="$server_rpc_url" \
-  ROBYN_VERIFY_ALLOW_LIFECYCLE_PROGRESS=true \
-  node scripts/verify-schema18-deployment.mjs "$manifest" \
+ROBYN_SCHEMA19_RPC_URL="$server_rpc_url" \
+  node scripts/verify-schema19-qualified-testnet.mjs "$manifest" \
   > /tmp/robyn-testnet-deployment-verify.json
 jq -e '.passed == true' /tmp/robyn-testnet-deployment-verify.json >/dev/null
 
