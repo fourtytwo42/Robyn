@@ -43,3 +43,14 @@ test("verifier requires Public zero-state accounting and ready routes", () => {
   assert.match(source, /route not ready/);
   assert.match(source, /unexpected native balance/);
 });
+
+test("verifier reads launch count from the launch factory only", () => {
+  assert.match(
+    source,
+    /address: c\.launchFactory, abi: launchFactoryAbi, functionName: "launchCount"/,
+  );
+  assert.doesNotMatch(
+    source,
+    /address: c\.coordinator, abi: coordinatorAbi, functionName: "launchCount"/,
+  );
+});

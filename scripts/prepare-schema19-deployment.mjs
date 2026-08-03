@@ -172,6 +172,9 @@ const routes = buildSchema19RouteConfiguration(
   input.routes,
   input.external.wrappedNative,
 );
+const fullEndingNonceExclusive = deployment.fullEndingNonceExclusive(
+  routes.assets.length,
+);
 const result = {
   schemaVersion: 19,
   chainId: input.chainId,
@@ -179,7 +182,7 @@ const result = {
   contractReleaseSha: input.contractReleaseSha,
   toolingSha: input.toolingSha,
   reusedRuntimeCodeHashes,
-  deployment,
+  deployment: { ...deployment, fullEndingNonceExclusive },
   governance: {
     guardianSafe: getAddress(input.guardianSafe),
     daoToken: getAddress(input.daoToken),
@@ -209,6 +212,7 @@ process.stdout.write(
     output: outputPath,
     sha256: createHash("sha256").update(serialized).digest("hex"),
     endingNonceExclusive: deployment.endingNonceExclusive,
+    fullEndingNonceExclusive,
     contracts: deployment.contracts,
   })}\n`,
 );

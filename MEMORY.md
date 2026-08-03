@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 pinned Testnet-fork deployment passes
+
+- Context: The first local broadcast invocation never submitted because Foundry resolved the script/input path incorrectly; the pinned chain-46630 Anvil fork remained unchanged.
+- Decision: Run the production broadcaster from the contracts root, distinguish the 19-step address-prediction range from the complete 36-transaction configured deployment, and verify launch count only on the launch factory where it is actually exposed.
+- Evidence: `/home/hendo420/robyn-evidence/schema19-testnet/preflight-cada1cd-01` contains the protected input, prepared deployment, 36-receipt local ledger, deployment log, and passing independent verification.
+- Result: All 36 local-fork transactions have unique successful receipts. Candidate and reused runtimes, sole-owner governance, Public state, six ready routes, bindings, profile, fallback settings, and zero genesis accounting pass. No live Testnet or Mainnet transaction occurred.
+- Follow-up: Commit and push the tooling correction, calculate the reserve-preserving Testnet budget exclusively from local receipts, build the restart-safe focused lifecycle runner, and deploy live only if the complete lifecycle budget preserves the 0.0015 ETH Testnet reserve.
+
 ### 2026-08-03 - Schema-19 user-driven maintenance checkpoint
 
 - Context: The owner authorized a fresh Schema-19 replacement because Schema-18 has only the project canary and no public launches.
@@ -74,6 +82,7 @@
 - Follow-up: Commit/push, generate the exact protected input, prepare the deterministic deployment manifest, run a LAN-sourced isolated-fork broadcast/verification rehearsal, and measure the complete deployment gas before deciding whether live Testnet funding passes.
 
 ## Active Handoff
+- The pinned chain-46630 local-fork deployment from Testnet block `96760889` passed with 36/36 unique successful transactions and independent postdeployment verification. Its evidence is under `/home/hendo420/robyn-evidence/schema19-testnet/preflight-cada1cd-01`. Live Testnet remains unchanged.
 - Schema-19 is the active development handoff on `codex/schema19-user-driven-fees` in `/home/hendo420/Robyn-schema19`. Exact contract candidate `4a39cf470f0870c1757b2ead8730bf0209eabbc4` passed fast and deep Devnet torture, including 20 invariant seeds, 50 simulation seeds, 100,000 actions, isolated broadcast, 90.81% lines, and 80.14% branches.
 - Fast torture attempts 01 through 04 are permanently failed evidence and must never be relabeled. Fast run 05 and deep run 01 on exact SHA `4a39cf4` passed and are checksum-sealed under `/home/hendo420/robyn-evidence/devnet-torture/4a39cf470f0870c1757b2ead8730bf0209eabbc4`.
 - Treasury settlement is now pull-based: maintenance makes the exact 5% assignment claimable, and the treasury pays for its own withdrawal. Creator, DAO, holder, and treasury custody remain pull-oriented.

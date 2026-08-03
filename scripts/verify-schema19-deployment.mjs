@@ -131,10 +131,7 @@ if (delay !== 3600n) throw new Error("Timelock delay changed");
 if (getAddress(governorToken) !== getAddress(prepared.governance.daoToken)) throw new Error("Governor token changed");
 if (getAddress(governorTimelock) !== getAddress(prepared.governance.timelock)) throw new Error("Governor Timelock changed");
 
-const coordinatorAbi = parseAbi([
-  "function launchMode() view returns (uint8)",
-  "function launchCount() view returns (uint256)",
-]);
+const coordinatorAbi = parseAbi(["function launchMode() view returns (uint8)"]);
 const assetRouterAbi = parseAbi([
   "function conversionsPaused() view returns (bool)",
   "function executionRouteStatus(address) view returns ((uint8 kind,uint128 maximumNativeInput,uint128 maximumAssetInput,bytes32 disabledReason,bool enabled,bool runtimeVerified,bool ready,bytes32 reason) status)",
@@ -164,10 +161,9 @@ const launchFactoryAbi = parseAbi([
   "function launchCount() view returns (uint256)",
 ]);
 const c = prepared.deployment.contracts;
-const [launchMode, coordinatorLaunchCount, conversionsPaused, feePaused, maintenanceBinding, daoReceiver, creatorLiability, basketLiability, daoLiability, treasuryLiability, rewardDepositor, epochCount, deposited, claimed, target, maximumPurchase, spacing, fallbackDelay, factoryLaunchCount] =
+const [launchMode, conversionsPaused, feePaused, maintenanceBinding, daoReceiver, creatorLiability, basketLiability, daoLiability, treasuryLiability, rewardDepositor, epochCount, deposited, claimed, target, maximumPurchase, spacing, fallbackDelay, factoryLaunchCount] =
   await Promise.all([
     client.readContract({ address: c.coordinator, abi: coordinatorAbi, functionName: "launchMode" }),
-    client.readContract({ address: c.coordinator, abi: coordinatorAbi, functionName: "launchCount" }),
     client.readContract({ address: c.assetRouter, abi: assetRouterAbi, functionName: "conversionsPaused" }),
     client.readContract({ address: c.feeRouter, abi: feeRouterAbi, functionName: "paused" }),
     client.readContract({ address: c.feeRouter, abi: feeRouterAbi, functionName: "maintenanceCoordinator" }),
@@ -191,7 +187,7 @@ if (getAddress(maintenanceBinding) !== getAddress(c.maintenance)) throw new Erro
 if (getAddress(daoReceiver) !== getAddress(c.daoRewards) || getAddress(rewardDepositor) !== getAddress(c.feeRouter)) throw new Error("DAO reward binding mismatch");
 if (target !== BigInt(prepared.settings.targetGraduationNative) || maximumPurchase !== BigInt(prepared.settings.maximumCurvePurchase)) throw new Error("graduation profile mismatch");
 if (spacing !== BigInt(prepared.settings.failureObservationSpacing) || fallbackDelay !== BigInt(prepared.settings.fallbackDelay)) throw new Error("fallback policy mismatch");
-if ([coordinatorLaunchCount, factoryLaunchCount, creatorLiability, basketLiability, daoLiability, treasuryLiability, epochCount, deposited, claimed].some((value) => value !== 0n)) throw new Error("nonzero Schema-19 genesis accounting");
+if ([factoryLaunchCount, creatorLiability, basketLiability, daoLiability, treasuryLiability, epochCount, deposited, claimed].some((value) => value !== 0n)) throw new Error("nonzero Schema-19 genesis accounting");
 for (const asset of prepared.routes.assets) {
   const status = await client.readContract({ address: c.assetRouter, abi: assetRouterAbi, functionName: "executionRouteStatus", args: [asset] });
   if (!status.enabled || !status.runtimeVerified || !status.ready) throw new Error(`route not ready ${asset}: ${status.reason}`);

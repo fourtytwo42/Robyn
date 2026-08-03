@@ -35,6 +35,7 @@ test("deployment prediction accounts for CREATE2 and pre-coordinator bindings", 
   assert.equal(SCHEMA19_DEPLOYMENT_SEQUENCE.length, 19);
   assert.equal(result.contracts.oracleHook, oracleHook);
   assert.equal(result.endingNonceExclusive, 60);
+  assert.equal(result.fullEndingNonceExclusive(6), 77);
   assert.equal(
     result.contracts.coordinator,
     getContractAddress({ from: deployer, nonce: 59n }),
@@ -229,6 +230,8 @@ test("preparer emits an exact accelerated Testnet deployment input", async () =>
     assert.equal(result.deployment.contracts.oracleHook, oracleHook);
     assert.equal(result.routes.configurationCalldata.length, 6);
     assert.equal(result.settings.rewardDuration, 600);
+    assert.equal(result.deployment.endingNonceExclusive, 26);
+    assert.equal(result.deployment.fullEndingNonceExclusive, 43);
   } finally {
     await rm(temporary, { recursive: true, force: true });
   }

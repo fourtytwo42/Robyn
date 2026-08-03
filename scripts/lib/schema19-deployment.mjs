@@ -32,6 +32,12 @@ export const SCHEMA19_DEPLOYMENT_SEQUENCE = Object.freeze([
   { label: "coordinator", nonceOffset: 18, directCreate: true },
 ]);
 
+// Transactions issued after the coordinator deployment: fallback policy plus
+// the ten one-time controller/registrar/coordinator bindings. Route
+// configuration transactions are counted separately because that set is
+// manifest-defined.
+export const SCHEMA19_POST_DEPLOYMENT_FIXED_TRANSACTION_COUNT = 11;
+
 export function predictSchema19Deployments({
   deployer,
   startingNonce,
@@ -62,6 +68,14 @@ export function predictSchema19Deployments({
     deployer: from,
     startingNonce,
     endingNonceExclusive: startingNonce + SCHEMA19_DEPLOYMENT_SEQUENCE.length,
+    fullEndingNonceExclusive(routeCount) {
+      return (
+        startingNonce +
+        SCHEMA19_DEPLOYMENT_SEQUENCE.length +
+        SCHEMA19_POST_DEPLOYMENT_FIXED_TRANSACTION_COUNT +
+        routeCount
+      );
+    },
     contracts,
     transactions,
   };
