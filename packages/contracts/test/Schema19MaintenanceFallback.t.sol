@@ -144,6 +144,26 @@ contract Schema19MaintenanceFallbackTest is RobynV4NativeProtocolTest {
         assertEq(address(trades).balance, 0);
     }
 
+    function testTradeRouterAcceptsOnlyCanonicalPoolManagerOutputAfterGraduation() public {
+        (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(keccak256("schema19-graduated-trade-router")));
+        feeRouter.bindMaintenanceCoordinator(address(new Schema19GasExhaustingMaintenance()));
+        RobynTradeRouter trades = new RobynTradeRouter();
+        _graduateMarket(market);
+
+        uint256 bought = trades.buy{ value: 0.01 ether }(market, 1);
+        assertGt(bought, 0, "graduated routed buy must return launch tokens");
+        token.approve(address(trades), bought);
+        uint256 nativeBefore = address(this).balance;
+        uint256 sold = trades.sell(market, bought, 1);
+
+        assertGt(sold, 0, "graduated routed sell must return native value");
+        assertEq(address(this).balance, nativeBefore + sold);
+        assertEq(token.allowance(address(trades), address(market)), 0);
+        assertEq(token.balanceOf(address(trades)), 0);
+        assertEq(address(trades).balance, 0);
+    }
+
     function testBondingBuyAndSellSurviveExhaustedMaintenanceGas() public {
         (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
             coordinator.createLaunch(_request(keccak256("schema19-gas-isolation")));

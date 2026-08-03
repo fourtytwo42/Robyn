@@ -15,7 +15,7 @@ contract RobynTradeRouter is ReentrancyGuard {
     error UnauthorizedNativeSender();
     error NativeTransferFailed();
 
-    address private activeMarket;
+    address private activeNativeSender;
 
     event RoutedBuy(
         address indexed account,
@@ -33,7 +33,7 @@ contract RobynTradeRouter is ReentrancyGuard {
     );
 
     receive() external payable {
-        if (msg.sender != activeMarket) revert UnauthorizedNativeSender();
+        if (msg.sender != activeNativeSender) revert UnauthorizedNativeSender();
     }
 
     function buy(RobynV4BondingCurveMarket market, uint256 minimumTokenOutput)
@@ -48,9 +48,9 @@ contract RobynTradeRouter is ReentrancyGuard {
         IERC20 token = IERC20(address(market.launchToken()));
         uint256 tokenBefore = token.balanceOf(address(this));
         uint256 nativeBefore = address(this).balance - msg.value;
-        activeMarket = address(market);
+        activeNativeSender = _nativeSender(market);
         tokenOutput = market.buy{ value: msg.value }(minimumTokenOutput);
-        activeMarket = address(0);
+        activeNativeSender = address(0);
         uint256 received = token.balanceOf(address(this)) - tokenBefore;
         if (received != tokenOutput) revert InvalidConfiguration();
         token.safeTransfer(msg.sender, received);
@@ -70,9 +70,9 @@ contract RobynTradeRouter is ReentrancyGuard {
         IERC20 token = IERC20(address(market.launchToken()));
         token.safeTransferFrom(msg.sender, address(this), tokenInput);
         token.forceApprove(address(market), tokenInput);
-        activeMarket = address(market);
+        activeNativeSender = _nativeSender(market);
         nativeOutput = market.sell(tokenInput, minimumNativeOutput);
-        activeMarket = address(0);
+        activeNativeSender = address(0);
         token.forceApprove(address(market), 0);
         _sendNative(payable(msg.sender), nativeOutput);
         emit RoutedSell(msg.sender, address(market), address(token), tokenInput, nativeOutput);
@@ -81,5 +81,10 @@ contract RobynTradeRouter is ReentrancyGuard {
     function _sendNative(address payable recipient, uint256 amount) private {
         (bool sent,) = recipient.call{ value: amount }("");
         if (!sent) revert NativeTransferFailed();
+    }
+
+    function _nativeSender(RobynV4BondingCurveMarket market) private view returns (address) {
+        if (!market.graduated()) return address(market);
+        return address(market.graduationAdapter().assetRouter().poolManager());
     }
 }
