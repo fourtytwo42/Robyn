@@ -308,3 +308,27 @@ test("production promotion reads but does not advance deployed-release state", (
   assert.doesNotMatch(promoter, /sourceSha: sha, tag, publishedAt:/);
   assert.doesNotMatch(promoter, /candidateState,\s*stateFile,/);
 });
+
+test("mixed application releases reuse the frozen contract attestation", () => {
+  const promoter = readFileSync(
+    path.join(repositoryRoot, "scripts", "promote-mainnet-production.mjs"),
+    "utf8",
+  );
+  const packageJson = JSON.parse(
+    readFileSync(path.join(repositoryRoot, "package.json"), "utf8"),
+  );
+
+  assert.match(
+    promoter,
+    /mixed: \["pnpm", \["test:application-scope"\]\]/,
+  );
+  assert.match(
+    packageJson.scripts["test:application-scope"],
+    /^pnpm test:contracts:freeze /,
+  );
+  assert.doesNotMatch(
+    packageJson.scripts["test:application-scope"],
+    /(^|&&\s*)pnpm test:contracts(\s|$)/,
+  );
+  assert.doesNotMatch(packageJson.scripts["test:application-scope"], /forge/);
+});

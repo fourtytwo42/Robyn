@@ -79,7 +79,7 @@ const gate = {
   ui: ["pnpm", ["test:ui-scope"]],
   data: ["pnpm", ["test:production-release"]],
   infrastructure: ["pnpm", ["test:production-release"]],
-  mixed: ["pnpm", ["test"]],
+  mixed: ["pnpm", ["test:application-scope"]],
   contracts: ["pnpm", ["test"]],
 }[scope];
 execFileSync(gate[0], gate[1], { cwd: repo, stdio: "inherit" });

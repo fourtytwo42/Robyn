@@ -12,6 +12,7 @@
     "release:promote:mainnet": "node scripts/promote-mainnet-production.mjs",
     "release:validate:production": "node scripts/validate-production-release.mjs",
     "test:production-release": "node --test scripts/test/production-release.test.mjs scripts/test/production-topology.test.mjs",
+    "test:application-scope": "pnpm test:contracts:freeze && turbo run test && pnpm typecheck && pnpm lint && pnpm test:production-release",
     "test:ui-scope": "pnpm test:contracts:freeze && pnpm --filter @robyn/web test && pnpm --filter @robyn/web typecheck && pnpm --filter @robyn/web lint",
     "build": "turbo run build",
     "build:web-release": "bash scripts/build-web-release.sh",
