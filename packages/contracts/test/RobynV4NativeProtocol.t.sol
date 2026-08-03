@@ -561,6 +561,10 @@ contract RobynV4NativeProtocolTest is Test {
         feeRouter.settleBasketFees(address(token), 0.0005 ether);
         feeRouter.settleDaoFees(0.0002 ether);
         feeRouter.settleTreasuryFees(0.00005 ether);
+        assertEq(TREASURY.balance - treasuryBefore, 0);
+        assertEq(feeRouter.claimableTreasuryNative(), 0.00005 ether);
+        vm.prank(TREASURY);
+        feeRouter.claimTreasuryFees();
         assertEq(TREASURY.balance - treasuryBefore, 0.00005 ether);
         assertEq(address(feeRouter).balance, feeRouter.totalCreatorNativeLiability());
     }

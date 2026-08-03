@@ -113,6 +113,8 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
     uint256 public totalTreasuryNativeLiability;
     uint256 public totalDaoNativeRewards;
     uint256 public totalTreasuryNative;
+    uint256 public claimableTreasuryNative;
+    uint256 public claimedTreasuryNative;
     uint256 public totalBasketNative;
 
     event CoordinatorBound(address indexed coordinator);
@@ -139,6 +141,7 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
     event BasketFeesSettled(address indexed token, address indexed vault, uint256 amount);
     event DaoFeesSettled(address indexed daoToken, uint256 amount);
     event TreasuryFeesSettled(address indexed treasury, uint256 amount);
+    event TreasuryFeesClaimed(address indexed treasury, uint256 amount);
     event UnattributedNativeSwept(address indexed treasury, uint256 amount);
     event CreatorFeesClaimed(
         address indexed token, address indexed claimant, address indexed recipient, uint256 amount
@@ -444,8 +447,7 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
         if (amount == 0 || amount > account.pendingTreasuryNative) revert InvalidConfiguration();
         account.pendingTreasuryNative -= amount;
         account.cumulativeTreasuryNativeSettled += amount;
-        totalTreasuryNativeLiability -= amount;
-        _sendNative(treasury, amount);
+        claimableTreasuryNative += amount;
         emit TreasuryFeesSettled(treasury, amount);
         _assertSolvent();
     }
@@ -464,10 +466,22 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
 
     function settleTreasuryFees(uint256 amount) external nonReentrant {
         if (daoRewardReceiver != address(0)) revert InvalidConfiguration();
-        if (amount == 0 || amount > totalTreasuryNativeLiability) revert InvalidConfiguration();
+        uint256 unsettled = totalTreasuryNativeLiability - claimableTreasuryNative;
+        if (amount == 0 || amount > unsettled) revert InvalidConfiguration();
+        claimableTreasuryNative += amount;
+        emit TreasuryFeesSettled(treasury, amount);
+        _assertSolvent();
+    }
+
+    function claimTreasuryFees() external nonReentrant returns (uint256 amount) {
+        if (msg.sender != treasury) revert Unauthorized();
+        amount = claimableTreasuryNative;
+        if (amount == 0) revert NothingPending();
+        claimableTreasuryNative = 0;
+        claimedTreasuryNative += amount;
         totalTreasuryNativeLiability -= amount;
         _sendNative(treasury, amount);
-        emit TreasuryFeesSettled(treasury, amount);
+        emit TreasuryFeesClaimed(treasury, amount);
         _assertSolvent();
     }
 

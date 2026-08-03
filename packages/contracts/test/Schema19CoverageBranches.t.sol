@@ -21,15 +21,14 @@ contract Schema19CoverageBranchesTest is Schema19MaintenanceFallbackTest {
     function testSchema19TradeRouterRejectsEveryInvalidAdmissionShape() public {
         RobynTradeRouter trades = new RobynTradeRouter();
         RobynV4BondingCurveMarket zeroMarket = RobynV4BondingCurveMarket(payable(address(0)));
-        RobynV4BondingCurveMarket eoaMarket =
-            RobynV4BondingCurveMarket(payable(address(0x123456)));
+        RobynV4BondingCurveMarket eoaMarket = RobynV4BondingCurveMarket(payable(address(0x123456)));
 
         vm.expectRevert(RobynTradeRouter.InvalidConfiguration.selector);
         trades.buy{ value: 1 }(zeroMarket, 1);
         vm.expectRevert(RobynTradeRouter.InvalidConfiguration.selector);
         trades.buy{ value: 1 }(eoaMarket, 1);
 
-        (, , RobynV4BondingCurveMarket market) =
+        (,, RobynV4BondingCurveMarket market) =
             coordinator.createLaunch(_request(keccak256("schema19-trade-zero-value")));
         vm.expectRevert(RobynTradeRouter.InvalidConfiguration.selector);
         trades.buy(market, 1);
@@ -56,14 +55,10 @@ contract Schema19CoverageBranchesTest is Schema19MaintenanceFallbackTest {
         assertFalse(maintenance.processRewards(address(0xBADD)));
 
         vm.expectRevert(RobynMaintenanceCoordinator.Unauthorized.selector);
-        maintenance.executeTask(
-            address(0xBADD), RobynMaintenanceCoordinator.Task.CollectLockerFees
-        );
+        maintenance.executeTask(address(0xBADD), RobynMaintenanceCoordinator.Task.CollectLockerFees);
         vm.prank(address(maintenance));
         vm.expectRevert(RobynMaintenanceCoordinator.UnknownLaunch.selector);
-        maintenance.executeTask(
-            address(0xBADD), RobynMaintenanceCoordinator.Task.CollectLockerFees
-        );
+        maintenance.executeTask(address(0xBADD), RobynMaintenanceCoordinator.Task.CollectLockerFees);
     }
 
     function testSchema19DaoDistributorRejectsInvalidConfigurationAndAdmissions() public {
@@ -95,6 +90,13 @@ contract Schema19CoverageBranchesTest is Schema19MaintenanceFallbackTest {
         rewards.depositRewards{ value: 1 }(address(0));
         vm.expectRevert(RobynDaoRewardDistributor.InvalidConfiguration.selector);
         rewards.depositRewards(address(basketAsset));
+        RobynDaoRewardDistributor zeroClock =
+            new RobynDaoRewardDistributor(IVotes(address(daoToken)), 1 hours);
+        zeroClock.bindRewardDepositor(address(this));
+        vm.warp(0);
+        vm.expectRevert(RobynDaoRewardDistributor.InvalidConfiguration.selector);
+        zeroClock.depositRewards{ value: 1 }(address(basketAsset));
+        vm.warp(1);
 
         vm.expectRevert(RobynDaoRewardDistributor.InvalidConfiguration.selector);
         rewards.epoch(0);
@@ -183,33 +185,25 @@ contract Schema19CoverageBranchesTest is Schema19MaintenanceFallbackTest {
         address[] memory oneAsset = new address[](1);
         oneAsset[0] = address(basketAsset);
         vm.expectRevert(RobynNativeBasketVaultV2.InvalidAssetCount.selector);
-        new RobynNativeBasketVaultV2(
-            assetRouter, address(this), oneAsset, emptyWeights, 1, 1 hours
-        );
+        new RobynNativeBasketVaultV2(assetRouter, address(this), oneAsset, emptyWeights, 1, 1 hours);
 
         uint16[] memory oneWeight = new uint16[](1);
         oneWeight[0] = 10_000;
         oneAsset[0] = address(0);
         vm.expectRevert(abi.encodeWithSelector(RobynNativeBasketVaultV2.InvalidAsset.selector, 0));
-        new RobynNativeBasketVaultV2(
-            assetRouter, address(this), oneAsset, oneWeight, 1, 1 hours
-        );
+        new RobynNativeBasketVaultV2(assetRouter, address(this), oneAsset, oneWeight, 1, 1 hours);
 
         V4TestAsset unavailable = new V4TestAsset();
         oneAsset[0] = address(unavailable);
         vm.expectRevert(abi.encodeWithSelector(RobynNativeBasketVaultV2.InvalidAsset.selector, 0));
-        new RobynNativeBasketVaultV2(
-            assetRouter, address(this), oneAsset, oneWeight, 1, 1 hours
-        );
+        new RobynNativeBasketVaultV2(assetRouter, address(this), oneAsset, oneWeight, 1, 1 hours);
 
         oneAsset[0] = address(basketAsset);
         oneWeight[0] = 9_999;
         vm.expectRevert(
             abi.encodeWithSelector(RobynNativeBasketVaultV2.InvalidWeightTotal.selector, 9_999)
         );
-        new RobynNativeBasketVaultV2(
-            assetRouter, address(this), oneAsset, oneWeight, 1, 1 hours
-        );
+        new RobynNativeBasketVaultV2(assetRouter, address(this), oneAsset, oneWeight, 1, 1 hours);
 
         address[] memory duplicateAssets = new address[](2);
         duplicateAssets[0] = address(basketAsset);
@@ -240,18 +234,11 @@ contract Schema19CoverageBranchesTest is Schema19MaintenanceFallbackTest {
         assets[0] = address(basketAsset);
         uint16[] memory weights = new uint16[](1);
         weights[0] = 10_000;
-        RobynNativeBasketVaultV2 vault = new RobynNativeBasketVaultV2(
-            assetRouter, address(this), assets, weights, 1, 1 hours
-        );
+        RobynNativeBasketVaultV2 vault =
+            new RobynNativeBasketVaultV2(assetRouter, address(this), assets, weights, 1, 1 hours);
 
         RobynLaunchToken noFallback = new RobynLaunchToken(
-            "No fallback",
-            "NOFB",
-            address(this),
-            1_000 ether,
-            address(vault),
-            assets,
-            METADATA_URI
+            "No fallback", "NOFB", address(this), 1_000 ether, address(vault), assets, METADATA_URI
         );
         vm.expectRevert(RobynNativeBasketVaultV2.InvalidRewardConfiguration.selector);
         vault.bindLaunchToken(noFallback);
@@ -260,13 +247,7 @@ contract Schema19CoverageBranchesTest is Schema19MaintenanceFallbackTest {
         rewardAssets[0] = address(basketAsset);
         rewardAssets[1] = address(testWrappedNative);
         RobynLaunchToken valid = new RobynLaunchToken(
-            "Valid",
-            "VALID",
-            address(this),
-            1_000 ether,
-            address(vault),
-            rewardAssets,
-            METADATA_URI
+            "Valid", "VALID", address(this), 1_000 ether, address(vault), rewardAssets, METADATA_URI
         );
         vault.bindLaunchToken(valid);
         assertEq(vault.fallbackRewardIndex(), 1);
@@ -323,13 +304,13 @@ contract Schema19CoverageBranchesTest is Schema19MaintenanceFallbackTest {
         recipients[0] = address(this);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1_000_000_000 ether;
-        RobynDaoTokenV3 token =
-            new RobynDaoTokenV3(recipients, allocations, 1 hours, address(this));
+        RobynDaoTokenV3 token = new RobynDaoTokenV3(recipients, allocations, 1 hours, address(this));
 
         assertEq(token.bootstrapOwner(), address(this));
         vm.expectRevert(RobynDaoTokenV3.BootstrapControllerNotBound.selector);
         token.transfer(address(0xBADD), 1);
     }
+
     function testSchema19FeeRouterBindingPauseAndSettlementAdmissions() public {
         RobynNativeProtocolFeeRouterV4 fresh = new RobynNativeProtocolFeeRouterV4(
             daoToken, assetRouter, TREASURY, GUARDIAN, 1 hours
@@ -409,6 +390,11 @@ contract Schema19CoverageBranchesTest is Schema19MaintenanceFallbackTest {
         feeRouter.settleDaoFees(1);
         vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
         feeRouter.settleTreasuryFees(1);
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.Unauthorized.selector);
+        feeRouter.claimTreasuryFees();
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.NothingPending.selector);
+        vm.prank(TREASURY);
+        feeRouter.claimTreasuryFees();
     }
 
     function testSchema19VaultConversionAdmissionsRemainAttributed() public {
@@ -436,6 +422,22 @@ contract Schema19CoverageBranchesTest is Schema19MaintenanceFallbackTest {
             rewardAssets,
             METADATA_URI
         );
+        vm.prank(address(0xBADD));
+        vm.expectRevert(RobynNativeBasketVaultV2.Unauthorized.selector);
+        vault.configureFallbackPolicy(1 hours, 3 hours);
+        vm.expectRevert(RobynNativeBasketVaultV2.Unauthorized.selector);
+        vault.bindLaunchToken(RobynLaunchToken(address(0)));
+        RobynLaunchToken wrongController = new RobynLaunchToken(
+            "Wrong controller",
+            "WRONG",
+            address(this),
+            1_000 ether,
+            address(this),
+            rewardAssets,
+            METADATA_URI
+        );
+        vm.expectRevert(RobynNativeBasketVaultV2.Unauthorized.selector);
+        vault.bindLaunchToken(wrongController);
         vm.prank(address(0xBADD));
         vm.expectRevert(RobynNativeBasketVaultV2.Unauthorized.selector);
         vault.bindLaunchToken(token);
@@ -468,6 +470,22 @@ contract Schema19CoverageBranchesTest is Schema19MaintenanceFallbackTest {
             )
         );
         vault.convertLeg(0, 0.5 ether, 1, block.timestamp);
+        (bool converted,, bool usedFallback) = vault.processNextLeg();
+        assertFalse(converted);
+        assertFalse(usedFallback);
+        vm.expectRevert(RobynNativeBasketVaultV2.Unauthorized.selector);
+        vault.executePrimaryConversion(0, 1, 1, block.timestamp);
+        vm.expectRevert(RobynNativeBasketVaultV2.Unauthorized.selector);
+        vault.executeFallbackConversion(0, 1, 1, block.timestamp);
+        vm.prank(address(vault));
+        vm.expectRevert(RobynNativeBasketVaultV2.InvalidAmount.selector);
+        vault.executeFallbackConversion(0, 0, 1, block.timestamp);
+        vm.prank(address(vault));
+        vm.expectRevert(RobynNativeBasketVaultV2.InvalidAmount.selector);
+        vault.executeFallbackConversion(0, 0.5 ether + 1, 1, block.timestamp);
+        vm.prank(address(vault));
+        vm.expectRevert(RobynNativeBasketVaultV2.InvalidAmount.selector);
+        vault.executeFallbackConversion(0, 1, 0, block.timestamp);
         assertEq(vault.totalPendingNative(), 0.5 ether);
         assertEq(vault.totalNativeConsumed(), 0);
     }
@@ -487,8 +505,13 @@ contract Schema19CoverageBranchesTest is Schema19MaintenanceFallbackTest {
         vm.expectRevert(RobynClaimsRouter.InvalidConfiguration.selector);
         claims.claimAll(RobynLaunchToken(address(0x123456)));
 
+        RobynTradeRouter coordinatorTradeRouter = new RobynTradeRouter();
+        vm.expectRevert(RobynV4LaunchCoordinatorV7.InvalidConfiguration.selector);
+        new RobynV4LaunchCoordinatorV7(
+            launchFactory, marketFactory, feeRouter, coordinatorTradeRouter, TREASURY, TREASURY
+        );
         RobynV4LaunchCoordinatorV7 publicCoordinator = new RobynV4LaunchCoordinatorV7(
-            launchFactory, marketFactory, feeRouter, new RobynTradeRouter(), TREASURY, GUARDIAN
+            launchFactory, marketFactory, feeRouter, coordinatorTradeRouter, TREASURY, GUARDIAN
         );
         vm.prank(GUARDIAN);
         publicCoordinator.pauseLaunches();

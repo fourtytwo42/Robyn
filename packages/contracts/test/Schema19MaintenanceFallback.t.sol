@@ -16,6 +16,7 @@ import { RobynV4NativeProtocolTest } from "./RobynV4NativeProtocol.t.sol";
 
 contract Schema19GasExhaustingMaintenance is IRobynMaintenanceCoordinator {
     uint256 public constant taskGasLimit = 100_000;
+
     function processRewards(address) external pure returns (bool) {
         while (true) { }
         return false;
@@ -94,18 +95,32 @@ contract Schema19MaintenanceFallbackTest is RobynV4NativeProtocolTest {
         }
 
         assertEq(maintenance.nextTask(address(token)), initialTask, "scheduler wrapped");
-        assertEq(maintenance.attemptCount(address(token)), initialAttempts + maintenance.TASK_COUNT());
+        assertEq(
+            maintenance.attemptCount(address(token)), initialAttempts + maintenance.TASK_COUNT()
+        );
         assertTrue(maintenance.successCount(address(token)) >= 4, "assigned liabilities converted");
         assertEq(feeRouter.totalBasketNativeLiability(), 0, "basket settled");
         assertEq(feeRouter.totalDaoNativeLiability(), 0, "DAO settled");
-        assertEq(feeRouter.totalTreasuryNativeLiability(), 0, "treasury settled");
+        uint256 treasuryClaimable = feeRouter.claimableTreasuryNative();
+        assertGt(treasuryClaimable, 0, "treasury settlement becomes pull claimable");
+        assertEq(
+            feeRouter.totalTreasuryNativeLiability(),
+            treasuryClaimable,
+            "settlement preserves treasury liability until claim"
+        );
+        vm.prank(TREASURY);
+        assertEq(feeRouter.claimTreasuryFees(), treasuryClaimable, "treasury pulls assigned fees");
+        assertEq(feeRouter.totalTreasuryNativeLiability(), 0, "treasury claim clears liability");
         assertGt(feeRouter.totalCreatorNativeLiability(), 0, "creator remains pull based");
         assertEq(
             vault.totalPendingNative() + vault.totalNativeConsumed(),
             vault.totalFeesReceived(),
             "vault conservation"
         );
-        assertEq(daoRewards.totalRewardsDeposited(), feeRouter.launchAccount(address(token)).cumulativeDaoNativeSettled);
+        assertEq(
+            daoRewards.totalRewardsDeposited(),
+            feeRouter.launchAccount(address(token)).cumulativeDaoNativeSettled
+        );
     }
 
     function testTradeRouterReturnsAssetsAndNativeWithoutRetainingAllowance() public {
@@ -192,6 +207,7 @@ contract Schema19MaintenanceFallbackTest is RobynV4NativeProtocolTest {
         assertFalse(usedFallback);
         assertEq(vault.leg(0).failureObservations, 0);
     }
+
     function testGlobalConversionPauseNeverCountsAsLegFailure() public {
         (, RobynNativeBasketVaultV2 vault,) =
             coordinator.createLaunch(_request(keccak256("schema19-global-pause")));
@@ -208,7 +224,7 @@ contract Schema19MaintenanceFallbackTest is RobynV4NativeProtocolTest {
         assertEq(pausedLeg.pendingNative, 0.01 ether, "pending allocation remains attributed");
     }
 
-    function testGuardianSealedOracleFailureCountsAsObjectiveObservation() public {
+    function testGuardianReasonCannotManufactureObjectiveFallbackObservation() public {
         (, RobynNativeBasketVaultV2 vault,) =
             coordinator.createLaunch(_request(keccak256("schema19-stale-oracle")));
         vault.recordFees{ value: 0.01 ether }();
@@ -216,18 +232,16 @@ contract Schema19MaintenanceFallbackTest is RobynV4NativeProtocolTest {
 
         vm.prank(GUARDIAN);
         assetRouter.disableRoute(address(basketAsset), staleOracle);
-        RobynV4AssetRouter.RouteStatus memory status =
-            assetRouter.routeStatus(address(basketAsset));
+        RobynV4AssetRouter.RouteStatus memory status = assetRouter.routeStatus(address(basketAsset));
         assertFalse(status.ready);
         assertEq(status.reason, staleOracle);
 
         vault.processNextLeg();
         RobynNativeBasketVaultV2.BasketLeg memory failedLeg = vault.leg(0);
-        assertEq(failedLeg.failureObservations, 1);
-        assertEq(failedLeg.lastFailureReason, staleOracle);
+        assertEq(failedLeg.failureObservations, 0);
+        assertEq(failedLeg.lastFailureReason, bytes32(0));
         assertEq(failedLeg.pendingNative, 0.01 ether);
     }
-
 
     function _configureBasketRoute(uint128 minimumLiquidity) private {
         assetRouter.configureRoute(

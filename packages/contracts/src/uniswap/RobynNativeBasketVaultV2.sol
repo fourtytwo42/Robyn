@@ -20,8 +20,6 @@ contract RobynNativeBasketVaultV2 is ReentrancyGuard {
     bytes32 private constant REASON_POOL_UNINITIALIZED = keccak256("POOL_UNINITIALIZED");
     bytes32 private constant REASON_THIN_LIQUIDITY = keccak256("INSUFFICIENT_LIQUIDITY");
     bytes32 private constant REASON_REFERENCE_DEVIATION = keccak256("REFERENCE_PRICE_DEVIATION");
-    bytes32 private constant REASON_STALE_REFERENCE = keccak256("STALE_REFERENCE_PRICE");
-    bytes32 private constant REASON_ORACLE_PAUSED = keccak256("ORACLE_PAUSED");
     bytes32 private constant REASON_PROTECTED_QUOTE = keccak256("PROTECTED_QUOTE_FAILURE");
 
     error Unauthorized();
@@ -448,8 +446,7 @@ contract RobynNativeBasketVaultV2 is ReentrancyGuard {
 
     function _isObjectiveRouteFailure(bytes32 reason) private pure returns (bool) {
         return reason == REASON_POOL_UNINITIALIZED || reason == REASON_THIN_LIQUIDITY
-            || reason == REASON_REFERENCE_DEVIATION || reason == REASON_STALE_REFERENCE
-            || reason == REASON_ORACLE_PAUSED || reason == REASON_PROTECTED_QUOTE;
+            || reason == REASON_REFERENCE_DEVIATION || reason == REASON_PROTECTED_QUOTE;
     }
 
     function _fundLeg(uint256 index, uint256 amount) private {
