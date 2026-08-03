@@ -243,7 +243,7 @@ const receiptDigest = (receipt) =>
   );
 const missing = (error) => /not found|could not be found/i.test(String(error?.shortMessage ?? error?.message ?? error));
 
-const submit = async ({ phase, label, to, data, value = 0n }) => {
+const submit = async ({ phase, label, to, data, value = 0n, minimumGas = 0n }) => {
   const key = `schema19-${mainnetFork ? "mainnet-fork" : "testnet"}:${phase}:${label}`;
   const records = await journal();
   const classified = classifyCanaryJournal(records, key);
@@ -289,7 +289,8 @@ const submit = async ({ phase, label, to, data, value = 0n }) => {
   const maxPriorityFeePerGas =
     (fees.maxPriorityFeePerGas ?? 0n) <= maxFeePerGas ? (fees.maxPriorityFeePerGas ?? 0n) : maxFeePerGas;
   const estimate = await client.estimateGas({ account: account.address, to, data, value });
-  const gas = estimate * 2n;
+  const doubledEstimate = estimate * 2n;
+  const gas = doubledEstimate > minimumGas ? doubledEstimate : minimumGas;
   const balance = await client.getBalance({ address: account.address });
   if (balance < value + gas * maxFeePerGas + L1_FEE_RESERVE + RESERVE) {
     throw new Error(`${key} would breach the fixed Testnet reserve`);
@@ -834,14 +835,17 @@ const run = async () => {
   const processMaintenance = async (phase, attempts = 45) => {
     const before = await read(contracts.maintenance, built.maintenance.abi, "attemptCount", [token]);
     for (let index = 0; index < attempts; index += 1) {
-      await write(
+      await submit({
         phase,
-        `${phase}-maintenance-${before + BigInt(index + 1)}`,
-        contracts.maintenance,
-        built.maintenance.abi,
-        "processRewards",
-        [token],
-      );
+        label: `${phase}-maintenance-${before + BigInt(index + 1)}`,
+        to: contracts.maintenance,
+        data: encodeFunctionData({
+          abi: built.maintenance.abi,
+          functionName: "processRewards",
+          args: [token],
+        }),
+        minimumGas: BigInt(manifest.settings.maintenanceCallGas),
+      });
     }
     const after = await read(contracts.maintenance, built.maintenance.abi, "attemptCount", [token]);
     if (after - before !== BigInt(attempts)) throw new Error(`${phase} did not advance one deterministic task per call`);

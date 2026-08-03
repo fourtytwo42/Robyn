@@ -53,6 +53,10 @@ test("Schema-19 lifecycle covers three assets, user-driven maintenance, and all 
     source,
     /`\$\{phase\}-maintenance-\$\{before \+ BigInt\(index \+ 1\)\}`/,
   );
+  assert.match(
+    source,
+    /minimumGas: BigInt\(manifest\.settings\.maintenanceCallGas\)/,
+  );
   assert.match(source, /await waitUntil\(BigInt\(state\.graduatedAt\) \+ 301n\)/);
   assert.match(
     source,
