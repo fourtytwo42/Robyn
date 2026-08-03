@@ -28,6 +28,7 @@ const postdeployment = JSON.parse(postdeploymentRaw);
 const CONTRACT_SHA = "4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4";
 const DEPLOYMENT_APPLICATION_SHA = "8327b250122cd9050a7da6a44e12859e3cf521aa";
 const APPLICATION_SHA = "5ea50ed836d81416a7a6a32c8078a864fca28d0b";
+const INDEXING_POLICY_HASH = "5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1";
 if (
   baseline.schemaVersion !== 18 ||
   baseline.chainId !== 46630 ||
@@ -43,19 +44,50 @@ if (
   throw new Error("Schema-18 Mainnet application-manifest identity mismatch");
 }
 
-const routerArtifact = JSON.parse(
-  await readFile(
-    path.resolve(
-      path.dirname(new URL(import.meta.url).pathname),
-      "../packages/contracts/out/RobynV4AssetRouter.sol/RobynV4AssetRouter.json",
-    ),
-    "utf8",
-  ),
-);
+// Keep this operational finalizer independent of the Solidity build cache. The
+// release process freezes the qualified contract closure separately; these two
+// ABI fragments are the only calls decoded from the sealed bootstrap plan.
+const ROUTER_CONFIGURATION_ABI = [
+  {
+    type: "function",
+    name: "configureRoute",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "asset", type: "address" },
+      {
+        name: "route_",
+        type: "tuple",
+        components: [
+          { name: "fee", type: "uint24" },
+          { name: "tickSpacing", type: "int24" },
+          { name: "hooks", type: "address" },
+          { name: "minimumLiquidity", type: "uint128" },
+          { name: "maximumNativeInput", type: "uint128" },
+          { name: "referenceTick", type: "int24" },
+          { name: "maximumReferenceTickDeviation", type: "uint24" },
+          { name: "enforceReferencePrice", type: "bool" },
+          { name: "verificationClass", type: "bytes32" },
+          { name: "enabled", type: "bool" },
+        ],
+      },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "configureWrappedNativeRoute",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "maximumNativeInput", type: "uint128" },
+      { name: "enabled", type: "bool" },
+    ],
+    outputs: [],
+  },
+];
 const publicRoutes = new Map();
 for (const call of lifecycle.bootstrap.steps[1].calls.filter((item) => item.label.includes("public-cap"))) {
   const symbol = call.label.replace("install-", "").replace("-public-cap", "");
-  const decoded = decodeFunctionData({ abi: routerArtifact.abi, data: call.data });
+  const decoded = decodeFunctionData({ abi: ROUTER_CONFIGURATION_ABI, data: call.data });
   if (decoded.functionName === "configureRoute") {
     const [asset, route] = decoded.args;
     publicRoutes.set(symbol, {
@@ -167,10 +199,22 @@ const runtimeCodeHashes = Object.fromEntries(
 );
 
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+// The qualified scoped policy permanently retains the original Schema-18
+// factory root for its historical logs. Runtime reads use launchFactory via
+// contracts.factory, while this policy-only alias preserves the sealed 15-root
+// ingestion closure.
 const indexingPolicy = buildSchema18IndexingPolicy({
   schemaVersion: 18,
-  contracts,
+  contracts: {
+    ...contracts,
+    factory: baseline.contracts.factory,
+  },
 });
+if (indexingPolicy.policyHash !== INDEXING_POLICY_HASH) {
+  throw new Error(
+    `Schema-18 Mainnet indexing-policy mismatch: ${indexingPolicy.policyHash}`,
+  );
+}
 const result = {
   ...baseline,
   schemaVersion: 18,

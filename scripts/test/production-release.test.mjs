@@ -272,3 +272,25 @@ test("production updater follows authenticated asset redirects under the hardene
     /install -d -o root -g robyn-release -m 0750 \/var\/lib\/robyn-release \/var\/lib\/robyn-release\/downloads/,
   );
 });
+
+test("Mainnet application finalization is independent of contract build output", () => {
+  const finalizer = readFileSync(
+    path.join(
+      repositoryRoot,
+      "scripts",
+      "finalize-schema18-mainnet-application-manifest.mjs",
+    ),
+    "utf8",
+  );
+
+  assert.match(finalizer, /const ROUTER_CONFIGURATION_ABI = \[/);
+  assert.match(finalizer, /name: "configureRoute"/);
+  assert.match(finalizer, /name: "configureWrappedNativeRoute"/);
+  assert.doesNotMatch(finalizer, /packages\/contracts\/out/);
+  assert.match(
+    finalizer,
+    /INDEXING_POLICY_HASH = "5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1"/,
+  );
+  assert.match(finalizer, /factory: lifecycle\.contracts\.launchFactory/);
+  assert.match(finalizer, /factory: baseline\.contracts\.factory/);
+});
