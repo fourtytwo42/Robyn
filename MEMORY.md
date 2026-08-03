@@ -1,6 +1,8 @@
 # Project Memory
 
 ## Active Handoff
+- Exact current-state route-governance rehearsal passed on LAN-sourced fork block `26548329`: unanimous scheduling, the simulated one-hour Timelock, twelve route configurations, and twelve guardian rollback disables produced 14 unique successful local receipts. The preliminary authorization-false manifest hashes to `6f93b66b701f45d91cfde1d069e94abe00396a4c312d4bf9619c02afe74450487`; it must be resealed after the tooling commit so it binds the final pushed SHA.
+- Signed application release `mainnet-prod-20260803-faeb3ad` was published, but the keyless production updater has not downloaded/deployed it. Public production remains on `30dfb1746d9b455a916275c2b8940be98f70181f`. The staging promotion state still records rollback predecessor `296f4a3268a58b7549e4efb712487362ad716651`; do not bypass the updater's required-previous-release guard. Reconcile production-to-staging release state from verified signed evidence before issuing a new unique release.
 - Asset-route remediation is in progress on `codex/schema18-asset-route-pricing-remediation`. Additive API/UI work separates Chainlink reference prices, raw v4 pool-implied prices, and final selectability; Mainnet routes and Schema-18 contracts are unchanged.
 - Schema-18 asset policy `schema18-assets-v1` hashes to `de5d61f253c9ae8a53a2e6663ebf87069ef1b74072c4d8e368b978ff0064fe52`. Contract-compatible discovery, 65-receipt/13-invariant LAN-sourced fork execution, and 13 samples spanning 3,752 seconds all passed; final qualification is sealed at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/final-qualification-de5d61f`.
 - No route-governance operation has been authorized, scheduled, or broadcast. Additive application candidate `19e207c1d1ef1defd55d2ff8cf73c01a306a4a3b` preserves the six existing onchain routes; its deterministic Mainnet manifest hashes to `134185806f602989ce4e04f7ce9736d51a9601d0289aefb18190f969fd9772b4`.
@@ -15,6 +17,7 @@
 - Production migration is complete. Keyless host `192.168.50.108` now serves the canonical public domain through Cloudflare tunnel `sherwoodforest-mainnet-prod`; host `192.168.50.250` retains Devnet, Testnet, keeper/signing operations, and LAN-only Mainnet staging at `http://192.168.50.250:3082`. Ordinary pushes never deploy production.
 
 ## Current State
+- Operational tooling HEAD `faeb3adaa1e01f24e4ade45c03b6698680144716` is on `origin/main`. Two protected fixed-root application builds were byte-identical at `7a3fb892486a06267873087a58dc2dc55a1bd21e64d410f5c63217fbb0ce53cf`; frozen contract attestation remained `ed382d44515b833641e76e78c6a168a1a63f00e4c4266f75b1b45ecfa2977685`. The signed release has zero observed asset downloads and is not live.
 - Schema-18 asset policy `schema18-assets-v1` hashes to `de5d61f253c9ae8a53a2e6663ebf87069ef1b74072c4d8e368b978ff0064fe52` and catalogs WETH plus twelve stock or ETF candidates. Selected safe caps are 0.05 ETH for WETH, GOOGL, MSFT, NVDA, SPCX, SPY, USDG, and USAR; 0.01 ETH for AMZN, INTC, and SLV; 0.0025 ETH for GME; and 0.001 ETH for QQQ. NVDA uses the zero-hook 0.05% pool, SPY the zero-hook 0.30% pool, and USDG the router-compatible zero-hook fee-460 pool; zero-fee or hooked pools are rejected.
 
 
@@ -46,6 +49,9 @@
 - Mainnet staging retention is enabled nightly on `192.168.50.250`; it retains seven days of bounded raw/log/audit history and its first execution completed with zero eligible rows.
 
 ## Open Follow-ups
+
+- Repair the production updater/authentication or release-state synchronization on `192.168.50.108`, then publish a new unique signed production release whose `requiredPreviousRelease` exactly matches the verified deployed source. Do not reuse or modify `mainnet-prod-20260803-faeb3ad`.
+- Commit and push `scripts/prepare-schema18-route-governance.mjs`, rerun the exact current-state rehearsal on that SHA, reseal the governance manifest, and stop for exact-hash authorization before any live schedule transaction.
 
 - Continue observing the first 24 public hours through native monitoring. On any contract, accounting, solvency, supply, principal, route, or LAN-RPC anomaly, disable application submissions and use the verified guardian controls.
 - GOOGL remains unavailable in the live catalog until the additive application release and a separately authorized route-governance operation recalibrate its nonzero liquidity floor. Do not bypass the current fail-closed readiness result.
