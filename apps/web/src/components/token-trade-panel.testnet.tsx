@@ -8,6 +8,7 @@ import { ResponsiveTradePanel } from "@/components/responsive-trade-panel";
 import { useRobynTestnetWallet } from "./robyn-testnet-wallet";
 import { normalizeWalletError } from "@/lib/wallet-policy";
 import { publicEnvironment } from "@/lib/public-environment";
+import { nativeTradeTarget } from "@/lib/schema19-trade-policy";
 
 const erc20Abi = [
   {
@@ -84,6 +85,29 @@ const nativeMarketAbi = [
     stateMutability: "nonpayable",
     inputs: [{ type: "uint256" }, { type: "uint256" }],
     outputs: [{ type: "uint256" }],
+  },
+] as const;
+const tradeRouterAbi = [
+  {
+    type: "function",
+    name: "buy",
+    stateMutability: "payable",
+    inputs: [
+      { type: "address", name: "market" },
+      { type: "uint256", name: "minimumOutput" },
+    ],
+    outputs: [{ type: "uint256", name: "tokenOutput" }],
+  },
+  {
+    type: "function",
+    name: "sell",
+    stateMutability: "nonpayable",
+    inputs: [
+      { type: "address", name: "market" },
+      { type: "uint256", name: "tokenAmount" },
+      { type: "uint256", name: "minimumOutput" },
+    ],
+    outputs: [{ type: "uint256", name: "nativeOutput" }],
   },
 ] as const;
 const v4AssetRouterAbi = [
@@ -414,6 +438,10 @@ export function NetworkTokenTradePanel({
     }
     setBusy(true);
     try {
+      const nativeTarget = isNativeV4
+        ? nativeTradeTarget(deployment, market)
+        : market;
+      const useTradeRouter = nativeTarget !== market;
       const amount = parseEther(input);
       if (
         side === "buy" &&
@@ -425,7 +453,7 @@ export function NetworkTokenTradePanel({
       }
       if (!isNativeV4 || side === "sell") {
         const asset = side === "buy" ? deployment.contracts.baseAsset : token;
-        const spender = market;
+        const spender = isNativeV4 ? nativeTarget : market;
         setStatus(`Approving ${side === "buy" ? "mUSD" : symbol}…`);
         const approval = await walletClient.writeContract({
           address: asset,
@@ -462,20 +490,24 @@ export function NetworkTokenTradePanel({
         if (side === "buy") {
           const simulation = await publicClient.simulateContract({
             account,
-            address: market,
-            abi: nativeMarketAbi,
+            address: nativeTarget,
+            abi: useTradeRouter ? tradeRouterAbi : nativeMarketAbi,
             functionName: "buy",
-            args: [minimumOutput],
+            args: useTradeRouter
+              ? [market, minimumOutput]
+              : [minimumOutput],
             value: amount,
           });
           hash = await walletClient.writeContract(simulation.request);
         } else {
           const simulation = await publicClient.simulateContract({
             account,
-            address: market,
-            abi: nativeMarketAbi,
+            address: nativeTarget,
+            abi: useTradeRouter ? tradeRouterAbi : nativeMarketAbi,
             functionName: "sell",
-            args: [amount, minimumOutput],
+            args: useTradeRouter
+              ? [market, amount, minimumOutput]
+              : [amount, minimumOutput],
           });
           hash = await walletClient.writeContract(simulation.request);
         }

@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 user-facing trade paths bound to maintenance
+
+- Context: Claims already used `RobynClaimsRouter`, but the shared public-network token panel still sent native trades directly to the market. That bypassed Schema-19 best-effort maintenance after graduated trades. The Devnet panel also lacked a native Schema-19 transaction path.
+- Decision: Route every Schema-19 native buy and sell through the manifest-bound `RobynTradeRouter`; approve launch-token sells to that router; fail closed when a Schema-19 manifest omits it; and preserve archived-schema direct-market behavior. Remove the unused direct-settlement helper from the focused lifecycle so qualification can advance work only through user actions or `processRewards(token)`.
+- Files: `apps/web/src/components/token-trade-panel.{devnet,testnet}.tsx`, `apps/web/src/lib/schema19-trade-policy.ts`, its unit tests, and `scripts/run-schema19-testnet-lifecycle.mjs`.
+- Tests: Web typecheck, lint, and 74 tests pass. All 34 Schema-19 deployment, verifier, finalizer, funding, indexing, lifecycle, restart, and torture-tooling tests pass.
+- Result: Corrected contract candidate `a67288133f09bce68b7386009d702c14dfb8bbab` passed fresh fast run 07. Deep run 03 is active on that exact clean pushed candidate and must not be duplicated. Mainnet and live Testnet remain unchanged.
+- Follow-up: Require deep run 03, exact security/reproducibility gates, then regenerate a clean exact Testnet fork deployment and full focused lifecycle before any live Testnet transaction.
+
 ### 2026-08-03 - Graduated trade-router sender boundary fixed
 
 - Context: The first isolated three-asset Testnet-fork lifecycle reached graduation, then the canonical dapp-wrapped sell reverted. The v4 PoolManager sends native output directly to the trade router, but the router accepted native only from the bonding market.
@@ -109,7 +118,7 @@
 ## Active Handoff
 - A pre-Testnet adversarial review found and fixed an administrative-label fallback edge case in `RobynNativeBasketVaultV2`. The previous `4a39cf4` contract candidate is superseded and must not be deployed; the corrected candidate requires fresh fast/deep torture and reproducibility evidence.
 - Candidate `54e4c5d728616371373d945dd0e6c887ab87102c` passed fast run 06, but its deep run 02 was interrupted and invalidated after the focused Testnet-fork lifecycle exposed a graduated trade-router sender defect. Never deploy or resume it.
-- Active corrected contract candidate is `a67288133f09bce68b7386009d702c14dfb8bbab`; fresh fast run 07 is active in `/home/hendo420/Robyn-schema19-qual-a672` and must not be duplicated.
+- Active corrected contract candidate is `a67288133f09bce68b7386009d702c14dfb8bbab`; fresh fast run 07 passed and deep run 03 is active in `/home/hendo420/Robyn-schema19-qual-a672`. Do not duplicate the deep gate.
 - Operational branch `codex/schema19-user-driven-fees` now binds Universal Router, produces a fail-closed active Schema-19 manifest, and contains the restart-safe focused three-asset lifecycle runner. Regenerate all local Testnet deployment evidence after the tooling is committed and clean; predecessor addresses and receipts are diagnostic only.
 - The pinned chain-46630 local-fork deployment from Testnet block `96760889` passed with 36/36 unique successful transactions and independent postdeployment verification. Its evidence is under `/home/hendo420/robyn-evidence/schema19-testnet/preflight-cada1cd-01`. Live Testnet remains unchanged.
 - Schema-19 is the active development handoff on `codex/schema19-user-driven-fees` in `/home/hendo420/Robyn-schema19`. Exact active contract candidate is `a67288133f09bce68b7386009d702c14dfb8bbab`; `4a39cf4` and `54e4c5d` evidence is archived and non-deployable.

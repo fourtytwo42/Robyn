@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { Deployment } from "@/lib/deployment";
 import { ResponsiveTradePanel } from "@/components/responsive-trade-panel";
+import { nativeTradeTarget } from "@/lib/schema19-trade-policy";
 
 const erc20Abi = [
   {
@@ -63,6 +64,62 @@ const marketAbi = [
     outputs: [{ type: "uint256" }, { type: "uint256" }],
   },
 ] as const;
+const nativeMarketAbi = [
+  {
+    type: "function",
+    name: "quoteBuy",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "uint256" }],
+    outputs: [{ type: "uint256" }, { type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "quoteSell",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "uint256" }],
+    outputs: [{ type: "uint256" }, { type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "buy",
+    stateMutability: "payable",
+    inputs: [{ type: "uint256", name: "minimumOutput" }],
+    outputs: [{ type: "uint256", name: "tokenOutput" }],
+  },
+  {
+    type: "function",
+    name: "sell",
+    stateMutability: "nonpayable",
+    inputs: [
+      { type: "uint256", name: "tokenAmount" },
+      { type: "uint256", name: "minimumOutput" },
+    ],
+    outputs: [{ type: "uint256", name: "nativeOutput" }],
+  },
+] as const;
+const tradeRouterAbi = [
+  {
+    type: "function",
+    name: "buy",
+    stateMutability: "payable",
+    inputs: [
+      { type: "address", name: "market" },
+      { type: "uint256", name: "minimumOutput" },
+    ],
+    outputs: [{ type: "uint256", name: "tokenOutput" }],
+  },
+  {
+    type: "function",
+    name: "sell",
+    stateMutability: "nonpayable",
+    inputs: [
+      { type: "address", name: "market" },
+      { type: "uint256", name: "tokenAmount" },
+      { type: "uint256", name: "minimumOutput" },
+    ],
+    outputs: [{ type: "uint256", name: "nativeOutput" }],
+  },
+] as const;
 
 function compact(value: bigint) {
   return Number(formatEther(value)).toLocaleString(undefined, {
@@ -88,8 +145,10 @@ export function NetworkTokenTradePanel({
   marketPhase: "legacy_fixed" | "bonding" | "graduated";
 }) {
   const router = useRouter();
+  const isNativeV4 = deployment.liquidityVenue === "uniswap-v4";
+  const buyDefault = isNativeV4 ? "0.001" : "100";
   const [side, setSide] = useState<"buy" | "sell">("buy");
-  const [input, setInput] = useState("100");
+  const [input, setInput] = useState(buyDefault);
   const [privateKey, setPrivateKey] = useState<Hex>();
   const [baseBalance, setBaseBalance] = useState(0n);
   const [tokenBalance, setTokenBalance] = useState(0n);
@@ -143,13 +202,13 @@ export function NetworkTokenTradePanel({
     }
     let active = true;
     void publicClient
-      .readContract({
+      .simulateContract({
         address: market,
-        abi: marketAbi,
+        abi: isNativeV4 ? nativeMarketAbi : marketAbi,
         functionName: side === "buy" ? "quoteBuy" : "quoteSell",
         args: [parseEther(input)],
       })
-      .then(([, amount]) => {
+      .then(({ result: [, amount] }) => {
         if (active) setQuotedOutput(Number(formatEther(amount)));
       })
       .catch(() => {
@@ -158,7 +217,7 @@ export function NetworkTokenTradePanel({
     return () => {
       active = false;
     };
-  }, [input, market, marketPhase, parsed, publicClient, side]);
+  }, [input, isNativeV4, market, marketPhase, parsed, publicClient, side]);
 
   useEffect(() => {
     const stored = window.sessionStorage.getItem("robyn-devnet-session-key");
@@ -168,12 +227,14 @@ export function NetworkTokenTradePanel({
   useEffect(() => {
     if (!account) return;
     void Promise.all([
-      publicClient.readContract({
-        address: deployment.contracts.baseAsset,
-        abi: erc20Abi,
-        functionName: "balanceOf",
-        args: [account.address],
-      }),
+      isNativeV4
+        ? publicClient.getBalance({ address: account.address })
+        : publicClient.readContract({
+            address: deployment.contracts.baseAsset,
+            abi: erc20Abi,
+            functionName: "balanceOf",
+            args: [account.address],
+          }),
       publicClient.readContract({
         address: token,
         abi: erc20Abi,
@@ -184,7 +245,13 @@ export function NetworkTokenTradePanel({
       setBaseBalance(base);
       setTokenBalance(held);
     });
-  }, [account, deployment.contracts.baseAsset, publicClient, token]);
+  }, [
+    account,
+    deployment.contracts.baseAsset,
+    isNativeV4,
+    publicClient,
+    token,
+  ]);
 
   async function submit() {
     if (!account || !walletClient) {
@@ -199,36 +266,81 @@ export function NetworkTokenTradePanel({
     }
     setBusy(true);
     try {
+      const nativeTarget = isNativeV4
+        ? nativeTradeTarget(deployment, market)
+        : market;
+      const useTradeRouter = nativeTarget !== market;
       const amount = parseEther(input);
-      const asset = side === "buy" ? deployment.contracts.baseAsset : token;
-      setStatus(`Approving ${side === "buy" ? "mUSD" : symbol}…`);
-      const approval = await walletClient.writeContract({
-        account,
-        address: asset,
-        abi: erc20Abi,
-        functionName: "approve",
-        args: [market, amount],
-      });
-      await publicClient.waitForTransactionReceipt({ hash: approval });
+      if (!isNativeV4 || side === "sell") {
+        const asset = side === "buy" ? deployment.contracts.baseAsset : token;
+        const spender = isNativeV4 ? nativeTarget : market;
+        setStatus(
+          `Approving ${side === "buy" ? (isNativeV4 ? "ETH" : "mUSD") : symbol}…`,
+        );
+        const approval = await walletClient.writeContract({
+          account,
+          address: asset,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [spender, amount],
+        });
+        await publicClient.waitForTransactionReceipt({ hash: approval });
+      }
       setStatus(`${side === "buy" ? "Buying" : "Selling"} ${symbol}…`);
-      const hash = await walletClient.writeContract({
-        account,
-        address: market,
-        abi: marketAbi,
-        functionName: side,
-        args: [amount, 1n],
-      });
+      let hash;
+      if (isNativeV4) {
+        const quote = await publicClient.simulateContract({
+          account,
+          address: market,
+          abi: nativeMarketAbi,
+          functionName: side === "buy" ? "quoteBuy" : "quoteSell",
+          args: [amount],
+        });
+        const minimumOutput = (quote.result[1] * 99n) / 100n;
+        if (minimumOutput === 0n) throw new Error("Quote output is too small.");
+        hash =
+          side === "buy"
+            ? await walletClient.writeContract({
+                account,
+                address: nativeTarget,
+                abi: useTradeRouter ? tradeRouterAbi : nativeMarketAbi,
+                functionName: "buy",
+                args: useTradeRouter
+                  ? [market, minimumOutput]
+                  : [minimumOutput],
+                value: amount,
+              })
+            : await walletClient.writeContract({
+                account,
+                address: nativeTarget,
+                abi: useTradeRouter ? tradeRouterAbi : nativeMarketAbi,
+                functionName: "sell",
+                args: useTradeRouter
+                  ? [market, amount, minimumOutput]
+                  : [amount, minimumOutput],
+              });
+      } else {
+        hash = await walletClient.writeContract({
+          account,
+          address: market,
+          abi: marketAbi,
+          functionName: side,
+          args: [amount, 1n],
+        });
+      }
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success")
         throw new Error("Transaction reverted.");
       setStatus(`${side === "buy" ? "Buy" : "Sell"} confirmed.`);
       const [base, held] = await Promise.all([
-        publicClient.readContract({
-          address: deployment.contracts.baseAsset,
-          abi: erc20Abi,
-          functionName: "balanceOf",
-          args: [account.address],
-        }),
+        isNativeV4
+          ? publicClient.getBalance({ address: account.address })
+          : publicClient.readContract({
+              address: deployment.contracts.baseAsset,
+              abi: erc20Abi,
+              functionName: "balanceOf",
+              args: [account.address],
+            }),
         publicClient.readContract({
           address: token,
           abi: erc20Abi,
@@ -252,9 +364,9 @@ export function NetworkTokenTradePanel({
       side={side}
       onSideChange={(value) => {
         setSide(value);
-        setInput(value === "buy" ? "100" : "10000");
+        setInput(value === "buy" ? buyDefault : "10000");
       }}
-      dirty={input !== (side === "buy" ? "100" : "10000")}
+      dirty={input !== (side === "buy" ? buyDefault : "10000")}
     >
       <div className="trade-tabs" role="tablist" aria-label="Trade side">
         {(["buy", "sell"] as const).map((value) => (
@@ -266,7 +378,7 @@ export function NetworkTokenTradePanel({
             className={side === value ? "active" : ""}
             onClick={() => {
               setSide(value);
-              setInput(value === "buy" ? "100" : "10000");
+              setInput(value === "buy" ? buyDefault : "10000");
             }}
           >
             {value}
@@ -287,24 +399,33 @@ export function NetworkTokenTradePanel({
             inputMode="decimal"
             onChange={(event) => setInput(event.target.value)}
             aria-label={
-              side === "buy" ? "Amount in mUSD" : `Amount in ${symbol}`
+              side === "buy"
+                ? `Amount in ${isNativeV4 ? "ETH" : "mUSD"}`
+                : `Amount in ${symbol}`
             }
           />
-          <strong>{side === "buy" ? "mUSD" : symbol}</strong>
+          <strong>
+            {side === "buy" ? (isNativeV4 ? "ETH" : "mUSD") : symbol}
+          </strong>
         </div>
       </label>
       <div className="quick-amounts">
-        {(side === "buy" ? [25, 100, 250] : [10000, 100000, 500000]).map(
-          (value) => (
+        {(side === "buy"
+          ? isNativeV4
+            ? ["0.001", "0.01", "0.1"]
+            : ["25", "100", "250"]
+          : ["10000", "100000", "500000"]
+        ).map((value) => (
             <button
               type="button"
               key={value}
-              onClick={() => setInput(String(value))}
+              onClick={() => setInput(value)}
             >
-              {value.toLocaleString()}
+              {Number(value).toLocaleString(undefined, {
+                maximumFractionDigits: 4,
+              })}
             </button>
-          ),
-        )}
+          ))}
       </div>
       <div className="trade-receive">
         <span>You receive approximately</span>
@@ -312,7 +433,7 @@ export function NetworkTokenTradePanel({
           {(quotedOutput ?? output).toLocaleString(undefined, {
             maximumFractionDigits: 2,
           })}{" "}
-          {side === "buy" ? symbol : "mUSD"}
+          {side === "buy" ? symbol : isNativeV4 ? "ETH" : "mUSD"}
         </strong>
         <small>
           {marketPhase === "bonding"
