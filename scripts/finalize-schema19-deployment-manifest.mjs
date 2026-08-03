@@ -32,7 +32,9 @@ if (input.rpcPolicy?.applicationUpstream !== "LAN-only" || input.rpcPolicy?.alch
   throw new Error("LAN-only RPC policy required");
 }
 const successfulReceipts = ledger.receipts?.filter((receipt) => receipt.status === "0x1") ?? [];
-if (successfulReceipts.length !== prepared.deployment.transactions.length) {
+const expectedReceiptCount =
+  prepared.deployment.fullEndingNonceExclusive - prepared.deployment.startingNonce;
+if (successfulReceipts.length !== expectedReceiptCount) {
   throw new Error("complete successful receipt ledger required");
 }
 const hashes = new Set(successfulReceipts.map((receipt) => receipt.transactionHash?.toLowerCase()));

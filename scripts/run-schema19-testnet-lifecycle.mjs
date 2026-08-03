@@ -109,19 +109,8 @@ const manifest = JSON.parse(manifestRaw);
 if (manifest.schemaVersion !== 19 || manifest.chainId !== CHAIN_ID) {
   throw new Error("Schema-19 lifecycle manifest identity mismatch");
 }
-if (!mainnetFork) {
-  const releaseManifest = JSON.parse(
-    await readFile(
-      path.join(
-        path.dirname(path.dirname(manifestPath)),
-        "testnet-release-manifest.json",
-      ),
-      "utf8",
-    ),
-  );
-  if (releaseManifest.gitSha !== releaseSha) {
-    throw new Error("Schema-19 served runtime release identity mismatch");
-  }
+if (manifest.contractReleaseSha !== releaseSha) {
+  throw new Error("Schema-19 contract release identity mismatch");
 }
 const chain = {
   id: CHAIN_ID,
@@ -199,7 +188,7 @@ const loadJson = async (file, fallback) => {
 const state = await loadJson(statePath, {
   schemaVersion: 19,
   releaseSha,
-  deploymentSha: manifest.releaseSha,
+  deploymentSha: manifest.contractReleaseSha,
   toolingSha,
   manifestSha256: sha256(manifestRaw),
   completedStages: [],
@@ -207,7 +196,7 @@ const state = await loadJson(statePath, {
 });
 if (
   state.releaseSha !== releaseSha ||
-  state.deploymentSha !== manifest.releaseSha ||
+  state.deploymentSha !== manifest.contractReleaseSha ||
   state.toolingSha !== toolingSha ||
   state.manifestSha256 !== sha256(manifestRaw)
 ) {
@@ -530,7 +519,7 @@ const run = async () => {
       `${json({
         stage,
         releaseSha,
-        deploymentSha: manifest.releaseSha,
+        deploymentSha: manifest.contractReleaseSha,
         toolingSha,
         manifestSha256: sha256(manifestRaw),
         chainId: await client.getChainId(),
