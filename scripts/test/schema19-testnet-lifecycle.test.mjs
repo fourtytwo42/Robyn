@@ -60,6 +60,10 @@ test("Schema-19 lifecycle covers three assets, user-driven maintenance, and all 
   assert.match(source, /did not complete and reset WETH fallback/);
   assert.match(source, /fixture-unwind/);
   assert.match(source, /testFailureFixture/);
+  assert.match(
+    source,
+    /poolKey\.currency0\.toLowerCase\(\) === zeroAddress\.toLowerCase\(\)/,
+  );
 });
 
 test("Schema-19 lifecycle proves unwind, supply, principal, allowance, solvency, and allocation", () => {

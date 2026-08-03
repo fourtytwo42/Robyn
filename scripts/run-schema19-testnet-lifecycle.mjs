@@ -738,7 +738,8 @@ const run = async () => {
       [token, [account.address], [10_000], true],
     );
     const poolKey = await read(adapter, adapterAbi, "poolKey");
-    const nativeZeroForOne = poolKey.currency0.toLowerCase() === external.weth.toLowerCase();
+    const nativeZeroForOne =
+      poolKey.currency0.toLowerCase() === zeroAddress.toLowerCase();
     const quoterAbi = parseAbi([
       "function quoteExactInputSingle(((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) poolKey,bool zeroForOne,uint128 exactAmount,bytes hookData) params) returns (uint256 amountOut,uint256 gasEstimate)",
     ]);
