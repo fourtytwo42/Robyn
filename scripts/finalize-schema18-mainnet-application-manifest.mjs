@@ -205,7 +205,7 @@ const assetCatalog = {
       logoUrl: policyAsset.logoUrl,
       mainnetAddress: getAddress(policyAsset.address),
       chainId: 4663,
-      decimals: 18,
+      decimals: policyAsset.decimals,
       mock: false,
       mockOnly: false,
       network: "robinhood-mainnet",

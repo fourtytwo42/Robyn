@@ -45,6 +45,9 @@ for (const asset of policy.assets ?? []) {
   if (address && addresses.has(address)) failures.push(`${asset.symbol} reuses an address`);
   if (address) addresses.add(address);
   if (!asset.provenance?.startsWith("robinhood-")) failures.push(`${asset.symbol} lacks Robinhood provenance`);
+  if (!Number.isInteger(asset.decimals) || asset.decimals < 0 || asset.decimals > 36) {
+    failures.push(`${asset.symbol} has invalid token decimals`);
+  }
   if (asset.symbol === "WETH") {
     if (asset.referencePrice?.kind !== "native-parity") failures.push("WETH must use native parity");
     if ((asset.candidatePools ?? []).length) failures.push("WETH must not use a pool");

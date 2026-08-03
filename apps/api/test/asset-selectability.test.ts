@@ -64,8 +64,13 @@ describe("asset market admission", () => {
         args: readonly unknown[];
       }) => {
         expect(address).toBe(quoter);
-        const amount = (args[0] as { exactAmount: bigint }).exactAmount;
-        return { result: [amount, 100_000n] };
+        const quote = args[0] as {
+          exactAmount: bigint;
+          zeroForOne: boolean;
+        };
+        return {
+          result: [quote.zeroForOne ? 200_000n : 99_000_000_000_000n, 100_000n],
+        };
       },
     } as unknown as PublicClient;
     const manifest: AssetCatalogManifest = {
@@ -75,12 +80,12 @@ describe("asset market admission", () => {
       v4Venue: { quoter },
       assets: [
         {
-          symbol: "AMZN",
-          name: "Amazon",
+          symbol: "USDG",
+          name: "Global Dollar",
           category: "stock",
           address: token,
           chainId: 4663,
-          decimals: 18,
+          decimals: 6,
           verification: "robinhood-mainnet-token-runtime",
           mockOnly: false,
           referencePrice: {
@@ -111,7 +116,7 @@ describe("asset market admission", () => {
         }),
         poolPrice: expect.objectContaining({
           status: "available",
-          nativePerAsset: "1",
+          nativePerAsset: "0.0005",
         }),
         route: expect.objectContaining({
           contractReady: false,

@@ -59,6 +59,17 @@ test("rejects wrapped lookalikes with an address", () => {
   );
 });
 
+test("pins canonical token decimals and rejects invalid metadata", () => {
+  assert.match(run(), /"passed":true/);
+  assert.throws(
+    () =>
+      run((policy) => {
+        policy.assets.find((asset) => asset.symbol === "USDG").decimals = 18.5;
+      }),
+    /invalid token decimals/,
+  );
+});
+
 test("rejects pools the Schema-18 router cannot configure", () => {
   assert.throws(
     () =>

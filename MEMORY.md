@@ -2,10 +2,10 @@
 
 ## Active Handoff
 - Exact current-state route-governance tooling is committed and pushed. Its final run must bind the clean pushed commit and preserve 14 unique successful local receipts for unanimous scheduling, the simulated one-hour Timelock, twelve route configurations, and twelve guardian rollback disables. The authorization-false manifest is stored under `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/governance-current-state`; never schedule it without the user's exact-hash authorization.
-- Signed application release `mainnet-prod-20260803-faeb3ad` was published, but the keyless production updater has not downloaded/deployed it. Public production remains on `30dfb1746d9b455a916275c2b8940be98f70181f`. The staging promotion state still records rollback predecessor `296f4a3268a58b7549e4efb712487362ad716651`; do not bypass the updater's required-previous-release guard. Reconcile production-to-staging release state from verified signed evidence before issuing a new unique release.
-- Asset-route remediation is in progress on `codex/schema18-asset-route-pricing-remediation`. Additive API/UI work separates Chainlink reference prices, raw v4 pool-implied prices, and final selectability; Mainnet routes and Schema-18 contracts are unchanged.
-- Schema-18 asset policy `schema18-assets-v1` hashes to `de5d61f253c9ae8a53a2e6663ebf87069ef1b74072c4d8e368b978ff0064fe52`. Contract-compatible discovery, 65-receipt/13-invariant LAN-sourced fork execution, and 13 samples spanning 3,752 seconds all passed; final qualification is sealed at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/final-qualification-de5d61f`.
-- No route-governance operation has been authorized, scheduled, or broadcast. Additive application candidate `19e207c1d1ef1defd55d2ff8cf73c01a306a4a3b` preserves the six existing onchain routes; its deterministic Mainnet manifest hashes to `134185806f602989ce4e04f7ce9736d51a9601d0289aefb18190f969fd9772b4`.
+- Signed release `mainnet-prod-20260803-cb352ca` is live on the keyless production host. The additive API/UI separates Chainlink references, pool-implied prices, and route selectability while preserving the existing onchain routes.
+- Schema-18 asset policy `schema18-assets-v2` hashes to `ec5c8f9c444623f2303504416bf5192c951bc17d6af191c3bf08a2c52cc483c0`. It adds explicit canonical token decimals; USDG is six decimals and every other catalog asset is eighteen. This corrects USDG pool-price scaling without changing qualified pool execution or contract bytecode.
+- Contract-compatible discovery, 65-receipt/13-invariant LAN-sourced fork execution, and 13 samples spanning 3,752 seconds all passed; original route qualification is sealed at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/final-qualification-de5d61f`.
+- No route-governance operation has been authorized, scheduled, or broadcast. The final manifest must be regenerated after the policy-v2 application release is committed, pushed, qualified, and promoted.
 
 
 - Schema-18 is publicly operational on Robinhood Mainnet at `https://sherwoodforest.trade`. Public mode, the `6 ETH / 0.5 ETH` profile, six qualified routes, both conversion systems, and application transaction submission are active.
@@ -17,8 +17,8 @@
 - Production migration is complete. Keyless host `192.168.50.108` now serves the canonical public domain through Cloudflare tunnel `sherwoodforest-mainnet-prod`; host `192.168.50.250` retains Devnet, Testnet, keeper/signing operations, and LAN-only Mainnet staging at `http://192.168.50.250:3082`. Ordinary pushes never deploy production.
 
 ## Current State
-- Operational tooling HEAD `faeb3adaa1e01f24e4ade45c03b6698680144716` is on `origin/main`. Two protected fixed-root application builds were byte-identical at `7a3fb892486a06267873087a58dc2dc55a1bd21e64d410f5c63217fbb0ce53cf`; frozen contract attestation remained `ed382d44515b833641e76e78c6a168a1a63f00e4c4266f75b1b45ecfa2977685`. The signed release has zero observed asset downloads and is not live.
-- Schema-18 asset policy `schema18-assets-v1` hashes to `de5d61f253c9ae8a53a2e6663ebf87069ef1b74072c4d8e368b978ff0064fe52` and catalogs WETH plus twelve stock or ETF candidates. Selected safe caps are 0.05 ETH for WETH, GOOGL, MSFT, NVDA, SPCX, SPY, USDG, and USAR; 0.01 ETH for AMZN, INTC, and SLV; 0.0025 ETH for GME; and 0.001 ETH for QQQ. NVDA uses the zero-hook 0.05% pool, SPY the zero-hook 0.30% pool, and USDG the router-compatible zero-hook fee-460 pool; zero-fee or hooked pools are rejected.
+- Live production application source is `cb352cacd6ef6e5e45d586900cf7c18e3838c33f`. The next policy-v2 release is application-only and must preserve frozen contract attestation `ed382d44515b833641e76e78c6a168a1a63f00e4c4266f75b1b45ecfa2977685`.
+- Schema-18 asset policy `schema18-assets-v2` hashes to `ec5c8f9c444623f2303504416bf5192c951bc17d6af191c3bf08a2c52cc483c0` and catalogs WETH plus twelve stock, ETF, commodity, or stablecoin candidates. Selected safe caps are 0.05 ETH for WETH, GOOGL, MSFT, NVDA, SPCX, SPY, USDG, and USAR; 0.01 ETH for AMZN, INTC, and SLV; 0.0025 ETH for GME; and 0.001 ETH for QQQ. NVDA uses the zero-hook 0.05% pool, SPY the zero-hook 0.30% pool, and USDG the router-compatible zero-hook fee-460 pool; zero-fee or hooked pools are rejected.
 
 
 - Gate-3 manifest `2554c9c971630dc6a8399a0868201908e313c6ab89e299e2b544100cd7ca3bda` executed exactly once as transaction `0xb9cea03d314c66c0f6afda3613e183fe9228f6652ed8345e6f033419610fc67c` at block `26011510`.
@@ -50,14 +50,22 @@
 
 ## Open Follow-ups
 
-- Repair the production updater/authentication or release-state synchronization on `192.168.50.108`, then publish a new unique signed production release whose `requiredPreviousRelease` exactly matches the verified deployed source. Do not reuse or modify `mainnet-prod-20260803-faeb3ad`.
-- Commit and push `scripts/prepare-schema18-route-governance.mjs`, rerun the exact current-state rehearsal on that SHA, reseal the governance manifest, and stop for exact-hash authorization before any live schedule transaction.
+- Commit and push the policy-v2 decimal correction, run scope-appropriate application qualification and a signed production release, then rerun the exact current-state route rehearsal and stop for exact-hash authorization before any live schedule transaction.
 
 - Continue observing the first 24 public hours through native monitoring. On any contract, accounting, solvency, supply, principal, route, or LAN-RPC anomaly, disable application submissions and use the verified guardian controls.
 - GOOGL remains unavailable in the live catalog until the additive application release and a separately authorized route-governance operation recalibrate its nonzero liquidity floor. Do not bypass the current fail-closed readiness result.
 - Correct the raw `/api/assets/catalog-manifest` snapshot's stale per-asset Testnet chain/provenance metadata in a future application release. The live `/api/assets` endpoint and transaction builder already use chain `4663`, so this is a catalog hygiene follow-up rather than a wallet-safety blocker.
 - Rotate the previously exposed comparison-provider credential during routine credential hygiene. Alchemy remains probe-only and is not a production dependency.
 - Add a true second-site encrypted backup target when available; the NAS copy is off-host but remains in the same LAN/failure domain.
+
+
+### 2026-08-03 - USDG decimal metadata corrected before governance
+
+- Context: Live browser acceptance showed the stale cached picker first, then API inspection found USDG's pool-implied price was scaled as if the six-decimal canonical token used eighteen decimals.
+- Decision: Version the support policy as `schema18-assets-v2`, pin token decimals explicitly, and require the application-manifest finalizer to consume policy decimals. USDG is six decimals; the other twelve catalog assets are eighteen.
+- Files: `config/protocol/robinhood-mainnet-support-policy.json`, `scripts/finalize-schema18-mainnet-application-manifest.mjs`, `scripts/validate-mainnet-support-policy.mjs`, `scripts/prepare-schema18-route-governance.mjs`, and focused policy/API tests.
+- Verification: Policy validation, 82 API tests, 71 web tests, typecheck, lint, production-release security tests, and the frozen-contract attestation pass. No Solidity compilation, contract test suite, onchain route change, or Mainnet transaction occurred.
+- Follow-up: Commit and push, run two reproducible application builds and environment acceptance, promote a fresh signed release, verify the public picker after reload, then reseal the authorization-false route manifest.
 
 
 ### 2026-08-03 - Schema-18 one-hour route qualification sealed
