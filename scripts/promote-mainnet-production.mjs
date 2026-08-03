@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { chmodSync, copyFileSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+  chmodSync,
+  copyFileSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -169,4 +176,31 @@ execFileSync("gh", [
   "--verify-tag", "--title", tag,
   "--notes", `Signed production release for ${sha}; scope=${scope}`,
 ], { cwd: repo, stdio: "inherit" });
+const stateDirectory = mkdtempSync(
+  path.join(tmpdir(), "robyn-release-state-"),
+);
+try {
+  chmodSync(stateDirectory, 0o755);
+  const candidateState = path.join(stateDirectory, "last-production-release.json");
+  writeFileSync(
+    candidateState,
+    `${JSON.stringify({ sourceSha: sha, tag, publishedAt: new Date().toISOString() }, null, 2)}\n`,
+    { mode: 0o444 },
+  );
+  execFileSync(
+    "sudo",
+    [
+      "-u",
+      "robyn-release",
+      "install",
+      "-m",
+      "0440",
+      candidateState,
+      stateFile,
+    ],
+    { stdio: "inherit" },
+  );
+} finally {
+  rmSync(stateDirectory, { force: true, recursive: true });
+}
 process.stdout.write(`${JSON.stringify({ tag, sha, scope, outputRoot }, null, 2)}\n`);
