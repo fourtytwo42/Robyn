@@ -223,6 +223,15 @@ test("production updater follows authenticated asset redirects under the hardene
     ),
     "utf8",
   );
+  const productionNginx = readFileSync(
+    path.join(
+      repositoryRoot,
+      "infrastructure",
+      "nginx",
+      "robyn-mainnet-production.conf",
+    ),
+    "utf8",
+  );
 
   assert.match(
     updater,
@@ -294,6 +303,11 @@ test("production updater follows authenticated asset redirects under the hardene
   assert.match(
     tunnelService,
     /^ExecStart=\/usr\/bin\/cloudflared tunnel --no-autoupdate run --token \$\{TUNNEL_TOKEN\}$/m,
+  );
+  assert.match(productionNginx, /server_name www\.sherwoodforest\.trade;/);
+  assert.match(
+    productionNginx,
+    /return 308 https:\/\/sherwoodforest\.trade\$request_uri;/,
   );
 });
 
