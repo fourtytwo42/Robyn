@@ -288,6 +288,60 @@ export default async function LaunchDetail({
                       </div>
                     </dl>
                   </div>
+                  {launch.maintenance ? (
+                    <section
+                      className="maintenance-progress"
+                      aria-label="Schema-19 reward processing"
+                    >
+                      <div className="reward-subheading">
+                        <span>User-driven distribution</span>
+                        <small>
+                          One bounded task is attempted after each trade or
+                          holder claim
+                        </small>
+                      </div>
+                      <dl className="reward-pulse-metrics">
+                        <div>
+                          <dt>Pending conversion</dt>
+                          <dd>{quantity(launch.maintenance.totalPendingNative, 6)} ETH</dd>
+                        </div>
+                        <div>
+                          <dt>Tasks completed</dt>
+                          <dd>
+                            {launch.maintenance.successes} /{" "}
+                            {launch.maintenance.attempts}
+                          </dd>
+                        </div>
+                      </dl>
+                      <div className="maintenance-leg-grid">
+                        {launch.maintenance.legs.map((leg) => {
+                          const asset = basket.find(
+                            (entry) =>
+                              entry.address.toLowerCase() ===
+                              leg.primaryAsset.toLowerCase(),
+                          );
+                          return (
+                            <div key={leg.index}>
+                              <strong>
+                                {asset?.symbol ?? short(leg.primaryAsset)}
+                              </strong>
+                              <span>{leg.weightBps / 100}% target</span>
+                              <small>
+                                {quantity(leg.pendingNative, 6)} ETH pending ·{" "}
+                                {leg.failureObservations}/3 route observations
+                              </small>
+                              {leg.failureObservations > 0 ? (
+                                <small>
+                                  Primary route is retried first; only this
+                                  pending leg can fall back to WETH after 72h.
+                                </small>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ) : null}
                   <p className="metric-source">
                     Canonical events and current balances through block{" "}
                     {analytics.asOfBlock ?? "unavailable"}.

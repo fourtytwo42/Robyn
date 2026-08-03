@@ -729,6 +729,43 @@
   font-size: 0.75rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+.maintenance-progress {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.maintenance-progress .reward-pulse-metrics {
+  margin-top: 0.7rem;
+}
+
+.maintenance-leg-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.7rem;
+}
+
+.maintenance-leg-grid > div {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid rgba(183, 245, 140, 0.16);
+  border-radius: 0.75rem;
+  padding: 0.7rem;
+  background: rgba(183, 245, 140, 0.035);
+}
+
+.maintenance-leg-grid span {
+  color: var(--primary);
+  font-size: 0.65rem;
+  font-weight: 750;
+}
+
+.maintenance-leg-grid small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
 }
 
 .token-data-tabs {
@@ -869,6 +906,11 @@
   .reward-pulse-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .maintenance-leg-grid {
+    grid-template-columns: 1fr;
+  }
+
   .reward-hub-heading {
     align-items: stretch;
     flex-direction: column;

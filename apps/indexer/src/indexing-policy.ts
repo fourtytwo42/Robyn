@@ -118,12 +118,12 @@ export function backfillAllowed(
 }
 
 export function validateIndexingPolicy(manifest: IndexingPolicyManifest) {
-  if (manifest.schemaVersion !== 18) {
-    throw new Error("Scoped indexer requires a Schema-18 manifest");
+  if (manifest.schemaVersion !== 19) {
+    throw new Error("Scoped indexer requires a Schema-19 manifest");
   }
   const policy = manifest.indexingPolicy;
   if (!policy || policy.version !== 1) {
-    throw new Error("Schema-18 indexing policy version 1 is required");
+    throw new Error("Schema-19 indexing policy version 1 is required");
   }
   if (policy.protocolRoots.length === 0) {
     throw new Error("Indexing policy requires protocol roots");
@@ -149,7 +149,7 @@ export function validateIndexingPolicy(manifest: IndexingPolicyManifest) {
     normalizedUnique(policy.poolEventTopics).join(",") !==
       normalizedUnique(requiredPoolEventTopics).join(",")
   ) {
-    throw new Error("Schema-18 indexing event identity mismatch");
+    throw new Error("Schema-19 indexing event identity mismatch");
   }
   for (const [label, size] of [
     ["addressBatchSize", policy.addressBatchSize],

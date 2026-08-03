@@ -1371,17 +1371,17 @@ async function projectRewardStreams(asOfBlock: bigint) {
   return logs.length;
 }
 
-async function projectSchema18Governance(asOfBlock: bigint) {
-  if ((manifest.schemaVersion ?? 0) !== 18) return 0;
+async function projectSchema19Governance(asOfBlock: bigint) {
+  if ((manifest.schemaVersion ?? 0) !== 19) return 0;
   const timelock = manifest.contracts.timelock;
   const governor = manifest.contracts.governor;
   if (typeof timelock !== "string" || typeof governor !== "string") {
-    throw new Error("Schema-18 manifest is missing Timelock or Governor");
+    throw new Error("Schema-19 manifest is missing Timelock or Governor");
   }
   const [checkpoint] = await sql.unsafe<
     { last_block: string; last_hash: string }[]
   >(
-    "SELECT last_block::text,last_hash FROM indexer_checkpoints WHERE service='schema18-governance-projector' AND chain_id=$1",
+    "SELECT last_block::text,last_hash FROM indexer_checkpoints WHERE service='schema19-governance-projector' AND chain_id=$1",
     [manifest.chainId],
   );
   const fromBlock = checkpoint
@@ -1433,10 +1433,10 @@ async function projectSchema18Governance(asOfBlock: bigint) {
     );
     if (!captured)
       throw new Error(
-        "Schema-18 governance projection target is not canonical",
+        "Schema-19 governance projection target is not canonical",
       );
     await tx.unsafe(
-      "INSERT INTO indexer_checkpoints (service,chain_id,last_block,last_hash) VALUES ('schema18-governance-projector',$1,$2,$3) ON CONFLICT (service,chain_id) DO UPDATE SET last_block=EXCLUDED.last_block,last_hash=EXCLUDED.last_hash,updated_at=now()",
+      "INSERT INTO indexer_checkpoints (service,chain_id,last_block,last_hash) VALUES ('schema19-governance-projector',$1,$2,$3) ON CONFLICT (service,chain_id) DO UPDATE SET last_block=EXCLUDED.last_block,last_hash=EXCLUDED.last_hash,updated_at=now()",
       [manifest.chainId, asOfBlock.toString(), captured.hash.toLowerCase()],
     );
   });
@@ -1819,7 +1819,7 @@ async function projectOnce() {
         projectedRewardEvents = await projectRewardStreams(
           BigInt(ingested.last_block),
         );
-        projectedGovernanceEvents = await projectSchema18Governance(
+        projectedGovernanceEvents = await projectSchema19Governance(
           BigInt(ingested.last_block),
         );
       },
@@ -2054,7 +2054,7 @@ async function projectOnce() {
     projectedRewardEvents = await projectRewardStreams(
       BigInt(ingested.last_block),
     );
-    projectedGovernanceEvents = await projectSchema18Governance(
+    projectedGovernanceEvents = await projectSchema19Governance(
       BigInt(ingested.last_block),
     );
   }

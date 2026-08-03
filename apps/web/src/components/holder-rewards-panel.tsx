@@ -22,6 +22,9 @@ const tokenAbi = parseAbi([
   "function withdrawnRewardOf(address,uint256) view returns (uint256)",
   "function claimAll()",
 ]);
+const claimsRouterAbi = parseAbi([
+  "function claimAll(address token) returns (uint256 claimed,bool maintenanceCallSucceeded)",
+]);
 const symbolAbi = parseAbi(["function symbol() view returns (string)"]);
 
 type HolderReward = {
@@ -42,6 +45,7 @@ function short(address: Address) {
 }
 
 export function HolderRewardsPanel({
+  claimsRouter,
   account,
   token,
   symbol,
@@ -51,6 +55,7 @@ export function HolderRewardsPanel({
   connect,
   switchNetwork,
 }: {
+  claimsRouter?: Address;
   account?: Address;
   token: Address;
   symbol: string;
@@ -163,9 +168,12 @@ export function HolderRewardsPanel({
     try {
       const { request } = await publicClient.simulateContract({
         account: walletClient.account ?? account,
-        address: token,
-        abi: tokenAbi,
+        address: claimsRouter ?? token,
+        abi: claimsRouter ? claimsRouterAbi : tokenAbi,
         functionName: "claimAll",
+        ...(claimsRouter
+          ? { args: [token] as const }
+          : {}),
       });
       const hash = await walletClient.writeContract(request);
       setStatus(`Claim submitted: ${hash.slice(0, 12)}...`);
@@ -240,8 +248,9 @@ export function HolderRewardsPanel({
         {holderRewardActionLabel(action)}
       </button>
       <p className="holder-reward-note">
-        Claims every currently available basket asset for this token in one
-        transaction.
+        Claims every currently available basket asset for this token. On
+        Schema-19, the claim then attempts one bounded maintenance task; a
+        maintenance failure cannot undo the claim.
       </p>
       {status ? (
         <p className="transaction-status" role="status">

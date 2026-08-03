@@ -10,6 +10,7 @@ import {
   type Hex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import deployment from "@robyn/deployment";
 import { HolderRewardsPanel } from "./holder-rewards-panel";
 
 const chain = defineChain({
@@ -58,6 +59,7 @@ export function NetworkHolderRewardsPanel({
       symbol={symbol}
       publicClient={publicClient}
       walletClient={walletClient}
+      claimsRouter={deployment.contracts.claimsRouter as Address | undefined}
       connect={() => window.location.assign("/#devnet-console")}
     />
   );

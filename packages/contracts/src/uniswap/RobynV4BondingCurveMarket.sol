@@ -365,7 +365,19 @@ contract RobynV4BondingCurveMarket is ReentrancyGuard {
     function _tryMaintenance() private {
         address coordinator = feeRouter.maintenanceCoordinator();
         if (coordinator == address(0)) return;
-        (bool succeeded,) = coordinator.call{gas: 450_000}(
+        (bool limitRead, bytes memory encodedLimit) = coordinator.staticcall(
+            abi.encodeCall(IRobynMaintenanceCoordinator.taskGasLimit, ())
+        );
+        if (!limitRead || encodedLimit.length != 32) {
+            emit MaintenanceCallResult(address(launchToken), false);
+            return;
+        }
+        uint256 configuredLimit = abi.decode(encodedLimit, (uint256));
+        if (configuredLimit < 100_000 || configuredLimit > 2_000_000) {
+            emit MaintenanceCallResult(address(launchToken), false);
+            return;
+        }
+        (bool succeeded,) = coordinator.call{gas: configuredLimit + 50_000}(
             abi.encodeCall(IRobynMaintenanceCoordinator.processRewards, (address(launchToken)))
         );
         emit MaintenanceCallResult(address(launchToken), succeeded);

@@ -30,7 +30,7 @@ function manifest() {
     poolIdBatchSize: 64,
   };
   return {
-    schemaVersion: 18,
+    schemaVersion: 19,
     contracts: {
       atomicLaunchCoordinator: address(1),
       launchFactory: address(2),
@@ -45,7 +45,7 @@ function manifest() {
   };
 }
 
-test("Schema-18 policy validates and normalizes its deterministic scope", () => {
+test("Schema-19 policy validates and normalizes its deterministic scope", () => {
   const result = validateIndexingPolicy(manifest());
   assert.equal(result.version, 1);
   assert.equal(result.protocolRoots.length, 2);
@@ -54,8 +54,8 @@ test("Schema-18 policy validates and normalizes its deterministic scope", () => 
 
 test("manifest validation rejects stale, zero, external, and altered policies", () => {
   const stale = manifest();
-  stale.schemaVersion = 17;
-  assert.throws(() => validateIndexingPolicy(stale), /Schema-18/);
+  stale.schemaVersion = 18;
+  assert.throws(() => validateIndexingPolicy(stale), /Schema-19/);
 
   const zero = manifest();
   zero.indexingPolicy.protocolRoots[0] = address(0);

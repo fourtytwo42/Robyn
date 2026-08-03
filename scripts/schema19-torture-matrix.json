@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 1,
+  "groups": [
+    {
+      "id": "schema19-user-driven-maintenance",
+      "actions": [
+        {
+          "id": "public-construction-and-bindings",
+          "tests": ["testSchema19CoordinatorStartsPublicOnlyWithBoundMaintenance()"]
+        },
+        {
+          "id": "reused-rdao-checkpointed-rewards",
+          "tests": [
+            "testReusedRdaoReceivesSchema19CheckpointedRewards()",
+            "testZeroEligibleDaoSupplyQueuesWithoutBlockingTrade()"
+          ]
+        },
+        {
+          "id": "deterministic-single-task-scheduler",
+          "tests": ["testSchedulerVisitsEveryTaskAndSettlesAssignedLiabilities()"]
+        },
+        {
+          "id": "best-effort-user-action-isolation",
+          "tests": [
+            "testBondingBuyAndSellSurviveExhaustedMaintenanceGas()",
+            "testClaimSurvivesMaintenanceRevert()"
+          ]
+        },
+        {
+          "id": "permissionless-nonredirectable-claims",
+          "tests": [
+            "testPermissionlessClaimAllForAlwaysPaysAccount()",
+            "testClaimsRouterRejectsMismatchedGasPolicy()"
+          ]
+        },
+        {
+          "id": "trade-router-custody-and-allowance-cleanup",
+          "tests": ["testTradeRouterReturnsAssetsAndNativeWithoutRetainingAllowance()"]
+        },
+        {
+          "id": "independent-leg-fallback-and-primary-retry",
+          "tests": [
+            "testObjectiveFailuresFallbackOnlyPendingLegThenRetryPrimary()",
+            "testSuccessfulPrimaryQuoteResetsFailureHistoryBeforeFallback()"
+          ]
+        },
+        {
+          "id": "failure-classification",
+          "tests": [
+            "testGlobalConversionPauseNeverCountsAsLegFailure()",
+            "testGuardianSealedOracleFailureCountsAsObjectiveObservation()"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "launch-modes-profiles",
+      "actions": [
+        {
+          "id": "mode-transitions-and-continuity",
+          "tests": [
+            "testLaunchModesRestrictCreationWithoutStoppingExistingBondingTrades()"
+          ]
+        },
+        {
+          "id": "profile-snapshot-and-version-race",
+          "tests": [
+            "testGovernedProfilesSnapshotFutureLaunchesAndRejectStaleRequests()"
+          ]
+        },
+        {
+          "id": "canary-and-production-graduation",
+          "tests": [
+            "testCanaryAndProductionProfilesBothGraduateAtSnapshottedCurves()"
+          ]
+        },
+        {
+          "id": "profile-bounds-and-rounding",
+          "tests": ["testFuzzGraduationProfileDerivationStaysBounded("]
+        }
+      ]
+    },
+    {
+      "id": "launch-bonding-graduation",
+      "actions": [
+        {
+          "id": "atomic-creation-and-initial-purchase",
+          "tests": ["testAtomicLaunchCanIncludeCreatorPurchase()"]
+        },
+        {
+          "id": "purchase-cap-and-rollback",
+          "tests": [
+            "testBondingCurvePurchaseCapIsEnforced()",
+            "testOversizedInitialPurchaseRollsBackLaunch()"
+          ]
+        },
+        {
+          "id": "forced-native-and-one-time-graduation",
+          "tests": [
+            "testForcedNativeCannotChangeCurvePrincipalOrBlockGraduation()"
+          ]
+        },
+        {
+          "id": "locked-principal-and-fixed-supply",
+          "tests": [
+            "testGraduationLocksPrincipalAndPostGraduationTrades()"
+          ]
+        },
+        {
+          "id": "bonding-phase-v4-rejections",
+          "tests": [
+            "testBondingPoolRejectsDirectSwapLiquidityAndDonation()"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "v4-routing-fees",
+      "actions": [
+        {
+          "id": "all-eleven-candidates-mechanical-round-trip",
+          "tests": [
+            "testAllElevenSchema15RouteCandidatesMechanically()"
+          ]
+        },
+        {
+          "id": "direct-wrapped-native-round-trip",
+          "tests": ["testDirectWrappedNativeRouteIsOneToOne()"]
+        },
+        {
+          "id": "protected-route-minimum-and-twap",
+          "tests": [
+            "testProtectedBasketRouteRejectsWeakMinimumOutputAndReferenceDeviation()"
+          ]
+        },
+        {
+          "id": "exact-input-both-directions",
+          "tests": [
+            "testHookChargesAndSettlesExactInputFeesInBothDirections()"
+          ]
+        },
+        {
+          "id": "exact-output-both-directions",
+          "tests": ["testHookChargesExactOutputFeesInBothDirections()"]
+        },
+        {
+          "id": "third-party-liquidity",
+          "tests": [
+            "testThirdPartyLiquidityDilutesLockedLpFeesButNotHookFees()"
+          ]
+        },
+        {
+          "id": "token-fee-conversion-safety",
+          "tests": [
+            "testHookTokenFeesConvertWithSafetyAndRemainFullyAttributed()",
+            "testLaunchFeeSaleRejectsSpotTwapManipulation()",
+            "testLaunchFeeSaleRejectsStaleLatestObservation()"
+          ]
+        },
+        {
+          "id": "forced-assets-and-allowance-cleanup",
+          "tests": [
+            "testLockerSegregatesPrincipalFeesAndUnattributedAssets()"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rewards-creators",
+      "actions": [
+        {
+          "id": "holder-transfer-aware-and-same-block",
+          "tests": [
+            "testRollingStreamSettlesTransfersAndBlocksSameBlockCapture()",
+            "testBuyerCannotEarnPrePurchaseRewardAndSellerKeepsIt()"
+          ]
+        },
+        {
+          "id": "holder-stream-boundaries",
+          "tests": [
+            "testHolderClaimsAtZeroTenThirtyFiftyNineAndSixtyMinutes()"
+          ]
+        },
+        {
+          "id": "dao-stream-boundaries-and-sniping",
+          "tests": [
+            "testClaimsAtZeroTenThirtyFiftyNineAndSixtyMinutes()",
+            "testOneHourStreamPreventsSameBlockRewardSniping()"
+          ]
+        },
+        {
+          "id": "reward-reentrancy-and-recipient-rollback",
+          "tests": [
+            "testMaliciousRewardTokenCannotReenterClaim()",
+            "testRewardClaimToFailureRollbackAndExclusionRules()"
+          ]
+        },
+        {
+          "id": "creator-future-only-splits",
+          "tests": [
+            "testCreatorFeeSplitAllocatesFutureFeesAndPreservesAccruedClaims()"
+          ]
+        },
+        {
+          "id": "creator-stream-boundaries",
+          "tests": [
+            "testCreatorClaimsAtZeroTenThirtyFiftyNineAndSixtyMinutes()"
+          ]
+        },
+        {
+          "id": "creator-batch-claim-to-failure",
+          "tests": [
+            "testCreatorBatchToAndFailedRecipientPreserveStreams()"
+          ]
+        },
+        {
+          "id": "creator-lock-and-invalid-config",
+          "tests": [
+            "testCreatorFeeSplitCanBePermanentlyLockedOnlyByCreator()",
+            "testCreatorFeeSplitRejectsInvalidConfigurations()"
+          ]
+        },
+        {
+          "id": "dao-zero-supply-queue",
+          "tests": [
+            "testZeroEligibleDaoSupplyQueuesWithoutBlockingTrade()"
+          ]
+        },
+        {
+          "id": "production-and-accelerated-streams",
+          "tests": [
+            "testSchema15ProductionAndAcceleratedRewardConfigurations()"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "recovery-adversarial",
+      "actions": [
+        {
+          "id": "snapshot-depth-replay",
+          "tests": [
+            "testSnapshotDepthsOneFiveTwentyReplayDeterministically()"
+          ]
+        },
+        {
+          "id": "route-bootstrap-and-unauthorized",
+          "tests": [
+            "testAssetRouterBootstrapConfigurationClosesWhenRegistrarBinds()"
+          ]
+        },
+        {
+          "id": "predicted-pool-squat-rejection",
+          "tests": ["testUnregisteredPredictedPoolCannotBeSquatted()"]
+        },
+        {
+          "id": "fee-conservation",
+          "tests": ["testCurveFeesConserveImmutableSplit()"]
+        },
+        {
+          "id": "malicious-callback-and-measured-delta",
+          "tests": [
+            "testMaliciousRouterCallbacksCannotReenterVault()",
+            "testFeeOnTransferAllocationUsesMeasuredDelta()"
+          ]
+        },
+        {
+          "id": "graduation-replay-rejection",
+          "tests": ["testGraduationCannotRepeat()"]
+        },
+        {
+          "id": "runtime-mutation-and-provider-surface-removal",
+          "tests": [
+            "testWrappedNativeRouteDetectsRuntimeMutation()",
+            "testProviderCalldataEntrypointsDoNotExist()"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "governance",
+      "actions": [
+        {
+          "id": "proposal-vote-queue-execute",
+          "tests": ["testProposalVoteQueueAndTimelockExecution()"]
+        },
+        {
+          "id": "proposal-threshold",
+          "tests": ["testBelowThresholdCannotPropose()"]
+        },
+        {
+          "id": "delegation-signature-replay",
+          "tests": ["testDelegationBySignatureAndReplayProtection()"]
+        },
+        {
+          "id": "double-vote-and-invalid-support",
+          "tests": ["testDoubleVoteAndInvalidSupportFail()"]
+        },
+        {
+          "id": "defeat-and-no-quorum",
+          "tests": ["testNoQuorumAndAgainstVoteAreDefeated()"]
+        },
+        {
+          "id": "cancel-and-early-execution",
+          "tests": [
+            "testGuardianCanCancelQueuedOperationButCannotExecuteEarly()"
+          ]
+        },
+        {
+          "id": "governance-only-settings",
+          "tests": ["testOnlyGovernanceCanChangeGovernorSettings()"]
+        }
+      ]
+    }
+  ]
+}

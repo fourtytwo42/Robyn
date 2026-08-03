@@ -15,6 +15,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LaunchList, LaunchRecord } from "@/lib/data-api";
 import { isActivePortfolioPosition } from "@/lib/portfolio-position-policy";
+import deployment from "@robyn/deployment";
 
 const tokenAbi = [
   {
@@ -58,6 +59,18 @@ const tokenAbi = [
     stateMutability: "nonpayable",
     inputs: [],
     outputs: [],
+  },
+] as const;
+const claimsRouterAbi = [
+  {
+    type: "function",
+    name: "claimAll",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "address", name: "token" }],
+    outputs: [
+      { type: "uint256", name: "claimed" },
+      { type: "bool", name: "maintenanceCallSucceeded" },
+    ],
   },
 ] as const;
 
@@ -273,9 +286,12 @@ export function PortfolioView({
       try {
         const { request } = await client.simulateContract({
           account,
-          address: token,
-          abi: tokenAbi,
+          address: deployment.contracts.claimsRouter ?? token,
+          abi: deployment.contracts.claimsRouter
+            ? claimsRouterAbi
+            : tokenAbi,
           functionName: "claimAll",
+          ...(deployment.contracts.claimsRouter ? { args: [token] } : {}),
         });
         const walletClient = createWalletClient({
           account,

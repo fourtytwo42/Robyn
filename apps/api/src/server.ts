@@ -128,6 +128,13 @@ const deployment = JSON.parse(
     progressThresholdBps: number;
     minimumUniqueTraders: number;
   };
+  maintenancePolicy?: {
+    tasksPerUserAction: 1;
+    taskGasLimit: string;
+    failureObservationSpacingSeconds: number;
+    fallbackDelaySeconds: number;
+    fallbackAsset: Address;
+  };
   contracts: {
     baseAsset?: Address;
     conversionRouter?: Address;
@@ -147,6 +154,10 @@ const deployment = JSON.parse(
     stateView?: Address;
     oracleHook?: Address;
     assetRouter?: Address;
+    maintenanceCoordinator?: Address;
+    claimsRouter?: Address;
+    tradeRouter?: Address;
+    daoRewardDistributor?: Address;
     tokenSink?: Address;
   };
   ipfsMetadata?: {
@@ -280,6 +291,24 @@ const remediationLaunchTokenAbi = parseAbi([
   "function streamingRewards(uint256) view returns (uint256)",
   "function totalRewardsVested(uint256) view returns (uint256)",
 ]);
+const schema19VaultAbi = parseAbi([
+  "function legCount() view returns (uint256)",
+  "function leg(uint256) view returns ((address asset,uint16 weightBps,uint256 pendingNative,uint256 consumedNative,uint256 rewardsDeposited,uint256 pendingSince,uint256 fallbackNativeConsumed,uint256 fallbackRewardsDeposited,uint8 failureObservations,uint64 firstFailureAt,uint64 lastFailureAt,bytes32 lastFailureReason))",
+  "function fallbackAsset() view returns (address)",
+  "function fallbackRewardIndex() view returns (uint8)",
+  "function failureObservationSpacing() view returns (uint256)",
+  "function fallbackDelay() view returns (uint256)",
+  "function nextLegCursor() view returns (uint8)",
+  "function totalFeesReceived() view returns (uint256)",
+  "function totalNativeConsumed() view returns (uint256)",
+  "function totalPendingNative() view returns (uint256)",
+]);
+const schema19MaintenanceAbi = parseAbi([
+  "function nextTask(address token) view returns (uint8)",
+  "function attemptCount(address token) view returns (uint256)",
+  "function successCount(address token) view returns (uint256)",
+]);
+
 const assetCatalog = new AssetCatalogService(
   rpcClient,
   chainId,
@@ -2212,6 +2241,88 @@ app.get<{
   };
 });
 
+async function schema19MaintenanceState(token: Address, vault: Address) {
+  if ((deployment.schemaVersion ?? 0) !== 19) return null;
+  const maintenance = deployment.contracts.maintenanceCoordinator;
+  const policy = deployment.maintenancePolicy;
+  if (!maintenance || !policy) {
+    throw new Error("Schema-19 manifest is missing maintenance identity");
+  }
+  const [
+    legCount,
+    fallbackAsset,
+    fallbackRewardIndex,
+    observationSpacing,
+    fallbackDelay,
+    nextLegCursor,
+    totalFeesReceived,
+    totalNativeConsumed,
+    totalPendingNative,
+    nextTask,
+    attempts,
+    successes,
+  ] = await Promise.all([
+    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "legCount" }),
+    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "fallbackAsset" }),
+    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "fallbackRewardIndex" }),
+    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "failureObservationSpacing" }),
+    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "fallbackDelay" }),
+    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "nextLegCursor" }),
+    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "totalFeesReceived" }),
+    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "totalNativeConsumed" }),
+    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "totalPendingNative" }),
+    rpcClient.readContract({ address: maintenance, abi: schema19MaintenanceAbi, functionName: "nextTask", args: [token] }),
+    rpcClient.readContract({ address: maintenance, abi: schema19MaintenanceAbi, functionName: "attemptCount", args: [token] }),
+    rpcClient.readContract({ address: maintenance, abi: schema19MaintenanceAbi, functionName: "successCount", args: [token] }),
+  ]);
+  const legs = await Promise.all(
+    Array.from({ length: Number(legCount) }, async (_, index) => {
+      const leg = await rpcClient.readContract({
+        address: vault,
+        abi: schema19VaultAbi,
+        functionName: "leg",
+        args: [BigInt(index)],
+      });
+      const eligibleAt =
+        leg.failureObservations === 3
+          ? BigInt(leg.firstFailureAt) + fallbackDelay
+          : null;
+      return {
+        index,
+        primaryAsset: leg.asset,
+        fallbackAsset,
+        weightBps: leg.weightBps,
+        pendingNative: leg.pendingNative.toString(),
+        pendingSince: leg.pendingSince.toString(),
+        primaryNativeConsumed: leg.consumedNative.toString(),
+        primaryRewardsDeposited: leg.rewardsDeposited.toString(),
+        fallbackNativeConsumed: leg.fallbackNativeConsumed.toString(),
+        fallbackRewardsDeposited: leg.fallbackRewardsDeposited.toString(),
+        failureObservations: leg.failureObservations,
+        firstFailureAt: leg.firstFailureAt.toString(),
+        lastFailureAt: leg.lastFailureAt.toString(),
+        lastFailureReason: leg.lastFailureReason,
+        fallbackEligibleAt: eligibleAt?.toString() ?? null,
+      };
+    }),
+  );
+  return {
+    policy,
+    fallbackAsset,
+    fallbackRewardIndex,
+    observationSpacingSeconds: observationSpacing.toString(),
+    fallbackDelaySeconds: fallbackDelay.toString(),
+    nextLegCursor,
+    nextTask,
+    attempts: attempts.toString(),
+    successes: successes.toString(),
+    totalFeesReceived: totalFeesReceived.toString(),
+    totalNativeConsumed: totalNativeConsumed.toString(),
+    totalPendingNative: totalPendingNative.toString(),
+    legs,
+  };
+}
+
 app.get("/king-of-forest", async () => {
   const storedRows = await sql.unsafe<LaunchRow[]>(
     "SELECT l.launch_id::text,l.token,l.vault,l.market,l.creator,l.name,l.symbol,l.assets,l.weights_bps,l.created_block::text,l.updated_block::text,l.formula_version,l.graduation_profile_version::text,l.target_graduation_native::text,l.actual_graduation_native::text,l.maximum_curve_purchase::text,l.initial_virtual_native_reserve::text,l.terminal_native_per_token_x18::text,l.terminal_sqrt_price_x96::text,l.graduation_profile_hash,l.campaign_id,l.campaign_release_sha,l.automated_test_launch,l.pool_id FROM king_of_forest_awards a JOIN launches l ON l.chain_id=a.chain_id AND l.token=a.token WHERE a.chain_id=$1 ORDER BY a.awarded_block DESC,a.awarded_transaction_index DESC,a.awarded_log_index DESC,a.token DESC LIMIT 100",
@@ -2249,9 +2360,13 @@ app.get<{ Params: { token: string } }>(
     );
     const rows = await hydrateMarkets(storedRows);
     if (!rows[0]) return reply.code(404).send({ error: "launch_not_found" });
-    const [metadata, kingState] = await Promise.all([
+    const [metadata, kingState, maintenance] = await Promise.all([
       launchMetadataMap([rows[0].token]),
       kingStateMap([rows[0].token]),
+      schema19MaintenanceState(
+        rows[0].token as Address,
+        rows[0].vault as Address,
+      ),
     ]);
     return {
       data: {
@@ -2260,6 +2375,7 @@ app.get<{ Params: { token: string } }>(
         kingOfForest: kingOfForestView(
           kingState.get(rows[0].token.toLowerCase()),
         ),
+        maintenance,
       },
       ...(await freshness()),
     };

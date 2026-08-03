@@ -2,6 +2,7 @@
 
 import type { Address } from "viem";
 import { HolderRewardsPanel } from "./holder-rewards-panel";
+import deployment from "@robyn/deployment";
 import { useRobynTestnetWallet } from "./robyn-testnet-wallet";
 
 export function NetworkHolderRewardsPanel({
@@ -24,6 +25,7 @@ export function NetworkHolderRewardsPanel({
       account={account}
       token={token}
       symbol={symbol}
+      claimsRouter={deployment.contracts.claimsRouter as Address | undefined}
       publicClient={publicClient!}
       walletClient={walletClient}
       correctChain={!isWrongChain}

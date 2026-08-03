@@ -1,5 +1,15 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 user-driven maintenance checkpoint
+
+- Context: The owner authorized a fresh Schema-19 replacement because Schema-18 has only the project canary and no public launches.
+- Decision: Every successful user buy, sell, routed trade, or holder claim attempts at most one deterministic maintenance task; maintenance failure cannot revert the primary action. Only objective route failures count toward per-leg fallback, while global pauses and RPC conditions do not.
+- Files: `packages/contracts/src/RobynMaintenanceCoordinator.sol`, `RobynClaimsRouter.sol`, `RobynTradeRouter.sol`, `RobynDaoRewardDistributor.sol`, Schema-19 launch/vault/router/factory/coordinator changes, `DeploySchema19.s.sol`, API/web/indexer integration, and `scripts/*schema19*`.
+- Commands/tests: Full `forge test` passed 614/614 with one protected fork skip; API/web typecheck, web lint, indexer build/policy tests, torture-tooling tests, artifact-derived scope generation, and the eight-receipt isolated Schema-19 Anvil claim/maintenance rehearsal passed.
+- Result: Contract/application development checkpoint is green. No Testnet or Mainnet transaction occurred.
+- Follow-up: Extend Schema-19-specific stateful invariants and the 512-wallet simulation, pass 90/80 coverage and reproducibility/security gates, then deploy a fresh Schema-19 Testnet stack only if the reserve-preserving funding preflight passes.
+- Safety: Mainnet remains Schema-18 and must not be mutated until Schema-19 qualification, exact replacement-manifest sealing, and explicit hash authorization. Do not reuse Schema-18 launches, journals, addresses, or databases.
+
 ### 2026-08-03 - Schema-19 implementation started
 
 - Context: The owner approved a fresh Schema-19 replacement that moves routine fee processing onto bounded best-effort work attempted by user trades and claims. Schema-18 remains live until the exact replacement cutover.

@@ -9,6 +9,7 @@ import { useRobynTestnetWallet } from "./robyn-testnet-wallet";
 import { resolveDataApiUrl } from "@/lib/data-api-url";
 import { isActivePortfolioPosition } from "@/lib/portfolio-position-policy";
 import { publicEnvironment } from "@/lib/public-environment";
+import deployment from "@robyn/deployment";
 
 const tokenAbi = [
   {
@@ -52,6 +53,18 @@ const tokenAbi = [
     stateMutability: "nonpayable",
     inputs: [],
     outputs: [],
+  },
+] as const;
+const claimsRouterAbi = [
+  {
+    type: "function",
+    name: "claimAll",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "address", name: "token" }],
+    outputs: [
+      { type: "uint256", name: "claimed" },
+      { type: "bool", name: "maintenanceCallSucceeded" },
+    ],
   },
 ] as const;
 
@@ -290,9 +303,12 @@ export function NetworkPortfolioView({
       try {
         const { request } = await client.simulateContract({
           account: walletClient.account ?? wallet,
-          address: token,
-          abi: tokenAbi,
+          address: deployment.contracts.claimsRouter ?? token,
+          abi: deployment.contracts.claimsRouter
+            ? claimsRouterAbi
+            : tokenAbi,
           functionName: "claimAll",
+          ...(deployment.contracts.claimsRouter ? { args: [token] } : {}),
         });
         const hash = await walletClient.writeContract(request);
         setStatus(`Claim submitted: ${hash.slice(0, 12)}...`);

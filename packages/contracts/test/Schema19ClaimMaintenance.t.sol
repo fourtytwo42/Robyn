@@ -20,6 +20,7 @@ contract Schema19RewardAsset is ERC20 {
 }
 
 contract Schema19RevertingMaintenance is IRobynMaintenanceCoordinator {
+    uint256 public constant taskGasLimit = 100_000;
     function processRewards(address) external pure returns (bool) {
         revert("maintenance unavailable");
     }

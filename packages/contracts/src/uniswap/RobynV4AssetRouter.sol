@@ -360,10 +360,6 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
             status.reason = REASON_NOT_CONFIGURED;
             return status;
         }
-        if (conversionsPaused) {
-            status.reason = REASON_CONVERSIONS_PAUSED;
-            return status;
-        }
         PoolId id = _poolKey(asset, configured).toId();
         status.poolId = PoolId.unwrap(id);
         (uint160 sqrtPriceX96, int24 spotTick,,) = stateView.getSlot0(id);
@@ -373,12 +369,12 @@ contract RobynV4AssetRouter is SafeCallback, ReentrancyGuard {
             return status;
         }
         status.liquidity = stateView.getLiquidity(id);
-        if (!configured.enabled) {
-            status.reason = REASON_DISABLED;
-            return status;
-        }
         if (status.liquidity < configured.minimumLiquidity) {
             status.reason = REASON_THIN_LIQUIDITY;
+            return status;
+        }
+        if (!execution.ready) {
+            status.reason = execution.reason;
             return status;
         }
         if (

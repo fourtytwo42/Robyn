@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 1,
+  "schema": 19,
+  "description": "Executable repository-owned source closure for production and accelerated Schema-19 deployments.",
+  "coverageCompiler": {
+    "viaIR": false,
+    "optimizer": false,
+    "reason": "Accurate Foundry line and branch source maps"
+  },
+  "coverageTests": [
+    "DaoFees.t.sol",
+    "DaoGovernance.t.sol",
+    "DaoGovernanceMatrix.t.sol",
+    "DaoTokenMatrix.t.sol",
+    "FeeBasketAccounting.t.sol",
+    "NativeFeeConverterMatrix.t.sol",
+    "RobynProtocol.t.sol",
+    "RobynSchema14AssetRouter.t.sol",
+    "RobynTestnetGovernor.t.sol",
+    "RobynV4HundredsUsersSimulation.t.sol",
+    "RobynV4NativeProtocol.t.sol",
+    "RobynV4ProtocolInvariant.t.sol",
+    "RobynV4TestAssetLiquidityLocker.t.sol",
+    "Schema15DevnetTorture.t.sol",
+    "Schema18BootstrapGovernance.t.sol",
+    "Schema18CoverageBranches.t.sol",
+    "Schema18CoverageMatrix.t.sol",
+    "Schema18ProtocolLifecycle.t.sol",
+    "Schema18RewardAccounting.t.sol",
+    "Schema19ClaimMaintenance.t.sol",
+    "Schema19MaintenanceFallback.t.sol"
+  ],
+  "coverageCompileExcludedSources": [
+    "src/RobynAtomicLaunchCoordinator.sol",
+    "src/RobynDaoLaunchCoordinator.sol",
+    "src/RobynDaoLaunchCoordinatorV5.sol",
+    "src/uniswap/RewardFeePositionLocker.sol",
+    "src/uniswap/UniswapV3AdapterDeployer.sol",
+    "src/uniswap/UniswapV3BondingCurveMarket.sol",
+    "src/uniswap/UniswapV3GraduationAdapter.sol",
+    "src/uniswap/UniswapV3MarketDeployer.sol",
+    "src/uniswap/UniswapV3MarketFactory.sol",
+    "src/uniswap/UniswapV3MarketFactoryV2.sol",
+    "src/uniswap/UniswapV3MarketFactoryV3.sol"
+  ],
+  "roots": [
+    {
+      "contract": "RobynDaoTokenV3",
+      "source": "src/dao/RobynDaoTokenV3.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynBootstrapTimelock",
+      "source": "src/dao/RobynBootstrapTimelock.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynGovernorV2",
+      "source": "src/dao/RobynGovernorV2.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynV4AssetRouter",
+      "source": "src/uniswap/RobynV4AssetRouter.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynV4TestAssetLiquidityLocker",
+      "source": "src/uniswap/RobynV4TestAssetLiquidityLocker.sol",
+      "modes": [
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynNativeLaunchDeployerV4",
+      "source": "src/uniswap/RobynNativeLaunchDeployerV4.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynNativeVaultDeployerV4",
+      "source": "src/uniswap/RobynNativeVaultDeployerV4.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynNativeLaunchFactoryV4",
+      "source": "src/uniswap/RobynNativeLaunchFactoryV4.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynNativeProtocolFeeRouterV4",
+      "source": "src/uniswap/RobynNativeProtocolFeeRouterV4.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynTokenSink",
+      "source": "src/RobynTokenSink.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ],
+      "coverageExcludedReason": "no executable statements"
+    },
+    {
+      "contract": "RobynV4FeeAndPhaseHook",
+      "source": "src/uniswap/RobynV4FeeAndPhaseHook.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynV4AdapterDeployer",
+      "source": "src/uniswap/RobynV4AdapterDeployer.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynV4LockerDeployer",
+      "source": "src/uniswap/RobynV4LockerDeployer.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynV4MarketDeployer",
+      "source": "src/uniswap/RobynV4MarketDeployer.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynV4MarketFactory",
+      "source": "src/uniswap/RobynV4MarketFactory.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynV4LaunchCoordinatorV7",
+      "source": "src/uniswap/RobynV4LaunchCoordinatorV7.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynClaimsRouter",
+      "source": "src/RobynClaimsRouter.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynDaoRewardDistributor",
+      "source": "src/RobynDaoRewardDistributor.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynMaintenanceCoordinator",
+      "source": "src/RobynMaintenanceCoordinator.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    },
+    {
+      "contract": "RobynTradeRouter",
+      "source": "src/RobynTradeRouter.sol",
+      "modes": [
+        "production",
+        "accelerated"
+      ]
+    }
+  ],
+  "retiredSources": [
+    "src/RobynAtomicLaunchCoordinator.sol",
+    "src/RobynDaoLaunchCoordinator.sol",
+    "src/RobynDaoLaunchCoordinatorV5.sol",
+    "src/RobynLaunchDeployerV2.sol",
+    "src/RobynLaunchFactory.sol",
+    "src/RobynLaunchFactoryV2.sol",
+    "src/RobynLaunchFactoryV3.sol",
+    "src/dao/RobynDaoTokenV2.sol",
+    "src/uniswap/RewardFeePositionLocker.sol",
+    "src/uniswap/RobynNativeProtocolFeeRouterV3.sol",
+    "src/uniswap/RobynV4LaunchCoordinatorV5.sol",
+    "src/uniswap/RobynV4LaunchCoordinatorV6.sol",
+    "src/uniswap/RobynV4OracleHook.sol",
+    "src/uniswap/UniswapV3AdapterDeployer.sol",
+    "src/uniswap/UniswapV3BondingCurveMarket.sol",
+    "src/uniswap/UniswapV3GraduationAdapter.sol",
+    "src/uniswap/UniswapV3MarketDeployer.sol",
+    "src/uniswap/UniswapV3MarketFactory.sol",
+    "src/uniswap/UniswapV3MarketFactoryV2.sol",
+    "src/uniswap/UniswapV3MarketFactoryV3.sol",
+    "src/uniswap/UniswapV3NativeFeeConverter.sol"
+  ],
+  "thresholds": {
+    "aggregateLinePercent": 90,
+    "aggregateBranchPercent": 80
+  }
+}

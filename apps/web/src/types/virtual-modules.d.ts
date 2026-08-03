@@ -57,6 +57,7 @@ declare module "@robyn/network-holder-rewards" {
   export function NetworkHolderRewardsPanel(props: {
     token: Address;
     symbol: string;
+    claimsRouter?: Address;
   }): JSX.Element;
 }
 

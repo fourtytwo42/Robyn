@@ -41,6 +41,10 @@ export type Deployment = {
     nativeFeeConverter: Address;
     poolManager?: Address;
     positionManager?: Address;
+    maintenanceCoordinator?: Address;
+    claimsRouter?: Address;
+    tradeRouter?: Address;
+    daoRewardDistributor?: Address;
     quoter?: Address;
     permit2?: Address;
     stateView?: Address;
@@ -99,6 +103,13 @@ export type Deployment = {
         quoteAmountNativeWei?: string;
       };
     }>;
+  };
+  maintenancePolicy?: {
+    tasksPerUserAction: 1;
+    taskGasLimit: string;
+    failureObservationSpacingSeconds: number;
+    fallbackDelaySeconds: number;
+    fallbackAsset: Address;
   };
   dao?: {
     token: { name: string; symbol: string; fixedSupply: string };

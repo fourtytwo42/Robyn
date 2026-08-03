@@ -15,6 +15,7 @@ import { RobynV4LaunchCoordinatorV7 } from "../src/uniswap/RobynV4LaunchCoordina
 import { RobynV4NativeProtocolTest } from "./RobynV4NativeProtocol.t.sol";
 
 contract Schema19GasExhaustingMaintenance is IRobynMaintenanceCoordinator {
+    uint256 public constant taskGasLimit = 100_000;
     function processRewards(address) external pure returns (bool) {
         while (true) { }
         return false;
@@ -44,6 +45,7 @@ contract Schema19MaintenanceFallbackTest is RobynV4NativeProtocolTest {
     }
 
     function testReusedRdaoReceivesSchema19CheckpointedRewards() public {
+        daoToken.delegate(address(this));
         RobynDaoRewardDistributor daoRewards =
             new RobynDaoRewardDistributor(IVotes(address(daoToken)), 1 hours);
         daoRewards.bindRewardDepositor(address(feeRouter));
@@ -66,6 +68,44 @@ contract Schema19MaintenanceFallbackTest is RobynV4NativeProtocolTest {
         assertEq(claimed, assigned);
         assertEq(address(this).balance, nativeBefore + assigned);
         assertEq(daoRewards.outstandingLiability(), 0);
+    }
+
+    function testSchedulerVisitsEveryTaskAndSettlesAssignedLiabilities() public {
+        RobynMaintenanceCoordinator maintenance =
+            new RobynMaintenanceCoordinator(feeRouter, assetRouter, 500_000);
+        feeRouter.bindMaintenanceCoordinator(address(maintenance));
+        RobynDaoRewardDistributor daoRewards =
+            new RobynDaoRewardDistributor(IVotes(address(daoToken)), 1 hours);
+        daoRewards.bindRewardDepositor(address(feeRouter));
+        feeRouter.bindDaoRewardReceiver(address(daoRewards));
+        vm.warp(block.timestamp + 1);
+
+        (RobynLaunchToken token, RobynNativeBasketVaultV2 vault, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(keccak256("schema19-all-tasks")));
+        market.buy{ value: 0.1 ether }(1);
+        uint256 initialTask = maintenance.nextTask(address(token));
+        uint256 initialAttempts = maintenance.attemptCount(address(token));
+        assertGt(feeRouter.totalBasketNativeLiability(), 0);
+        assertGt(feeRouter.totalDaoNativeLiability(), 0);
+        assertGt(feeRouter.totalTreasuryNativeLiability(), 0);
+
+        for (uint256 task; task < maintenance.TASK_COUNT(); ++task) {
+            maintenance.processRewards(address(token));
+        }
+
+        assertEq(maintenance.nextTask(address(token)), initialTask, "scheduler wrapped");
+        assertEq(maintenance.attemptCount(address(token)), initialAttempts + maintenance.TASK_COUNT());
+        assertTrue(maintenance.successCount(address(token)) >= 3, "assigned liabilities settled");
+        assertEq(feeRouter.totalBasketNativeLiability(), 0, "basket settled");
+        assertEq(feeRouter.totalDaoNativeLiability(), 0, "DAO settled");
+        assertEq(feeRouter.totalTreasuryNativeLiability(), 0, "treasury settled");
+        assertGt(feeRouter.totalCreatorNativeLiability(), 0, "creator remains pull based");
+        assertEq(
+            vault.totalPendingNative() + vault.totalNativeConsumed(),
+            vault.totalFeesReceived(),
+            "vault conservation"
+        );
+        assertEq(daoRewards.totalRewardsDeposited(), feeRouter.launchAccount(address(token)).cumulativeDaoNativeSettled);
     }
 
     function testTradeRouterReturnsAssetsAndNativeWithoutRetainingAllowance() public {
@@ -152,6 +192,42 @@ contract Schema19MaintenanceFallbackTest is RobynV4NativeProtocolTest {
         assertFalse(usedFallback);
         assertEq(vault.leg(0).failureObservations, 0);
     }
+    function testGlobalConversionPauseNeverCountsAsLegFailure() public {
+        (, RobynNativeBasketVaultV2 vault,) =
+            coordinator.createLaunch(_request(keccak256("schema19-global-pause")));
+        vault.recordFees{ value: 0.01 ether }();
+
+        vm.prank(GUARDIAN);
+        assetRouter.pauseConversions();
+        (bool converted,, bool usedFallback) = vault.processNextLeg();
+
+        assertFalse(converted);
+        assertFalse(usedFallback);
+        RobynNativeBasketVaultV2.BasketLeg memory pausedLeg = vault.leg(0);
+        assertEq(pausedLeg.failureObservations, 0, "global pause is not a route failure");
+        assertEq(pausedLeg.pendingNative, 0.01 ether, "pending allocation remains attributed");
+    }
+
+    function testGuardianSealedOracleFailureCountsAsObjectiveObservation() public {
+        (, RobynNativeBasketVaultV2 vault,) =
+            coordinator.createLaunch(_request(keccak256("schema19-stale-oracle")));
+        vault.recordFees{ value: 0.01 ether }();
+        bytes32 staleOracle = keccak256("STALE_REFERENCE_PRICE");
+
+        vm.prank(GUARDIAN);
+        assetRouter.disableRoute(address(basketAsset), staleOracle);
+        RobynV4AssetRouter.RouteStatus memory status =
+            assetRouter.routeStatus(address(basketAsset));
+        assertFalse(status.ready);
+        assertEq(status.reason, staleOracle);
+
+        vault.processNextLeg();
+        RobynNativeBasketVaultV2.BasketLeg memory failedLeg = vault.leg(0);
+        assertEq(failedLeg.failureObservations, 1);
+        assertEq(failedLeg.lastFailureReason, staleOracle);
+        assertEq(failedLeg.pendingNative, 0.01 ether);
+    }
+
 
     function _configureBasketRoute(uint128 minimumLiquidity) private {
         assetRouter.configureRoute(

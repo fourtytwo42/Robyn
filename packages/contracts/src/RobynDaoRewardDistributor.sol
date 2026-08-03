@@ -21,7 +21,7 @@ contract RobynDaoRewardDistributor is ReentrancyGuard {
 
     struct Epoch {
         address sourceToken;
-        uint64 snapshotBlock;
+        uint64 snapshotTimepoint;
         uint64 streamStart;
         uint64 streamEnd;
         uint256 amount;
@@ -44,7 +44,7 @@ contract RobynDaoRewardDistributor is ReentrancyGuard {
         uint256 indexed epochId,
         address indexed sourceToken,
         uint256 amount,
-        uint256 snapshotBlock,
+        uint256 snapshotTimepoint,
         uint256 streamEnd
     );
     event RewardsClaimed(
@@ -78,16 +78,16 @@ contract RobynDaoRewardDistributor is ReentrancyGuard {
         returns (uint256 epochId)
     {
         if (msg.sender != rewardDepositor) revert Unauthorized();
-        if (sourceToken == address(0) || msg.value == 0 || block.number == 0) {
+        if (sourceToken == address(0) || msg.value == 0) {
             revert InvalidConfiguration();
         }
         uint256 currentClock = daoToken.clock();
         if (currentClock == 0) revert InvalidConfiguration();
-        uint256 snapshotBlock = currentClock - 1;
+        uint256 snapshotTimepoint = currentClock - 1;
         epochId = epochCount++;
         _epochs[epochId] = Epoch({
             sourceToken: sourceToken,
-            snapshotBlock: uint64(snapshotBlock),
+            snapshotTimepoint: uint64(snapshotTimepoint),
             streamStart: uint64(block.timestamp),
             streamEnd: uint64(block.timestamp + rewardStreamDuration),
             amount: msg.value,
@@ -95,7 +95,7 @@ contract RobynDaoRewardDistributor is ReentrancyGuard {
         });
         totalRewardsDeposited += msg.value;
         emit RewardsDeposited(
-            epochId, sourceToken, msg.value, snapshotBlock, block.timestamp + rewardStreamDuration
+            epochId, sourceToken, msg.value, snapshotTimepoint, block.timestamp + rewardStreamDuration
         );
     }
 
@@ -185,8 +185,8 @@ contract RobynDaoRewardDistributor is ReentrancyGuard {
             ? rewardStreamDuration
             : block.timestamp - selected.streamStart;
         uint256 vested = (selected.amount * elapsed) / rewardStreamDuration;
-        uint256 supply = daoToken.getPastTotalSupply(selected.snapshotBlock);
-        uint256 votes = daoToken.getPastVotes(account, selected.snapshotBlock);
+        uint256 supply = daoToken.getPastTotalSupply(selected.snapshotTimepoint);
+        uint256 votes = daoToken.getPastVotes(account, selected.snapshotTimepoint);
         return supply == 0 ? 0 : (vested * votes) / supply;
     }
 }

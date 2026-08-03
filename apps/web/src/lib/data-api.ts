@@ -102,6 +102,43 @@ export type LaunchRecord = {
     positionTokenId: string | null;
     poolFeePips: number | null;
   } | null;
+  maintenance?: {
+    policy: {
+      tasksPerUserAction: 1;
+      taskGasLimit: string;
+      failureObservationSpacingSeconds: number;
+      fallbackDelaySeconds: number;
+      fallbackAsset: string;
+    };
+    fallbackAsset: string;
+    fallbackRewardIndex: number;
+    observationSpacingSeconds: string;
+    fallbackDelaySeconds: string;
+    nextLegCursor: number;
+    nextTask: number;
+    attempts: string;
+    successes: string;
+    totalFeesReceived: string;
+    totalNativeConsumed: string;
+    totalPendingNative: string;
+    legs: Array<{
+      index: number;
+      primaryAsset: string;
+      fallbackAsset: string;
+      weightBps: number;
+      pendingNative: string;
+      pendingSince: string;
+      primaryNativeConsumed: string;
+      primaryRewardsDeposited: string;
+      fallbackNativeConsumed: string;
+      fallbackRewardsDeposited: string;
+      failureObservations: number;
+      firstFailureAt: string;
+      lastFailureAt: string;
+      lastFailureReason: string;
+      fallbackEligibleAt: string | null;
+    }>;
+  } | null;
 };
 
 export type LaunchList = {
