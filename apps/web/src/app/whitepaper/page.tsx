@@ -419,10 +419,10 @@ export default function WhitepaperPage() {
               <span>3</span>
               <h3>Routes convert it</h3>
               <p>
-                Trader and claimant transactions advance one deterministic
-                task through approved, liquidity-checked routes. Anyone may
-                also request the same bounded work without choosing arbitrary
-                targets or calldata.
+                Trader and claimant transactions advance one deterministic task
+                through approved, liquidity-checked routes. Anyone may also
+                request the same bounded work without choosing arbitrary targets
+                or calldata.
               </p>
             </article>
             <article>
@@ -453,8 +453,8 @@ export default function WhitepaperPage() {
             Basket legs are independent. A failed asset route does not block
             healthy legs, trading, or any claim. Only three objective route
             failures spaced across at least 72 hours can make the currently
-            pending allocation eligible for canonical WETH fallback. A later
-            fee batch retries the creator’s original asset.
+            pending allocation eligible for canonical WETH fallback. A later fee
+            batch retries the creator’s original asset.
           </p>
         </section>
 

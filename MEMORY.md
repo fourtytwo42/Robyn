@@ -4,7 +4,7 @@
 
 - Context: Claims already used `RobynClaimsRouter`, but the shared public-network token panel still sent native trades directly to the market. That bypassed Schema-19 best-effort maintenance after graduated trades. The Devnet panel also lacked a native Schema-19 transaction path.
 - Decision: Route every Schema-19 native buy and sell through the manifest-bound `RobynTradeRouter`; approve launch-token sells to that router; fail closed when a Schema-19 manifest omits it; and preserve archived-schema direct-market behavior. Remove the unused direct-settlement helper from the focused lifecycle so qualification can advance work only through user actions or `processRewards(token)`.
-- Files: `apps/web/src/components/token-trade-panel.{devnet,testnet}.tsx`, `apps/web/src/lib/schema19-trade-policy.ts`, its unit tests, `scripts/run-schema19-testnet-lifecycle.mjs`, and the public whitepaper.
+- Files: `apps/web/src/components/token-trade-panel.{devnet,testnet}.tsx`, `apps/web/src/lib/schema19-trade-policy.ts`, its unit tests, `scripts/run-schema19-testnet-lifecycle.mjs`, the public whitepaper, and `docs/operations/schema19-mainnet-contingency-playbooks.md`.
 - Tests: Web typecheck, lint, and 74 tests pass. All 34 Schema-19 deployment, verifier, finalizer, funding, indexing, lifecycle, restart, and torture-tooling tests pass.
 - Result: Corrected contract candidate `a67288133f09bce68b7386009d702c14dfb8bbab` passed fresh fast run 07. Deep run 03 is active on that exact clean pushed candidate and must not be duplicated. Mainnet and live Testnet remain unchanged.
 - Follow-up: Require deep run 03, exact security/reproducibility gates, then regenerate a clean exact Testnet fork deployment and full focused lifecycle before any live Testnet transaction.
