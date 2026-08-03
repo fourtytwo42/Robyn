@@ -1,10 +1,9 @@
 # Project Memory
 
 ## Active Handoff
-- Policy-v2 application manifest is deterministically regenerated at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/application-policy-v2-242b635/deployments-4663-mainnet.json`, SHA-256 `26772d351a6b5599b659145e4a74e2d93c7dff8f2f33f59226faa3aefe9f1ee8`. The protected release input and `config/production-mainnet.json` now bind this hash.
-- Signed release `mainnet-prod-20260803-1879955` is live, but its API exposed a production-topology defect: processes still consumed the old root-managed deployment manifest, so policy v1 remained visible. The topology now binds API, indexer, and projector to the signed release's `deployments/4663-mainnet.json`; promote a superseding release and verify policy v2 before resealing route governance.
+- Signed production release `mainnet-prod-20260803-2e91482` is live and browser-accepted. It serves Schema-18 asset policy v2, Chainlink references, pool-implied prices, precise route readiness, canonical symbols, and six-decimal USDG pricing from the release-bound manifest.
+- Policy-v2 application manifest is sealed at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/application-policy-v2-242b635/deployments-4663-mainnet.json`, SHA-256 `26772d351a6b5599b659145e4a74e2d93c7dff8f2f33f59226faa3aefe9f1ee8`.
 - Exact current-state route-governance tooling is committed and pushed. Its final run must bind the clean pushed commit and preserve 14 unique successful local receipts for unanimous scheduling, the simulated one-hour Timelock, twelve route configurations, and twelve guardian rollback disables. The authorization-false manifest is stored under `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/governance-current-state`; never schedule it without the user's exact-hash authorization.
-- Signed release `mainnet-prod-20260803-cb352ca` is live on the keyless production host. The additive API/UI separates Chainlink references, pool-implied prices, and route selectability while preserving the existing onchain routes.
 - Schema-18 asset policy `schema18-assets-v2` hashes to `ec5c8f9c444623f2303504416bf5192c951bc17d6af191c3bf08a2c52cc483c0`. It adds explicit canonical token decimals; USDG is six decimals and every other catalog asset is eighteen. This corrects USDG pool-price scaling without changing qualified pool execution or contract bytecode.
 - Contract-compatible discovery, 65-receipt/13-invariant LAN-sourced fork execution, and 13 samples spanning 3,752 seconds all passed; original route qualification is sealed at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/final-qualification-de5d61f`.
 - No route-governance operation has been authorized, scheduled, or broadcast. The final manifest must be regenerated after the policy-v2 application release is committed, pushed, qualified, and promoted.
@@ -19,7 +18,7 @@
 - Production migration is complete. Keyless host `192.168.50.108` now serves the canonical public domain through Cloudflare tunnel `sherwoodforest-mainnet-prod`; host `192.168.50.250` retains Devnet, Testnet, keeper/signing operations, and LAN-only Mainnet staging at `http://192.168.50.250:3082`. Ordinary pushes never deploy production.
 
 ## Current State
-- Live production application source is `1879955e67db2ea43cdc0fee8482daac850cf064`, but it still presents the external policy-v1 manifest. The superseding policy-v2 release must use its signed release-bound manifest and preserve frozen contract attestation `ed382d44515b833641e76e78c6a168a1a63f00e4c4266f75b1b45ecfa2977685`.
+- Live production application source is `2e91482eae67c6eb5571c0c75227b51037213300`; frozen contract attestation remains `ed382d44515b833641e76e78c6a168a1a63f00e4c4266f75b1b45ecfa2977685`.
 - Schema-18 asset policy `schema18-assets-v2` hashes to `ec5c8f9c444623f2303504416bf5192c951bc17d6af191c3bf08a2c52cc483c0` and catalogs WETH plus twelve stock, ETF, commodity, or stablecoin candidates. Selected safe caps are 0.05 ETH for WETH, GOOGL, MSFT, NVDA, SPCX, SPY, USDG, and USAR; 0.01 ETH for AMZN, INTC, and SLV; 0.0025 ETH for GME; and 0.001 ETH for QQQ. NVDA uses the zero-hook 0.05% pool, SPY the zero-hook 0.30% pool, and USDG the router-compatible zero-hook fee-460 pool; zero-fee or hooked pools are rejected.
 
 
@@ -27,7 +26,7 @@
 - Mainnet launch mode is Public; profile version 2 targets 6 ETH with a 0.5 ETH maximum purchase; all six sealed routes and both conversion systems are enabled. The canary retains its immutable profile-1 snapshot.
 - Scoped indexing is current with zero ingestion/projection lag, one launch, 20 tracked addresses, one pool, excluded global sources, and a 12.9 MB database. API audit, reward backing, router solvency, supplies, locked principal, and keeper queues are healthy.
 - The last verified operator balance was `0.028372369252761679 ETH`, above the protected `0.02 ETH` reserve. Requery before any future financial operation.
-- Production runtime release `30dfb1746d9b455a916275c2b8940be98f70181f` is active on all six keyless services with signed-transaction relay enabled. Signed tag `mainnet-prod-20260803-30dfb17` passed the atomic updater and health gate with zero restarts.
+- Production runtime release `2e91482eae67c6eb5571c0c75227b51037213300` is active on all six keyless services with signed-transaction relay enabled. Signed tag `mainnet-prod-20260803-2e91482` passed the atomic updater and health gate.
 - Host `192.168.50.108` has one 248 GiB root LV with roughly 219 GiB free and no blockchain signer material. Its signed-release updater polls every two minutes and accepts only signed `mainnet-prod-*` releases; previous release `296f4a3` remains available for rollback.
 
 ## Verification Ledger

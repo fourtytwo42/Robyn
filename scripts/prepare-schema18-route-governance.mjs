@@ -17,7 +17,7 @@ import {
 
 const CHAIN_ID = 4663;
 const CONTRACT_SHA = "4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4";
-const APPLICATION_SHA = "19e207c1d1ef1defd55d2ff8cf73c01a306a4a3b";
+const APPLICATION_SHA = "2e91482eae67c6eb5571c0c75227b51037213300";
 const POLICY_HASH = "ec5c8f9c444623f2303504416bf5192c951bc17d6af191c3bf08a2c52cc483c0";
 const QUALIFICATION = "/home/hendo420/robyn-evidence/schema18-asset-route-remediation/final-qualification-de5d61f/qualification-summary.json";
 const POLICY = "config/protocol/robinhood-mainnet-support-policy.json";
