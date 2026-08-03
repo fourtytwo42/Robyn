@@ -11,6 +11,10 @@ const source = resolve(
   repo,
   "config/protocol/robinhood-mainnet-support-policy.json",
 );
+const governanceSource = resolve(
+  repo,
+  "scripts/prepare-schema18-route-governance.mjs",
+);
 function run(mutator = () => {}) {
   const directory = mkdtempSync(join(tmpdir(), "schema18-assets-"));
   const target = join(directory, "policy.json");
@@ -26,6 +30,17 @@ function run(mutator = () => {}) {
 
 test("accepts the frozen Schema-18 single-hop policy", () => {
   assert.match(run(), /"passed":true/);
+});
+
+test("governance binds current policy and immutable qualification evidence separately", () => {
+  const governance = readFileSync(governanceSource, "utf8");
+  assert.match(governance, /const POLICY_HASH = "ec5c8f9c/);
+  assert.match(governance, /const QUALIFICATION_POLICY_HASH =/);
+  assert.match(governance, /qualificationPolicyHash: QUALIFICATION_POLICY_HASH/);
+  assert.doesNotMatch(
+    governance,
+    /qualification\.policyHash !== POLICY_HASH/,
+  );
 });
 
 test("rejects noncanonical duplicate addresses", () => {

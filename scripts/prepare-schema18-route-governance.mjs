@@ -19,6 +19,8 @@ const CHAIN_ID = 4663;
 const CONTRACT_SHA = "4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4";
 const APPLICATION_SHA = "2e91482eae67c6eb5571c0c75227b51037213300";
 const POLICY_HASH = "ec5c8f9c444623f2303504416bf5192c951bc17d6af191c3bf08a2c52cc483c0";
+const QUALIFICATION_POLICY_HASH =
+  "de5d61f253c9ae8a53a2e6663ebf87069ef1b74072c4d8e368b978ff0064fe52";
 const QUALIFICATION = "/home/hendo420/robyn-evidence/schema18-asset-route-remediation/final-qualification-de5d61f/qualification-summary.json";
 const POLICY = "config/protocol/robinhood-mainnet-support-policy.json";
 const DEPLOYMENT = process.env.ROBYN_SCHEMA18_DEPLOYMENT_MANIFEST ?? "/home/hendo420/robyn-evidence/schema18-asset-route-remediation/application-19e207c/deployments-4663-mainnet.json";
@@ -49,7 +51,13 @@ const routerAbi = parseAbi([
   "function executionRoute(address asset) view returns ((uint8 kind,uint128 maximumNativeInput,uint128 maximumAssetInput,bytes32 disabledReason,bool enabled) route)",
   "function disableRoute(address asset,bytes32 reason)",
 ]);
-if (policy.policyHash !== POLICY_HASH || qualification.policyHash !== POLICY_HASH || qualification.status !== "passed") throw new Error("qualified policy identity mismatch");
+if (
+  policy.policyHash !== POLICY_HASH ||
+  qualification.policyHash !== QUALIFICATION_POLICY_HASH ||
+  qualification.status !== "passed"
+) {
+  throw new Error("qualified policy identity mismatch");
+}
 if (deployment.schemaVersion !== 18 || deployment.chainId !== CHAIN_ID || deployment.releaseSha !== CONTRACT_SHA) throw new Error("Schema-18 deployment identity mismatch");
 const router = getAddress(deployment.contracts.assetRouter);
 const governor = getAddress(deployment.contracts.governor);
@@ -169,6 +177,7 @@ try {
     applicationQualificationSha: APPLICATION_SHA,
     toolingSha,
     policyHash: POLICY_HASH,
+    qualificationPolicyHash: QUALIFICATION_POLICY_HASH,
     qualificationEvidenceHash: qualification.evidenceHash,
     qualificationSummarySha256: sha256(qualificationRaw),
     rehearsalSha256: sha256(rehearsalRaw),

@@ -1,6 +1,7 @@
 # Project Memory
 
 ## Active Handoff
+- Route-governance tooling must bind current policy hash `ec5c8f9c...` and the immutable route-qualification policy hash `de5d61f...` separately. Policy v2 changed canonical decimal metadata only; the 65-receipt route execution evidence remains sealed and unmodified.
 - Signed production release `mainnet-prod-20260803-2e91482` is live and browser-accepted. It serves Schema-18 asset policy v2, Chainlink references, pool-implied prices, precise route readiness, canonical symbols, and six-decimal USDG pricing from the release-bound manifest.
 - Policy-v2 application manifest is sealed at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/application-policy-v2-242b635/deployments-4663-mainnet.json`, SHA-256 `26772d351a6b5599b659145e4a74e2d93c7dff8f2f33f59226faa3aefe9f1ee8`.
 - Exact current-state route-governance tooling is committed and pushed. Its final run must bind the clean pushed commit and preserve 14 unique successful local receipts for unanimous scheduling, the simulated one-hour Timelock, twelve route configurations, and twelve guardian rollback disables. The authorization-false manifest is stored under `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/governance-current-state`; never schedule it without the user's exact-hash authorization.
