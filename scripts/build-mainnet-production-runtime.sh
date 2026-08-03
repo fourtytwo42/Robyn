@@ -12,15 +12,20 @@ set -a
 source "${build_env}"
 set +a
 manifest_input="${ROBYN_RELEASE_MANIFEST_INPUT:-${ROBYN_MAINNET_MANIFEST:-}}"
+next_secrets="${ROBYN_NEXT_BUILD_SECRETS_FILE:-/etc/robyn/next-build-secrets.json}"
 : "${manifest_input:?release manifest input is required}"
 : "${NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:?}"
-: "${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:?}"
+[[ -r "${next_secrets}" ]] || { echo "protected Next build secrets are missing" >&2; exit 1; }
 cd "${source_root}"
 source_sha="$(git rev-parse HEAD)"
 [[ -z "$(git status --porcelain)" ]]
 [[ "$(git rev-parse HEAD:packages/contracts/src)" == "$(jq -r .contractClosureHash config/production-mainnet.json)" ]]
 [[ -r "${manifest_input}" ]] || { echo "release manifest input is not readable" >&2; exit 1; }
 [[ "$(sha256sum "${manifest_input}" | cut -d' ' -f1)" == "$(jq -r .deploymentManifestHash config/production-mainnet.json)" ]] || { echo "release manifest input hash mismatch" >&2; exit 1; }
+NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(
+  node scripts/prepare-next-build-inputs.mjs "${source_root}" "${next_secrets}"
+)"
+export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
 COREPACK_DEFAULT_TO_LATEST=0 pnpm install --frozen-lockfile
 pnpm --filter @robyn/db --filter @robyn/api --filter @robyn/indexer --filter @robyn/artifacts --filter @robyn/rpc-gateway --recursive run build
 ROBYN_BUILD_ID="${source_sha}" ROBYN_NETWORK_MODE=mainnet NEXT_PUBLIC_ROBYN_NETWORK_MODE=mainnet ROBYN_DEPLOYMENT_PATH="${manifest_input}" NEXT_PUBLIC_ROBYN_RPC_URL=https://sherwoodforest.trade/rpc NEXT_PUBLIC_DATA_API_URL=https://sherwoodforest.trade/api NEXT_PUBLIC_ROBYN_EXPLORER_URL=https://explorer.chain.robinhood.com NEXT_PUBLIC_APP_URL=https://sherwoodforest.trade pnpm --filter @robyn/web build

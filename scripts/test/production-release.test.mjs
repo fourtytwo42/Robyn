@@ -369,6 +369,15 @@ test("Mainnet application finalization is independent of contract build output",
   assert.match(finalizer, /factory: baseline\.contracts\.factory/);
 });
 
+test("production runtime build pins protected Next build inputs", () => {
+  const buildScript = readFileSync(
+    path.join(repositoryRoot, "scripts", "build-mainnet-production-runtime.sh"),
+    "utf8",
+  );
+  assert.match(buildScript, /prepare-next-build-inputs\.mjs/);
+  assert.match(buildScript, /ROBYN_NEXT_BUILD_SECRETS_FILE/);
+});
+
 test("production promotion reads but does not advance deployed-release state", () => {
   const promoter = readFileSync(
     path.join(repositoryRoot, "scripts", "promote-mainnet-production.mjs"),
