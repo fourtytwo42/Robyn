@@ -232,6 +232,15 @@ test("production updater follows authenticated asset redirects under the hardene
     ),
     "utf8",
   );
+  const stagingMainnetNginx = readFileSync(
+    path.join(
+      repositoryRoot,
+      "infrastructure",
+      "nginx",
+      "robyn-schema18-mainnet-public.conf",
+    ),
+    "utf8",
+  );
 
   assert.match(
     updater,
@@ -314,6 +323,11 @@ test("production updater follows authenticated asset redirects under the hardene
     /return 308 https:\/\/sherwoodforest\.trade\$request_uri;/,
   );
   assert.match(productionNginx, /proxy_pass http:\/\/127\.0\.0\.1:18549\/;/);
+  assert.match(stagingMainnetNginx, /listen 192\.168\.50\.250:3082;/);
+  assert.match(
+    stagingMainnetNginx,
+    /proxy_pass http:\/\/127\.0\.0\.1:18549\/;/,
+  );
 });
 
 test("Mainnet application finalization is independent of contract build output", () => {
