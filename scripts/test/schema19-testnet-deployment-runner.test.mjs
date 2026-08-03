@@ -33,3 +33,9 @@ test("deployment runner doubles gas and preserves the Testnet reserve", () => {
   assert.match(source, /25_000_000_000_000n/);
   assert.match(source, /would breach the fixed Testnet reserve/);
 });
+
+test("deployment runner binds every signed transaction to chain 46630", () => {
+  assert.match(source, /defineChain\(\{/);
+  assert.match(source, /id: 46630/);
+  assert.match(source, /createWalletClient\(\{[\s\S]*chain: testnetChain/);
+});

@@ -1,5 +1,12 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 live Testnet broadcaster chain binding corrected
+
+- Context: The first live Testnet deployment attempt stopped before its first signature because viem requires the wallet client to carry an explicit chain definition.
+- Decision: Bind the production Testnet broadcaster to an explicit Robinhood Testnet chain object with chain ID `46630`; retain the existing independent RPC chain-ID check and add a regression assertion for the signing boundary.
+- Result: No intent was journaled, no transaction was signed or submitted, and the deployer nonce remained `2683`. Focused broadcaster, funding, input, lifecycle, and syntax tests pass.
+- Follow-up: Commit and push the tooling correction, regenerate exact release-bound fork and funding evidence, then retry the live deployment only from a clean journal and unchanged nonce.
+
 ### 2026-08-03 - Schema-19 deep qualification passes and dependency advisories remediated
 
 - Context: The final Schema-19 contract candidate and application dependency graph required complete deep qualification and a zero-high/critical dependency gate before live Testnet deployment.

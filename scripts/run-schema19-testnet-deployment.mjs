@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import {
   createPublicClient,
   createWalletClient,
+  defineChain,
   getAddress,
   http,
   keccak256,
@@ -214,7 +215,17 @@ const decrypted = command(
 );
 const account = privateKeyToAccount(parseCastDecryptedPrivateKey(decrypted));
 if (getAddress(account.address) !== deployer) throw new Error("Testnet keystore address mismatch");
-const wallet = createWalletClient({ account, transport: http(rpcUrl, { retryCount: 0, timeout: 30_000 }) });
+const testnetChain = defineChain({
+  id: 46630,
+  name: "Robinhood Testnet",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: { default: { http: [rpcUrl] } },
+});
+const wallet = createWalletClient({
+  account,
+  chain: testnetChain,
+  transport: http(rpcUrl, { retryCount: 0, timeout: 30_000 }),
+});
 
 for (let index = 0; index < forgeLedger.transactions.length; index += 1) {
   const template = forgeLedger.transactions[index].transaction;
