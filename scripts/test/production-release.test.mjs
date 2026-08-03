@@ -264,6 +264,13 @@ test("production updater follows authenticated asset redirects under the hardene
   assert.match(updater, /apply_migrations "\$\{target\}"/);
   assert.match(
     updater,
+    /\/usr\/local\/bin\/pm2 delete "\$\{process_names\[@\]\}"/,
+  );
+  assert.match(updater, /\/usr\/local\/bin\/pm2 start "\$\{pm2_config\}" --update-env/);
+  assert.doesNotMatch(updater, /startOrReload/);
+  assert.match(updater, /curl -fsS http:\/\/127\.0\.0\.1:3121\/health/);
+  assert.match(
+    updater,
     /SELECT EXISTS \(SELECT 1 FROM schema_migrations WHERE version = '\$\{version\}'\)/,
   );
   assert.doesNotMatch(updater, /packages\/db\/dist\/migrate\.js/);

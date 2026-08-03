@@ -87,6 +87,14 @@ mv -Tf "${temporary}" /opt/robyn/current
 start_release() {
   local root="${1}"
   local pm2_config=/var/lib/robynapp/.pm2/ecosystem.mainnet.production.config.cjs
+  local -a process_names=(
+    robyn-web-mainnet-prod
+    robyn-api-mainnet-prod
+    robyn-indexer-mainnet-prod
+    robyn-projector-mainnet-prod
+    robyn-artifacts-mainnet-prod
+    robyn-rpc-gateway-mainnet-prod
+  )
   set -a
   # shellcheck disable=SC1091
   source /etc/robyn/mainnet/runtime.env
@@ -98,6 +106,10 @@ start_release() {
   runuser -u robynapp -- env \
     HOME=/var/lib/robynapp \
     PM2_HOME=/var/lib/robynapp/.pm2 \
+    /usr/local/bin/pm2 delete "${process_names[@]}" >/dev/null 2>&1 || true
+  runuser -u robynapp -- env \
+    HOME=/var/lib/robynapp \
+    PM2_HOME=/var/lib/robynapp/.pm2 \
     ROBYN_PRODUCTION_RELEASE_ROOT="${root}" \
     ROBYN_MAINNET_MANIFEST="${ROBYN_MAINNET_MANIFEST}" \
     ROBYN_MAINNET_PRIMARY_RPC_URL="${ROBYN_MAINNET_PRIMARY_RPC_URL}" \
@@ -106,7 +118,7 @@ start_release() {
     ROBYN_MAINNET_AUTH_ORIGINS="${ROBYN_MAINNET_AUTH_ORIGINS}" \
     ROBYN_MAINNET_TRANSACTION_SUBMISSION_AUTHORIZED="${ROBYN_MAINNET_TRANSACTION_SUBMISSION_AUTHORIZED}" \
     ROBYN_RELEASE_SHA="$(basename "${root}")" \
-    /usr/local/bin/pm2 startOrReload "${pm2_config}" --update-env
+    /usr/local/bin/pm2 start "${pm2_config}" --update-env
 }
 
 apply_migrations() {
@@ -160,6 +172,7 @@ healthy=false
 for _ in $(seq 1 60); do
   if curl -fsS http://127.0.0.1:18549/health >/dev/null &&
     curl -fsS http://127.0.0.1:3121/status >/dev/null &&
+    curl -fsS http://127.0.0.1:3121/health >/dev/null &&
     curl -fsS http://127.0.0.1:3220/health >/dev/null &&
     curl -fsS http://127.0.0.1:3022/api/health >/dev/null; then
     healthy=true
