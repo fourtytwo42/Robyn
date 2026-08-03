@@ -192,13 +192,14 @@ export default function WhitepaperPage() {
                 <p className="trail-kicker">Harvest</p>
                 <h3>Fees become claimable assets</h3>
                 <p>
-                  Keepers settle bounded work without custody. Basket assets,
-                  creator ETH, DAO-member ETH, and treasury ETH accrue
-                  independently. Holder, creator, and DAO rewards unlock
-                  linearly over one rolling hour and remain pull claims. A
-                  creator may divide future creator fees among several
-                  addresses, then keep that split editable or lock it
-                  permanently.
+                  Every successful Sherwood trade or holder claim attempts one
+                  bounded maintenance task after its primary action succeeds.
+                  Basket assets, creator ETH, DAO-member ETH, and treasury ETH
+                  remain independently attributed even when that optional work
+                  must wait. Holder, creator, and DAO rewards unlock linearly
+                  over one rolling hour and remain pull claims. A creator may
+                  divide future creator fees among several addresses, then keep
+                  that split editable or lock it permanently.
                 </p>
               </div>
             </li>
@@ -418,8 +419,10 @@ export default function WhitepaperPage() {
               <span>3</span>
               <h3>Routes convert it</h3>
               <p>
-                Permissionless keepers use approved, liquidity-checked routes
-                with deadlines, slippage bounds, and measured balance changes.
+                Trader and claimant transactions advance one deterministic
+                task through approved, liquidity-checked routes. Anyone may
+                also request the same bounded work without choosing arbitrary
+                targets or calldata.
               </p>
             </article>
             <article>
@@ -440,9 +443,19 @@ export default function WhitepaperPage() {
               Holders claim basket assets from a token page or Portfolio.
               Creators claim each token’s ETH separately from that token page or
               claim several owned launches from Portfolio. DAO members claim
-              their native ETH from the DAO workspace.
+              their native ETH from the DAO workspace. A holder claim pays
+              rewards that are already vested first, then safely attempts one
+              maintenance task; newly converted rewards begin a fresh one-hour
+              stream for a later claim.
             </p>
           </div>
+          <p className="fine-print">
+            Basket legs are independent. A failed asset route does not block
+            healthy legs, trading, or any claim. Only three objective route
+            failures spaced across at least 72 hours can make the currently
+            pending allocation eligible for canonical WETH fallback. A later
+            fee batch retries the creator’s original asset.
+          </p>
         </section>
 
         <section id="governance" className="paper-section governance-section">
@@ -579,7 +592,7 @@ export default function WhitepaperPage() {
               <h3>Bounded conversion</h3>
               <p>
                 TWAP, deviation, impact, deadline, route, and amount checks fail
-                closed.
+                closed without reversing the user’s trade or claim.
               </p>
             </article>
             <article>
