@@ -9,6 +9,8 @@
 - Result: Contract/application development checkpoint is green. No Testnet or Mainnet transaction occurred.
 - Follow-up: Extend Schema-19-specific stateful invariants and the 512-wallet simulation, pass 90/80 coverage and reproducibility/security gates, then deploy a fresh Schema-19 Testnet stack only if the reserve-preserving funding preflight passes.
 - 2026-08-03 verification update: The Schema-19 invariant handler and 512-wallet/32-launch/25,000-action simulation now exercise user-driven maintenance. A 500k task envelope was proven insufficient for basket conversion; contracts now fail closed above 2m or below 100k, claims require 50k forwarding overhead, and the qualified test envelope is 1.5m task plus 50k call overhead.
+- Fast torture run `20260803-schema19-fast-01` for `c832041` is permanently failed and preserved: all execution phases passed, but accurate coverage was 89.03% lines / 70.19% branches versus the fixed 90/80 gate.
+- A focused Schema-19 coverage matrix now targets the actual gaps in DAO reward solvency/admission, trade-router admission, maintenance gas and launch admission, basket/fallback configuration, immutable binding, reused RDAO, and Public/Canary/Pause controls. Thresholds remain unchanged.
 - Full regression after the gas-policy correction passes 660 Foundry tests with zero failures and one protected fork skip. Fast/deep torture evidence has not yet been generated for the new SHA.
 - Safety: Mainnet remains Schema-18 and must not be mutated until Schema-19 qualification, exact replacement-manifest sealing, and explicit hash authorization. Do not reuse Schema-18 launches, journals, addresses, or databases.
 

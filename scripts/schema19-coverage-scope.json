@@ -28,6 +28,7 @@
     "Schema18ProtocolLifecycle.t.sol",
     "Schema18RewardAccounting.t.sol",
     "Schema19ClaimMaintenance.t.sol",
+    "Schema19CoverageBranches.t.sol",
     "Schema19MaintenanceInvariant.t.sol",
     "Schema19MaintenanceFallback.t.sol"
   ],
