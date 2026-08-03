@@ -572,6 +572,9 @@ const run = async () => {
     "function allowance(address,address) view returns (uint256)",
     "function totalSupply() view returns (uint256)",
   ]);
+  const permit2Abi = parseAbi([
+    "function approve(address token,address spender,uint160 amount,uint48 expiration)",
+  ]);
   if (stage === "routes") {
     const input = 1_000_000_000_000n;
     for (const route of manifest.routes.filter((item) => item.symbol !== "WETH")) {
@@ -770,9 +773,6 @@ const run = async () => {
     await write("launch", "permit2-token-approve", token, erc20, "approve", [
       external.permit2,
       maxUint256,
-    ]);
-    const permit2Abi = parseAbi([
-      "function approve(address token,address spender,uint160 amount,uint48 expiration)",
     ]);
     await write("launch", "permit2-router-approve", external.permit2, permit2Abi, "approve", [
       token,
