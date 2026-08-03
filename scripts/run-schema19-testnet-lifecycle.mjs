@@ -1002,15 +1002,9 @@ const run = async () => {
         throw new Error("controlled failed leg did not complete and reset WETH fallback");
       }
 
-      const currency0 =
-        BigInt(external.weth) < BigInt(fixtureAsset)
-          ? external.weth
-          : fixtureAsset;
-      const currency1 =
-        currency0 === external.weth ? fixtureAsset : external.weth;
       const fixturePoolKey = {
-        currency0,
-        currency1,
+        currency0: zeroAddress,
+        currency1: fixtureAsset,
         fee: Number(fixture.fee),
         tickSpacing: Number(fixture.tickSpacing),
         hooks: checksum(fixture.hooks),
@@ -1025,7 +1019,7 @@ const run = async () => {
         [
           {
             poolKey: fixturePoolKey,
-            zeroForOne: currency0 !== external.weth,
+            zeroForOne: false,
             exactAmount: disturbanceTokens,
             hookData: "0x",
           },
@@ -1045,7 +1039,7 @@ const run = async () => {
       );
       const fixtureSell = encodeUniversalV4SingleSwap({
         poolKey: fixturePoolKey,
-        zeroForOne: currency0 !== external.weth,
+        zeroForOne: false,
         amount: disturbanceTokens,
         limit: (fixtureSellQuote[0] * 99n) / 100n,
         refundRecipient: account.address,
