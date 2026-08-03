@@ -4,6 +4,18 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Last verified 2026-08-02 21:47 CDT: mainnet
+  `192.168.50.173:8547` now runs the pinned Nitro image with
+  `--execution.caching.trie-dirty-cache=8192`. A controlled restart completed
+  at `2026-08-03T02:43:03Z`; Nitro and the LAN gateway returned chain ID 4663,
+  `eth_syncing=false`, zero lag, and matching hashes across local plus two
+  free public references at 20 and 1,000 blocks deep. Node/container restart
+  counters remain zero, watchdog/health/failover units are active, and no
+  quarantine exists. The mainnet health collector no longer performs recursive
+  `du`; it records filesystem, trie, compaction, memory, swap, and restart
+  metrics each minute in `/var/lib/robinhood/mainnet-health-history.jsonl`
+  with 14-day rotation. The 24-hour disk-growth acceptance window ends
+  `2026-08-04T02:43:03Z`; testnet was not changed.
 - Last verified 2026-08-01: testnet `192.168.50.117:8547` and mainnet
   `192.168.50.173:8547` are synchronized, canonical, and served through a
   public-only resilience stack with no active Alchemy or other paid endpoint.
@@ -2359,6 +2371,19 @@ When sources conflict, use this order:
 
 ## Verification Ledger
 
+- 2026-08-02: Mainnet Nitro disk-growth correction was installed on
+  `192.168.50.173` without pruning or rebuilding chain data. Pre-change
+  metrics were 43% filesystem use, 137.3 GB trie flush, zero trie GC, zero
+  restarts, and matching local/public hashes. The service and health collector
+  were backed up, dirty-trie cache was raised from the 1 GiB default to 8 GiB,
+  recursive per-minute `du` was replaced by lightweight Nitro/filesystem
+  metrics plus rotating JSONL history, and Nitro was restarted once under a
+  paused watchdog. Post-change verification passed chain ID 4663,
+  `eth_syncing=false`, local/public convergence, three-way canonical hashes
+  at 20 and 1,000 blocks deep, zero compaction debt, zero restart counters,
+  active watchdog/health/failover services, no quarantine, and ample memory.
+  The existing four-hour health automation now evaluates the 24-hour cache
+  acceptance window beginning `2026-08-03T02:43:03Z`.
 - 2026-08-01: Robinhood RPC public-only resilience passed live service,
   canonical, and failover checks. Testnet and mainnet returned chain IDs 46630
   and 4663, `eth_syncing=false`, zero practical lag, and matching hashes 1,000
@@ -2915,6 +2940,11 @@ When sources conflict, use this order:
 
 ## Open Follow-ups
 
+- At or after `2026-08-04T02:43:03Z`, evaluate
+  `/var/lib/robinhood/mainnet-health-history.jsonl`: trie GC should be
+  nonzero, trie flush should trend below 25 GiB/day, filesystem growth below
+  20 GiB/day, memory below 70 GiB, available host memory above 12 GiB, swap
+  growth below 1 GiB, and restart count zero.
 - Configure a vendor-neutral IPFS Pinning Service endpoint/token in the
   protected testnet API environment.
 - Supply and review the actual RDAO member wallet/percentage allocation
