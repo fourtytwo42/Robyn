@@ -109,6 +109,9 @@ const manifest = JSON.parse(manifestRaw);
 if (manifest.schemaVersion !== 19 || manifest.chainId !== CHAIN_ID) {
   throw new Error("Schema-19 lifecycle manifest identity mismatch");
 }
+if (manifest.toolingSha !== toolingSha) {
+  throw new Error("Schema-19 lifecycle manifest tooling identity mismatch");
+}
 if (manifest.contractReleaseSha !== releaseSha) {
   throw new Error("Schema-19 contract release identity mismatch");
 }

@@ -9,6 +9,7 @@ test("Schema-19 lifecycle is LAN-only, immutable-release-bound, and restart safe
     /const CHAIN_ID = mainnetFork \? 4663 : 46630/,
     /ROBYN_SCHEMA19_TESTNET_RELEASE_SHA/,
     /exact clean pushed tooling/,
+    /manifest tooling identity mismatch/,
     /gateway\.fallbackTrafficAuthorized !== false/,
     /unresolved signed intent; automatic replay is prohibited/,
     /submission is ambiguous; manual reconciliation required/,
