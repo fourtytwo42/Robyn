@@ -295,16 +295,16 @@ test("Mainnet application finalization is independent of contract build output",
   assert.match(finalizer, /factory: baseline\.contracts\.factory/);
 });
 
-test("successful production promotion records the exact prior-release identity", () => {
+test("production promotion reads but does not advance deployed-release state", () => {
   const promoter = readFileSync(
     path.join(repositoryRoot, "scripts", "promote-mainnet-production.mjs"),
     "utf8",
   );
 
-  const releaseCreate = promoter.indexOf('execFileSync("gh", [');
-  const stateInstall = promoter.indexOf('"last-production-release.json"');
-  assert.ok(releaseCreate >= 0 && stateInstall > releaseCreate);
-  assert.match(promoter, /sourceSha: sha, tag, publishedAt:/);
-  assert.match(promoter, /candidateState,\s*stateFile,/);
-  assert.match(promoter, /"-u",\s*"robyn-release",\s*"install"/);
+  assert.match(
+    promoter,
+    /\["-u", "robyn-release", "cat", stateFile\]/,
+  );
+  assert.doesNotMatch(promoter, /sourceSha: sha, tag, publishedAt:/);
+  assert.doesNotMatch(promoter, /candidateState,\s*stateFile,/);
 });
