@@ -836,7 +836,7 @@ const run = async () => {
     for (let index = 0; index < attempts; index += 1) {
       await write(
         phase,
-        `${phase}-maintenance-${index + 1}`,
+        `${phase}-maintenance-${before + BigInt(index + 1)}`,
         contracts.maintenance,
         built.maintenance.abi,
         "processRewards",

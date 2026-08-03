@@ -49,6 +49,10 @@ test("Schema-19 lifecycle covers three assets, user-driven maintenance, and all 
   ])
     assert.match(source, new RegExp(`"${action}"`));
   assert.match(source, /did not advance one deterministic task per call/);
+  assert.match(
+    source,
+    /`\$\{phase\}-maintenance-\$\{before \+ BigInt\(index \+ 1\)\}`/,
+  );
   assert.match(source, /await waitUntil\(BigInt\(state\.graduatedAt\) \+ 301n\)/);
   assert.match(
     source,
