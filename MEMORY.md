@@ -64,6 +64,15 @@
 - Result: Verification fails closed on altered code, wrong chain/upstream, governance drift, route failure, nonzero genesis accounting, or unexpected native balance. No chain transaction occurred.
 - Follow-up: Commit/push the verifier, generate exact chain-46630 inputs from live runtime hashes, run a LAN-sourced isolated-fork deployment/verification receipt rehearsal, and calculate the live funding requirement.
 
+### 2026-08-03 - Live-derived Schema-19 Testnet input
+
+- Context: Archived deployment manifests did not preserve complete active route parameters and could not safely seed a fresh Schema-19 deployment input by copying fields.
+- Decision: Derive the protected chain-46630 input through the loopback LAN gateway from the live reused governance/runtime identities and the active Schema-16 route registry; require a clean pushed tooling SHA and the exact `4a39cf4` contract candidate.
+- Files: `scripts/prepare-schema19-testnet-input.mjs`, its focused tests, and package gates.
+- Commands/tests: Four focused policy tests, syntax, and formatting pass. Read-only live checks independently showed all five stock routes and WETH ready, exact sole-owner governance, nonce 2683, and 0.057580513587846098 ETH.
+- Result: The generator binds six live-ready routes, fresh Schema-19 hook domain, accelerated Testnet timing, qualified maintenance gas, runtime hashes, source-manifest hashes, and explicit no-Alchemy-fallback policy. No transaction occurred.
+- Follow-up: Commit/push, generate the exact protected input, prepare the deterministic deployment manifest, run a LAN-sourced isolated-fork broadcast/verification rehearsal, and measure the complete deployment gas before deciding whether live Testnet funding passes.
+
 ## Active Handoff
 - Schema-19 is the active development handoff on `codex/schema19-user-driven-fees` in `/home/hendo420/Robyn-schema19`. Exact contract candidate `4a39cf470f0870c1757b2ead8730bf0209eabbc4` passed fast and deep Devnet torture, including 20 invariant seeds, 50 simulation seeds, 100,000 actions, isolated broadcast, 90.81% lines, and 80.14% branches.
 - Fast torture attempts 01 through 04 are permanently failed evidence and must never be relabeled. Fast run 05 and deep run 01 on exact SHA `4a39cf4` passed and are checksum-sealed under `/home/hendo420/robyn-evidence/devnet-torture/4a39cf470f0870c1757b2ead8730bf0209eabbc4`.
