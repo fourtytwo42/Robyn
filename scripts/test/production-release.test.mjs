@@ -309,6 +309,7 @@ test("production updater follows authenticated asset redirects under the hardene
     productionNginx,
     /return 308 https:\/\/sherwoodforest\.trade\$request_uri;/,
   );
+  assert.match(productionNginx, /proxy_pass http:\/\/127\.0\.0\.1:18549\/;/);
 });
 
 test("Mainnet application finalization is independent of contract build output", () => {
