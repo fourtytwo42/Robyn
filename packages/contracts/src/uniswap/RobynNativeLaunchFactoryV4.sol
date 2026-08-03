@@ -15,6 +15,7 @@ contract RobynNativeLaunchFactoryV4 {
     error CoordinatorNotBound();
     error CoordinatorAlreadyBound();
     error LaunchSaltAlreadyUsed(bytes32 launchSaltHash);
+    error FallbackPolicyAlreadyConfigured();
     error AssetRouteUnavailable(uint256 index, address asset, bytes32 reason);
 
     struct LaunchRequest {
@@ -49,8 +50,11 @@ contract RobynNativeLaunchFactoryV4 {
         uint64 expectedGraduationProfileVersion;
     }
 
-    string public constant CONTRACT_VERSION = "7.0.0";
+    string public constant CONTRACT_VERSION = "8.0.0-schema19";
     uint256 public immutable chainId;
+    uint256 public failureObservationSpacing;
+    uint256 public fallbackDelay;
+    bool public fallbackPolicyConfigured;
     RobynV4AssetRouter public immutable assetRouter;
     RobynNativeLaunchDeployerV4 public immutable launchDeployer;
     RobynNativeVaultDeployerV4 public immutable vaultDeployer;
@@ -61,6 +65,7 @@ contract RobynNativeLaunchFactoryV4 {
     uint256 public launchCount;
     mapping(uint256 launchId => address token) public launchTokenById;
     mapping(address token => address vault) public vaultByToken;
+    event FallbackPolicyConfigured(uint256 failureObservationSpacing, uint256 fallbackDelay);
     mapping(address token => address creator) public creatorByToken;
     mapping(bytes32 launchSaltHash => bool used) public usedLaunchSalt;
 
@@ -87,6 +92,8 @@ contract RobynNativeLaunchFactoryV4 {
         assetRouter = assetRouter_;
         launchDeployer = launchDeployer_;
         vaultDeployer = vaultDeployer_;
+        failureObservationSpacing = 24 hours;
+        fallbackDelay = 72 hours;
         minimumConversionNative = minimumConversionNative_;
         maximumPendingDelay = maximumPendingDelay_;
         chainId = block.chainid;
@@ -105,6 +112,20 @@ contract RobynNativeLaunchFactoryV4 {
         if (coordinator_ == address(0) || coordinator_.code.length == 0) revert InvalidAddress();
         coordinator = coordinator_;
         emit CoordinatorBound(coordinator_);
+    }
+
+    function configureFallbackPolicy(uint256 observationSpacing, uint256 fallbackDelay_) external {
+        if (msg.sender != initializer) revert Unauthorized();
+        if (coordinator != address(0) || fallbackPolicyConfigured) {
+            revert FallbackPolicyAlreadyConfigured();
+        }
+        if (observationSpacing == 0 || fallbackDelay_ < observationSpacing * 3) {
+            revert InvalidAddress();
+        }
+        failureObservationSpacing = observationSpacing;
+        fallbackDelay = fallbackDelay_;
+        fallbackPolicyConfigured = true;
+        emit FallbackPolicyConfigured(observationSpacing, fallbackDelay_);
     }
 
     function requireBasketRoutes(address[] calldata assets) public view {
@@ -153,7 +174,9 @@ contract RobynNativeLaunchFactoryV4 {
         if (
             launchDeployer.controller() != address(this)
                 || vaultDeployer.controller() != address(this)
-        ) revert Unauthorized();
+        ) {
+            revert Unauthorized();
+        }
         launchSaltHash = _launchSaltHash(creator, initialSupply, request);
         if (usedLaunchSalt[launchSaltHash]) revert LaunchSaltAlreadyUsed(launchSaltHash);
         usedLaunchSalt[launchSaltHash] = true;
@@ -175,6 +198,7 @@ contract RobynNativeLaunchFactoryV4 {
             minimumConversionNative,
             maximumPendingDelay
         );
+        vault.configureFallbackPolicy(failureObservationSpacing, fallbackDelay);
         RobynNativeLaunchDeployerV4.TokenRequest memory tokenRequest =
             _tokenRequest(request, supplyRecipient, initialSupply, address(vault));
         bytes32 tokenSalt =
@@ -199,6 +223,8 @@ contract RobynNativeLaunchFactoryV4 {
                 address(vault),
                 request.assets,
                 request.weights,
+                failureObservationSpacing,
+                fallbackDelay,
                 keccak256(bytes(request.metadataUri)),
                 request.expectedGraduationProfileVersion
             )
@@ -247,16 +273,33 @@ contract RobynNativeLaunchFactoryV4 {
         address supplyRecipient,
         uint256 initialSupply,
         address vault
-    ) private pure returns (RobynNativeLaunchDeployerV4.TokenRequest memory tokenRequest) {
+    ) private view returns (RobynNativeLaunchDeployerV4.TokenRequest memory tokenRequest) {
         tokenRequest = RobynNativeLaunchDeployerV4.TokenRequest({
             name: request.name,
             symbol: request.symbol,
             supplyRecipient: supplyRecipient,
             initialSupply: initialSupply,
             vault: vault,
-            assets: request.assets,
+            assets: _rewardAssets(request.assets),
             tokenUri: request.metadataUri
         });
+    }
+
+    function _rewardAssets(address[] calldata primaryAssets)
+        private
+        view
+        returns (address[] memory rewards)
+    {
+        address wrappedNative = address(assetRouter.wrappedNative());
+        bool included;
+        for (uint256 index; index < primaryAssets.length; ++index) {
+            if (primaryAssets[index] == wrappedNative) included = true;
+        }
+        rewards = new address[](primaryAssets.length + (included ? 0 : 1));
+        for (uint256 index; index < primaryAssets.length; ++index) {
+            rewards[index] = primaryAssets[index];
+        }
+        if (!included) rewards[primaryAssets.length] = wrappedNative;
     }
 
     function _requireContract(address account) private view {
@@ -272,6 +315,7 @@ contract RobynNativeLaunchFactoryV4 {
         preimage.chainId = block.chainid;
         preimage.factory = address(this);
         preimage.creator = creator;
+
         preimage.nameHash = keccak256(bytes(request.name));
         preimage.symbolHash = keccak256(bytes(request.symbol));
         preimage.initialSupply = initialSupply;

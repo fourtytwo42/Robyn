@@ -8,6 +8,10 @@ import { RobynDaoToken } from "../dao/RobynDaoToken.sol";
 import { RobynNativeBasketVaultV2 } from "./RobynNativeBasketVaultV2.sol";
 import { RobynV4AssetRouter } from "./RobynV4AssetRouter.sol";
 
+interface ISchema19DaoRewardReceiver {
+    function depositRewards(address sourceToken) external payable returns (uint256 epochId);
+}
+
 /// @notice Immutable native-ETH 50/25/20/5 fee policy with per-token creator liabilities.
 contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -18,7 +22,7 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
     uint16 public constant TREASURY_BPS = 500;
     uint8 public constant MAX_CREATOR_RECIPIENTS = 8;
     uint256 public immutable CREATOR_REWARD_STREAM_DURATION;
-    string public constant CONTRACT_VERSION = "8.0.0";
+    string public constant CONTRACT_VERSION = "9.0.0-schema19";
 
     struct CreatorRewardStream {
         uint256 rewardRate;
@@ -66,6 +70,10 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
         uint256 pendingBasketNative;
         uint256 cumulativeBasketNativeSettled;
         bool registered;
+        uint256 pendingDaoNative;
+        uint256 cumulativeDaoNativeSettled;
+        uint256 pendingTreasuryNative;
+        uint256 cumulativeTreasuryNativeSettled;
     }
 
     error Unauthorized();
@@ -87,8 +95,10 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
     address public immutable guardian;
     address public immutable initializer;
     address public coordinator;
+    address public maintenanceCoordinator;
     bool public paused;
 
+    address public daoRewardReceiver;
     mapping(address token => LaunchFeeAccount account) private _launchAccounts;
     mapping(address token => CreatorFeeSplit split) private _creatorFeeSplits;
     mapping(address token => mapping(address recipient => CreatorRewardStream stream)) private
@@ -106,6 +116,7 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
     uint256 public totalBasketNative;
 
     event CoordinatorBound(address indexed coordinator);
+    event MaintenanceCoordinatorBound(address indexed maintenanceCoordinator);
     event LaunchRegistered(
         address indexed token,
         address indexed creator,
@@ -114,6 +125,7 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
         address locker,
         address hook
     );
+    event DaoRewardReceiverBound(address indexed receiver);
     event NativeFeesRouted(
         address indexed token,
         address indexed source,
@@ -182,11 +194,30 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
     function bindCoordinator(address coordinator_) external {
         if (msg.sender != initializer) revert Unauthorized();
         if (coordinator != address(0)) revert AlreadyBound();
+
         if (coordinator_ == address(0) || coordinator_.code.length == 0) {
             revert InvalidConfiguration();
         }
         coordinator = coordinator_;
         emit CoordinatorBound(coordinator_);
+    }
+
+    function bindMaintenanceCoordinator(address maintenanceCoordinator_) external {
+        if (msg.sender != initializer) revert Unauthorized();
+        if (maintenanceCoordinator != address(0)) revert AlreadyBound();
+        if (maintenanceCoordinator_ == address(0) || maintenanceCoordinator_.code.length == 0) {
+            revert InvalidConfiguration();
+        }
+        maintenanceCoordinator = maintenanceCoordinator_;
+        emit MaintenanceCoordinatorBound(maintenanceCoordinator_);
+    }
+
+    function bindDaoRewardReceiver(address receiver) external {
+        if (msg.sender != initializer) revert Unauthorized();
+        if (daoRewardReceiver != address(0)) revert AlreadyBound();
+        if (receiver == address(0) || receiver.code.length == 0) revert InvalidConfiguration();
+        daoRewardReceiver = receiver;
+        emit DaoRewardReceiverBound(receiver);
     }
 
     function setPaused(bool paused_) external {
@@ -395,7 +426,32 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
         _assertSolvent();
     }
 
+    function settleDaoFees(address token, uint256 amount) external nonReentrant {
+        LaunchFeeAccount storage account = _launchAccounts[token];
+        if (!account.registered || daoRewardReceiver == address(0)) revert InvalidConfiguration();
+        if (amount == 0 || amount > account.pendingDaoNative) revert InvalidConfiguration();
+        account.pendingDaoNative -= amount;
+        account.cumulativeDaoNativeSettled += amount;
+        totalDaoNativeLiability -= amount;
+        ISchema19DaoRewardReceiver(daoRewardReceiver).depositRewards{ value: amount }(token);
+        emit DaoFeesSettled(daoRewardReceiver, amount);
+        _assertSolvent();
+    }
+
+    function settleTreasuryFees(address token, uint256 amount) external nonReentrant {
+        LaunchFeeAccount storage account = _launchAccounts[token];
+        if (!account.registered || daoRewardReceiver == address(0)) revert InvalidConfiguration();
+        if (amount == 0 || amount > account.pendingTreasuryNative) revert InvalidConfiguration();
+        account.pendingTreasuryNative -= amount;
+        account.cumulativeTreasuryNativeSettled += amount;
+        totalTreasuryNativeLiability -= amount;
+        _sendNative(treasury, amount);
+        emit TreasuryFeesSettled(treasury, amount);
+        _assertSolvent();
+    }
+
     function settleDaoFees(uint256 amount) external nonReentrant {
+        if (daoRewardReceiver != address(0)) revert InvalidConfiguration();
         if (amount == 0 || amount > totalDaoNativeLiability || daoToken.eligibleRewardSupply() == 0)
         {
             revert InvalidConfiguration();
@@ -407,6 +463,7 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
     }
 
     function settleTreasuryFees(uint256 amount) external nonReentrant {
+        if (daoRewardReceiver != address(0)) revert InvalidConfiguration();
         if (amount == 0 || amount > totalTreasuryNativeLiability) revert InvalidConfiguration();
         totalTreasuryNativeLiability -= amount;
         _sendNative(treasury, amount);
@@ -517,6 +574,8 @@ contract RobynNativeProtocolFeeRouterV4 is ReentrancyGuard {
         totalDaoNativeLiability += daoAmount;
         totalTreasuryNativeLiability += treasuryAmount;
         totalDaoNativeRewards += daoAmount;
+        account.pendingDaoNative += daoAmount;
+        account.pendingTreasuryNative += treasuryAmount;
         totalTreasuryNative += treasuryAmount;
         totalBasketNative += basketAmount;
         emit NativeFeesRouted(

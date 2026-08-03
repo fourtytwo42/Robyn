@@ -1,5 +1,20 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 implementation started
+
+- Context: The owner approved a fresh Schema-19 replacement that moves routine fee processing onto bounded best-effort work attempted by user trades and claims. Schema-18 remains live until the exact replacement cutover.
+- Decision: Develop on `codex/schema19-user-driven-fees` in `/home/hendo420/Robyn-schema19`; version new contracts alongside Schema-18 and preserve the existing Safe, RDAO, Governor, and one-hour Timelock. Mainnet receives no transaction until the complete Devnet, focused Testnet, exact fork, funding, and sealed-manifest gates pass.
+- Safety: Mainnet continues using LAN RPC only; Alchemy remains probe-only. At cutover, require exactly the existing Schema-18 canary and no external launch or liability, otherwise stop for a migration plan.
+- Follow-up: Implement per-launch maintenance scheduling, permissionless account-directed claims, independent reward legs with objective 72-hour WETH fallback, full application/tooling integration, and qualification gates.
+### 2026-08-03 - Schema-19 contract core checkpoint
+
+- Context: Reusing Schema-18 RDAO cannot reuse its one-time-bound reward depositor.
+- Decision: Schema-19 settles its per-launch 20% DAO liabilities into a new bounded epoch distributor keyed to the reused RDAO timestamp voting checkpoints. RDAO, Safe, Governor, and Timelock remain unchanged.
+- Contracts: Added maintenance, claims, trade, and DAO-reward routers; added Public-at-construction coordinator V7; added one-task best-effort maintenance to canonical market trades; added per-leg objective failure history and canonical-WETH fallback.
+- Tests: The genuine full Foundry suite passes from `packages/contracts`; focused tests cover permissionless account-directed claims, claim/trade maintenance failure isolation, exhausted subcall gas, 72-hour fallback, recovery reset, future primary reuse, routed buy/sell cleanup, Public construction, and reused-RDAO rewards.
+- Safety: No Mainnet or Testnet transaction occurred. Schema-18 remains the active public protocol during development.
+
+
 ## Active Handoff
 - Route-governance tooling must bind current policy hash `ec5c8f9c...` and the immutable route-qualification policy hash `de5d61f...` separately. Policy v2 changed canonical decimal metadata only; the 65-receipt route execution evidence remains sealed and unmodified.
 - Signed production release `mainnet-prod-20260803-2e91482` is live and browser-accepted. It serves Schema-18 asset policy v2, Chainlink references, pool-implied prices, precise route readiness, canonical symbols, and six-decimal USDG pricing from the release-bound manifest.

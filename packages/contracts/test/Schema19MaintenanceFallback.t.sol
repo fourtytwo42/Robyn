@@ -1,0 +1,173 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.30;
+
+import { IHooks } from "@uniswap/v4-core/src/interfaces/IHooks.sol";
+import { IVotes } from "@openzeppelin/contracts/governance/utils/IVotes.sol";
+import { RobynDaoRewardDistributor } from "../src/RobynDaoRewardDistributor.sol";
+import { RobynMaintenanceCoordinator } from "../src/RobynMaintenanceCoordinator.sol";
+import { RobynLaunchToken } from "../src/RobynLaunchToken.sol";
+import { RobynTradeRouter } from "../src/RobynTradeRouter.sol";
+import { IRobynMaintenanceCoordinator } from "../src/interfaces/IRobynMaintenanceCoordinator.sol";
+import { RobynNativeBasketVaultV2 } from "../src/uniswap/RobynNativeBasketVaultV2.sol";
+import { RobynV4AssetRouter } from "../src/uniswap/RobynV4AssetRouter.sol";
+import { RobynV4BondingCurveMarket } from "../src/uniswap/RobynV4BondingCurveMarket.sol";
+import { RobynV4LaunchCoordinatorV7 } from "../src/uniswap/RobynV4LaunchCoordinatorV7.sol";
+import { RobynV4NativeProtocolTest } from "./RobynV4NativeProtocol.t.sol";
+
+contract Schema19GasExhaustingMaintenance is IRobynMaintenanceCoordinator {
+    function processRewards(address) external pure returns (bool) {
+        while (true) { }
+        return false;
+    }
+}
+
+contract Schema19MaintenanceFallbackTest is RobynV4NativeProtocolTest {
+    function testSchema19CoordinatorStartsPublicOnlyWithBoundMaintenance() public {
+        RobynMaintenanceCoordinator maintenance =
+            new RobynMaintenanceCoordinator(feeRouter, assetRouter, 500_000);
+        feeRouter.bindMaintenanceCoordinator(address(maintenance));
+        RobynDaoRewardDistributor daoRewards =
+            new RobynDaoRewardDistributor(IVotes(address(daoToken)), 1 hours);
+        daoRewards.bindRewardDepositor(address(feeRouter));
+        feeRouter.bindDaoRewardReceiver(address(daoRewards));
+        RobynTradeRouter trades = new RobynTradeRouter();
+        RobynV4LaunchCoordinatorV7 publicCoordinator = new RobynV4LaunchCoordinatorV7(
+            launchFactory, marketFactory, feeRouter, trades, TREASURY, GUARDIAN
+        );
+
+        assertEq(
+            uint256(publicCoordinator.launchMode()),
+            uint256(RobynV4LaunchCoordinatorV7.LaunchMode.Public),
+            "Schema-19 must be Public at construction"
+        );
+        assertEq(feeRouter.maintenanceCoordinator(), address(maintenance));
+    }
+
+    function testReusedRdaoReceivesSchema19CheckpointedRewards() public {
+        RobynDaoRewardDistributor daoRewards =
+            new RobynDaoRewardDistributor(IVotes(address(daoToken)), 1 hours);
+        daoRewards.bindRewardDepositor(address(feeRouter));
+        feeRouter.bindDaoRewardReceiver(address(daoRewards));
+        vm.warp(block.timestamp + 1);
+        assertEq(daoToken.getPastVotes(address(this), block.timestamp - 1), daoToken.totalSupply());
+        assertEq(daoToken.getPastTotalSupply(block.timestamp - 1), daoToken.totalSupply());
+        (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(keccak256("schema19-dao-rewards")));
+        market.buy{ value: 0.1 ether }(1);
+        uint256 assigned = feeRouter.totalDaoNativeLiability();
+        assertGt(assigned, 0);
+
+        feeRouter.settleDaoFees(address(token), assigned);
+        assertEq(feeRouter.totalDaoNativeLiability(), 0);
+        assertEq(daoRewards.totalRewardsDeposited(), assigned);
+        vm.warp(block.timestamp + 1 hours);
+        uint256 nativeBefore = address(this).balance;
+        uint256 claimed = daoRewards.claimFor(address(this), 1);
+        assertEq(claimed, assigned);
+        assertEq(address(this).balance, nativeBefore + assigned);
+        assertEq(daoRewards.outstandingLiability(), 0);
+    }
+
+    function testTradeRouterReturnsAssetsAndNativeWithoutRetainingAllowance() public {
+        (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(keccak256("schema19-trade-router")));
+        feeRouter.bindMaintenanceCoordinator(address(new Schema19GasExhaustingMaintenance()));
+        RobynTradeRouter trades = new RobynTradeRouter();
+
+        uint256 bought = trades.buy{ value: 0.1 ether }(market, 1);
+        assertEq(token.balanceOf(address(trades)), 0);
+        assertEq(token.balanceOf(address(this)), bought);
+        token.approve(address(trades), bought / 2);
+        uint256 nativeBefore = address(this).balance;
+        uint256 sold = trades.sell(market, bought / 2, 1);
+        assertEq(address(this).balance, nativeBefore + sold);
+        assertEq(token.allowance(address(trades), address(market)), 0);
+        assertEq(token.balanceOf(address(trades)), 0);
+        assertEq(address(trades).balance, 0);
+    }
+
+    function testBondingBuyAndSellSurviveExhaustedMaintenanceGas() public {
+        (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(keccak256("schema19-gas-isolation")));
+        feeRouter.bindMaintenanceCoordinator(address(new Schema19GasExhaustingMaintenance()));
+
+        uint256 bought = market.buy{ value: 0.1 ether }(1);
+        assertGt(bought, 0, "buy must survive maintenance failure");
+        token.approve(address(market), bought / 2);
+        uint256 sold = market.sell(bought / 2, 1);
+        assertGt(sold, 0, "sell must survive maintenance failure");
+    }
+
+    function testObjectiveFailuresFallbackOnlyPendingLegThenRetryPrimary() public {
+        (RobynLaunchToken token, RobynNativeBasketVaultV2 vault,) =
+            coordinator.createLaunch(_request(keccak256("schema19-fallback")));
+        assertEq(token.rewardAssetCount(), 2, "primary plus canonical WETH reward");
+        vault.recordFees{ value: 0.01 ether }();
+        assetRouter.configureWrappedNativeRoute(0.25 ether, true);
+        _configureBasketRoute(type(uint128).max);
+
+        vault.processNextLeg();
+        vm.warp(block.timestamp + 24 hours);
+        vault.processNextLeg();
+        vm.warp(block.timestamp + 24 hours);
+        vault.processNextLeg();
+        vm.warp(block.timestamp + 24 hours);
+        (bool converted,, bool usedFallback) = vault.processNextLeg();
+
+        assertTrue(converted, "eligible current failure must convert fallback");
+        assertTrue(usedFallback, "conversion must use canonical WETH");
+        RobynNativeBasketVaultV2.BasketLeg memory afterFallback = vault.leg(0);
+        assertEq(afterFallback.pendingNative, 0, "only pending allocation consumed");
+        assertEq(afterFallback.failureObservations, 0, "fallback resets observations");
+        assertGt(afterFallback.fallbackRewardsDeposited, 0, "WETH reward deposited");
+        assertEq(
+            vault.totalPendingNative() + vault.totalNativeConsumed(), vault.totalFeesReceived()
+        );
+
+        vault.recordFees{ value: 0.01 ether }();
+        _configureBasketRoute(1);
+        (converted,, usedFallback) = vault.processNextLeg();
+        assertTrue(converted, "future batch must retry recovered primary");
+        assertFalse(usedFallback, "future batch must not remain on fallback");
+        RobynNativeBasketVaultV2.BasketLeg memory afterRecovery = vault.leg(0);
+        assertGt(afterRecovery.rewardsDeposited, 0, "primary reward deposited after recovery");
+        assertEq(
+            vault.totalPendingNative() + vault.totalNativeConsumed(), vault.totalFeesReceived()
+        );
+    }
+
+    function testSuccessfulPrimaryQuoteResetsFailureHistoryBeforeFallback() public {
+        (, RobynNativeBasketVaultV2 vault,) =
+            coordinator.createLaunch(_request(keccak256("schema19-recovery-reset")));
+        vault.recordFees{ value: 0.01 ether }();
+        _configureBasketRoute(type(uint128).max);
+        vault.processNextLeg();
+        vm.warp(block.timestamp + 24 hours);
+        vault.processNextLeg();
+        assertEq(vault.leg(0).failureObservations, 2);
+
+        _configureBasketRoute(1);
+        (bool converted,, bool usedFallback) = vault.processNextLeg();
+        assertTrue(converted);
+        assertFalse(usedFallback);
+        assertEq(vault.leg(0).failureObservations, 0);
+    }
+
+    function _configureBasketRoute(uint128 minimumLiquidity) private {
+        assetRouter.configureRoute(
+            address(basketAsset),
+            RobynV4AssetRouter.Route({
+                fee: 3_000,
+                tickSpacing: 60,
+                hooks: IHooks(address(0)),
+                minimumLiquidity: minimumLiquidity,
+                maximumNativeInput: 0.25 ether,
+                referenceTick: 0,
+                maximumReferenceTickDeviation: 198,
+                enforceReferencePrice: true,
+                verificationClass: keccak256("TEST_BASKET_ASSET"),
+                enabled: true
+            })
+        );
+    }
+}

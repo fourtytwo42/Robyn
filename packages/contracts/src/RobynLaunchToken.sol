@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 /// @notice Fixed-supply token with transfer-aware, multi-asset one-hour reward streams.
 contract RobynLaunchToken is ERC20, ReentrancyGuard {
@@ -15,7 +15,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     uint8 public constant MAX_EXCLUDED_ACCOUNTS = 16;
     uint256 public constant MAGNITUDE = 2 ** 128;
     uint256 public REWARD_STREAM_DURATION = 1 hours;
-    string public constant CONTRACT_VERSION = "6.0.0";
+    string public constant CONTRACT_VERSION = "7.0.0-schema19";
 
     error Unauthorized();
     error InvalidAssetCount();
@@ -76,9 +76,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         uint256 eligibleSupply
     );
     event RewardStreamPaused(uint256 indexed assetIndex, uint256 queuedRewards);
-    event RewardClaimed(
-        address indexed account, uint256 indexed assetIndex, address indexed asset, uint256 amount
-    );
+    event RewardClaimed(address indexed account, uint256 indexed assetIndex, address indexed asset, uint256 amount);
     event ExclusionsSealed(address[] accounts, uint256 eligibleSupply);
     event RewardStreamDurationConfigured(uint256 duration);
 
@@ -168,8 +166,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         uint256 supply = eligibleSupply;
         if (supply == 0) return magnifiedRewardPerShare[index];
         uint256 newlyVested = _newlyVestedRewards(index);
-        (uint256 increase,) =
-            _rewardPerShareIncrease(newlyVested, supply, distributionRemainder[index]);
+        (uint256 increase,) = _rewardPerShareIncrease(newlyVested, supply, distributionRemainder[index]);
         return magnifiedRewardPerShare[index] + increase;
     }
 
@@ -187,11 +184,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         return totalRewardsDistributed[index] + newlyVested;
     }
 
-    function distributeReward(uint256 index, uint256 requestedAmount)
-        external
-        nonReentrant
-        returns (uint256 received)
-    {
+    function distributeReward(uint256 index, uint256 requestedAmount) external nonReentrant returns (uint256 received) {
         if (msg.sender != controller) revert Unauthorized();
         if (!exclusionsSealed) revert ExclusionsNotSealed();
         _validateAssetIndex(index);
@@ -262,9 +255,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         if (isExcluded[account]) return 0;
         return _accruedRewards[account][index]
             + Math.mulDiv(
-            balanceOf(account),
-            currentRewardPerToken(index) - userRewardPerTokenPaid[account][index],
-            MAGNITUDE
+            balanceOf(account), currentRewardPerToken(index) - userRewardPerTokenPaid[account][index], MAGNITUDE
         );
     }
 
@@ -274,11 +265,23 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     }
 
     function claimAll() external nonReentrant returns (uint256 claimed) {
+        return _claimAllFor(msg.sender);
+    }
+
+    /// @notice Claims every vested basket reward for `account` directly to that account.
+    /// @dev Permissionless execution cannot redirect funds and is used by the Schema-19
+    /// claims router to couple a holder-paid claim with best-effort maintenance.
+    function claimAllFor(address account) external nonReentrant returns (uint256 claimed) {
+        if (account == address(0)) revert InvalidAccount();
+        return _claimAllFor(account);
+    }
+
+    function _claimAllFor(address account) private returns (uint256 claimed) {
         for (uint256 i; i < rewardAssetCount; ++i) {
-            _updateAccount(msg.sender, i);
-            uint256 amount = _accruedRewards[msg.sender][i];
+            _updateAccount(account, i);
+            uint256 amount = _accruedRewards[account][i];
             if (amount != 0) {
-                claimed += _claimUpdatedAsset(msg.sender, i, amount);
+                claimed += _claimUpdatedAsset(account, i, amount);
             }
         }
         if (claimed == 0) revert NoRewardAvailable();
@@ -291,10 +294,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         return _claimUpdatedAsset(account, index, amount);
     }
 
-    function _claimUpdatedAsset(address account, uint256 index, uint256 amount)
-        private
-        returns (uint256)
-    {
+    function _claimUpdatedAsset(address account, uint256 index, uint256 amount) private returns (uint256) {
         _accruedRewards[account][index] = 0;
         uint256 available = _rewardAssets[index].balanceOf(address(this));
         if (amount > available) revert RewardAccountingInsolvent(index, amount, available);
@@ -330,9 +330,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
             ][
                 index
             ] += Math.mulDiv(
-                balanceOf(account),
-                magnifiedRewardPerShare[index] - userRewardPerTokenPaid[account][index],
-                MAGNITUDE
+                balanceOf(account), magnifiedRewardPerShare[index] - userRewardPerTokenPaid[account][index], MAGNITUDE
             );
             userRewardPerTokenPaid[account][index] = magnifiedRewardPerShare[index];
         }
@@ -340,8 +338,7 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
 
     function _updateStream(uint256 index) private {
         RewardStream storage stream = _streams[index];
-        uint256 applicable =
-            block.timestamp < stream.periodFinish ? block.timestamp : stream.periodFinish;
+        uint256 applicable = block.timestamp < stream.periodFinish ? block.timestamp : stream.periodFinish;
         if (applicable <= stream.lastUpdateTime) return;
         uint256 supply = eligibleSupply;
         if (supply == 0) {
@@ -397,18 +394,14 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
         stream.periodFinish = block.timestamp + REWARD_STREAM_DURATION;
         stream.lastUpdateTime = block.timestamp;
         pendingWithoutSupply[index] = 0;
-        emit RewardStreamUpdated(
-            index, stream.rewardRate, stream.periodFinish, pendingWithoutSupply[index], supply
-        );
+        emit RewardStreamUpdated(index, stream.rewardRate, stream.periodFinish, pendingWithoutSupply[index], supply);
     }
 
     function _vestedStreamRewards(uint256 index) private view returns (uint256) {
         RewardStream memory stream = _streams[index];
         if (stream.streamTotal == 0 || block.timestamp <= stream.streamStartTime) return 0;
         if (block.timestamp >= stream.periodFinish) return stream.streamTotal;
-        return
-            (stream.streamTotal * (block.timestamp - stream.streamStartTime))
-                / REWARD_STREAM_DURATION;
+        return (stream.streamTotal * (block.timestamp - stream.streamStartTime)) / REWARD_STREAM_DURATION;
     }
 
     function _newlyVestedRewards(uint256 index) private view returns (uint256) {
@@ -435,8 +428,8 @@ contract RobynLaunchToken is ERC20, ReentrancyGuard {
     function _validateTokenUri(string memory value) private pure {
         bytes memory uri = bytes(value);
         if (
-            uri.length < 28 || uri.length > 140 || uri[0] != "i" || uri[1] != "p" || uri[2] != "f"
-                || uri[3] != "s" || uri[4] != ":" || uri[5] != "/" || uri[6] != "/" || uri[7] != "b"
+            uri.length < 28 || uri.length > 140 || uri[0] != "i" || uri[1] != "p" || uri[2] != "f" || uri[3] != "s"
+                || uri[4] != ":" || uri[5] != "/" || uri[6] != "/" || uri[7] != "b"
         ) revert InvalidTokenUri();
         for (uint256 i = 8; i < uri.length; ++i) {
             bytes1 character = uri[i];
