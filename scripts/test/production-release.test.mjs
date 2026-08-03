@@ -307,6 +307,10 @@ test("production updater follows authenticated asset redirects under the hardene
   assert.match(productionNginx, /server_name www\.sherwoodforest\.trade;/);
   assert.match(
     productionNginx,
+    /listen 192\.168\.50\.108:3082 default_server;/,
+  );
+  assert.match(
+    productionNginx,
     /return 308 https:\/\/sherwoodforest\.trade\$request_uri;/,
   );
   assert.match(productionNginx, /proxy_pass http:\/\/127\.0\.0\.1:18549\/;/);
