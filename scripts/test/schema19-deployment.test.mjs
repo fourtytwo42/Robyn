@@ -152,7 +152,7 @@ test("preparer emits an exact accelerated Testnet deployment input", async () =>
       })),
       {
         symbol: "WETH",
-        asset: address(12),
+        asset: address(13),
         kind: "wrapped-native",
         maximumNativeInput: "1000000000000000",
         enabled: true,
@@ -163,7 +163,7 @@ test("preparer emits an exact accelerated Testnet deployment input", async () =>
       JSON.stringify({
         schemaVersion: 19,
         chainId: 46630,
-        contractReleaseSha: "4a39cf470f0870c1757b2ead8730bf0209eabbc4",
+        contractReleaseSha: "54e4c5d728616371373d945dd0e6c887ab87102c",
         toolingSha: "acf65fdd6eea6b287f22827776b9708507ba5854",
         reusedRuntimeCodeHashes: Object.fromEntries(
           [
@@ -177,6 +177,7 @@ test("preparer emits an exact accelerated Testnet deployment input", async () =>
             "quoter",
             "stateView",
             "permit2",
+            "universalRouter",
             "wrappedNative",
           ].map((field, index) => [
             field,
@@ -196,7 +197,8 @@ test("preparer emits an exact accelerated Testnet deployment input", async () =>
           quoter: address(9),
           stateView: address(10),
           permit2: address(11),
-          wrappedNative: address(12),
+          universalRouter: address(12),
+          wrappedNative: address(13),
         },
         oracleHook,
         hookSalt,

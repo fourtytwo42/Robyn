@@ -47,6 +47,7 @@ const external = {
   quoter: getAddress(schema18.contracts.quoter),
   stateView: getAddress(schema18.contracts.stateView),
   permit2: getAddress(schema18.contracts.permit2),
+  universalRouter: getAddress(schema18.contracts.universalRouter),
   wrappedNative: getAddress(schema18.contracts.wrappedNative),
 };
 const reusedAddresses = {

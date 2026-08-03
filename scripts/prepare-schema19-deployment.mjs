@@ -56,6 +56,7 @@ for (const field of [
   "quoter",
   "stateView",
   "permit2",
+  "universalRouter",
   "wrappedNative",
 ]) {
   if (!isAddress(input.external?.[field])) throw new Error(`missing external ${field}`);
@@ -63,7 +64,7 @@ for (const field of [
 const reusedRuntimeCodeHashes = input.reusedRuntimeCodeHashes ?? {};
 for (const field of [
   "guardianSafe", "daoToken", "timelock", "governor", "create2Deployer",
-  "poolManager", "positionManager", "quoter", "stateView", "permit2", "wrappedNative",
+  "poolManager", "positionManager", "quoter", "stateView", "permit2", "universalRouter", "wrappedNative",
 ]) {
   if (!/^0x[0-9a-fA-F]{64}$/.test(reusedRuntimeCodeHashes[field] ?? "")) {
     throw new Error(`missing reused runtime hash ${field}`);
