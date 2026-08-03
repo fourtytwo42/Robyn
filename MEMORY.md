@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 live Testnet qualification passes
+
+- Context: The exact Schema-19 contract candidate and deployment tooling completed a fresh live chain-46630 deployment and focused lifecycle after the full Devnet qualification.
+- Result: Contract candidate `a67288133f09bce68b7386009d702c14dfb8bbab` deployed in 36 unique successful transactions under tooling `f3373d5f3c4f08b6f757b75520168f84788b5ab9`. The three-asset lifecycle passed routes, launch, maintenance, claims, unwind, post-settlement, shutdown, and reconciliation with a real ten-minute reward release, controlled MSFT failure observations and canonical-WETH fallback, reset observations, 79.00% recovery, unchanged locked principal, and `0.054240745838292962 ETH` remaining.
+- Evidence: `/home/hendo420/robyn-evidence/schema19-testnet/live-f3373d5-01`; independent deployment verification SHA `379565bb922088bf268fa550231662f792d9fa66fa9cc596e7f20c2725518d2c`; lifecycle bundle checksum hash `aeb289bdedb36b7f4de812c83df80043ac3a463d72494662bca7dd694b8f75ac`.
+- Safety: Qualification ended guardian-Paused with conversions Paused and all six routes disabled. No Mainnet transaction occurred; Schema-18 remains the live Mainnet protocol.
+- Follow-up: Finalize the live receipt journal into the canonical Schema-19 Testnet manifest, rebuild a fresh scoped database, complete projection/RPC/browser acceptance, then prepare the exact LAN-sourced chain-4663 replacement rehearsal and stop for manifest authorization before any Mainnet mutation.
+
 ### 2026-08-03 - Schema-19 live Testnet broadcaster chain binding corrected
 
 - Context: The first live Testnet deployment attempt stopped before its first signature because viem requires the wallet client to carry an explicit chain definition.
