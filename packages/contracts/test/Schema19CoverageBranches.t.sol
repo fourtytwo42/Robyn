@@ -504,6 +504,12 @@ contract Schema19CoverageBranchesTest is Schema19MaintenanceFallbackTest {
         claims.claimAll(RobynLaunchToken(address(0)));
         vm.expectRevert(RobynClaimsRouter.InvalidConfiguration.selector);
         claims.claimAll(RobynLaunchToken(address(0x123456)));
+        (RobynLaunchToken emptyToken,,) =
+            coordinator.createLaunch(_request(keccak256("schema19-empty-claims")));
+        vm.expectRevert(RobynLaunchToken.InvalidAccount.selector);
+        emptyToken.claimAllFor(address(0));
+        vm.expectRevert(RobynLaunchToken.NoRewardAvailable.selector);
+        emptyToken.claim(0);
 
         RobynTradeRouter coordinatorTradeRouter = new RobynTradeRouter();
         vm.expectRevert(RobynV4LaunchCoordinatorV7.InvalidConfiguration.selector);

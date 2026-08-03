@@ -19,6 +19,8 @@
 - Commit `12c9c4a4db9035819a25eef774be5ac68898ae5f` adds the remaining surgical branch cases, makes treasury settlement pull-based, and prevents guardian-supplied labels from manufacturing fallback observations.
 - Full regression passes 721 Foundry tests with zero failures and one protected fork skip. Mainnet and Testnet remain untouched.
 - Follow-up: run a fresh fast gate on the next clean documentation-bound SHA; if 90/80 passes, run the complete deep gate before Testnet work.
+- Fast run `20260803-schema19-fast-04` for `04af0e8` is permanently failed and checksum-preserved: every behavioral phase passed, but coverage was 90.81% lines / 79.62% branches (461/579), three branch hits short of the 80% gate.
+- The next increment explicitly covers zero-account and empty per-asset holder claims plus a second no-work scheduler cycle after liabilities are settled.
 
 ### 2026-08-03 - Schema-19 implementation started
 

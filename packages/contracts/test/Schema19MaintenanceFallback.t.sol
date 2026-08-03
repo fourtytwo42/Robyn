@@ -111,6 +111,9 @@ contract Schema19MaintenanceFallbackTest is RobynV4NativeProtocolTest {
         vm.prank(TREASURY);
         assertEq(feeRouter.claimTreasuryFees(), treasuryClaimable, "treasury pulls assigned fees");
         assertEq(feeRouter.totalTreasuryNativeLiability(), 0, "treasury claim clears liability");
+        for (uint256 task; task < maintenance.TASK_COUNT(); ++task) {
+            maintenance.processRewards(address(token));
+        }
         assertGt(feeRouter.totalCreatorNativeLiability(), 0, "creator remains pull based");
         assertEq(
             vault.totalPendingNative() + vault.totalNativeConsumed(),
