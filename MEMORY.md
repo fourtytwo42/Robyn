@@ -3,7 +3,7 @@
 ## Active Handoff
 - Asset-route remediation is in progress on `codex/schema18-asset-route-pricing-remediation`. Additive API/UI work separates Chainlink reference prices, raw v4 pool-implied prices, and final selectability; Mainnet routes and Schema-18 contracts are unchanged.
 - Schema-18 asset policy `schema18-assets-v1` hashes to `8be877361baee8ca633287758ff8ae5f44d9f7470bc85a103ed41837a5d8e542`. Contract-compatible full-history qualification and the 65-receipt/13-invariant LAN-sourced fork rehearsal passed; the final one-hour observation is active at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/one-hour-20260803T042538Z`.
-- No route-governance operation has been sealed, authorized, scheduled, or broadcast. The first additive application release must preserve the six existing onchain routes.
+- No route-governance operation has been sealed, authorized, scheduled, or broadcast. Additive application candidate `f05d9fc305c272bb730e64ce92d797d89f331980` preserves the six existing onchain routes; its deterministic Mainnet manifest hashes to `88b0a6ca7acac27a984604b7381c32611cddffbcf415b8d9b95b5732132e8f1a`.
 
 
 - Schema-18 is publicly operational on Robinhood Mainnet at `https://sherwoodforest.trade`. Public mode, the `6 ETH / 0.5 ETH` profile, six qualified routes, both conversion systems, and application transaction submission are active.

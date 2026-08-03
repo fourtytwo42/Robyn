@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { createHash } from "node:crypto";
-import { execFileSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { decodeFunctionData, getAddress } from "viem";
@@ -30,7 +29,7 @@ const CONTRACT_SHA = "4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4";
 const DEPLOYMENT_APPLICATION_SHA = "8327b250122cd9050a7da6a44e12859e3cf521aa";
 const APPLICATION_SHA =
   process.env.ROBYN_APPLICATION_RELEASE_SHA ??
-  execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  "f05d9fc305c272bb730e64ce92d797d89f331980";
 if (!/^[0-9a-f]{40}$/.test(APPLICATION_SHA)) throw new Error("invalid application SHA");
 const INDEXING_POLICY_HASH = "5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1";
 const ASSET_POLICY_PATH = path.resolve(
