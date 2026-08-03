@@ -575,6 +575,9 @@ const run = async () => {
   const permit2Abi = parseAbi([
     "function approve(address token,address spender,uint160 amount,uint48 expiration)",
   ]);
+  const universalAbi = parseAbi([
+    "function execute(bytes commands,bytes[] inputs,uint256 deadline) payable",
+  ]);
   if (stage === "routes") {
     const input = 1_000_000_000_000n;
     for (const route of manifest.routes.filter((item) => item.symbol !== "WETH")) {
@@ -758,7 +761,6 @@ const run = async () => {
       limit: (directQuote[0] * 99n) / 100n,
       refundRecipient: account.address,
     });
-    const universalAbi = parseAbi(["function execute(bytes commands,bytes[] inputs,uint256 deadline) payable"]);
     const directBefore = await read(token, erc20, "balanceOf", [account.address]);
     await write(
       "launch",
