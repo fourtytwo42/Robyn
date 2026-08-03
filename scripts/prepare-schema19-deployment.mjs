@@ -60,6 +60,15 @@ for (const field of [
 ]) {
   if (!isAddress(input.external?.[field])) throw new Error(`missing external ${field}`);
 }
+const reusedRuntimeCodeHashes = input.reusedRuntimeCodeHashes ?? {};
+for (const field of [
+  "guardianSafe", "daoToken", "timelock", "governor", "create2Deployer",
+  "poolManager", "positionManager", "quoter", "stateView", "permit2", "wrappedNative",
+]) {
+  if (!/^0x[0-9a-fA-F]{64}$/.test(reusedRuntimeCodeHashes[field] ?? "")) {
+    throw new Error(`missing reused runtime hash ${field}`);
+  }
+}
 const settings = {
   rewardDuration: Number(input.settings?.rewardDuration),
   failureObservationSpacing: Number(input.settings?.failureObservationSpacing),
@@ -169,6 +178,7 @@ const result = {
   provisional: false,
   contractReleaseSha: input.contractReleaseSha,
   toolingSha: input.toolingSha,
+  reusedRuntimeCodeHashes,
   deployment,
   governance: {
     guardianSafe: getAddress(input.guardianSafe),

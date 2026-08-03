@@ -55,6 +55,15 @@
 - Result: Testnet is read-only preflighted at chain 46630 with healthy LAN RPC, exact reused 1-of-1 Safe/RDAO/Governor/one-hour Timelock state, deployer nonce 2683, and balance 0.057580513587846098 ETH. No transaction occurred.
 - Follow-up: Commit/push the preparer, add postdeployment verification and restart-safe focused-lifecycle tooling, rehearse locally from the current Testnet state, and calculate the reserve-preserving live budget before deployment.
 
+### 2026-08-03 - Schema-19 postdeployment verifier
+
+- Context: A prepared manifest and Solidity broadcaster alone could not independently admit a deployed Testnet or Mainnet stack.
+- Decision: Normalize immutable runtime slots against the exact candidate artifacts, hash every full deployed runtime, bind every reused external/governance runtime hash, and verify governance, bindings, Public profile, routes, fallback timing, zero liabilities, and zero unexpected balances over a loopback LAN gateway or isolated fork only.
+- Files: `scripts/verify-schema19-deployment.mjs`, its focused test, the deployment preparer, and package gates.
+- Commands/tests: Five deployment-preparer tests and four verifier-policy tests pass with formatting, lint, typecheck, and syntax checks.
+- Result: Verification fails closed on altered code, wrong chain/upstream, governance drift, route failure, nonzero genesis accounting, or unexpected native balance. No chain transaction occurred.
+- Follow-up: Commit/push the verifier, generate exact chain-46630 inputs from live runtime hashes, run a LAN-sourced isolated-fork deployment/verification receipt rehearsal, and calculate the live funding requirement.
+
 ## Active Handoff
 - Schema-19 is the active development handoff on `codex/schema19-user-driven-fees` in `/home/hendo420/Robyn-schema19`. Exact contract candidate `4a39cf470f0870c1757b2ead8730bf0209eabbc4` passed fast and deep Devnet torture, including 20 invariant seeds, 50 simulation seeds, 100,000 actions, isolated broadcast, 90.81% lines, and 80.14% branches.
 - Fast torture attempts 01 through 04 are permanently failed evidence and must never be relabeled. Fast run 05 and deep run 01 on exact SHA `4a39cf4` passed and are checksum-sealed under `/home/hendo420/robyn-evidence/devnet-torture/4a39cf470f0870c1757b2ead8730bf0209eabbc4`.
