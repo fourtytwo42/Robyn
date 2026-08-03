@@ -99,10 +99,14 @@ public_observed_head="$(jq -r .observedHeadBlock <<<"$public_status")"
 observed_head_gap=$(( local_observed_head - public_observed_head ))
 [[ "$observed_head_gap" -lt 0 ]] && observed_head_gap=$(( -observed_head_gap ))
 [[ "$observed_head_gap" -le 100 ]]
+deployment_verify_file=/tmp/robyn-testnet-deployment-verify.json
+rm -f "$deployment_verify_file"
 ROBYN_SCHEMA19_RPC_URL="$server_rpc_url" \
-  node scripts/verify-schema19-qualified-testnet.mjs "$manifest" \
-  > /tmp/robyn-testnet-deployment-verify.json
-jq -e '.passed == true' /tmp/robyn-testnet-deployment-verify.json >/dev/null
+  node scripts/verify-schema19-qualified-testnet.mjs \
+  "$manifest" \
+  "$deployment_verify_file" \
+  >/dev/null
+jq -e '.passed == true' "$deployment_verify_file" >/dev/null
 
 jq -n \
   --arg verifiedAt "$(date -u +%FT%TZ)" \
@@ -117,6 +121,6 @@ jq -n \
   --argjson gatewayHealth "$gateway_health" \
   --argjson status "$status" \
   --argjson publicStatus "$public_status" \
-  --argjson verifierChecks "$(jq '.contractsVerified' /tmp/robyn-testnet-deployment-verify.json)" \
+  --argjson verifierChecks "$(jq '.contractsVerified' "$deployment_verify_file")" \
   '{verifiedAt:$verifiedAt,releasePath:$releasePath,gitSha:$gitSha,serverRpcProvider:$serverRpcProvider,database:$database,activeDatabaseIndexers:$activeDatabaseIndexers,gatewayHealth:$gatewayHealth,status:$status,publicStatus:$publicStatus,verifierChecks:$verifierChecks}'
-rm -f /tmp/robyn-testnet-deployment-verify.json
+rm -f "$deployment_verify_file"

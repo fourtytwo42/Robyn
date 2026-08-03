@@ -1,5 +1,12 @@
 # Project Memory
 
+### 2026-08-03 - First Schema-19 Testnet application promotion rolled back safely
+
+- Context: Immutable Testnet release `schema19-f682cc8` passed its complete build gate, but its first promotion into fresh database `robyn_testnet_schema19_96800800` exposed a release-verifier argument mismatch.
+- Result: The fresh database migrated successfully and the intended six-process Schema-19 topology started without a keeper. Before acceptance, `verify-testnet-release.sh` invoked `verify-schema19-qualified-testnet.mjs` without its required output-evidence path. The fail-closed promoter did not accept the release and automatically restored the prior Testnet symlink, seven-process topology, database, and saved PM2 state. No chain transaction or contract state changed.
+- Decision: Persist the qualified-state verifier result to a fresh temporary evidence file, assert its pass bit, and add a focused regression that proves both required arguments remain wired. Never reuse the failed promotion's fresh database as the next clean projection target.
+- Follow-up: Commit and push the operational fix, build a new immutable release, promote into a new fresh Schema-19 database identity, and require direct state, scoped projection, RPC-degradation, and browser acceptance before Mainnet preparation.
+
 ### 2026-08-03 - Schema-19 Testnet manifest and frozen-contract release boundary
 
 - Context: The successful live Testnet receipt journal needed a canonical active manifest, and future application-only work needed to stop invoking the retired Schema-18 contract freeze.
