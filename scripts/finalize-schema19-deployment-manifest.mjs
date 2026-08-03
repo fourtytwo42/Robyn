@@ -106,6 +106,7 @@ const assetRoutes = input.routes.map((route) => ({
 }));
 const result = {
   schemaVersion: 19,
+  liquidityVenue: "uniswap-v4",
   environment: verified.chainId === 4663 ? "robinhood-mainnet" : "robinhood-testnet",
   chainId: verified.chainId,
   deploymentBlock,

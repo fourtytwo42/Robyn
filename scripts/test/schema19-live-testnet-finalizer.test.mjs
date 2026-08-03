@@ -6,6 +6,14 @@ const source = await readFile(
   new URL("../finalize-schema19-live-testnet-manifest.mjs", import.meta.url),
   "utf8",
 );
+const deploymentFinalizerSource = await readFile(
+  new URL("../finalize-schema19-deployment-manifest.mjs", import.meta.url),
+  "utf8",
+);
+const indexerSource = await readFile(
+  new URL("../../apps/indexer/src/server.ts", import.meta.url),
+  "utf8",
+);
 
 test("live Schema-19 finalizer rejects incomplete or ambiguous deployment evidence", () => {
   assert.match(source, /intents\.length !== 36/);
@@ -34,6 +42,12 @@ test("live Schema-19 finalizer requires the complete reconciled lifecycle", () =
 });
 
 test("qualified live Testnet manifest is fail-closed Paused", () => {
+  assert.match(deploymentFinalizerSource, /liquidityVenue: "uniswap-v4"/);
+  assert.match(source, /liquidityVenue: "uniswap-v4"/);
+  assert.match(
+    indexerSource,
+    /Schema-19 manifest must declare the Uniswap v4 liquidity venue/,
+  );
   assert.match(source, /launchMode: "Paused"/);
   assert.match(source, /assetConversionsPaused: true/);
   assert.match(source, /feeConversionsPaused: true/);

@@ -98,6 +98,7 @@ if (
 const deploymentBlock = Math.min(...receipts.map((record) => Number(record.blockNumber)));
 const result = {
   ...base,
+  liquidityVenue: "uniswap-v4",
   deploymentBlock,
   initialState: {
     launchMode: "Paused",

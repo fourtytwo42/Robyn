@@ -15,6 +15,9 @@ test("Schema-19 Testnet release verifier persists qualified state evidence", asy
     /verify-schema19-qualified-testnet\.mjs[\s\\\n]+"\$manifest"[\s\\\n]+"\$deployment_verify_file"/,
   );
   assert.match(source, /jq -e '\.passed == true' "\$deployment_verify_file"/);
+  assert.match(source, /\.launchCount <<<"\$status"\)" -eq 1/);
+  assert.match(source, /\.trackedLaunches <<<"\$observed"\)" -eq 1/);
+  assert.match(source, /\.trackedPoolIds <<<"\$observed"\)" -eq 1/);
   assert.doesNotMatch(
     source,
     /verify-schema19-qualified-testnet\.mjs "\$manifest"\s*>/,

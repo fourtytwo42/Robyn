@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 Testnet v4 projection identity corrected
+
+- Context: Corrected release `schema19-4c8dd52` promoted successfully into fresh database `robyn_testnet_schema19_96800800_4c8dd52`, but acceptance inspection found zero projected launches despite the canonical launch log being retained and direct onchain verification confirming one graduated launch.
+- Diagnosis: The Schema-19 qualified manifest omitted `liquidityVenue`. The indexer therefore decoded the retained `AtomicV4LaunchCreated` log with the legacy event ABI and silently projected zero launches. The release verifier also permitted a zero launch count, so service health alone did not catch the mismatch.
+- Decision: Every Schema-19 deployment and live-qualified manifest must declare `liquidityVenue: uniswap-v4`; the indexer rejects a Schema-19 manifest without it; and Testnet release acceptance requires exactly one projected qualified launch, at least 23 tracked root/dynamic addresses, and exactly one Sherwood pool ID.
+- Verification: The canonical creation receipt at block `96801060` contains the expected `AtomicV4LaunchCreated` topic and dynamic token, vault, market, adapter, locker, and pool identity. Focused indexer, API, web, typecheck, lint, finalizer, release-verifier, and frozen-contract tests pass. Regenerated manifest SHA-256 is `08a998566d75d26656afde78353ce93def2a6e04297940d3e698f9af8f20d885`.
+- Follow-up: Commit/push, build a new immutable application release, promote into another fresh Schema-19 database, and require exact projection/direct-state equality before browser acceptance.
+
 ### 2026-08-03 - First Schema-19 Testnet application promotion rolled back safely
 
 - Context: Immutable Testnet release `schema19-f682cc8` passed its complete build gate, but its first promotion into fresh database `robyn_testnet_schema19_96800800` exposed a release-verifier argument mismatch.

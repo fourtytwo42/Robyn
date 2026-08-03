@@ -347,6 +347,7 @@
     ],
     "qualificationPassed": true
   },
+  "liquidityVenue": "uniswap-v4",
   "qualification": {
     "completedStages": [
       "routes",

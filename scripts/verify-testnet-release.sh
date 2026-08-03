@@ -73,8 +73,8 @@ status="$(curl -fsS http://127.0.0.1:3111/status)"
 curl -fsS http://127.0.0.1:3210/health >/dev/null
 public_status="$(curl -fsS https://testnet.sherwoodforest.trade/api/status)"
 [[ "$(jq -r .chainId <<<"$status")" -eq 46630 ]]
-[[ "$(jq -r .launchCount <<<"$status")" -ge 0 ]]
-[[ "$(jq -r .launchCount <<<"$public_status")" -ge 0 ]]
+[[ "$(jq -r .launchCount <<<"$status")" -eq 1 ]]
+[[ "$(jq -r .launchCount <<<"$public_status")" -eq 1 ]]
 [[ "$(jq -r .launchCount <<<"$status")" == \
    "$(jq -r .launchCount <<<"$public_status")" ]]
 [[ "$(jq -r .chainId <<<"$public_status")" -eq 46630 ]]
@@ -91,6 +91,9 @@ for observed in "$status" "$public_status"; do
   [[ "$(jq -r .projectionStatus <<<"$observed")" == "ok" ]]
   [[ "$(jq -r .projectionAsOfBlock <<<"$observed")" =~ ^[0-9]+$ ]]
   [[ "$(jq -r .projectionLagBlocks <<<"$observed")" -le 100 ]]
+  [[ "$(jq -r .trackedLaunches <<<"$observed")" -eq 1 ]]
+  [[ "$(jq -r .trackedAddresses <<<"$observed")" -ge 23 ]]
+  [[ "$(jq -r .trackedPoolIds <<<"$observed")" -eq 1 ]]
   jq -e '.ingestionCycleMs >= 0 and .projectionCycleMs >= 0 and .rpcRetryCount >= 0' \
     <<<"$observed" >/dev/null
 done

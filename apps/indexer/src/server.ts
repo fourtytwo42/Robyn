@@ -66,6 +66,12 @@ const manifest = JSON.parse(
     "utf8",
   ),
 ) as Manifest;
+if (manifest.schemaVersion === 19 && manifest.liquidityVenue !== "uniswap-v4") {
+  throw new Error(
+    "Schema-19 manifest must declare the Uniswap v4 liquidity venue",
+  );
+}
+const usesUniswapV4 = manifest.liquidityVenue === "uniswap-v4";
 const rpcUrl = process.env.ROBYN_OPERATOR_RPC_URL ?? "http://127.0.0.1:8545";
 const client = createPublicClient({
   transport: http(rpcUrl, {
@@ -416,10 +422,7 @@ function newlyCreatedLaunchArtifacts(
       poolIds: new Map<Hex, bigint>(),
     };
   }
-  const event =
-    manifest.liquidityVenue === "uniswap-v4"
-      ? atomicV4LaunchEvent
-      : atomicLaunchEvent;
+  const event = usesUniswapV4 ? atomicV4LaunchEvent : atomicLaunchEvent;
   const addresses = new Map<Address, bigint>();
   const poolIds = new Map<Hex, bigint>();
   for (const log of logs) {
@@ -646,7 +649,7 @@ async function loadAtomicLaunchesFromDatabase(
       string,
       { blockNumber: bigint; args: Record<string, unknown> }
     >();
-  const v4 = manifest.liquidityVenue === "uniswap-v4";
+  const v4 = usesUniswapV4;
   const event = v4 ? atomicV4LaunchEvent : atomicLaunchEvent;
   const logs = await sql.unsafe<
     {
@@ -822,7 +825,7 @@ async function projectLaunch(
     if (!seeded || !exclusionsSealed) {
       throw new Error(`Launch ${id} is not sealed and seeded`);
     }
-    if (manifest.liquidityVenue === "uniswap-v4") {
+    if (usesUniswapV4) {
       if (!manifest.contracts.oracleHook) {
         throw new Error(`Launch ${id} has no canonical phase hook`);
       }
@@ -877,10 +880,7 @@ async function projectLaunch(
     if (manifest.contracts.protocolFeeRouter) {
       const feeAccount = await client.readContract({
         address: manifest.contracts.protocolFeeRouter,
-        abi:
-          manifest.liquidityVenue === "uniswap-v4"
-            ? nativeV4FeeRouterStateAbi
-            : feeRouterStateAbi,
+        abi: usesUniswapV4 ? nativeV4FeeRouterStateAbi : feeRouterStateAbi,
         functionName: "launchAccount",
         args: [token],
       });
@@ -891,7 +891,7 @@ async function projectLaunch(
         feeAccount.market.toLowerCase() !== market.toLowerCase() ||
         feeAccount.locker.toLowerCase() !==
           String(atomic.args.locker).toLowerCase() ||
-        (manifest.liquidityVenue === "uniswap-v4" &&
+        (usesUniswapV4 &&
           (!("hook" in feeAccount) ||
             feeAccount.hook.toLowerCase() !==
               String(manifest.contracts.oracleHook).toLowerCase()))
@@ -966,7 +966,7 @@ async function projectLaunch(
       created.toString(),
       created.toString(),
       atomic && manifest.contracts.protocolFeeRouter
-        ? manifest.liquidityVenue === "uniswap-v4"
+        ? usesUniswapV4
           ? graduationProfile
             ? "native-v4-schema13-governed"
             : "native-v4-dao-atomic"
@@ -1018,7 +1018,7 @@ type KingProjectionLog = {
 
 async function projectKingOfForest(asOfBlock: bigint) {
   if (!kingPolicy) return { processedLogs: 0, awarded: 0 };
-  if (manifest.liquidityVenue === "uniswap-v4") {
+  if (usesUniswapV4) {
     const missingPools = await sql.unsafe<{ token: string; market: Address }[]>(
       "SELECT token,market FROM launches WHERE chain_id=$1 AND pool_id IS NULL",
       [manifest.chainId],
