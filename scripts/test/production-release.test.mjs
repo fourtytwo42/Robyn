@@ -241,6 +241,15 @@ test("production updater follows authenticated asset redirects under the hardene
     ),
     "utf8",
   );
+  const stagingRetentionService = readFileSync(
+    path.join(
+      repositoryRoot,
+      "infrastructure",
+      "systemd",
+      "robyn-staging-retention.service",
+    ),
+    "utf8",
+  );
 
   assert.match(
     updater,
@@ -327,6 +336,10 @@ test("production updater follows authenticated asset redirects under the hardene
   assert.match(
     stagingMainnetNginx,
     /proxy_pass http:\/\/127\.0\.0\.1:18549\/;/,
+  );
+  assert.match(
+    stagingRetentionService,
+    /^ExecStart=\/usr\/local\/lib\/robyn\/prune-mainnet-staging-history\.sh --execute$/m,
   );
 });
 

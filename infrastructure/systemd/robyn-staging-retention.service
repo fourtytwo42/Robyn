@@ -7,7 +7,7 @@ Type=oneshot
 User=hendo420
 Environment=ROBYN_STAGING_MAINNET_DATABASE=robyn_mainnet
 Environment=ROBYN_STAGING_RETENTION_DAYS=7
-ExecStart=/home/hendo420/Robyn/scripts/prune-mainnet-staging-history.sh --execute
+ExecStart=/usr/local/lib/robyn/prune-mainnet-staging-history.sh --execute
 Nice=10
 IOSchedulingClass=best-effort
 IOSchedulingPriority=7
