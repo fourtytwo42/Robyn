@@ -50,4 +50,8 @@ test("Testnet input uses fresh hook domain and exactly the required six routes",
   assert.match(source, /routes: routes.length/);
   assert.match(source, /failureFixtureSymbol = "MSFT"/);
   assert.match(source, /testFailureFixture: symbol === failureFixtureSymbol/);
+  assert.match(
+    source,
+    /symbol === failureFixtureSymbol \? true : route\.enforceReferencePrice/,
+  );
 });

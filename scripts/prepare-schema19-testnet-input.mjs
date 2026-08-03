@@ -95,7 +95,8 @@ for (const symbol of requiredSymbols) {
       symbol === failureFixtureSymbol ? route.spotTick : route.referenceTick,
     maximumReferenceTickDeviation:
       symbol === failureFixtureSymbol ? 1 : route.maximumReferenceTickDeviation,
-    enforceReferencePrice: route.enforceReferencePrice,
+    enforceReferencePrice:
+      symbol === failureFixtureSymbol ? true : route.enforceReferencePrice,
     verificationClass: route.verificationClass,
     enabled: true,
     testFailureFixture: symbol === failureFixtureSymbol,
