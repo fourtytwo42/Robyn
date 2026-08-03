@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 exact Testnet-fork lifecycle and live funding pass
+
+- Context: The corrected Schema-19 candidate required a complete production-style chain-46630 fork lifecycle and a receipt-derived live funding preflight before any fresh Testnet deployment could be considered.
+- Decision: Bind the rehearsal to contract candidate `a67288133f09bce68b7386009d702c14dfb8bbab`, execute every restart-safe lifecycle stage, and distinguish explicit fork-only gas provisioning from the live funding calculation.
+- Evidence: `/home/hendo420/robyn-evidence/schema19-testnet/preflight-7f21eb0-01` contains 36 unique successful deployment receipts; successful `routes`, `launch`, `maintenance`, `claims`, `unwind`, `post-settle`, `shutdown`, and `reconcile` stages; a controlled MSFT failed-leg fallback to canonical WETH with reset observations; 79.00% recovery; and checksum-sealed evidence whose `SHA256SUMS` hash is `c17ef3854435eb0ca1c476e1e724266c4c47ad2fb02f66570ade09b68ba0ac66`.
+- Funding: At live Testnet block `96783128`, the receipt-derived requirement is `0.01856565328125 ETH`, including the `0.0015 ETH` reserve, `0.01 ETH` principal, route working capital, and gas headroom. The verified project balance was `0.057580513587846098 ETH`, leaving `0.039014860306596098 ETH` margin. Result hash: `154c638eeab1a64f4825b813fe745e5e91d1de185fb061ef737053b1dd2a7550`.
+- Result: The isolated rehearsal and live funding preflight pass. No live Testnet or Mainnet transaction occurred. Mainnet remains Schema-18.
+- Follow-up: Commit this checkpoint, repeat the exact fork lifecycle against that resulting clean pushed tooling SHA, require the active complete deep gate plus security and reproducibility gates, and only then consider a fresh Schema-19 Testnet deployment.
+
 ### 2026-08-03 - Focused Testnet lifecycle gains live failed-leg proof
 
 - Context: The focused lifecycle exercised three healthy assets but did not mechanically prove on a public chain that a failed basket leg leaves a user trade successful or that accelerated fallback resets the leg.
