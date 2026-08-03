@@ -2,11 +2,15 @@
 pragma solidity 0.8.30;
 
 import { IVotes } from "@openzeppelin/contracts/governance/utils/IVotes.sol";
+import { RobynClaimsRouter } from "../src/RobynClaimsRouter.sol";
+import { IRobynMaintenanceCoordinator } from "../src/interfaces/IRobynMaintenanceCoordinator.sol";
 import { RobynDaoRewardDistributor } from "../src/RobynDaoRewardDistributor.sol";
 import { RobynMaintenanceCoordinator } from "../src/RobynMaintenanceCoordinator.sol";
 import { RobynLaunchToken } from "../src/RobynLaunchToken.sol";
 import { RobynTradeRouter } from "../src/RobynTradeRouter.sol";
 import { RobynDaoTokenV3 } from "../src/dao/RobynDaoTokenV3.sol";
+import { RobynNativeLaunchFactoryV4 } from "../src/uniswap/RobynNativeLaunchFactoryV4.sol";
+import { RobynNativeProtocolFeeRouterV4 } from "../src/uniswap/RobynNativeProtocolFeeRouterV4.sol";
 import { RobynNativeBasketVaultV2 } from "../src/uniswap/RobynNativeBasketVaultV2.sol";
 import { RobynV4BondingCurveMarket } from "../src/uniswap/RobynV4BondingCurveMarket.sol";
 import { RobynV4LaunchCoordinatorV7 } from "../src/uniswap/RobynV4LaunchCoordinatorV7.sol";
@@ -321,8 +325,187 @@ contract Schema19CoverageBranchesTest is Schema19MaintenanceFallbackTest {
         allocations[0] = 1_000_000_000 ether;
         RobynDaoTokenV3 token =
             new RobynDaoTokenV3(recipients, allocations, 1 hours, address(this));
+
         assertEq(token.bootstrapOwner(), address(this));
         vm.expectRevert(RobynDaoTokenV3.BootstrapControllerNotBound.selector);
         token.transfer(address(0xBADD), 1);
+    }
+    function testSchema19FeeRouterBindingPauseAndSettlementAdmissions() public {
+        RobynNativeProtocolFeeRouterV4 fresh = new RobynNativeProtocolFeeRouterV4(
+            daoToken, assetRouter, TREASURY, GUARDIAN, 1 hours
+        );
+        vm.prank(address(0xBADD));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.Unauthorized.selector);
+        fresh.bindCoordinator(address(this));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        fresh.bindCoordinator(address(0));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        fresh.bindCoordinator(address(0x123456));
+        fresh.bindCoordinator(address(this));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.AlreadyBound.selector);
+        fresh.bindCoordinator(address(this));
+
+        vm.prank(address(0xBADD));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.Unauthorized.selector);
+        fresh.bindMaintenanceCoordinator(address(this));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        fresh.bindMaintenanceCoordinator(address(0));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        fresh.bindMaintenanceCoordinator(address(0x123456));
+        fresh.bindMaintenanceCoordinator(address(this));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.AlreadyBound.selector);
+        fresh.bindMaintenanceCoordinator(address(this));
+
+        vm.prank(address(0xBADD));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.Unauthorized.selector);
+        fresh.bindDaoRewardReceiver(address(this));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        fresh.bindDaoRewardReceiver(address(0));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        fresh.bindDaoRewardReceiver(address(0x123456));
+        fresh.bindDaoRewardReceiver(address(this));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.AlreadyBound.selector);
+        fresh.bindDaoRewardReceiver(address(this));
+
+        vm.prank(address(0xBADD));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.Unauthorized.selector);
+        fresh.setPaused(true);
+        vm.prank(GUARDIAN);
+        fresh.setPaused(true);
+        vm.prank(address(0xBADD));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.Unauthorized.selector);
+        fresh.setPaused(false);
+        vm.prank(TREASURY);
+        fresh.setPaused(false);
+
+        (RobynLaunchToken token,, RobynV4BondingCurveMarket market) =
+            coordinator.createLaunch(_request(keccak256("schema19-settlement-admission")));
+        market.buy{ value: 0.1 ether }(1);
+        RobynNativeProtocolFeeRouterV4.LaunchFeeAccount memory account =
+            feeRouter.launchAccount(address(token));
+
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.UnknownLaunch.selector);
+        feeRouter.settleBasketFees(address(0xBADD), 1);
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        feeRouter.settleBasketFees(address(token), 0);
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        feeRouter.settleBasketFees(address(token), account.pendingBasketNative + 1);
+
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        feeRouter.settleDaoFees(address(token), 1);
+        RobynDaoRewardDistributor rewards =
+            new RobynDaoRewardDistributor(IVotes(address(daoToken)), 1 hours);
+        rewards.bindRewardDepositor(address(feeRouter));
+        feeRouter.bindDaoRewardReceiver(address(rewards));
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        feeRouter.settleDaoFees(address(token), 0);
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        feeRouter.settleDaoFees(address(token), account.pendingDaoNative + 1);
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        feeRouter.settleTreasuryFees(address(token), 0);
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        feeRouter.settleTreasuryFees(address(token), account.pendingTreasuryNative + 1);
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        feeRouter.settleDaoFees(1);
+        vm.expectRevert(RobynNativeProtocolFeeRouterV4.InvalidConfiguration.selector);
+        feeRouter.settleTreasuryFees(1);
+    }
+
+    function testSchema19VaultConversionAdmissionsRemainAttributed() public {
+        address[] memory assets = new address[](1);
+        assets[0] = address(basketAsset);
+        uint16[] memory weights = new uint16[](1);
+        weights[0] = 10_000;
+        RobynNativeBasketVaultV2 vault = new RobynNativeBasketVaultV2(
+            assetRouter, address(this), assets, weights, 1 ether, 1 hours
+        );
+        vm.expectRevert(RobynNativeBasketVaultV2.NotBound.selector);
+        vault.recordFees{ value: 1 }();
+        vm.expectRevert(RobynNativeBasketVaultV2.NotBound.selector);
+        vault.processNextLeg();
+
+        address[] memory rewardAssets = new address[](2);
+        rewardAssets[0] = address(basketAsset);
+        rewardAssets[1] = address(testWrappedNative);
+        RobynLaunchToken token = new RobynLaunchToken(
+            "Conversion admissions",
+            "CADM",
+            address(this),
+            1_000 ether,
+            address(vault),
+            rewardAssets,
+            METADATA_URI
+        );
+        vm.prank(address(0xBADD));
+        vm.expectRevert(RobynNativeBasketVaultV2.Unauthorized.selector);
+        vault.bindLaunchToken(token);
+        vault.bindLaunchToken(token);
+
+        vm.expectRevert(abi.encodeWithSelector(RobynNativeBasketVaultV2.InvalidLeg.selector, 1));
+        vault.convertLeg(1, 1, 1, block.timestamp);
+        vm.expectRevert(RobynNativeBasketVaultV2.InvalidAmount.selector);
+        vault.convertLeg(0, 0, 1, block.timestamp);
+        vm.expectRevert(RobynNativeBasketVaultV2.InvalidAmount.selector);
+        vault.convertLeg(0, uint256(type(uint128).max) + 1, 1, block.timestamp);
+        vm.expectRevert(RobynNativeBasketVaultV2.InvalidAmount.selector);
+        vault.convertLeg(0, 1, 0, block.timestamp);
+        vm.expectRevert(RobynNativeBasketVaultV2.InvalidDeadline.selector);
+        vault.convertLeg(0, 1, 1, block.timestamp - 1);
+
+        vault.recordFees{ value: 0.5 ether }();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RobynNativeBasketVaultV2.InsufficientPending.selector, 0.5 ether, 0.5 ether + 1
+            )
+        );
+        vault.convertLeg(0, 0.5 ether + 1, 1, block.timestamp);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RobynNativeBasketVaultV2.BelowThreshold.selector,
+                0.5 ether,
+                1 ether,
+                block.timestamp + 1 hours
+            )
+        );
+        vault.convertLeg(0, 0.5 ether, 1, block.timestamp);
+        assertEq(vault.totalPendingNative(), 0.5 ether);
+        assertEq(vault.totalNativeConsumed(), 0);
+    }
+
+    function testSchema19ClaimsAndCoordinatorRejectRemainingInvalidModes() public {
+        RobynMaintenanceCoordinator maintenance =
+            new RobynMaintenanceCoordinator(feeRouter, assetRouter, 1_500_000);
+        feeRouter.bindMaintenanceCoordinator(address(maintenance));
+        RobynDaoRewardDistributor rewards =
+            new RobynDaoRewardDistributor(IVotes(address(daoToken)), 1 hours);
+        rewards.bindRewardDepositor(address(feeRouter));
+        feeRouter.bindDaoRewardReceiver(address(rewards));
+        RobynClaimsRouter claims =
+            new RobynClaimsRouter(IRobynMaintenanceCoordinator(address(maintenance)), 1_550_000);
+        vm.expectRevert(RobynClaimsRouter.InvalidConfiguration.selector);
+        claims.claimAll(RobynLaunchToken(address(0)));
+        vm.expectRevert(RobynClaimsRouter.InvalidConfiguration.selector);
+        claims.claimAll(RobynLaunchToken(address(0x123456)));
+
+        RobynV4LaunchCoordinatorV7 publicCoordinator = new RobynV4LaunchCoordinatorV7(
+            launchFactory, marketFactory, feeRouter, new RobynTradeRouter(), TREASURY, GUARDIAN
+        );
+        vm.prank(GUARDIAN);
+        publicCoordinator.pauseLaunches();
+        vm.expectRevert(RobynV4LaunchCoordinatorV7.LaunchesPaused.selector);
+        publicCoordinator.createLaunch(_request(keccak256("schema19-paused-create")));
+        vm.prank(TREASURY);
+        publicCoordinator.setCanaryMode(address(this));
+        vm.prank(address(0xBADD));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                RobynV4LaunchCoordinatorV7.CanaryLauncherOnly.selector,
+                address(this),
+                address(0xBADD)
+            )
+        );
+        publicCoordinator.createLaunch(_request(keccak256("schema19-wrong-canary")));
+        vm.expectRevert(RobynNativeLaunchFactoryV4.Unauthorized.selector);
+        publicCoordinator.createLaunch(_request(keccak256("schema19-authorized-canary")));
     }
 }

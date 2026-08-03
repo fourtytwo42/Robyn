@@ -12,6 +12,8 @@
 - Fast torture run `20260803-schema19-fast-01` for `c832041` is permanently failed and preserved: all execution phases passed, but accurate coverage was 89.03% lines / 70.19% branches versus the fixed 90/80 gate.
 - A focused Schema-19 coverage matrix now targets the actual gaps in DAO reward solvency/admission, trade-router admission, maintenance gas and launch admission, basket/fallback configuration, immutable binding, reused RDAO, and Public/Canary/Pause controls. Thresholds remain unchanged.
 - Full regression after the gas-policy correction passes 660 Foundry tests with zero failures and one protected fork skip. Fast/deep torture evidence has not yet been generated for the new SHA.
+- Replacement fast run `20260803-schema19-fast-02` for `8a26c70` is also permanently failed and preserved: line coverage passed at 90.14%, while branch coverage improved to 75.56% but remained below 80%.
+- The second focused branch increment adds fee-router binding/pause/per-launch settlement rejection, vault conversion admission and attribution boundaries, claims-router invalid-token rejection, and coordinator Paused/Canary creation rejection.
 - Safety: Mainnet remains Schema-18 and must not be mutated until Schema-19 qualification, exact replacement-manifest sealing, and explicit hash authorization. Do not reuse Schema-18 launches, journals, addresses, or databases.
 
 ### 2026-08-03 - Schema-19 implementation started
