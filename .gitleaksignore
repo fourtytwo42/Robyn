@@ -4,3 +4,5 @@
 9803bb129d84815dee74f7acdc4d9fc8ca21eb1f:packages/contracts/test/RobynV4ProtocolInvariant.t.sol:generic-api-key:21
 # Solidity function parameter list misclassified as a generic API key.
 7c451d60983f63fd3803afe9c983af55608f1007:packages/contracts/test/RobinhoodMainnetSchema13Fork.t.sol:generic-api-key:413
+# Schema-19 Solidity function parameter list misclassified as a generic API key.
+c832041e8aa4835675a4fa4c9ecddf43c476e856:packages/contracts/test/Schema19MaintenanceInvariant.t.sol:generic-api-key:25

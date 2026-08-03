@@ -38,8 +38,8 @@
 
 
 ## Active Handoff
-- Schema-19 is the active development handoff on `codex/schema19-user-driven-fees` in `/home/hendo420/Robyn-schema19`. Code commit `12c9c4a` passes 721 Foundry tests with one protected fork skip.
-- Fast torture attempts 01 through 03 are permanently failed evidence; the latest reached 90.61% lines and 78.16% branches. Never relabel or reuse those runs.
+- Schema-19 is the active development handoff on `codex/schema19-user-driven-fees` in `/home/hendo420/Robyn-schema19`. Exact contract candidate `4a39cf470f0870c1757b2ead8730bf0209eabbc4` passed fast and deep Devnet torture, including 20 invariant seeds, 50 simulation seeds, 100,000 actions, isolated broadcast, 90.81% lines, and 80.14% branches.
+- Fast torture attempts 01 through 04 are permanently failed evidence and must never be relabeled. Fast run 05 and deep run 01 on exact SHA `4a39cf4` passed and are checksum-sealed under `/home/hendo420/robyn-evidence/devnet-torture/4a39cf470f0870c1757b2ead8730bf0209eabbc4`.
 - Treasury settlement is now pull-based: maintenance makes the exact 5% assignment claimable, and the treasury pays for its own withdrawal. Creator, DAO, holder, and treasury custody remain pull-oriented.
 - Only directly observed pool initialization, liquidity, reference-deviation, and protected-quote failures advance fallback. A guardian-supplied stale-oracle label alone cannot manufacture the three-observation history.
 - Mainnet remains Schema-18. Do not deploy, retire Schema-18, or mutate Mainnet until Devnet, focused Testnet, exact fork, funding, sealed replacement manifest, and explicit exact-hash authorization all pass.
@@ -8187,3 +8187,11 @@ When sources conflict, use this order:
 - Current state: The checksum-gated systemd snapshot job is downloading the official 2026-07-15 testnet pruned snapshot (`180589076480` bytes, SHA-256 `9234e53eedd3c7a1e12b122f7ba747576d6c2685c9d0b9fdd625c20ab3c73077`). Nitro waits for successful verification and extraction. Private RPC is `192.168.50.117:8547`; no Cloudflare or public route exists.
 - Capacity: This host can start one pruned node. It cannot safely run testnet plus mainnet simultaneously, and the roughly 2.87 TiB testnet archive cannot fit. Add at least 2 TB NVMe and preferably 64 GB RAM before enabling mainnet.
 - Follow-up: Do not cut backend consumers over until `eth_syncing=false`, independent head and historical-log probes pass, Prometheus is clean, and reboot recovery is verified. See `docs/robinhood-rpc-node.md`.
+
+### 2026-08-03 - Schema-19 deep qualification and expanded security scope
+
+- Context: Schema-19 introduces maintenance, claims, trade, DAO-distributor, fallback-vault, and coordinator-V7 contracts that the Schema-18 security regex did not include.
+- Decision: Preserve the passing exact contract candidate `4a39cf470f0870c1757b2ead8730bf0209eabbc4`; expand Slither to every new active contract, retain exact detector triage, and patch the build-only `brace-expansion` advisory to 5.0.9.
+- Commands/tests: Fast and deep torture passed; deep used 10,000 fuzz cases, 20 seeds at 1,024 runs/depth 256 for three invariant suites, 512 wallets, 64 launches, 100,000 actions across 50 seeds, isolated broadcast, and accurate non-via-IR coverage. Expanded `scripts/security-audit.sh` passed with zero unresolved high/medium findings, zero Gitleaks findings, zero known high/critical dependency vulnerabilities, and 721 Foundry tests plus one protected fork skip.
+- Result: Deep evidence and all checksums pass. Coverage is 90.81% lines and 80.14% branches. No Solidity changed after the deep run; subsequent changes are security tooling, documentation, and a development-only dependency override.
+- Follow-up: Commit/push the tooling SHA, run full repository and two-build reproducibility gates, then prepare a fresh Schema-19 Testnet deployment and funding preflight. Mainnet remains Schema-18 and untouched.

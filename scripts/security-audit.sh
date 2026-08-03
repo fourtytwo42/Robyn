@@ -46,7 +46,7 @@ set +e
     --solc-remaps=@openzeppelin/contracts/=${repo}/node_modules/@openzeppelin/contracts/ \
     --solc-args=--base-path\ ${repo}/packages/contracts\ --allow-paths\ ${repo}/node_modules \
     --exclude-dependencies \
-    --include-paths 'src/(Robyn(LaunchToken|TokenSink)\.sol|dao/Robyn(BootstrapTimelock|DaoToken(V2)?|GovernorV2|TestnetGovernor)\.sol|uniswap/Robyn(Native(BasketVaultV2|LaunchDeployerV4|LaunchFactoryV4|ProtocolFeeRouterV4|VaultDeployerV4)|V4(AdapterDeployer|AssetRouter|BondingCurveMarket|FeeAndPhaseHook|FeePositionLocker|GraduationAdapter|LaunchCoordinatorV6|LockerDeployer|MarketDeployer|MarketFactory|TestAssetLiquidityLocker))\.sol)' \
+    --include-paths 'src/(Robyn(ClaimsRouter|DaoRewardDistributor|LaunchToken|MaintenanceCoordinator|TokenSink|TradeRouter)\.sol|dao/Robyn(BootstrapTimelock|DaoToken(V2)?|GovernorV2|TestnetGovernor)\.sol|uniswap/Robyn(Native(BasketVaultV2|LaunchDeployerV4|LaunchFactoryV4|ProtocolFeeRouterV4|VaultDeployerV4)|V4(AdapterDeployer|AssetRouter|BondingCurveMarket|FeeAndPhaseHook|FeePositionLocker|GraduationAdapter|LaunchCoordinatorV(6|7)|LockerDeployer|MarketDeployer|MarketFactory|TestAssetLiquidityLocker))\.sol)' \
     --json "${work}/slither.json" >/dev/null 2>"${work}/slither.log"
 )
 slither_status=$?
@@ -69,6 +69,8 @@ while IFS=$'\t' read -r check description; do
       ;;
     reentrancy-balance)
       if [[ "${description}" == *"RobynNativeBasketVaultV2._convertLeg"* ||
+            "${description}" == *"RobynNativeBasketVaultV2.executeFallbackConversion"* ||
+            "${description}" == *"RobynTradeRouter.buy"* ||
             "${description}" == *"RobynV4AssetRouter._swapExactAssetForNative"* ||
             "${description}" == *"RobynV4AssetRouter._swapExactNativeForAsset"* ]]; then
         reviewed_high=$((reviewed_high + 1))
@@ -80,7 +82,8 @@ while IFS=$'\t' read -r check description; do
     reentrancy-eth)
       if [[ "${description}" == *"RobynV4BondingCurveMarket._buyBonding"* && "${description}" == *"curveNativePrincipal = 0"* ]]; then
         reviewed_high=$((reviewed_high + 1))
-      elif [[ "${description}" == *"RobynNativeBasketVaultV2._convertLeg"* ]]; then
+      elif [[ "${description}" == *"RobynNativeBasketVaultV2._convertLeg"* ||
+              "${description}" == *"RobynNativeBasketVaultV2.executeFallbackConversion"* ]]; then
         reviewed_high=$((reviewed_high + 1))
       else
         echo "Untriaged high Slither detector in the active remediation scope: ${check}" >&2
@@ -107,15 +110,25 @@ while IFS=$'\t' read -r check description; do
 done < <(jq -r '.results.detectors[]? | select(.impact == "High") | [.check,.description] | @tsv' "${work}/slither.json")
 [[ "${reviewed_high}" -eq "${high_count}" ]]
 medium_count="$(jq '[.results.detectors[]? | select(.impact == "Medium")]|length' "${work}/slither.json")"
-while IFS= read -r check; do
+while IFS=$'\t' read -r check description; do
   case "${check}" in
     incorrect-equality|reentrancy-no-eth|uninitialized-local|unused-return) ;;
+    divide-before-multiply)
+      if [[ "${description}" == *"RobynDaoRewardDistributor._vestedEntitlement"* &&
+            "${description}" == *"(selected.amount * elapsed) / rewardStreamDuration"* &&
+            "${description}" == *"(vested * votes) / supply"* ]]; then
+        :
+      else
+        echo "Untriaged medium Slither detector in active remediation scope: ${check}" >&2
+        exit 1
+      fi
+      ;;
     *)
       echo "Untriaged medium Slither detector in active remediation scope: ${check}" >&2
       exit 1
       ;;
   esac
-done < <(jq -r '.results.detectors[]? | select(.impact == "Medium") | .check' "${work}/slither.json" | sort -u)
+done < <(jq -r '.results.detectors[]? | select(.impact == "Medium") | [.check,.description] | @tsv' "${work}/slither.json")
 
 jq -n   --arg generatedAt "$(date --iso-8601=seconds)"   --arg gitSha "$(git rev-parse HEAD)"   --arg gitleaksVersion "$(gitleaks version)"   --arg slitherVersion "$("${slither}" --version)"   --argjson slitherStatus "${slither_status}"   --argjson routerBytecodeBytes "${router_bytecode_bytes}"   --argjson reviewedHigh "${reviewed_high}"   --argjson reviewedMedium "${medium_count}"   --slurpfile slither "${work}/slither.json"   --slurpfile licenses "${work}/licenses.json"   '{
     schemaVersion: 1,
@@ -148,7 +161,7 @@ jq -n   --arg generatedAt "$(date --iso-8601=seconds)"   --arg gitSha "$(git rev
         rationaleDocument: "docs/assurance/security-remediation-review.md"
       },
       mediumTriagePolicy: {
-        checks: ["incorrect-equality", "reentrancy-no-eth", "uninitialized-local", "unused-return"],
+        checks: ["divide-before-multiply", "incorrect-equality", "reentrancy-no-eth", "uninitialized-local", "unused-return"],
         rationaleDocument: "docs/protocol-security-review.md"
       },
       findings: [

@@ -130,6 +130,29 @@ exposed during the release interval, but a short-lived position earns only its
 short-lived share. This residual economic behavior remains a disclosure and
 independent-audit item before a real-value release.
 
+
+### Schema-19 bounded maintenance and DAO epoch triage
+
+The Schema-19 trade router and basket vault use function-wide reentrancy guards
+on every permissionless entry point. Vault conversion debits pending native value
+before interaction, self-call conversion helpers accept only the vault itself,
+and both primary and fallback conversions verify actual token balance deltas.
+Slither reports balance and ETH reentrancy paths because it does not propagate
+those guards and self-call restrictions through the asset router and reward
+deposit calls. The gate accepts only the named `RobynTradeRouter.buy`,
+`RobynNativeBasketVaultV2._convertLeg`, and
+`RobynNativeBasketVaultV2.executeFallbackConversion` paths; any new path still
+fails closed.
+
+`RobynDaoRewardDistributor._vestedEntitlement` intentionally floors first at
+the stream's currently vested amount and then at each account's checkpointed
+vote share. Partial claims do not compound this rounding because the final
+checkpoint is recomputed from the full epoch amount. At completion, each
+account is entitled to `floor(epoch amount * votes / supply)`; the aggregate
+sub-wei-per-account remainder remains attributed to the DAO epoch in
+`outstandingLiability()` and cannot be overclaimed or reclassified. The gate
+accepts only this exact two-expression detector match.
+
 ## Automated evidence
 
 ### Schema-18 deterministic remainder triage
