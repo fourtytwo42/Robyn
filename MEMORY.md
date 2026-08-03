@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 deep qualification passes and dependency advisories remediated
+
+- Context: The final Schema-19 contract candidate and application dependency graph required complete deep qualification and a zero-high/critical dependency gate before live Testnet deployment.
+- Contract result: Candidate `a67288133f09bce68b7386009d702c14dfb8bbab` passed deep run `20260803-schema19-deep-03`: 10,000 fuzz cases per target, 20 protocol, 20 v4, and 20 maintenance invariant seeds at 1,024 runs/depth 256, the 512-wallet/64-launch/100,000-action simulation across 50 seeds, isolated broadcast, and accurate non-via-IR 90/80 coverage validation. Evidence: `/home/hendo420/robyn-evidence/devnet-torture/a67288133f09bce68b7386009d702c14dfb8bbab/20260803-schema19-deep-03`.
+- Dependency result: Newly published high-severity transitive advisories in `fast-uri` and `ip-address` were remediated with workspace-level patched-version overrides. The resulting audit reports zero high and zero critical vulnerabilities; API, indexer, web, production topology, Schema-19 tooling, typecheck, and lint gates pass.
+- Safety: These dependency updates do not change Solidity or deployment bytecode. No live Testnet or Mainnet transaction occurred; Mainnet remains Schema-18.
+- Follow-up: Commit and push the patched application/tooling release, regenerate the exact Testnet-fork lifecycle and security/reproducibility evidence under that SHA, then deploy a fresh Schema-19 Testnet stack only if every live preflight remains green.
+
 ### 2026-08-03 - Schema-19 exact Testnet-fork lifecycle and live funding pass
 
 - Context: The corrected Schema-19 candidate required a complete production-style chain-46630 fork lifecycle and a receipt-derived live funding preflight before any fresh Testnet deployment could be considered.
