@@ -12,6 +12,7 @@ getent passwd cloudflared >/dev/null || useradd --system --create-home --home-di
 install -d -o cloudflared -g cloudflared -m 0750 /var/lib/cloudflared
 install -d -o root -g robynapp -m 0750 /etc/robyn/mainnet
 install -d -o root -g robyn-release -m 0750 /etc/robyn/release-agent
+install -d -o root -g root -m 0751 /var/lib/robyn
 install -d -o robynapp -g robynapp -m 0750 /var/lib/robynapp/.pm2 /var/lib/robyn/mainnet-rpc-gateway
 install -d -o root -g robyn-release -m 0750 /var/lib/robyn-release /var/lib/robyn-release/downloads
 install -d -o root -g root -m 0755 /opt/robyn/releases /opt/robyn/staging /usr/local/lib/robyn

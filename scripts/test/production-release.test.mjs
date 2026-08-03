@@ -278,6 +278,10 @@ test("production updater follows authenticated asset redirects under the hardene
     installer,
     /install -d -o root -g robyn-release -m 0750 \/var\/lib\/robyn-release \/var\/lib\/robyn-release\/downloads/,
   );
+  assert.match(
+    installer,
+    /install -d -o root -g root -m 0751 \/var\/lib\/robyn/,
+  );
 });
 
 test("Mainnet application finalization is independent of contract build output", () => {
