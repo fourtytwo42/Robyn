@@ -82,3 +82,21 @@ test("rejects a selected pool or cap outside the qualified policy", () => {
     /selected pool is not a candidate/,
   );
 });
+
+test("rejects missing observed route controls after qualification", () => {
+  assert.throws(
+    () => run((policy) => {
+      delete policy.assets[1].selectedRoute.minimumLiquidity;
+    }),
+    /requires a nonzero observed liquidity floor/,
+  );
+});
+
+test("rejects a stale qualified evidence timestamp", () => {
+  assert.throws(
+    () => run((policy) => {
+      policy.lastVerifiedAt = null;
+    }),
+    /qualified policy requires lastVerifiedAt/,
+  );
+});

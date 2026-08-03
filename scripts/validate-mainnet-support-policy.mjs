@@ -18,7 +18,12 @@ if (process.argv.includes("--write-hash")) {
 } else if (policy.policyHash !== expectedPolicyHash) failures.push(`policyHash mismatch: expected ${expectedPolicyHash}`);
 if (policy.schemaVersion !== 18) failures.push("schemaVersion must be 18");
 if (policy.chainId !== 4663) failures.push("chainId must be 4663");
-if (policy.status !== "qualification-in-progress") failures.push("policy must remain qualification-in-progress before governance");
+if (!["qualification-in-progress", "qualified-awaiting-governance"].includes(policy.status)) {
+  failures.push("policy must be qualification-in-progress or qualified-awaiting-governance");
+}
+if (policy.status === "qualified-awaiting-governance" && !Number.isFinite(Date.parse(policy.lastVerifiedAt))) {
+  failures.push("qualified policy requires lastVerifiedAt");
+}
 if (policy.defaultEnabled !== false) failures.push("default activation must fail closed");
 if (!/^schema18-assets-v[1-9][0-9]*$/.test(policy.policyVersion ?? "")) failures.push("invalid policyVersion");
 const q = policy.qualification ?? {};
@@ -66,6 +71,15 @@ for (const asset of policy.assets ?? []) {
     }
     if (!ladder.includes(String(asset.capWei)) || BigInt(asset.capWei ?? 0) < BigInt(q.minimumUsefulCapacityWei)) {
       failures.push(`${asset.symbol} cap is outside the qualified ladder`);
+    }
+    if (policy.status === "qualified-awaiting-governance") {
+      const route = asset.selectedRoute ?? {};
+      if (BigInt(route.minimumLiquidity ?? 0) <= 0n) failures.push(`${asset.symbol} requires a nonzero observed liquidity floor`);
+      if (!Number.isInteger(route.referenceTick)) failures.push(`${asset.symbol} requires an observed reference tick`);
+      if (route.maximumReferenceTickDeviation !== 198) failures.push(`${asset.symbol} tick deviation must remain 198`);
+      if (route.enforceReferencePrice !== true) failures.push(`${asset.symbol} must enforce its reference tick`);
+      if (!/^0x[0-9a-f]{64}$/.test(route.verificationClass ?? "")) failures.push(`${asset.symbol} has invalid verification class`);
+      if (asset.qualificationStatus !== "qualified-readonly-and-local-fork") failures.push(`${asset.symbol} is not fully qualified`);
     }
   }
   if (!/^[0-9a-f]{64}$/.test(asset.evidenceHash ?? "")) failures.push(`${asset.symbol} has invalid evidence hash`);

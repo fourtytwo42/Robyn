@@ -1,11 +1,11 @@
 {
   "schemaVersion": 18,
   "policyVersion": "schema18-assets-v1",
-  "policyHash": "8be877361baee8ca633287758ff8ae5f44d9f7470bc85a103ed41837a5d8e542",
+  "policyHash": "de5d61f253c9ae8a53a2e6663ebf87069ef1b74072c4d8e368b978ff0064fe52",
   "chainId": 4663,
-  "status": "qualification-in-progress",
+  "status": "qualified-awaiting-governance",
   "defaultEnabled": false,
-  "lastVerifiedAt": null,
+  "lastVerifiedAt": "2026-08-03T05:28:23.969Z",
   "sources": {
     "robinhoodContracts": "https://docs.robinhood.com/chain/contracts/",
     "robinhoodAssetRegistry": "https://api.robinhood.com/rhj/assets",
@@ -65,8 +65,8 @@
       "candidatePools": [],
       "selectedPool": null,
       "capWei": "50000000000000000",
-      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
-      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+      "qualificationStatus": "qualified-readonly-and-local-fork",
+      "evidenceHash": "bba6ed9e6ec093620fe1b207fbbea55bb9f185e5301e1f85ab882ee4368425dd"
     },
     {
       "symbol": "GOOGL",
@@ -91,8 +91,15 @@
       ],
       "selectedPool": "0x5182d37e70a1c2e1060f8671739ae929913ceabcf2bd80a1a2a6356eafd4b506",
       "capWei": "50000000000000000",
-      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
-      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+      "qualificationStatus": "qualified-readonly-and-local-fork",
+      "evidenceHash": "bba6ed9e6ec093620fe1b207fbbea55bb9f185e5301e1f85ab882ee4368425dd",
+      "selectedRoute": {
+        "minimumLiquidity": "41487209424027839032",
+        "referenceTick": 16495,
+        "maximumReferenceTickDeviation": 198,
+        "enforceReferencePrice": true,
+        "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf"
+      }
     },
     {
       "symbol": "MSFT",
@@ -117,8 +124,15 @@
       ],
       "selectedPool": "0x34147f36f89c42a67f77601e612abdb1bd40869e53e8d0edd19705ae0499192d",
       "capWei": "50000000000000000",
-      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
-      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+      "qualificationStatus": "qualified-readonly-and-local-fork",
+      "evidenceHash": "bba6ed9e6ec093620fe1b207fbbea55bb9f185e5301e1f85ab882ee4368425dd",
+      "selectedRoute": {
+        "minimumLiquidity": "27847088207797636989",
+        "referenceTick": 13835,
+        "maximumReferenceTickDeviation": 198,
+        "enforceReferencePrice": true,
+        "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf"
+      }
     },
     {
       "symbol": "NVDA",
@@ -143,8 +157,15 @@
       ],
       "selectedPool": "0x71f9660f9535e3e81d720696a58ea80274da8b2c6eb7c3acb22611d977439a5c",
       "capWei": "50000000000000000",
-      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
-      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+      "qualificationStatus": "qualified-readonly-and-local-fork",
+      "evidenceHash": "bba6ed9e6ec093620fe1b207fbbea55bb9f185e5301e1f85ab882ee4368425dd",
+      "selectedRoute": {
+        "minimumLiquidity": "1249387981219080235782",
+        "referenceTick": 22163,
+        "maximumReferenceTickDeviation": 198,
+        "enforceReferencePrice": true,
+        "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf"
+      }
     },
     {
       "symbol": "SPCX",
@@ -169,8 +190,15 @@
       ],
       "selectedPool": "0x39910df82a4009ea98d01e9df0b9f1b5b01583cc62ea5889c6c8a8e41fbef470",
       "capWei": "50000000000000000",
-      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
-      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+      "qualificationStatus": "qualified-readonly-and-local-fork",
+      "evidenceHash": "bba6ed9e6ec093620fe1b207fbbea55bb9f185e5301e1f85ab882ee4368425dd",
+      "selectedRoute": {
+        "minimumLiquidity": "1024145796939068572609",
+        "referenceTick": 28449,
+        "maximumReferenceTickDeviation": 198,
+        "enforceReferencePrice": true,
+        "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf"
+      }
     },
     {
       "symbol": "SPY",
@@ -195,8 +223,15 @@
       ],
       "selectedPool": "0xf44a149d4b37db24f4091ebd6aab83ee73bf199b3f756133a8e1a50af6715449",
       "capWei": "50000000000000000",
-      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
-      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+      "qualificationStatus": "qualified-readonly-and-local-fork",
+      "evidenceHash": "bba6ed9e6ec093620fe1b207fbbea55bb9f185e5301e1f85ab882ee4368425dd",
+      "selectedRoute": {
+        "minimumLiquidity": "73399618865359879718",
+        "referenceTick": 9071,
+        "maximumReferenceTickDeviation": 198,
+        "enforceReferencePrice": true,
+        "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf"
+      }
     },
     {
       "symbol": "USDG",
@@ -220,8 +255,15 @@
       ],
       "selectedPool": "0x54f7883914619af9105355bf83ed678bcf9f63560218ac61c9963b9503d0ba32",
       "capWei": "50000000000000000",
-      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
-      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+      "qualificationStatus": "qualified-readonly-and-local-fork",
+      "evidenceHash": "bba6ed9e6ec093620fe1b207fbbea55bb9f185e5301e1f85ab882ee4368425dd",
+      "selectedRoute": {
+        "minimumLiquidity": "151268224592626830",
+        "referenceTick": -201061,
+        "maximumReferenceTickDeviation": 198,
+        "enforceReferencePrice": true,
+        "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf"
+      }
     },
     {
       "symbol": "AMZN",
@@ -246,8 +288,15 @@
       ],
       "selectedPool": "0x59aa257d163e391082943b22a839078a64a959dba8ffa4b69477e98459bb50a4",
       "capWei": "10000000000000000",
-      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
-      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+      "qualificationStatus": "qualified-readonly-and-local-fork",
+      "evidenceHash": "bba6ed9e6ec093620fe1b207fbbea55bb9f185e5301e1f85ab882ee4368425dd",
+      "selectedRoute": {
+        "minimumLiquidity": "4377942661913909931",
+        "referenceTick": 19098,
+        "maximumReferenceTickDeviation": 198,
+        "enforceReferencePrice": true,
+        "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf"
+      }
     },
     {
       "symbol": "INTC",
@@ -272,8 +321,15 @@
       ],
       "selectedPool": "0x11843474a8a65c71a4191624920b62e4d7fcf9980499dcf47f1f36e9b236e1c9",
       "capWei": "10000000000000000",
-      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
-      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+      "qualificationStatus": "qualified-readonly-and-local-fork",
+      "evidenceHash": "bba6ed9e6ec093620fe1b207fbbea55bb9f185e5301e1f85ab882ee4368425dd",
+      "selectedRoute": {
+        "minimumLiquidity": "6758775835214655751",
+        "referenceTick": 30048,
+        "maximumReferenceTickDeviation": 198,
+        "enforceReferencePrice": true,
+        "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf"
+      }
     },
     {
       "symbol": "USAR",
@@ -298,8 +354,15 @@
       ],
       "selectedPool": "0x176e2c377b6911ef9be8f2dca2f5419bf8d4d98755aeaf0868191ef2c0a8e726",
       "capWei": "50000000000000000",
-      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
-      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+      "qualificationStatus": "qualified-readonly-and-local-fork",
+      "evidenceHash": "bba6ed9e6ec093620fe1b207fbbea55bb9f185e5301e1f85ab882ee4368425dd",
+      "selectedRoute": {
+        "minimumLiquidity": "1123918255335515498109",
+        "referenceTick": 48109,
+        "maximumReferenceTickDeviation": 198,
+        "enforceReferencePrice": true,
+        "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf"
+      }
     },
     {
       "symbol": "SLV",
@@ -324,8 +387,15 @@
       ],
       "selectedPool": "0x8163aaf524cb1ccc5bba2c8eb4ec2569f8156b846094413e2b4bb19899f8a594",
       "capWei": "10000000000000000",
-      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
-      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+      "qualificationStatus": "qualified-readonly-and-local-fork",
+      "evidenceHash": "bba6ed9e6ec093620fe1b207fbbea55bb9f185e5301e1f85ab882ee4368425dd",
+      "selectedRoute": {
+        "minimumLiquidity": "7021551909019643747",
+        "referenceTick": 35698,
+        "maximumReferenceTickDeviation": 198,
+        "enforceReferencePrice": true,
+        "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf"
+      }
     },
     {
       "symbol": "GME",
@@ -350,8 +420,15 @@
       ],
       "selectedPool": "0xca11843fcb588e837565f1b728dfa6832fa25d64d0825147a10843d25f800804",
       "capWei": "2500000000000000",
-      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
-      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+      "qualificationStatus": "qualified-readonly-and-local-fork",
+      "evidenceHash": "bba6ed9e6ec093620fe1b207fbbea55bb9f185e5301e1f85ab882ee4368425dd",
+      "selectedRoute": {
+        "minimumLiquidity": "3748955383371839983",
+        "referenceTick": 44547,
+        "maximumReferenceTickDeviation": 198,
+        "enforceReferencePrice": true,
+        "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf"
+      }
     },
     {
       "symbol": "QQQ",
@@ -376,8 +453,15 @@
       ],
       "selectedPool": "0x7ba2c8a5f53ee4cda9ef07effe81bb8509efafb79a26d0e33b28ada879e5bb52",
       "capWei": "1000000000000000",
-      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
-      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+      "qualificationStatus": "qualified-readonly-and-local-fork",
+      "evidenceHash": "bba6ed9e6ec093620fe1b207fbbea55bb9f185e5301e1f85ab882ee4368425dd",
+      "selectedRoute": {
+        "minimumLiquidity": "326683612901093966",
+        "referenceTick": 9843,
+        "maximumReferenceTickDeviation": 198,
+        "enforceReferencePrice": true,
+        "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf"
+      }
     }
   ],
   "provenanceWatchlist": [
@@ -399,5 +483,6 @@
       "status": "unavailable",
       "reason": "No authoritative canonical Robinhood chain-4663 contract published"
     }
-  ]
+  ],
+  "qualificationInputPolicyHash": "8be877361baee8ca633287758ff8ae5f44d9f7470bc85a103ed41837a5d8e542"
 }
