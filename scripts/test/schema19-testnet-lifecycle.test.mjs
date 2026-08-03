@@ -58,7 +58,10 @@ test("Schema-19 lifecycle covers three assets, user-driven maintenance, and all 
     source,
     /minimumGas: BigInt\(manifest\.settings\.maintenanceCallGas\)/,
   );
-  assert.match(source, /await waitUntil\(BigInt\(state\.graduatedAt\) \+ 301n\)/);
+  assert.match(
+    source,
+    /await waitUntil\(BigInt\(state\.graduatedAt\) \+ 301n\)/,
+  );
   assert.match(
     source,
     /await waitUntil\(BigInt\(state\.streamStartedAt\) \+ rewardDuration\)/,
@@ -75,7 +78,10 @@ test("Schema-19 lifecycle covers three assets, user-driven maintenance, and all 
   assert.match(source, /did not complete and reset WETH fallback/);
   assert.match(source, /fixture-unwind/);
   assert.equal((source.match(/const permit2Abi = parseAbi/g) ?? []).length, 1);
-  assert.equal((source.match(/const universalAbi = parseAbi/g) ?? []).length, 1);
+  assert.equal(
+    (source.match(/const universalAbi = parseAbi/g) ?? []).length,
+    1,
+  );
   assert.match(source, /currency0: zeroAddress,\s+currency1: fixtureAsset/);
   assert.match(source, /testFailureFixture/);
   assert.match(

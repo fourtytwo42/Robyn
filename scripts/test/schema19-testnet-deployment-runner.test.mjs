@@ -22,7 +22,10 @@ test("deployment runner journals before submission and never replays ambiguity",
   const send = source.indexOf("sendRawTransaction", intent);
   assert(intent > 0 && send > intent);
   assert.match(source, /unresolved signed intent; replay is prohibited/);
-  assert.match(source, /submission is ambiguous; manual reconciliation required/);
+  assert.match(
+    source,
+    /submission is ambiguous; manual reconciliation required/,
+  );
   assert.match(source, /confirmed receipt changed/);
   assert.match(source, /validateSchema19ForgeLedger/);
 });

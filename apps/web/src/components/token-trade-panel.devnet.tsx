@@ -416,16 +416,12 @@ export function NetworkTokenTradePanel({
             : ["25", "100", "250"]
           : ["10000", "100000", "500000"]
         ).map((value) => (
-            <button
-              type="button"
-              key={value}
-              onClick={() => setInput(value)}
-            >
-              {Number(value).toLocaleString(undefined, {
-                maximumFractionDigits: 4,
-              })}
-            </button>
-          ))}
+          <button type="button" key={value} onClick={() => setInput(value)}>
+            {Number(value).toLocaleString(undefined, {
+              maximumFractionDigits: 4,
+            })}
+          </button>
+        ))}
       </div>
       <div className="trade-receive">
         <span>You receive approximately</span>

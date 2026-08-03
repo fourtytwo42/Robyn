@@ -493,9 +493,7 @@ export function NetworkTokenTradePanel({
             address: nativeTarget,
             abi: useTradeRouter ? tradeRouterAbi : nativeMarketAbi,
             functionName: "buy",
-            args: useTradeRouter
-              ? [market, minimumOutput]
-              : [minimumOutput],
+            args: useTradeRouter ? [market, minimumOutput] : [minimumOutput],
             value: amount,
           });
           hash = await walletClient.writeContract(simulation.request);

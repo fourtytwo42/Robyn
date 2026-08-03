@@ -4,8 +4,14 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const source = await readFile(path.join(repo, "scripts/finalize-schema19-deployment-manifest.mjs"), "utf8");
+const repo = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../..",
+);
+const source = await readFile(
+  path.join(repo, "scripts/finalize-schema19-deployment-manifest.mjs"),
+  "utf8",
+);
 
 test("Schema-19 finalizer binds active runtime roles and scoped indexing", () => {
   for (const token of [
@@ -15,7 +21,8 @@ test("Schema-19 finalizer binds active runtime roles and scoped indexing", () =>
     "daoRewardDistributor",
     "buildSchema19IndexingPolicy",
     "universalRouter",
-  ]) assert.match(source, new RegExp(token));
+  ])
+    assert.match(source, new RegExp(token));
 });
 
 test("Schema-19 finalizer fails closed on identity, receipt, and RPC policy drift", () => {
@@ -26,7 +33,8 @@ test("Schema-19 finalizer fails closed on identity, receipt, and RPC policy drif
     "complete successful receipt ledger required",
     "unique receipt hashes required",
     "LAN-only RPC policy required",
-  ]) assert.match(source, new RegExp(token));
+  ])
+    assert.match(source, new RegExp(token));
 });
 
 test("Schema-19 finalizer preserves Public contracts while application writes remain disabled", () => {
