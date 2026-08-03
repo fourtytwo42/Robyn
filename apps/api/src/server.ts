@@ -1322,10 +1322,7 @@ app.get("/health", async (_request, reply) => {
     ...state,
     ...keeper,
     keeperExpected,
-    keeperStatus: keeperStatusForHealth(
-      keeperExpected,
-      keeper.keeperStatus,
-    ),
+    keeperStatus: keeperStatusForHealth(keeperExpected, keeper.keeperStatus),
     ...artifact,
   });
 });
@@ -2554,6 +2551,8 @@ app.get<{
     data: page,
     catalog: {
       schemaVersion: deployment.assetCatalog?.schemaVersion ?? null,
+      policyVersion: deployment.assetCatalog?.policyVersion ?? null,
+      policyHash: deployment.assetCatalog?.policyHash ?? null,
       snapshotAt: deployment.assetCatalog?.snapshotAt ?? null,
       disclosure: deployment.assetCatalog?.disclosure ?? null,
     },
@@ -2580,9 +2579,9 @@ app.get<{
   if (!/^[1-9][0-9]{0,77}$/.test(request.query.amount ?? "")) {
     return reply.code(400).send({ error: "invalid_amount" });
   }
-  const asset = await assetCatalog.resolve(request.params.address);
+  const asset = await assetCatalog.resolveWithLivePrice(request.params.address);
   if (!asset) return reply.code(404).send({ error: "asset_not_found" });
-  if (!asset.route.ready) {
+  if (!(asset.route.selectable ?? asset.route.ready)) {
     return reply.code(409).send({ error: "route_unavailable", data: asset });
   }
   const output = await assetCatalog.quote(

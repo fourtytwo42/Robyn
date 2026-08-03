@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { decodeFunctionData, getAddress } from "viem";
@@ -27,8 +28,20 @@ const gate1 = JSON.parse(gate1Raw);
 const postdeployment = JSON.parse(postdeploymentRaw);
 const CONTRACT_SHA = "4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4";
 const DEPLOYMENT_APPLICATION_SHA = "8327b250122cd9050a7da6a44e12859e3cf521aa";
-const APPLICATION_SHA = "5ea50ed836d81416a7a6a32c8078a864fca28d0b";
+const APPLICATION_SHA =
+  process.env.ROBYN_APPLICATION_RELEASE_SHA ??
+  execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+if (!/^[0-9a-f]{40}$/.test(APPLICATION_SHA)) throw new Error("invalid application SHA");
 const INDEXING_POLICY_HASH = "5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1";
+const ASSET_POLICY_PATH = path.resolve(
+  process.env.ROBYN_SCHEMA18_ASSET_POLICY ??
+    "config/protocol/robinhood-mainnet-support-policy.json",
+);
+const assetPolicyRaw = await readFile(ASSET_POLICY_PATH, "utf8");
+const assetPolicy = JSON.parse(assetPolicyRaw);
+if (assetPolicy.schemaVersion !== 18 || assetPolicy.chainId !== 4663 || !/^[0-9a-f]{64}$/.test(assetPolicy.policyHash ?? "")) {
+  throw new Error("invalid Schema-18 asset policy identity");
+}
 if (
   baseline.schemaVersion !== 18 ||
   baseline.chainId !== 46630 ||
@@ -155,27 +168,77 @@ const productionNames = new Map(
   ]),
 );
 const assetCatalog = {
-  ...baseline.assetCatalog,
   schemaVersion: 18,
   chainId: 4663,
+  snapshotAt: postdeployment.generatedAt,
+  policyVersion: assetPolicy.policyVersion,
+  policyHash: assetPolicy.policyHash,
   disclosure:
-    "Schema-18 Mainnet uses individually qualified Robinhood Chain assets and canonical WETH. External token availability and issuer terms remain outside Sherwood Forest control.",
-  assets: baseline.assetCatalog.assets
-    .filter((asset) => routeAddressBySymbol.has(asset.symbol))
-    .map((asset) => ({
-      ...asset,
-      address: routeAddressBySymbol.get(asset.symbol),
-      name: productionNames.get(asset.symbol),
+    "Chainlink reference prices, pool-implied prices, and route readiness are independent. Only assets passing all three admission checks are selectable.",
+  chainlink: {
+    cacheTtlSeconds: assetPolicy.chainlink.cacheSeconds,
+    sequencerUptimeFeed: assetPolicy.chainlink.sequencerUptimeFeed,
+    sequencerGracePeriodSeconds: assetPolicy.chainlink.sequencerGraceSeconds,
+  },
+  v4Venue: {
+    poolManager: assetPolicy.venue.poolManager,
+    quoter: assetPolicy.venue.quoter,
+  },
+  assets: assetPolicy.assets.map((policyAsset) => {
+    const activeRoute = publicRoutes.get(policyAsset.symbol) ?? null;
+    const selectedCandidate =
+      policyAsset.candidatePools?.find(
+        (pool) => pool.poolId.toLowerCase() === policyAsset.selectedPool?.toLowerCase(),
+      ) ?? null;
+    const candidatePool = activeRoute?.routeKind === "uniswap-v4"
+      ? activeRoute
+      : selectedCandidate;
+    return {
+      address: getAddress(policyAsset.address),
+      symbol: policyAsset.symbol,
+      name: policyAsset.name,
+      category:
+        ["SPY", "QQQ", "SLV"].includes(policyAsset.symbol)
+          ? "etf-commodity"
+          : policyAsset.category === "stock"
+            ? "stock"
+            : "crypto",
+      logoUrl: policyAsset.logoUrl,
+      mainnetAddress: getAddress(policyAsset.address),
+      chainId: 4663,
+      decimals: 18,
       mock: false,
       mockOnly: false,
       network: "robinhood-mainnet",
       verification:
-        asset.symbol === "WETH"
+        policyAsset.symbol === "WETH"
           ? "canonical-weth-runtime"
-          : "robinhood-mainnet-token-runtime-and-v4-route",
-      disclosure:
-        "Qualified for the sealed Robinhood Mainnet release; route availability is rechecked before activation.",
-    })),
+          : activeRoute
+            ? "robinhood-mainnet-token-runtime-and-v4-route"
+            : "robinhood-mainnet-token-runtime",
+      referencePrice: {
+        kind: policyAsset.referencePrice.kind,
+        feedAddress: policyAsset.referencePrice.feedAddress,
+        heartbeatSeconds: policyAsset.referencePrice.heartbeatSeconds,
+        oraclePauseCheck: policyAsset.referencePrice.oraclePausedCheck ?? false,
+      },
+      route: {
+        kind: activeRoute?.routeKind ?? "none",
+        ready: Boolean(activeRoute?.enabled),
+      },
+      pool: candidatePool && activeRoute?.routeKind !== "wrapped-native" ? {
+        fee: candidatePool.fee,
+        tickSpacing: candidatePool.tickSpacing,
+        hooks: candidatePool.hook ?? candidatePool.hooks,
+        poolId: candidatePool.poolId,
+        zeroForOne: true,
+        quoteAmountNativeWei: "100000000000000",
+      } : undefined,
+      disclosure: activeRoute
+        ? "Canonical runtime and configured route; live feed and two-sided market admission are rechecked before selection."
+        : `Catalog-visible only: ${policyAsset.qualificationStatus}.`,
+    };
+  }),
 };
 const contracts = {
   ...baseline.contracts,

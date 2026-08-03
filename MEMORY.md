@@ -1,6 +1,10 @@
 # Project Memory
 
 ## Active Handoff
+- Asset-route remediation is in progress on `codex/schema18-asset-route-pricing-remediation`. Additive API/UI work separates Chainlink reference prices, raw v4 pool-implied prices, and final selectability; Mainnet routes and Schema-18 contracts are unchanged.
+- Schema-18 asset policy `schema18-assets-v1` hashes to `8be877361baee8ca633287758ff8ae5f44d9f7470bc85a103ed41837a5d8e542`. Contract-compatible full-history qualification and the 65-receipt/13-invariant LAN-sourced fork rehearsal passed; the final one-hour observation is active at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/one-hour-20260803T042538Z`.
+- No route-governance operation has been sealed, authorized, scheduled, or broadcast. The first additive application release must preserve the six existing onchain routes.
+
 
 - Schema-18 is publicly operational on Robinhood Mainnet at `https://sherwoodforest.trade`. Public mode, the `6 ETH / 0.5 ETH` profile, six qualified routes, both conversion systems, and application transaction submission are active.
 - Exact identities: contracts `4728cb5cce4b0bad1c275b8bfcc2de3e8fb3f6a4`, application `5ea50ed836d81416a7a6a32c8078a864fca28d0b`, tooling `e2e2be924f1ec432c2b3eebeb79c7c814b82a32c`, policy `5e92d61940f39b05f7b61273b0a2d190d77cf204369a224822b098a4f5ca01e1`.
@@ -11,6 +15,8 @@
 - Production migration is complete. Keyless host `192.168.50.108` now serves the canonical public domain through Cloudflare tunnel `sherwoodforest-mainnet-prod`; host `192.168.50.250` retains Devnet, Testnet, keeper/signing operations, and LAN-only Mainnet staging at `http://192.168.50.250:3082`. Ordinary pushes never deploy production.
 
 ## Current State
+- Schema-18 asset policy `schema18-assets-v1` hashes to `8be877361baee8ca633287758ff8ae5f44d9f7470bc85a103ed41837a5d8e542` and catalogs WETH plus twelve stock or ETF candidates. Selected safe caps are 0.05 ETH for WETH, GOOGL, MSFT, NVDA, SPCX, SPY, USDG, and USAR; 0.01 ETH for AMZN, INTC, and SLV; 0.0025 ETH for GME; and 0.001 ETH for QQQ. NVDA uses the zero-hook 0.05% pool, SPY the zero-hook 0.30% pool, and USDG the router-compatible zero-hook fee-460 pool; zero-fee or hooked pools are rejected.
+
 
 - Gate-3 manifest `2554c9c971630dc6a8399a0868201908e313c6ab89e299e2b544100cd7ca3bda` executed exactly once as transaction `0xb9cea03d314c66c0f6afda3613e183fe9228f6652ed8345e6f033419610fc67c` at block `26011510`.
 - Mainnet launch mode is Public; profile version 2 targets 6 ETH with a 0.5 ETH maximum purchase; all six sealed routes and both conversion systems are enabled. The canary retains its immutable profile-1 snapshot.
@@ -42,10 +48,18 @@
 ## Open Follow-ups
 
 - Continue observing the first 24 public hours through native monitoring. On any contract, accounting, solvency, supply, principal, route, or LAN-RPC anomaly, disable application submissions and use the verified guardian controls.
-- GOOGL is presently rejected by the live catalog because its conversion pool reports insufficient liquidity; do not bypass that readiness result. The other live route prices and WETH parity are available.
+- GOOGL remains unavailable in the live catalog until the additive application release and a separately authorized route-governance operation recalibrate its nonzero liquidity floor. Do not bypass the current fail-closed readiness result.
 - Correct the raw `/api/assets/catalog-manifest` snapshot's stale per-asset Testnet chain/provenance metadata in a future application release. The live `/api/assets` endpoint and transaction builder already use chain `4663`, so this is a catalog hygiene follow-up rather than a wallet-safety blocker.
 - Rotate the previously exposed comparison-provider credential during routine credential hygiene. Alchemy remains probe-only and is not a production dependency.
 - Add a true second-site encrypted backup target when available; the NAS copy is off-host but remains in the same LAN/failure domain.
+
+### 2026-08-03 - Schema-18 asset policy and fork route qualification
+
+- Context: Mainnet asset presentation mixed stale static references with route readiness, and several better direct pools or additional canonical assets required qualification.
+- Decision: Use Chainlink-only Mainnet USD references, independent raw-v4 pool prices, and fail-closed selectability. Preserve single-hop Schema-18 contracts and require separate exact-manifest authorization for every onchain route change.
+- Evidence: Contract-compatible discovery is sealed at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/read-only-contract-compatible.json`; the broadcast-style fork ledger at `/home/hendo420/robyn-evidence/schema18-asset-route-remediation/fork-roundtrip` contains 65 unique successful receipts and 13 passing asset invariants with zero residual allowances.
+- Result: GOOGL, MSFT, NVDA, SPCX, SPY, WETH, USDG, AMZN, INTC, USAR, SLV, GME, and QQQ have policy-bound candidate pools and safe caps. WBTC, WSOL, and WBNB remain unavailable pending authoritative chain-4663 provenance.
+- Follow-up: Finish the one-hour observation, qualify and promote the additive application with current routes unchanged, then seal but do not schedule the unanimous route operation without exact-hash authorization.
 
 ### 2026-08-03 - Mainnet share metadata corrected and deployed
 
@@ -3068,6 +3082,8 @@ Durable project context lives here. Update this file whenever information should
   below `maximumCurvePurchase`. A complete exact-SHA 100-wallet rehearsal is
   the next gate.
 ## Active Handoff
+- Asset-route remediation is in progress on `codex/schema18-asset-route-pricing-remediation`. Additive API/UI work separates Chainlink reference prices, raw v4 pool-implied prices, and final selectability; Mainnet routes and Schema-18 contracts are unchanged. A fail-closed Schema-18 policy and LAN-only quote-ladder qualification are under validation.
+
 
 - 2026-08-01: Schema-18 Gate 2 exact-state Mainnet recovery is authorized under
   manifest SHA `f59b49d96d8b9eee8d84b01b37718d36b16aa22f4f8fc550e1b9d9f9a75eaf29`.
@@ -5139,6 +5155,8 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Commit/push, build immutable release, migrate/promote testnet, run live responsive in-app-browser acceptance, then carry the checkpoint into the guaranteed-fee branch.
 
 ## Current State
+- Schema-18 asset policy `schema18-assets-v1` currently hashes to `532462ffb9780d0cdf2a2fdebe9838bb79a234c9d2f845647468f99d9e82ddc7`; it catalogs WETH plus twelve stock or ETF candidates and leaves all new or changed routes pending evidence. Full-history pool discovery, one-hour sampling, and broadcast-style fork execution remain required before an unsigned governance manifest can be sealed.
+
 
 ### 2026-08-01 - Schema-18 Gate 2 recovery is Timelock-scheduled
 

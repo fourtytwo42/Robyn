@@ -8,6 +8,8 @@ export function assetCatalogVerificationLabel(asset: { verification: string }) {
     return "Robyn test DEX";
   if (asset.verification === "robyn-token-list") return "Robyn verified";
   if (asset.verification === "canonical-weth-runtime") return "Canonical WETH";
+  if (asset.verification === "robinhood-mainnet-token-runtime")
+    return "Mainnet runtime verified";
   if (asset.verification === "robinhood-mainnet-token-runtime-and-v4-route")
     return "Mainnet runtime + route verified";
   return "Unverified ERC-20";

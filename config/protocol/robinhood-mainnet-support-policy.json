@@ -1,166 +1,403 @@
 {
-  "schemaVersion": 16,
+  "schemaVersion": 18,
+  "policyVersion": "schema18-assets-v1",
+  "policyHash": "8be877361baee8ca633287758ff8ae5f44d9f7470bc85a103ed41837a5d8e542",
   "chainId": 4663,
-  "status": "candidate-only",
-  "lastVerifiedAt": "2026-07-29",
-  "discoveryBlock": 22195210,
-  "activationPolicy": {
-    "defaultEnabled": false,
-    "requireCanonicalAddress": true,
-    "requireRuntimeCode": true,
-    "requireBidirectionalExactInput": true,
-    "requireBidirectionalExactOutput": true,
-    "maximumProtectedSlippageBps": 100,
-    "maximumRoundTripLossBps": 500,
-    "requireDeploymentBlockRequalification": true,
-    "requireExactForkLifecycle": true,
-    "requireFreshContractDeploymentForRouteChanges": true
+  "status": "qualification-in-progress",
+  "defaultEnabled": false,
+  "lastVerifiedAt": null,
+  "sources": {
+    "robinhoodContracts": "https://docs.robinhood.com/chain/contracts/",
+    "robinhoodAssetRegistry": "https://api.robinhood.com/rhj/assets",
+    "robinhoodPriceFeeds": "https://docs.robinhood.com/chain/oracles-and-price-feeds/",
+    "chainlinkDirectory": "https://reference-data-directory.vercel.app/feeds-robinhood-mainnet.json"
   },
-  "executionClasses": {
-    "canonical-v4-single-hop": {
-      "supportedBySchema16": true,
-      "requiresFreshContracts": false
-    },
-    "direct-native-wrap": {
-      "supportedBySchema16": true,
-      "requiresFreshContracts": false
+  "chainlink": {
+    "cacheSeconds": 60,
+    "sequencerUptimeFeed": null,
+    "sequencerGraceSeconds": 3600,
+    "sequencerPolicy": "No chain-4663 uptime feed is published; LAN gateway chain, sync, lag, and canonical-hash admission remains mandatory.",
+    "ethUsdFeed": {
+      "address": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+      "heartbeatSeconds": 86400
     }
   },
-  "candidates": [
+  "qualification": {
+    "architecture": "v4-single-hop-only",
+    "quoteLadderWei": [
+      "100000000000000",
+      "250000000000000",
+      "500000000000000",
+      "1000000000000000",
+      "2500000000000000",
+      "5000000000000000",
+      "10000000000000000",
+      "25000000000000000",
+      "50000000000000000"
+    ],
+    "minimumUsefulCapacityWei": "1000000000000000",
+    "maximumRoundTripLossBps": 500,
+    "minimumOutputBps": 9900,
+    "sampleDurationSeconds": 3600,
+    "requireExactInputBothDirections": true,
+    "requireExactOutputBothDirections": true,
+    "requireBroadcastForkRoundTrip": true,
+    "syntheticLiquidityAllowed": false
+  },
+  "venue": {
+    "poolManager": "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+    "quoter": "0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94",
+    "nativeCurrency": "0x0000000000000000000000000000000000000000"
+  },
+  "assets": [
+    {
+      "symbol": "WETH",
+      "name": "Wrapped Ether",
+      "category": "wrapped-native",
+      "address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+      "provenance": "robinhood-canonical-contract",
+      "logoUrl": null,
+      "referencePrice": {
+        "kind": "native-parity",
+        "feedAddress": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+        "heartbeatSeconds": 86400
+      },
+      "candidatePools": [],
+      "selectedPool": null,
+      "capWei": "50000000000000000",
+      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
+      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+    },
     {
       "symbol": "GOOGL",
-      "required": true,
-      "kind": "robinhood-stock-token",
+      "name": "Alphabet Class A",
+      "category": "stock",
       "address": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
-      "executionClass": "canonical-v4-single-hop",
-      "maximumNativeInputWei": "500000000000000000",
-      "activation": "blocked-pending-exact-fork-rehearsal"
+      "provenance": "robinhood-asset-registry",
+      "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x2e0847e8910a9732eb3fb1bb4b70a580adad4fe3.png",
+      "referencePrice": {
+        "kind": "chainlink-usd",
+        "feedAddress": "0xF6f373a037c30F0e5010d854385cA89185AE638b",
+        "heartbeatSeconds": 86400,
+        "oraclePausedCheck": true
+      },
+      "candidatePools": [
+        {
+          "poolId": "0x5182d37e70a1c2e1060f8671739ae929913ceabcf2bd80a1a2a6356eafd4b506",
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        }
+      ],
+      "selectedPool": "0x5182d37e70a1c2e1060f8671739ae929913ceabcf2bd80a1a2a6356eafd4b506",
+      "capWei": "50000000000000000",
+      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
+      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
     },
     {
       "symbol": "MSFT",
-      "required": true,
-      "kind": "robinhood-stock-token",
+      "name": "Microsoft",
+      "category": "stock",
       "address": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
-      "executionClass": "canonical-v4-single-hop",
-      "maximumNativeInputWei": "500000000000000000",
-      "activation": "blocked-pending-exact-fork-rehearsal"
+      "provenance": "robinhood-asset-registry",
+      "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xe93237c50d904957cf27e7b1133b510c669c2e74.png",
+      "referencePrice": {
+        "kind": "chainlink-usd",
+        "feedAddress": "0x45C3C877C15E6BA2EBB19eA114Ea508d14C1Af2E",
+        "heartbeatSeconds": 86400,
+        "oraclePausedCheck": true
+      },
+      "candidatePools": [
+        {
+          "poolId": "0x34147f36f89c42a67f77601e612abdb1bd40869e53e8d0edd19705ae0499192d",
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        }
+      ],
+      "selectedPool": "0x34147f36f89c42a67f77601e612abdb1bd40869e53e8d0edd19705ae0499192d",
+      "capWei": "50000000000000000",
+      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
+      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
     },
     {
       "symbol": "NVDA",
-      "required": true,
-      "kind": "robinhood-stock-token",
+      "name": "NVIDIA",
+      "category": "stock",
       "address": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
-      "executionClass": "canonical-v4-single-hop",
-      "maximumNativeInputWei": "500000000000000000",
-      "activation": "blocked-pending-exact-fork-rehearsal"
+      "provenance": "robinhood-asset-registry",
+      "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec.png",
+      "referencePrice": {
+        "kind": "chainlink-usd",
+        "feedAddress": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15",
+        "heartbeatSeconds": 86400,
+        "oraclePausedCheck": true
+      },
+      "candidatePools": [
+        {
+          "poolId": "0x71f9660f9535e3e81d720696a58ea80274da8b2c6eb7c3acb22611d977439a5c",
+          "fee": 500,
+          "tickSpacing": 10,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        }
+      ],
+      "selectedPool": "0x71f9660f9535e3e81d720696a58ea80274da8b2c6eb7c3acb22611d977439a5c",
+      "capWei": "50000000000000000",
+      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
+      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
     },
     {
       "symbol": "SPCX",
-      "required": true,
-      "kind": "robinhood-stock-token",
+      "name": "SpaceX",
+      "category": "stock",
       "address": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
-      "executionClass": "canonical-v4-single-hop",
-      "maximumNativeInputWei": "500000000000000000",
-      "activation": "blocked-pending-exact-fork-rehearsal"
+      "provenance": "robinhood-asset-registry",
+      "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x4a0e65a3eccec6dbe60ae065f2e7bb85fae35eea.png",
+      "referencePrice": {
+        "kind": "chainlink-usd",
+        "feedAddress": "0xB265810950ba6c5C0Ff821c9963014a56fD8Bffb",
+        "heartbeatSeconds": 86400,
+        "oraclePausedCheck": true
+      },
+      "candidatePools": [
+        {
+          "poolId": "0x39910df82a4009ea98d01e9df0b9f1b5b01583cc62ea5889c6c8a8e41fbef470",
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        }
+      ],
+      "selectedPool": "0x39910df82a4009ea98d01e9df0b9f1b5b01583cc62ea5889c6c8a8e41fbef470",
+      "capWei": "50000000000000000",
+      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
+      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
     },
     {
       "symbol": "SPY",
-      "required": true,
-      "kind": "robinhood-stock-token",
+      "name": "SPDR S&P 500 ETF Trust",
+      "category": "stock",
       "address": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
-      "executionClass": "canonical-v4-single-hop",
-      "maximumNativeInputWei": "100000000000000000",
-      "activation": "blocked-pending-exact-fork-rehearsal"
-    },
-    {
-      "symbol": "GME",
-      "required": false,
-      "kind": "robinhood-stock-token",
-      "address": "0x1b0E319c6A659F002271B69dB8A7df2F911c153E",
-      "executionClass": "canonical-v4-single-hop",
-      "maximumNativeInputWei": "1000000000000000",
-      "activation": "conditional-pending-deployment-block-depth"
-    },
-    {
-      "symbol": "WETH",
-      "required": true,
-      "kind": "canonical-wrapped-native",
-      "address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
-      "executionClass": "direct-native-wrap",
-      "maximumNativeInputWei": "500000000000000000",
-      "activation": "blocked-pending-exact-fork-rehearsal"
+      "provenance": "robinhood-asset-registry",
+      "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x117cc2133c37b721f49de2a7a74833232b3b4c0c.png",
+      "referencePrice": {
+        "kind": "chainlink-usd",
+        "feedAddress": "0x319724394D3A0e3669269846abE664Cd621f9f6A",
+        "heartbeatSeconds": 86400,
+        "oraclePausedCheck": true
+      },
+      "candidatePools": [
+        {
+          "poolId": "0xf44a149d4b37db24f4091ebd6aab83ee73bf199b3f756133a8e1a50af6715449",
+          "fee": 3000,
+          "tickSpacing": 30,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        }
+      ],
+      "selectedPool": "0xf44a149d4b37db24f4091ebd6aab83ee73bf199b3f756133a8e1a50af6715449",
+      "capWei": "50000000000000000",
+      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
+      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
     },
     {
       "symbol": "USDG",
-      "required": false,
-      "kind": "canonical-stablecoin",
+      "name": "Global Dollar",
+      "category": "stablecoin",
       "address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
-      "executionClass": "canonical-v4-single-hop",
-      "maximumNativeInputWei": "50000000000000000",
-      "activation": "conditional-pending-direct-v4-pool-qualification"
+      "provenance": "robinhood-canonical-contract",
+      "logoUrl": null,
+      "referencePrice": {
+        "kind": "chainlink-usd",
+        "feedAddress": "0x61B7e5650328764B076A108EFF5fa7282a1B9aD2",
+        "heartbeatSeconds": 86400
+      },
+      "candidatePools": [
+        {
+          "poolId": "0x54f7883914619af9105355bf83ed678bcf9f63560218ac61c9963b9503d0ba32",
+          "fee": 460,
+          "tickSpacing": 9,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        }
+      ],
+      "selectedPool": "0x54f7883914619af9105355bf83ed678bcf9f63560218ac61c9963b9503d0ba32",
+      "capWei": "50000000000000000",
+      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
+      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
     },
     {
-      "symbol": "USDe",
-      "required": false,
-      "kind": "layerzero-verified-token",
-      "address": "0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34",
-      "executionClass": "canonical-v4-single-hop",
-      "maximumNativeInputWei": "50000000000000000",
-      "activation": "conditional-pending-direct-v4-pool-qualification"
+      "symbol": "AMZN",
+      "name": "Amazon",
+      "category": "stock",
+      "address": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+      "provenance": "robinhood-asset-registry",
+      "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x12f190a9f9d7d37a250758b26824b97ce941bf54.png",
+      "referencePrice": {
+        "kind": "chainlink-usd",
+        "feedAddress": "0xD5a1508ceD74c084eBf3cBe853e2C968fB2a651C",
+        "heartbeatSeconds": 86400,
+        "oraclePausedCheck": true
+      },
+      "candidatePools": [
+        {
+          "poolId": "0x59aa257d163e391082943b22a839078a64a959dba8ffa4b69477e98459bb50a4",
+          "fee": 3000,
+          "tickSpacing": 30,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        }
+      ],
+      "selectedPool": "0x59aa257d163e391082943b22a839078a64a959dba8ffa4b69477e98459bb50a4",
+      "capWei": "10000000000000000",
+      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
+      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
     },
     {
-      "symbol": "DEGEN",
-      "required": false,
-      "kind": "layerzero-verified-token",
-      "address": "0x0830A9Dd26a04e959657AB6788d45f5725590c32",
-      "executionClass": "canonical-v4-single-hop",
-      "maximumNativeInputWei": "50000000000000000",
-      "activation": "conditional-pending-direct-v4-pool-qualification"
+      "symbol": "INTC",
+      "name": "Intel",
+      "category": "stock",
+      "address": "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681",
+      "provenance": "robinhood-asset-registry",
+      "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xc72b96e0e48ecd4dc75e1e45396e26300bc39681.png",
+      "referencePrice": {
+        "kind": "chainlink-usd",
+        "feedAddress": "0x3f390C5C24628Ac7C489515402235FeAD71D1913",
+        "heartbeatSeconds": 86400,
+        "oraclePausedCheck": true
+      },
+      "candidatePools": [
+        {
+          "poolId": "0x11843474a8a65c71a4191624920b62e4d7fcf9980499dcf47f1f36e9b236e1c9",
+          "fee": 2500,
+          "tickSpacing": 25,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        }
+      ],
+      "selectedPool": "0x11843474a8a65c71a4191624920b62e4d7fcf9980499dcf47f1f36e9b236e1c9",
+      "capWei": "10000000000000000",
+      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
+      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
     },
     {
-      "symbol": "ARROW",
-      "required": false,
-      "kind": "layerzero-verified-token",
-      "address": "0xf2915d1e3C1B0c769d0c756Ec43F1c1f6c99cD03",
-      "executionClass": "canonical-v4-single-hop",
-      "maximumNativeInputWei": "50000000000000000",
-      "activation": "conditional-pending-direct-v4-pool-qualification"
+      "symbol": "USAR",
+      "name": "USA Rare Earth",
+      "category": "stock",
+      "address": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
+      "provenance": "robinhood-asset-registry",
+      "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xd917b029c761d264c6a312bbbcda868658ef86a6.png",
+      "referencePrice": {
+        "kind": "chainlink-usd",
+        "feedAddress": "0xA994d3684e8400A6c8078226925779FdeE682DD9",
+        "heartbeatSeconds": 86400,
+        "oraclePausedCheck": true
+      },
+      "candidatePools": [
+        {
+          "poolId": "0x176e2c377b6911ef9be8f2dca2f5419bf8d4d98755aeaf0868191ef2c0a8e726",
+          "fee": 9000,
+          "tickSpacing": 90,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        }
+      ],
+      "selectedPool": "0x176e2c377b6911ef9be8f2dca2f5419bf8d4d98755aeaf0868191ef2c0a8e726",
+      "capWei": "50000000000000000",
+      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
+      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+    },
+    {
+      "symbol": "SLV",
+      "name": "iShares Silver Trust",
+      "category": "stock",
+      "address": "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f",
+      "provenance": "robinhood-asset-registry",
+      "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x411efb0e7f985935daec3d4c3ebaea0d0ad7d89f.png",
+      "referencePrice": {
+        "kind": "chainlink-usd",
+        "feedAddress": "0x209b73908e92Ae021826eD79609845451Ecba2ce",
+        "heartbeatSeconds": 86400,
+        "oraclePausedCheck": true
+      },
+      "candidatePools": [
+        {
+          "poolId": "0x8163aaf524cb1ccc5bba2c8eb4ec2569f8156b846094413e2b4bb19899f8a594",
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        }
+      ],
+      "selectedPool": "0x8163aaf524cb1ccc5bba2c8eb4ec2569f8156b846094413e2b4bb19899f8a594",
+      "capWei": "10000000000000000",
+      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
+      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+    },
+    {
+      "symbol": "GME",
+      "name": "GameStop",
+      "category": "stock",
+      "address": "0x1b0E319c6A659F002271B69dB8A7df2F911c153E",
+      "provenance": "robinhood-asset-registry",
+      "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x1b0e319c6a659f002271b69db8a7df2f911c153e.png",
+      "referencePrice": {
+        "kind": "chainlink-usd",
+        "feedAddress": "0x27C71df6A64fB476468EdF256CF72c038baB5B67",
+        "heartbeatSeconds": 86400,
+        "oraclePausedCheck": true
+      },
+      "candidatePools": [
+        {
+          "poolId": "0xca11843fcb588e837565f1b728dfa6832fa25d64d0825147a10843d25f800804",
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        }
+      ],
+      "selectedPool": "0xca11843fcb588e837565f1b728dfa6832fa25d64d0825147a10843d25f800804",
+      "capWei": "2500000000000000",
+      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
+      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
+    },
+    {
+      "symbol": "QQQ",
+      "name": "Invesco QQQ Trust",
+      "category": "stock",
+      "address": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+      "provenance": "robinhood-asset-registry",
+      "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xd5f3879160bc7c32ebb4dc785f8a4f505888de68.png",
+      "referencePrice": {
+        "kind": "chainlink-usd",
+        "feedAddress": "0x80901d846d5D7B030F26B480776EE3b29374C2ae",
+        "heartbeatSeconds": 86400,
+        "oraclePausedCheck": true
+      },
+      "candidatePools": [
+        {
+          "poolId": "0x7ba2c8a5f53ee4cda9ef07effe81bb8509efafb79a26d0e33b28ada879e5bb52",
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        }
+      ],
+      "selectedPool": "0x7ba2c8a5f53ee4cda9ef07effe81bb8509efafb79a26d0e33b28ada879e5bb52",
+      "capWei": "1000000000000000",
+      "qualificationStatus": "pending-one-hour-and-broadcast-fork",
+      "evidenceHash": "f561e8bda9d2442c623c8e4ad2de37a991cf96a70ea888ea8aabdc9fa73382a4"
     }
   ],
-  "observedButRejected": [
-    {
-      "symbol": "APE",
-      "reason": "round-trip loss exceeded policy at 0.05 ETH"
-    },
-    {
-      "symbol": "ENA",
-      "reason": "unacceptable round-trip loss"
-    },
-    {
-      "symbol": "sUSDe",
-      "reason": "unacceptable round-trip loss"
-    },
-    {
-      "symbol": "CHZ",
-      "reason": "unacceptable round-trip loss"
-    },
-    {
-      "symbol": "weETH",
-      "reason": "unacceptable round-trip loss"
-    },
-    {
-      "symbol": "PEPPER",
-      "reason": "no qualifying direct Uniswap v4 route"
-    },
+  "provenanceWatchlist": [
     {
       "symbol": "WBTC",
-      "reason": "not present in the live LayerZero Robinhood destination catalog"
+      "address": null,
+      "status": "unavailable",
+      "reason": "No authoritative canonical Robinhood chain-4663 contract published"
+    },
+    {
+      "symbol": "WSOL",
+      "address": null,
+      "status": "unavailable",
+      "reason": "No authoritative canonical Robinhood chain-4663 contract published"
+    },
+    {
+      "symbol": "WBNB",
+      "address": null,
+      "status": "unavailable",
+      "reason": "No authoritative canonical Robinhood chain-4663 contract published"
     }
-  ],
-  "sources": {
-    "robinhoodContracts": "https://docs.robinhood.com/chain/contracts/",
-    "robinhoodAssetApi": "https://api.robinhood.com/rhj/assets",
-    "layerZeroTokens": "https://transfer.layerzero-api.com/v1/tokens",
-    "stockRouteEvidence": "/home/hendo420/robyn-evidence/schema11-final-readiness/mainnet-stock-support-matrix.json"
-  }
+  ]
 }

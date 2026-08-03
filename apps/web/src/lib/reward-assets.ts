@@ -33,6 +33,9 @@ export function assetVerificationLabel(verification: string) {
   if (verification === "canonical-weth-runtime") {
     return "Canonical WETH";
   }
+  if (verification === "robinhood-mainnet-token-runtime") {
+    return "Mainnet runtime verified";
+  }
   if (verification === "robinhood-mainnet-token-runtime-and-v4-route") {
     return "Mainnet runtime + route verified";
   }
@@ -73,6 +76,9 @@ function assetDescription(asset: {
   }
   if (asset.verification === "official-robinhood-current-chain") {
     return `${asset.name} (${asset.symbol}) is identified by its current-chain contract address and canonical Robinhood metadata.`;
+  }
+  if (asset.verification === "robinhood-mainnet-token-runtime") {
+    return `${asset.name} (${asset.symbol}) has verified canonical Mainnet runtime identity; route qualification is separate.`;
   }
   if (asset.verification === "robinhood-mainnet-token-runtime-and-v4-route") {
     return `${asset.name} (${asset.symbol}) is verified by its Mainnet runtime and qualified Sherwood v4 route.`;

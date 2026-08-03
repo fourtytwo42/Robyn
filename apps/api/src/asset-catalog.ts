@@ -10,6 +10,12 @@ import {
   type PublicClient,
 } from "viem";
 import { SingleFlightTtlCache } from "./single-flight-cache.js";
+import {
+  ChainlinkReferencePriceService,
+  type ChainlinkFeedPolicy,
+  type ChainlinkPolicy,
+  type ReferencePrice,
+} from "./chainlink-reference-price.js";
 
 export type AssetCategory = "stock" | "etf-commodity" | "crypto" | "custom";
 export type AssetVerification =
@@ -20,6 +26,7 @@ export type AssetVerification =
   | "robyn-token-list"
   | "canonical-weth-runtime"
   | "robinhood-mainnet-token-runtime-and-v4-route"
+  | "robinhood-mainnet-token-runtime"
   | "unverified-erc20";
 
 export type AssetRoute = {
@@ -34,9 +41,19 @@ export type AssetRoute = {
   maximumAssetInput?: string | null;
   lastSuccessfulExecution?: string | null;
   disabledReason?: string | null;
+  contractReady?: boolean;
+  marketReady?: boolean;
+  selectable?: boolean;
+  poolId?: `0x${string}` | null;
+  minimumLiquidity?: string | null;
+  spotTick?: number | null;
+  referenceTick?: number | null;
+  maximumReferenceTickDeviation?: number | null;
+  roundTripRecoveryBps?: number | null;
+  marketCheckedAt?: string | null;
 };
 
-export type AssetLivePrice = {
+export type AssetPoolPrice = {
   kind: "exact-native" | "pool-implied";
   status: "available" | "unavailable";
   nativePerAsset: string | null;
@@ -44,6 +61,8 @@ export type AssetLivePrice = {
   quoteAmountAsset: string | null;
   quotedAt: string | null;
   reason: string | null;
+  poolId?: `0x${string}` | null;
+  poolFee?: number | null;
 };
 
 export type CatalogAsset = {
@@ -61,8 +80,10 @@ export type CatalogAsset = {
   mainnetAddress: Address | null;
   referencePriceUsd: string | null;
   referencePriceAt: string | null;
+  referencePrice: ReferencePrice;
   route: AssetRoute;
-  livePrice?: AssetLivePrice;
+  poolPrice?: AssetPoolPrice;
+  livePrice?: AssetPoolPrice;
 };
 
 type ManifestAsset = {
@@ -79,12 +100,25 @@ type ManifestAsset = {
   verification: AssetVerification;
   mockOnly: boolean;
   route?: { kind?: AssetRoute["kind"]; ready?: boolean };
+  referencePrice?: ChainlinkFeedPolicy;
+  pool?: {
+    fee: number;
+    tickSpacing: number;
+    hooks: Address;
+    poolId?: `0x${string}` | null;
+    zeroForOne?: boolean;
+    quoteAmountNativeWei?: string;
+  };
 };
 
 export type AssetCatalogManifest = {
   schemaVersion: number;
   snapshotAt: string;
   disclosure: string;
+  policyVersion?: string;
+  policyHash?: string;
+  chainlink?: ChainlinkPolicy;
+  v4Venue?: { quoter?: Address | null };
   assets: ManifestAsset[];
 };
 
@@ -222,6 +256,39 @@ const v4AssetRouterAbi = [
     outputs: [{ type: "uint256" }, { type: "uint256" }],
   },
 ] as const;
+const v4QuoterAbi = [
+  {
+    type: "function",
+    name: "quoteExactInputSingle",
+    stateMutability: "nonpayable",
+    inputs: [
+      {
+        name: "params",
+        type: "tuple",
+        components: [
+          {
+            name: "poolKey",
+            type: "tuple",
+            components: [
+              { name: "currency0", type: "address" },
+              { name: "currency1", type: "address" },
+              { name: "fee", type: "uint24" },
+              { name: "tickSpacing", type: "int24" },
+              { name: "hooks", type: "address" },
+            ],
+          },
+          { name: "zeroForOne", type: "bool" },
+          { name: "exactAmount", type: "uint128" },
+          { name: "hookData", type: "bytes" },
+        ],
+      },
+    ],
+    outputs: [
+      { name: "amount", type: "uint256" },
+      { name: "gasEstimate", type: "uint256" },
+    ],
+  },
+] as const;
 
 const zeroAddress = "0x0000000000000000000000000000000000000000" as Address;
 
@@ -280,6 +347,7 @@ function v4ExecutionKind(value: number): AssetRoute["kind"] {
 
 export class AssetCatalogService {
   private readonly byAddress: Map<string, ManifestAsset>;
+  private readonly referencePrices: ChainlinkReferencePriceService;
   private readonly assetCache = new SingleFlightTtlCache<CatalogAsset | null>(
     600_000,
     256,
@@ -292,6 +360,10 @@ export class AssetCatalogService {
     private readonly routeRegistry: Address | undefined,
     private readonly manifest: AssetCatalogManifest | undefined,
   ) {
+    this.referencePrices = new ChainlinkReferencePriceService(
+      rpcClient,
+      manifest?.chainlink,
+    );
     this.byAddress = new Map(
       (manifest?.assets ?? []).map((asset) => [
         asset.address.toLowerCase(),
@@ -328,7 +400,7 @@ export class AssetCatalogService {
         ...(await Promise.all(
           filtered
             .slice(offset, offset + 3)
-            .map((asset) => this.withLivePrice(asset)),
+            .map((asset) => this.withMarketData(asset)),
         )),
       );
     }
@@ -337,7 +409,7 @@ export class AssetCatalogService {
 
   async resolveWithLivePrice(value: string) {
     const asset = await this.resolve(value);
-    return asset ? this.withLivePrice(asset) : null;
+    return asset ? this.withMarketData(asset) : null;
   }
 
   async resolve(value: string): Promise<CatalogAsset | null> {
@@ -373,6 +445,16 @@ export class AssetCatalogService {
         mainnetAddress: known.mainnetAddress ?? null,
         referencePriceUsd: known.referencePriceUsd ?? null,
         referencePriceAt: this.manifest?.snapshotAt ?? null,
+        referencePrice: {
+          kind: "unavailable",
+          status: "unavailable",
+          usdPerToken: null,
+          feedAddress: known.referencePrice?.feedAddress ?? null,
+          feedTimestamp: null,
+          heartbeatSeconds: known.referencePrice?.heartbeatSeconds ?? null,
+          reason: "Reference price has not been checked",
+          sequencerStatus: "not-published",
+        },
         route: await this.readRoute(address, known.route),
       };
     }
@@ -413,6 +495,16 @@ export class AssetCatalogService {
       mainnetAddress: null,
       referencePriceUsd: null,
       referencePriceAt: null,
+      referencePrice: {
+        kind: "unavailable",
+        status: "unavailable",
+        usdPerToken: null,
+        feedAddress: null,
+        feedTimestamp: null,
+        heartbeatSeconds: null,
+        reason: "Unverified assets do not have a qualified Chainlink feed",
+        sequencerStatus: "not-published",
+      },
       route,
     };
   }
@@ -434,6 +526,134 @@ export class AssetCatalogService {
       functionName: "quoteExactInput",
       args: [this.baseAsset, address, amount],
     });
+  }
+
+  private async withMarketData(asset: CatalogAsset): Promise<CatalogAsset> {
+    const policyAsset = this.byAddress.get(asset.address.toLowerCase());
+    const legacyFixture =
+      policyAsset?.mockOnly && policyAsset.referencePriceUsd
+        ? {
+            kind: "test-fixture" as const,
+            fixtureUsd: policyAsset.referencePriceUsd,
+          }
+        : undefined;
+    const referencePrice = await this.referencePrices.read(
+      asset.address,
+      policyAsset?.referencePrice ?? legacyFixture,
+    );
+    const legacyPriced = await this.withLivePrice(asset);
+    let poolPrice = legacyPriced.livePrice!;
+    let roundTripRecoveryBps: number | null = null;
+
+    if (asset.route.kind === "wrapped-native") {
+      roundTripRecoveryBps = 10_000;
+    } else if (policyAsset?.pool && this.manifest?.v4Venue?.quoter) {
+      const configuredProbe = BigInt(
+        policyAsset.pool.quoteAmountNativeWei ?? "100000000000000",
+      );
+      const configuredMaximum = BigInt(asset.route.maximumNativeInput ?? "0");
+      const quoteAmount =
+        configuredMaximum > 0n && configuredMaximum < configuredProbe
+          ? configuredMaximum
+          : configuredProbe;
+      try {
+        if (quoteAmount <= 0n) throw new Error("zero quote capacity");
+        const forward = await this.rawPoolQuote(
+          asset.address,
+          policyAsset.pool,
+          quoteAmount,
+          policyAsset.pool.zeroForOne ?? true,
+        );
+        const reverse = await this.rawPoolQuote(
+          asset.address,
+          policyAsset.pool,
+          forward,
+          !(policyAsset.pool.zeroForOne ?? true),
+        );
+        if (forward <= 0n || reverse <= 0n) throw new Error("empty quote");
+        const nativePerAssetWei =
+          (quoteAmount * 10n ** BigInt(asset.decimals)) / forward;
+        roundTripRecoveryBps = Number((reverse * 10_000n) / quoteAmount);
+        poolPrice = {
+          kind: "pool-implied",
+          status: "available",
+          nativePerAsset: formatUnits(nativePerAssetWei, 18),
+          quoteAmountNative: quoteAmount.toString(),
+          quoteAmountAsset: forward.toString(),
+          quotedAt: new Date().toISOString(),
+          reason: null,
+          poolId: policyAsset.pool.poolId ?? asset.route.poolId ?? null,
+          poolFee: policyAsset.pool.fee,
+        };
+      } catch {
+        poolPrice = {
+          kind: "pool-implied",
+          status: "unavailable",
+          nativePerAsset: null,
+          quoteAmountNative: quoteAmount.toString(),
+          quoteAmountAsset: null,
+          quotedAt: null,
+          reason: "Fresh bounded pool quote is unavailable",
+          poolId: policyAsset.pool.poolId ?? asset.route.poolId ?? null,
+          poolFee: policyAsset.pool.fee,
+        };
+      }
+    }
+
+    const contractReady = asset.route.ready;
+    const marketReady =
+      poolPrice.status === "available" &&
+      (roundTripRecoveryBps == null || roundTripRecoveryBps >= 9_500);
+    const selectable =
+      asset.route.kind === "wrapped-native"
+        ? contractReady && BigInt(asset.route.maximumNativeInput ?? "0") > 0n
+        : contractReady && marketReady && referencePrice.status === "available";
+    return {
+      ...legacyPriced,
+      referencePrice,
+      referencePriceUsd: referencePrice.usdPerToken,
+      referencePriceAt: referencePrice.feedTimestamp,
+      poolPrice,
+      livePrice: poolPrice,
+      route: {
+        ...asset.route,
+        contractReady,
+        marketReady,
+        selectable,
+        roundTripRecoveryBps,
+        marketCheckedAt: poolPrice.quotedAt,
+      },
+    };
+  }
+
+  private async rawPoolQuote(
+    asset: Address,
+    pool: NonNullable<ManifestAsset["pool"]>,
+    amount: bigint,
+    zeroForOne: boolean,
+  ) {
+    const quoter = this.manifest?.v4Venue?.quoter;
+    if (!quoter) throw new Error("raw quoter unavailable");
+    const result = await this.rpcClient.simulateContract({
+      address: quoter,
+      abi: v4QuoterAbi,
+      functionName: "quoteExactInputSingle",
+      args: [
+        {
+          poolKey: {
+            currency0: zeroAddress,
+            currency1: asset,
+            fee: pool.fee,
+            tickSpacing: pool.tickSpacing,
+            hooks: pool.hooks,
+          },
+          zeroForOne,
+          exactAmount: amount,
+          hookData: "0x",
+        },
+      ],
+    });
+    return result.result[0];
   }
 
   private async withLivePrice(asset: CatalogAsset): Promise<CatalogAsset> {
@@ -582,6 +802,7 @@ export class AssetCatalogService {
         return {
           kind: v4ExecutionKind(execution.kind),
           ready: execution.ready,
+          contractReady: execution.ready,
           venue: this.routeRegistry,
           poolFee: status.fee === 0 ? null : status.fee,
           liquidity: execution.kind === 1 ? status.liquidity.toString() : null,
@@ -590,6 +811,13 @@ export class AssetCatalogService {
           maximumAssetInput: execution.maximumAssetInput.toString(),
           lastSuccessfulExecution: null,
           disabledReason: reasonText(execution.disabledReason),
+          poolId: execution.kind === 1 ? status.poolId : null,
+          minimumLiquidity:
+            execution.kind === 1 ? status.minimumLiquidity.toString() : null,
+          spotTick: execution.kind === 1 ? status.spotTick : null,
+          referenceTick: execution.kind === 1 ? status.referenceTick : null,
+          maximumReferenceTickDeviation:
+            execution.kind === 1 ? status.maximumReferenceTickDeviation : null,
         };
       } catch {
         const ready = fallback?.ready === true;

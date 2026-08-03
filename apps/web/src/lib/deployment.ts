@@ -63,6 +63,14 @@ export type Deployment = {
     schemaVersion: number;
     snapshotAt: string;
     disclosure: string;
+    policyVersion?: string;
+    policyHash?: string;
+    chainlink?: {
+      cacheTtlSeconds?: number;
+      sequencerUptimeFeed?: Address | null;
+      sequencerGracePeriodSeconds?: number;
+    };
+    v4Venue?: { poolManager?: Address; quoter?: Address };
     assets: Array<{
       address: Address;
       symbol: string;
@@ -74,6 +82,22 @@ export type Deployment = {
       mockOnly: boolean;
       decimals: number;
       referencePriceUsd?: string | null;
+      referencePrice?: {
+        kind: "chainlink-usd" | "test-fixture" | "none";
+        feedAddress?: Address | null;
+        heartbeatSeconds?: number | null;
+        oraclePauseCheck?: boolean;
+        fixtureUsd?: string | null;
+      };
+      route?: { kind?: string; ready?: boolean };
+      pool?: {
+        fee: number;
+        tickSpacing: number;
+        hooks: Address;
+        poolId?: Hex | null;
+        zeroForOne?: boolean;
+        quoteAmountNativeWei?: string;
+      };
     }>;
   };
   dao?: {

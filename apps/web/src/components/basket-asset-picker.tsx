@@ -27,6 +27,16 @@ export type BasketAsset = {
   mainnetAddress: Address | null;
   referencePriceUsd: string | null;
   referencePriceAt: string | null;
+  referencePrice: {
+    kind: "chainlink-usd" | "test-fixture" | "unavailable";
+    status: "available" | "unavailable";
+    usdPerToken: string | null;
+    feedAddress: Address | null;
+    feedTimestamp: string | null;
+    heartbeatSeconds: number | null;
+    reason: string | null;
+    sequencerStatus: "healthy" | "unavailable" | "not-published";
+  };
   route: {
     kind:
       "none" | "fixed-testnet" | "uniswap-v3" | "uniswap-v4" | "wrapped-native";
@@ -39,8 +49,13 @@ export type BasketAsset = {
     maximumAssetInput?: string | null;
     lastSuccessfulExecution?: string | null;
     disabledReason?: string | null;
+    contractReady?: boolean;
+    marketReady?: boolean;
+    selectable?: boolean;
+    roundTripRecoveryBps?: number | null;
+    marketCheckedAt?: string | null;
   };
-  livePrice?: {
+  poolPrice?: {
     kind: "exact-native" | "pool-implied";
     status: "available" | "unavailable";
     nativePerAsset: string | null;
@@ -48,7 +63,10 @@ export type BasketAsset = {
     quoteAmountAsset: string | null;
     quotedAt: string | null;
     reason: string | null;
+    poolId?: `0x${string}` | null;
+    poolFee?: number | null;
   };
+  livePrice?: BasketAsset["poolPrice"];
 };
 
 type AssetResponse = {
@@ -58,6 +76,10 @@ type AssetResponse = {
 
 function shortAddress(address: string) {
   return `${address.slice(0, 8)}...${address.slice(-6)}`;
+}
+
+function isSelectable(asset: BasketAsset) {
+  return asset.route.selectable ?? asset.route.ready;
 }
 
 function AssetLogo({ asset }: { asset: BasketAsset }) {
@@ -184,9 +206,9 @@ export function BasketAssetPicker({
   }
 
   function add(asset: BasketAsset) {
-    if (!asset.route.ready)
+    if (!(asset.route.selectable ?? isSelectable(asset)))
       return setMessage(
-        `No funded conversion route: ${asset.route.reason ?? "unavailable"}.`,
+        `Asset unavailable: ${asset.referencePrice.reason ?? asset.poolPrice?.reason ?? asset.route.reason ?? "qualification failed"}.`,
       );
     if (
       selected.some(
@@ -508,48 +530,63 @@ function AssetRow({
       </div>
       <div className="asset-picker-market">
         <div className="asset-price-pair">
-          <span>Static reference</span>
+          <span>
+            {asset.referencePrice.kind === "test-fixture"
+              ? "Test fixture"
+              : "Chainlink reference"}
+          </span>
           <strong>
-            {asset.referencePriceUsd
-              ? `$${asset.referencePriceUsd} USD`
-              : "Not published"}
+            {asset.referencePrice.status === "available" &&
+            asset.referencePrice.usdPerToken
+              ? `$${asset.referencePrice.usdPerToken} USD`
+              : "Unavailable"}
           </strong>
+          {asset.referencePrice.status === "unavailable" ? (
+            <small>{asset.referencePrice.reason}</small>
+          ) : null}
         </div>
         <div className="asset-price-pair live">
           <span>
-            {asset.livePrice?.kind === "exact-native"
-              ? "Native value"
-              : "Live route · pool-implied"}
+            {asset.poolPrice?.kind === "exact-native"
+              ? "Native parity"
+              : "Pool-implied price"}
           </span>
           <strong>
-            {asset.livePrice?.status === "available" &&
-            compactNativePrice(asset.livePrice.nativePerAsset)
-              ? `${compactNativePrice(asset.livePrice.nativePerAsset)} ETH`
+            {asset.poolPrice?.status === "available" &&
+            compactNativePrice(asset.poolPrice.nativePerAsset)
+              ? `${compactNativePrice(asset.poolPrice.nativePerAsset)} ETH`
               : "Unavailable"}
           </strong>
         </div>
         <span
-          className={asset.route.ready ? "route-ready" : "route-unavailable"}
+          className={isSelectable(asset) ? "route-ready" : "route-unavailable"}
         >
-          {asset.route.ready
+          {isSelectable(asset)
             ? asset.route.kind === "fixed-testnet"
               ? "Funded mock route"
               : asset.route.kind === "wrapped-native"
                 ? "Direct WETH route"
                 : "Live Uniswap v4 route"
-            : (asset.route.reason ?? "No route")}
+            : (asset.referencePrice.reason ??
+              asset.poolPrice?.reason ??
+              asset.route.reason ??
+              "Unavailable")}
         </span>
-        {asset.route.ready && asset.livePrice?.status === "unavailable" ? (
-          <span className="route-unavailable">{asset.livePrice.reason}</span>
+        {isSelectable(asset) && asset.poolPrice?.status === "unavailable" ? (
+          <span className="route-unavailable">{asset.poolPrice.reason}</span>
         ) : null}
       </div>
       <button
         className="button compact"
         type="button"
-        disabled={!asset.route.ready || alreadySelected}
+        disabled={!isSelectable(asset) || alreadySelected}
         onClick={() => onAdd(asset)}
       >
-        {alreadySelected ? "Added" : asset.route.ready ? "Add" : "Unavailable"}
+        {alreadySelected
+          ? "Added"
+          : isSelectable(asset)
+            ? "Add"
+            : "Unavailable"}
       </button>
     </article>
   );
