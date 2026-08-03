@@ -255,18 +255,12 @@ test("production updater follows authenticated asset redirects under the hardene
     updater,
     /curl -fsSL --proto '=https' --proto-redir '=https' --max-redirs 3/,
   );
-  assert.match(
-    updater,
-    /headers=\(-H "X-GitHub-Api-Version: 2022-11-28"\)/,
-  );
+  assert.match(updater, /headers=\(-H "X-GitHub-Api-Version: 2022-11-28"\)/);
   assert.match(
     updater,
     /-H "Accept: application\/vnd\.github\+json" "\$\{api\}\/releases\?per_page=30"/,
   );
-  assert.match(
-    updater,
-    /-H "Accept: application\/octet-stream" "\$\{url\}"/,
-  );
+  assert.match(updater, /-H "Accept: application\/octet-stream" "\$\{url\}"/);
   assert.match(
     updater,
     /tar --no-same-owner --zstd -xf "\$\{work\}\/runtime\.tar\.zst"/,
@@ -280,19 +274,21 @@ test("production updater follows authenticated asset redirects under the hardene
   const readableIndex = updater.indexOf('chmod -R a+rX,go-w "${target}"');
   const immutableIndex = updater.indexOf('chmod -R a-w "${target}"');
   assert.ok(
-    moveIndex >= 0 && readableIndex > moveIndex && immutableIndex > readableIndex,
+    moveIndex >= 0 &&
+      readableIndex > moveIndex &&
+      immutableIndex > readableIndex,
   );
   assert.match(
     updaterService,
     /^CapabilityBoundingSet=CAP_SETUID CAP_SETGID$/m,
   );
-  assert.doesNotMatch(updaterService, /CAP_DAC_OVERRIDE|CAP_CHOWN|CAP_NET_ADMIN/);
+  assert.doesNotMatch(
+    updaterService,
+    /CAP_DAC_OVERRIDE|CAP_CHOWN|CAP_NET_ADMIN/,
+  );
   assert.match(updaterService, /^WorkingDirectory=\/$/m);
   assert.match(updater, /HOME=\/var\/lib\/robynapp/);
-  assert.match(
-    updater,
-    /ecosystem\.mainnet\.production\.config\.cjs/,
-  );
+  assert.match(updater, /ecosystem\.mainnet\.production\.config\.cjs/);
   assert.match(
     updater,
     /ecosystem\.mainnet\.production\.cjs" \\\n+    "\$\{pm2_config\}"/,
@@ -302,7 +298,10 @@ test("production updater follows authenticated asset redirects under the hardene
     updater,
     /\/usr\/local\/bin\/pm2 delete "\$\{process_names\[@\]\}"/,
   );
-  assert.match(updater, /\/usr\/local\/bin\/pm2 start "\$\{pm2_config\}" --update-env/);
+  assert.match(
+    updater,
+    /\/usr\/local\/bin\/pm2 start "\$\{pm2_config\}" --update-env/,
+  );
   assert.doesNotMatch(updater, /startOrReload/);
   assert.match(updater, /curl -fsS http:\/\/127\.0\.0\.1:3121\/health/);
   assert.match(
@@ -384,10 +383,7 @@ test("production promotion reads but does not advance deployed-release state", (
     "utf8",
   );
 
-  assert.match(
-    promoter,
-    /\["-u", "robyn-release", "cat", stateFile\]/,
-  );
+  assert.match(promoter, /\["-u", "robyn-release", "cat", stateFile\]/);
   assert.doesNotMatch(promoter, /sourceSha: sha, tag, publishedAt:/);
   assert.doesNotMatch(promoter, /candidateState,\s*stateFile,/);
 });
@@ -401,10 +397,7 @@ test("mixed application releases reuse the frozen contract attestation", () => {
     readFileSync(path.join(repositoryRoot, "package.json"), "utf8"),
   );
 
-  assert.match(
-    promoter,
-    /mixed: \["pnpm", \["test:application-scope"\]\]/,
-  );
+  assert.match(promoter, /mixed: \["pnpm", \["test:application-scope"\]\]/);
   assert.match(
     packageJson.scripts["test:application-scope"],
     /^pnpm test:contracts:freeze /,

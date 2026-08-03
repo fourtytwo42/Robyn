@@ -304,9 +304,7 @@ export function NetworkPortfolioView({
         const { request } = await client.simulateContract({
           account: walletClient.account ?? wallet,
           address: deployment.contracts.claimsRouter ?? token,
-          abi: deployment.contracts.claimsRouter
-            ? claimsRouterAbi
-            : tokenAbi,
+          abi: deployment.contracts.claimsRouter ? claimsRouterAbi : tokenAbi,
           functionName: "claimAll",
           ...(deployment.contracts.claimsRouter ? { args: [token] } : {}),
         });

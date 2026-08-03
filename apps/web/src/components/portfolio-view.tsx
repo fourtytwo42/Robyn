@@ -287,9 +287,7 @@ export function PortfolioView({
         const { request } = await client.simulateContract({
           account,
           address: deployment.contracts.claimsRouter ?? token,
-          abi: deployment.contracts.claimsRouter
-            ? claimsRouterAbi
-            : tokenAbi,
+          abi: deployment.contracts.claimsRouter ? claimsRouterAbi : tokenAbi,
           functionName: "claimAll",
           ...(deployment.contracts.claimsRouter ? { args: [token] } : {}),
         });

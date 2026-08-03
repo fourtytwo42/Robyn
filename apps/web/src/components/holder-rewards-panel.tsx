@@ -171,9 +171,7 @@ export function HolderRewardsPanel({
         address: claimsRouter ?? token,
         abi: claimsRouter ? claimsRouterAbi : tokenAbi,
         functionName: "claimAll",
-        ...(claimsRouter
-          ? { args: [token] as const }
-          : {}),
+        ...(claimsRouter ? { args: [token] as const } : {}),
       });
       const hash = await walletClient.writeContract(request);
       setStatus(`Claim submitted: ${hash.slice(0, 12)}...`);

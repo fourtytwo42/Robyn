@@ -60,7 +60,9 @@ test("production topology is six keyless services with no keeper", () => {
     topology.apps.some((app) => app.name.includes("keeper")),
     false,
   );
-  const api = topology.apps.find((app) => app.name === "robyn-api-mainnet-prod");
+  const api = topology.apps.find(
+    (app) => app.name === "robyn-api-mainnet-prod",
+  );
   assert.equal(api.env.ROBYN_KEEPER_EXPECTED, "false");
   assert.equal(
     api.env.ROBYN_MANIFEST,

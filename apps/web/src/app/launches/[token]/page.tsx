@@ -303,7 +303,10 @@ export default async function LaunchDetail({
                       <dl className="reward-pulse-metrics">
                         <div>
                           <dt>Pending conversion</dt>
-                          <dd>{quantity(launch.maintenance.totalPendingNative, 6)} ETH</dd>
+                          <dd>
+                            {quantity(launch.maintenance.totalPendingNative, 6)}{" "}
+                            ETH
+                          </dd>
                         </div>
                         <div>
                           <dt>Tasks completed</dt>

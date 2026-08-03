@@ -2262,18 +2262,69 @@ async function schema19MaintenanceState(token: Address, vault: Address) {
     attempts,
     successes,
   ] = await Promise.all([
-    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "legCount" }),
-    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "fallbackAsset" }),
-    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "fallbackRewardIndex" }),
-    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "failureObservationSpacing" }),
-    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "fallbackDelay" }),
-    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "nextLegCursor" }),
-    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "totalFeesReceived" }),
-    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "totalNativeConsumed" }),
-    rpcClient.readContract({ address: vault, abi: schema19VaultAbi, functionName: "totalPendingNative" }),
-    rpcClient.readContract({ address: maintenance, abi: schema19MaintenanceAbi, functionName: "nextTask", args: [token] }),
-    rpcClient.readContract({ address: maintenance, abi: schema19MaintenanceAbi, functionName: "attemptCount", args: [token] }),
-    rpcClient.readContract({ address: maintenance, abi: schema19MaintenanceAbi, functionName: "successCount", args: [token] }),
+    rpcClient.readContract({
+      address: vault,
+      abi: schema19VaultAbi,
+      functionName: "legCount",
+    }),
+    rpcClient.readContract({
+      address: vault,
+      abi: schema19VaultAbi,
+      functionName: "fallbackAsset",
+    }),
+    rpcClient.readContract({
+      address: vault,
+      abi: schema19VaultAbi,
+      functionName: "fallbackRewardIndex",
+    }),
+    rpcClient.readContract({
+      address: vault,
+      abi: schema19VaultAbi,
+      functionName: "failureObservationSpacing",
+    }),
+    rpcClient.readContract({
+      address: vault,
+      abi: schema19VaultAbi,
+      functionName: "fallbackDelay",
+    }),
+    rpcClient.readContract({
+      address: vault,
+      abi: schema19VaultAbi,
+      functionName: "nextLegCursor",
+    }),
+    rpcClient.readContract({
+      address: vault,
+      abi: schema19VaultAbi,
+      functionName: "totalFeesReceived",
+    }),
+    rpcClient.readContract({
+      address: vault,
+      abi: schema19VaultAbi,
+      functionName: "totalNativeConsumed",
+    }),
+    rpcClient.readContract({
+      address: vault,
+      abi: schema19VaultAbi,
+      functionName: "totalPendingNative",
+    }),
+    rpcClient.readContract({
+      address: maintenance,
+      abi: schema19MaintenanceAbi,
+      functionName: "nextTask",
+      args: [token],
+    }),
+    rpcClient.readContract({
+      address: maintenance,
+      abi: schema19MaintenanceAbi,
+      functionName: "attemptCount",
+      args: [token],
+    }),
+    rpcClient.readContract({
+      address: maintenance,
+      abi: schema19MaintenanceAbi,
+      functionName: "successCount",
+      args: [token],
+    }),
   ]);
   const legs = await Promise.all(
     Array.from({ length: Number(legCount) }, async (_, index) => {

@@ -36,11 +36,11 @@ test("governance binds current policy and immutable qualification evidence separ
   const governance = readFileSync(governanceSource, "utf8");
   assert.match(governance, /const POLICY_HASH = "ec5c8f9c/);
   assert.match(governance, /const QUALIFICATION_POLICY_HASH =/);
-  assert.match(governance, /qualificationPolicyHash: QUALIFICATION_POLICY_HASH/);
-  assert.doesNotMatch(
+  assert.match(
     governance,
-    /qualification\.policyHash !== POLICY_HASH/,
+    /qualificationPolicyHash: QUALIFICATION_POLICY_HASH/,
   );
+  assert.doesNotMatch(governance, /qualification\.policyHash !== POLICY_HASH/);
 });
 
 test("rejects noncanonical duplicate addresses", () => {
@@ -111,18 +111,20 @@ test("rejects a selected pool or cap outside the qualified policy", () => {
 
 test("rejects missing observed route controls after qualification", () => {
   assert.throws(
-    () => run((policy) => {
-      delete policy.assets[1].selectedRoute.minimumLiquidity;
-    }),
+    () =>
+      run((policy) => {
+        delete policy.assets[1].selectedRoute.minimumLiquidity;
+      }),
     /requires a nonzero observed liquidity floor/,
   );
 });
 
 test("rejects a stale qualified evidence timestamp", () => {
   assert.throws(
-    () => run((policy) => {
-      policy.lastVerifiedAt = null;
-    }),
+    () =>
+      run((policy) => {
+        policy.lastVerifiedAt = null;
+      }),
     /qualified policy requires lastVerifiedAt/,
   );
 });
