@@ -848,9 +848,7 @@ const run = async () => {
   };
 
   if (stage === "maintenance") {
-    if ((await latestTime()) < BigInt(state.graduatedAt) + 301n) {
-      throw new Error("fee settlement delay is not complete");
-    }
+    await waitUntil(BigInt(state.graduatedAt) + 301n);
     await write("maintenance", "create-convertible-token-fees", contracts.tradeRouter, built.tradeRouter.abi, "buy", [market, 1n], 1_000_000_000_000n);
     let fallbackEvidence = null;
     if (!mainnetFork) {
@@ -1085,9 +1083,8 @@ const run = async () => {
   if (stage === "claims") {
     if (!state.completedStages.includes("maintenance")) throw new Error("claims require completed maintenance");
     const rewardDuration = BigInt(manifest.settings.rewardDuration);
-    if (!state.streamStartedAt || (await latestTime()) < BigInt(state.streamStartedAt) + rewardDuration) {
-      throw new Error("reward release is not complete");
-    }
+    if (!state.streamStartedAt) throw new Error("reward stream start is missing");
+    await waitUntil(BigInt(state.streamStartedAt) + rewardDuration);
     await write("claims", "holder", contracts.claimsRouter, built.claimsRouter.abi, "claimAll", [token]);
     await write("claims", "creator", contracts.feeRouter, built.feeRouter.abi, "claimCreatorFees", [token]);
     await write("claims", "dao", contracts.daoRewards, built.daoRewards.abi, "claimFor", [account.address, 256n]);
