@@ -1,5 +1,15 @@
 # Project Memory
 
+### 2026-08-04 - RDAO sale page adopts the token-market experience
+
+- Context: The public RDAO sale surface needed the same focused market hierarchy as ordinary launch-token pages; staking, rewards, and governance were already available in the DAO workspace and should not compete with the sale.
+- Decision: `/rdao` is now a dedicated public RDAO market page with identity and supply details, a deterministic bonding-curve chart, current and terminal price, fully diluted value, sale progress, curve principal, bonding fees, buy/sell controls, graduation lifecycle, and sale mechanics. It links to `/dao`, where Sale, Stake, Rewards, and Governance remain available.
+- Chart semantics: The chart is derived from the exact live constant-product curve and current sale state. It is labeled as a bonding-curve projection and does not fabricate historical market data or market capitalization.
+- Files: `apps/web/src/app/rdao/page.tsx`, `apps/web/src/components/rdao-token-market.tsx`, `apps/web/src/components/network-dao-view-devnet.tsx`, `apps/web/src/components/network-dao-view-testnet.tsx`, `apps/web/src/types/virtual-network-modules.d.ts`, `apps/web/src/app/globals.css`, and `apps/web/tests/marketing-pages.test.mjs`.
+- Verification: 87 web tests, typecheck, lint, diff checks, secret scan, dependency audit, exact frozen Schema-20 contract-tree attestation, and the protected immutable Devnet build passed. Desktop browser acceptance confirmed the chart, trade controls, responsive two-column layout, DAO link, no horizontal overflow, and zero console errors; `/dao` retained its four workspace tabs.
+- Deployment: Clean pushed application SHA `5aa57a553c73d353d37c88b6e26abd955653ca5e` is live as immutable Devnet web release `/opt/robyn/releases/5aa57a553c73d353d37c88b6e26abd955653ca5e`. Only `robyn-web` changed; contracts, APIs, indexers, chain state, Testnet, and Mainnet are unchanged.
+- Operations: Immediate rollback release `789dfc88376669cba2977e074770f24a917d185a` and the release referenced by `/opt/robyn/current` were retained. Five older superseded web bundles were removed after exact-path validation, increasing root free space from 9.4 GiB to 18 GiB.
+
 ### 2026-08-04 - RDAO sale becomes a public token surface
 
 - Context: The public 150m RDAO bonding sale was incorrectly hidden behind the legacy DAO-member page gate even though the Schema-20 sale contract accepts any wallet. The complete 20% allocation is 150m public sale plus 50m reserved for permanently locked liquidity.
