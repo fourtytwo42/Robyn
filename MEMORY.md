@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-03 - Corrected WETH application release sealed for authorization
+
+- Result: Application-only correction `eceb94f33be21cc64237ccf79d7cbe36cb37ce77` and operational binding `abbe65b00b2ad7f5605caf84bcdef0d1dda8c27c` are clean, pushed, and reachable from `origin/main`.
+- Qualification: Devnet, Testnet, and LAN-Mainnet-staging acceptance pass with scope `mixed`; all application tests, 84 API tests, typecheck, lint, production-release security tests, frozen-contract attestation, and the protected two-build runtime comparison pass. No Solidity was compiled or retested.
+- Release: Signed tag `mainnet-prod-20260804-abbe65b`; production release SHA-256 `caf94353e01de159beb9b3214142e4b9fb9912d2038c6adaaeb6c2046b13c98a`; runtime archive SHA-256 `98460d15e4b75f31a8309b32cc0ae92ae1a3b80e7e39b8c576c63a81701ff3e4`.
+- Authorization manifest: `/home/hendo420/robyn-evidence/schema19-mainnet/application-cutover-eceb94f-01/schema19-mainnet-application-cutover-manifest.json`, SHA-256 `a7edeb8e2b094d43979e7f9225504b78d5f47fbb1457623ff97a7453d4a69c06`. The evidence bundle checksum passes.
+- Safety: Production still serves release `8f7eab...`; transaction submission and the updater timer remain disabled. The corrected signed release has not been installed because the prior exact authorization prohibited changing the application release.
+- Follow-up: Obtain exact authorization for manifest `a7edeb8e...`, then deploy the signed release with writes disabled, verify all six selectable assets including direct WETH, complete responsive acceptance and emergency checks, enable submissions, and restart the updater/24-hour native monitoring.
+
 ### 2026-08-03 - Production acceptance found direct-WETH catalog defect
 
 - Context: The exact Schema-19 production runtime and fresh scoped database were deployed to the keyless host with transaction submission disabled. Responsive launch-wizard acceptance showed all five stock routes selectable but canonical WETH unavailable.
@@ -234,7 +243,7 @@
 - Public production submissions remain deliberately disabled on `192.168.50.108`. The Schema-19 database and exact authorized runtime are caught up, but browser acceptance found the direct-WETH catalog defect described above.
 - Operational HEAD begins at `ff6cffa885e0877391155a35ea03e44485c0ff80` plus the production-release-v2 binding change. Qualified application identity remains separately frozen at `0873abd4332c6283b374c92de3ce244bc60f291c`; `apps`, `packages`, and lock/workspace files are byte-identical between that application SHA and the operational source.
 - Production release policy is Schema 19, contract closure `8b4b591bebc896fe58ff4457cc72ecb6518862d8`, application-bound deployment manifest SHA-256 `d726ccc1a818e7fc916096e071e6db0bcb125b3754c9e82a92d0e2fa4d4ecadd`, and indexing policy SHA-256 `cd816f7b373bc6af79059b71d3cf0f1674ac56ef0a720574b6b6763c6b33facb0`.
-- Next: qualify a corrected application-only release, seal a superseding exact manifest, and obtain authorization because the prior authorization prohibited changing application release `0873abd...`. Do not enable submissions under the consumed authorization.
+- Next: obtain exact authorization for application-cutover manifest `a7edeb8e2b094d43979e7f9225504b78d5f47fbb1457623ff97a7453d4a69c06`. Do not install the signed corrected release or enable submissions under the consumed authorization.
 
 ## Current State
 - Schema-19 Mainnet launch mode is Public with production profile `6 ETH / 0.5 ETH`, one-hour rewards, active conversions, six ready routes, zero launches, and zero liabilities at initial verification.
@@ -251,9 +260,7 @@
 - Production-release-v2 focused tests, Schema-19 frozen-contract verification, script syntax, and application-runtime identity comparison pass. Full production promotion and browser acceptance remain pending.
 
 ## Open Follow-ups
-- Commit and push the direct-WETH catalog correction without modifying Solidity, deployment bytecode, routes, caps, contracts, database, or RPC policy.
-- Produce two reproducible application builds and new Devnet, Testnet, and LAN-Mainnet-staging acceptance records for the corrected clean SHA.
-- Seal a superseding signed production release/manifest and stop for exact authorization before production promotion or enabling submissions.
+- Exact authorization remains required for manifest `a7edeb8e...` before production promotion or enabling submissions.
 - After authorization, promote with writes disabled, verify WETH and all stock routes in desktop/mobile launch creation, then enable submissions only after emergency and transaction simulations pass.
 - After cutover, seal evidence and monitor the first 24 public hours. Keep Schema-18 archived and never migrate or replay its test-canary state.
 
