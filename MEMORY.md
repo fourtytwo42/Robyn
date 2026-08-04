@@ -5,7 +5,9 @@
 - Context: The public 150m RDAO bonding sale was incorrectly hidden behind the legacy DAO-member page gate even though the Schema-20 sale contract accepts any wallet. The complete 20% allocation is 150m public sale plus 50m reserved for permanently locked liquidity.
 - Decision: Feature live RDAO sale progress on the homepage, add a permanent public `/rdao` token page and navigation link, and bypass the legacy membership wrapper only for Schema-20 Devnet. Existing RDAO remains necessary only for selling, staking, reward, and governance actions.
 - Files: `apps/web/src/components/rdao-sale-spotlight.tsx`, `apps/web/src/app/rdao/page.tsx`, homepage, shared navigation, Devnet DAO access adapter, marketing tests, and responsive styles.
-- Verification: 86 web tests, typecheck, lint, and the protected Devnet build pass. Preview acceptance confirms `/rdao` and `/dao` render without a membership gate while disconnected. Testnet, Mainnet, contracts, APIs, indexers, and onchain state are unchanged.
+- Verification: 87 web tests, typecheck, lint, secret scan, dependency audit, frozen Schema-20 contract-tree attestation, and the protected Devnet build pass. Live browser acceptance confirms `/rdao`, `/dao`, and the homepage render reconciled sale data without the legacy member gate or console errors.
+- Deployment: Clean pushed application SHA `789dfc88376669cba2977e074770f24a917d185a` is live as immutable Devnet web release `/opt/robyn/releases/789dfc88376669cba2977e074770f24a917d185a`. The Devnet-only Next rewrite forwards direct port-3000 `/api/*` requests to the scoped data API at loopback port 3101; Testnet and Mainnet do not receive this rewrite.
+- Operations: Eight obsolete intermediate Devnet web release directories were removed after exact-path verification to recover 12 GiB; live release `68af533...` was retained until the successful cutover and rollback release `aae7c08...` remains available. Testnet, Mainnet, contracts, APIs, indexers, and onchain state are unchanged.
 
 ### 2026-08-04 - Sherwood sizzle reel replaces the explanatory film
 
