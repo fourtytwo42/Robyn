@@ -49,6 +49,8 @@ export type AssetRoute = {
   spotTick?: number | null;
   referenceTick?: number | null;
   maximumReferenceTickDeviation?: number | null;
+  tickSpacing?: number | null;
+  hooks?: Address | null;
   roundTripRecoveryBps?: number | null;
   marketCheckedAt?: string | null;
 };
@@ -251,6 +253,13 @@ const v4AssetRouterAbi = [
   {
     type: "function",
     name: "quoteNativeToAsset",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "address" }, { type: "uint128" }],
+    outputs: [{ type: "uint256" }, { type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "quoteAssetToNative",
     stateMutability: "nonpayable",
     inputs: [{ type: "address" }, { type: "uint128" }],
     outputs: [{ type: "uint256" }, { type: "uint256" }],
@@ -528,6 +537,17 @@ export class AssetCatalogService {
     });
   }
 
+  private async quoteAssetToNative(address: Address, amount: bigint) {
+    if (!this.routeRegistry || amount <= 0n) return null;
+    const result = await this.rpcClient.simulateContract({
+      address: this.routeRegistry,
+      abi: v4AssetRouterAbi,
+      functionName: "quoteAssetToNative",
+      args: [address, amount],
+    });
+    return result.result[0];
+  }
+
   private async withMarketData(asset: CatalogAsset): Promise<CatalogAsset> {
     const policyAsset = this.byAddress.get(asset.address.toLowerCase());
     const legacyFixture =
@@ -547,6 +567,52 @@ export class AssetCatalogService {
 
     if (asset.route.kind === "wrapped-native") {
       roundTripRecoveryBps = 10_000;
+    } else if (
+      asset.route.kind === "uniswap-v4" &&
+      asset.route.ready &&
+      this.usesNativeV4Routes()
+    ) {
+      const configuredProbe = BigInt(
+        policyAsset?.pool?.quoteAmountNativeWei ?? "100000000000000",
+      );
+      const configuredMaximum = BigInt(asset.route.maximumNativeInput ?? "0");
+      const quoteAmount =
+        configuredMaximum > 0n && configuredMaximum < configuredProbe
+          ? configuredMaximum
+          : configuredProbe;
+      try {
+        if (quoteAmount <= 0n) throw new Error("zero quote capacity");
+        const forward = await this.quote(asset.address, quoteAmount);
+        if (!forward || forward <= 0n) throw new Error("empty quote");
+        const reverse = await this.quoteAssetToNative(asset.address, forward);
+        if (!reverse || reverse <= 0n) throw new Error("empty reverse quote");
+        const nativePerAssetWei =
+          (quoteAmount * 10n ** BigInt(asset.decimals)) / forward;
+        roundTripRecoveryBps = Number((reverse * 10_000n) / quoteAmount);
+        poolPrice = {
+          kind: "pool-implied",
+          status: "available",
+          nativePerAsset: formatUnits(nativePerAssetWei, 18),
+          quoteAmountNative: quoteAmount.toString(),
+          quoteAmountAsset: forward.toString(),
+          quotedAt: new Date().toISOString(),
+          reason: null,
+          poolId: asset.route.poolId ?? null,
+          poolFee: asset.route.poolFee,
+        };
+      } catch {
+        poolPrice = {
+          kind: "pool-implied",
+          status: "unavailable",
+          nativePerAsset: null,
+          quoteAmountNative: quoteAmount.toString(),
+          quoteAmountAsset: null,
+          quotedAt: null,
+          reason: "Fresh bounded execution-route quote is unavailable",
+          poolId: asset.route.poolId ?? null,
+          poolFee: asset.route.poolFee,
+        };
+      }
     } else if (policyAsset?.pool && this.manifest?.v4Venue?.quoter) {
       const configuredProbe = BigInt(
         policyAsset.pool.quoteAmountNativeWei ?? "100000000000000",
@@ -820,6 +886,8 @@ export class AssetCatalogService {
           referenceTick: status?.referenceTick ?? null,
           maximumReferenceTickDeviation:
             status?.maximumReferenceTickDeviation ?? null,
+          tickSpacing: status?.tickSpacing ?? null,
+          hooks: status?.hooks ?? null,
         };
       } catch {
         const ready = fallback?.ready === true;

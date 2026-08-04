@@ -103,6 +103,15 @@ describe("AssetCatalogService", () => {
   it("reads and quotes native Uniswap v4 routes", async () => {
     const v4Manifest = manifest();
     v4Manifest.v4Venue = { quoter: registry };
+    v4Manifest.assets[0]!.pool = {
+      fee: 3_000,
+      tickSpacing: 60,
+      hooks: native,
+      poolId: `0x${"2".repeat(64)}`,
+      zeroForOne: true,
+      quoteAmountNativeWei: "10",
+    };
+    const simulatedFunctions: string[] = [];
     const client = {
       getCode: async () => "0x01",
       readContract: async ({ functionName }: { functionName: string }) => {
@@ -142,7 +151,12 @@ describe("AssetCatalogService", () => {
         }
         throw new Error(`unexpected ${functionName}`);
       },
-      simulateContract: async () => ({ result: [25n, 0n] }),
+      simulateContract: async ({ functionName }: { functionName: string }) => {
+        simulatedFunctions.push(functionName);
+        if (functionName === "quoteNativeToAsset") return { result: [25n, 0n] };
+        if (functionName === "quoteAssetToNative") return { result: [10n, 0n] };
+        throw new Error(`unexpected ${functionName}`);
+      },
     } as unknown as PublicClient;
     const service = new AssetCatalogService(
       client,
@@ -167,11 +181,15 @@ describe("AssetCatalogService", () => {
         livePrice: expect.objectContaining({
           kind: "pool-implied",
           status: "available",
-          quoteAmountNative: "1000000",
+          quoteAmountNative: "10",
           quoteAmountAsset: "25",
+          poolId: `0x${"1".repeat(64)}`,
+          poolFee: 10_000,
         }),
+        route: expect.objectContaining({ roundTripRecoveryBps: 10_000 }),
       }),
     ]);
+    expect(simulatedFunctions).not.toContain("quoteExactInputSingle");
   });
 
   it("keeps a direct WETH wrap selectable without reading a v4 pool", async () => {
