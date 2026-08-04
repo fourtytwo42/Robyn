@@ -5,6 +5,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   createPublicClient,
+  encodeAbiParameters,
   getAddress,
   http,
   keccak256,
@@ -18,18 +19,31 @@ if (!schema18Argument || !routeSourceArgument || !outputArgument) {
 }
 const schema18Path = path.resolve(schema18Argument);
 const routeSourcePath = path.resolve(routeSourceArgument);
+const assetPolicyPath = path.resolve(
+  process.env.ROBYN_SCHEMA19_MAINNET_ASSET_POLICY ??
+    "config/protocol/robinhood-mainnet-support-policy.json",
+);
 const outputPath = path.resolve(outputArgument);
-const [schema18Raw, routeSourceRaw] = await Promise.all([
+const [schema18Raw, routeSourceRaw, assetPolicyRaw] = await Promise.all([
   readFile(schema18Path, "utf8"),
   readFile(routeSourcePath, "utf8"),
+  readFile(assetPolicyPath, "utf8"),
 ]);
 const schema18 = JSON.parse(schema18Raw);
 const routeSource = JSON.parse(routeSourceRaw);
+const assetPolicy = JSON.parse(assetPolicyRaw);
 if (schema18.schemaVersion !== 18 || routeSource.schemaVersion !== 18) {
   throw new Error("Schema-18 governance and active route source required");
 }
 if (schema18.chainId !== 4663 || routeSource.chainId !== 4663) {
   throw new Error("chain 4663 manifests required");
+}
+if (
+  assetPolicy.schemaVersion !== 18 ||
+  assetPolicy.chainId !== 4663 ||
+  assetPolicy.status !== "qualified-awaiting-governance"
+) {
+  throw new Error("qualified Mainnet asset policy required");
 }
 const toolingSha = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 if (execFileSync("git", ["status", "--porcelain"], { encoding: "utf8" }).trim()) throw new Error("dirty Schema-19 checkout");
@@ -104,6 +118,10 @@ const quoterAbi = parseAbi([
   "function quoteExactInputSingle(((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) poolKey,bool zeroForOne,uint128 exactAmount,bytes hookData) params) returns (uint256 amountOut,uint256 gasEstimate)",
   "function quoteExactOutputSingle(((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) poolKey,bool zeroForOne,uint128 exactAmount,bytes hookData) params) returns (uint256 amountIn,uint256 gasEstimate)",
 ]);
+const feedAbi = parseAbi([
+  "function latestRoundData() view returns (uint80 roundId,int256 answer,uint256 startedAt,uint256 updatedAt,uint80 answeredInRound)",
+]);
+const stockOracleAbi = parseAbi(["function oraclePaused() view returns (bool)"]);
 const quote = async (functionName, poolKey, zeroForOne, exactAmount) => {
   const simulation = await client.simulateContract({
     address: external.quoter,
@@ -115,34 +133,65 @@ const quote = async (functionName, poolKey, zeroForOne, exactAmount) => {
 };
 const requiredSymbols = ["GOOGL", "MSFT", "NVDA", "SPCX", "SPY"];
 const rehearsalFailureFixtureSymbol = "MSFT";
-const sourceBySymbol = new Map(routeSource.assetRoutes.map((route) => [route.symbol, route]));
+const sourceBySymbol = new Map(assetPolicy.assets.map((asset) => [asset.symbol, asset]));
+const qualificationBlock = await client.getBlock();
 const routes = [];
 for (const symbol of requiredSymbols) {
   const source = sourceBySymbol.get(symbol);
   if (!source) throw new Error(`missing Mainnet route ${symbol}`);
   const asset = getAddress(source.address);
-  const [route, execution] = await Promise.all([
-    client.readContract({ address: routeRouter, abi: routeAbi, functionName: "routeStatus", args: [asset] }),
-    client.readContract({ address: routeRouter, abi: routeAbi, functionName: "executionRouteStatus", args: [asset] }),
-  ]);
-  if (!execution.enabled || execution.kind !== 1 || route.poolId.toLowerCase() !== source.poolId.toLowerCase()) {
-    throw new Error(`mismatched Mainnet route ${symbol}`);
+  if (source.qualificationStatus !== "qualified-readonly-and-local-fork" || !source.selectedPool) {
+    throw new Error(`unqualified Mainnet asset policy ${symbol}`);
   }
-  const [liquidity, slot0, assetCode] = await Promise.all([
-    client.readContract({ address: canonicalStateView, abi: stateViewAbi, functionName: "getLiquidity", args: [route.poolId] }),
-    client.readContract({ address: canonicalStateView, abi: stateViewAbi, functionName: "getSlot0", args: [route.poolId] }),
+  const selectedPool = source.candidatePools.find(
+    (pool) => pool.poolId.toLowerCase() === source.selectedPool.toLowerCase(),
+  );
+  if (!selectedPool) throw new Error(`selected Mainnet pool missing ${symbol}`);
+  const poolKey = {
+    currency0: "0x0000000000000000000000000000000000000000",
+    currency1: asset,
+    fee: selectedPool.fee,
+    tickSpacing: selectedPool.tickSpacing,
+    hooks: getAddress(selectedPool.hooks),
+  };
+  const derivedPoolId = keccak256(
+    encodeAbiParameters(
+      [
+        { type: "address" },
+        { type: "address" },
+        { type: "uint24" },
+        { type: "int24" },
+        { type: "address" },
+      ],
+      [poolKey.currency0, poolKey.currency1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks],
+    ),
+  );
+  if (derivedPoolId.toLowerCase() !== source.selectedPool.toLowerCase()) {
+    throw new Error(`selected Mainnet pool identity mismatch ${symbol}`);
+  }
+  const feedAddress = getAddress(source.referencePrice.feedAddress);
+  const [liquidity, slot0, assetCode, feedRound, oraclePaused] = await Promise.all([
+    client.readContract({ address: canonicalStateView, abi: stateViewAbi, functionName: "getLiquidity", args: [derivedPoolId] }),
+    client.readContract({ address: canonicalStateView, abi: stateViewAbi, functionName: "getSlot0", args: [derivedPoolId] }),
     client.getCode({ address: asset }),
+    client.readContract({ address: feedAddress, abi: feedAbi, functionName: "latestRoundData" }),
+    source.referencePrice.oraclePausedCheck
+      ? client.readContract({ address: asset, abi: stockOracleAbi, functionName: "oraclePaused" })
+      : false,
   ]);
   if (!assetCode || assetCode === "0x" || liquidity === 0n || slot0[0] === 0n) {
     throw new Error(`invalid Mainnet pool or asset runtime ${symbol}`);
   }
-  const poolKey = {
-    currency0: "0x0000000000000000000000000000000000000000",
-    currency1: asset,
-    fee: route.fee,
-    tickSpacing: route.tickSpacing,
-    hooks: route.hooks,
-  };
+  const feedAge = Number(qualificationBlock.timestamp - feedRound[3]);
+  if (
+    feedRound[1] <= 0n ||
+    feedRound[4] < feedRound[0] ||
+    feedRound[3] === 0n ||
+    feedAge > source.referencePrice.heartbeatSeconds ||
+    oraclePaused
+  ) {
+    throw new Error(`unhealthy Mainnet reference feed ${symbol}`);
+  }
   const quoteLadder = [
     100_000_000_000_000n,
     250_000_000_000_000n,
@@ -153,7 +202,7 @@ for (const symbol of requiredSymbols) {
     10_000_000_000_000_000n,
     25_000_000_000_000_000n,
     50_000_000_000_000_000n,
-  ].filter((amount) => amount <= route.maximumNativeInput);
+  ].filter((amount) => amount <= BigInt(source.capWei));
   const ladderResults = [];
   for (const amount of quoteLadder) {
     try {
@@ -196,15 +245,16 @@ for (const symbol of requiredSymbols) {
     symbol,
     asset,
     kind: "uniswap-v4",
-    fee: route.fee,
-    tickSpacing: route.tickSpacing,
-    hooks: route.hooks,
+    poolId: derivedPoolId,
+    fee: selectedPool.fee,
+    tickSpacing: selectedPool.tickSpacing,
+    hooks: selectedPool.hooks,
     minimumLiquidity: minimumLiquidity.toString(),
     maximumNativeInput: cap.toString(),
     referenceTick: Number(slot0[1]),
-    maximumReferenceTickDeviation: route.maximumReferenceTickDeviation,
-    enforceReferencePrice: route.enforceReferencePrice,
-    verificationClass: route.verificationClass,
+    maximumReferenceTickDeviation: source.selectedRoute.maximumReferenceTickDeviation,
+    enforceReferencePrice: source.selectedRoute.enforceReferencePrice,
+    verificationClass: source.selectedRoute.verificationClass,
     enabled: true,
     liveQualification: {
       liquidity: liquidity.toString(),
@@ -216,6 +266,9 @@ for (const symbol of requiredSymbols) {
       recoveryBps,
       exactInputBothDirections: true,
       exactOutputBothDirections: true,
+      referenceFeed: feedAddress,
+      referenceFeedUpdatedAt: Number(feedRound[3]),
+      referenceFeedAgeSeconds: feedAge,
       quoteLadder: ladderResults.map((entry) => ({
         amountWei: entry.amount.toString(),
         recoveryBps: entry.recoveryBps ?? null,
@@ -235,11 +288,19 @@ const wethStatus = await client.readContract({
 if (!wethStatus.ready || !wethStatus.runtimeVerified) {
   throw new Error("unready Mainnet WETH route");
 }
+const wethPolicy = sourceBySymbol.get("WETH");
+if (
+  !wethPolicy ||
+  wethPolicy.qualificationStatus !== "qualified-readonly-and-local-fork" ||
+  getAddress(wethPolicy.address) !== external.wrappedNative
+) {
+  throw new Error("qualified Mainnet WETH policy required");
+}
 routes.push({
   symbol: "WETH",
   asset: external.wrappedNative,
   kind: "wrapped-native",
-  maximumNativeInput: wethStatus.maximumNativeInput.toString(),
+  maximumNativeInput: BigInt(wethPolicy.capWei).toString(),
   enabled: true,
 });
 const deployer = getAddress(schema18.deployer);
@@ -277,6 +338,7 @@ const result = {
   sourceManifests: {
     schema18Sha256: createHash("sha256").update(schema18Raw).digest("hex"),
     activeRouteSourceSha256: createHash("sha256").update(routeSourceRaw).digest("hex"),
+    qualifiedAssetPolicySha256: createHash("sha256").update(assetPolicyRaw).digest("hex"),
   },
   snapshotBlock: Number(blockNumber),
   deployer,

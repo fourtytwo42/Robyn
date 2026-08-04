@@ -28,7 +28,10 @@ test("Mainnet input uses LAN-only live runtime and route reads", () => {
   assert.match(source, /stateView: canonicalStateView/);
   assert.match(source, /routeStatus/);
   assert.match(source, /executionRouteStatus/);
-  assert.match(source, /mismatched Mainnet route/);
+  assert.match(source, /qualified Mainnet asset policy required/);
+  assert.match(source, /qualified-readonly-and-local-fork/);
+  assert.match(source, /selected Mainnet pool identity mismatch/);
+  assert.match(source, /encodeAbiParameters/);
   assert.match(source, /getLiquidity/);
   assert.match(source, /getSlot0/);
   assert.match(source, /quoteExactInputSingle/);
@@ -43,6 +46,10 @@ test("Mainnet input uses LAN-only live runtime and route reads", () => {
   );
   assert.match(source, /minimumLiquidity = \(liquidity \* 9n\) \/ 10n/);
   assert.match(source, /liveQualification/);
+  assert.match(source, /latestRoundData/);
+  assert.match(source, /oraclePaused/);
+  assert.match(source, /unhealthy Mainnet reference feed/);
+  assert.match(source, /qualifiedAssetPolicySha256/);
   assert.match(source, /alchemyFallbackAuthorized: false/);
 });
 

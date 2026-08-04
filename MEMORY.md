@@ -8410,3 +8410,11 @@ When sources conflict, use this order:
 - Files: `scripts/prepare-schema19-mainnet-input.mjs`, `scripts/test/schema19-mainnet-input.test.mjs`.
 - Result: The fresh Schema-19 deployment cap is derived from current executable depth per route rather than copied from stale Schema-18 settings.
 - Follow-up: Qualify the tooling-only change, push a clean SHA, and rerun the local-fork rehearsal with fresh evidence. No Mainnet transaction is authorized.
+
+### 2026-08-03 - Schema-19 qualified-policy route source
+
+- Context: The active Schema-18 router still uses the older SPY pool `0x7d32...6459` at 1%, while the completed qualification policy selected the materially better direct pool `0xf44a...5449` at 0.30%. The old pool failed the unchanged 95% recovery policy at `0.001 ETH`; the qualified pool freshly passed the full read-only ladder through `0.05 ETH` with 99.09% recovery at the cap.
+- Decision: Schema-19 deployment inputs use the versioned qualified asset policy for selected pool identities and maximum candidate caps, not active Schema-18 route configuration. Live preparation derives and verifies the pool ID, canonical asset runtime, Chainlink round health and heartbeat, stock-oracle pause state, pool liquidity/tick, exact-input/output quotes in both directions, safe cap, liquidity floor, and reference tick.
+- Files: `scripts/prepare-schema19-mainnet-input.mjs`, `scripts/test/schema19-mainnet-input.test.mjs`.
+- Result: Fresh Schema-19 routes can use the already qualified improved SPY and NVDA pools without mutating Schema-18. The active Schema-18 route manifest remains useful only for governance/application ancestry and retirement evidence.
+- Follow-up: Push the tooling-only correction and repeat the no-broadcast LAN-sourced fork rehearsal under a fresh SHA/evidence identity. Mainnet remains unchanged and Schema-19 broadcasting remains unauthorized.
