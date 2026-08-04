@@ -247,7 +247,7 @@ export function HolderRewardsPanel({
       </button>
       <p className="holder-reward-note">
         Claims every currently available basket asset for this token. On
-        Schema-19, the claim then attempts one bounded maintenance task; a
+        Schema-20, the claim then attempts one bounded maintenance task; a
         maintenance failure cannot undo the claim.
       </p>
       {status ? (
