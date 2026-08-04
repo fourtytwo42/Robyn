@@ -28,7 +28,14 @@ test("Mainnet input uses LAN-only live runtime and route reads", () => {
   assert.match(source, /stateView: canonicalStateView/);
   assert.match(source, /routeStatus/);
   assert.match(source, /executionRouteStatus/);
-  assert.match(source, /unready Mainnet route/);
+  assert.match(source, /mismatched Mainnet route/);
+  assert.match(source, /getLiquidity/);
+  assert.match(source, /getSlot0/);
+  assert.match(source, /quoteExactInputSingle/);
+  assert.match(source, /quoteExactOutputSingle/);
+  assert.match(source, /recoveryBps < 9_500/);
+  assert.match(source, /minimumLiquidity = \(liquidity \* 9n\) \/ 10n/);
+  assert.match(source, /liveQualification/);
   assert.match(source, /alchemyFallbackAuthorized: false/);
 });
 

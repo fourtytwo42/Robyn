@@ -96,6 +96,23 @@ const routeAbi = parseAbi([
   "function routeStatus(address) view returns ((bytes32 poolId,uint128 liquidity,uint128 minimumLiquidity,uint128 maximumNativeInput,int24 spotTick,int24 referenceTick,uint24 maximumReferenceTickDeviation,bool enforceReferencePrice,bytes32 verificationClass,uint24 fee,int24 tickSpacing,address hooks,bool ready,bytes32 reason) status)",
   "function executionRouteStatus(address) view returns ((uint8 kind,uint128 maximumNativeInput,uint128 maximumAssetInput,bytes32 disabledReason,bool enabled,bool runtimeVerified,bool ready,bytes32 reason) status)",
 ]);
+const stateViewAbi = parseAbi([
+  "function getLiquidity(bytes32 poolId) view returns (uint128)",
+  "function getSlot0(bytes32 poolId) view returns (uint160 sqrtPriceX96,int24 tick,uint24 protocolFee,uint24 lpFee)",
+]);
+const quoterAbi = parseAbi([
+  "function quoteExactInputSingle(((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) poolKey,bool zeroForOne,uint128 exactAmount,bytes hookData) params) returns (uint256 amountOut,uint256 gasEstimate)",
+  "function quoteExactOutputSingle(((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) poolKey,bool zeroForOne,uint128 exactAmount,bytes hookData) params) returns (uint256 amountIn,uint256 gasEstimate)",
+]);
+const quote = async (functionName, poolKey, zeroForOne, exactAmount) => {
+  const simulation = await client.simulateContract({
+    address: external.quoter,
+    abi: quoterAbi,
+    functionName,
+    args: [{ poolKey, zeroForOne, exactAmount, hookData: "0x" }],
+  });
+  return simulation.result;
+};
 const requiredSymbols = ["GOOGL", "MSFT", "NVDA", "SPCX", "SPY"];
 const rehearsalFailureFixtureSymbol = "MSFT";
 const sourceBySymbol = new Map(routeSource.assetRoutes.map((route) => [route.symbol, route]));
@@ -108,9 +125,33 @@ for (const symbol of requiredSymbols) {
     client.readContract({ address: routeRouter, abi: routeAbi, functionName: "routeStatus", args: [asset] }),
     client.readContract({ address: routeRouter, abi: routeAbi, functionName: "executionRouteStatus", args: [asset] }),
   ]);
-  if (!route.ready || !execution.ready || !execution.runtimeVerified) {
-    throw new Error(`unready Mainnet route ${symbol}`);
+  if (!execution.enabled || execution.kind !== 1 || route.poolId.toLowerCase() !== source.poolId.toLowerCase()) {
+    throw new Error(`mismatched Mainnet route ${symbol}`);
   }
+  const [liquidity, slot0, assetCode] = await Promise.all([
+    client.readContract({ address: canonicalStateView, abi: stateViewAbi, functionName: "getLiquidity", args: [route.poolId] }),
+    client.readContract({ address: canonicalStateView, abi: stateViewAbi, functionName: "getSlot0", args: [route.poolId] }),
+    client.getCode({ address: asset }),
+  ]);
+  if (!assetCode || assetCode === "0x" || liquidity === 0n || slot0[0] === 0n) {
+    throw new Error(`invalid Mainnet pool or asset runtime ${symbol}`);
+  }
+  const poolKey = {
+    currency0: "0x0000000000000000000000000000000000000000",
+    currency1: asset,
+    fee: route.fee,
+    tickSpacing: route.tickSpacing,
+    hooks: route.hooks,
+  };
+  const cap = route.maximumNativeInput;
+  if (cap < 1_000_000_000_000_000n) throw new Error(`insufficient Mainnet route capacity ${symbol}`);
+  const [buy] = await quote("quoteExactInputSingle", poolKey, true, cap);
+  const [sell] = await quote("quoteExactInputSingle", poolKey, false, buy);
+  await quote("quoteExactOutputSingle", poolKey, true, buy / 2n || 1n);
+  await quote("quoteExactOutputSingle", poolKey, false, cap / 2n || 1n);
+  const recoveryBps = Number((sell * 10_000n) / cap);
+  if (recoveryBps < 9_500) throw new Error(`unsafe Mainnet route recovery ${symbol}`);
+  const minimumLiquidity = (liquidity * 9n) / 10n;
   routes.push({
     symbol,
     asset,
@@ -118,13 +159,24 @@ for (const symbol of requiredSymbols) {
     fee: route.fee,
     tickSpacing: route.tickSpacing,
     hooks: route.hooks,
-    minimumLiquidity: route.minimumLiquidity.toString(),
+    minimumLiquidity: minimumLiquidity.toString(),
     maximumNativeInput: route.maximumNativeInput.toString(),
-    referenceTick: route.referenceTick,
+    referenceTick: Number(slot0[1]),
     maximumReferenceTickDeviation: route.maximumReferenceTickDeviation,
     enforceReferencePrice: route.enforceReferencePrice,
     verificationClass: route.verificationClass,
     enabled: true,
+    liveQualification: {
+      liquidity: liquidity.toString(),
+      minimumLiquidity: minimumLiquidity.toString(),
+      spotTick: Number(slot0[1]),
+      capWei: cap.toString(),
+      buyOutput: buy.toString(),
+      roundTripOutput: sell.toString(),
+      recoveryBps,
+      exactInputBothDirections: true,
+      exactOutputBothDirections: true,
+    },
     rehearsalFailureFixture: symbol === rehearsalFailureFixtureSymbol,
   });
 }

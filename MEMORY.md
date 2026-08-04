@@ -8394,3 +8394,11 @@ When sources conflict, use this order:
 - Commands/tests: Focused Mainnet-input tests, syntax, formatting, and `scripts/verify-schema19-contract-freeze.mjs` pass. No Solidity was compiled or retested.
 - Result: The tooling now rejects stale application-manifest dependency identities while binding the canonical onchain StateView used by the active routes.
 - Follow-up: Commit and push the tooling-only correction, start a fresh evidence directory, and rerun the exact LAN-sourced chain-4663 rehearsal. No Schema-19 Mainnet transaction or Schema-18 retirement is authorized.
+
+### 2026-08-03 - Schema-19 fresh Mainnet route-control derivation
+
+- Context: Fresh rehearsal `rehearsal-31d48ac-01` stopped before Anvil because GOOGL's active Schema-18 route was unready. Live chain reads showed pool liquidity `35850002386450155133` below the stale floor `46120522618311967959`; the spot tick `16130` had also moved beyond the prior reference tick `16562` and deviation band `198`.
+- Decision: Preserve the attempt as invalid and incomplete. A fresh Schema-19 router must not inherit stale Schema-18 admission controls. The Mainnet input now verifies the sealed pool identity and asset runtime, performs raw exact-input and exact-output Quoter checks in both directions at the cap, requires at least `0.001 ETH` capacity and 95% recovery, then derives a 90%-of-live-liquidity floor and the live reference tick.
+- Files: `scripts/prepare-schema19-mainnet-input.mjs`, `scripts/test/schema19-mainnet-input.test.mjs`.
+- Result: Existing route enablement is evidence only; fresh raw pool qualification determines the Schema-19 controls. No onchain route or contract was changed.
+- Follow-up: Push the tooling-only change and restart the LAN-sourced local-fork rehearsal under a fresh evidence identity. Mainnet remains Schema-18 and live; Schema-19 broadcasting remains unauthorized.
