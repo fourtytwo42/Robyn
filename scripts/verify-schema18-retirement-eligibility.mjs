@@ -10,6 +10,7 @@ const [manifestArg, outputArg] = process.argv.slice(2);
 if (!manifestArg || !outputArg) throw new Error("usage: verify-schema18-retirement-eligibility.mjs <schema18-public-manifest> <output>");
 const manifestRaw = await readFile(path.resolve(manifestArg), "utf8");
 const manifest = JSON.parse(manifestRaw);
+const archiveAccepted = process.env.ROBYN_SCHEMA18_TEST_CANARY_ARCHIVE_ACCEPTED === "true";
 if (manifest.schemaVersion !== 18 || manifest.chainId !== 4663 || !manifest.canary?.launchToken) {
   throw new Error("sealed Schema-18 Mainnet Public manifest with canary required");
 }
@@ -113,9 +114,16 @@ const result = {
   totalNativeLiabilities: liabilities.toString(), feeRouterBalance: routerBalance.toString(), liabilitiesExactlyBacked: true,
   retainedTransferLogs, positiveHolders, externalHolderCount: externalHolders.length, externalHolders, externalTransfers, runtimeHashes,
   rpcPolicy: { upstream: "LAN-only", alchemyProbeOnly: true, fallbackTrafficAuthorized: false },
+  disposition: externalHolders.length === 0
+    ? "clean-retirement"
+    : archiveAccepted
+      ? "owner-accepted-test-canary-archive"
+      : "blocked-external-holder",
+  ownerAcceptedArchive: archiveAccepted,
   eligibleForCleanRetirement: externalHolders.length === 0,
+  eligibleForArchivedReplacement: externalHolders.length === 0 || archiveAccepted,
 };
 const serialized = `${JSON.stringify(result, null, 2)}\n`;
 await writeFile(path.resolve(outputArg), serialized, { mode: 0o600, flag: "wx" });
-process.stdout.write(`${JSON.stringify({ passed: result.eligibleForCleanRetirement, launchCount: 1, externalHolderCount: result.externalHolderCount, liabilitiesWei: result.totalNativeLiabilities, sha256: createHash("sha256").update(serialized).digest("hex") })}\n`);
-if (!result.eligibleForCleanRetirement) process.exitCode = 2;
+process.stdout.write(`${JSON.stringify({ passed: result.eligibleForArchivedReplacement, disposition: result.disposition, launchCount: 1, externalHolderCount: result.externalHolderCount, liabilitiesWei: result.totalNativeLiabilities, sha256: createHash("sha256").update(serialized).digest("hex") })}\n`);
+if (!result.eligibleForArchivedReplacement) process.exitCode = 2;

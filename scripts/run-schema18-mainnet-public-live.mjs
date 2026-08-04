@@ -35,6 +35,8 @@ const NGINX_CONFIG_HASH =
 const RESERVE = 20_000_000_000_000_000n;
 const L1_FEE_RESERVE = 25_000_000_000_000n;
 const localRehearsal = process.env.ROBYN_SCHEMA18_MAINNET_PUBLIC_LOCAL_REHEARSAL === "true";
+const schema19ReplacementRetirement =
+  process.env.ROBYN_SCHEMA19_REPLACEMENT_RETIREMENT === "true";
 const stages = new Set([
   "verify",
   "schedule-public",
@@ -46,6 +48,9 @@ const stages = new Set([
 const stage = process.argv[2];
 if (!stages.has(stage)) {
   throw new Error(`usage: ${path.basename(process.argv[1])} ${[...stages].join("|")}`);
+}
+if (schema19ReplacementRetirement && stage !== "shutdown") {
+  throw new Error("Schema-19 replacement retirement authorizes only Schema-18 shutdown");
 }
 const readOnly = new Set(["verify", "verify-public", "status"]);
 const required = (name) => {
@@ -103,7 +108,7 @@ if (
 ) {
   throw new Error("Gate 3 scoped application or indexer identity mismatch");
 }
-if (manifest.operationalToolingSha !== toolingSha && !localRehearsal) throw new Error("Public manifest is not bound to this tooling SHA");
+if (manifest.operationalToolingSha !== toolingSha && !localRehearsal && !schema19ReplacementRetirement) throw new Error("Public manifest is not bound to this tooling SHA");
 if (
   manifest.authorizationEligible !== true ||
   manifest.authorization?.additionalBridgeAuthorized !== false ||
@@ -112,7 +117,35 @@ if (
 ) {
   throw new Error("Gate 3 manifest scope or pre-authorization state is invalid");
 }
-if (!localRehearsal && !readOnly.has(stage)) {
+if (!localRehearsal && !readOnly.has(stage) && schema19ReplacementRetirement) {
+  const replacementPath = path.resolve(required("ROBYN_SCHEMA19_MAINNET_REPLACEMENT_MANIFEST"));
+  const replacementRaw = await readFile(replacementPath, "utf8");
+  const replacement = JSON.parse(replacementRaw);
+  const replacementSha = sha256(replacementRaw);
+  const authorizationRaw = await readFile(
+    path.resolve(required("ROBYN_SCHEMA19_MAINNET_REPLACEMENT_AUTHORIZATION_RECEIPT")),
+    "utf8",
+  );
+  const authorization = JSON.parse(authorizationRaw);
+  if (
+    process.env.ROBYN_SCHEMA19_MAINNET_REPLACEMENT_AUTHORIZED !== replacementSha ||
+    replacement.schemaVersion !== 19 ||
+    replacement.chainId !== 4663 ||
+    replacement.gate !== "schema19-mainnet-public-replacement" ||
+    replacement.identities?.operationalToolingSha !== toolingSha ||
+    replacement.identities?.schema18ManifestSha256 !== manifestSha ||
+    replacement.legacySchema18?.disposition !== "owner-accepted-test-canary-archive" ||
+    authorization.authorized !== true ||
+    authorization.manifestSha256 !== replacementSha ||
+    authorization.scope !== "schema19-deployment-schema18-archive-and-application-cutover" ||
+    authorization.schema19DeploymentAuthorized !== true ||
+    authorization.schema18RetirementAuthorized !== true ||
+    authorization.applicationWritesAuthorized !== true ||
+    authorization.additionalBridgeAuthorized !== false
+  ) {
+    throw new Error("exact Schema-19 replacement authorization does not permit Schema-18 retirement");
+  }
+} else if (!localRehearsal && !readOnly.has(stage)) {
   const authorizationPath = path.resolve(required("ROBYN_SCHEMA18_MAINNET_PUBLIC_AUTHORIZATION_RECEIPT"));
   const authorizationRaw = await readFile(authorizationPath, "utf8");
   const authorization = JSON.parse(authorizationRaw);
