@@ -34,6 +34,9 @@ ROBYN_SCHEMA19_MAINNET_RPC_URL="$rpc_live" \
   node scripts/prepare-schema19-mainnet-input.mjs \
   "$schema18_manifest" "$route_source" "$input"
 node scripts/prepare-schema19-deployment.mjs "$input" "$prepared"
+local_deployment_input="$repo/packages/contracts/tmp/schema19-mainnet-rehearsal-input.json"
+install -m 0600 "$prepared" "$local_deployment_input"
+[[ "$(sha256sum "$prepared" | cut -d' ' -f1)" == "$(sha256sum "$local_deployment_input" | cut -d' ' -f1)" ]]
 
 fork_block="$(jq -r .snapshotBlock "$input")"
 deployer="$(jq -r .deployer "$input")"
@@ -49,6 +52,7 @@ anvil_pid=$!
 cleanup() {
   kill "$anvil_pid" 2>/dev/null || true
   wait "$anvil_pid" 2>/dev/null || true
+  rm -f "$local_deployment_input"
 }
 trap cleanup EXIT
 anvil_ready=false
@@ -76,7 +80,7 @@ funded_balance="$($HOME/.foundry/bin/cast balance --rpc-url "$rpc_fork" "$deploy
 [[ "$funded_balance" == 100000000000000000000 ]]
 
 rm -rf packages/contracts/broadcast/DeploySchema19.s.sol/4663
-SCHEMA19_DEPLOYMENT_INPUT="$prepared" \
+SCHEMA19_DEPLOYMENT_INPUT="$local_deployment_input" \
   "$forge" script script/DeploySchema19.s.sol:DeploySchema19 \
     --root packages/contracts \
     --rpc-url "$rpc_fork" \

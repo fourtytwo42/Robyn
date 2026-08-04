@@ -8434,3 +8434,11 @@ When sources conflict, use this order:
 - Files: `scripts/run-schema19-mainnet-rehearsal.sh`, `scripts/test/schema19-mainnet-rehearsal.test.mjs`.
 - Result: Local fork funding remains explicitly verified without assuming a stale Anvil response shape. No live balance or Mainnet state was touched.
 - Follow-up: Push the tooling-only change and restart under a fresh evidence identity. No Schema-19 Mainnet transaction is authorized.
+
+### 2026-08-03 - Schema-19 Foundry input sandbox staging
+
+- Context: Rehearsal `rehearsal-382ab71-01` passed live qualification, pinned-fork startup, and exact local balance verification, then Forge stopped before local broadcast because `DeploySchema19.s.sol` could not read the prepared JSON outside Foundry's permitted `packages/contracts/tmp` path.
+- Decision: Preserve the protected evidence JSON, install a mode-600 checksum-identical temporary copy inside the existing Foundry-permitted directory, pass that path to the deployment script, and remove it in the cleanup trap.
+- Files: `scripts/run-schema19-mainnet-rehearsal.sh`, `scripts/test/schema19-mainnet-rehearsal.test.mjs`.
+- Result: Foundry receives the exact sealed deployment input without widening filesystem permissions or rebuilding/changing contracts.
+- Follow-up: Push the tooling-only correction and restart with a fresh evidence identity. No Mainnet transaction is authorized.
