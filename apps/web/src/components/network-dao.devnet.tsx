@@ -12,6 +12,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { DaoView } from "./dao-view";
 import { RdaoWorkspace } from "./rdao-workspace";
+import { RdaoTokenMarket } from "./rdao-token-market";
 import type { Deployment } from "@/lib/deployment";
 
 const chain = defineChain({
@@ -24,9 +25,11 @@ const chain = defineChain({
 export function NetworkDaoView({
   deployment,
   proposalId,
+  surface = "workspace",
 }: {
   deployment: Deployment;
   proposalId?: string;
+  surface?: "workspace" | "market";
 }) {
   const [key, setKey] = useState<Hex>();
   const load = useCallback(() => {
@@ -57,6 +60,17 @@ export function NetworkDaoView({
     window.location.href = "/#devnet-console";
   }, []);
   const dataApiUrl = "/api";
+  if (deployment.schemaVersion === 20 && surface === "market") {
+    return (
+      <RdaoTokenMarket
+        account={account?.address as Address | undefined}
+        rpcClient={publicClient}
+        walletClient={walletClient}
+        connect={connect}
+        dataApiUrl={dataApiUrl}
+      />
+    );
+  }
   if (deployment.schemaVersion === 20) {
     return (
       <RdaoWorkspace

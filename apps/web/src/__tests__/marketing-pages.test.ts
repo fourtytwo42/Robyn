@@ -52,11 +52,17 @@ describe("marketing pages", () => {
   it("makes the Schema-20 RDAO sale public from the homepage and its own page", () => {
     const home = source("../app/page.tsx");
     const rdao = source("../app/rdao/page.tsx");
+    const market = source("../components/rdao-token-market.tsx");
     const devnetAccess = source("../components/network-dao-access.devnet.tsx");
     expect(home).toContain("<RdaoSaleSpotlight />");
-    expect(rdao).toContain('<RdaoSaleSpotlight variant="page" />');
-    expect(rdao).toContain("<NetworkDaoView");
+    expect(rdao).toContain('surface="market"');
     expect(rdao).not.toContain("NetworkDaoAccessGate");
+    expect(rdao).not.toContain("RdaoSaleSpotlight");
+    expect(market).toContain("BondingCurveChart");
+    expect(market).toContain("Trade RDAO");
+    expect(market).toContain('href="/dao"');
+    expect(market).not.toContain('label: "Stake"');
+    expect(market).not.toContain('label: "Governance"');
     expect(devnetAccess).toContain("deployment.schemaVersion === 20");
   });
 

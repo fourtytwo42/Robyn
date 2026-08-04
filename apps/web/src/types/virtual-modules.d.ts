@@ -66,6 +66,7 @@ declare module "@robyn/network-dao" {
   export function NetworkDaoView(props: {
     deployment: Deployment;
     proposalId?: string;
+    surface?: "workspace" | "market";
   }): JSX.Element;
 }
 

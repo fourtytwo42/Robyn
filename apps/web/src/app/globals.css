@@ -2755,6 +2755,428 @@ main > .notice {
   }
 }
 
+/* RDAO public market. Mirrors launch-token hierarchy without inventing trade history. */
+.rdao-token-page .token-page-shell {
+  padding-bottom: 5rem;
+}
+
+.rdao-overview-card {
+  overflow: hidden;
+  position: relative;
+  background:
+    radial-gradient(
+      circle at 90% 15%,
+      rgba(244, 201, 93, 0.16),
+      transparent 31%
+    ),
+    linear-gradient(135deg, rgba(18, 43, 31, 0.97), rgba(7, 14, 12, 0.98));
+}
+
+.rdao-overview-card::after {
+  content: "R";
+  position: absolute;
+  right: -0.02em;
+  bottom: -0.42em;
+  color: rgba(244, 201, 93, 0.045);
+  font-size: clamp(13rem, 26vw, 23rem);
+  font-weight: 950;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.rdao-overview-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.rdao-token-art {
+  border: 1px solid rgba(244, 201, 93, 0.42);
+  border-radius: 50%;
+  box-shadow: 0 0 45px rgba(244, 201, 93, 0.13);
+}
+
+.rdao-token-summary {
+  max-width: 66ch;
+  margin: 0.65rem 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.rdao-overview-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
+
+.rdao-overview-chips span {
+  padding: 0.38rem 0.62rem;
+  border: 1px solid rgba(244, 201, 93, 0.23);
+  border-radius: 999px;
+  color: #e9d99f;
+  background: rgba(244, 201, 93, 0.06);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.rdao-token-actions {
+  align-self: flex-start;
+  display: grid;
+  gap: 0.55rem;
+  min-width: 11rem;
+}
+
+.rdao-token-actions .button {
+  justify-content: center;
+}
+
+.rdao-market-layout {
+  margin-top: 1rem;
+}
+
+.rdao-curve-card {
+  background:
+    radial-gradient(
+      circle at 80% 0%,
+      rgba(69, 213, 147, 0.08),
+      transparent 36%
+    ),
+    rgba(11, 17, 31, 0.9);
+}
+
+.rdao-curve-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.rdao-curve-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.rdao-curve-legend i {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.rdao-curve-legend i.graduation {
+  border-radius: 1px;
+  background: var(--reward);
+}
+
+.rdao-curve-frame {
+  margin-top: 0.6rem;
+  overflow: hidden;
+}
+
+.rdao-curve-frame svg {
+  display: block;
+  width: 100%;
+  min-height: 285px;
+}
+
+.rdao-curve-frame .chart-grid-line {
+  stroke: rgba(255, 255, 255, 0.075);
+  stroke-width: 1;
+}
+
+.rdao-curve-frame .chart-axis-label {
+  fill: var(--muted);
+  font-size: 10px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+.rdao-curve-frame .chart-line {
+  fill: none;
+  stroke: #83e3ad;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rdao-current-marker {
+  stroke: rgba(131, 227, 173, 0.42);
+  stroke-width: 1;
+  stroke-dasharray: 4 5;
+}
+
+.rdao-current-point {
+  fill: #83e3ad;
+  stroke: #07100c;
+  stroke-width: 4;
+}
+
+.rdao-curve-frame .graduation-marker {
+  stroke: rgba(244, 201, 93, 0.75);
+  stroke-width: 2;
+  stroke-dasharray: 5 5;
+}
+
+.rdao-market-stats {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.rdao-chart-note {
+  margin: 0.85rem 0 0;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.rdao-market-details,
+.rdao-trade-card,
+.rdao-lifecycle-card,
+.rdao-utility-card {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgba(11, 17, 31, 0.88);
+}
+
+.rdao-market-details {
+  padding: 1rem;
+}
+
+.rdao-details-heading,
+.rdao-trade-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.rdao-details-heading h2,
+.rdao-trade-heading-row h2,
+.rdao-lifecycle-card h3,
+.rdao-utility-card h3 {
+  margin: 0.2rem 0 0;
+}
+
+.rdao-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: var(--line);
+}
+
+.rdao-detail-grid article {
+  padding: 1rem;
+  background: rgba(5, 12, 22, 0.98);
+}
+
+.rdao-detail-grid span,
+.rdao-detail-grid p {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.rdao-detail-grid strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--reward);
+  font-size: 1.15rem;
+}
+
+.rdao-detail-grid p {
+  margin: 0.45rem 0 0;
+  line-height: 1.45;
+}
+
+.token-trade-column {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.rdao-trade-card,
+.rdao-lifecycle-card,
+.rdao-utility-card {
+  padding: 1rem;
+}
+
+.trade-side-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: rgba(3, 7, 14, 0.68);
+}
+
+.trade-side-tabs button {
+  border: 0;
+  border-radius: 0.5rem;
+  padding: 0.7rem;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-weight: 800;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
+.trade-side-tabs button.active {
+  color: #04140d;
+  background: var(--primary);
+}
+
+.rdao-trade-card .field {
+  margin-top: 1rem;
+}
+
+.rdao-quick-amounts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+}
+
+.rdao-quick-amounts button {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.025);
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.rdao-quote-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  color: var(--muted);
+  background: rgba(3, 8, 15, 0.68);
+  font-size: 0.74rem;
+}
+
+.rdao-quote-summary strong {
+  color: var(--text);
+}
+
+.rdao-submit {
+  width: 100%;
+  margin-top: 0.8rem;
+  justify-content: center;
+}
+
+.trade-helper,
+.trade-status,
+.rdao-utility-card p {
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.rdao-lifecycle-card ol {
+  display: grid;
+  gap: 0.8rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rdao-lifecycle-card li {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.65rem;
+  align-items: center;
+  color: var(--muted);
+}
+
+.rdao-lifecycle-card li > span {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.rdao-lifecycle-card li.active > span {
+  border-color: rgba(69, 213, 147, 0.55);
+  color: #07140e;
+  background: var(--primary);
+}
+
+.rdao-lifecycle-card strong,
+.rdao-lifecycle-card small {
+  display: block;
+}
+
+.rdao-lifecycle-card strong {
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
+.rdao-lifecycle-card small {
+  margin-top: 0.15rem;
+  line-height: 1.35;
+}
+
+.rdao-utility-card .button {
+  width: 100%;
+  margin-top: 0.7rem;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .rdao-market-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .rdao-token-actions {
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .rdao-overview-card {
+    border-inline: 0;
+  }
+
+  .rdao-token-actions,
+  .rdao-detail-grid,
+  .rdao-market-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .rdao-curve-legend {
+    justify-content: flex-start;
+  }
+
+  .rdao-curve-frame {
+    overflow-x: auto;
+  }
+
+  .rdao-curve-frame svg {
+    width: 680px;
+  }
+}
+
 .site-nav {
   display: flex;
   align-items: center;

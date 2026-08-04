@@ -11,6 +11,7 @@ export function NetworkDaoView({
 }: {
   deployment: Deployment;
   proposalId?: string;
+  surface?: "workspace" | "market";
 }) {
   const { account, publicClient, walletClient, connect } =
     useRobynTestnetWallet();
