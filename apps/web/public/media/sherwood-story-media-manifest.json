@@ -10,15 +10,15 @@
     "displayName": "Voice of Sherwood - Rowan",
     "kind": "synthetic stock voice",
     "engine": "GPU45 Pocket TTS",
-    "voice": "built-in Anna",
+    "voice": "built-in Alba",
     "cloned": false,
-    "alignedNarrationSha256": "79218a27cf462ab141108c4e052c7a641fa6f6c28e9c0030b65b7d00934ce7bb"
+    "alignedNarrationSha256": "101023396ba18f252a679848c62a5e59daae24b0ff75e8da81019f028bda8360"
   },
   "media": {
     "webMp4": {
       "path": "/media/sherwood-story-devnet.mp4",
-      "bytes": 11918375,
-      "sha256": "765d8c1c00eeb896ad5fc89dccc351f859c1e08d081429520dc9ce35fa134ab5"
+      "bytes": 12051177,
+      "sha256": "766c1d61f1495fc689d01b950e50240b90576ca02229be74f31ab69c5d5e88ce"
     },
     "poster": {
       "path": "/media/sherwood-story-poster.webp",
@@ -32,7 +32,7 @@
     },
     "archivalMaster": {
       "committed": false,
-      "sha256": "da58511c651b7fe7972db7610ac73e287cf9a4d49bf4c56e72834d5b07447245"
+      "sha256": "7c6d2ab104da937be0fc49ea207a3f0ecf83d5c6ef676df465d18197cf5a58f9"
     }
   },
   "transactions": [
