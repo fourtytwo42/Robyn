@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-04 - Sherwood sizzle reel replaces the explanatory film
+
+- Context: The user rejected the long, infrastructure-heavy demonstration and requested a short, themed sales film understandable at a high-school level. The film itself must not mention Devnet, fixtures, infrastructure, or internal process; the surrounding preview page retains a small testing-fixture disclosure.
+- Application: Branch `codex/marketing-pages-demo` adds seven noindex `/film-scenes` capture states and an original cinematic forest image. The `/demo` page and shared lazy film component now present a 66-second benefit-first story covering discovery, trading, holder rewards, creator launches, graduation, locked liquidity, RDAO staking, and governance.
+- Media: GPU45 Pocket TTS built-in Anna remains labeled synthetic `Voice of Sherwood - Rowan`; no clone was used. Narration SHA-256 is `0a8ca62509f9d5dfb2e7882661a5bf365d5a15a51e83e8ac9401c0b9b2c01027`. Web MP4 is 13,741,364 bytes, 66.454 seconds, SHA-256 `1876d0c1cf5a27546e637bd57bc098b918f1c9fc00e728f265d91dc2f2e93c85`.
+- Verification: The scene-only SHA `fdaf886fc7b38d14dbc2736d4bee21240689c2ce` passed 84 web tests, typecheck, lint, and two reproducible builds before capture. The final media release still requires a clean commit/push, reproducible application build, Devnet web-only cutover, and desktop/mobile playback acceptance.
+- Safety: Schema-20 chain, database, API, indexer, contracts, Testnet, Mainnet, and production remain unchanged.
+
 ### 2026-08-04 - Schema-20 marketing Devnet preview passed
 
 - Context: The user canceled the long soak and authorized a Devnet-only marketing upgrade from qualified Schema-20 candidate `dd7afcfaad41a8c7054b3e9b581bfd4029e88e60`; no Solidity, Testnet, Mainnet, or production work is authorized.

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 2,
+  "title": "Enter Sherwood Forest",
+  "environment": "Devnet",
+  "durationSeconds": 66.454,
+  "frameRate": 30,
+  "resolution": "1920x1080",
+  "disclosure": "The film is a marketing presentation captured with testing fixtures. Assets and transactions shown have no real-world value.",
+  "narrator": {
+    "displayName": "Voice of Sherwood - Rowan",
+    "kind": "synthetic stock voice",
+    "engine": "GPU45 Pocket TTS",
+    "voice": "built-in Anna",
+    "cloned": false,
+    "narrationSha256": "0a8ca62509f9d5dfb2e7882661a5bf365d5a15a51e83e8ac9401c0b9b2c01027"
+  },
+  "media": {
+    "webMp4": {
+      "path": "/media/sherwood-sizzle-web.mp4",
+      "bytes": 13741364,
+      "sha256": "1876d0c1cf5a27546e637bd57bc098b918f1c9fc00e728f265d91dc2f2e93c85"
+    },
+    "poster": {
+      "path": "/media/sherwood-sizzle-poster.webp",
+      "bytes": 203526,
+      "sha256": "1a66560b2fda439242907a4e6abad2ae885f2a868465521cb906f90899c04201"
+    },
+    "captions": {
+      "path": "/media/sherwood-sizzle.vtt",
+      "bytes": 1228,
+      "sha256": "1d140605d10d6eb33ef2d1697a9fc449d3940c9d39369641c8b55fe3f0ab6b45"
+    },
+    "archivalMaster": {
+      "committed": false,
+      "sha256": "127e8d513aa0ddf8ed1b9a0c728d998d705d009023b830a4cb0a5cc8ae2614ea"
+    }
+  },
+  "transactions": [
+    { "label": "create-CANOPY", "hash": "0x42ccc180027a66ca31a2e541484b3370d37c6d496eb77a3f4469c7c8cf7d9270", "blockNumber": 73 },
+    { "label": "bounded-buy-SIGNAL", "hash": "0xa61466ff181421aaf935982239c49f2f7671514a506b20a43c85ae973ab46195", "blockNumber": 156 },
+    { "label": "holder-claim-CANOPY", "hash": "0x73d7003589ca19f969c0f449117890a7ea74b6cb6818d3b36c0b1a0d2da79d00", "blockNumber": 158 },
+    { "label": "buy-RDAO", "hash": "0x8379a685b6e27f0e04838af0e758c604947a4234daa9b7a8380a129d86216ff1", "blockNumber": 159 },
+    { "label": "stake-RDAO", "hash": "0x707278178e41a6f966d322d61b9c156ff5c94de9aad517a3fb33a6edb9919d2f", "blockNumber": 161 }
+  ]
+}

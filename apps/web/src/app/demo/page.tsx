@@ -3,9 +3,9 @@ import { SiteHeader } from "@/components/site-header";
 import { MarketingFilm } from "@/components/marketing-film";
 
 export const metadata = {
-  title: "The Sherwood story | Devnet product demo",
+  title: "The Sherwood story | Sherwood Forest",
   description:
-    "A three-minute, transaction-backed Devnet demonstration of Sherwood Forest.",
+    "See how Sherwood Forest turns token markets into communities that can trade, launch, earn, and govern together.",
 };
 
 export default function DemoPage() {
@@ -13,18 +13,20 @@ export default function DemoPage() {
     <main id="main" className="marketing-page demo-page">
       <SiteHeader />
       <section className="demo-intro">
-        <p className="eyebrow">Devnet demonstration · no real-world value</p>
-        <h1>From a trade to a living reward basket.</h1>
+        <p className="eyebrow">The Sherwood story</p>
+        <h1>A launchpad where every market can grow more.</h1>
         <p>
-          This film uses deterministic testing fixtures and real Devnet
-          receipts. Waiting periods are shown honestly; matured positions were
-          prepared before recording.
+          Trade the communities you believe in. Share in what their activity
+          creates. Or launch the next story everyone wants to join.
+        </p>
+        <p className="marketing-disclosure">
+          This preview uses testing fixtures with no real-world value.
         </p>
         <a
           className="text-link"
-          href="/media/sherwood-story-media-manifest.json"
+          href="/media/sherwood-sizzle-media-manifest.json"
         >
-          Inspect the media and transaction manifest →
+          View film credits and technical details →
         </a>
       </section>
       <MarketingFilm />
@@ -40,7 +42,7 @@ export default function DemoPage() {
           </div>
           <a
             className="text-link"
-            href="/media/sherwood-story-devnet.vtt"
+            href="/media/sherwood-sizzle.vtt"
             download
           >
             Download captions
@@ -48,83 +50,65 @@ export default function DemoPage() {
         </div>
         <div className="transcript-copy">
           <article>
-            <time>0:00–0:06</time>
+            <time>0:00–0:05</time>
             <p>
-              In every market, a community gathers around a story. Sherwood
-              Forest gives that story roots.
+              Welcome to Sherwood Forest, where a token can become more than a
+              ticker.
             </p>
           </article>
           <article>
-            <time>0:06–0:24</time>
+            <time>0:05–0:10</time>
+            <p>Find a community. Follow the story. Make your move.</p>
+          </article>
+          <article>
+            <time>0:10–0:15</time>
             <p>
-              Start in the market grove. Every token shows its price, activity,
-              ownership, and immutable reward basket before you trade. Choose
-              the community you believe in, inspect the assets its market can
-              grow, and enter with a bounded quote you can verify before
-              signing.
+              Every trade helps the market grow. A share of the fees can build
+              a reward basket chosen when the token is created.
             </p>
           </article>
           <article>
-            <time>0:24–0:37</time>
+            <time>0:15–0:22</time>
             <p>
-              When this Devnet trade confirms, ownership updates onchain. The
-              transaction succeeds on its own terms. Then, as a best-effort
-              second step, the protocol advances one piece of that token&apos;s
-              maintenance work.
+              Holders can claim what they earn. Creators can build a following
+              and share in the success they help create.
             </p>
           </article>
           <article>
-            <time>0:37–1:13</time>
+            <time>0:22–0:32</time>
             <p>
-              Every fee is assigned before anything external happens. Fifty
-              percent belongs to holder baskets. Twenty-five percent belongs to
-              the creator. Twenty percent flows to eligible RDAO stakers. Five
-              percent belongs to the governed treasury. A delayed conversion
-              cannot silently change those shares. As activity continues, each
-              healthy basket leg converts independently. Purchased assets are
-              held for that launch and streamed to eligible holders. Claims pull
-              already-accounted rewards from custody; they do not sell the token
-              and buy the basket at withdrawal.
+              Launching is simple. Pick a name. Add your look. Choose up to
+              three reward assets. Then let the market decide how far your idea
+              can run.
             </p>
           </article>
           <article>
-            <time>1:13–1:30</time>
+            <time>0:32–0:40</time>
             <p>
-              Creators begin with one guided launch. Name the token, publish its
-              media and links, and choose up to three supported reward assets.
-              Supply, basket weights, fee rules, and creator identity take root
-              together. There is no hidden creator token allocation.
+              As momentum builds, the token moves from its bonding curve into
+              open trading, with liquidity locked for the long haul.
             </p>
           </article>
           <article>
-            <time>1:30–1:44</time>
+            <time>0:40–0:49</time>
             <p>
-              The market begins on a transparent bonding curve. When it
-              graduates, reserved tokens and collected principal seed its
-              open-market pool. The liquidity position is locked, while the
-              creator&apos;s fee share remains claimable through its declared
-              recipient split.
+              And the whole forest has a heartbeat. Stake RDAO to share in
+              platform rewards and take part in the decisions that shape what
+              comes next.
             </p>
           </article>
           <article>
-            <time>1:44–2:03</time>
+            <time>0:49–0:59</time>
             <p>
-              The forest also has a common token. RDAO begins with a disclosed
-              bonding sale and locked-liquidity allocation. Stake it after the
-              twenty-four-hour warm-up to share in WETH rewards, while one token
-              remains one vote. Governance keeps its quorum, proposal threshold,
-              vote, and Timelock visible.
+              No empty hype. No mystery box. Just visible markets, clear rules,
+              real communities, and rewards designed to move with them.
             </p>
           </article>
           <article>
-            <time>2:03–2:34</time>
+            <time>0:59–1:06</time>
             <p>
-              Markets can be volatile. Routes can pause. Smart contracts and
-              chains carry risk. Sherwood does not promise profit, graduation,
-              liquidity, or rewards. It promises rules you can inspect,
-              accounting you can follow, and emergency controls you can see.
-              Explore the markets. Plant a token. Devnet demonstration only.
-              These assets and transactions have no real-world value.
+              Find the next breakout. Launch the story everyone wants to join.
+              Trade communities. Harvest what they grow. Enter Sherwood Forest.
             </p>
           </article>
         </div>
@@ -132,14 +116,14 @@ export default function DemoPage() {
       <section className="marketing-cta">
         <div>
           <p className="eyebrow">Choose your path</p>
-          <h2>Explore a market or plant one.</h2>
+          <h2>Find the next breakout or launch it.</h2>
         </div>
         <div className="hero-actions">
           <Link className="button primary" href="/discover">
             Explore markets
           </Link>
           <Link className="button ghost" href="/creators">
-            Why launch here?
+            Launch your story
           </Link>
         </div>
       </section>

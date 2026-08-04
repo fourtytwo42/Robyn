@@ -19,11 +19,11 @@ export function MarketingFilm({
       aria-labelledby="story-film-heading"
     >
       <div className="story-film-copy">
-        <p className="eyebrow">A Devnet story · 2½ minutes</p>
-        <h2 id="story-film-heading">See a market become a community.</h2>
+        <p className="eyebrow">A Sherwood story · 66 seconds</p>
+        <h2 id="story-film-heading">Where markets become communities.</h2>
         <p>
-          Follow one testing-only token from discovery and trade to basket
-          rewards, creator launch, locked liquidity, and RDAO staking.
+          Find the next breakout, earn alongside the community, or launch the
+          story everyone wants to join.
         </p>
         <div className="story-film-links">
           <Link className="text-link" href="/demo#transcript">
@@ -39,12 +39,8 @@ export function MarketingFilm({
       <div className="story-film-stage">
         {!available ? (
           <div className="story-film-coming" role="status">
-            <span>Film production underway</span>
-            <strong>The upgraded Devnet is ready for its close-up.</strong>
-            <p>
-              The transaction-backed film is being recorded against this exact
-              Schema-20 deployment. The accessible transcript is available now.
-            </p>
+            <span>The next story is taking root</span>
+            <strong>A new Sherwood film is almost ready.</strong>
           </div>
         ) : playing ? (
           <video
@@ -52,14 +48,14 @@ export function MarketingFilm({
             controls
             playsInline
             preload="metadata"
-            poster="/media/sherwood-story-poster.webp"
-            aria-label="Sherwood Forest product demonstration"
+            poster="/media/sherwood-sizzle-poster.webp"
+            aria-label="The Sherwood Forest story"
           >
-            <source src="/media/sherwood-story-devnet.mp4" type="video/mp4" />
+            <source src="/media/sherwood-sizzle-web.mp4" type="video/mp4" />
             <track
               default
               kind="captions"
-              src="/media/sherwood-story-devnet.vtt"
+              src="/media/sherwood-sizzle.vtt"
               srcLang="en"
               label="English"
             />
@@ -73,16 +69,16 @@ export function MarketingFilm({
             onClick={() => setPlaying(true)}
           >
             <Image
-              src="/media/sherwood-story-poster.webp"
-              alt="A stylized Sherwood Forest market interface glowing between trees"
-              width={1600}
-              height={900}
+              src="/media/sherwood-sizzle-poster.webp"
+              alt="A glowing path through Sherwood Forest"
+              width={1920}
+              height={1080}
               sizes="(max-width: 900px) 100vw, 56vw"
             />
             <span className="story-film-play" aria-hidden="true">
               ▶
             </span>
-            <span>Play the Devnet story</span>
+            <span>Watch the Sherwood story</span>
           </button>
         )}
       </div>
