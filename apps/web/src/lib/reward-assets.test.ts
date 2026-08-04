@@ -57,6 +57,42 @@ describe("rewardAssetMetadata", () => {
         "Tesla (TSLA) is a faucet-issued Robinhood Chain Testnet asset. It is for testing only and has no backing or redemption rights.",
     });
   });
+
+  it("uses Testnet aliases only for mocks and recognizes wrapped native", () => {
+    const catalog = [
+      {
+        address: addresses[0]!,
+        symbol: "MSFT",
+        mockSymbol: "tmMSFT",
+        name: "Robyn Testnet Mock Microsoft",
+        category: "stock",
+        verification: "robyn-testnet-mock",
+        mockOnly: true,
+      },
+      {
+        address: addresses[1]!,
+        symbol: "WETH",
+        mockSymbol: "WETH",
+        name: "Wrapped Ether",
+        category: "crypto",
+        verification: "robyn-controlled-testnet-dex",
+        mockOnly: true,
+      },
+    ];
+    expect(
+      rewardAssetMetadata(addresses[0]!, addresses, true, catalog),
+    ).toMatchObject({
+      symbol: "tmMSFT",
+      name: "Robyn Testnet Mock Microsoft",
+    });
+    expect(
+      rewardAssetMetadata(addresses[1]!, addresses, true, catalog),
+    ).toMatchObject({
+      symbol: "WETH",
+      name: "Wrapped Ether",
+      verification: "robyn-controlled-testnet-dex",
+    });
+  });
 });
 
 describe("assetVerificationLabel", () => {

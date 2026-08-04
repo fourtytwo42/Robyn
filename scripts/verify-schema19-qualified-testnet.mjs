@@ -34,6 +34,35 @@ for (const field of ["token", "vault", "market", "adapter", "locker"]) {
 if (BigInt(qualification.recoveryBps ?? 0) < 7_500n) {
   throw new Error("qualification recovery threshold not met");
 }
+const maintenancePolicy = manifest.maintenancePolicy;
+if (
+  maintenancePolicy?.tasksPerUserAction !== 1 ||
+  BigInt(maintenancePolicy.taskGasLimit ?? 0) !==
+    BigInt(manifest.settings?.maintenanceTaskGas ?? 0) ||
+  maintenancePolicy.failureObservationSpacingSeconds !==
+    manifest.settings?.failureObservationSpacing ||
+  maintenancePolicy.fallbackDelaySeconds !== manifest.settings?.fallbackDelay ||
+  maintenancePolicy.fallbackAsset?.toLowerCase() !==
+    manifest.contracts?.wrappedNative?.toLowerCase()
+) {
+  throw new Error("qualified Schema-19 maintenance policy mismatch");
+}
+const catalogAssets = manifest.assetCatalog?.assets;
+const rewardAssets = manifest.contracts?.rewardAssets ?? [];
+if (
+  manifest.assetCatalog?.schemaVersion !== 19 ||
+  !manifest.assetCatalog?.policyHash ||
+  !Array.isArray(catalogAssets) ||
+  catalogAssets.length !== rewardAssets.length ||
+  rewardAssets.some(
+    (address) =>
+      !catalogAssets.some(
+        (asset) => asset.address?.toLowerCase() === address.toLowerCase(),
+      ),
+  )
+) {
+  throw new Error("qualified Schema-19 asset catalog mismatch");
+}
 
 const rpcUrl = process.env.ROBYN_SCHEMA19_RPC_URL;
 if (!rpcUrl) throw new Error("ROBYN_SCHEMA19_RPC_URL is required");

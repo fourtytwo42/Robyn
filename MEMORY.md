@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 Testnet token-detail and asset-catalog acceptance defect
+
+- Context: Release `schema19-5d1a180` correctly rebuilt one launch, five dynamic contracts, and one Sherwood pool, but responsive browser acceptance found every token-detail URL returning 404 and the WETH basket leg rendered as an unknown asset.
+- Diagnosis: The API detail endpoint was returning 500 because the qualified Schema-19 manifest omitted the application-facing `maintenancePolicy`; the list endpoint did not exercise that view. The same manifest omitted `assetCatalog`, so reward presentation fell through a stale three-entry positional catalog.
+- Decision: Finalizers now bind the exact one-task maintenance gas/timing/fallback policy and a complete six-asset Schema-19 Testnet catalog with explicit `tm*` mock aliases and WETH identity. Mainnet finalization fails closed unless a separately supplied Schema-19 catalog is present. The qualified verifier rejects missing or mismatched maintenance/catalog state.
+- Verification: Finalizer, release-policy, reward-presentation, web typecheck, and direct loopback-LAN qualification checks pass. Regenerated qualified Testnet manifest SHA-256 is `cdc880d1fc78f1937d6b190bbeca35b7d03032b9ebd56ba728d11cf98ea7e33f`; direct verification still passes 32 runtimes, one graduated launch, fixed supply, locked principal, reward backing, and guardian-Paused state.
+- Safety: This is application/manifest metadata only. Schema-19 bytecode is unchanged and frozen; Testnet remains Paused; Mainnet remains Schema-18 and untouched.
+- Follow-up: Commit/push, produce a new immutable application release, promote into another fresh Schema-19 database, and repeat responsive token-page, wallet-state, RPC-degradation, and projection acceptance before Mainnet replacement rehearsal.
+
 ### 2026-08-03 - Schema-19 Testnet application releases stop requalifying frozen contracts
 
 - Context: The scoped-indexer correction changed application and manifest code only, but the protected Testnet builder still ran the complete Foundry suite and compiled the frozen protocol again in its clean room.

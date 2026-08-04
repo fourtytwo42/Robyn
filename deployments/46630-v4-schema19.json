@@ -348,6 +348,173 @@
     "qualificationPassed": true
   },
   "liquidityVenue": "uniswap-v4",
+  "maintenancePolicy": {
+    "tasksPerUserAction": 1,
+    "taskGasLimit": "1500000",
+    "failureObservationSpacingSeconds": 60,
+    "fallbackDelaySeconds": 180,
+    "fallbackAsset": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19"
+  },
+  "assetCatalog": {
+    "schemaVersion": 19,
+    "snapshotAt": "2026-08-03T23:06:38.875Z",
+    "disclosure": "Schema-19 Testnet assets are deterministic test fixtures. They are not production Stock Tokens, backed shares, or redeemable securities.",
+    "policyVersion": "schema19-testnet-assets-v1",
+    "v4Venue": {
+      "quoter": "0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94"
+    },
+    "assets": [
+      {
+        "symbol": "GOOGL",
+        "mockSymbol": "tmGOOGL",
+        "name": "Robyn Testnet Mock Alphabet Class A",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x2e0847e8910a9732eb3fb1bb4b70a580adad4fe3.png",
+        "mainnetAddress": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+        "referencePriceUsd": "319.64",
+        "address": "0xD8c939f427815934e099002aFb59512191EE464c",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0xb1a665a5b9248cad13618ab970df14e481df34f637746a4511640de60a807975",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "100000000000000"
+        }
+      },
+      {
+        "symbol": "MSFT",
+        "mockSymbol": "tmMSFT",
+        "name": "Robyn Testnet Mock Microsoft",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xe93237c50d904957cf27e7b1133b510c669c2e74.png",
+        "mainnetAddress": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+        "referencePriceUsd": "383.25",
+        "address": "0xF6ADDebdb72a47ee7d55B8D4914270fB723d01d4",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0x1e8deab3f22246371d19ff3fddb2640948674040bfa6dbced9ae291e9fdaa60f",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "100000000000000"
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "mockSymbol": "tmNVDA",
+        "name": "Robyn Testnet Mock NVIDIA",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec.png",
+        "mainnetAddress": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+        "referencePriceUsd": "208.34",
+        "address": "0x2f63e9484CF6242507b1cE8C8A479e6Dbbc7e677",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0x97c1fccbf4119735593063ebe8f2bc23d3b28b911c848a54318ddfcc7a34e160",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "100000000000000"
+        }
+      },
+      {
+        "symbol": "SPCX",
+        "mockSymbol": "tmSPCX",
+        "name": "Robyn Testnet Mock SpaceX",
+        "category": "stock",
+        "logoUrl": null,
+        "mainnetAddress": null,
+        "referencePriceUsd": null,
+        "address": "0x613863f5DcbD415039602e5A579103F160f69997",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0x3ecd75f7b25e4ad891754853c48983bfdab1940ea570f09f4b55c5335295edca",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "100000000000000"
+        }
+      },
+      {
+        "symbol": "SPY",
+        "mockSymbol": "tmSPY",
+        "name": "Robyn Testnet Mock SPDR S&P 500 ETF Trust",
+        "category": "etf-commodity",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x117cc2133c37b721f49de2a7a74833232b3b4c0c.png",
+        "mainnetAddress": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+        "referencePriceUsd": "739.22",
+        "address": "0xDfCcA159be0d4E1a034BD653728F7543B53cD940",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0xc6f786e302f8393c768e1cbdbee08936e9da411d0182adf4aae9701ae9440c1f",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "100000000000000"
+        }
+      },
+      {
+        "symbol": "WETH",
+        "mockSymbol": "WETH",
+        "name": "Wrapped Ether",
+        "category": "crypto",
+        "logoUrl": "/assets/launchpad/asset-meth.webp",
+        "mainnetAddress": null,
+        "referencePriceUsd": null,
+        "address": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-controlled-testnet-dex",
+        "mockOnly": true,
+        "route": {
+          "kind": "wrapped-native",
+          "ready": true
+        }
+      }
+    ],
+    "policyHash": "4e685645b4646cdc9ab0e5459817c02f8112aed4ecf46faa180b6dec165e9e4e"
+  },
   "qualification": {
     "completedStages": [
       "routes",

@@ -4,6 +4,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { getAddress } from "viem";
 import { buildSchema19IndexingPolicy } from "./lib/schema19-indexing-policy.mjs";
+import { buildSchema19AssetCatalog } from "./lib/schema19-asset-catalog.mjs";
 
 const [verifiedArg, preparedArg, inputArg, ledgerArg, outputArg] = process.argv.slice(2);
 if (![verifiedArg, preparedArg, inputArg, ledgerArg, outputArg].every(Boolean)) {
@@ -104,6 +105,20 @@ const assetRoutes = input.routes.map((route) => ({
   verificationClass: route.verificationClass,
   testFailureFixture: route.testFailureFixture === true,
 }));
+const maintenancePolicy = {
+  tasksPerUserAction: 1,
+  taskGasLimit: String(verified.settings.maintenanceTaskGas),
+  failureObservationSpacingSeconds:
+    verified.settings.failureObservationSpacing,
+  fallbackDelaySeconds: verified.settings.fallbackDelay,
+  fallbackAsset: getAddress(external.wrappedNative),
+};
+const assetCatalog = buildSchema19AssetCatalog({
+  chainId: verified.chainId,
+  assetRoutes,
+  quoter: external.quoter,
+  suppliedCatalog: input.assetCatalog,
+});
 const result = {
   schemaVersion: 19,
   liquidityVenue: "uniswap-v4",
@@ -121,6 +136,8 @@ const result = {
   runtimeCodeHashes,
   normalizedRuntimeCodeHashes: verified.normalizedRuntimeCodeHashes,
   settings: verified.settings,
+  maintenancePolicy,
+  assetCatalog,
   initialState: {
     launchMode: "Public",
     assetConversionsPaused: false,

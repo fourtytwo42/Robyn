@@ -20,7 +20,19 @@ test("Schema-19 finalizer binds active runtime roles and scoped indexing", () =>
     "tradeRouter",
     "daoRewardDistributor",
     "buildSchema19IndexingPolicy",
+    "buildSchema19AssetCatalog",
     "universalRouter",
+  ])
+    assert.match(source, new RegExp(token));
+});
+
+test("Schema-19 finalizer binds user-driven maintenance policy", () => {
+  for (const token of [
+    "tasksPerUserAction: 1",
+    "maintenanceTaskGas",
+    "failureObservationSpacing",
+    "fallbackDelay",
+    "fallbackAsset",
   ])
     assert.match(source, new RegExp(token));
 });

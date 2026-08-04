@@ -37,3 +37,15 @@ test("Schema-19 application releases attest frozen contracts without protocol re
   assert.doesNotMatch(source, /forge (?:build|test)/);
   assert.doesNotMatch(source, /--filter @robyn\/keeper/);
 });
+
+test("Schema-19 qualified verification requires maintenance and complete asset presentation", async () => {
+  const source = await readFile(
+    "scripts/verify-schema19-qualified-testnet.mjs",
+    "utf8",
+  );
+
+  assert.match(source, /qualified Schema-19 maintenance policy mismatch/);
+  assert.match(source, /qualified Schema-19 asset catalog mismatch/);
+  assert.match(source, /tasksPerUserAction !== 1/);
+  assert.match(source, /catalogAssets\.length !== rewardAssets\.length/);
+});

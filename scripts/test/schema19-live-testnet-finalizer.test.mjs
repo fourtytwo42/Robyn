@@ -54,6 +54,8 @@ test("qualified live Testnet manifest is fail-closed Paused", () => {
   assert.match(source, /applicationWritesEnabled: false/);
   assert.match(source, /qualificationPassed: true/);
   assert.match(source, /qualification: \{/);
+  assert.match(source, /maintenancePolicy/);
+  assert.match(source, /assetCatalog/);
   assert.match(source, /lockedPrincipal: lifecycle\.lockedPrincipal/);
   assert.match(source, /token: lifecycle\.token/);
 });

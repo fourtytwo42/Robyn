@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { buildSchema19AssetCatalog } from "./lib/schema19-asset-catalog.mjs";
 
 const [baseArg, verifiedArg, journalArg, lifecycleArg, outputArg] = process.argv.slice(2);
 if (![baseArg, verifiedArg, journalArg, lifecycleArg, outputArg].every(Boolean)) {
@@ -96,10 +97,24 @@ if (
 }
 
 const deploymentBlock = Math.min(...receipts.map((record) => Number(record.blockNumber)));
+const maintenancePolicy = base.maintenancePolicy ?? {
+  tasksPerUserAction: 1,
+  taskGasLimit: String(base.settings.maintenanceTaskGas),
+  failureObservationSpacingSeconds: base.settings.failureObservationSpacing,
+  fallbackDelaySeconds: base.settings.fallbackDelay,
+  fallbackAsset: base.contracts.wrappedNative,
+};
+const assetCatalog = base.assetCatalog ?? buildSchema19AssetCatalog({
+  chainId: base.chainId,
+  assetRoutes: base.assetRoutes,
+  quoter: base.contracts.quoter,
+});
 const result = {
   ...base,
   liquidityVenue: "uniswap-v4",
   deploymentBlock,
+  maintenancePolicy,
+  assetCatalog,
   initialState: {
     launchMode: "Paused",
     assetConversionsPaused: true,
