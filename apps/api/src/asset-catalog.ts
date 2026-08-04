@@ -793,31 +793,33 @@ export class AssetCatalogService {
           functionName: "executionRouteStatus",
           args: [outputToken],
         });
-        const status = await this.rpcClient.readContract({
-          address: this.routeRegistry,
-          abi: v4AssetRouterAbi,
-          functionName: "routeStatus",
-          args: [outputToken],
-        });
+        const status =
+          execution.kind === 1
+            ? await this.rpcClient.readContract({
+                address: this.routeRegistry,
+                abi: v4AssetRouterAbi,
+                functionName: "routeStatus",
+                args: [outputToken],
+              })
+            : null;
         return {
           kind: v4ExecutionKind(execution.kind),
           ready: execution.ready,
           contractReady: execution.ready,
           venue: this.routeRegistry,
-          poolFee: status.fee === 0 ? null : status.fee,
-          liquidity: execution.kind === 1 ? status.liquidity.toString() : null,
+          poolFee: status && status.fee !== 0 ? status.fee : null,
+          liquidity: status ? status.liquidity.toString() : null,
           reason: execution.ready ? null : reasonText(execution.reason),
           maximumNativeInput: execution.maximumNativeInput.toString(),
           maximumAssetInput: execution.maximumAssetInput.toString(),
           lastSuccessfulExecution: null,
           disabledReason: reasonText(execution.disabledReason),
-          poolId: execution.kind === 1 ? status.poolId : null,
-          minimumLiquidity:
-            execution.kind === 1 ? status.minimumLiquidity.toString() : null,
-          spotTick: execution.kind === 1 ? status.spotTick : null,
-          referenceTick: execution.kind === 1 ? status.referenceTick : null,
+          poolId: status?.poolId ?? null,
+          minimumLiquidity: status?.minimumLiquidity.toString() ?? null,
+          spotTick: status?.spotTick ?? null,
+          referenceTick: status?.referenceTick ?? null,
           maximumReferenceTickDeviation:
-            execution.kind === 1 ? status.maximumReferenceTickDeviation : null,
+            status?.maximumReferenceTickDeviation ?? null,
         };
       } catch {
         const ready = fallback?.ready === true;

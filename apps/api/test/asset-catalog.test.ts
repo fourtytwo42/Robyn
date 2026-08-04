@@ -172,6 +172,71 @@ describe("AssetCatalogService", () => {
     ]);
   });
 
+  it("keeps a direct WETH wrap selectable without reading a v4 pool", async () => {
+    let routeStatusReads = 0;
+    const wethManifest = manifest();
+    wethManifest.assets[0] = {
+      ...wethManifest.assets[0]!,
+      symbol: "WETH",
+      mockSymbol: undefined,
+      name: "Wrapped Ether",
+      category: "wrapped-native",
+      chainId: 4663,
+      mockOnly: false,
+      verification: "canonical-weth-runtime",
+    };
+    const client = {
+      getCode: async () => "0x01",
+      readContract: async ({ functionName }: { functionName: string }) => {
+        if (functionName === "executionRouteStatus") {
+          return {
+            kind: 2,
+            maximumNativeInput: 500_000_000_000_000_000n,
+            maximumAssetInput: 500_000_000_000_000_000n,
+            disabledReason: `0x${"0".repeat(64)}`,
+            enabled: true,
+            runtimeVerified: true,
+            ready: true,
+            reason: `0x${"0".repeat(64)}`,
+          };
+        }
+        if (functionName === "routeStatus") {
+          routeStatusReads += 1;
+          throw new Error("direct WETH wrap has no v4 pool");
+        }
+        throw new Error(`unexpected ${functionName}`);
+      },
+    } as unknown as PublicClient;
+    const service = new AssetCatalogService(
+      client,
+      4663,
+      native,
+      registry,
+      wethManifest,
+    );
+
+    await expect(service.list()).resolves.toEqual([
+      expect.objectContaining({
+        symbol: "WETH",
+        route: expect.objectContaining({
+          kind: "wrapped-native",
+          ready: true,
+          contractReady: true,
+          selectable: true,
+          maximumNativeInput: "500000000000000000",
+          maximumAssetInput: "500000000000000000",
+          poolId: null,
+        }),
+        poolPrice: expect.objectContaining({
+          status: "available",
+          kind: "exact-native",
+          nativePerAsset: "1",
+        }),
+      }),
+    ]);
+    expect(routeStatusReads).toBe(0);
+  });
+
   it("keeps canonical symbols for verified Mainnet assets with mock aliases", async () => {
     const mainnetManifest = manifest();
     mainnetManifest.assets[0] = {

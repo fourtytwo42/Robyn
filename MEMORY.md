@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-03 - Production acceptance found direct-WETH catalog defect
+
+- Context: The exact Schema-19 production runtime and fresh scoped database were deployed to the keyless host with transaction submission disabled. Responsive launch-wizard acceptance showed all five stock routes selectable but canonical WETH unavailable.
+- Diagnosis: `AssetCatalogService.readRoute()` read both `executionRouteStatus()` and the v4-only `routeStatus()` for every native execution route. Direct WETH wrapping has no v4 pool, so the second read reverted and the fallback response dropped the configured cap, making selectability false despite a healthy onchain direct-wrap route.
+- Decision: For execution kind `wrapped-native`, trust the manifest-bound router's `executionRouteStatus()` and never query v4 pool state. Preserve the configured native/asset caps and exact 1 WETH = 1 ETH presentation. Keep Mainnet transaction submission disabled because the original authorization froze application release `0873abd...`.
+- Verification: The regression proves a direct WETH route remains ready/selectable, preserves both caps and exact-native pricing, and performs zero `routeStatus()` reads. All 84 API tests, application tests, typechecks, lint, production-release tests, formatting, and the frozen Schema-19 contract attestation pass without compiling or testing Solidity.
+- Follow-up: Commit and push the application-only correction, produce two reproducible builds and a superseding signed release/manifest, then request exact-hash authorization before promoting it or enabling Mainnet transaction submission.
+
 ### 2026-08-03 - Schema-19 Mainnet replacement deployed and Schema-18 retired
 
 - Authorization: Exact manifest SHA-256 `44167d8f243315dee904f329dbcd7d106230a626282796a030cdbf66324fd37f` authorized deployment, binding, Schema-18 test-canary retirement, fresh database cutover, application release `0873abd4332c6283b374c92de3ce244bc60f291c`, and writes only after acceptance. No bridge was authorized.
@@ -223,15 +231,15 @@
 
 ## Active Handoff
 - Schema-19 is deployed and independently verified on Robinhood Mainnet. Schema-18 is guardian-retired and archived. No further onchain deployment or retirement transaction is pending.
-- Public production submissions remain deliberately disabled on `192.168.50.108` while the Schema-19 database and exact application runtime are promoted and accepted.
+- Public production submissions remain deliberately disabled on `192.168.50.108`. The Schema-19 database and exact authorized runtime are caught up, but browser acceptance found the direct-WETH catalog defect described above.
 - Operational HEAD begins at `ff6cffa885e0877391155a35ea03e44485c0ff80` plus the production-release-v2 binding change. Qualified application identity remains separately frozen at `0873abd4332c6283b374c92de3ce244bc60f291c`; `apps`, `packages`, and lock/workspace files are byte-identical between that application SHA and the operational source.
 - Production release policy is Schema 19, contract closure `8b4b591bebc896fe58ff4457cc72ecb6518862d8`, application-bound deployment manifest SHA-256 `d726ccc1a818e7fc916096e071e6db0bcb125b3754c9e82a92d0e2fa4d4ecadd`, and indexing policy SHA-256 `cd816f7b373bc6af79059b71d3cf0f1674ac56ef0a720574b6b6763c6b33facb0`.
-- Next: commit/push clean operational tooling, complete three environment acceptance records, create the signed production release, let the keyless updater deploy with writes disabled, rebuild and reconcile `robyn_mainnet_schema19`, run responsive browser acceptance, then enable submissions only after every gate passes.
+- Next: qualify a corrected application-only release, seal a superseding exact manifest, and obtain authorization because the prior authorization prohibited changing application release `0873abd...`. Do not enable submissions under the consumed authorization.
 
 ## Current State
 - Schema-19 Mainnet launch mode is Public with production profile `6 ETH / 0.5 ETH`, one-hour rewards, active conversions, six ready routes, zero launches, and zero liabilities at initial verification.
 - Schema-18 is Paused with conversions paused and all routes disabled; its sole project test canary is archived and remains claimable onchain.
-- The keyless production host still serves the predecessor application with transaction submission disabled. Do not report Schema-19 as user-ready until the fresh database, exact runtime, and final public acceptance pass.
+- The keyless production host serves the exact authorized Schema-19 application and a caught-up fresh database with transaction submission disabled. Do not report Schema-19 as user-ready until the corrected WETH-catalog release is authorized, promoted, and accepted.
 - LAN `192.168.50.173:8547` remains the sole application and transaction upstream. Alchemy remains comparison-probe-only and never automatic fallback.
 - Requery balance and fees before any future operator transaction; the last postdeployment balance was `0.027577594735033679 ETH`.
 
@@ -243,11 +251,10 @@
 - Production-release-v2 focused tests, Schema-19 frozen-contract verification, script syntax, and application-runtime identity comparison pass. Full production promotion and browser acceptance remain pending.
 
 ## Open Follow-ups
-- Commit and push the production-release-v2 operational change without modifying the qualified application runtime tree.
-- Generate passing Devnet, Testnet, and LAN-Mainnet-staging acceptance records bound to the clean operational SHA and application SHA `0873abd...`.
-- Install the exact live Schema-19 application manifest as the protected release input, build/sign/tag the production release, and verify automatic keyless deployment with writes disabled.
-- Create and rebuild fresh database `robyn_mainnet_schema19` from block `27248417`; require zero lag, exact projection/direct-state equality, no excluded global logs, and correct Schema-19 health.
-- Complete API, route-readiness, desktop/mobile, transaction-simulation, emergency-disable, and reboot/rollback checks before enabling production submissions.
+- Commit and push the direct-WETH catalog correction without modifying Solidity, deployment bytecode, routes, caps, contracts, database, or RPC policy.
+- Produce two reproducible application builds and new Devnet, Testnet, and LAN-Mainnet-staging acceptance records for the corrected clean SHA.
+- Seal a superseding signed production release/manifest and stop for exact authorization before production promotion or enabling submissions.
+- After authorization, promote with writes disabled, verify WETH and all stock routes in desktop/mobile launch creation, then enable submissions only after emergency and transaction simulations pass.
 - After cutover, seal evidence and monitor the first 24 public hours. Keep Schema-18 archived and never migrate or replay its test-canary state.
 
 
