@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
-export const PRODUCTION_MANIFEST_SCHEMA = 1;
+export const PRODUCTION_MANIFEST_SCHEMA = 2;
 export const ALLOWED_SCOPES = new Set([
   "ui",
   "data",
@@ -124,6 +124,10 @@ export function validateProductionRelease(manifest, policy, options = {}) {
     errors.push("schemaVersion");
   if (manifest.chainId !== policy.chainId) errors.push("chainId");
   if (!hex(manifest.sourceSha, 40)) errors.push("sourceSha");
+  if (!hex(manifest.applicationReleaseSha, 40))
+    errors.push("applicationReleaseSha");
+  if (manifest.applicationReleaseSha !== policy.applicationReleaseSha)
+    errors.push("applicationReleaseSha");
   if (!hex(manifest.applicationArtifactHash, 64))
     errors.push("applicationArtifactHash");
   if (!hex(manifest.runtimeArchiveHash, 64)) errors.push("runtimeArchiveHash");
@@ -173,6 +177,8 @@ export function validateProductionAcceptance(evidence, expected) {
   if (evidence.schemaVersion !== 1) errors.push("schemaVersion");
   if (evidence.environment !== expected.environment) errors.push("environment");
   if (evidence.sourceSha !== expected.sourceSha) errors.push("sourceSha");
+  if (evidence.applicationReleaseSha !== expected.applicationReleaseSha)
+    errors.push("applicationReleaseSha");
   if (evidence.changeScope !== expected.changeScope) errors.push("changeScope");
   if (evidence.contractClosureHash !== expected.contractClosureHash)
     errors.push("contractClosureHash");
@@ -248,7 +254,11 @@ export function assertReleaseTreeIntegrity(root, manifest) {
       );
     }
     const evidence = JSON.parse(readFileSync(file, "utf8"));
-    if (evidence.passed !== true || evidence.sourceSha !== manifest.sourceSha) {
+    if (
+      evidence.passed !== true ||
+      evidence.sourceSha !== manifest.sourceSha ||
+      evidence.applicationReleaseSha !== manifest.applicationReleaseSha
+    ) {
       throw new Error(
         "Acceptance evidence identity mismatch: " + reference.environment,
       );

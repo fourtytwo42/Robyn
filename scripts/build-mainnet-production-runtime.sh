@@ -19,6 +19,13 @@ next_secrets="${ROBYN_NEXT_BUILD_SECRETS_FILE:-/etc/robyn/next-build-secrets.jso
 cd "${source_root}"
 source_sha="$(git rev-parse HEAD)"
 [[ -z "$(git status --porcelain)" ]]
+application_release_sha="$(jq -r .applicationReleaseSha config/production-mainnet.json)"
+[[ "${application_release_sha}" =~ ^[0-9a-f]{40}$ ]] || { echo "invalid application release SHA" >&2; exit 1; }
+git cat-file -e "${application_release_sha}^{commit}"
+git diff --quiet "${application_release_sha}" HEAD -- apps packages pnpm-lock.yaml pnpm-workspace.yaml || {
+  echo "application runtime source differs from qualified application release" >&2
+  exit 1
+}
 [[ "$(git rev-parse HEAD:packages/contracts/src)" == "$(jq -r .contractClosureHash config/production-mainnet.json)" ]]
 [[ -r "${manifest_input}" ]] || { echo "release manifest input is not readable" >&2; exit 1; }
 [[ "$(sha256sum "${manifest_input}" | cut -d' ' -f1)" == "$(jq -r .deploymentManifestHash config/production-mainnet.json)" ]] || { echo "release manifest input hash mismatch" >&2; exit 1; }
@@ -69,8 +76,8 @@ done | jq -s .)"
   sha256sum "${output_root}/runtime.tar.zst" | sed 's#  .*/#  #' > "${output_root}/runtime.tar.zst.sha256"
 )
 runtime_archive_hash="$(sha256sum "${output_root}/runtime.tar.zst" | cut -d' ' -f1)"
-jq -n --arg sourceSha "${source_sha}" --arg applicationArtifactHash "${application_hash}" --arg runtimeArchiveHash "${runtime_archive_hash}" --arg changeScope "${scope}" --arg contractClosureHash "$(jq -r .contractClosureHash config/production-mainnet.json)" --arg deploymentManifestHash "$(jq -r .deploymentManifestHash config/production-mainnet.json)" --arg migrationSetHash "${migration_hash}" --arg processTopologyHash "${topology_hash}" --arg requiredPreviousRelease "${previous}" --argjson acceptanceReferences "${acceptance}" '{
-  schemaVersion:1,sourceSha:$sourceSha,applicationArtifactHash:$applicationArtifactHash,
+jq -n --arg sourceSha "${source_sha}" --arg applicationReleaseSha "${application_release_sha}" --arg applicationArtifactHash "${application_hash}" --arg runtimeArchiveHash "${runtime_archive_hash}" --arg changeScope "${scope}" --arg contractClosureHash "$(jq -r .contractClosureHash config/production-mainnet.json)" --arg deploymentManifestHash "$(jq -r .deploymentManifestHash config/production-mainnet.json)" --arg migrationSetHash "${migration_hash}" --arg processTopologyHash "${topology_hash}" --arg requiredPreviousRelease "${previous}" --argjson acceptanceReferences "${acceptance}" '{
+  schemaVersion:2,sourceSha:$sourceSha,applicationReleaseSha:$applicationReleaseSha,applicationArtifactHash:$applicationArtifactHash,
   runtimeArchiveHash:$runtimeArchiveHash,
   changeScope:$changeScope,contractClosureHash:$contractClosureHash,
   deploymentManifestHash:$deploymentManifestHash,chainId:4663,

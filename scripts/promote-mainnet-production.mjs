@@ -54,6 +54,35 @@ const scope = classifyProductionChanges(changed);
 const policy = JSON.parse(
   readFileSync(path.join(repo, "config/production-mainnet.json"), "utf8"),
 );
+const applicationReleaseSha = execFileSync(
+  "git",
+  ["rev-parse", policy.applicationReleaseSha],
+  { cwd: repo, encoding: "utf8" },
+).trim();
+if (applicationReleaseSha !== policy.applicationReleaseSha) {
+  throw new Error("qualified application release SHA is not canonical");
+}
+try {
+  execFileSync(
+    "git",
+    [
+      "diff",
+      "--quiet",
+      applicationReleaseSha,
+      sha,
+      "--",
+      "apps",
+      "packages",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+    ],
+    { cwd: repo },
+  );
+} catch {
+  throw new Error(
+    "application runtime source differs from qualified application release",
+  );
+}
 const acceptanceRoot = path.join("/var/lib/robyn-release/acceptance", sha);
 for (const environment of ["devnet", "testnet", "mainnet-staging"]) {
   const evidence = JSON.parse(
@@ -71,6 +100,7 @@ for (const environment of ["devnet", "testnet", "mainnet-staging"]) {
   validateProductionAcceptance(evidence, {
     environment,
     sourceSha: sha,
+    applicationReleaseSha,
     changeScope: scope,
     contractClosureHash: policy.contractClosureHash,
   });

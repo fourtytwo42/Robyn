@@ -18,10 +18,12 @@ const policy = {
   chainId: 4663,
   contractClosureHash: "a".repeat(40),
   deploymentManifestHash: "b".repeat(64),
+  applicationReleaseSha: "8".repeat(40),
 };
 const valid = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   sourceSha: "c".repeat(40),
+  applicationReleaseSha: policy.applicationReleaseSha,
   applicationArtifactHash: "d".repeat(64),
   runtimeArchiveHash: "9".repeat(64),
   changeScope: "ui",
@@ -130,6 +132,7 @@ test("requires exact, passing, fail-closed environment acceptance", () => {
   const expected = {
     environment: "mainnet-staging",
     sourceSha: valid.sourceSha,
+    applicationReleaseSha: valid.applicationReleaseSha,
     changeScope: "infrastructure",
     contractClosureHash: policy.contractClosureHash,
   };
@@ -173,6 +176,7 @@ test("binds every runtime file and acceptance record to the signed manifest", ()
       environment,
       passed: true,
       sourceSha: valid.sourceSha,
+      applicationReleaseSha: valid.applicationReleaseSha,
     });
     const relative = "release-evidence/" + environment + ".json";
     writeFileSync(path.join(root, relative), body);

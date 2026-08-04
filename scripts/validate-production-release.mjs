@@ -27,4 +27,4 @@ if (hashMigrationSet(path.join(root, "packages/db/migrations")) !== manifest.mig
 if (sha256File(path.join(root, "infrastructure/pm2/ecosystem.mainnet.production.cjs")) !== manifest.processTopologyHash) {
   throw new Error("Process topology hash mismatch");
 }
-process.stdout.write(`${JSON.stringify({ passed: true, sourceSha: manifest.sourceSha, scope: manifest.changeScope })}\n`);
+process.stdout.write(`${JSON.stringify({ passed: true, sourceSha: manifest.sourceSha, applicationReleaseSha: manifest.applicationReleaseSha, scope: manifest.changeScope })}\n`);
