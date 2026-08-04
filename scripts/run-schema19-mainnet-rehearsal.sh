@@ -114,5 +114,5 @@ node scripts/seal-schema19-mainnet-rehearsal.mjs \
   "$input" "$prepared" "$ledger" "$verified" "$manifest" "$lifecycle" \
   "$evidence/rehearsal-report.json"
 (cd "$evidence" && sha256sum -- *.json lifecycle/*.jsonl lifecycle/*.json > SHA256SUMS)
-sha256sum -c "$evidence/SHA256SUMS"
+(cd "$evidence" && sha256sum -c SHA256SUMS)
 cat "$evidence/rehearsal-report.json"

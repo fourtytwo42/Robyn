@@ -8466,3 +8466,11 @@ When sources conflict, use this order:
 - Files: `scripts/run-schema19-testnet-lifecycle.mjs`, `scripts/test/schema19-testnet-lifecycle.test.mjs`.
 - Result: The 72-hour fallback rehearsal uses real pool mechanics, no synthetic liquidity or direct state mutation, and a bounded maximum disturbance budget.
 - Follow-up: Push the runner-only fix and restart the complete fresh-fork lifecycle. No Mainnet transaction is authorized.
+
+### 2026-08-03 - Schema-19 Mainnet rehearsal lifecycle pass
+
+- Context: Rehearsal `rehearsal-90372f2-01` passed the substantive lifecycle: 36 deployment receipts, 246 lifecycle receipts, all required stages, `105507585` total gas, 78.97% gross recovery, objective MSFT fallback consuming `10362975471365069` wei after three observations across 72 hours, reset observations, guardian shutdown, and reconciliation.
+- Decision: Do not promote the run because the final checksum verifier was invoked from the repository root against relative evidence filenames. Verify checksums from inside the evidence directory and repeat the full lifecycle under the resulting clean tooling SHA.
+- Files: `scripts/run-schema19-mainnet-rehearsal.sh`, `scripts/test/schema19-mainnet-rehearsal.test.mjs`.
+- Result: Contract behavior and the exact production lifecycle pass; only evidence-path sealing remains to be repeated.
+- Follow-up: Push the one-line tooling fix and run a fresh complete rehearsal so receipts and verified checksums share one immutable run identity. No Mainnet transaction is authorized.

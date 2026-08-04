@@ -32,6 +32,7 @@ test("Mainnet rehearsal is pinned to LAN, chain 4663, and local Anvil", () => {
   assert.match(runner, /local_deployment_input_name=tmp\/schema19-mainnet-rehearsal-input\.json/);
   assert.match(runner, /cd "\$repo\/packages\/contracts"/);
   assert.doesNotMatch(runner, /--root packages\/contracts/);
+  assert.match(runner, /\(cd "\$evidence" && sha256sum -c SHA256SUMS\)/);
   assert.match(runner, /http:\/\/127\.0\.0\.1:28548/);
   assert.doesNotMatch(runner, /alchemy\.com|--fork-url https:/i);
 });
