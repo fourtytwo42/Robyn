@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "title": "Enter Sherwood Forest",
   "environment": "Devnet",
-  "durationSeconds": 66.454,
+  "durationSeconds": 66.475,
   "frameRate": 30,
   "resolution": "1920x1080",
   "disclosure": "The film is a marketing presentation captured with testing fixtures. Assets and transactions shown have no real-world value.",
@@ -17,13 +17,13 @@
   "media": {
     "webMp4": {
       "path": "/media/sherwood-sizzle-web.mp4",
-      "bytes": 13741364,
-      "sha256": "1876d0c1cf5a27546e637bd57bc098b918f1c9fc00e728f265d91dc2f2e93c85"
+      "bytes": 5132401,
+      "sha256": "f27ffa802421271d87ba3a0166bbdc5ec2ce306990c853516bd04c62ade4419f"
     },
     "poster": {
       "path": "/media/sherwood-sizzle-poster.webp",
-      "bytes": 203526,
-      "sha256": "1a66560b2fda439242907a4e6abad2ae885f2a868465521cb906f90899c04201"
+      "bytes": 219362,
+      "sha256": "a640e23c9f0c3c91c8be697ec76fad28bbe8e6e4cc0e875f2307a09db572abc0"
     },
     "captions": {
       "path": "/media/sherwood-sizzle.vtt",
@@ -32,7 +32,7 @@
     },
     "archivalMaster": {
       "committed": false,
-      "sha256": "127e8d513aa0ddf8ed1b9a0c728d998d705d009023b830a4cb0a5cc8ae2614ea"
+      "sha256": "c0ccb45a2e0eb54f021c8296746cfe1d1e36c35fd8da2d746d7d78334e213def"
     }
   },
   "transactions": [
