@@ -342,19 +342,19 @@
 
 - Context: The user canceled the endurance soak and authorized a Devnet-only Schema-20 upgrade plus a product film using the already qualified `dd7afcfa...` candidate.
 - Decision: Preserve the Schema-19 Devnet chain, database, PM2 dump, release, and manifest as rollback evidence; run Schema-20 persistently on native Anvil port `28549`; stop the Devnet keeper because maintenance is user-driven; leave Testnet and Mainnet untouched.
-- Files: Marketing application branch `codex/marketing-pages-demo`; paced film release `bd532d361f2df7cb8da79d1237278860c081029c`; fresh database `robyn_devnet_schema20_marketing_dd7afcf`; systemd service `robyn-schema20-devnet.service`.
+- Files: Marketing application branch `codex/marketing-pages-demo`; word-aligned film release `f1586b9d1a46d76d88be792d62bd7e16e8b2f852`; fresh database `robyn_devnet_schema20_marketing_dd7afcf`; systemd service `robyn-schema20-devnet.service`.
 - Commands/tests: 84 web tests, typecheck, lint, secret scan, dependency audit with zero high/critical findings, exact `packages/contracts` diff against `dd7afcf`, two clean reproducible web builds, direct chain/accounting/receipt validation, and in-app-browser acceptance passed. No Solidity compilation or contract test ran.
 - Result: Devnet serves the trader-first homepage, `/creators`, `/security`, `/demo`, four Schema-20 markets, and a 154-second film narrated by GPU45 Pocket TTS built-in Anna as synthetic `Voice of Sherwood - Rowan`. The complete cut is 15% faster than the original while Anna's clean natural source requires only about 3.8% tempo acceleration. Scenes, cues, captions, and transcript timestamps are synchronized, and the release-blocking audio-quality gate remains enforced.
 - Follow-up: Keep this release Devnet-only. Any Testnet/Mainnet promotion requires a separate plan and authorization. Retain the archival film master and receipt evidence outside Git.
 
 ## Active Handoff
-- Schema-20 Devnet is active at `http://192.168.50.250:3000` from immutable application release `bd532d361f2df7cb8da79d1237278860c081029c` on branch `codex/marketing-pages-demo`.
+- Schema-20 Devnet is active at `http://192.168.50.250:3000` from immutable application release `f1586b9d1a46d76d88be792d62bd7e16e8b2f852` on branch `codex/marketing-pages-demo`.
 - The persistent Schema-20 chain is `robyn-schema20-devnet.service` on loopback `28549`; the fresh scoped database is `robyn_devnet_schema20_marketing_dd7afcf`; the Devnet keeper is intentionally absent.
 - Schema-19 Devnet rollback evidence is under `/home/hendo420/robyn-evidence/schema20-marketing-upgrade/precutover-dd7afcf-01`. Testnet and Mainnet were not changed.
 
 ## Current State
 - Devnet has four deterministic Schema-20 launches, one graduated market, three ready mock reward routes, exact fixed one-billion RDAO supply, prepared eligible stake plus the film's warming stake, and exact WETH liability backing.
-- The published film is approximately 154 seconds, 1920x1080 at 30 fps, 10,978,421 bytes, SHA-256 `7bfe47e2cbcbfce9ce3a7d1f7e0e5f3ea33e49d79695d912cd306cd7542845b0`; the archival master remains outside Git.
+- The published film is 153.9 seconds, 1920x1080 at 30 fps, 10,401,174 bytes, SHA-256 `840ec7d93dd2be783da6c0fc3346bff5ce5f7cf3f5fd383d30d0e37ef50f85d7`; the archival master remains outside Git.
 - No soak or scheduled task is running. No Schema-20 Testnet/Mainnet deployment or production tag exists.
 
 ## Verification Ledger
@@ -362,6 +362,7 @@
 - `68091c4...`: 84 web tests, typecheck, lint, secret scan, dependency audit, exact contract-tree freeze, two identical clean application builds, live receipt/accounting validation, and in-app-browser route/video/wallet acceptance passed.
 - `367a2ac...`: noisy alignment root cause confirmed; built-in Alba narration and final web encode pass peak, zero-crossing, high-frequency, duration, and format gates. The old film fails the gate. 84 web tests, typecheck, lint, exact contract-tree freeze, two identical application builds, and live in-app-browser playback passed with no console errors or overflow.
 - `bd532d3...`: built-in Anna clean-source cut reduces complete runtime by 15%; narration, video, captions, transcript, and interface cues are synchronized. Audio gates, 84 web tests, typecheck, lint, frozen-contract check, two reproducible application builds, and live browser playback at 153.97 seconds pass with no console errors or overflow.
+- `f1586b9...`: Whisper word timestamps exposed large inherited scene offsets, including quote narration near 20 seconds versus its old visual near 37 seconds and RDAO narration near 107 seconds versus its old visual near 126 seconds. Scene boundaries, cue sounds, captions, and transcript ranges were recut to the spoken phrases. Audio gates, 84 web tests, typecheck, lint, frozen-contract check, two reproducible builds, and live 153.9-second browser playback pass.
 - Evidence: `/home/hendo420/robyn-evidence/schema20-marketing-upgrade`, `/home/hendo420/robyn-media-evidence/schema20-marketing-film/23cd8c4-01`, and `/home/hendo420/robyn-media-evidence/schema20-marketing-fixture/dd7afcf-prep-01`.
 
 ## Open Follow-ups
