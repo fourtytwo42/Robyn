@@ -32,6 +32,7 @@ nohup "$anvil" \
   --port 28549 \
   --auto-impersonate \
   --base-fee 1000000 \
+  --gas-price 1000000 \
   --silent >"$evidence/anvil.log" 2>&1 &
 anvil_pid=$!
 cleanup() {
