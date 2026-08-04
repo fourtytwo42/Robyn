@@ -174,6 +174,7 @@ try {
     schemaVersion: 1,
     environment,
     sourceSha,
+    applicationReleaseSha: policy.applicationReleaseSha,
     changeScope,
     contractClosureHash: policy.contractClosureHash,
     passed: true,
