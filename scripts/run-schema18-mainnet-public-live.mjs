@@ -291,7 +291,7 @@ const submit = async ({ phase, label, to, data, value = 0n }) => {
   ]);
   if (latest !== pending) throw new Error(`${key} has a pending nonce`);
   const baseMaxFee = localRehearsal
-    ? (fees.gasPrice ?? fees.maxFeePerGas)
+    ? 1_000_000n
     : (fees.maxFeePerGas ?? fees.gasPrice);
   const maxFeePerGas = (baseMaxFee * 12_500n + 9_999n) / 10_000n;
   const maxPriorityFeePerGas = localRehearsal
