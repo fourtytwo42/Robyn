@@ -290,10 +290,15 @@ const submit = async ({ phase, label, to, data, value = 0n }) => {
     client.estimateFeesPerGas(),
   ]);
   if (latest !== pending) throw new Error(`${key} has a pending nonce`);
-  const baseMaxFee = fees.maxFeePerGas ?? fees.gasPrice;
+  const baseMaxFee = localRehearsal
+    ? (fees.gasPrice ?? fees.maxFeePerGas)
+    : (fees.maxFeePerGas ?? fees.gasPrice);
   const maxFeePerGas = (baseMaxFee * 12_500n + 9_999n) / 10_000n;
-  const maxPriorityFeePerGas =
-    (fees.maxPriorityFeePerGas ?? 0n) <= maxFeePerGas ? (fees.maxPriorityFeePerGas ?? 0n) : maxFeePerGas;
+  const maxPriorityFeePerGas = localRehearsal
+    ? 0n
+    : (fees.maxPriorityFeePerGas ?? 0n) <= maxFeePerGas
+      ? (fees.maxPriorityFeePerGas ?? 0n)
+      : maxFeePerGas;
   const estimate = await client.estimateGas({ account: account.address, to, data, value });
   const gas = estimate * 2n;
   const phaseCeiling = BigInt(manifest.gas?.phaseCeilings?.[phase] ?? 0);
