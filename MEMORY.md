@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-04 - Schema-20 bounded staking and Devnet application checkpoint
+
+- Context: The Schema-20 RDAO staking/sale implementation was extended without touching active Schema-19 services or deployments.
+- Decision: Warm-up activation is bounded to 64 lots by default and 256 explicitly; immediate unstaking cancels warming principal in constant time and later activation drains cancellation state in bounded pages. This preserves uncapped staking without an unbounded gas scan.
+- Application: Added a Devnet-only Sale/Stake/Rewards/Governance workspace, additive `/rdao` API, WETH claim/unwrap state, and Schema-20 scoped-indexer roots for the sale, staking, and permanent RDAO/WETH locker.
+- Verification: The 1,024-lot exit/activation regressions pass; focused Schema-20 contract tests, API typecheck/test, web typecheck/lint, and scoped-indexer build/tests pass. A seven-transaction isolated Anvil broadcaster deployed fresh RDAO/governance/staking/sale/locker state, funded 150m sale plus 50m liquidity, finalized bootstrap on first distribution, and staked the uncapped retained 800m.
+- Evidence: `/home/hendo420/robyn-evidence/schema20/devnet-broadcast-e71a54d-01/receipt-ledger.json`.
+- Follow-up: Complete the full Schema-20 protocol deployment closure, event projections, economic/fuzz/invariant/security/coverage/reproducibility gates, then run the uninterrupted eight-real-hour 60x soak on one clean pushed SHA. Devnet only pending legal review.
+
 ### 2026-08-04 - Schema-20 isolated Devnet implementation checkpoint
 
 - Context: User authorized a Devnet-only Schema-20 revision for an RDAO bonding sale and staking rewards. Active Schema-19 Devnet/Testnet/Mainnet deployments and the dirty landing-page worktree must remain untouched pending legal review.

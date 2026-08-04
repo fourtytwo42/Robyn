@@ -66,9 +66,12 @@ const manifest = JSON.parse(
     "utf8",
   ),
 ) as Manifest;
-if (manifest.schemaVersion === 19 && manifest.liquidityVenue !== "uniswap-v4") {
+if (
+  (manifest.schemaVersion === 19 || manifest.schemaVersion === 20) &&
+  manifest.liquidityVenue !== "uniswap-v4"
+) {
   throw new Error(
-    "Schema-19 manifest must declare the Uniswap v4 liquidity venue",
+    "Schema-19/20 manifest must declare the Uniswap v4 liquidity venue",
   );
 }
 const usesUniswapV4 = manifest.liquidityVenue === "uniswap-v4";

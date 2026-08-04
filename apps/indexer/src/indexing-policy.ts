@@ -118,12 +118,12 @@ export function backfillAllowed(
 }
 
 export function validateIndexingPolicy(manifest: IndexingPolicyManifest) {
-  if (manifest.schemaVersion !== 19) {
-    throw new Error("Scoped indexer requires a Schema-19 manifest");
+  if (manifest.schemaVersion !== 19 && manifest.schemaVersion !== 20) {
+    throw new Error("Scoped indexer requires a Schema-19 or Schema-20 manifest");
   }
   const policy = manifest.indexingPolicy;
   if (!policy || policy.version !== 1) {
-    throw new Error("Schema-19 indexing policy version 1 is required");
+    throw new Error("Schema-19/20 indexing policy version 1 is required");
   }
   if (policy.protocolRoots.length === 0) {
     throw new Error("Indexing policy requires protocol roots");
@@ -149,7 +149,7 @@ export function validateIndexingPolicy(manifest: IndexingPolicyManifest) {
     normalizedUnique(policy.poolEventTopics).join(",") !==
       normalizedUnique(requiredPoolEventTopics).join(",")
   ) {
-    throw new Error("Schema-19 indexing event identity mismatch");
+    throw new Error("Schema-19/20 indexing event identity mismatch");
   }
   for (const [label, size] of [
     ["addressBatchSize", policy.addressBatchSize],
@@ -185,6 +185,14 @@ export function validateIndexingPolicy(manifest: IndexingPolicyManifest) {
   for (const root of normalizedRoots) {
     if (externalAddresses.has(root)) {
       throw new Error(`External dependency entered indexing roots: ${root}`);
+    }
+  }
+  if (manifest.schemaVersion === 20) {
+    for (const role of ["rdaoSale", "rdaoStaking", "rdaoLiquidityLocker"] as const) {
+      const value = manifest.contracts[role];
+      if (typeof value !== "string" || !normalizedRoots.includes(value.toLowerCase())) {
+        throw new Error(`Schema-20 indexing roots must include ${role}`);
+      }
     }
   }
   const expectedHash = indexingPolicyHash({

@@ -30,6 +30,7 @@ import {
 } from "./launch-analytics.js";
 import { registerCreatorRoutes } from "./creator-routes.js";
 import { registerDaoRoutes } from "./dao-routes.js";
+import { registerRdaoRoutes } from "./rdao-routes.js";
 import { registerCampaignRoutes } from "./campaign-routes.js";
 import {
   KeyedStaleWhileRevalidateCache,
@@ -159,7 +160,24 @@ const deployment = JSON.parse(
     claimsRouter?: Address;
     tradeRouter?: Address;
     daoRewardDistributor?: Address;
+    rdaoSale?: Address;
+    rdaoStaking?: Address;
+    rdaoLiquidityLocker?: Address;
+    wrappedNative?: Address;
     tokenSink?: Address;
+  };
+  rdao?: {
+    allocation: { retained: string; sale: string; liquidity: string };
+    pricing: {
+      ethUsdFixture: string;
+      ownerTargetUsd: string;
+      liquidityTargetUsd: string;
+    };
+    staking: {
+      warmupSeconds: number;
+      rewardDurationSeconds: number;
+      zeroSupplyDurationSeconds: number;
+    };
   };
   ipfsMetadata?: {
     tokenListCid?: string | null;
@@ -2850,6 +2868,7 @@ registerCampaignRoutes(app, {
     : {}),
 });
 registerDaoRoutes(app, rpcClient, deployment);
+registerRdaoRoutes(app, rpcClient, deployment);
 
 void runProtocolAudit();
 protocolAuditTimer = setInterval(

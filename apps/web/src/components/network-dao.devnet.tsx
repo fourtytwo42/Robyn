@@ -11,6 +11,7 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { DaoView } from "./dao-view";
+import { RdaoWorkspace } from "./rdao-workspace";
 import type { Deployment } from "@/lib/deployment";
 
 const chain = defineChain({
@@ -56,6 +57,19 @@ export function NetworkDaoView({
     window.location.href = "/#devnet-console";
   }, []);
   const dataApiUrl = "/api";
+  if (deployment.schemaVersion === 20) {
+    return (
+      <RdaoWorkspace
+        deployment={deployment}
+        proposalId={proposalId}
+        account={account?.address as Address | undefined}
+        rpcClient={publicClient}
+        walletClient={walletClient}
+        connect={connect}
+        dataApiUrl={dataApiUrl}
+      />
+    );
+  }
   return (
     <DaoView
       deployment={deployment}

@@ -49,8 +49,13 @@ contract RobynRdaoStakingTest is Test {
         rdao = new RobynDaoToken(recipients, amounts, 1 hours);
         weth = new DevnetWrappedNative();
         staking = new RobynRdaoStaking(
-            IERC20(address(rdao)), IRobynWrappedNative(address(weth)), address(this), GUARDIAN,
-            WARMUP, 1 hours, 7 days
+            IERC20(address(rdao)),
+            IRobynWrappedNative(address(weth)),
+            address(this),
+            GUARDIAN,
+            WARMUP,
+            1 hours,
+            7 days
         );
         source = new Schema20RewardSource(staking, IERC20(address(weth)));
         staking.configureRewardSource(address(source), true);
@@ -79,8 +84,7 @@ contract RobynRdaoStakingTest is Test {
         staking.stake(100_000_000 ether, address(this));
         vm.warp(firstReady);
         assertEq(staking.activateFor(address(this)), 500_000_000 ether);
-        (, uint256 eligible, uint256 warming, uint256 nextReady,,) =
-            staking.position(address(this));
+        (, uint256 eligible, uint256 warming, uint256 nextReady,,) = staking.position(address(this));
         assertEq(eligible, 500_000_000 ether);
         assertEq(warming, 100_000_000 ether);
         assertEq(nextReady, firstReady + 12 hours);
@@ -165,5 +169,33 @@ contract RobynRdaoStakingTest is Test {
         assertApproxEqAbs(staking.claim(), 1 ether, 1);
         staking.unstake(100_000_000 ether, address(this));
         assertEq(staking.totalPrincipal(), 0);
+    }
+
+    function testThousandsOfWarmupLotsRemainBoundedAndExitImmediately() external {
+        uint256 lotCount = 1_024;
+        for (uint256 index; index < lotCount; ++index) {
+            staking.stake(1, address(this));
+        }
+        staking.unstake(lotCount, address(this));
+        assertEq(staking.totalPrincipal(), 0);
+        assertEq(staking.totalWarmingStake(), 0);
+        assertEq(staking.cancelledWarming(address(this)), lotCount);
+
+        staking.stake(1, address(this));
+        vm.warp(block.timestamp + WARMUP);
+        for (uint256 page; page < 3; ++page) {
+            assertEq(staking.activateFor(address(this), 256), 0);
+        }
+        assertEq(staking.activateFor(address(this), 256), 1);
+        assertEq(staking.cancelledWarming(address(this)), 0);
+        assertEq(staking.totalEligibleStake(), 1);
+        assertEq(staking.totalPrincipal(), 1);
+    }
+
+    function testActivationLotLimitRejectsUnboundedRequests() external {
+        staking.stake(1, address(this));
+        vm.warp(block.timestamp + WARMUP);
+        vm.expectRevert(RobynRdaoStaking.InvalidConfiguration.selector);
+        staking.activateFor(address(this), 257);
     }
 }

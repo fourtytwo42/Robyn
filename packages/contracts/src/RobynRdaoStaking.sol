@@ -25,6 +25,8 @@ contract RobynRdaoStaking is ReentrancyGuard {
 
     string public constant CONTRACT_VERSION = "1.0.0-schema20";
     uint256 private constant MAGNITUDE = 1 << 128;
+    uint256 public constant DEFAULT_ACTIVATION_LOT_LIMIT = 64;
+    uint256 public constant MAX_ACTIVATION_LOT_LIMIT = 256;
 
     error Unauthorized();
     error InvalidConfiguration();
@@ -86,6 +88,7 @@ contract RobynRdaoStaking is ReentrancyGuard {
     mapping(address account => Position position) private _positions;
     mapping(address account => WarmupLot[] lots) private _warmupLots;
     mapping(address account => uint256 cursor) private _warmupCursor;
+    mapping(address account => uint256 amount) public cancelledWarming;
     mapping(address account => address escrow) public escrowOf;
     mapping(address source => bool allowed) public isRewardSource;
 
@@ -118,7 +121,9 @@ contract RobynRdaoStaking is ReentrancyGuard {
     );
     event QueuedRewardsActivated(uint256 amount, uint256 streamEnd);
     event RewardsClaimed(address indexed account, address indexed recipient, uint256 amount);
-    event LegacyRewardsForwarded(address indexed account, address indexed recipient, uint256 amount);
+    event LegacyRewardsForwarded(
+        address indexed account, address indexed recipient, uint256 amount
+    );
 
     constructor(
         IERC20 rdao_,
@@ -170,7 +175,9 @@ contract RobynRdaoStaking is ReentrancyGuard {
     function setPaused(bool paused_) external {
         if (paused_) {
             if (msg.sender != guardian && msg.sender != governance) revert Unauthorized();
-        } else if (msg.sender != governance) revert Unauthorized();
+        } else if (msg.sender != governance) {
+            revert Unauthorized();
+        }
         paused = paused_;
         emit PauseChanged(paused_, msg.sender);
     }
@@ -199,9 +206,8 @@ contract RobynRdaoStaking is ReentrancyGuard {
         eligible = selected.eligible;
         warming = selected.warming;
         activationTime = selected.activationTime;
-        delegatee = escrow == address(0)
-            ? address(0)
-            : IRobynVotesToken(address(rdao)).delegates(escrow);
+        delegatee =
+            escrow == address(0) ? address(0) : IRobynVotesToken(address(rdao)).delegates(escrow);
         claimable = earned(account);
     }
 
@@ -235,20 +241,30 @@ contract RobynRdaoStaking is ReentrancyGuard {
     }
 
     function activateFor(address account) public nonReentrant returns (uint256 amount) {
-        amount = _activate(account, true);
+        amount = _activate(account, true, DEFAULT_ACTIVATION_LOT_LIMIT);
+    }
+
+    function activateFor(address account, uint256 maxLots)
+        public
+        nonReentrant
+        returns (uint256 amount)
+    {
+        if (maxLots == 0 || maxLots > MAX_ACTIVATION_LOT_LIMIT) {
+            revert InvalidConfiguration();
+        }
+        amount = _activate(account, true, maxLots);
     }
 
     function unstake(uint256 amount, address recipient) external nonReentrant {
         if (amount == 0 || recipient == address(0)) revert InvalidConfiguration();
         _updateAccount(msg.sender);
-        _activate(msg.sender, false);
         Position storage selected = _positions[msg.sender];
         if (amount > selected.eligible + selected.warming) revert InsufficientStake();
         uint256 fromWarming = Math.min(amount, selected.warming);
         if (fromWarming != 0) {
-            _removeWarmingFromNewest(msg.sender, fromWarming);
             selected.warming -= fromWarming;
             totalWarmingStake -= fromWarming;
+            cancelledWarming[msg.sender] += fromWarming;
         }
         uint256 fromEligible = amount - fromWarming;
         if (fromEligible != 0) {
@@ -256,12 +272,12 @@ contract RobynRdaoStaking is ReentrancyGuard {
             totalEligibleStake -= fromEligible;
             if (totalEligibleStake == 0) _queueRemainingStreams();
         }
-        if (selected.warming == 0) selected.activationTime = 0;
+        if (selected.warming == 0 && cancelledWarming[msg.sender] == 0) {
+            selected.activationTime = 0;
+        }
         totalPrincipal -= amount;
         RobynRdaoStakeEscrow(escrowOf[msg.sender]).release(recipient, amount);
-        emit Unstaked(
-            msg.sender, recipient, amount, selected.eligible, selected.warming
-        );
+        emit Unstaked(msg.sender, recipient, amount, selected.eligible, selected.warming);
     }
 
     function setDelegate(address delegatee) external nonReentrant {
@@ -289,9 +305,7 @@ contract RobynRdaoStaking is ReentrancyGuard {
         bool queued = totalEligibleStake == 0;
         if (queued) queuedRewards += msg.value;
         else _startOrExtend(ordinaryStream, msg.value, rewardStreamDuration);
-        emit RewardsDeposited(
-            msg.sender, sourceToken, msg.value, queued, totalRewardsDeposited
-        );
+        emit RewardsDeposited(msg.sender, sourceToken, msg.value, queued, totalRewardsDeposited);
     }
 
     function depositWrappedRewards(address sourceToken, uint256 amount) external nonReentrant {
@@ -350,8 +364,8 @@ contract RobynRdaoStaking is ReentrancyGuard {
     function currentRewardPerToken() public view returns (uint256) {
         if (totalEligibleStake == 0) return rewardPerTokenStored;
         uint256 newlyReleased = _newlyReleased(ordinaryStream) + _newlyReleased(zeroSupplyStream);
-        return rewardPerTokenStored
-            + (newlyReleased * MAGNITUDE + distributionRemainder) / totalEligibleStake;
+        return rewardPerTokenStored + (newlyReleased * MAGNITUDE + distributionRemainder)
+            / totalEligibleStake;
     }
 
     function outstandingLiability() public view returns (uint256) {
@@ -390,7 +404,7 @@ contract RobynRdaoStaking is ReentrancyGuard {
         if (paused) revert Paused();
         if (amount == 0 || delegatee == address(0)) revert InvalidConfiguration();
         _updateAccount(account);
-        _activate(account, false);
+        _activate(account, false, DEFAULT_ACTIVATION_LOT_LIMIT);
         address escrow = escrowOf[account];
         if (escrow == address(0)) {
             bytes32 salt = keccak256(abi.encode(block.chainid, address(this), account));
@@ -412,37 +426,54 @@ contract RobynRdaoStaking is ReentrancyGuard {
         emit Staked(account, escrow, amount, readyAt, delegatee);
     }
 
-    function _activate(address account, bool strict) private returns (uint256 amount) {
+    function _activate(address account, bool strict, uint256 maxLots)
+        private
+        returns (uint256 amount)
+    {
         Position storage selected = _positions[account];
-        if (selected.warming == 0) {
+        uint256 cancellation = cancelledWarming[account];
+        if (selected.warming == 0 && cancellation == 0) {
             if (strict) revert NothingToActivate();
             return 0;
         }
-        if (block.timestamp < selected.activationTime) {
+        if (cancellation == 0 && block.timestamp < selected.activationTime) {
             if (strict) revert WarmupIncomplete(selected.activationTime);
             return 0;
         }
         _updateAccount(account);
         WarmupLot[] storage lots = _warmupLots[account];
         uint256 cursor = _warmupCursor[account];
-        while (cursor < lots.length) {
+        uint256 processed;
+        while (cursor < lots.length && processed < maxLots) {
             WarmupLot storage lot = lots[cursor];
+            ++processed;
             if (lot.amount == 0) {
                 ++cursor;
                 continue;
+            }
+            if (cancellation != 0) {
+                uint256 removed = Math.min(cancellation, lot.amount);
+                lot.amount = uint128(uint256(lot.amount) - removed);
+                cancellation -= removed;
+                if (lot.amount == 0) {
+                    ++cursor;
+                    continue;
+                }
             }
             if (block.timestamp < lot.readyAt) break;
             amount += lot.amount;
             lot.amount = 0;
             ++cursor;
         }
-        if (amount == 0) {
+        cancelledWarming[account] = cancellation;
+        _warmupCursor[account] = cursor;
+        selected.activationTime = cursor < lots.length ? lots[cursor].readyAt : 0;
+        if (amount == 0 && processed == 0) {
             if (strict) revert WarmupIncomplete(selected.activationTime);
             return 0;
         }
-        _warmupCursor[account] = cursor;
+        if (amount == 0) return 0;
         selected.warming -= amount;
-        selected.activationTime = _nextActivationTime(account, cursor);
         selected.eligible += amount;
         totalWarmingStake -= amount;
         totalEligibleStake += amount;
@@ -451,33 +482,6 @@ contract RobynRdaoStaking is ReentrancyGuard {
             _activateQueuedRewards();
         }
         emit StakeActivated(account, amount, totalEligibleStake);
-    }
-
-    function _removeWarmingFromNewest(address account, uint256 amount) private {
-        WarmupLot[] storage lots = _warmupLots[account];
-        uint256 cursor = _warmupCursor[account];
-        uint256 remaining = amount;
-        for (uint256 i = lots.length; i > cursor && remaining != 0;) {
-            unchecked { --i; }
-            WarmupLot storage lot = lots[i];
-            uint256 removed = Math.min(remaining, lot.amount);
-            if (removed != 0) {
-                lot.amount = uint128(uint256(lot.amount) - removed);
-                remaining -= removed;
-            }
-        }
-        if (remaining != 0) revert InsufficientStake();
-    }
-
-    function _nextActivationTime(address account, uint256 cursor)
-        private
-        view
-        returns (uint64 readyAt)
-    {
-        WarmupLot[] storage lots = _warmupLots[account];
-        for (uint256 i = cursor; i < lots.length; ++i) {
-            if (lots[i].amount != 0) return lots[i].readyAt;
-        }
     }
 
     function _activateQueuedRewards() private returns (uint256 amount) {
@@ -494,7 +498,7 @@ contract RobynRdaoStaking is ReentrancyGuard {
         returns (uint256 amount)
     {
         _updateAccount(account);
-        _activate(account, false);
+        _activate(account, false, DEFAULT_ACTIVATION_LOT_LIMIT);
         Position storage selected = _positions[account];
         amount = selected.accrued;
         if (amount == 0) revert NothingToClaim();
@@ -519,7 +523,8 @@ contract RobynRdaoStaking is ReentrancyGuard {
     }
 
     function _updateGlobal() private {
-        uint256 newlyReleased = _consumeReleased(ordinaryStream) + _consumeReleased(zeroSupplyStream);
+        uint256 newlyReleased =
+            _consumeReleased(ordinaryStream) + _consumeReleased(zeroSupplyStream);
         if (newlyReleased == 0) return;
         if (totalEligibleStake == 0) {
             queuedRewards += newlyReleased;
@@ -540,8 +545,8 @@ contract RobynRdaoStaking is ReentrancyGuard {
     }
 
     function _queueRemainingStreams() private {
-        uint256 remaining = ordinaryStream.total - ordinaryStream.released
-            + zeroSupplyStream.total - zeroSupplyStream.released;
+        uint256 remaining = ordinaryStream.total - ordinaryStream.released + zeroSupplyStream.total
+            - zeroSupplyStream.released;
         if (remaining != 0) queuedRewards += remaining;
         _resetStream(ordinaryStream);
         _resetStream(zeroSupplyStream);
@@ -570,8 +575,6 @@ contract RobynRdaoStaking is ReentrancyGuard {
     function _vested(Stream memory stream) private view returns (uint256) {
         if (stream.total == 0 || block.timestamp <= stream.start) return 0;
         if (block.timestamp >= stream.end) return stream.total;
-        return Math.mulDiv(
-            stream.total, block.timestamp - stream.start, stream.end - stream.start
-        );
+        return Math.mulDiv(stream.total, block.timestamp - stream.start, stream.end - stream.start);
     }
 }

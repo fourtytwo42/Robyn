@@ -45,6 +45,10 @@ export type Deployment = {
     claimsRouter?: Address;
     tradeRouter?: Address;
     daoRewardDistributor?: Address;
+    rdaoSale?: Address;
+    rdaoStaking?: Address;
+    rdaoLiquidityLocker?: Address;
+    wrappedNative?: Address;
     quoter?: Address;
     permit2?: Address;
     stateView?: Address;
@@ -128,6 +132,19 @@ export type Deployment = {
       bootstrapWindowSeconds?: number;
       bootstrapPlanHashes?: [Hex, Hex];
       unanimousTimelockRequired?: boolean;
+    };
+  };
+  rdao?: {
+    allocation: { retained: string; sale: string; liquidity: string };
+    pricing: {
+      ethUsdFixture: string;
+      ownerTargetUsd: string;
+      liquidityTargetUsd: string;
+    };
+    staking: {
+      warmupSeconds: number;
+      rewardDurationSeconds: number;
+      zeroSupplyDurationSeconds: number;
     };
   };
   genesis?: {

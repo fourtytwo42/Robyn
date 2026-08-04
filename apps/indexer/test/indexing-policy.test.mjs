@@ -52,6 +52,25 @@ test("Schema-19 policy validates and normalizes its deterministic scope", () => 
   assert.match(result.policyHash, /^[0-9a-f]{64}$/);
 });
 
+test("Schema-20 policy requires every RDAO protocol root", () => {
+  const current = manifest();
+  current.schemaVersion = 20;
+  current.contracts.rdaoSale = address(3);
+  current.contracts.rdaoStaking = address(4);
+  current.contracts.rdaoLiquidityLocker = address(5);
+  current.indexingPolicy.protocolRoots.push(address(3), address(4), address(5));
+  const unsigned = { ...current.indexingPolicy };
+  delete unsigned.policyHash;
+  current.indexingPolicy.policyHash = indexingPolicyHash(unsigned);
+  assert.equal(validateIndexingPolicy(current).protocolRoots.length, 5);
+
+  current.indexingPolicy.protocolRoots.pop();
+  const missing = { ...current.indexingPolicy };
+  delete missing.policyHash;
+  current.indexingPolicy.policyHash = indexingPolicyHash(missing);
+  assert.throws(() => validateIndexingPolicy(current), /rdaoLiquidityLocker/);
+});
+
 test("manifest validation rejects stale, zero, external, and altered policies", () => {
   const stale = manifest();
   stale.schemaVersion = 18;
