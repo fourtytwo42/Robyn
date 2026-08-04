@@ -1,5 +1,15 @@
 # Project Memory
 
+### 2026-08-03 - Execution-pool quote correction qualified and sealed
+
+- Authorized deployment result: Signed release `mainnet-prod-20260804-6b0fd7c` was installed on keyless production host `192.168.50.108` with transaction submission disabled. All six PM2 processes were online, the scoped indexer had zero ingestion lag, and the production updater timer remained inactive.
+- Acceptance defect: Live Mainnet inspection proved NVDA and SPY price/selectability checks were using stale catalog candidate pools instead of their enabled onchain execution pools. Writes were not enabled under manifest `bde9ac2a...`; no bridge, onchain transaction, route, cap, database, or RPC-policy change occurred.
+- Fix: `AssetCatalogService` now obtains bounded forward and reverse quotes through the live Schema-19 asset router whenever an enabled native-v4 route is ready. The API reports that route's pool ID and fee, derives round-trip recovery/selectability from the actual execution path, and uses raw catalog Quoter inspection only when no live route is ready. Direct WETH remains exact native parity.
+- Qualification: Application SHA `68e2f5890309234e8e1b7393a7ecb2688d62d94e` and operational SHA `a98217c44ddc3e6f4a239aa38113ec3fe55b0743` are clean, pushed, and reachable from `origin/main`. The application-scope gate, 84 API tests, all application tests, typecheck, lint, release-security tests, frozen-contract attestation, reproducible build, and protected Devnet/Testnet/LAN-Mainnet-staging acceptance passed. No Solidity was compiled or retested.
+- Release: Signed tag `mainnet-prod-20260804-a98217c`; production release SHA-256 `45a8504ae0a9ccee1cd7d2cb621ee2934910da3f30fb8e40a3392865c7a86437`; runtime SHA-256 `d3c570ef0032619b67d24ad49a466d367dcf8a38b95d9903b25cec3283504cc7`.
+- Authorization manifest: `/home/hendo420/robyn-evidence/schema19-mainnet/application-cutover-68e2f58-01/schema19-mainnet-execution-pool-cutover-manifest.json`, SHA-256 `1237ee151c233b84f607781eaf614f2f26abde71124eb3bd3a7debba68430a63`. Bundle checksum verification passes.
+- Safety/follow-up: Production remains on `mainnet-prod-20260804-6b0fd7c` with writes disabled and updater inactive. Obtain exact authorization for manifest `1237ee15...`; then deploy the corrected release with writes disabled, verify exact execution-pool quotes for all five stock routes plus WETH, complete desktop/mobile acceptance and emergency checks, enable submissions, and restart updater/24-hour monitoring.
+
 ### 2026-08-03 - Deeper native-v4 application correction qualified and sealed
 
 - Result: Application correction `d66303ced5d0f1e68af4297b3b354a87ff0f8835` and release binding `6b0fd7cd7933289c8a99e1f86359224233501fc7` are clean, pushed, and reachable from `origin/main`. The API now uses manifest-declared native v4 routes for status and quotes even when canonical WETH is the nonzero base asset.
