@@ -79,6 +79,7 @@ describe("getHealthStatus", () => {
             JSON.stringify({
               asOfBlock: "90",
               launchCount: "2",
+              keeperExpected: true,
               keeperStatus: "ok",
               artifactStatus: "ok",
             }),
@@ -90,6 +91,7 @@ describe("getHealthStatus", () => {
         status: "ok",
         asOfBlock: "90",
         launchCount: "2",
+        keeperExpected: true,
         keeperStatus: "ok",
         artifactStatus: "ok",
       });
@@ -102,8 +104,31 @@ describe("getHealthStatus", () => {
         status: "degraded",
         asOfBlock: null,
         launchCount: "0",
+        keeperExpected: true,
         keeperStatus: "degraded",
         artifactStatus: "degraded",
+      });
+    });
+
+    it("accepts Schema-19 user-driven maintenance without a keeper", async () => {
+      const request = () =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              asOfBlock: "90",
+              launchCount: "1",
+              keeperExpected: false,
+              keeperStatus: "external",
+              artifactStatus: "ok",
+            }),
+            { status: 200 },
+          ),
+        );
+
+      await expect(getDataPlaneHealth(request)).resolves.toMatchObject({
+        status: "ok",
+        keeperExpected: false,
+        keeperStatus: "external",
       });
     });
   });

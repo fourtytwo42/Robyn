@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 health recognizes user-driven maintenance
+
+- Context: The qualified Testnet application and projection were healthy, but `/admin/health` reported an overall degraded state because the shared health model still required a routine keeper heartbeat.
+- Decision: Schema version 19 deterministically sets `keeperExpected` false and reports the observed keeper status as `external`. Schema-18 and older schemas remain fail-closed and continue requiring their configured keeper. The API `/health` and `/status`, shared web health parser, and administration dashboard all use the same policy.
+- Verification: API 83 tests, web 77 tests, the complete Testnet application-scope gate, scoped-indexer Anvil isolation, script syntax, typecheck, lint, and frozen-contract attestation pass. No Solidity compilation or contract test suite was run.
+- Safety: This is application health presentation only. Testnet remains guardian-Paused with conversions paused and routes disabled; Mainnet remains Schema-18 and untouched.
+- Follow-up: Commit/push, build a new immutable reproducible Testnet release, promote it into a fresh database, and verify `/status`, `/admin/health`, token detail, catalog, projection, and browser wallet states before Mainnet replacement rehearsal.
+
 ### 2026-08-03 - Schema-19 Testnet token-detail and asset-catalog acceptance defect
 
 - Context: Release `schema19-5d1a180` correctly rebuilt one launch, five dynamic contracts, and one Sherwood pool, but responsive browser acceptance found every token-detail URL returning 404 and the WETH basket leg rendered as an unknown asset.

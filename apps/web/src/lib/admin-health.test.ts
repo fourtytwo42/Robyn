@@ -91,6 +91,42 @@ describe("getAdminHealthSnapshot", () => {
     });
   });
 
+  it("treats Schema-19 user-driven maintenance as healthy", async () => {
+    process.env.CHAIN_ID = "46630";
+    const request = (_input: URL | RequestInfo, init?: RequestInit) => {
+      const method = init?.body
+        ? JSON.parse(String(init.body)).method
+        : undefined;
+      if (method === "eth_chainId")
+        return Promise.resolve(
+          new Response(JSON.stringify({ result: "0xb626" })),
+        );
+      if (method === "eth_blockNumber")
+        return Promise.resolve(
+          new Response(JSON.stringify({ result: "0x64" })),
+        );
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            ingestionStatus: "ok",
+            projectionStatus: "ok",
+            keeperExpected: false,
+            keeperStatus: "external",
+            artifactStatus: "ok",
+          }),
+        ),
+      );
+    };
+
+    const snapshot = await getAdminHealthSnapshot(request as typeof fetch);
+    expect(snapshot.overall).toBe("ok");
+    expect(snapshot.keeper).toMatchObject({
+      status: "ok",
+      expected: false,
+      updatedAt: null,
+    });
+  });
+
   it("fails closed when RPC and status reads fail", async () => {
     process.env.CHAIN_ID = "46630";
     const snapshot = await getAdminHealthSnapshot((() =>

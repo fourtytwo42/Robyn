@@ -106,9 +106,14 @@ export function AdminHealthDashboard({
       ],
     },
     {
-      name: "Keeper",
+      name: "Routine keeper",
       status: snapshot.keeper.status,
-      rows: [["Last heartbeat", time(snapshot.keeper.updatedAt)]],
+      rows: snapshot.keeper.expected
+        ? [["Last heartbeat", time(snapshot.keeper.updatedAt)]]
+        : [
+            ["Mode", "Not required"],
+            ["Maintenance", "User-driven by trades and claims"],
+          ],
     },
     {
       name: "Artifacts and IPFS",

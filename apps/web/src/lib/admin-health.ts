@@ -29,7 +29,11 @@ export type AdminHealthSnapshot = {
     lastRpcDegradationAt: string | null;
     indexedAt: string | null;
   };
-  keeper: { status: "ok" | "degraded"; updatedAt: string | null };
+  keeper: {
+    status: "ok" | "degraded";
+    expected: boolean;
+    updatedAt: string | null;
+  };
   artifacts: { status: "ok" | "degraded"; updatedAt: string | null };
   protocol: null | {
     status: "ok" | "degraded";
@@ -143,7 +147,9 @@ export async function getAdminHealthSnapshot(
   const data = dataResult.status === "fulfilled" ? dataResult.value : {};
   const ingestionOk = data.ingestionStatus === "ok";
   const projectionOk = data.projectionStatus === "ok";
-  const keeperOk = data.keeperStatus === "ok";
+  const keeperExpected =
+    data.keeperExpected !== false && data.keeperStatus !== "external";
+  const keeperOk = !keeperExpected || data.keeperStatus === "ok";
   const artifactsOk = data.artifactStatus === "ok";
   const protocol = recordOrNull(data.protocol);
   const bootstrapControl = recordOrNull(protocol?.bootstrapControl);
@@ -192,6 +198,7 @@ export async function getAdminHealthSnapshot(
     },
     keeper: {
       status: keeperOk ? "ok" : "degraded",
+      expected: keeperExpected,
       updatedAt: stringOrNull(data.keeperUpdatedAt),
     },
     artifacts: {

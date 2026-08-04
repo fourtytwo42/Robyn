@@ -43,6 +43,7 @@ import { rewardStreamConservation } from "./reward-conservation.js";
 import { projectionCheckpointsHealthy } from "./projection-health.js";
 import {
   keeperExpectedFromEnvironment,
+  keeperExpectedForSchema,
   keeperHealthSatisfied,
   keeperStatusForHealth,
 } from "./service-health.js";
@@ -59,7 +60,7 @@ app.addContentTypeParser(
 );
 const { sql } = createDatabase();
 const chainId = Number(process.env.CHAIN_ID ?? "31337");
-const keeperExpected = keeperExpectedFromEnvironment(
+const configuredKeeperExpected = keeperExpectedFromEnvironment(
   process.env.ROBYN_KEEPER_EXPECTED,
 );
 const demoMarketChangesEnabled = isDemoMarketChangeEnabled(
@@ -167,6 +168,10 @@ const deployment = JSON.parse(
   };
   assetCatalog?: AssetCatalogManifest;
 };
+const keeperExpected = keeperExpectedForSchema(
+  deployment.schemaVersion,
+  configuredKeeperExpected,
+);
 const multicall3Address =
   "0xcA11bde05977b3631167028862bE2a173976CA11" as Address;
 const multicall3RuntimeSha256 =
@@ -1975,6 +1980,8 @@ app.get("/status", async () => {
     rpcGateway,
     protocol,
     ...keeper,
+    keeperExpected,
+    keeperStatus: keeperStatusForHealth(keeperExpected, keeper.keeperStatus),
     ...artifact,
   };
 });

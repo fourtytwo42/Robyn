@@ -81,7 +81,8 @@ export type DataPlaneHealth = {
   status: "ok" | "degraded";
   asOfBlock: string | null;
   launchCount: string;
-  keeperStatus: "ok" | "degraded";
+  keeperExpected: boolean;
+  keeperStatus: "ok" | "degraded" | "external";
   artifactStatus: "ok" | "degraded";
 };
 
@@ -100,7 +101,11 @@ export async function getDataPlaneHealth(
     if (
       typeof payload.asOfBlock !== "string" ||
       typeof payload.launchCount !== "string" ||
-      payload.keeperStatus !== "ok" ||
+      !(
+        payload.keeperStatus === "ok" ||
+        (payload.keeperExpected === false &&
+          payload.keeperStatus === "external")
+      ) ||
       payload.artifactStatus !== "ok"
     ) {
       throw new Error("Data API status response was invalid");
@@ -109,6 +114,7 @@ export async function getDataPlaneHealth(
       status: "ok",
       asOfBlock: payload.asOfBlock,
       launchCount: payload.launchCount,
+      keeperExpected: payload.keeperExpected !== false,
       keeperStatus: payload.keeperStatus,
       artifactStatus: payload.artifactStatus,
     };
@@ -117,6 +123,7 @@ export async function getDataPlaneHealth(
       status: "degraded",
       asOfBlock: null,
       launchCount: "0",
+      keeperExpected: true,
       keeperStatus: "degraded",
       artifactStatus: "degraded",
     };
