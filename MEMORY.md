@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-03 - Corrected application cutover authorized; host control blocked
+
+- Authorization: The owner authorized exact application-cutover manifest SHA-256 `a7edeb8e2b094d43979e7f9225504b78d5f47fbb1457623ff97a7453d4a69c06`. The sanitized authorization receipt and bundle checksums pass in `/home/hendo420/robyn-evidence/schema19-mainnet/application-cutover-eceb94f-01`.
+- Preflight: The signed GitHub release, manifest, runtime archive, application/deployment identities, and authorization scope all reverified. Production remains on release `8f7eab...`, writes remain disabled, and `robyn-prod-updater.timer` remains inactive.
+- Blocker: The production host's administrator password was rotated during hardening. The previously supplied password is rejected by `sudo`, root SSH is disabled, and unprivileged systemd control correctly refuses to start `robyn-prod-updater.service`.
+- Safety: No production deployment, write enablement, onchain transaction, bridge, contract/route/cap/database/RPC-policy change, or ambiguous action occurred.
+- Follow-up: Obtain the current `hendo420` sudo password for `192.168.50.108` or a narrowly scoped passwordless systemd grant for the updater. Then deploy with writes disabled and resume the authorized acceptance sequence.
+
 ### 2026-08-03 - Corrected WETH application release sealed for authorization
 
 - Result: Application-only correction `eceb94f33be21cc64237ccf79d7cbe36cb37ce77` and operational binding `abbe65b00b2ad7f5605caf84bcdef0d1dda8c27c` are clean, pushed, and reachable from `origin/main`.
