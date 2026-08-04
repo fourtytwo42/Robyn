@@ -295,7 +295,6 @@ for (let index = 0; index < forgeLedger.transactions.length; index += 1) {
   const data = template.input;
   const value = BigInt(template.value ?? 0);
   const estimate = await client.estimateGas({ account: deployer, to, data, value });
-  const gas = estimate * 2n;
   const baseMaxFee = fees.maxFeePerGas ?? fees.gasPrice;
   const maxFeePerGas = (baseMaxFee * 12_500n + 9_999n) / 10_000n;
   const maxPriorityFeePerGas =
@@ -303,7 +302,8 @@ for (let index = 0; index < forgeLedger.transactions.length; index += 1) {
       ? (fees.maxPriorityFeePerGas ?? 0n)
       : maxFeePerGas;
   const sealedGasCeiling = BigInt(replacement.execution.transactionGasCeilings[String(nonce)] ?? 0);
-  if (sealedGasCeiling === 0n || gas > sealedGasCeiling) throw new Error(`${logicalKey} exceeds sealed gas ceiling`);
+  if (sealedGasCeiling === 0n || estimate > sealedGasCeiling) throw new Error(`${logicalKey} exceeds sealed gas ceiling`);
+  const gas = sealedGasCeiling;
   if (maxFeePerGas > BigInt(replacement.execution.maxFeePerGasWei)) throw new Error(`${logicalKey} exceeds sealed fee ceiling`);
   const remainingReserve = 20_000_000_000_000_000n;
   const l1FeeReserve = 25_000_000_000_000n;
