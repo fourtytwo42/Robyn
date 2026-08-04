@@ -31,6 +31,7 @@ nohup "$anvil" \
   --host 127.0.0.1 \
   --port 28549 \
   --auto-impersonate \
+  --base-fee 1000000 \
   --silent >"$evidence/anvil.log" 2>&1 &
 anvil_pid=$!
 cleanup() {
