@@ -54,7 +54,12 @@ const launchAbi = parseAbi(["function launchCount() view returns (uint256)", "fu
 const legacyLaunchCount = await client.readContract({ address: schema18.value.contracts.launchFactory, abi: launchAbi, functionName: "launchCount" });
 const legacyToken = await client.readContract({ address: schema18.value.contracts.launchFactory, abi: launchAbi, functionName: "launchTokenById", args: [1n] });
 if (legacyLaunchCount !== 1n || getAddress(legacyToken) !== getAddress(schema18.value.canary.launchToken)) throw new Error("legacy Schema-18 launch set changed");
-const transactionGasCeilings = Object.fromEntries(ledger.value.transactions.map((entry) => [String(BigInt(entry.transaction.nonce)), String(BigInt(entry.transaction.gas) * 2n)]));
+const receiptByHash = new Map(ledger.value.receipts.map((receipt) => [receipt.transactionHash.toLowerCase(), receipt]));
+const transactionGasCeilings = Object.fromEntries(ledger.value.transactions.map((entry) => {
+  const receipt = receiptByHash.get(entry.hash.toLowerCase());
+  if (!receipt || receipt.status !== "0x1") throw new Error("deployment transaction receipt missing");
+  return [String(BigInt(entry.transaction.nonce)), String(BigInt(receipt.gasUsed) * 2n)];
+}));
 const result = {
   schemaVersion: 19, chainId: 4663, gate: "schema19-mainnet-public-replacement", sealedAt: new Date().toISOString(),
   authorizationEligible: true,
