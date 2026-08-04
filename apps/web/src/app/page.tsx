@@ -5,6 +5,7 @@ import deployment from "@robyn/deployment";
 import { TokenArt } from "@/components/launchpad-visuals";
 import { MarketCard } from "@/components/market-card";
 import { MarketingFilm } from "@/components/marketing-film";
+import { RdaoSaleSpotlight } from "@/components/rdao-sale-spotlight";
 import { LaunchTokenTrigger } from "@/components/launch-token-trigger";
 import { getKingOfForest, getLaunches } from "@/lib/data-api";
 import { deriveHomepageMetrics } from "@/lib/homepage-metrics";
@@ -150,6 +151,8 @@ export default async function Home() {
           </strong>
         </article>
       </section>
+
+      <RdaoSaleSpotlight />
 
       <MarketingFilm compact />
 

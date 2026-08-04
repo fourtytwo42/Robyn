@@ -61,6 +61,7 @@ export function NetworkDaoAccessGate({
   const connect = useCallback(() => {
     window.location.href = "/#devnet-console";
   }, []);
+  if (deployment.schemaVersion === 20) return children;
   return (
     <DaoAccessGate status={status} connect={connect}>
       {children}

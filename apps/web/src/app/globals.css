@@ -6769,9 +6769,182 @@ main > .notice {
 .film-transcript,
 .marketing-cta,
 .home-cta-grid,
+.rdao-sale-spotlight,
+.rdao-public-workspace,
 .devnet-tools {
   width: min(1180px, calc(100% - 2rem));
   margin-inline: auto;
+}
+
+.rdao-sale-spotlight {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(19rem, 0.85fr);
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: center;
+  margin-top: 5rem;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(244, 201, 93, 0.34);
+  background:
+    radial-gradient(
+      circle at 92% 12%,
+      rgba(244, 201, 93, 0.2),
+      transparent 34%
+    ),
+    linear-gradient(132deg, rgba(20, 46, 33, 0.98), rgba(6, 15, 11, 0.99));
+}
+
+.rdao-sale-spotlight::after {
+  content: "R";
+  position: absolute;
+  right: -0.04em;
+  bottom: -0.28em;
+  color: rgba(244, 201, 93, 0.045);
+  font-size: clamp(15rem, 35vw, 31rem);
+  font-weight: 950;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.rdao-sale-copy,
+.rdao-sale-panel {
+  position: relative;
+  z-index: 1;
+}
+
+.rdao-sale-identity {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.rdao-sale-identity img {
+  width: 4.75rem;
+  height: 4.75rem;
+  border: 1px solid rgba(244, 201, 93, 0.35);
+  border-radius: 50%;
+  box-shadow: 0 0 38px rgba(244, 201, 93, 0.14);
+}
+
+.rdao-sale-identity h2 {
+  margin: 0.15rem 0 0;
+  font-size: clamp(2.25rem, 5vw, 5rem);
+  line-height: 0.9;
+  letter-spacing: -0.055em;
+}
+
+.rdao-sale-copy > p {
+  max-width: 62ch;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.rdao-allocation-line {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  height: 0.72rem;
+  margin: 1.6rem 0 0.7rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.rdao-allocation-line span:first-child {
+  background: linear-gradient(90deg, #37d996, #83e3ad);
+}
+
+.rdao-allocation-line span:last-child {
+  background: var(--reward);
+}
+
+.rdao-allocation-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #d7c78f;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.rdao-sale-panel {
+  padding: 1.5rem;
+  border: 1px solid rgba(244, 201, 93, 0.24);
+  background: rgba(3, 10, 7, 0.72);
+  backdrop-filter: blur(16px);
+}
+
+.rdao-sale-progress {
+  height: 0.42rem;
+  margin: 0.9rem 0 1.4rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.rdao-sale-progress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--reward));
+}
+
+.rdao-sale-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin-bottom: 1.4rem;
+  background: var(--line);
+}
+
+.rdao-sale-metrics div {
+  padding: 0.8rem;
+  background: rgba(5, 15, 10, 0.96);
+}
+
+.rdao-sale-metrics span,
+.rdao-sale-metrics small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.rdao-sale-metrics strong {
+  display: block;
+  margin: 0.2rem 0;
+  color: var(--reward);
+  font-size: 1.05rem;
+}
+
+.rdao-token-page .rdao-sale-spotlight {
+  margin-top: 3rem;
+}
+
+.rdao-sale-spotlight.page {
+  min-height: 430px;
+}
+
+.rdao-public-workspace {
+  margin-top: 2rem;
+  margin-bottom: 5rem;
+}
+
+.rdao-public-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  align-items: end;
+  margin-bottom: 1.25rem;
+}
+
+.rdao-public-heading h2 {
+  margin: 0.25rem 0 0;
+  font-size: clamp(2rem, 4vw, 4rem);
+  line-height: 0.95;
+}
+
+.rdao-public-heading p:last-child {
+  max-width: 38rem;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
 }
 
 .market-hero {
@@ -7456,6 +7629,9 @@ main > .notice {
   .control-matrix {
     grid-template-columns: 1fr;
   }
+  .rdao-sale-spotlight {
+    grid-template-columns: 1fr;
+  }
   .market-hero {
     padding-top: 3.5rem;
   }
@@ -7531,6 +7707,19 @@ main > .notice {
   }
   .marketing-cta,
   .rdao-security {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .rdao-sale-spotlight {
+    width: 100%;
+    margin-top: 3rem;
+    padding: 1.25rem;
+    border-inline: 0;
+  }
+  .rdao-sale-metrics {
+    grid-template-columns: 1fr;
+  }
+  .rdao-public-heading {
     align-items: flex-start;
     flex-direction: column;
   }

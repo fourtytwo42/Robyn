@@ -9,6 +9,7 @@ describe("marketing pages", () => {
     const header = source("../components/site-header.tsx");
     for (const route of [
       "/discover",
+      "/rdao",
       "/creators",
       "/security",
       "/whitepaper",
@@ -46,6 +47,17 @@ describe("marketing pages", () => {
     );
     expect(film).toContain("{compact ? null : (");
     expect(film).not.toContain("Open the film page");
+  });
+
+  it("makes the Schema-20 RDAO sale public from the homepage and its own page", () => {
+    const home = source("../app/page.tsx");
+    const rdao = source("../app/rdao/page.tsx");
+    const devnetAccess = source("../components/network-dao-access.devnet.tsx");
+    expect(home).toContain("<RdaoSaleSpotlight />");
+    expect(rdao).toContain('<RdaoSaleSpotlight variant="page" />');
+    expect(rdao).toContain("<NetworkDaoView");
+    expect(rdao).not.toContain("NetworkDaoAccessGate");
+    expect(devnetAccess).toContain("deployment.schemaVersion === 20");
   });
 
   it("labels the film and fixtures as Devnet-only", () => {

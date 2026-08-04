@@ -1,5 +1,12 @@
 # Project Memory
 
+### 2026-08-04 - RDAO sale becomes a public token surface
+
+- Context: The public 150m RDAO bonding sale was incorrectly hidden behind the legacy DAO-member page gate even though the Schema-20 sale contract accepts any wallet. The complete 20% allocation is 150m public sale plus 50m reserved for permanently locked liquidity.
+- Decision: Feature live RDAO sale progress on the homepage, add a permanent public `/rdao` token page and navigation link, and bypass the legacy membership wrapper only for Schema-20 Devnet. Existing RDAO remains necessary only for selling, staking, reward, and governance actions.
+- Files: `apps/web/src/components/rdao-sale-spotlight.tsx`, `apps/web/src/app/rdao/page.tsx`, homepage, shared navigation, Devnet DAO access adapter, marketing tests, and responsive styles.
+- Verification: 86 web tests, typecheck, lint, and the protected Devnet build pass. Preview acceptance confirms `/rdao` and `/dao` render without a membership gate while disconnected. Testnet, Mainnet, contracts, APIs, indexers, and onchain state are unchanged.
+
 ### 2026-08-04 - Sherwood sizzle reel replaces the explanatory film
 
 - Context: The user rejected the long, infrastructure-heavy demonstration and requested a short, themed sales film understandable at a high-school level. The film itself must not mention Devnet, fixtures, infrastructure, or internal process; the surrounding preview page retains a small testing-fixture disclosure.
