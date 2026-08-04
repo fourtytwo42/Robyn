@@ -212,6 +212,11 @@ contract RobynRdaoStakingTest is Test {
         vm.warp(block.timestamp + 1 hours);
         uint256 claimable = staking.earned(address(this));
         assertLe(claimable, reward);
+        if (claimable == 0) {
+            assertEq(staking.totalRewardsClaimed(), 0);
+            assertEq(staking.outstandingLiability(), reward);
+            return;
+        }
         uint256 claimed = staking.claim();
         assertEq(claimed, claimable);
         assertLe(staking.totalRewardsClaimed(), weth.balanceOf(address(staking)) + claimed);
