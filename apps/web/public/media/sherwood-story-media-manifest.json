@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "The Sherwood Story",
   "environment": "Devnet",
-  "durationSeconds": 177,
+  "durationSeconds": 154,
   "frameRate": 30,
   "resolution": "1920x1080",
   "disclosure": "Deterministic Devnet fixtures and transactions with no real-world value.",
@@ -10,15 +10,15 @@
     "displayName": "Voice of Sherwood - Rowan",
     "kind": "synthetic stock voice",
     "engine": "GPU45 Pocket TTS",
-    "voice": "built-in Alba",
+    "voice": "built-in Anna",
     "cloned": false,
-    "alignedNarrationSha256": "101023396ba18f252a679848c62a5e59daae24b0ff75e8da81019f028bda8360"
+    "alignedNarrationSha256": "62d8fd5999e5d6c5eb756c4ea0c6cab73d265f59aa3c6740327e4b93f71e47b7"
   },
   "media": {
     "webMp4": {
       "path": "/media/sherwood-story-devnet.mp4",
-      "bytes": 12051177,
-      "sha256": "766c1d61f1495fc689d01b950e50240b90576ca02229be74f31ab69c5d5e88ce"
+      "bytes": 10978421,
+      "sha256": "7bfe47e2cbcbfce9ce3a7d1f7e0e5f3ea33e49d79695d912cd306cd7542845b0"
     },
     "poster": {
       "path": "/media/sherwood-story-poster.webp",
@@ -28,11 +28,11 @@
     "captions": {
       "path": "/media/sherwood-story-devnet.vtt",
       "bytes": 2705,
-      "sha256": "b3ea9648867f947d99fb934ed5e938f91248a4e7c3fcbe150b719fe6735ee45b"
+      "sha256": "d6d33e9a64eea7aac7857110d9ad429a4a1debad4d439a7d2ffb6eac1dc6bfd0"
     },
     "archivalMaster": {
       "committed": false,
-      "sha256": "7c6d2ab104da937be0fc49ea207a3f0ecf83d5c6ef676df465d18197cf5a58f9"
+      "sha256": "088742895edae587472e0bc199bcededb6da4facf2afe21686578c974c504e53"
     }
   },
   "transactions": [

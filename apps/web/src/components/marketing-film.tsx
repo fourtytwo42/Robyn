@@ -19,7 +19,7 @@ export function MarketingFilm({
       aria-labelledby="story-film-heading"
     >
       <div className="story-film-copy">
-        <p className="eyebrow">A Devnet story · 3 minutes</p>
+        <p className="eyebrow">A Devnet story · 2½ minutes</p>
         <h2 id="story-film-heading">See a market become a community.</h2>
         <p>
           Follow one testing-only token from discovery and trade to basket

@@ -4,12 +4,16 @@ set -euo pipefail
 capture_dir="${1:?capture directory required}"
 narration="${2:?aligned narration required}"
 output_dir="${3:?output directory required}"
+speed="${4:-1.15}"
 work_dir="$(mktemp -d)"
 trap 'rm -rf "$work_dir"' EXIT
 mkdir -p "$output_dir"
 validator="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/validate-marketing-film-audio.py"
 [[ -x "$validator" ]] || { echo "missing audio validator: $validator" >&2; exit 1; }
-python3 "$validator" "$narration"
+narration_duration="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$narration")"
+minimum_duration="$(python3 -c "print(float('${narration_duration}') - 0.75)")"
+maximum_duration="$(python3 -c "print(float('${narration_duration}') + 0.75)")"
+python3 "$validator" "$narration" --min-duration "$minimum_duration" --max-duration "$maximum_duration"
 
 shots=(
   "01-opening.png:12"
@@ -43,16 +47,23 @@ for shot in "${shots[@]}"; do
   printf "file '%s'\n" "$clip" >> "$work_dir/video-concat.txt"
 done
 
-ffmpeg -hide_banner -loglevel error -f concat -safe 0 -i "$work_dir/video-concat.txt" -c copy "$work_dir/picture.mp4"
+ffmpeg -hide_banner -loglevel error -f concat -safe 0 -i "$work_dir/video-concat.txt" -c copy "$work_dir/picture-source.mp4"
+ffmpeg -hide_banner -loglevel error -i "$work_dir/picture-source.mp4" \
+  -vf "setpts=PTS/${speed}" -an -c:v libx264 -preset medium -crf 18 "$work_dir/picture.mp4"
+
+delay_quote="$(python3 -c "print(round(42000 / float('${speed}')))")"
+delay_receipt="$(python3 -c "print(round(68000 / float('${speed}')))")"
+delay_claim="$(python3 -c "print(round(95000 / float('${speed}')))")"
+delay_create="$(python3 -c "print(round(122000 / float('${speed}')))")"
 
 # Four quiet, original interface chimes mark the quote, receipt, claim, and creation beats.
 ffmpeg -hide_banner -loglevel error \
   -i "$narration" \
   -f lavfi -i "sine=frequency=740:duration=0.09:sample_rate=48000" \
   -f lavfi -i "sine=frequency=880:duration=0.09:sample_rate=48000" \
-  -filter_complex "[1:a]asplit=2[s1a][s1b];[2:a]asplit=2[s2a][s2b];[s1a]volume=0.025,adelay=42000|42000[c1];[s2a]volume=0.02,adelay=68000|68000[c2];[s1b]volume=0.02,adelay=95000|95000[c3];[s2b]volume=0.025,adelay=122000|122000[c4];[0:a][c1][c2][c3][c4]amix=inputs=5:duration=first:normalize=0,alimiter=limit=0.85[a]" \
+  -filter_complex "[1:a]asplit=2[s1a][s1b];[2:a]asplit=2[s2a][s2b];[s1a]volume=0.025,adelay=${delay_quote}|${delay_quote}[c1];[s2a]volume=0.02,adelay=${delay_receipt}|${delay_receipt}[c2];[s1b]volume=0.02,adelay=${delay_claim}|${delay_claim}[c3];[s2b]volume=0.025,adelay=${delay_create}|${delay_create}[c4];[0:a][c1][c2][c3][c4]amix=inputs=5:duration=first:normalize=0,alimiter=limit=0.85[a]" \
   -map "[a]" -c:a pcm_s16le "$work_dir/soundtrack.wav"
-python3 "$validator" "$work_dir/soundtrack.wav"
+python3 "$validator" "$work_dir/soundtrack.wav" --min-duration "$minimum_duration" --max-duration "$maximum_duration"
 
 ffmpeg -hide_banner -loglevel error -i "$work_dir/picture.mp4" -i "$work_dir/soundtrack.wav" \
   -map 0:v -map 1:a -c:v copy -c:a aac -b:a 160k -movflags +faststart -shortest \
@@ -61,8 +72,8 @@ ffmpeg -hide_banner -loglevel error -i "$work_dir/picture.mp4" -i "$work_dir/sou
 ffmpeg -hide_banner -loglevel error -i "$output_dir/sherwood-story-1080p-master.mp4" \
   -c:v libx264 -preset slow -crf 27 -maxrate 1050k -bufsize 2100k -c:a aac -b:a 112k \
   -movflags +faststart "$output_dir/sherwood-story-devnet.mp4"
-python3 "$validator" "$output_dir/sherwood-story-1080p-master.mp4"
-python3 "$validator" "$output_dir/sherwood-story-devnet.mp4"
+python3 "$validator" "$output_dir/sherwood-story-1080p-master.mp4" --min-duration "$minimum_duration" --max-duration "$maximum_duration"
+python3 "$validator" "$output_dir/sherwood-story-devnet.mp4" --min-duration "$minimum_duration" --max-duration "$maximum_duration"
 
 ffmpeg -hide_banner -loglevel error -i "$capture_dir/01-opening.png" \
   -vf "scale=1600:900:force_original_aspect_ratio=decrease,pad=1600:900:(ow-iw)/2:(oh-ih)/2:color=0x06110d" \
@@ -70,6 +81,6 @@ ffmpeg -hide_banner -loglevel error -i "$capture_dir/01-opening.png" \
 
 duration="$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$output_dir/sherwood-story-devnet.mp4")"
 size="$(stat -c %s "$output_dir/sherwood-story-devnet.mp4")"
-[[ "${duration%.*}" -ge 176 && "${duration%.*}" -le 178 ]] || { echo "unexpected film duration: $duration" >&2; exit 1; }
+python3 -c "duration=float('${duration}'); minimum=float('${minimum_duration}'); maximum=float('${maximum_duration}'); assert minimum <= duration <= maximum, f'unexpected film duration: {duration}'"
 [[ "$size" -lt 25000000 ]] || { echo "web film exceeds 25 MB: $size" >&2; exit 1; }
 sha256sum "$output_dir/sherwood-story-1080p-master.mp4" "$output_dir/sherwood-story-devnet.mp4" "$output_dir/sherwood-story-poster.webp"
