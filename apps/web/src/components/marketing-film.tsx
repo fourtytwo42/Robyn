@@ -19,22 +19,21 @@ export function MarketingFilm({
       aria-labelledby="story-film-heading"
     >
       <div className="story-film-copy">
-        <p className="eyebrow">A Sherwood story · 66 seconds</p>
+        <p className="eyebrow">
+          {compact ? "A Sherwood story" : "A Sherwood story · 66 seconds"}
+        </p>
         <h2 id="story-film-heading">Where markets become communities.</h2>
         <p>
           Find the next breakout, earn alongside the community, or launch the
           story everyone wants to join.
         </p>
-        <div className="story-film-links">
-          <Link className="text-link" href="/demo#transcript">
-            Read the transcript →
-          </Link>
-          {compact ? (
-            <Link className="text-link" href="/demo">
-              Open the film page →
+        {compact ? null : (
+          <div className="story-film-links">
+            <Link className="text-link" href="/demo#transcript">
+              Read the transcript →
             </Link>
-          ) : null}
-        </div>
+          </div>
+        )}
       </div>
       <div className="story-film-stage">
         {!available ? (

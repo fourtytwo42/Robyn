@@ -7,6 +7,7 @@
 - Media: GPU45 Pocket TTS built-in Anna remains labeled synthetic `Voice of Sherwood - Rowan`; no clone was used. Narration SHA-256 is `0a8ca62509f9d5dfb2e7882661a5bf365d5a15a51e83e8ac9401c0b9b2c01027`. The stabilized film uses locked 1920x1080 framing with no `zoompan` or simulated camera motion. Web MP4 is 5,132,401 bytes, 66.475 seconds, SHA-256 `f27ffa802421271d87ba3a0166bbdc5ec2ce306990c853516bd04c62ade4419f`.
 - Verification: Final application SHA `407f3828b3d1a959e558e66a5155020acc5eac3f` is clean and pushed. All 84 web tests and two reproducible builds pass. Browser playback reached ready state 4 at 1920x1080 with one English caption track; FFmpeg `mpdecimate` retained exactly one frame across the first 4.8-second shot, confirming its framing is static.
 - Deployment: Devnet `robyn-web` serves immutable release `407f382...` on port 3000. Homepage, `/demo`, MP4, captions, poster, and media manifest return 200. PM2 state is saved.
+- Homepage presentation: The compact homepage embed intentionally omits the runtime, transcript link, and dedicated film-page link. The accessible transcript remains available on `/demo`.
 - Safety: Schema-20 chain, database, API, indexer, contracts, Testnet, Mainnet, and production remain unchanged.
 
 ### 2026-08-04 - Schema-20 marketing Devnet preview passed
