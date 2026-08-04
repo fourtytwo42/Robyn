@@ -35,6 +35,7 @@ ROBYN_SCHEMA19_MAINNET_RPC_URL="$rpc_live" \
   "$schema18_manifest" "$route_source" "$input"
 node scripts/prepare-schema19-deployment.mjs "$input" "$prepared"
 local_deployment_input="$repo/packages/contracts/tmp/schema19-mainnet-rehearsal-input.json"
+local_deployment_input_name=tmp/schema19-mainnet-rehearsal-input.json
 install -m 0600 "$prepared" "$local_deployment_input"
 [[ "$(sha256sum "$prepared" | cut -d' ' -f1)" == "$(sha256sum "$local_deployment_input" | cut -d' ' -f1)" ]]
 
@@ -80,16 +81,18 @@ funded_balance="$($HOME/.foundry/bin/cast balance --rpc-url "$rpc_fork" "$deploy
 [[ "$funded_balance" == 100000000000000000000 ]]
 
 rm -rf packages/contracts/broadcast/DeploySchema19.s.sol/4663
-SCHEMA19_DEPLOYMENT_INPUT="$local_deployment_input" \
-  "$forge" script script/DeploySchema19.s.sol:DeploySchema19 \
-    --root packages/contracts \
-    --rpc-url "$rpc_fork" \
-    --sender "$deployer" \
-    --unlocked \
-    --broadcast \
-    --slow \
-    --skip-simulation \
-    -vv >"$evidence/deployment.log" 2>&1
+(
+  cd "$repo/packages/contracts"
+  SCHEMA19_DEPLOYMENT_INPUT="$local_deployment_input_name" \
+    "$forge" script script/DeploySchema19.s.sol:DeploySchema19 \
+      --rpc-url "$rpc_fork" \
+      --sender "$deployer" \
+      --unlocked \
+      --broadcast \
+      --slow \
+      --skip-simulation \
+      -vv
+) >"$evidence/deployment.log" 2>&1
 cp packages/contracts/broadcast/DeploySchema19.s.sol/4663/run-latest.json "$ledger"
 
 ROBYN_SCHEMA19_RPC_URL="$rpc_fork" \

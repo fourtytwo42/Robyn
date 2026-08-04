@@ -8442,3 +8442,11 @@ When sources conflict, use this order:
 - Files: `scripts/run-schema19-mainnet-rehearsal.sh`, `scripts/test/schema19-mainnet-rehearsal.test.mjs`.
 - Result: Foundry receives the exact sealed deployment input without widening filesystem permissions or rebuilding/changing contracts.
 - Follow-up: Push the tooling-only correction and restart with a fresh evidence identity. No Mainnet transaction is authorized.
+
+### 2026-08-03 - Schema-19 Forge root-context correction
+
+- Context: Rehearsals `rehearsal-cc0470f-01` and `-02` still stopped before local broadcast because `vm.readFile` resolves a permitted relative path from the process working directory. A verbose isolated run from `packages/contracts` read the identical temporary input, deployed the full stack locally, verified predicted addresses and production settings, and wrote the local broadcast ledger successfully.
+- Decision: Run Forge in a subshell whose working directory is `packages/contracts`, pass `tmp/schema19-mainnet-rehearsal-input.json`, and return to the repository root for verification and evidence handling.
+- Files: `scripts/run-schema19-mainnet-rehearsal.sh`, `scripts/test/schema19-mainnet-rehearsal.test.mjs`.
+- Result: The exact deployment script executes without widening Foundry filesystem permissions. The diagnostic run touched only isolated Anvil state.
+- Follow-up: Push the tooling-only change and run the entire receipt-ledger lifecycle under a fresh evidence identity. Mainnet remains untouched and unauthorized for Schema-19.
