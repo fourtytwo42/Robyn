@@ -37,7 +37,7 @@ node scripts/prepare-schema19-deployment.mjs "$input" "$prepared"
 
 fork_block="$(jq -r .snapshotBlock "$input")"
 deployer="$(jq -r .deployer "$input")"
-"$anvil" \
+nohup "$anvil" \
   --fork-url "$rpc_live" \
   --fork-block-number "$fork_block" \
   --chain-id 4663 \
@@ -51,14 +51,23 @@ cleanup() {
   wait "$anvil_pid" 2>/dev/null || true
 }
 trap cleanup EXIT
+anvil_ready=false
 for _ in $(seq 1 60); do
-  if curl -fsS -H 'content-type: application/json' \
+  kill -0 "$anvil_pid" 2>/dev/null || break
+  response="$(curl -fsS -H 'content-type: application/json' \
     --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' \
-    "$rpc_fork" | jq -e '.result == "0x1237"' >/dev/null; then
+    "$rpc_fork" 2>/dev/null || true)"
+  if [[ -n "$response" ]] && jq -e '.result == "0x1237"' <<<"$response" >/dev/null; then
+    anvil_ready=true
     break
   fi
   sleep 1
 done
+if [[ "$anvil_ready" != true ]]; then
+  cat "$evidence/anvil.log" >&2
+  echo "pinned Anvil fork failed readiness" >&2
+  exit 1
+fi
 curl -fsS -H 'content-type: application/json' \
   --data "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"anvil_setBalance\",\"params\":[\"$deployer\",\"0x56bc75e2d63100000\"]}" \
   "$rpc_fork" | jq -e '.result == true' >/dev/null

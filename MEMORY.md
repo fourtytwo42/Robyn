@@ -8418,3 +8418,11 @@ When sources conflict, use this order:
 - Files: `scripts/prepare-schema19-mainnet-input.mjs`, `scripts/test/schema19-mainnet-input.test.mjs`.
 - Result: Fresh Schema-19 routes can use the already qualified improved SPY and NVDA pools without mutating Schema-18. The active Schema-18 route manifest remains useful only for governance/application ancestry and retirement evidence.
 - Follow-up: Push the tooling-only correction and repeat the no-broadcast LAN-sourced fork rehearsal under a fresh SHA/evidence identity. Mainnet remains unchanged and Schema-19 broadcasting remains unauthorized.
+
+### 2026-08-03 - Schema-19 pinned-Anvil startup hardening
+
+- Context: Rehearsal attempts `rehearsal-84ff116-01` and `-02` prepared valid route/deployment inputs but stopped before local deployment because background Anvil exited when the SSH invocation's controlling terminal or stdin closed. Direct foreground Anvil against the same LAN block passed.
+- Decision: Start the isolated Anvil fork with `nohup`, track its PID, and require an explicit chain-4663 readiness response within 60 seconds. A dead process or readiness timeout emits its log and stops before funding or local deployment.
+- Files: `scripts/run-schema19-mainnet-rehearsal.sh`, `scripts/test/schema19-mainnet-rehearsal.test.mjs`.
+- Result: The no-broadcast wrapper is restart-safe across noninteractive SSH execution and cannot fall through after fork startup failure.
+- Follow-up: Qualify and push the tooling-only change, then use a fresh evidence directory for the complete local-fork rehearsal. No Mainnet transaction is authorized.

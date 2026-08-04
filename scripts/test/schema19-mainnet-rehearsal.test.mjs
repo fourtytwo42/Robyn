@@ -18,6 +18,10 @@ test("Mainnet rehearsal is pinned to LAN, chain 4663, and local Anvil", () => {
   assert.match(runner, /--fork-block-number/);
   assert.match(runner, /--chain-id 4663/);
   assert.match(runner, /--auto-impersonate/);
+  assert.match(runner, /nohup "\$anvil"/);
+  assert.match(runner, /anvil_ready=false/);
+  assert.match(runner, /kill -0 "\$anvil_pid"/);
+  assert.match(runner, /pinned Anvil fork failed readiness/);
   assert.match(runner, /http:\/\/127\.0\.0\.1:28548/);
   assert.doesNotMatch(runner, /alchemy\.com|--fork-url https:/i);
 });
