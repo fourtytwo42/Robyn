@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "title": "The Sherwood Story",
+  "environment": "Devnet",
+  "durationSeconds": 177,
+  "frameRate": 30,
+  "resolution": "1920x1080",
+  "disclosure": "Deterministic Devnet fixtures and transactions with no real-world value.",
+  "narrator": {
+    "displayName": "Voice of Sherwood - Rowan",
+    "kind": "synthetic stock voice",
+    "engine": "GPU45 Pocket TTS",
+    "voice": "built-in Anna",
+    "cloned": false,
+    "alignedNarrationSha256": "79218a27cf462ab141108c4e052c7a641fa6f6c28e9c0030b65b7d00934ce7bb"
+  },
+  "media": {
+    "webMp4": {
+      "path": "/media/sherwood-story-devnet.mp4",
+      "bytes": 11918375,
+      "sha256": "765d8c1c00eeb896ad5fc89dccc351f859c1e08d081429520dc9ce35fa134ab5"
+    },
+    "poster": {
+      "path": "/media/sherwood-story-poster.webp",
+      "bytes": 38618,
+      "sha256": "399e4ae3487eb89bb40280760041e3a4a50970539205c324dbc8a96f29f2f4ec"
+    },
+    "captions": {
+      "path": "/media/sherwood-story-devnet.vtt",
+      "bytes": 2705,
+      "sha256": "b3ea9648867f947d99fb934ed5e938f91248a4e7c3fcbe150b719fe6735ee45b"
+    },
+    "archivalMaster": {
+      "committed": false,
+      "sha256": "da58511c651b7fe7972db7610ac73e287cf9a4d49bf4c56e72834d5b07447245"
+    }
+  },
+  "transactions": [
+    { "label": "create-CANOPY", "hash": "0x42ccc180027a66ca31a2e541484b3370d37c6d496eb77a3f4469c7c8cf7d9270", "blockNumber": 73 },
+    { "label": "film-bounded-buy-SIGNAL", "hash": "0xa61466ff181421aaf935982239c49f2f7671514a506b20a43c85ae973ab46195", "blockNumber": 156 },
+    { "label": "film-matured-holder-claim-CANOPY", "hash": "0x73d7003589ca19f969c0f449117890a7ea74b6cb6818d3b36c0b1a0d2da79d00", "blockNumber": 158 },
+    { "label": "film-buy-RDAO", "hash": "0x8379a685b6e27f0e04838af0e758c604947a4234daa9b7a8380a129d86216ff1", "blockNumber": 159 },
+    { "label": "film-stake-RDAO-warming", "hash": "0x707278178e41a6f966d322d61b9c156ff5c94de9aad517a3fb33a6edb9919d2f", "blockNumber": 161 }
+  ]
+}

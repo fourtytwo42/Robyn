@@ -6,7 +6,7 @@ import { useState } from "react";
 
 export function MarketingFilm({
   compact = false,
-  available = false,
+  available = true,
 }: {
   compact?: boolean;
   available?: boolean;

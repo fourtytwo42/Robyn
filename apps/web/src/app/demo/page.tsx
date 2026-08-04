@@ -20,6 +20,12 @@ export default function DemoPage() {
           receipts. Waiting periods are shown honestly; matured positions were
           prepared before recording.
         </p>
+        <a
+          className="text-link"
+          href="/media/sherwood-story-media-manifest.json"
+        >
+          Inspect the media and transaction manifest →
+        </a>
       </section>
       <MarketingFilm />
       <section
