@@ -83,6 +83,10 @@ test("Schema-19 lifecycle covers three assets, user-driven maintenance, and all 
     source,
     /controlled route did not enter objective deviation failure/,
   );
+  assert.match(source, /const disturbanceAttempts = mainnetFork \? 8 : 1/);
+  assert.match(source, /attempt < disturbanceAttempts && failedStatus\.ready/);
+  assert.match(source, /disturbanceTokens \+=/);
+  assert.match(source, /`disturb-failure-fixture-\$\{attempt \+ 1\}`/);
   assert.match(source, /user-buy-with-failed-maintenance/);
   assert.match(source, /failed maintenance did not preserve the user trade/);
   assert.match(source, /failed leg did not record observation/);

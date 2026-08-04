@@ -8458,3 +8458,11 @@ When sources conflict, use this order:
 - Files: `scripts/run-schema19-testnet-lifecycle.mjs`, `scripts/test/schema19-testnet-lifecycle.test.mjs`.
 - Result: A process restart between launch and maintenance retains the objective failed-leg identity without relying on transient JavaScript scope.
 - Follow-up: Run focused and adjacent lifecycle tests, push the tooling-only fix, and restart the complete fresh-fork rehearsal. No Mainnet transaction is authorized.
+
+### 2026-08-03 - Schema-19 bounded Mainnet failed-route fixture
+
+- Context: Rehearsal `rehearsal-29cfd11-01` passed deployment and entered the maintenance stage, but one cap-sized MSFT purchase did not move the real pool beyond the sealed reference-deviation limit.
+- Decision: On the isolated Mainnet fork only, permit at most eight fresh-quoted cap-sized disturbance purchases, stopping immediately when objective route readiness fails. Accumulate all received fixture tokens for one later bounded unwind. Testnet retains one deterministic disturbance transaction.
+- Files: `scripts/run-schema19-testnet-lifecycle.mjs`, `scripts/test/schema19-testnet-lifecycle.test.mjs`.
+- Result: The 72-hour fallback rehearsal uses real pool mechanics, no synthetic liquidity or direct state mutation, and a bounded maximum disturbance budget.
+- Follow-up: Push the runner-only fix and restart the complete fresh-fork lifecycle. No Mainnet transaction is authorized.

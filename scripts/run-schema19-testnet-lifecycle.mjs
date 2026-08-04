@@ -910,38 +910,48 @@ const run = async () => {
         BigInt(fixture.maximumNativeInput) < disturbanceCeiling
           ? BigInt(fixture.maximumNativeInput)
           : disturbanceCeiling;
-      const disturbanceQuote = await read(
-        contracts.assetRouter,
-        built.assetRouter.abi,
-        "quoteNativeToAsset",
-        [fixtureAsset, disturbanceInput],
-      );
-      const beforeFixture = await read(fixtureAsset, erc20, "balanceOf", [
-        account.address,
-      ]);
-      await write(
-        "maintenance",
-        "disturb-failure-fixture",
-        contracts.assetRouter,
-        built.assetRouter.abi,
-        "swapExactNativeForAsset",
-        [
-          fixtureAsset,
-          (disturbanceQuote[0] * 99n) / 100n,
-          account.address,
-          await deadline(),
-        ],
-        disturbanceInput,
-      );
-      const disturbanceTokens =
-        (await read(fixtureAsset, erc20, "balanceOf", [account.address])) -
-        beforeFixture;
-      const failedStatus = await read(
+      const disturbanceAttempts = mainnetFork ? 8 : 1;
+      let disturbanceTokens = 0n;
+      let failedStatus = await read(
         contracts.assetRouter,
         built.assetRouter.abi,
         "routeStatus",
         [fixtureAsset],
       );
+      for (let attempt = 0; attempt < disturbanceAttempts && failedStatus.ready; attempt += 1) {
+        const disturbanceQuote = await read(
+          contracts.assetRouter,
+          built.assetRouter.abi,
+          "quoteNativeToAsset",
+          [fixtureAsset, disturbanceInput],
+        );
+        const beforeFixture = await read(fixtureAsset, erc20, "balanceOf", [
+          account.address,
+        ]);
+        await write(
+          "maintenance",
+          `disturb-failure-fixture-${attempt + 1}`,
+          contracts.assetRouter,
+          built.assetRouter.abi,
+          "swapExactNativeForAsset",
+          [
+            fixtureAsset,
+            (disturbanceQuote[0] * 99n) / 100n,
+            account.address,
+            await deadline(),
+          ],
+          disturbanceInput,
+        );
+        disturbanceTokens +=
+          (await read(fixtureAsset, erc20, "balanceOf", [account.address])) -
+          beforeFixture;
+        failedStatus = await read(
+          contracts.assetRouter,
+          built.assetRouter.abi,
+          "routeStatus",
+          [fixtureAsset],
+        );
+      }
       if (failedStatus.ready) {
         throw new Error("controlled route did not enter objective deviation failure");
       }
