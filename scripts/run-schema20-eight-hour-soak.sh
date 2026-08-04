@@ -110,7 +110,9 @@ event lifecycle_passed
 
 ROBYN_TORTURE_LAUNCH_COUNT=64 ROBYN_TORTURE_ACTION_COUNT=100000 \
   ROBYN_TORTURE_SEED_COUNT=50 ROBYN_TORTURE_BASE_SEED=2048001 \
-  node scripts/simulate-devnet-torture.mjs >"$output/simulation.log" 2>&1
+  forge test --root packages/contracts \
+    --match-path test/RobynV4HundredsUsersSimulation.t.sol -vv \
+    >"$output/simulation.log" 2>&1
 event simulation_passed "512 wallets, 64 launches, 100000 actions, 50 seeds"
 
 for minute in $(seq 1 "$sample_count"); do

@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-04 - Schema-20 eight-hour soak runner wiring correction
+
+- Context: Exact candidate `c0678f673e641c702929169c3b508416147b3f6e` passed the complete deep qualification, then its first dedicated soak attempt stopped after six seconds before the clock began.
+- Diagnosis: `run-schema20-eight-hour-soak.sh` referenced nonexistent `scripts/simulate-devnet-torture.mjs` even though the qualified 512-wallet simulator is the Foundry target `RobynV4HundredsUsersSimulation.t.sol`.
+- Decision: Run that exact simulator target directly under the soak's 64-launch, 100,000-action, 50-seed environment. Preserve the failed evidence under `/home/hendo420/robyn-evidence/devnet-soak/c0678f673e641c702929169c3b508416147b3f6e/20260804-schema20-eight-hour-01`.
+- Result: No eight-hour clock started, no ambiguous action occurred, and active Schema-19 remained untouched.
+- Follow-up: Validate the focused simulator wiring, commit and push a new clean SHA, rerun fast/security/reproducibility/deep, then restart the uninterrupted eight-real-hour soak from zero.
+
 ### 2026-08-04 - Schema-20 fee-router identity is explicitly source mapped
 
 - Context: Fast run `20260804-schema20-fast-05` still rejected V5 as an absent coverage source even though its instance and compiler-generated constant getter were exercised; inherited constructors and generated getters emit no instrumentable LCOV source record.
