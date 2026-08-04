@@ -29,6 +29,17 @@ test("Schema-19 lifecycle starts Public without bootstrap or a live activation v
   assert.doesNotMatch(source, /executeBootstrapStep|bootstrap1|bootstrap2/);
 });
 
+test("Mainnet fork uses the production graduation profile and objective 72-hour fallback", () => {
+  assert.match(
+    source,
+    /mainnetFork \? 500_000_000_000_000_000n : 1_000_000_000_000_000n/,
+  );
+  assert.match(source, /item\.rehearsalFailureFixture === true/);
+  assert.match(source, /manifest\.settings\.failureObservationSpacing/);
+  assert.match(source, /manifest\.settings\.fallbackDelay/);
+  assert.match(source, /did not complete and reset WETH fallback/);
+});
+
 test("Schema-19 lifecycle covers three assets, user-driven maintenance, and all pull claims", () => {
   assert.match(source, /weights: \[4_000, 3_000, 3_000\]/);
   assert.match(

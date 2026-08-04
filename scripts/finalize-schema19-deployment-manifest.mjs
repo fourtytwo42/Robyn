@@ -104,6 +104,7 @@ const assetRoutes = input.routes.map((route) => ({
   maximumReferenceTickDeviation: route.maximumReferenceTickDeviation ?? null,
   verificationClass: route.verificationClass,
   testFailureFixture: route.testFailureFixture === true,
+  rehearsalFailureFixture: route.rehearsalFailureFixture === true,
 }));
 const maintenancePolicy = {
   tasksPerUserAction: 1,

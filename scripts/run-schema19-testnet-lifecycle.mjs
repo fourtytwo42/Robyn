@@ -664,16 +664,20 @@ const run = async () => {
     if (!state.completedStages.includes("routes")) throw new Error("launch requires route coverage");
     const basketRoutes = manifest.assetRoutes.filter((item) => item.enabled && item.symbol !== "WETH");
     if (basketRoutes.length < 2) throw new Error("three-asset lifecycle requires two stock routes plus WETH");
-    const failureFixture = basketRoutes.find((item) => item.testFailureFixture === true);
-    const healthyBasketRoute = basketRoutes.find(
-      (item) => item.testFailureFixture !== true,
+    const failureFixture = basketRoutes.find((item) =>
+      mainnetFork
+        ? item.rehearsalFailureFixture === true
+        : item.testFailureFixture === true,
     );
-    if (!mainnetFork && (!failureFixture || !healthyBasketRoute)) {
-      throw new Error("Testnet lifecycle requires one controlled failed leg");
+    const healthyBasketRoute = basketRoutes.find((item) =>
+      mainnetFork
+        ? item.rehearsalFailureFixture !== true
+        : item.testFailureFixture !== true,
+    );
+    if (!failureFixture || !healthyBasketRoute) {
+      throw new Error("lifecycle requires one controlled failed leg");
     }
-    const selectedBasketRoutes = mainnetFork
-      ? basketRoutes.slice(0, 2)
-      : [healthyBasketRoute, failureFixture];
+    const selectedBasketRoutes = [healthyBasketRoute, failureFixture];
     const request = {
       name: mainnetFork ? "Schema 19 Mainnet Rehearsal" : "Schema 19 Testnet Lifecycle",
       symbol: mainnetFork ? "S19MR" : "S19TL",
@@ -702,7 +706,7 @@ const run = async () => {
       built.coordinator.abi,
       "createLaunch",
       [request],
-      1_000_000_000_000_000n,
+      mainnetFork ? 500_000_000_000_000_000n : 1_000_000_000_000_000n,
     );
     const token = getAddress(predicted[0]);
     const vault = getAddress(predicted[1]);
@@ -713,7 +717,15 @@ const run = async () => {
     let buys = 0;
     while (!(await read(market, marketAbi, "graduated"))) {
       if (++buys > 20) throw new Error("graduation exceeded bounded purchases");
-      await write("launch", `bonding-buy-${buys}`, contracts.tradeRouter, built.tradeRouter.abi, "buy", [market, 1n], 1_000_000_000_000_000n);
+      await write(
+        "launch",
+        `bonding-buy-${buys}`,
+        contracts.tradeRouter,
+        built.tradeRouter.abi,
+        "buy",
+        [market, 1n],
+        mainnetFork ? 500_000_000_000_000_000n : 1_000_000_000_000_000n,
+      );
     }
     const adapter = getAddress(await read(market, marketAbi, "graduationAdapter"));
     const adapterAbi = (await artifact("RobynV4GraduationAdapter")).abi;
@@ -859,9 +871,12 @@ const run = async () => {
     await waitUntil(BigInt(state.graduatedAt) + 301n);
     await write("maintenance", "create-convertible-token-fees", contracts.tradeRouter, built.tradeRouter.abi, "buy", [market, 1n], 1_000_000_000_000n);
     let fallbackEvidence = null;
-    if (!mainnetFork) {
+    if (failureFixture) {
       const fixture = manifest.assetRoutes.find(
-        (item) => item.testFailureFixture === true,
+        (item) =>
+          mainnetFork
+            ? item.rehearsalFailureFixture === true
+            : item.testFailureFixture === true,
       );
       if (!fixture || checksum(fixture.address) !== checksum(state.failureFixtureAsset)) {
         throw new Error("controlled failed-leg identity changed");
@@ -888,10 +903,13 @@ const run = async () => {
         throw new Error("controlled failed leg never received its attributed value");
       }
 
+      const disturbanceCeiling = mainnetFork
+        ? BigInt(fixture.maximumNativeInput)
+        : 1_000_000_000_000_000n;
       const disturbanceInput =
-        BigInt(fixture.maximumNativeInput) < 1_000_000_000_000_000n
+        BigInt(fixture.maximumNativeInput) < disturbanceCeiling
           ? BigInt(fixture.maximumNativeInput)
-          : 1_000_000_000_000_000n;
+          : disturbanceCeiling;
       const disturbanceQuote = await read(
         contracts.assetRouter,
         built.assetRouter.abi,

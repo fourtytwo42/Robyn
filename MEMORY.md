@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 focused Testnet application acceptance passed
+
+- Context: Exact application SHA `0873abd4332c6283b374c92de3ce244bc60f291c` was built twice reproducibly and promoted into fresh database `robyn_testnet_schema19_96800800_0873abd`.
+- Verification: The LAN-only direct verifier passed 32 runtimes, exactly one graduated launch, fixed supply, locked principal `1414213548230959354360`, reward backing, and guardian-Paused state. The scoped projection contains one launch, 23 tracked addresses, one Sherwood pool, 799 retained canonical logs, and zero projection lag. API protocol audit is `ok`, all mismatch counts are zero, and unattributed native is zero.
+- Browser: `https://testnet.sherwoodforest.trade/admin/health` reports Overall ok and correctly identifies routine keeper maintenance as not required and user-driven by trades and claims. The qualified token page resolves its WETH/tmGOOGL/tmMSFT basket, holder claims, paginated market data, and Schema-19 reward-maintenance state.
+- Evidence: `/home/hendo420/robyn-evidence/schema19-testnet/application-0873abd-01`; qualified manifest SHA-256 `cdc880d1fc78f1937d6b190bbeca35b7d03032b9ebd56ba728d11cf98ea7e33f`.
+- Safety: Testnet remains Paused with conversions paused and all routes disabled. No Testnet keeper is running. Mainnet remains Schema-18 and untouched.
+- Follow-up: Build the exact chain-4663 production input and LAN-sourced fork receipt rehearsal, measure funding while preserving 0.02 ETH, seal the Schema-19 replacement manifest, and stop for exact-hash authorization before any Mainnet transaction or Schema-18 shutdown.
+
 ### 2026-08-03 - Schema-19 health recognizes user-driven maintenance
 
 - Context: The qualified Testnet application and projection were healthy, but `/admin/health` reported an overall degraded state because the shared health model still required a routine keeper heartbeat.
