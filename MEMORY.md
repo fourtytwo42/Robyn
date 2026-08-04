@@ -6,7 +6,7 @@
 - Worktree: `/home/hendo420/Robyn-marketing-pages-demo`, branch `codex/marketing-pages-demo`. The former Schema-19 Devnet rollback bundle is checksum-sealed under `/home/hendo420/robyn-evidence/schema20-marketing-upgrade/precutover-dd7afcf-01`.
 - Preview: Persistent native Anvil runs under `robyn-schema20-devnet.service` on `127.0.0.1:28549`; fresh database `robyn_devnet_schema20_marketing_dd7afcf` has four launches, 360 retained logs, 41 tracked addresses, four pool IDs, and zero ingestion/projection lag. Schema-20 correctly reports routine keeper maintenance as external/not expected.
 - Fixture: Direct validation confirms one graduated market, fixed 1B RDAO supply, fully eligible prepared stake, exact WETH reward backing, a matured holder claim, and three ready mock routes. Evidence is under `/home/hendo420/robyn-evidence/schema20-marketing-upgrade/preview-dd7afcf-01`.
-- Application: Trader-first homepage plus `/creators`, `/security`, `/demo`, environment-aware disclosures, and accessible film render successfully. The published film uses GPU45 Pocket TTS built-in Alba labeled synthetic `Voice of Sherwood - Rowan`; no voice cloning.
+- Application: Trader-first homepage plus `/creators`, `/security`, `/demo`, environment-aware disclosures, and accessible film render successfully. The published film uses GPU45 Pocket TTS built-in Anna labeled synthetic `Voice of Sherwood - Rowan`; no voice cloning.
 - Follow-up: Finish focused application gates, commit/push, cut over only Devnet while preserving rollback, record real Devnet actions and HTML scenes, render the film with FFmpeg, publish a web-only film release, finish responsive/browser acceptance, and seal checksums.
 
 ### 2026-08-04 - Schema-20 isolated projector zero-argument regression
@@ -342,25 +342,26 @@
 
 - Context: The user canceled the endurance soak and authorized a Devnet-only Schema-20 upgrade plus a product film using the already qualified `dd7afcfa...` candidate.
 - Decision: Preserve the Schema-19 Devnet chain, database, PM2 dump, release, and manifest as rollback evidence; run Schema-20 persistently on native Anvil port `28549`; stop the Devnet keeper because maintenance is user-driven; leave Testnet and Mainnet untouched.
-- Files: Marketing application branch `codex/marketing-pages-demo`; corrected film release `367a2ac87ecbd15d23c7de8795926263a4052a70`; fresh database `robyn_devnet_schema20_marketing_dd7afcf`; systemd service `robyn-schema20-devnet.service`.
+- Files: Marketing application branch `codex/marketing-pages-demo`; paced film release `bd532d361f2df7cb8da79d1237278860c081029c`; fresh database `robyn_devnet_schema20_marketing_dd7afcf`; systemd service `robyn-schema20-devnet.service`.
 - Commands/tests: 84 web tests, typecheck, lint, secret scan, dependency audit with zero high/critical findings, exact `packages/contracts` diff against `dd7afcf`, two clean reproducible web builds, direct chain/accounting/receipt validation, and in-app-browser acceptance passed. No Solidity compilation or contract test ran.
-- Result: Devnet serves the trader-first homepage, `/creators`, `/security`, `/demo`, four Schema-20 markets, and the 177-second film narrated by GPU45 Pocket TTS built-in Alba as synthetic `Voice of Sherwood - Rowan`. The original Anna synthesis was clean, but its old sample-rate alignment introduced severe static; the Alba replacement uses resampling plus `atempo` and a release-blocking audio-quality gate.
+- Result: Devnet serves the trader-first homepage, `/creators`, `/security`, `/demo`, four Schema-20 markets, and a 154-second film narrated by GPU45 Pocket TTS built-in Anna as synthetic `Voice of Sherwood - Rowan`. The complete cut is 15% faster than the original while Anna's clean natural source requires only about 3.8% tempo acceleration. Scenes, cues, captions, and transcript timestamps are synchronized, and the release-blocking audio-quality gate remains enforced.
 - Follow-up: Keep this release Devnet-only. Any Testnet/Mainnet promotion requires a separate plan and authorization. Retain the archival film master and receipt evidence outside Git.
 
 ## Active Handoff
-- Schema-20 Devnet is active at `http://192.168.50.250:3000` from immutable application release `367a2ac87ecbd15d23c7de8795926263a4052a70` on branch `codex/marketing-pages-demo`.
+- Schema-20 Devnet is active at `http://192.168.50.250:3000` from immutable application release `bd532d361f2df7cb8da79d1237278860c081029c` on branch `codex/marketing-pages-demo`.
 - The persistent Schema-20 chain is `robyn-schema20-devnet.service` on loopback `28549`; the fresh scoped database is `robyn_devnet_schema20_marketing_dd7afcf`; the Devnet keeper is intentionally absent.
 - Schema-19 Devnet rollback evidence is under `/home/hendo420/robyn-evidence/schema20-marketing-upgrade/precutover-dd7afcf-01`. Testnet and Mainnet were not changed.
 
 ## Current State
 - Devnet has four deterministic Schema-20 launches, one graduated market, three ready mock reward routes, exact fixed one-billion RDAO supply, prepared eligible stake plus the film's warming stake, and exact WETH liability backing.
-- The published film is 177 seconds, 1920x1080 at 30 fps, 12,051,177 bytes, SHA-256 `766c1d61f1495fc689d01b950e50240b90576ca02229be74f31ab69c5d5e88ce`; the archival master remains outside Git.
+- The published film is approximately 154 seconds, 1920x1080 at 30 fps, 10,978,421 bytes, SHA-256 `7bfe47e2cbcbfce9ce3a7d1f7e0e5f3ea33e49d79695d912cd306cd7542845b0`; the archival master remains outside Git.
 - No soak or scheduled task is running. No Schema-20 Testnet/Mainnet deployment or production tag exists.
 
 ## Verification Ledger
 - `dd7afcfa...`: fast and deep Schema-20 qualification passed before the user canceled the soak; the failed earlier candidates and canceled soak remain preserved as diagnostic evidence.
 - `68091c4...`: 84 web tests, typecheck, lint, secret scan, dependency audit, exact contract-tree freeze, two identical clean application builds, live receipt/accounting validation, and in-app-browser route/video/wallet acceptance passed.
 - `367a2ac...`: noisy alignment root cause confirmed; built-in Alba narration and final web encode pass peak, zero-crossing, high-frequency, duration, and format gates. The old film fails the gate. 84 web tests, typecheck, lint, exact contract-tree freeze, two identical application builds, and live in-app-browser playback passed with no console errors or overflow.
+- `bd532d3...`: built-in Anna clean-source cut reduces complete runtime by 15%; narration, video, captions, transcript, and interface cues are synchronized. Audio gates, 84 web tests, typecheck, lint, frozen-contract check, two reproducible application builds, and live browser playback at 153.97 seconds pass with no console errors or overflow.
 - Evidence: `/home/hendo420/robyn-evidence/schema20-marketing-upgrade`, `/home/hendo420/robyn-media-evidence/schema20-marketing-film/23cd8c4-01`, and `/home/hendo420/robyn-media-evidence/schema20-marketing-fixture/dd7afcf-prep-01`.
 
 ## Open Follow-ups
