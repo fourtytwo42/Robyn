@@ -48,14 +48,14 @@ export default function DemoPage() {
         </div>
         <div className="transcript-copy">
           <article>
-            <time>0:00–0:10</time>
+            <time>0:00–0:06</time>
             <p>
               In every market, a community gathers around a story. Sherwood
               Forest gives that story roots.
             </p>
           </article>
           <article>
-            <time>0:10–0:37</time>
+            <time>0:06–0:24</time>
             <p>
               Start in the market grove. Every token shows its price, activity,
               ownership, and immutable reward basket before you trade. Choose
@@ -65,7 +65,7 @@ export default function DemoPage() {
             </p>
           </article>
           <article>
-            <time>0:37–0:59</time>
+            <time>0:24–0:37</time>
             <p>
               When this Devnet trade confirms, ownership updates onchain. The
               transaction succeeds on its own terms. Then, as a best-effort
@@ -74,7 +74,7 @@ export default function DemoPage() {
             </p>
           </article>
           <article>
-            <time>0:59–1:23</time>
+            <time>0:37–1:13</time>
             <p>
               Every fee is assigned before anything external happens. Fifty
               percent belongs to holder baskets. Twenty-five percent belongs to
@@ -88,7 +88,7 @@ export default function DemoPage() {
             </p>
           </article>
           <article>
-            <time>1:23–1:46</time>
+            <time>1:13–1:30</time>
             <p>
               Creators begin with one guided launch. Name the token, publish its
               media and links, and choose up to three supported reward assets.
@@ -97,7 +97,7 @@ export default function DemoPage() {
             </p>
           </article>
           <article>
-            <time>1:46–2:06</time>
+            <time>1:30–1:44</time>
             <p>
               The market begins on a transparent bonding curve. When it
               graduates, reserved tokens and collected principal seed its
@@ -107,7 +107,7 @@ export default function DemoPage() {
             </p>
           </article>
           <article>
-            <time>2:06–2:23</time>
+            <time>1:44–2:03</time>
             <p>
               The forest also has a common token. RDAO begins with a disclosed
               bonding sale and locked-liquidity allocation. Stake it after the
@@ -117,7 +117,7 @@ export default function DemoPage() {
             </p>
           </article>
           <article>
-            <time>2:23–2:34</time>
+            <time>2:03–2:34</time>
             <p>
               Markets can be volatile. Routes can pause. Smart contracts and
               chains carry risk. Sherwood does not promise profit, graduation,

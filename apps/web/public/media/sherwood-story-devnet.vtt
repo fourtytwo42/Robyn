@@ -1,34 +1,37 @@
 WEBVTT
 
-00:00:04.348 --> 00:00:17.704
-In every market, a community gathers around a story. Sherwood Forest gives that story roots. Start in the market grove. Every token shows its price, activity, ownership, and immutable reward basket before you trade.
+00:00:00.600 --> 00:00:05.500
+In every market, a community gathers around a story. Sherwood Forest gives that story roots.
 
-00:00:18.574 --> 00:00:32.278
-Choose the community you believe in, inspect the assets its market can grow, and enter with a bounded quote you can verify before signing. When this Devnet trade confirms, ownership updates onchain. The transaction succeeds on its own terms.
+00:00:05.500 --> 00:00:15.200
+Start in the market grove. Every token shows its price, activity, ownership, and immutable reward basket before you trade.
 
-00:00:33.148 --> 00:00:46.852
-Then, as a best-effort second step, the protocol advances one piece of that token's maintenance work. Every fee is assigned before anything external happens. Fifty percent belongs to holder baskets. Twenty-five percent belongs to the creator.
+00:00:15.200 --> 00:00:23.800
+Choose the community you believe in, inspect the assets its market can grow, and enter with a bounded quote you can verify before signing.
 
-00:00:47.722 --> 00:01:02.539
-Twenty percent flows to eligible RDAO stakers. Five percent belongs to the governed treasury. A delayed conversion cannot silently change those shares. As activity continues, each healthy basket leg converts independently.
+00:00:23.800 --> 00:00:36.900
+When this Devnet trade confirms, ownership updates onchain. The transaction succeeds on its own terms. Then, as a best-effort second step, the protocol advances one piece of that token's maintenance work.
 
-00:01:03.409 --> 00:01:16.139
-Purchased assets are held for that launch and streamed to eligible holders. Claims pull already-accounted rewards from custody; they do not sell the token and buy the basket at the moment of withdrawal. Creators begin with one guided launch.
+00:00:36.900 --> 00:00:50.000
+Every fee is assigned before anything external happens. Fifty percent belongs to holder baskets. Twenty-five percent belongs to the creator. Twenty percent flows to eligible RDAO stakers. Five percent belongs to the governed treasury.
 
-00:01:17.009 --> 00:01:29.530
-Name the token, publish its media and links, and choose up to three supported reward assets. Supply, basket weights, fee rules, and creator identity take root together. There is no hidden creator token allocation.
+00:00:50.000 --> 00:01:00.500
+A delayed conversion cannot silently change those shares. As activity continues, each healthy basket leg converts independently.
 
-00:01:30.400 --> 00:01:43.339
+00:01:00.500 --> 00:01:13.300
+Purchased assets are held for that launch and streamed to eligible holders. Claims pull already-accounted rewards from custody; they do not sell the token and buy the basket at withdrawal.
+
+00:01:13.300 --> 00:01:30.100
+Creators begin with one guided launch. Name the token, publish its media and links, and choose up to three supported reward assets. Supply, basket weights, fee rules, and creator identity take root together. There is no hidden creator token allocation.
+
+00:01:30.100 --> 00:01:44.000
 The market begins on a transparent bonding curve. When it graduates, reserved tokens and collected principal seed its open-market pool. The liquidity position is locked, while the creator's fee share remains claimable through its declared recipient split.
 
-00:01:44.209 --> 00:01:56.870
-The forest also has a common token. RDAO begins with a disclosed bonding sale and locked liquidity allocation. Stake it after the twenty-four-hour warm-up to share in WETH rewards, while one token remains one vote.
+00:01:44.000 --> 00:02:03.500
+The forest also has a common token. RDAO begins with a disclosed bonding sale and locked-liquidity allocation. Stake it after the twenty-four-hour warm-up to share in WETH rewards, while one token remains one vote. Governance keeps its quorum, proposal threshold, vote, and Timelock visible.
 
-00:01:57.739 --> 00:02:13.461
-Governance keeps its quorum, proposal threshold, vote, and Timelock visible. Markets can be volatile. Routes can pause. Smart contracts and chains carry risk. Sherwood does not promise profit, graduation, liquidity, or rewards.
+00:02:03.500 --> 00:02:23.500
+Markets can be volatile. Routes can pause. Smart contracts and chains carry risk. Sherwood does not promise profit, graduation, liquidity, or rewards. It promises rules you can inspect, accounting you can follow, and emergency controls you can see.
 
-00:02:14.330 --> 00:02:27.409
-It promises something more useful: rules you can inspect, accounting you can follow, and emergency controls you can see. Explore the markets. Plant a token. And see what your community can grow. Devnet demonstration only.
-
-00:02:28.278 --> 00:02:31.965
-These assets and transactions have no real-world value.
+00:02:23.500 --> 00:02:33.500
+Explore the markets. Plant a token. And see what your community can grow. Devnet demonstration only. These assets and transactions have no real-world value.

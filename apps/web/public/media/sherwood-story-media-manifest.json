@@ -17,8 +17,8 @@
   "media": {
     "webMp4": {
       "path": "/media/sherwood-story-devnet.mp4",
-      "bytes": 10978421,
-      "sha256": "7bfe47e2cbcbfce9ce3a7d1f7e0e5f3ea33e49d79695d912cd306cd7542845b0"
+      "bytes": 10401174,
+      "sha256": "840ec7d93dd2be783da6c0fc3346bff5ce5f7cf3f5fd383d30d0e37ef50f85d7"
     },
     "poster": {
       "path": "/media/sherwood-story-poster.webp",
@@ -27,12 +27,12 @@
     },
     "captions": {
       "path": "/media/sherwood-story-devnet.vtt",
-      "bytes": 2705,
-      "sha256": "d6d33e9a64eea7aac7857110d9ad429a4a1debad4d439a7d2ffb6eac1dc6bfd0"
+      "bytes": 2699,
+      "sha256": "f6cb8f9f9c563c5bf12f6050cda97656f9de93aa179b1b6f28b4c3231eed1a7b"
     },
     "archivalMaster": {
       "committed": false,
-      "sha256": "088742895edae587472e0bc199bcededb6da4facf2afe21686578c974c504e53"
+      "sha256": "41d099c6c6c50a1f54a702be5cbafeade8e02dc69513625704495180e84b82f3"
     }
   },
   "transactions": [

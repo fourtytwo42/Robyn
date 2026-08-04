@@ -4,7 +4,6 @@ set -euo pipefail
 capture_dir="${1:?capture directory required}"
 narration="${2:?aligned narration required}"
 output_dir="${3:?output directory required}"
-speed="${4:-1.15}"
 work_dir="$(mktemp -d)"
 trap 'rm -rf "$work_dir"' EXIT
 mkdir -p "$output_dir"
@@ -16,21 +15,21 @@ maximum_duration="$(python3 -c "print(float('${narration_duration}') + 0.75)")"
 python3 "$validator" "$narration" --min-duration "$minimum_duration" --max-duration "$maximum_duration"
 
 shots=(
-  "01-opening.png:12"
-  "02-discover.png:18"
-  "03-token.png:12"
-  "04-quote.png:10"
-  "05-receipt.png:16"
-  "06-fee-flow.png:15"
-  "07-holder-claim.png:12"
-  "08-creator-wizard.png:17"
-  "09-created-token.png:10"
-  "10-graduation.png:13"
-  "11-creator-king.png:10"
-  "12-rdao-sale.png:12"
-  "13-rdao-stake.png:8"
-  "14-security.png:8"
-  "15-close.png:4"
+  "01-opening.png:5.5"
+  "02-discover.png:9.5"
+  "03-token.png:5.0"
+  "04-quote.png:4.5"
+  "05-receipt.png:11.0"
+  "06-fee-flow.png:25.0"
+  "07-holder-claim.png:12.8"
+  "08-creator-wizard.png:12.7"
+  "09-created-token.png:4.2"
+  "10-graduation.png:9.8"
+  "11-creator-king.png:5.5"
+  "12-rdao-sale.png:6.5"
+  "13-rdao-stake.png:11.5"
+  "14-security.png:20.0"
+  "15-close.png:10.4"
 )
 
 : > "$work_dir/video-concat.txt"
@@ -40,21 +39,20 @@ for shot in "${shots[@]}"; do
   source="$capture_dir/$name"
   [[ -s "$source" ]] || { echo "missing film capture: $source" >&2; exit 1; }
   clip="$work_dir/${name%.png}.mp4"
-  frames=$((seconds * 30))
+  frames="$(python3 -c "print(round(float('${seconds}') * 30))")"
   ffmpeg -hide_banner -loglevel error -loop 1 -i "$source" -frames:v "$frames" \
     -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=0x06110d,zoompan=z='min(zoom+0.00012,1.035)':d=$frames:s=1920x1080:fps=30,format=yuv420p" \
     -an -c:v libx264 -preset medium -crf 18 "$clip"
   printf "file '%s'\n" "$clip" >> "$work_dir/video-concat.txt"
 done
 
-ffmpeg -hide_banner -loglevel error -f concat -safe 0 -i "$work_dir/video-concat.txt" -c copy "$work_dir/picture-source.mp4"
-ffmpeg -hide_banner -loglevel error -i "$work_dir/picture-source.mp4" \
-  -vf "setpts=PTS/${speed}" -an -c:v libx264 -preset medium -crf 18 "$work_dir/picture.mp4"
+ffmpeg -hide_banner -loglevel error -f concat -safe 0 -i "$work_dir/video-concat.txt" -c copy "$work_dir/picture.mp4"
 
-delay_quote="$(python3 -c "print(round(42000 / float('${speed}')))")"
-delay_receipt="$(python3 -c "print(round(68000 / float('${speed}')))")"
-delay_claim="$(python3 -c "print(round(95000 / float('${speed}')))")"
-delay_create="$(python3 -c "print(round(122000 / float('${speed}')))")"
+# Chimes are pinned to the matching spoken and visual beats.
+delay_quote=20500
+delay_receipt=24500
+delay_claim=66100
+delay_create=88000
 
 # Four quiet, original interface chimes mark the quote, receipt, claim, and creation beats.
 ffmpeg -hide_banner -loglevel error \
