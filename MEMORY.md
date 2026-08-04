@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-04 - Schema-20 isolated Devnet implementation checkpoint
+
+- Context: User authorized a Devnet-only Schema-20 revision for an RDAO bonding sale and staking rewards. Active Schema-19 Devnet/Testnet/Mainnet deployments and the dirty landing-page worktree must remain untouched pending legal review.
+- Worktree: `/home/hendo420/Robyn-schema20`, branch `codex/schema20-rdao-staking-sale`, based on clean `origin/main` commit `a7ffc7bdb09ded4e23a9014cfe30043b17e566f7`.
+- Implemented: Deterministic vote-delegating stake escrows; uncapped RDAO staking with independent 24-hour deposit warm-ups, immediate exits, one-hour WETH reward streams, seven-day zero-eligible queue release, permissionless claims to the owner, and guardian pause boundaries. Added a 150m constant-product RDAO sale plus 50m price-continuous 1% v4 liquidity allocation, exact owner/LP arithmetic, 1% buy/sell staking fees, excess-buy refunds, bonding sells, atomic finalization, explicit dust handling, and a permanently locked RDAO/WETH v4 position whose two-sided LP fees route to staking. Added the Schema-20 deployment identity for the unchanged 50/25/20/5 native fee router.
+- Economics: 800m retained, 150m sold, 50m LP; virtual RDAO `600000000 ether`; virtual native `996953752423151481585 wei`; curve target `332317917474383827195 wei`; owner payout `184621065263546570663 wei`; LP native `147696852210837256531 wei`; the remaining one wei is attributed to staking. The live v4 proof used `147696852210837251856 wei` and `49999999999999999999999973` RDAO units in the position, with only 4,675 WETH wei routed as reward dust and 27 RDAO wei permanently locked as residual.
+- Verification: Non-via-IR focused tests pass: 16 staking/sale/v4 tests, the staked-governance test, and the 41-test protocol fixture including the new fee-router-to-staking path. The 200m allocation irreversibly ends the unanimous path, staked 800m preserves 800m votes, fixed-supply quorum remains 100m, and the ordinary 1h delay/4h vote/1h Timelock lifecycle passes.
+- Follow-up: Complete Schema-20 deployment closure and manifests; application/indexer RDAO workspace; fuzz/invariant/economic/security/reproducibility gates; then one clean pushed candidate and the uninterrupted eight-real-hour 60x native-Anvil qualification. Do not deploy Testnet/Mainnet or create a production release.
+
 ### 2026-08-03 - Schema-19 corrected production application is public
 
 - Authorization: Manifest SHA-256 `1237ee151c233b84f607781eaf614f2f26abde71124eb3bd3a7debba68430a63` authorized signed release `mainnet-prod-20260804-a98217c`, exact execution-route acceptance, application writes after all gates, and updater/first-24-hour monitoring. No bridge or onchain/contract/route/cap/database/RPC-policy change was authorized or performed.
