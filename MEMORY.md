@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-03 - Deeper native-v4 application correction qualified and sealed
+
+- Result: Application correction `d66303ced5d0f1e68af4297b3b354a87ff0f8835` and release binding `6b0fd7cd7933289c8a99e1f86359224233501fc7` are clean, pushed, and reachable from `origin/main`. The API now uses manifest-declared native v4 routes for status and quotes even when canonical WETH is the nonzero base asset.
+- Qualification: Devnet, Testnet, and LAN-Mainnet-staging acceptance pass with scope `mixed`; the application-scope gate, 84 API tests, typecheck, lint, production-release security tests, frozen-contract attestation, and protected reproducible runtime build pass. No Solidity was compiled or retested.
+- Release: Signed tag `mainnet-prod-20260804-6b0fd7c`; production release SHA-256 `0a9830ccc54d40784d9b299336d18f85230206e7afcc8a1e1bff7bca2cd59d2a`; runtime SHA-256 `c6fc106becd11fbc348ef5a38f3da75ef010ed812f30211a5c097f31580927b9`.
+- Authorization manifest: `/home/hendo420/robyn-evidence/schema19-mainnet/application-cutover-d66303c-01/schema19-mainnet-route-model-cutover-manifest.json`, SHA-256 `bde9ac2adb12ef01766d27e1d3225e921d6fc5c18cf0e2b9a20ac186dbed601c`. Bundle checksum verification passes.
+- Safety: Production remains on signed release `mainnet-prod-20260804-abbe65b`, with transaction submission disabled and updater timer inactive. The new release has not been installed and no onchain transaction, bridge, route, cap, database, or RPC-policy change occurred.
+- Follow-up: Obtain exact authorization for manifest `bde9ac2a...`; then deploy with writes disabled, verify all five stock routes and WETH with bounded quotes, complete responsive acceptance and emergency checks, enable submissions, and restart the updater/24-hour monitoring.
+
 ### 2026-08-03 - Production credential record corrected and deeper route defect found
 
 - Correction: The production administrator password was not rotated. Last verified 2026-08-03, `hendo420` is intentionally locked to key-only SSH and has `(ALL) NOPASSWD: ALL`; `sudo -v` was an invalid diagnostic because it prompted even though `sudo -n` commands succeed. Root SSH remains disabled. Never store the supplied password in Git, memory, logs, or evidence.
@@ -251,7 +260,7 @@
 - Public production submissions remain deliberately disabled on `192.168.50.108`. Signed release `mainnet-prod-20260804-abbe65b` is installed and healthy, but live acceptance found the native-v4 route-model defect described above.
 - The next application commit changes only `apps/api/src/asset-catalog.ts` and its regression test so a manifest-declared v4 venue controls route status and quotes even when canonical WETH is the nonzero base asset. The complete application-scope gate passes without compiling or testing Solidity.
 - Production release policy is Schema 19, contract closure `8b4b591bebc896fe58ff4457cc72ecb6518862d8`, application-bound deployment manifest SHA-256 `d726ccc1a818e7fc916096e071e6db0bcb125b3754c9e82a92d0e2fa4d4ecadd`, and indexing policy SHA-256 `cd816f7b373bc6af79059b71d3cf0f1674ac56ef0a720574b6b6763c6b33facb0`.
-- Next: commit and push the deeper application fix, qualify it across Devnet/Testnet/LAN-Mainnet staging, produce a signed release whose required previous release is `abbe65b`, seal a new exact cutover manifest, and stop for its authorization. Do not enable submissions.
+- Next: obtain exact authorization for application-cutover manifest `bde9ac2adb12ef01766d27e1d3225e921d6fc5c18cf0e2b9a20ac186dbed601c`. Do not install the signed release or enable submissions without that authorization.
 
 ## Current State
 - Schema-19 Mainnet launch mode is Public with production profile `6 ETH / 0.5 ETH`, one-hour rewards, active conversions, six ready routes, zero launches, and zero liabilities at initial verification.
@@ -268,7 +277,7 @@
 - Production-release-v2 focused tests, Schema-19 frozen-contract verification, script syntax, and application-runtime identity comparison pass. Full production promotion and browser acceptance remain pending.
 
 ## Open Follow-ups
-- Produce a superseding signed release and exact-hash cutover manifest for the deeper route-model correction. The consumed `a7edeb8e...` authorization does not cover a new application SHA.
+- Exact authorization remains required for manifest `bde9ac2a...` before production promotion or enabling submissions. The consumed `a7edeb8e...` authorization does not cover the new application SHA.
 - After new authorization, promote with writes disabled, verify WETH and all stock routes in desktop/mobile launch creation, then enable submissions only after emergency and transaction simulations pass.
 - After cutover, seal evidence and monitor the first 24 public hours. Keep Schema-18 archived and never migrate or replay its test-canary state.
 
