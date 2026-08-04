@@ -60,6 +60,13 @@ describe("marketing pages", () => {
     expect(devnetAccess).toContain("deployment.schemaVersion === 20");
   });
 
+  it("proxies direct Devnet browser API requests to the scoped data API", () => {
+    const nextConfig = source("../../next.config.ts");
+    expect(nextConfig).toContain('networkMode !== "devnet"');
+    expect(nextConfig).toContain('source: "/api/:path*"');
+    expect(nextConfig).toContain('"http://127.0.0.1:3101"');
+  });
+
   it("labels the film and fixtures as Devnet-only", () => {
     const home = source("../app/page.tsx");
     const demo = source("../app/demo/page.tsx");

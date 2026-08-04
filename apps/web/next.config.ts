@@ -45,6 +45,21 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    if (networkMode !== "devnet") return [];
+    const internalDataApiUrl =
+      process.env.DATA_API_URL ?? "http://127.0.0.1:3101";
+    return {
+      beforeFiles: [],
+      afterFiles: [
+        {
+          source: "/api/:path*",
+          destination: `${internalDataApiUrl}/:path*`,
+        },
+      ],
+      fallback: [],
+    };
+  },
   async headers() {
     if (networkMode === "devnet") return [];
     return [
