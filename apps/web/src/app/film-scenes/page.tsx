@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import type { CSSProperties } from "react";
 import styles from "./film-scenes.module.css";
 
@@ -34,13 +33,12 @@ export default async function FilmScenesPage({
 
   return (
     <main className={`${styles.stage} ${styles[scene]}`} data-film-scene={scene}>
-      <Image
+      {/* Film capture is a fixed 1920x1080 canvas; bypass responsive image transforms. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         className={styles.forest}
         src="/media/sherwood-sizzle-forest.webp"
         alt=""
-        fill
-        priority
-        sizes="100vw"
       />
       <div className={styles.vignette} />
       <div className={styles.fireflies} aria-hidden="true">
