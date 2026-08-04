@@ -26,6 +26,8 @@ export function SiteHeader() {
         </Link>
         <nav className="site-nav" aria-label="Primary navigation">
           <Link href="/discover">Markets</Link>
+          <Link href="/creators">For creators</Link>
+          <Link href="/security">Security</Link>
           <Link href="/whitepaper">Whitepaper</Link>
           <LaunchTokenTrigger className="site-nav-action">
             Create token

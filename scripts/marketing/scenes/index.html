@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Sherwood film scenes</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --green: #5ee3ad;
+        --lime: #9be15d;
+        --gold: #f4c95d;
+        --rust: #d78b5c;
+        --ink: #03100a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #020805;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+        color: #effff7;
+      }
+      body::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(
+            circle at 50% 70%,
+            rgba(52, 211, 153, 0.19),
+            transparent 43%
+          ),
+          repeating-linear-gradient(
+            90deg,
+            transparent 0 159px,
+            rgba(255, 255, 255, 0.025) 160px
+          ),
+          repeating-linear-gradient(
+            0deg,
+            transparent 0 89px,
+            rgba(255, 255, 255, 0.02) 90px
+          );
+      }
+      .scene {
+        display: none;
+        position: absolute;
+        inset: 0;
+        padding: 110px 130px;
+        isolation: isolate;
+      }
+      .scene.active {
+        display: grid;
+      }
+      .eyebrow {
+        color: var(--gold);
+        text-transform: uppercase;
+        letter-spacing: 0.19em;
+        font-weight: 800;
+        font-size: 20px;
+      }
+      h1 {
+        margin: 18px 0;
+        max-width: 1280px;
+        font-size: 112px;
+        line-height: 0.88;
+        letter-spacing: -0.07em;
+      }
+      p {
+        color: #a8c4b5;
+        font-size: 30px;
+        line-height: 1.45;
+      }
+      .fixture {
+        position: absolute;
+        right: 60px;
+        top: 50px;
+        color: #e0c984;
+        font:
+          800 18px/1 ui-monospace,
+          monospace;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .opening {
+        align-content: center;
+      }
+      .opening .tree-line {
+        position: absolute;
+        inset: auto 0 0;
+        height: 55%;
+        opacity: 0.55;
+        background:
+          linear-gradient(180deg, transparent, #071a11),
+          repeating-linear-gradient(
+            97deg,
+            transparent 0 150px,
+            rgba(28, 93, 59, 0.26) 152px 172px,
+            transparent 174px 265px
+          );
+        clip-path: polygon(
+          0 100%,
+          0 63%,
+          8% 63%,
+          12% 13%,
+          15% 63%,
+          25% 63%,
+          28% 26%,
+          31% 63%,
+          44% 63%,
+          48% 5%,
+          51% 63%,
+          63% 63%,
+          67% 19%,
+          70% 63%,
+          82% 63%,
+          86% 9%,
+          89% 63%,
+          100% 63%,
+          100% 100%
+        );
+        animation: forestRise 2.4s ease-out both;
+      }
+      .opening h1 span {
+        color: var(--green);
+      }
+      .opening .line {
+        width: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--green), transparent);
+        animation: draw 2s 0.5s ease-out forwards;
+      }
+      .fees {
+        grid-template-rows: auto 1fr;
+        align-content: center;
+      }
+      .allocation {
+        align-self: center;
+        display: grid;
+        grid-template-columns: 10fr 5fr 4fr 1fr;
+        height: 280px;
+        box-shadow: 0 30px 100px rgba(0, 0, 0, 0.45);
+      }
+      .allocation article {
+        display: grid;
+        place-items: center;
+        align-content: center;
+        color: #04100b;
+        transform: scaleY(0);
+        transform-origin: bottom;
+        animation: grow 0.85s forwards;
+      }
+      .allocation article:nth-child(1) {
+        background: var(--green);
+        animation-delay: 0.2s;
+      }
+      .allocation article:nth-child(2) {
+        background: var(--lime);
+        animation-delay: 0.4s;
+      }
+      .allocation article:nth-child(3) {
+        background: var(--gold);
+        animation-delay: 0.6s;
+      }
+      .allocation article:nth-child(4) {
+        background: var(--rust);
+        animation-delay: 0.8s;
+      }
+      .allocation strong {
+        font-size: 68px;
+        letter-spacing: -0.06em;
+      }
+      .allocation span {
+        font-size: 22px;
+        font-weight: 800;
+        text-align: center;
+      }
+      .graduation {
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+        gap: 100px;
+      }
+      .curve {
+        position: relative;
+        height: 570px;
+        border-left: 2px solid rgba(94, 227, 173, 0.35);
+        border-bottom: 2px solid rgba(94, 227, 173, 0.35);
+      }
+      .curve::before {
+        content: "";
+        position: absolute;
+        inset: 50px 30px 35px 40px;
+        border-bottom: 10px solid var(--green);
+        border-radius: 0 0 100% 0;
+        transform: skewY(-20deg);
+        filter: drop-shadow(0 0 24px rgba(94, 227, 173, 0.5));
+        animation: curve 2s ease both;
+      }
+      .curve .threshold {
+        position: absolute;
+        top: 12%;
+        right: 14%;
+        bottom: 0;
+        width: 3px;
+        background: var(--gold);
+        animation: pulse 1.6s infinite;
+      }
+      .curve .lock {
+        position: absolute;
+        right: 3%;
+        top: 5%;
+        display: grid;
+        place-items: center;
+        width: 140px;
+        height: 140px;
+        border: 2px solid var(--gold);
+        border-radius: 50%;
+        color: var(--gold);
+        font-size: 54px;
+        background: #07120d;
+      }
+      .staking {
+        grid-template-columns: 0.8fr 1.2fr;
+        align-items: center;
+        gap: 100px;
+      }
+      .stake-stack {
+        position: relative;
+        height: 600px;
+      }
+      .coin {
+        position: absolute;
+        left: 50%;
+        width: 330px;
+        height: 86px;
+        translate: -50% 0;
+        border: 2px solid var(--gold);
+        border-radius: 50%;
+        background: linear-gradient(180deg, #66501b, #201a08);
+        display: grid;
+        place-items: center;
+        color: var(--gold);
+        font-weight: 900;
+        font-size: 32px;
+        animation: coinDrop 0.8s ease both;
+      }
+      .coin:nth-child(1) {
+        bottom: 80px;
+        animation-delay: 0.2s;
+      }
+      .coin:nth-child(2) {
+        bottom: 145px;
+        animation-delay: 0.4s;
+      }
+      .coin:nth-child(3) {
+        bottom: 210px;
+        animation-delay: 0.6s;
+      }
+      .coin:nth-child(4) {
+        bottom: 275px;
+        animation-delay: 0.8s;
+      }
+      .coin:nth-child(5) {
+        bottom: 340px;
+        animation-delay: 1s;
+      }
+      .warmup {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        translate: -50% 0;
+        color: #a8c4b5;
+        font:
+          800 22px ui-monospace,
+          monospace;
+      }
+      .weth {
+        position: absolute;
+        right: 70px;
+        top: 40px;
+        color: #a9d8ff;
+        font-size: 86px;
+        animation: float 2s ease-in-out infinite;
+      }
+      .close {
+        place-items: center;
+        text-align: center;
+      }
+      .close h1 {
+        font-size: 138px;
+      }
+      .close p {
+        max-width: 950px;
+      }
+      .close .actions {
+        display: flex;
+        gap: 22px;
+        margin-top: 28px;
+      }
+      .close .actions span {
+        padding: 19px 30px;
+        border: 1px solid var(--green);
+        font-size: 23px;
+        font-weight: 800;
+      }
+      .close .actions span:first-child {
+        background: var(--green);
+        color: var(--ink);
+      }
+      @keyframes forestRise {
+        from {
+          translate: 0 30%;
+          opacity: 0;
+        }
+        to {
+          translate: 0 0;
+          opacity: 0.55;
+        }
+      }
+      @keyframes draw {
+        to {
+          width: 100%;
+        }
+      }
+      @keyframes grow {
+        to {
+          transform: scaleY(1);
+        }
+      }
+      @keyframes curve {
+        from {
+          clip-path: inset(0 100% 0 0);
+        }
+        to {
+          clip-path: inset(0);
+        }
+      }
+      @keyframes pulse {
+        50% {
+          box-shadow: 0 0 45px var(--gold);
+        }
+      }
+      @keyframes coinDrop {
+        from {
+          translate: -50% -300px;
+          opacity: 0;
+        }
+        to {
+          translate: -50% 0;
+          opacity: 1;
+        }
+      }
+      @keyframes float {
+        50% {
+          translate: 0 -24px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="fixture">Sherwood Devnet · no real-world value</div>
+    <section class="scene opening" data-scene="opening">
+      <div class="tree-line"></div>
+      <div>
+        <div class="eyebrow">A market with roots</div>
+        <h1>Trade communities.<br /><span>Harvest what they grow.</span></h1>
+        <div class="line"></div>
+      </div>
+    </section>
+    <section class="scene fees" data-scene="fees">
+      <header>
+        <div class="eyebrow">Assigned before maintenance</div>
+        <h1>Every fee knows where it belongs.</h1>
+      </header>
+      <div class="allocation">
+        <article><strong>50%</strong><span>Holder basket</span></article>
+        <article><strong>25%</strong><span>Creator</span></article>
+        <article><strong>20%</strong><span>RDAO staking</span></article>
+        <article><strong>5%</strong><span>Treasury</span></article>
+      </div>
+    </section>
+    <section class="scene graduation" data-scene="graduation">
+      <div>
+        <div class="eyebrow">Graduation</div>
+        <h1>From curve to locked market.</h1>
+        <p>
+          Reserved tokens and collected principal seed the pool at the terminal
+          curve price. The liquidity principal stays locked.
+        </p>
+      </div>
+      <div class="curve">
+        <span class="threshold"></span><span class="lock">🔒</span>
+      </div>
+    </section>
+    <section class="scene staking" data-scene="staking">
+      <div class="stake-stack">
+        <div class="weth">◆</div>
+        <span class="coin">RDAO</span><span class="coin">RDAO</span
+        ><span class="coin">RDAO</span><span class="coin">RDAO</span
+        ><span class="coin">RDAO</span>
+        <div class="warmup">24-hour warm-up → WETH rewards</div>
+      </div>
+      <div>
+        <div class="eyebrow">Stake and govern</div>
+        <h1>One token. One vote.</h1>
+        <p>
+          Eligible stake shares in variable WETH rewards while its checkpointed
+          voting power follows the holder’s chosen delegate.
+        </p>
+      </div>
+    </section>
+    <section class="scene close" data-scene="close">
+      <div>
+        <div class="eyebrow">Rules you can follow</div>
+        <h1>See what the forest can grow.</h1>
+        <p>
+          Markets remain volatile. Graduation, liquidity, rewards, and profit
+          are never guaranteed.
+        </p>
+        <div class="actions">
+          <span>Explore markets</span><span>Launch your token</span>
+        </div>
+      </div>
+    </section>
+    <script>
+      const requested =
+        new URLSearchParams(location.search).get("scene") || "opening";
+      document
+        .querySelector(`[data-scene="${requested}"]`)
+        ?.classList.add("active");
+    </script>
+  </body>
+</html>

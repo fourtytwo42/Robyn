@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-04 - Schema-20 marketing Devnet preview passed
+
+- Context: The user canceled the long soak and authorized a Devnet-only marketing upgrade from qualified Schema-20 candidate `dd7afcfaad41a8c7054b3e9b581bfd4029e88e60`; no Solidity, Testnet, Mainnet, or production work is authorized.
+- Worktree: `/home/hendo420/Robyn-marketing-pages-demo`, branch `codex/marketing-pages-demo`. The former Schema-19 Devnet rollback bundle is checksum-sealed under `/home/hendo420/robyn-evidence/schema20-marketing-upgrade/precutover-dd7afcf-01`.
+- Preview: Persistent native Anvil runs under `robyn-schema20-devnet.service` on `127.0.0.1:28549`; fresh database `robyn_devnet_schema20_marketing_dd7afcf` has four launches, 360 retained logs, 41 tracked addresses, four pool IDs, and zero ingestion/projection lag. Schema-20 correctly reports routine keeper maintenance as external/not expected.
+- Fixture: Direct validation confirms one graduated market, fixed 1B RDAO supply, fully eligible prepared stake, exact WETH reward backing, a matured holder claim, and three ready mock routes. Evidence is under `/home/hendo420/robyn-evidence/schema20-marketing-upgrade/preview-dd7afcf-01`.
+- Application: Trader-first homepage plus `/creators`, `/security`, `/demo`, environment-aware disclosures, and accessible film placeholder render successfully on the isolated preview. The final film must use the existing 177-second GPU45 Anna narration labeled synthetic `Voice of Sherwood - Rowan`; no voice cloning.
+- Follow-up: Finish focused application gates, commit/push, cut over only Devnet while preserving rollback, record real Devnet actions and HTML scenes, render the film with FFmpeg, publish a web-only film release, finish responsive/browser acceptance, and seal checksums.
+
 ### 2026-08-04 - Schema-20 isolated projector zero-argument regression
 
 - Context: Candidate `6e5dfab405629f3a5898c5ecbafd7ffee1a2bb11` passed fast, security, reproducibility, and deep qualification, but isolated API/indexer acceptance retained 29 RDAO logs and then failed while projecting the zero-argument `RewardSourcesSealed()` event.

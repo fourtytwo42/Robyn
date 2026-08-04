@@ -9,7 +9,9 @@ export function keeperExpectedForSchema(
   schemaVersion: number | undefined,
   configuredExpectation: boolean,
 ) {
-  return schemaVersion === 19 ? false : configuredExpectation;
+  return schemaVersion === 19 || schemaVersion === 20
+    ? false
+    : configuredExpectation;
 }
 
 export function keeperHealthSatisfied(

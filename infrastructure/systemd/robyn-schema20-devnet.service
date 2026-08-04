@@ -1,0 +1,21 @@
+[Unit]
+Description=Sherwood Schema-20 persistent Devnet
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hendo420
+Group=hendo420
+WorkingDirectory=/home/hendo420/Robyn-marketing-pages-demo
+ExecStart=/bin/bash /home/hendo420/Robyn-marketing-pages-demo/scripts/run-schema20-devnet-anvil.sh
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/hendo420/robyn-devnet/schema20-marketing
+
+[Install]
+WantedBy=multi-user.target

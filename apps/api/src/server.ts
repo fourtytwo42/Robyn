@@ -1380,6 +1380,11 @@ app.get("/health", async (_request, reply) => {
 });
 
 async function remediationProtocolState() {
+  // Schema-20 replaced the keeper-era DAO receiver with user-driven staking
+  // and maintenance contracts. Its dedicated RDAO routes and fixture
+  // validator audit those liabilities; the Schema-10-19 audit ABI below is
+  // intentionally not applied to the new contracts.
+  if ((deployment.schemaVersion ?? 0) >= 20) return null;
   if (
     (deployment.schemaVersion ?? 0) < 10 ||
     !deployment.contracts.oracleHook ||
