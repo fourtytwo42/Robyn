@@ -179,7 +179,14 @@ for (const symbol of requiredSymbols) {
   const selected = ladderResults
     .filter((entry) => entry.passed && entry.amount >= 1_000_000_000_000_000n && entry.recoveryBps >= 9_500)
     .at(-1);
-  if (!selected) throw new Error(`unsafe Mainnet route recovery ${symbol}`);
+  if (!selected) {
+    const diagnostic = ladderResults.map((entry) => ({
+      amountWei: entry.amount.toString(),
+      recoveryBps: entry.recoveryBps ?? null,
+      failureReason: entry.failureReason ?? null,
+    }));
+    throw new Error(`unsafe Mainnet route recovery ${symbol}: ${JSON.stringify(diagnostic)}`);
+  }
   const cap = selected.amount;
   const buy = selected.buy;
   const sell = selected.sell;
