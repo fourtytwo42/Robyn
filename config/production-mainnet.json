@@ -4,7 +4,7 @@
   "contractSchema": 19,
   "qualifiedContractGitSha": "a67288133f09bce68b7386009d702c14dfb8bbab",
   "contractClosureHash": "8b4b591bebc896fe58ff4457cc72ecb6518862d8",
-  "deploymentManifestHash": "b7e3c2485feec2f3ef23bba3c951a8e73ffa1a73d9cc96102f65e264e6cf9e74",
+  "deploymentManifestHash": "a3dd54117d98b4ad5f9f5ab92a19dad86f1dc1240f0ea03f4f8766837d21f37d",
   "indexingPolicyHash": "cd816f7b373bc6af79059b71d3cf0f1674ac56ef0a720574b6b6763c6b3facb0",
   "deploymentBlock": 27248417,
   "releaseTagPrefix": "mainnet-prod-",
@@ -22,5 +22,5 @@
     "automaticFallback": false,
     "transactionSubmissionDefault": false
   },
-  "applicationReleaseSha": "eceb94f33be21cc64237ccf79d7cbe36cb37ce77"
+  "applicationReleaseSha": "d66303ced5d0f1e68af4297b3b354a87ff0f8835"
 }
