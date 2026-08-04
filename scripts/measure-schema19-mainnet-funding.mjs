@@ -12,7 +12,7 @@ if (![deploymentArg, retirementArg, lifecycleArg, outputArg].every(Boolean)) {
 const rpc = process.env.ROBYN_SCHEMA19_MAINNET_RPC_URL ?? "http://127.0.0.1:18549";
 const parsed = new URL(rpc);
 if (!["127.0.0.1", "localhost"].includes(parsed.hostname)) throw new Error("Mainnet funding requires loopback LAN RPC");
-const files = [deploymentArg, retirementArg, lifecycleArg].map(path.resolve);
+const files = [deploymentArg, retirementArg, lifecycleArg].map((file) => path.resolve(file));
 const [deploymentRaw, retirementRaw, lifecycleRaw] = await Promise.all(files.map((file) => readFile(file, "utf8")));
 const deploymentLedger = JSON.parse(deploymentRaw);
 const retirementLedger = JSON.parse(retirementRaw);
