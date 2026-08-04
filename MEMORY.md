@@ -8385,3 +8385,12 @@ When sources conflict, use this order:
 - Commands/tests: Fast and deep torture passed; deep used 10,000 fuzz cases, 20 seeds at 1,024 runs/depth 256 for three invariant suites, 512 wallets, 64 launches, 100,000 actions across 50 seeds, isolated broadcast, and accurate non-via-IR coverage. Expanded `scripts/security-audit.sh` passed with zero unresolved high/medium findings, zero Gitleaks findings, zero known high/critical dependency vulnerabilities, and 721 Foundry tests plus one protected fork skip.
 - Result: Deep evidence and all checksums pass. Coverage is 90.81% lines and 80.14% branches. No Solidity changed after the deep run; subsequent changes are security tooling, documentation, and a development-only dependency override.
 - Follow-up: Commit/push the tooling SHA, run full repository and two-build reproducibility gates, then prepare a fresh Schema-19 Testnet deployment and funding preflight. Mainnet remains Schema-18 and untouched.
+
+### 2026-08-03 - Schema-19 Mainnet rehearsal StateView correction
+
+- Context: The first no-broadcast Mainnet rehearsal attempt at tooling SHA `94d904d1c997635554c0a165d4eb0d2626d55ce3` stopped before Anvil or any local transaction because the Schema-18 application manifest contained a stale `contracts.stateView` address with no runtime.
+- Decision: Preserve `/home/hendo420/robyn-evidence/schema19-mainnet/rehearsal-94d904d-01` as invalid and incomplete. Never weaken the runtime check. Derive the canonical StateView from the verified live asset router's immutable `stateView()` getter through the LAN-only gateway and attest its live runtime hash.
+- Files: `scripts/prepare-schema19-mainnet-input.mjs`, `scripts/test/schema19-mainnet-input.test.mjs`.
+- Commands/tests: Focused Mainnet-input tests, syntax, formatting, and `scripts/verify-schema19-contract-freeze.mjs` pass. No Solidity was compiled or retested.
+- Result: The tooling now rejects stale application-manifest dependency identities while binding the canonical onchain StateView used by the active routes.
+- Follow-up: Commit and push the tooling-only correction, start a fresh evidence directory, and rerun the exact LAN-sourced chain-4663 rehearsal. No Schema-19 Mainnet transaction or Schema-18 retirement is authorized.

@@ -58,12 +58,22 @@ if (
   throw new Error("Mainnet gateway is not healthy LAN-only");
 }
 
+const routeRouter = getAddress(routeSource.contracts.assetRouter);
+const stateViewReaderAbi = parseAbi(["function stateView() view returns (address)"]);
+const canonicalStateView = getAddress(
+  await client.readContract({
+    address: routeRouter,
+    abi: stateViewReaderAbi,
+    functionName: "stateView",
+  }),
+);
+
 const external = {
   create2Deployer: getAddress(schema18.oracleHook.create2Deployer),
   poolManager: getAddress(schema18.contracts.poolManager),
   positionManager: getAddress(schema18.contracts.positionManager),
   quoter: getAddress(schema18.contracts.quoter),
-  stateView: getAddress(schema18.contracts.stateView),
+  stateView: canonicalStateView,
   permit2: getAddress(schema18.contracts.permit2),
   universalRouter: getAddress(schema18.contracts.universalRouter),
   wrappedNative: getAddress(schema18.contracts.wrappedNative),
@@ -86,7 +96,6 @@ const routeAbi = parseAbi([
   "function routeStatus(address) view returns ((bytes32 poolId,uint128 liquidity,uint128 minimumLiquidity,uint128 maximumNativeInput,int24 spotTick,int24 referenceTick,uint24 maximumReferenceTickDeviation,bool enforceReferencePrice,bytes32 verificationClass,uint24 fee,int24 tickSpacing,address hooks,bool ready,bytes32 reason) status)",
   "function executionRouteStatus(address) view returns ((uint8 kind,uint128 maximumNativeInput,uint128 maximumAssetInput,bytes32 disabledReason,bool enabled,bool runtimeVerified,bool ready,bytes32 reason) status)",
 ]);
-const routeRouter = getAddress(routeSource.contracts.assetRouter);
 const requiredSymbols = ["GOOGL", "MSFT", "NVDA", "SPCX", "SPY"];
 const rehearsalFailureFixtureSymbol = "MSFT";
 const sourceBySymbol = new Map(routeSource.assetRoutes.map((route) => [route.symbol, route]));

@@ -23,6 +23,9 @@ test("Mainnet input uses LAN-only live runtime and route reads", () => {
   assert.match(source, /Mainnet LAN RPC is syncing/);
   assert.match(source, /fallbackTrafficAuthorized !== false/);
   assert.match(source, /reusedRuntimeCodeHashes/);
+  assert.match(source, /function stateView\(\) view returns \(address\)/);
+  assert.match(source, /canonicalStateView/);
+  assert.match(source, /stateView: canonicalStateView/);
   assert.match(source, /routeStatus/);
   assert.match(source, /executionRouteStatus/);
   assert.match(source, /unready Mainnet route/);
