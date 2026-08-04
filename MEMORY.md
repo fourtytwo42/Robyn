@@ -1,5 +1,12 @@
 # Project Memory
 
+### 2026-08-04 - Schema-20 fixed coverage gate restored
+
+- Context: Fast qualification `20260804-schema20-fast-03` on candidate `89db6a891ff65fd1f808f94d4a0dcebbb110561b` passed all mechanical phases but correctly failed the immutable coverage gate at 89.77% lines and 70.88% branches. The failed evidence remains under `/home/hendo420/robyn-evidence/devnet-torture/89db6a891ff65fd1f808f94d4a0dcebbb110561b/20260804-schema20-fast-03`.
+- Decision: Preserve the artifact-derived closure and fixed 90% line / 80% branch requirements. Add targeted admission, replay, authority, refund, wrapped/native reward, legacy forwarding, solvency, locker binding, deadline, and minimum-output branch tests instead of excluding code or weakening thresholds.
+- Verification: All focused sale, staking, escrow, and real-v4 locker tests pass. A fresh optimizer-disabled LCOV measurement reports 91.58% lines and 80.20% branches across the exact Schema-20 active closure.
+- Follow-up: Commit and push the branch matrices, run the official fast gate on that exact clean SHA, then require the complete deep qualification and uninterrupted eight-real-hour Devnet soak before browser acceptance or handoff. Devnet only; Schema-19 remains untouched.
+
 ### 2026-08-04 - Schema-20 bounded staking and Devnet application checkpoint
 
 - Context: The Schema-20 RDAO staking/sale implementation was extended without touching active Schema-19 services or deployments.

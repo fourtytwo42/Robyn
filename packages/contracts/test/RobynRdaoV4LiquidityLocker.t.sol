@@ -25,7 +25,9 @@ contract Schema20RdaoV4Trader is SafeCallback {
 
     PoolKey private _key;
 
-    constructor(IPoolManager manager, PoolKey memory key) SafeCallback(manager) { _key = key; }
+    constructor(IPoolManager manager, PoolKey memory key) SafeCallback(manager) {
+        _key = key;
+    }
 
     function swap(address inputToken, uint128 amount, address recipient)
         external
@@ -63,6 +65,18 @@ contract Schema20RdaoV4Trader is SafeCallback {
         poolManager.settle();
         poolManager.take(outputCurrency, recipient, output);
         return abi.encode(output);
+    }
+}
+
+contract Schema20LockerSaleIdentity {
+    IERC20 public immutable rdao;
+    RobynRdaoStaking public immutable staking;
+    address public immutable graduationFinalizer;
+
+    constructor(IERC20 rdao_, RobynRdaoStaking staking_, address finalizer_) {
+        rdao = rdao_;
+        staking = staking_;
+        graduationFinalizer = finalizer_;
     }
 }
 
@@ -108,30 +122,36 @@ contract RobynRdaoV4LiquidityLockerTest is Test {
         rdao = new RobynDaoToken(recipients, amounts, 1 hours);
         weth = new DevnetWrappedNative();
         staking = new RobynRdaoStaking(
-            IERC20(address(rdao)), IRobynWrappedNative(address(weth)), address(this), GUARDIAN,
-            24 hours, 1 hours, 7 days
+            IERC20(address(rdao)),
+            IRobynWrappedNative(address(weth)),
+            address(this),
+            GUARDIAN,
+            24 hours,
+            1 hours,
+            7 days
         );
         locker = new RobynRdaoV4LiquidityLocker(
-            poolManager, IERC20(address(rdao)), IRobynWrappedNative(address(weth)), staking,
-            10_000, 10_000
+            poolManager,
+            IERC20(address(rdao)),
+            IRobynWrappedNative(address(weth)),
+            staking,
+            10_000,
+            10_000
         );
-        RobynRdaoBondingSale.SaleConfiguration memory config =
-            RobynRdaoBondingSale.SaleConfiguration({
-                deployerPayoutRecipient: payable(address(0xDA0)),
-                governance: address(this),
-                guardian: GUARDIAN,
-                saleInventory: SALE,
-                liquidityInventory: LP_TOKENS,
-                virtualTokenReserve: VIRTUAL_RDAO,
-                virtualNativeReserve: VIRTUAL_NATIVE,
-                curvePrincipalTarget: CURVE_TARGET,
-                deployerPayout: OWNER_PAYOUT,
-                liquidityNative: LP_NATIVE,
-                maintenanceGasLimit: 500_000
-            });
-        sale = new RobynRdaoBondingSale(
-            IERC20(address(rdao)), staking, locker, config
-        );
+        RobynRdaoBondingSale.SaleConfiguration memory config = RobynRdaoBondingSale.SaleConfiguration({
+            deployerPayoutRecipient: payable(address(0xDA0)),
+            governance: address(this),
+            guardian: GUARDIAN,
+            saleInventory: SALE,
+            liquidityInventory: LP_TOKENS,
+            virtualTokenReserve: VIRTUAL_RDAO,
+            virtualNativeReserve: VIRTUAL_NATIVE,
+            curvePrincipalTarget: CURVE_TARGET,
+            deployerPayout: OWNER_PAYOUT,
+            liquidityNative: LP_NATIVE,
+            maintenanceGasLimit: 500_000
+        });
+        sale = new RobynRdaoBondingSale(IERC20(address(rdao)), staking, locker, config);
         locker.bindSale(address(sale));
         staking.configureRewardSource(address(sale), true);
         staking.configureRewardSource(address(locker), true);
@@ -148,13 +168,18 @@ contract RobynRdaoV4LiquidityLockerTest is Test {
         assertTrue(locker.initialized());
         assertGt(locker.principalLiquidity(), 0);
         assertEq(locker.principalRdaoUsed() + locker.lockedRdaoResidual(), LP_TOKENS);
-        assertEq(locker.principalWethUsed() + staking.totalRewardsDeposited(),
-            LP_NATIVE + sale.totalBondingFees() + sale.graduationDustToStaking());
+        assertEq(
+            locker.principalWethUsed() + staking.totalRewardsDeposited(),
+            LP_NATIVE + sale.totalBondingFees() + sale.graduationDustToStaking()
+        );
         assertLe(locker.lockedRdaoResidual(), 10_000);
         assertEq(locker.lockedWethResidual(), 0);
         (uint128 recordedLiquidity,,) = stateView.getPositionInfo(
-            PoolId.wrap(locker.poolId()), address(locker), locker.TICK_LOWER(),
-            locker.TICK_UPPER(), bytes32(0)
+            PoolId.wrap(locker.poolId()),
+            address(locker),
+            locker.TICK_LOWER(),
+            locker.TICK_UPPER(),
+            bytes32(0)
         );
         assertEq(recordedLiquidity, locker.principalLiquidity());
 
@@ -175,21 +200,108 @@ contract RobynRdaoV4LiquidityLockerTest is Test {
         assertGt(locker.cumulativeWethFees(), 0);
         assertGt(locker.cumulativeRdaoFees(), 0);
         (recordedLiquidity,,) = stateView.getPositionInfo(
-            PoolId.wrap(locker.poolId()), address(locker), locker.TICK_LOWER(),
-            locker.TICK_UPPER(), bytes32(0)
+            PoolId.wrap(locker.poolId()),
+            address(locker),
+            locker.TICK_LOWER(),
+            locker.TICK_UPPER(),
+            bytes32(0)
         );
         assertEq(recordedLiquidity, locker.principalLiquidity());
     }
 
     function testLockerHasNoPrincipalRemovalOrArbitraryCallSurface() external {
-        (bool removed,) = address(locker).call(
-            abi.encodeWithSignature("removeLiquidity(uint128,address)", 1, address(this))
-        );
+        (bool removed,) = address(locker)
+            .call(abi.encodeWithSignature("removeLiquidity(uint128,address)", 1, address(this)));
         assertFalse(removed);
-        (bool called,) = address(locker).call(
-            abi.encodeWithSignature("execute(address,bytes)", address(rdao), bytes(""))
-        );
+        (bool called,) = address(locker)
+            .call(abi.encodeWithSignature("execute(address,bytes)", address(rdao), bytes("")));
         assertFalse(called);
+    }
+
+    function testLockerBindingAndAdmissionBranches() external {
+        vm.expectRevert();
+        new RobynRdaoV4LiquidityLocker(
+            IPoolManager(address(0)),
+            IERC20(address(rdao)),
+            IRobynWrappedNative(address(weth)),
+            staking,
+            10_000,
+            10_000
+        );
+        vm.prank(BUYER);
+        vm.expectRevert(RobynRdaoV4LiquidityLocker.Unauthorized.selector);
+        locker.bindSale(address(sale));
+        vm.expectRevert(RobynRdaoV4LiquidityLocker.Unauthorized.selector);
+        locker.finalizeRdaoLiquidity(
+            IERC20(address(rdao)),
+            LP_TOKENS,
+            VIRTUAL_RDAO - SALE,
+            VIRTUAL_NATIVE + CURVE_TARGET,
+            address(staking)
+        );
+        vm.expectRevert(RobynRdaoV4LiquidityLocker.InvalidConfiguration.selector);
+        locker.bindSale(address(sale));
+
+        RobynRdaoV4LiquidityLocker fresh = new RobynRdaoV4LiquidityLocker(
+            poolManager,
+            IERC20(address(rdao)),
+            IRobynWrappedNative(address(weth)),
+            staking,
+            10_000,
+            10_000
+        );
+        vm.expectRevert(RobynRdaoV4LiquidityLocker.InvalidConfiguration.selector);
+        fresh.bindSale(address(0));
+        vm.expectRevert(RobynRdaoV4LiquidityLocker.InvalidConfiguration.selector);
+        fresh.bindSale(BUYER);
+        Schema20LockerSaleIdentity wrong =
+            new Schema20LockerSaleIdentity(IERC20(address(weth)), staking, address(fresh));
+        vm.expectRevert(RobynRdaoV4LiquidityLocker.InvalidConfiguration.selector);
+        fresh.bindSale(address(wrong));
+
+        Schema20LockerSaleIdentity selected =
+            new Schema20LockerSaleIdentity(IERC20(address(rdao)), staking, address(fresh));
+        fresh.bindSale(address(selected));
+        vm.prank(address(selected));
+        vm.expectRevert(RobynRdaoV4LiquidityLocker.InvalidConfiguration.selector);
+        fresh.finalizeRdaoLiquidity(
+            IERC20(address(weth)),
+            LP_TOKENS,
+            VIRTUAL_RDAO - SALE,
+            VIRTUAL_NATIVE + CURVE_TARGET,
+            address(staking)
+        );
+    }
+
+    function testHarvestReadinessDeadlineAndMinimumBranches() external {
+        RobynRdaoV4LiquidityLocker fresh = new RobynRdaoV4LiquidityLocker(
+            poolManager,
+            IERC20(address(rdao)),
+            IRobynWrappedNative(address(weth)),
+            staking,
+            10_000,
+            10_000
+        );
+        vm.expectRevert(RobynRdaoV4LiquidityLocker.NotInitialized.selector);
+        fresh.harvest(0, block.timestamp);
+
+        vm.deal(BUYER, 1_000 ether);
+        vm.prank(BUYER);
+        sale.buy{ value: 1_000 ether }(SALE, block.timestamp + 1, BUYER);
+        sale.finalizeGraduation();
+        vm.expectRevert(RobynRdaoV4LiquidityLocker.InvalidConfiguration.selector);
+        locker.harvest(0, block.timestamp - 1);
+        vm.expectPartialRevert(RobynRdaoV4LiquidityLocker.SlippageExceeded.selector);
+        locker.harvest(1, block.timestamp);
+        vm.prank(address(sale));
+        vm.expectRevert(RobynRdaoV4LiquidityLocker.AlreadyInitialized.selector);
+        locker.finalizeRdaoLiquidity(
+            IERC20(address(rdao)),
+            LP_TOKENS,
+            VIRTUAL_RDAO - SALE,
+            VIRTUAL_NATIVE + CURVE_TARGET,
+            address(staking)
+        );
     }
 
     function _deployPinned(string memory path, bytes memory constructorArgs)

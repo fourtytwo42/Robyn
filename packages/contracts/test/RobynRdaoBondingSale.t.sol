@@ -44,6 +44,16 @@ contract Schema20MockGraduationFinalizer is IRobynRdaoGraduationFinalizer {
     }
 }
 
+contract Schema20RejectNativeBuyer {
+    receive() external payable {
+        revert("reject native");
+    }
+
+    function buy(RobynRdaoBondingSale sale) external payable {
+        sale.buy{ value: msg.value }(0, block.timestamp, address(this));
+    }
+}
+
 contract RobynRdaoBondingSaleTest is Test {
     uint256 private constant SUPPLY = 1_000_000_000 ether;
     uint256 private constant SALE = 150_000_000 ether;
@@ -265,5 +275,133 @@ contract RobynRdaoBondingSaleTest is Test {
         assertEq(BUYER.balance - beforeSell, received);
         assertLt(received, grossNative);
         assertEq(staking.totalRewardsDeposited(), sale.totalBondingFees());
+    }
+
+    function testAdmissionAndStateViewBranchMatrix() external {
+        vm.expectRevert(RobynRdaoBondingSale.InvalidConfiguration.selector);
+        sale.fundAllocation();
+        vm.prank(BUYER);
+        vm.expectRevert(RobynRdaoBondingSale.Unauthorized.selector);
+        sale.setBuysPaused(true);
+        vm.prank(GUARDIAN);
+        sale.setBuysPaused(true);
+        vm.prank(BUYER);
+        vm.expectRevert(RobynRdaoBondingSale.Unauthorized.selector);
+        sale.setBuysPaused(false);
+        sale.setBuysPaused(false);
+        (uint256 zeroTokens, uint256 zeroPrincipal, uint256 zeroFee, uint256 zeroRefund) =
+            sale.quoteBuy(0);
+        assertEq(zeroTokens, 0);
+        assertEq(zeroPrincipal, 0);
+        assertEq(zeroFee, 0);
+        assertEq(zeroRefund, 0);
+        (uint256 zeroGross, uint256 zeroSellFee, uint256 zeroNet) = sale.quoteSell(0);
+        assertEq(zeroGross, 0);
+        assertEq(zeroSellFee, 0);
+        assertEq(zeroNet, 0);
+        (uint256 tinyGross, uint256 tinyFee, uint256 tinyNet) = sale.quoteSell(1);
+        assertEq(tinyGross, 0);
+        assertEq(tinyFee, 0);
+        assertEq(tinyNet, 0);
+        vm.deal(BUYER, 1 ether);
+        vm.prank(BUYER);
+        vm.expectRevert(RobynRdaoBondingSale.InvalidConfiguration.selector);
+        sale.buy{ value: 1 ether }(0, block.timestamp, address(0));
+        vm.prank(BUYER);
+        vm.expectRevert(RobynRdaoBondingSale.NothingToBuy.selector);
+        sale.buy{ value: 1 }(0, block.timestamp, BUYER);
+        vm.prank(BUYER);
+        vm.expectRevert(RobynRdaoBondingSale.InvalidConfiguration.selector);
+        sale.sell(0, 0, block.timestamp, payable(BUYER));
+        vm.prank(BUYER);
+        vm.expectRevert(RobynRdaoBondingSale.InvalidConfiguration.selector);
+        sale.sell(1, 0, block.timestamp, payable(address(0)));
+        vm.prank(BUYER);
+        vm.expectRevert(RobynRdaoBondingSale.InsufficientOutstanding.selector);
+        sale.sell(1, 0, block.timestamp, payable(BUYER));
+        vm.expectRevert(RobynRdaoBondingSale.GraduationNotReady.selector);
+        sale.finalizeGraduation();
+        vm.prank(BUYER);
+        vm.expectRevert(RobynRdaoBondingSale.Unauthorized.selector);
+        sale.recoverSurplusRdao(BUYER);
+        vm.expectRevert(RobynRdaoBondingSale.Unauthorized.selector);
+        sale.recoverSurplusRdao(address(0));
+        vm.expectRevert(RobynRdaoBondingSale.InvalidConfiguration.selector);
+        sale.recoverSurplusRdao(address(this));
+        (uint256 amount, bool success) = sale.processFees();
+        assertEq(amount, 0);
+        assertTrue(success);
+        sale.currentVirtualReserves();
+        sale.currentPriceE18();
+        sale.terminalPriceE18();
+    }
+
+    function testSellDeadlineAndSlippageBranches() external {
+        vm.deal(BUYER, 10 ether);
+        vm.startPrank(BUYER);
+        uint256 bought = sale.buy{ value: 10 ether }(0, block.timestamp, BUYER);
+        rdao.approve(address(sale), bought);
+        vm.expectRevert(RobynRdaoBondingSale.DeadlineExpired.selector);
+        sale.sell(bought, 0, block.timestamp - 1, payable(BUYER));
+        (,, uint256 quoted) = sale.quoteSell(bought);
+        vm.expectPartialRevert(RobynRdaoBondingSale.SlippageExceeded.selector);
+        sale.sell(bought, quoted + 1, block.timestamp, payable(BUYER));
+        vm.stopPrank();
+    }
+
+    function testFinalizedBranchesRejectReplayAndTrading() external {
+        vm.deal(BUYER, 1_000 ether);
+        vm.prank(BUYER);
+        sale.buy{ value: 1_000 ether }(SALE, block.timestamp, BUYER);
+        sale.finalizeGraduation();
+        vm.expectRevert(RobynRdaoBondingSale.AlreadyFinalized.selector);
+        sale.finalizeGraduation();
+        vm.prank(BUYER);
+        vm.expectRevert(RobynRdaoBondingSale.InvalidConfiguration.selector);
+        sale.buy{ value: 1 ether }(0, block.timestamp, BUYER);
+        vm.prank(BUYER);
+        vm.expectRevert(RobynRdaoBondingSale.InvalidConfiguration.selector);
+        sale.sell(1, 0, block.timestamp, payable(BUYER));
+    }
+
+    function testConstructorEconomicIdentityBranches() external {
+        RobynRdaoBondingSale.SaleConfiguration memory config = _validConfig();
+        config.curvePrincipalTarget += 1;
+        vm.expectRevert(RobynRdaoBondingSale.InvalidConfiguration.selector);
+        new RobynRdaoBondingSale(IERC20(address(rdao)), staking, finalizer, config);
+
+        config = _validConfig();
+        config.liquidityNative += 1;
+        vm.expectRevert(RobynRdaoBondingSale.InvalidConfiguration.selector);
+        new RobynRdaoBondingSale(IERC20(address(rdao)), staking, finalizer, config);
+    }
+
+    function testOverfillRefundFailureRollsBackPurchase() external {
+        Schema20RejectNativeBuyer rejecting = new Schema20RejectNativeBuyer();
+        vm.deal(address(rejecting), 1_000 ether);
+        vm.expectRevert(RobynRdaoBondingSale.NativeTransferFailed.selector);
+        rejecting.buy{ value: 1_000 ether }(sale);
+        assertEq(sale.sold(), 0);
+        assertEq(rdao.balanceOf(address(rejecting)), 0);
+    }
+
+    function _validConfig()
+        private
+        view
+        returns (RobynRdaoBondingSale.SaleConfiguration memory config)
+    {
+        config = RobynRdaoBondingSale.SaleConfiguration({
+            deployerPayoutRecipient: PAYOUT,
+            governance: address(this),
+            guardian: GUARDIAN,
+            saleInventory: SALE,
+            liquidityInventory: LP_TOKENS,
+            virtualTokenReserve: VIRTUAL_RDAO,
+            virtualNativeReserve: VIRTUAL_NATIVE,
+            curvePrincipalTarget: CURVE_TARGET,
+            deployerPayout: OWNER_PAYOUT,
+            liquidityNative: LP_NATIVE,
+            maintenanceGasLimit: 500_000
+        });
     }
 }
