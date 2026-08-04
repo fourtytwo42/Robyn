@@ -8402,3 +8402,11 @@ When sources conflict, use this order:
 - Files: `scripts/prepare-schema19-mainnet-input.mjs`, `scripts/test/schema19-mainnet-input.test.mjs`.
 - Result: Existing route enablement is evidence only; fresh raw pool qualification determines the Schema-19 controls. No onchain route or contract was changed.
 - Follow-up: Push the tooling-only change and restart the LAN-sourced local-fork rehearsal under a fresh evidence identity. Mainnet remains Schema-18 and live; Schema-19 broadcasting remains unauthorized.
+
+### 2026-08-03 - Schema-19 Mainnet deterministic cap selection
+
+- Context: Fresh rehearsal `rehearsal-f51f4aa-01` stopped before Anvil because SPY no longer retained at least 95% in a raw round trip at its old `0.05 ETH` cap.
+- Decision: Apply the unchanged quote ladder from `0.0001` through `0.05 ETH`, require exact-input and exact-output viability in both directions, and select the largest amount at or above `0.001 ETH` with at least 95% recovery. Never lower the recovery requirement to retain a larger cap.
+- Files: `scripts/prepare-schema19-mainnet-input.mjs`, `scripts/test/schema19-mainnet-input.test.mjs`.
+- Result: The fresh Schema-19 deployment cap is derived from current executable depth per route rather than copied from stale Schema-18 settings.
+- Follow-up: Qualify the tooling-only change, push a clean SHA, and rerun the local-fork rehearsal with fresh evidence. No Mainnet transaction is authorized.

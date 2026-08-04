@@ -143,14 +143,47 @@ for (const symbol of requiredSymbols) {
     tickSpacing: route.tickSpacing,
     hooks: route.hooks,
   };
-  const cap = route.maximumNativeInput;
-  if (cap < 1_000_000_000_000_000n) throw new Error(`insufficient Mainnet route capacity ${symbol}`);
-  const [buy] = await quote("quoteExactInputSingle", poolKey, true, cap);
-  const [sell] = await quote("quoteExactInputSingle", poolKey, false, buy);
-  await quote("quoteExactOutputSingle", poolKey, true, buy / 2n || 1n);
-  await quote("quoteExactOutputSingle", poolKey, false, cap / 2n || 1n);
-  const recoveryBps = Number((sell * 10_000n) / cap);
-  if (recoveryBps < 9_500) throw new Error(`unsafe Mainnet route recovery ${symbol}`);
+  const quoteLadder = [
+    100_000_000_000_000n,
+    250_000_000_000_000n,
+    500_000_000_000_000n,
+    1_000_000_000_000_000n,
+    2_500_000_000_000_000n,
+    5_000_000_000_000_000n,
+    10_000_000_000_000_000n,
+    25_000_000_000_000_000n,
+    50_000_000_000_000_000n,
+  ].filter((amount) => amount <= route.maximumNativeInput);
+  const ladderResults = [];
+  for (const amount of quoteLadder) {
+    try {
+      const [buy] = await quote("quoteExactInputSingle", poolKey, true, amount);
+      const [sell] = await quote("quoteExactInputSingle", poolKey, false, buy);
+      await quote("quoteExactOutputSingle", poolKey, true, buy / 2n || 1n);
+      await quote("quoteExactOutputSingle", poolKey, false, amount / 2n || 1n);
+      ladderResults.push({
+        amount,
+        buy,
+        sell,
+        recoveryBps: Number((sell * 10_000n) / amount),
+        passed: true,
+      });
+    } catch (error) {
+      ladderResults.push({
+        amount,
+        passed: false,
+        failureReason: String(error?.shortMessage ?? error?.message ?? error).slice(0, 300),
+      });
+    }
+  }
+  const selected = ladderResults
+    .filter((entry) => entry.passed && entry.amount >= 1_000_000_000_000_000n && entry.recoveryBps >= 9_500)
+    .at(-1);
+  if (!selected) throw new Error(`unsafe Mainnet route recovery ${symbol}`);
+  const cap = selected.amount;
+  const buy = selected.buy;
+  const sell = selected.sell;
+  const recoveryBps = selected.recoveryBps;
   const minimumLiquidity = (liquidity * 9n) / 10n;
   routes.push({
     symbol,
@@ -160,7 +193,7 @@ for (const symbol of requiredSymbols) {
     tickSpacing: route.tickSpacing,
     hooks: route.hooks,
     minimumLiquidity: minimumLiquidity.toString(),
-    maximumNativeInput: route.maximumNativeInput.toString(),
+    maximumNativeInput: cap.toString(),
     referenceTick: Number(slot0[1]),
     maximumReferenceTickDeviation: route.maximumReferenceTickDeviation,
     enforceReferencePrice: route.enforceReferencePrice,
@@ -176,6 +209,12 @@ for (const symbol of requiredSymbols) {
       recoveryBps,
       exactInputBothDirections: true,
       exactOutputBothDirections: true,
+      quoteLadder: ladderResults.map((entry) => ({
+        amountWei: entry.amount.toString(),
+        recoveryBps: entry.recoveryBps ?? null,
+        passed: entry.passed && (entry.recoveryBps ?? 0) >= 9_500,
+        failureReason: entry.failureReason ?? null,
+      })),
     },
     rehearsalFailureFixture: symbol === rehearsalFailureFixtureSymbol,
   });
