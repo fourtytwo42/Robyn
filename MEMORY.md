@@ -8450,3 +8450,11 @@ When sources conflict, use this order:
 - Files: `scripts/run-schema19-mainnet-rehearsal.sh`, `scripts/test/schema19-mainnet-rehearsal.test.mjs`.
 - Result: The exact deployment script executes without widening Foundry filesystem permissions. The diagnostic run touched only isolated Anvil state.
 - Follow-up: Push the tooling-only change and run the entire receipt-ledger lifecycle under a fresh evidence identity. Mainnet remains untouched and unauthorized for Schema-19.
+
+### 2026-08-03 - Schema-19 lifecycle failed-leg restart binding
+
+- Context: Rehearsal `rehearsal-68c1122-01` deployed and verified all 36 local deployment/binding transactions, then the maintenance stage raised `ReferenceError: failureFixture is not defined` before submitting a maintenance action. The launch stage had correctly persisted the fixture identity in durable state, but maintenance referenced the launch-local variable.
+- Decision: Gate the restartable maintenance branch on `state.failureFixtureAsset` and continue re-resolving the exact fixture from the sealed manifest before use.
+- Files: `scripts/run-schema19-testnet-lifecycle.mjs`, `scripts/test/schema19-testnet-lifecycle.test.mjs`.
+- Result: A process restart between launch and maintenance retains the objective failed-leg identity without relying on transient JavaScript scope.
+- Follow-up: Run focused and adjacent lifecycle tests, push the tooling-only fix, and restart the complete fresh-fork rehearsal. No Mainnet transaction is authorized.

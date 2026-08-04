@@ -35,6 +35,8 @@ test("Mainnet fork uses the production graduation profile and objective 72-hour 
     /mainnetFork \? 500_000_000_000_000_000n : 1_000_000_000_000_000n/,
   );
   assert.match(source, /item\.rehearsalFailureFixture === true/);
+  assert.match(source, /if \(state\.failureFixtureAsset\)/);
+  assert.doesNotMatch(source, /if \(failureFixture\)/);
   assert.match(source, /manifest\.settings\.failureObservationSpacing/);
   assert.match(source, /manifest\.settings\.fallbackDelay/);
   assert.match(source, /did not complete and reset WETH fallback/);

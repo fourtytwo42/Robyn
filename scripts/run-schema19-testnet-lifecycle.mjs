@@ -871,7 +871,7 @@ const run = async () => {
     await waitUntil(BigInt(state.graduatedAt) + 301n);
     await write("maintenance", "create-convertible-token-fees", contracts.tradeRouter, built.tradeRouter.abi, "buy", [market, 1n], 1_000_000_000_000n);
     let fallbackEvidence = null;
-    if (failureFixture) {
+    if (state.failureFixtureAsset) {
       const fixture = manifest.assetRoutes.find(
         (item) =>
           mainnetFork
