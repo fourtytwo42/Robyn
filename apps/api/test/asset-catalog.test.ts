@@ -101,6 +101,8 @@ describe("AssetCatalogService", () => {
   });
 
   it("reads and quotes native Uniswap v4 routes", async () => {
+    const v4Manifest = manifest();
+    v4Manifest.v4Venue = { quoter: registry };
     const client = {
       getCode: async () => "0x01",
       readContract: async ({ functionName }: { functionName: string }) => {
@@ -145,9 +147,9 @@ describe("AssetCatalogService", () => {
     const service = new AssetCatalogService(
       client,
       46630,
-      native,
+      base,
       registry,
-      manifest(),
+      v4Manifest,
     );
 
     await expect(service.resolve(asset)).resolves.toMatchObject({
@@ -175,6 +177,7 @@ describe("AssetCatalogService", () => {
   it("keeps a direct WETH wrap selectable without reading a v4 pool", async () => {
     let routeStatusReads = 0;
     const wethManifest = manifest();
+    wethManifest.v4Venue = { quoter: registry };
     wethManifest.assets[0] = {
       ...wethManifest.assets[0]!,
       symbol: "WETH",
@@ -210,7 +213,7 @@ describe("AssetCatalogService", () => {
     const service = new AssetCatalogService(
       client,
       4663,
-      native,
+      base,
       registry,
       wethManifest,
     );

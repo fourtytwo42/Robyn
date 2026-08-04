@@ -511,7 +511,7 @@ export class AssetCatalogService {
 
   async quote(address: Address, amount: bigint) {
     if (!this.routeRegistry || amount <= 0n) return null;
-    if (this.baseAsset === zeroAddress) {
+    if (this.usesNativeV4Routes()) {
       const result = await this.rpcClient.simulateContract({
         address: this.routeRegistry,
         abi: v4AssetRouterAbi,
@@ -785,7 +785,7 @@ export class AssetCatalogService {
         reason: "route-registry-unavailable",
       };
     }
-    if (this.baseAsset === zeroAddress) {
+    if (this.usesNativeV4Routes()) {
       try {
         const execution = await this.rpcClient.readContract({
           address: this.routeRegistry,
@@ -863,5 +863,11 @@ export class AssetCatalogService {
           : "route-read-failed",
       };
     }
+  }
+
+  private usesNativeV4Routes() {
+    return (
+      this.baseAsset === zeroAddress || Boolean(this.manifest?.v4Venue?.quoter)
+    );
   }
 }

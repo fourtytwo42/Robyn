@@ -1,12 +1,12 @@
 # Project Memory
 
-### 2026-08-03 - Corrected application cutover authorized; host control blocked
+### 2026-08-03 - Production credential record corrected and deeper route defect found
 
-- Authorization: The owner authorized exact application-cutover manifest SHA-256 `a7edeb8e2b094d43979e7f9225504b78d5f47fbb1457623ff97a7453d4a69c06`. The sanitized authorization receipt and bundle checksums pass in `/home/hendo420/robyn-evidence/schema19-mainnet/application-cutover-eceb94f-01`.
-- Preflight: The signed GitHub release, manifest, runtime archive, application/deployment identities, and authorization scope all reverified. Production remains on release `8f7eab...`, writes remain disabled, and `robyn-prod-updater.timer` remains inactive.
-- Blocker: The production host's administrator password was rotated during hardening. The previously supplied password is rejected by `sudo`, root SSH is disabled, and unprivileged systemd control correctly refuses to start `robyn-prod-updater.service`.
-- Safety: No production deployment, write enablement, onchain transaction, bridge, contract/route/cap/database/RPC-policy change, or ambiguous action occurred.
-- Follow-up: Obtain the current `hendo420` sudo password for `192.168.50.108` or a narrowly scoped passwordless systemd grant for the updater. Then deploy with writes disabled and resume the authorized acceptance sequence.
+- Correction: The production administrator password was not rotated. Last verified 2026-08-03, `hendo420` is intentionally locked to key-only SSH and has `(ALL) NOPASSWD: ALL`; `sudo -v` was an invalid diagnostic because it prompted even though `sudo -n` commands succeed. Root SSH remains disabled. Never store the supplied password in Git, memory, logs, or evidence.
+- Deployment: Authorized signed release `mainnet-prod-20260804-abbe65b` is installed on `192.168.50.108` with all six keyless PM2 services online, the scoped database caught up, and transaction submission still disabled. The updater timer remains inactive.
+- Acceptance defect: Live catalog acceptance showed the first WETH-only correction was insufficient. The API selected native-v4 versus legacy route methods from `baseAsset === zeroAddress`, but the live Schema-19 manifest correctly sets canonical WETH as `baseAsset` and declares `v4Venue.quoter`. Direct onchain `executionRouteStatus()` calls for WETH and GOOGL pass.
+- Fix: `AssetCatalogService` now selects native-v4 status and quote paths whenever the manifest declares a v4 venue, including a nonzero canonical-WETH base. Regressions cover stock and direct-WETH routes. The application-scope gate passes, including 84 API tests, typecheck, lint, production-release security, and frozen-contract attestation; no Solidity was compiled or retested.
+- Safety: Production remains writes-disabled on `abbe65b`. Because the application source changed again, authorization `a7edeb8e...` cannot authorize the replacement application artifact. Qualify, sign, and seal a superseding application-only release and exact manifest before production promotion.
 
 ### 2026-08-03 - Corrected WETH application release sealed for authorization
 
@@ -248,15 +248,15 @@
 
 ## Active Handoff
 - Schema-19 is deployed and independently verified on Robinhood Mainnet. Schema-18 is guardian-retired and archived. No further onchain deployment or retirement transaction is pending.
-- Public production submissions remain deliberately disabled on `192.168.50.108`. The Schema-19 database and exact authorized runtime are caught up, but browser acceptance found the direct-WETH catalog defect described above.
-- Operational HEAD begins at `ff6cffa885e0877391155a35ea03e44485c0ff80` plus the production-release-v2 binding change. Qualified application identity remains separately frozen at `0873abd4332c6283b374c92de3ce244bc60f291c`; `apps`, `packages`, and lock/workspace files are byte-identical between that application SHA and the operational source.
+- Public production submissions remain deliberately disabled on `192.168.50.108`. Signed release `mainnet-prod-20260804-abbe65b` is installed and healthy, but live acceptance found the native-v4 route-model defect described above.
+- The next application commit changes only `apps/api/src/asset-catalog.ts` and its regression test so a manifest-declared v4 venue controls route status and quotes even when canonical WETH is the nonzero base asset. The complete application-scope gate passes without compiling or testing Solidity.
 - Production release policy is Schema 19, contract closure `8b4b591bebc896fe58ff4457cc72ecb6518862d8`, application-bound deployment manifest SHA-256 `d726ccc1a818e7fc916096e071e6db0bcb125b3754c9e82a92d0e2fa4d4ecadd`, and indexing policy SHA-256 `cd816f7b373bc6af79059b71d3cf0f1674ac56ef0a720574b6b6763c6b33facb0`.
-- Next: obtain exact authorization for application-cutover manifest `a7edeb8e2b094d43979e7f9225504b78d5f47fbb1457623ff97a7453d4a69c06`. Do not install the signed corrected release or enable submissions under the consumed authorization.
+- Next: commit and push the deeper application fix, qualify it across Devnet/Testnet/LAN-Mainnet staging, produce a signed release whose required previous release is `abbe65b`, seal a new exact cutover manifest, and stop for its authorization. Do not enable submissions.
 
 ## Current State
 - Schema-19 Mainnet launch mode is Public with production profile `6 ETH / 0.5 ETH`, one-hour rewards, active conversions, six ready routes, zero launches, and zero liabilities at initial verification.
 - Schema-18 is Paused with conversions paused and all routes disabled; its sole project test canary is archived and remains claimable onchain.
-- The keyless production host serves the exact authorized Schema-19 application and a caught-up fresh database with transaction submission disabled. Do not report Schema-19 as user-ready until the corrected WETH-catalog release is authorized, promoted, and accepted.
+- The keyless production host serves signed release `abbe65b` and a caught-up fresh database with transaction submission disabled. Do not report Schema-19 as user-ready until the deeper route-model correction is separately authorized, promoted, and accepted.
 - LAN `192.168.50.173:8547` remains the sole application and transaction upstream. Alchemy remains comparison-probe-only and never automatic fallback.
 - Requery balance and fees before any future operator transaction; the last postdeployment balance was `0.027577594735033679 ETH`.
 
@@ -268,8 +268,8 @@
 - Production-release-v2 focused tests, Schema-19 frozen-contract verification, script syntax, and application-runtime identity comparison pass. Full production promotion and browser acceptance remain pending.
 
 ## Open Follow-ups
-- Exact authorization remains required for manifest `a7edeb8e...` before production promotion or enabling submissions.
-- After authorization, promote with writes disabled, verify WETH and all stock routes in desktop/mobile launch creation, then enable submissions only after emergency and transaction simulations pass.
+- Produce a superseding signed release and exact-hash cutover manifest for the deeper route-model correction. The consumed `a7edeb8e...` authorization does not cover a new application SHA.
+- After new authorization, promote with writes disabled, verify WETH and all stock routes in desktop/mobile launch creation, then enable submissions only after emergency and transaction simulations pass.
 - After cutover, seal evidence and monitor the first 24 public hours. Keep Schema-18 archived and never migrate or replay its test-canary state.
 
 
