@@ -14,6 +14,7 @@ contract Schema20FeeRouterStakingTest is RobynV4NativeProtocolTest {
             daoToken, assetRouter, TREASURY, GUARDIAN, 1 hours
         );
         assertEq(schema20.SCHEMA20_CONTRACT_VERSION(), "10.0.0-schema20");
+        assertEq(schema20.schema20RuntimeIdentity(), keccak256("ROBYN_SCHEMA20_FEE_ROUTER_V5"));
         assertEq(address(schema20.daoToken()), address(daoToken));
         assertEq(address(schema20.assetRouter()), address(assetRouter));
         assertEq(schema20.treasury(), TREASURY);

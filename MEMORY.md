@@ -1,5 +1,12 @@
 # Project Memory
 
+### 2026-08-04 - Schema-20 fee-router identity is explicitly source mapped
+
+- Context: Fast run `20260804-schema20-fast-05` still rejected V5 as an absent coverage source even though its instance and compiler-generated constant getter were exercised; inherited constructors and generated getters emit no instrumentable LCOV source record.
+- Decision: Keep V5 coverage-required. Add an explicit pure `schema20RuntimeIdentity()` function and verify its fixed identity in the exact V5 deployment test instead of weakening source requirements.
+- Verification: Focused V5 deployment/binding test passes and optimizer-disabled LCOV now contains `RobynNativeProtocolFeeRouterV5.sol` with 2/2 executable lines hit.
+- Follow-up: This additive bytecode change invalidates prior Schema-20 candidate SHAs. Commit/push and rerun the complete official fast gate on the new SHA before any deep qualification.
+
 ### 2026-08-04 - Schema-20 V5 deployment identity added to mechanical gate
 
 - Context: Official fast run `20260804-schema20-fast-04` on `2e8f1b8799a26b2b9e75bfaf7e27c175e30d212c` passed every runtime phase and the fixed 91.58%/80.20% coverage thresholds, but evidence validation correctly rejected one absent required source: `RobynNativeProtocolFeeRouterV5.sol`.

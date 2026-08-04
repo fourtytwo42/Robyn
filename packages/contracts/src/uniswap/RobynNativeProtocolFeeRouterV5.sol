@@ -10,6 +10,7 @@ import { RobynNativeProtocolFeeRouterV4 } from "./RobynNativeProtocolFeeRouterV4
 ///      one-time DAO receiver to RobynRdaoStaking instead of the Schema-19 vote-snapshot receiver.
 contract RobynNativeProtocolFeeRouterV5 is RobynNativeProtocolFeeRouterV4 {
     string public constant SCHEMA20_CONTRACT_VERSION = "10.0.0-schema20";
+    bytes32 public constant SCHEMA20_RUNTIME_IDENTITY = keccak256("ROBYN_SCHEMA20_FEE_ROUTER_V5");
 
     constructor(
         RobynDaoToken daoToken_,
@@ -17,7 +18,14 @@ contract RobynNativeProtocolFeeRouterV5 is RobynNativeProtocolFeeRouterV4 {
         address payable treasury_,
         address guardian_,
         uint256 creatorRewardStreamDuration_
-    ) RobynNativeProtocolFeeRouterV4(
-        daoToken_, assetRouter_, treasury_, guardian_, creatorRewardStreamDuration_
-    ) { }
+    )
+        RobynNativeProtocolFeeRouterV4(
+            daoToken_, assetRouter_, treasury_, guardian_, creatorRewardStreamDuration_
+        )
+    { }
+
+    /// @notice Explicit source-mapped deployment identity for release and coverage attestation.
+    function schema20RuntimeIdentity() external pure returns (bytes32) {
+        return SCHEMA20_RUNTIME_IDENTITY;
+    }
 }
