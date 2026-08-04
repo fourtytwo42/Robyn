@@ -3,6 +3,7 @@ pragma solidity 0.8.30;
 
 import { Test } from "forge-std/Test.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { RobynDaoToken } from "../src/dao/RobynDaoToken.sol";
 import { DevnetWrappedNative } from "../src/devnet/DevnetWrappedNative.sol";
 import {
@@ -18,7 +19,9 @@ contract Schema20MockGraduationFinalizer is IRobynRdaoGraduationFinalizer {
     uint256 public terminalTokenReserve;
     uint256 public terminalNativeReserve;
 
-    function setShouldRevert(bool value) external { shouldRevert = value; }
+    function setShouldRevert(bool value) external {
+        shouldRevert = value;
+    }
 
     function finalizeRdaoLiquidity(
         IERC20 rdao,
@@ -69,27 +72,29 @@ contract RobynRdaoBondingSaleTest is Test {
         rdao = new RobynDaoToken(recipients, amounts, 1 hours);
         weth = new DevnetWrappedNative();
         staking = new RobynRdaoStaking(
-            IERC20(address(rdao)), IRobynWrappedNative(address(weth)), address(this), GUARDIAN,
-            24 hours, 1 hours, 7 days
+            IERC20(address(rdao)),
+            IRobynWrappedNative(address(weth)),
+            address(this),
+            GUARDIAN,
+            24 hours,
+            1 hours,
+            7 days
         );
         finalizer = new Schema20MockGraduationFinalizer();
-        RobynRdaoBondingSale.SaleConfiguration memory config =
-            RobynRdaoBondingSale.SaleConfiguration({
-                deployerPayoutRecipient: PAYOUT,
-                governance: address(this),
-                guardian: GUARDIAN,
-                saleInventory: SALE,
-                liquidityInventory: LP_TOKENS,
-                virtualTokenReserve: VIRTUAL_RDAO,
-                virtualNativeReserve: VIRTUAL_NATIVE,
-                curvePrincipalTarget: CURVE_TARGET,
-                deployerPayout: OWNER_PAYOUT,
-                liquidityNative: LP_NATIVE,
-                maintenanceGasLimit: 500_000
-            });
-        sale = new RobynRdaoBondingSale(
-            IERC20(address(rdao)), staking, finalizer, config
-        );
+        RobynRdaoBondingSale.SaleConfiguration memory config = RobynRdaoBondingSale.SaleConfiguration({
+            deployerPayoutRecipient: PAYOUT,
+            governance: address(this),
+            guardian: GUARDIAN,
+            saleInventory: SALE,
+            liquidityInventory: LP_TOKENS,
+            virtualTokenReserve: VIRTUAL_RDAO,
+            virtualNativeReserve: VIRTUAL_NATIVE,
+            curvePrincipalTarget: CURVE_TARGET,
+            deployerPayout: OWNER_PAYOUT,
+            liquidityNative: LP_NATIVE,
+            maintenanceGasLimit: 500_000
+        });
+        sale = new RobynRdaoBondingSale(IERC20(address(rdao)), staking, finalizer, config);
         staking.configureRewardSource(address(sale), true);
         staking.sealRewardSources();
         rdao.approve(address(sale), SALE + LP_TOKENS);
@@ -127,7 +132,8 @@ contract RobynRdaoBondingSaleTest is Test {
         assertEq(sale.curvePrincipal(), 0);
         assertEq(address(sale).balance, 0);
         assertEq(
-            staking.totalRewardsDeposited(), sale.totalBondingFees() + sale.graduationDustToStaking()
+            staking.totalRewardsDeposited(),
+            sale.totalBondingFees() + sale.graduationDustToStaking()
         );
     }
 
@@ -224,5 +230,40 @@ contract RobynRdaoBondingSaleTest is Test {
         sale.setBuysPaused(false);
         vm.prank(BUYER);
         assertGt(sale.buy{ value: 1 ether }(1, block.timestamp + 1, BUYER), 0);
+    }
+
+    function testFuzzBuyQuoteIsBoundedMonotonicAndExactlyCharged(uint256 grossNative) external {
+        grossNative = bound(grossNative, 1 gwei, 1_000 ether);
+        (uint256 tokensOut, uint256 principal, uint256 fee, uint256 refund) =
+            sale.quoteBuy(grossNative);
+        assertLe(tokensOut, SALE);
+        assertEq(principal + fee + refund, grossNative);
+        if (tokensOut != 0) {
+            vm.deal(BUYER, grossNative);
+            vm.prank(BUYER);
+            assertEq(sale.buy{ value: grossNative }(tokensOut, block.timestamp, BUYER), tokensOut);
+            assertEq(sale.sold(), tokensOut);
+            assertEq(sale.curvePrincipal(), principal);
+            assertEq(sale.totalBondingFees(), fee);
+        }
+    }
+
+    function testFuzzRoundTripNeverCreatesNative(uint256 grossNative, uint256 sellFraction)
+        external
+    {
+        grossNative = bound(grossNative, 0.01 ether, 500 ether);
+        vm.deal(BUYER, grossNative);
+        vm.startPrank(BUYER);
+        uint256 bought = sale.buy{ value: grossNative }(0, block.timestamp, BUYER);
+        sellFraction = bound(sellFraction, 1, 10_000);
+        uint256 tokensIn = Math.mulDiv(bought, sellFraction, 10_000);
+        if (tokensIn == 0) tokensIn = 1;
+        rdao.approve(address(sale), tokensIn);
+        uint256 beforeSell = BUYER.balance;
+        uint256 received = sale.sell(tokensIn, 0, block.timestamp, payable(BUYER));
+        vm.stopPrank();
+        assertEq(BUYER.balance - beforeSell, received);
+        assertLt(received, grossNative);
+        assertEq(staking.totalRewardsDeposited(), sale.totalBondingFees());
     }
 }

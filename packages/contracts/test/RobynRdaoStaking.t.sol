@@ -198,4 +198,37 @@ contract RobynRdaoStakingTest is Test {
         vm.expectRevert(RobynRdaoStaking.InvalidConfiguration.selector);
         staking.activateFor(address(this), 257);
     }
+
+    function testFuzzSingleStakerNeverClaimsBeyondBacking(uint256 stakeAmount, uint256 reward)
+        external
+    {
+        stakeAmount = bound(stakeAmount, 1, RETAINED);
+        reward = bound(reward, 1, 100 ether);
+        staking.stake(stakeAmount, address(this));
+        vm.warp(block.timestamp + WARMUP);
+        staking.activateFor(address(this));
+        vm.deal(address(this), reward);
+        source.depositNative{ value: reward }(address(rdao));
+        vm.warp(block.timestamp + 1 hours);
+        uint256 claimable = staking.earned(address(this));
+        assertLe(claimable, reward);
+        uint256 claimed = staking.claim();
+        assertEq(claimed, claimable);
+        assertLe(staking.totalRewardsClaimed(), weth.balanceOf(address(staking)) + claimed);
+        assertEq(
+            staking.totalRewardsClaimed() + staking.outstandingLiability(),
+            staking.totalRewardsDeposited()
+        );
+    }
+
+    function testFuzzWarmingExitIsImmediateAndDoesNotChangeVotes(uint256 amount) external {
+        amount = bound(amount, 1, RETAINED);
+        uint256 votesBefore = rdao.getVotes(address(this));
+        staking.stake(amount, address(this));
+        assertEq(rdao.getVotes(address(this)), votesBefore);
+        staking.unstake(amount, address(this));
+        assertEq(rdao.getVotes(address(this)), votesBefore);
+        assertEq(staking.totalPrincipal(), 0);
+        assertEq(staking.totalWarmingStake(), 0);
+    }
 }
