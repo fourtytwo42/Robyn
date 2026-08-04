@@ -338,26 +338,34 @@
 - Result: The generator binds six live-ready routes, fresh Schema-19 hook domain, accelerated Testnet timing, qualified maintenance gas, runtime hashes, source-manifest hashes, and explicit no-Alchemy-fallback policy. No transaction occurred.
 - Follow-up: Commit/push, generate the exact protected input, prepare the deterministic deployment manifest, run a LAN-sourced isolated-fork broadcast/verification rehearsal, and measure the complete deployment gas before deciding whether live Testnet funding passes.
 
+### 2026-08-04 - Schema-20 Devnet marketing upgrade and film
+
+- Context: The user canceled the endurance soak and authorized a Devnet-only Schema-20 upgrade plus a product film using the already qualified `dd7afcfa...` candidate.
+- Decision: Preserve the Schema-19 Devnet chain, database, PM2 dump, release, and manifest as rollback evidence; run Schema-20 persistently on native Anvil port `28549`; stop the Devnet keeper because maintenance is user-driven; leave Testnet and Mainnet untouched.
+- Files: Marketing application branch `codex/marketing-pages-demo`; final film release `68091c4ffaa970e8bc2220b35adcad8837e7fb96`; fresh database `robyn_devnet_schema20_marketing_dd7afcf`; systemd service `robyn-schema20-devnet.service`.
+- Commands/tests: 84 web tests, typecheck, lint, secret scan, dependency audit with zero high/critical findings, exact `packages/contracts` diff against `dd7afcf`, two clean reproducible web builds, direct chain/accounting/receipt validation, and in-app-browser acceptance passed. No Solidity compilation or contract test ran.
+- Result: Devnet serves the trader-first homepage, `/creators`, `/security`, `/demo`, four Schema-20 markets, and the 177-second film narrated by GPU45 Pocket TTS built-in Anna as synthetic `Voice of Sherwood - Rowan`. The indexer is at block 161 with zero ingestion/projection lag, four launches, three healthy routes, exact one-billion RDAO supply, conserved eligible/warming stake, and exactly backed WETH liability.
+- Follow-up: Keep this release Devnet-only. Any Testnet/Mainnet promotion requires a separate plan and authorization. Retain the archival film master and receipt evidence outside Git.
+
 ## Active Handoff
-- Schema-20 remains Devnet-only on branch `codex/schema20-rdao-staking-sale`; active Schema-19 deployments and services remain untouched.
-- Candidate `6e5dfab...` is invalidated by the isolated indexer projection defect above despite passing its mechanical deep gate.
-- The source fix and focused regression pass locally. Next: commit/push a new clean SHA and restart every qualification gate before any eight-hour soak.
+- Schema-20 Devnet is active at `http://192.168.50.250:3000` from immutable application release `68091c4ffaa970e8bc2220b35adcad8837e7fb96` on branch `codex/marketing-pages-demo`.
+- The persistent Schema-20 chain is `robyn-schema20-devnet.service` on loopback `28549`; the fresh scoped database is `robyn_devnet_schema20_marketing_dd7afcf`; the Devnet keeper is intentionally absent.
+- Schema-19 Devnet rollback evidence is under `/home/hendo420/robyn-evidence/schema20-marketing-upgrade/precutover-dd7afcf-01`. Testnet and Mainnet were not changed.
 
 ## Current State
-- No Schema-20 Testnet/Mainnet deployment or production tag exists.
-- The RDAO sale/staking contracts, Devnet API, web workspace, and scoped projections are implemented in the isolated worktree.
-- The eight-hour qualification clock is not running; it must start only after the new SHA passes fast, security, reproducibility, deep, and isolated acceptance.
+- Devnet has four deterministic Schema-20 launches, one graduated market, three ready mock reward routes, exact fixed one-billion RDAO supply, prepared eligible stake plus the film's warming stake, and exact WETH liability backing.
+- The published film is 177 seconds, 1920x1080 at 30 fps, 11,918,375 bytes, SHA-256 `765d8c1c00eeb896ad5fc89dccc351f859c1e08d081429520dc9ce35fa134ab5`; the archival master remains outside Git.
+- No soak or scheduled task is running. No Schema-20 Testnet/Mainnet deployment or production tag exists.
 
 ## Verification Ledger
-- `6e5dfab...`: fast, security, dependency/license/secret, reproducibility, and deep passed; isolated indexer acceptance failed on zero-argument event projection and invalidated the candidate.
-- Focused correction: 31 indexer tests, typecheck, and an isolated replay projecting 29 of 29 RDAO events passed.
-- Failed evidence and checksums are preserved; active Schema-19 was not modified.
+- `dd7afcfa...`: fast and deep Schema-20 qualification passed before the user canceled the soak; the failed earlier candidates and canceled soak remain preserved as diagnostic evidence.
+- `68091c4...`: 84 web tests, typecheck, lint, secret scan, dependency audit, exact contract-tree freeze, two identical clean application builds, live receipt/accounting validation, and in-app-browser route/video/wallet acceptance passed.
+- Evidence: `/home/hendo420/robyn-evidence/schema20-marketing-upgrade`, `/home/hendo420/robyn-media-evidence/schema20-marketing-film/23cd8c4-01`, and `/home/hendo420/robyn-media-evidence/schema20-marketing-fixture/dd7afcf-prep-01`.
 
 ## Open Follow-ups
-- Commit/push the projector correction on a new SHA.
-- Repeat fast, security, dependency/license/secret, two-build reproducibility, deep, and isolated API/web/indexer acceptance.
-- Start the corrected eight-real-hour native-Anvil soak only after all preceding gates pass; any failure restarts the full clock.
-- Complete desktop/mobile in-app-browser acceptance after the soak without touching active Schema-19.
+- No Devnet marketing blocker remains.
+- Do not promote Schema-20 or this application release to Testnet or Mainnet without a new explicit authorization and environment-specific qualification.
+- Keep the Schema-19 rollback snapshot and GPU45 archival master until a separately approved retention change.
 
 
 ### 2026-08-03 - Production manifest binding corrected
