@@ -137,3 +137,8 @@ export async function completeProjectionBatch<T>(
   await advanceCheckpoint();
   return items.length;
 }
+export function decodedEventArgs(value: unknown): Record<string, unknown> {
+  return value !== null && typeof value === "object"
+    ? (value as Record<string, unknown>)
+    : {};
+}

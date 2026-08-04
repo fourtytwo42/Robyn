@@ -1,5 +1,13 @@
 # Project Memory
 
+### 2026-08-04 - Schema-20 isolated projector zero-argument regression
+
+- Context: Candidate `6e5dfab405629f3a5898c5ecbafd7ffee1a2bb11` passed fast, security, reproducibility, and deep qualification, but isolated API/indexer acceptance retained 29 RDAO logs and then failed while projecting the zero-argument `RewardSourcesSealed()` event.
+- Diagnosis: Viem correctly returns `undefined` for the decoded arguments of a zero-argument event; the projector treated it as a record and read `account`.
+- Fix: Normalize null or undefined decoded event arguments to an empty record before reward and Schema-20 RDAO projection, with a focused regression. The isolated rerun projected all 29 RDAO events to the canonical checkpoint.
+- Evidence: Failed candidate evidence is sealed under `/home/hendo420/robyn-evidence/devnet-acceptance/6e5dfab405629f3a5898c5ecbafd7ffee1a2bb11/schema20-isolated-01`. Active Schema-19, Testnet, and Mainnet were untouched.
+- Follow-up: Commit and push a new exact SHA, then repeat fast, security, reproducibility, deep, isolated acceptance, and the full uninterrupted eight-hour soak from zero.
+
 ### 2026-08-04 - Schema-20 eight-hour soak runner wiring correction
 
 - Context: Exact candidate `c0678f673e641c702929169c3b508416147b3f6e` passed the complete deep qualification, then its first dedicated soak attempt stopped after six seconds before the clock began.
@@ -322,30 +330,25 @@
 - Follow-up: Commit/push, generate the exact protected input, prepare the deterministic deployment manifest, run a LAN-sourced isolated-fork broadcast/verification rehearsal, and measure the complete deployment gas before deciding whether live Testnet funding passes.
 
 ## Active Handoff
-- Schema-19 is deployed and independently verified on Robinhood Mainnet. Schema-18 is guardian-retired and archived. No further onchain deployment or retirement transaction is pending.
-- Public production submissions remain deliberately disabled on `192.168.50.108`. Signed release `mainnet-prod-20260804-abbe65b` is installed and healthy, but live acceptance found the native-v4 route-model defect described above.
-- The next application commit changes only `apps/api/src/asset-catalog.ts` and its regression test so a manifest-declared v4 venue controls route status and quotes even when canonical WETH is the nonzero base asset. The complete application-scope gate passes without compiling or testing Solidity.
-- Production release policy is Schema 19, contract closure `8b4b591bebc896fe58ff4457cc72ecb6518862d8`, application-bound deployment manifest SHA-256 `d726ccc1a818e7fc916096e071e6db0bcb125b3754c9e82a92d0e2fa4d4ecadd`, and indexing policy SHA-256 `cd816f7b373bc6af79059b71d3cf0f1674ac56ef0a720574b6b6763c6b33facb0`.
-- Next: obtain exact authorization for application-cutover manifest `bde9ac2adb12ef01766d27e1d3225e921d6fc5c18cf0e2b9a20ac186dbed601c`. Do not install the signed release or enable submissions without that authorization.
+- Schema-20 remains Devnet-only on branch `codex/schema20-rdao-staking-sale`; active Schema-19 deployments and services remain untouched.
+- Candidate `6e5dfab...` is invalidated by the isolated indexer projection defect above despite passing its mechanical deep gate.
+- The source fix and focused regression pass locally. Next: commit/push a new clean SHA and restart every qualification gate before any eight-hour soak.
 
 ## Current State
-- Schema-19 Mainnet launch mode is Public with production profile `6 ETH / 0.5 ETH`, one-hour rewards, active conversions, six ready routes, zero launches, and zero liabilities at initial verification.
-- Schema-18 is Paused with conversions paused and all routes disabled; its sole project test canary is archived and remains claimable onchain.
-- The keyless production host serves signed release `abbe65b` and a caught-up fresh database with transaction submission disabled. Do not report Schema-19 as user-ready until the deeper route-model correction is separately authorized, promoted, and accepted.
-- LAN `192.168.50.173:8547` remains the sole application and transaction upstream. Alchemy remains comparison-probe-only and never automatic fallback.
-- Requery balance and fees before any future operator transaction; the last postdeployment balance was `0.027577594735033679 ETH`.
+- No Schema-20 Testnet/Mainnet deployment or production tag exists.
+- The RDAO sale/staking contracts, Devnet API, web workspace, and scoped projections are implemented in the isolated worktree.
+- The eight-hour qualification clock is not running; it must start only after the new SHA passes fast, security, reproducibility, deep, and isolated acceptance.
 
 ## Verification Ledger
-- Schema-19 live journal: 36 intents, 36 unique successful receipts, blocks `27248417` through `27248547`, zero failure, replay, or ambiguity.
-- Independent deployment verification passed 16 new and 12 reused runtime identities, governance, bindings, profile, fallback timing, routes, and zero-state accounting.
-- Schema-18 retirement journal passed nine unique successful receipts; direct reads confirm Paused launch mode, both conversion pauses, and six disabled routes.
-- Production writes-disabled boundary is active and saved in PM2 on `192.168.50.108`; gateway health reports submission unauthorized, LAN primary, and fallback unauthorized.
-- Production-release-v2 focused tests, Schema-19 frozen-contract verification, script syntax, and application-runtime identity comparison pass. Full production promotion and browser acceptance remain pending.
+- `6e5dfab...`: fast, security, dependency/license/secret, reproducibility, and deep passed; isolated indexer acceptance failed on zero-argument event projection and invalidated the candidate.
+- Focused correction: 31 indexer tests, typecheck, and an isolated replay projecting 29 of 29 RDAO events passed.
+- Failed evidence and checksums are preserved; active Schema-19 was not modified.
 
 ## Open Follow-ups
-- Exact authorization remains required for manifest `bde9ac2a...` before production promotion or enabling submissions. The consumed `a7edeb8e...` authorization does not cover the new application SHA.
-- After new authorization, promote with writes disabled, verify WETH and all stock routes in desktop/mobile launch creation, then enable submissions only after emergency and transaction simulations pass.
-- After cutover, seal evidence and monitor the first 24 public hours. Keep Schema-18 archived and never migrate or replay its test-canary state.
+- Commit/push the projector correction on a new SHA.
+- Repeat fast, security, dependency/license/secret, two-build reproducibility, deep, and isolated API/web/indexer acceptance.
+- Start the corrected eight-real-hour native-Anvil soak only after all preceding gates pass; any failure restarts the full clock.
+- Complete desktop/mobile in-app-browser acceptance after the soak without touching active Schema-19.
 
 
 ### 2026-08-03 - Production manifest binding corrected

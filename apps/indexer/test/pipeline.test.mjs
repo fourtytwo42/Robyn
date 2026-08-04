@@ -6,6 +6,7 @@ import {
   capturedProjectionBlockMatches,
   checkpointDisposition,
   completeProjectionBatch,
+  decodedEventArgs,
   failureBackoffMs,
   ingestionCycleResult,
   mergeIndexedAddresses,
@@ -175,4 +176,11 @@ test("lag policy accepts normal p95 and rejects sustained delay", () => {
   assert.equal(blockLag(80n, 100n), 0n);
   assert.equal(normalIngestionLagPassed([10, 20, 30, 40, 50]), true);
   assert.equal(normalIngestionLagPassed([10, 20, 30, 40, 51]), false);
+});
+
+test("zero-argument events project as an empty argument record", () => {
+  assert.deepEqual(decodedEventArgs(undefined), {});
+  assert.deepEqual(decodedEventArgs(null), {});
+  const args = { account: "0xabc" };
+  assert.equal(decodedEventArgs(args), args);
 });

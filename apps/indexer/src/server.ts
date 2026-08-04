@@ -15,6 +15,7 @@ import {
   capturedProjectionBlockMatches,
   checkpointDisposition,
   completeProjectionBatch,
+  decodedEventArgs,
   failureBackoffMs,
   ingestionCycleResult,
   mergeIndexedAddresses,
@@ -1461,7 +1462,7 @@ async function projectRewardStreams(asOfBlock: bigint) {
         data: log.data,
         topics: log.topics as [Hex, ...Hex[]],
       });
-      const args = decoded.args as Record<string, unknown>;
+      const args = decodedEventArgs(decoded.args);
       const token =
         definition.category === "holder"
           ? log.token
@@ -1626,7 +1627,7 @@ async function projectSchema20Rdao(asOfBlock: bigint) {
         data: log.data,
         topics: log.topics as [Hex, ...Hex[]],
       });
-      const args = decoded.args as Record<string, unknown>;
+      const args = decodedEventArgs(decoded.args);
       const account = [
         "account",
         "buyer",
