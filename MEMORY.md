@@ -1,5 +1,12 @@
 # Project Memory
 
+### 2026-08-04 - Schema-20 V5 deployment identity added to mechanical gate
+
+- Context: Official fast run `20260804-schema20-fast-04` on `2e8f1b8799a26b2b9e75bfaf7e27c175e30d212c` passed every runtime phase and the fixed 91.58%/80.20% coverage thresholds, but evidence validation correctly rejected one absent required source: `RobynNativeProtocolFeeRouterV5.sol`.
+- Diagnosis: The Schema-20 fee-allocation test exercised the inherited V4 instance from the protocol fixture rather than constructing the deployable V5 identity. No contract behavior failed.
+- Fix: The focused Schema-20 fee-router suite now deploys V5 directly and verifies its Schema-20 version plus immutable DAO token, asset router, and treasury bindings; the inherited exact 50/25/20/5 staking settlement test remains independent.
+- Follow-up: Commit and push a new exact candidate, repeat the official fast gate, and require evidence validation and checksums to pass before deep qualification.
+
 ### 2026-08-04 - Schema-20 fixed coverage gate restored
 
 - Context: Fast qualification `20260804-schema20-fast-03` on candidate `89db6a891ff65fd1f808f94d4a0dcebbb110561b` passed all mechanical phases but correctly failed the immutable coverage gate at 89.77% lines and 70.88% branches. The failed evidence remains under `/home/hendo420/robyn-evidence/devnet-torture/89db6a891ff65fd1f808f94d4a0dcebbb110561b/20260804-schema20-fast-03`.
