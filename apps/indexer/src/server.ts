@@ -353,6 +353,140 @@ const schema18GovernanceEventByTopic = new Map(
 const schema18GovernanceEventTopics = [
   ...schema18GovernanceEventByTopic.keys(),
 ];
+const schema20RdaoEventDefinitions = [
+  {
+    source: "sale",
+    event: parseAbiItem(
+      "event AllocationFunded(uint256 saleInventory,uint256 liquidityInventory)",
+    ),
+  },
+  {
+    source: "sale",
+    event: parseAbiItem(
+      "event BuyPauseChanged(bool paused,address indexed caller)",
+    ),
+  },
+  {
+    source: "sale",
+    event: parseAbiItem(
+      "event Bought(address indexed buyer,address indexed recipient,uint256 principal,uint256 fee,uint256 tokensOut,uint256 refund,uint256 cumulativeSold)",
+    ),
+  },
+  {
+    source: "sale",
+    event: parseAbiItem(
+      "event Sold(address indexed seller,address indexed recipient,uint256 tokensIn,uint256 principalOut,uint256 fee,uint256 nativeOut,uint256 cumulativeSold)",
+    ),
+  },
+  {
+    source: "sale",
+    event: parseAbiItem(
+      "event FeeSettlementAttempt(uint256 amount,bool success,bytes4 failureSelector)",
+    ),
+  },
+  {
+    source: "sale",
+    event: parseAbiItem(
+      "event Graduated(bytes32 indexed poolId,uint256 indexed positionId,uint256 deployerPayout,uint256 liquidityNative,uint256 liquidityTokens)",
+    ),
+  },
+  {
+    source: "sale",
+    event: parseAbiItem(
+      "event SurplusRdaoRecovered(address indexed recipient,uint256 amount)",
+    ),
+  },
+  {
+    source: "staking",
+    event: parseAbiItem(
+      "event RewardSourceConfigured(address indexed source,bool allowed)",
+    ),
+  },
+  { source: "staking", event: parseAbiItem("event RewardSourcesSealed()") },
+  {
+    source: "staking",
+    event: parseAbiItem(
+      "event PauseChanged(bool paused,address indexed caller)",
+    ),
+  },
+  {
+    source: "staking",
+    event: parseAbiItem(
+      "event EscrowCreated(address indexed account,address indexed escrow,address indexed delegatee)",
+    ),
+  },
+  {
+    source: "staking",
+    event: parseAbiItem(
+      "event Staked(address indexed account,address indexed escrow,uint256 amount,uint256 activationTime,address delegatee)",
+    ),
+  },
+  {
+    source: "staking",
+    event: parseAbiItem(
+      "event StakeActivated(address indexed account,uint256 amount,uint256 totalEligibleStake)",
+    ),
+  },
+  {
+    source: "staking",
+    event: parseAbiItem(
+      "event Unstaked(address indexed account,address indexed recipient,uint256 amount,uint256 eligibleRemaining,uint256 warmingRemaining)",
+    ),
+  },
+  {
+    source: "staking",
+    event: parseAbiItem(
+      "event StakeDelegateChanged(address indexed account,address indexed delegatee)",
+    ),
+  },
+  {
+    source: "staking",
+    event: parseAbiItem(
+      "event RewardsDeposited(address indexed source,address indexed sourceToken,uint256 amount,bool queued,uint256 cumulativeDeposited)",
+    ),
+  },
+  {
+    source: "staking",
+    event: parseAbiItem(
+      "event QueuedRewardsActivated(uint256 amount,uint256 streamEnd)",
+    ),
+  },
+  {
+    source: "staking",
+    event: parseAbiItem(
+      "event RewardsClaimed(address indexed account,address indexed recipient,uint256 amount)",
+    ),
+  },
+  {
+    source: "staking",
+    event: parseAbiItem(
+      "event LegacyRewardsForwarded(address indexed account,address indexed recipient,uint256 amount)",
+    ),
+  },
+  {
+    source: "liquidity-locker",
+    event: parseAbiItem("event SaleBound(address indexed sale)"),
+  },
+  {
+    source: "liquidity-locker",
+    event: parseAbiItem(
+      "event LiquidityPermanentlyLocked(bytes32 indexed poolId,uint128 liquidity,uint256 wethUsed,uint256 rdaoUsed,uint256 wethResidual,uint256 rdaoResidual,uint160 sqrtPriceX96)",
+    ),
+  },
+  {
+    source: "liquidity-locker",
+    event: parseAbiItem(
+      "event FeesHarvested(address indexed caller,uint256 wethFees,uint256 rdaoFees,uint256 rdaoConversionOutput,uint256 stakingDeposit,uint128 unchangedLiquidity)",
+    ),
+  },
+] as const;
+const schema20RdaoEventByTopic = new Map(
+  schema20RdaoEventDefinitions.map((definition) => [
+    toEventSelector(definition.event).toLowerCase(),
+    definition,
+  ]),
+);
+const schema20RdaoEventTopics = [...schema20RdaoEventByTopic.keys()];
 
 async function currentIndexedScope() {
   const launches = await sql.unsafe<
@@ -1446,6 +1580,105 @@ async function projectSchema19Governance(asOfBlock: bigint) {
   return logs.length;
 }
 
+async function projectSchema20Rdao(asOfBlock: bigint) {
+  if ((manifest.schemaVersion ?? 0) !== 20) return 0;
+  const sourceAddresses = new Map<string, string>();
+  for (const [role, source] of [
+    ["rdaoSale", "sale"],
+    ["rdaoStaking", "staking"],
+    ["rdaoLiquidityLocker", "liquidity-locker"],
+  ] as const) {
+    const address = manifest.contracts[role];
+    if (typeof address !== "string") {
+      throw new Error(`Schema-20 manifest is missing ${role}`);
+    }
+    sourceAddresses.set(address.toLowerCase(), source);
+  }
+  const [checkpoint] = await sql.unsafe<
+    { last_block: string; last_hash: string }[]
+  >(
+    "SELECT last_block::text,last_hash FROM indexer_checkpoints WHERE service='schema20-rdao-projector' AND chain_id=$1",
+    [manifest.chainId],
+  );
+  const fromBlock = checkpoint
+    ? BigInt(checkpoint.last_block) + 1n
+    : BigInt(manifest.deploymentBlock);
+  if (fromBlock > asOfBlock) return 0;
+  const logs = await sql.unsafe<RewardProjectionLog[]>(
+    "SELECT null::text token,l.block_number::text,l.block_hash,l.transaction_hash,l.log_index,l.address,l.topics,l.data FROM raw_logs l JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number AND b.hash=l.block_hash AND b.canonical=true WHERE l.chain_id=$1 AND l.block_number BETWEEN $2 AND $3 AND lower(l.address)=ANY($4::text[]) AND l.topics->>0=ANY($5::text[]) ORDER BY l.block_number,l.transaction_index,l.log_index",
+    [
+      manifest.chainId,
+      fromBlock.toString(),
+      asOfBlock.toString(),
+      [...sourceAddresses.keys()],
+      schema20RdaoEventTopics,
+    ],
+  );
+  await sql.begin(async (tx) => {
+    for (const log of logs) {
+      const definition = schema20RdaoEventByTopic.get(
+        log.topics[0]!.toLowerCase(),
+      );
+      const expectedSource = sourceAddresses.get(log.address.toLowerCase());
+      if (!definition || definition.source !== expectedSource) continue;
+      const decoded = decodeEventLog({
+        abi: [definition.event],
+        data: log.data,
+        topics: log.topics as [Hex, ...Hex[]],
+      });
+      const args = decoded.args as Record<string, unknown>;
+      const account = [
+        "account",
+        "buyer",
+        "seller",
+        "recipient",
+        "caller",
+        "source",
+      ]
+        .map((key) => args[key])
+        .find((value) => typeof value === "string");
+      const amount = [
+        "amount",
+        "tokensOut",
+        "tokensIn",
+        "stakingDeposit",
+        "wethFees",
+        "fee",
+        "principal",
+      ]
+        .map((key) => args[key])
+        .find((value) => typeof value === "bigint");
+      await tx.unsafe(
+        "INSERT INTO schema20_rdao_events (chain_id,transaction_hash,log_index,block_number,block_hash,address,source,event_name,account,amount,payload) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb) ON CONFLICT (chain_id,transaction_hash,log_index) DO NOTHING",
+        [
+          manifest.chainId,
+          log.transaction_hash.toLowerCase(),
+          log.log_index,
+          log.block_number,
+          log.block_hash.toLowerCase(),
+          log.address.toLowerCase(),
+          definition.source,
+          decoded.eventName,
+          typeof account === "string" ? account.toLowerCase() : null,
+          typeof amount === "bigint" ? amount.toString() : null,
+          rewardPayload(args),
+        ],
+      );
+    }
+    const [captured] = await tx.unsafe<{ hash: string }[]>(
+      "SELECT hash FROM chain_blocks WHERE chain_id=$1 AND number=$2 AND canonical=true",
+      [manifest.chainId, asOfBlock.toString()],
+    );
+    if (!captured)
+      throw new Error("Schema-20 RDAO projection target is not canonical");
+    await tx.unsafe(
+      "INSERT INTO indexer_checkpoints (service,chain_id,last_block,last_hash) VALUES ('schema20-rdao-projector',$1,$2,$3) ON CONFLICT (service,chain_id) DO UPDATE SET last_block=EXCLUDED.last_block,last_hash=EXCLUDED.last_hash,updated_at=now()",
+      [manifest.chainId, asOfBlock.toString(), captured.hash.toLowerCase()],
+    );
+  });
+  return logs.length;
+}
+
 async function resetCanonical() {
   await sql.begin(async (tx) => {
     await tx.unsafe("DELETE FROM launch_traders WHERE chain_id=$1", [
@@ -1477,8 +1710,11 @@ async function resetCanonical() {
     await tx.unsafe("DELETE FROM governance_control_events WHERE chain_id=$1", [
       manifest.chainId,
     ]);
+    await tx.unsafe("DELETE FROM schema20_rdao_events WHERE chain_id=$1", [
+      manifest.chainId,
+    ]);
     await tx.unsafe(
-      "DELETE FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector','king-of-forest-projector','reward-stream-projector','schema18-governance-projector') AND chain_id=$1",
+      "DELETE FROM indexer_checkpoints WHERE service IN ('chain-indexer','launch-projector','king-of-forest-projector','reward-stream-projector','schema18-governance-projector','schema19-governance-projector','schema20-rdao-projector') AND chain_id=$1",
       [manifest.chainId],
     );
     await tx.unsafe(
@@ -1774,8 +2010,11 @@ async function projectOnce() {
         "DELETE FROM governance_control_events WHERE chain_id=$1",
         [manifest.chainId],
       );
+      await tx.unsafe("DELETE FROM schema20_rdao_events WHERE chain_id=$1", [
+        manifest.chainId,
+      ]);
       await tx.unsafe(
-        "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector','reward-stream-projector','schema18-governance-projector') AND chain_id=$1",
+        "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector','reward-stream-projector','schema18-governance-projector','schema19-governance-projector','schema20-rdao-projector') AND chain_id=$1",
         [manifest.chainId],
       );
     });
@@ -1790,6 +2029,7 @@ async function projectOnce() {
   let kingProjection = { processedLogs: 0, awarded: 0 };
   let projectedRewardEvents = 0;
   let projectedGovernanceEvents = 0;
+  let projectedRdaoEvents = 0;
   if (window) {
     let ids: bigint[];
     let atomicLaunches: Map<string, AtomicLaunchProjection> | undefined;
@@ -1823,6 +2063,9 @@ async function projectOnce() {
           BigInt(ingested.last_block),
         );
         projectedGovernanceEvents = await projectSchema19Governance(
+          BigInt(ingested.last_block),
+        );
+        projectedRdaoEvents = await projectSchema20Rdao(
           BigInt(ingested.last_block),
         );
       },
@@ -2041,7 +2284,11 @@ async function projectOnce() {
               [manifest.chainId],
             );
             await tx.unsafe(
-              "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector','reward-stream-projector','schema18-governance-projector') AND chain_id=$1",
+              "DELETE FROM schema20_rdao_events WHERE chain_id=$1",
+              [manifest.chainId],
+            );
+            await tx.unsafe(
+              "DELETE FROM indexer_checkpoints WHERE service IN ('launch-projector','king-of-forest-projector','reward-stream-projector','schema18-governance-projector','schema19-governance-projector','schema20-rdao-projector') AND chain_id=$1",
               [manifest.chainId],
             );
           });
@@ -2060,6 +2307,9 @@ async function projectOnce() {
     projectedGovernanceEvents = await projectSchema19Governance(
       BigInt(ingested.last_block),
     );
+    projectedRdaoEvents = await projectSchema20Rdao(
+      BigInt(ingested.last_block),
+    );
   }
   const cycleMs = Math.round((performance.now() - began) * 100) / 100;
   process.stdout.write(
@@ -2072,6 +2322,7 @@ async function projectOnce() {
       kingAwards: kingProjection.awarded,
       projectedRewardEvents,
       projectedGovernanceEvents,
+      projectedRdaoEvents,
       cycleMs,
     }) + "\n",
   );
@@ -2080,6 +2331,7 @@ async function projectOnce() {
     projectedLaunches,
     projectedRewardEvents,
     projectedGovernanceEvents,
+    projectedRdaoEvents,
     cycleMs,
   };
 }

@@ -224,6 +224,38 @@ export const serviceHeartbeats = pgTable("service_heartbeats", {
     .defaultNow(),
 });
 
+export const schema20RdaoEvents = pgTable(
+  "schema20_rdao_events",
+  {
+    chainId: integer("chain_id").notNull(),
+    transactionHash: text("transaction_hash").notNull(),
+    logIndex: integer("log_index").notNull(),
+    blockNumber: bigint("block_number", { mode: "bigint" }).notNull(),
+    blockHash: text("block_hash").notNull(),
+    address: text("address").notNull(),
+    source: text("source").notNull(),
+    eventName: text("event_name").notNull(),
+    account: text("account"),
+    amount: numeric("amount", { precision: 78, scale: 0 }),
+    payload: jsonb("payload").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.chainId, table.transactionHash, table.logIndex],
+    }),
+    index("schema20_rdao_events_block_idx").on(
+      table.chainId,
+      table.blockNumber,
+    ),
+    index("schema20_rdao_events_account_idx").on(table.chainId, table.account),
+    index("schema20_rdao_events_source_idx").on(
+      table.chainId,
+      table.source,
+      table.eventName,
+    ),
+  ],
+);
+
 export const jobAuditEvents = pgTable(
   "job_audit_events",
   {

@@ -36,6 +36,7 @@
     "RobynRdaoV4LiquidityLocker.t.sol",
     "Schema20GovernanceStaking.t.sol",
     "Schema20FeeRouterStaking.t.sol",
+    "Schema20FullStack.t.sol",
     "Schema20RdaoInvariant.t.sol"
   ],
   "coverageCompileExcludedSources": [
