@@ -68,9 +68,12 @@ if [[ "$anvil_ready" != true ]]; then
   echo "pinned Anvil fork failed readiness" >&2
   exit 1
 fi
-curl -fsS -H 'content-type: application/json' \
+set_balance_response="$(curl -fsS -H 'content-type: application/json' \
   --data "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"anvil_setBalance\",\"params\":[\"$deployer\",\"0x56bc75e2d63100000\"]}" \
-  "$rpc_fork" | jq -e '.result == true' >/dev/null
+  "$rpc_fork")"
+jq -e 'has("error") | not' <<<"$set_balance_response" >/dev/null
+funded_balance="$($HOME/.foundry/bin/cast balance --rpc-url "$rpc_fork" "$deployer")"
+[[ "$funded_balance" == 100000000000000000000 ]]
 
 rm -rf packages/contracts/broadcast/DeploySchema19.s.sol/4663
 SCHEMA19_DEPLOYMENT_INPUT="$prepared" \

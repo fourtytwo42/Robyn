@@ -8426,3 +8426,11 @@ When sources conflict, use this order:
 - Files: `scripts/run-schema19-mainnet-rehearsal.sh`, `scripts/test/schema19-mainnet-rehearsal.test.mjs`.
 - Result: The no-broadcast wrapper is restart-safe across noninteractive SSH execution and cannot fall through after fork startup failure.
 - Follow-up: Qualify and push the tooling-only change, then use a fresh evidence directory for the complete local-fork rehearsal. No Mainnet transaction is authorized.
+
+### 2026-08-03 - Schema-19 Anvil funding response compatibility
+
+- Context: Rehearsal `rehearsal-5119bbb-01` passed route preparation and pinned-fork readiness, then stopped before Forge because Anvil 1.7.1 returns JSON-RPC `result: null` for successful `anvil_setBalance`, while the wrapper required `result: true`.
+- Decision: Reject any JSON-RPC error, accept the method's successful null result, and independently read back the exact `100 ETH` local-only deployer balance before proceeding.
+- Files: `scripts/run-schema19-mainnet-rehearsal.sh`, `scripts/test/schema19-mainnet-rehearsal.test.mjs`.
+- Result: Local fork funding remains explicitly verified without assuming a stale Anvil response shape. No live balance or Mainnet state was touched.
+- Follow-up: Push the tooling-only change and restart under a fresh evidence identity. No Schema-19 Mainnet transaction is authorized.
