@@ -1,5 +1,14 @@
 # Project Memory
 
+### 2026-08-03 - Schema-19 corrected production application is public
+
+- Authorization: Manifest SHA-256 `1237ee151c233b84f607781eaf614f2f26abde71124eb3bd3a7debba68430a63` authorized signed release `mainnet-prod-20260804-a98217c`, exact execution-route acceptance, application writes after all gates, and updater/first-24-hour monitoring. No bridge or onchain/contract/route/cap/database/RPC-policy change was authorized or performed.
+- Deployment: The signed updater installed operational SHA `a98217c44ddc3e6f4a239aa38113ec3fe55b0743` and application SHA `68e2f5890309234e8e1b7393a7ecb2688d62d94e` from required previous release `6b0fd7c...`. Six keyless PM2 services are online; only the intentional gateway restart occurred.
+- Route acceptance: GOOGL, MSFT, NVDA, SPCX, and SPY passed bounded forward/reverse quotes through their exact enabled onchain execution pools; WETH passed exact direct native parity. NVDA now reports pool `0x71f966...` fee 500 and SPY pool `0xf44a14...` fee 3000. All six required assets are selectable.
+- Application acceptance: Desktop 1440x900 and mobile 390x844 launch-wizard acceptance passed, including route/reference/pool presentation, six enabled assets, unavailable-asset blocking, asset selection, no mobile overflow, and zero application-origin console issues. No wallet transaction was submitted during acceptance.
+- Public state: Mainnet transaction submission is enabled at the keyless LAN-primary gateway. The gateway reports active provider `primary`, fallback traffic unauthorized, zero provider changes, zero primary request failures, and zero paid fallback CU. Indexing and projection lag are zero, protocol audit is `ok`, router solvency passes, and liabilities, DAO deficit, and unattributed native are zero.
+- Monitoring/evidence: The signed production updater, capacity timer, Prometheus, node exporter, and Alertmanager are active for the first public 24 hours. Evidence is sealed under `/home/hendo420/robyn-evidence/schema19-mainnet/application-cutover-68e2f58-01`; no Codex scheduled task was created.
+
 ### 2026-08-03 - Execution-pool quote correction qualified and sealed
 
 - Authorized deployment result: Signed release `mainnet-prod-20260804-6b0fd7c` was installed on keyless production host `192.168.50.108` with transaction submission disabled. All six PM2 processes were online, the scoped indexer had zero ingestion lag, and the production updater timer remained inactive.
