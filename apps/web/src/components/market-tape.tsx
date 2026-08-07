@@ -26,5 +26,5 @@ export async function MarketTape() {
         ),
         change24hBps: launch.metrics!.change24hBps,
       })) ?? [];
-  return <MarketTapeClient markets={markets} unavailable={launches === null} />;
+  return <MarketTapeClient markets={markets} />;
 }
