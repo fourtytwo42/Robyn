@@ -163,7 +163,10 @@ test("deployment verification applies funding only to unfinished transactions", 
   );
   assert.match(source, /transactionGasCeilings\s*\.slice\(confirmed\)/);
   assert.match(source, /requiredRemainingBalance/);
-  assert.doesNotMatch(source, /balance < BigInt\(funding\.requiredBalanceWei\)/);
+  assert.doesNotMatch(
+    source,
+    /balance < BigInt\(funding\.requiredBalanceWei\)/,
+  );
 });
 
 test("Schema-20 application manifests declare the scoped v4 venue", async () => {
@@ -211,5 +214,8 @@ test("Mainnet capture requalifies routes instead of copying stale thresholds", a
   assert.match(source, /routeQualificationRejections/);
   assert.match(source, /fewer than five safe Mainnet stock routes plus WETH/);
   assert.match(source, /prior protected Schema-20 input/);
-  assert.match(source, /sourceSchema19ManifestSha256 = captureSeed\.sourceSchema19ManifestSha256/);
+  assert.match(
+    source,
+    /sourceSchema19ManifestSha256 = captureSeed\.sourceSchema19ManifestSha256/,
+  );
 });
