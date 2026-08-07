@@ -26,6 +26,7 @@ function createUpstream(options?: {
   primaryChainId?: number;
   primarySyncing?: boolean;
   primarySyncingUnsupported?: boolean;
+  fallbackSyncingUnsupported?: boolean;
 }) {
   let primaryHead = options?.primaryHead ?? 1_000n;
   const fallbackHead = options?.fallbackHead ?? 1_000n;
@@ -53,7 +54,10 @@ function createUpstream(options?: {
       return Promise.resolve(result(entry.id, `0x${head.toString(16)}`));
     }
     if (entry.method === "eth_syncing") {
-      if (url === primaryUrl && options?.primarySyncingUnsupported) {
+      if (
+        (url === primaryUrl && options?.primarySyncingUnsupported) ||
+        (url === fallbackUrl && options?.fallbackSyncingUnsupported)
+      ) {
         return Promise.resolve({
           jsonrpc: "2.0",
           id: entry.id,
@@ -228,6 +232,24 @@ describe("operator-selected RPC policy", () => {
         params: [],
       }),
     ).resolves.toEqual({ jsonrpc: "2.0", id: 11, result: false });
+  });
+
+  it("accepts both probes without eth_syncing only when chain and head comparison remain healthy", async () => {
+    const upstream = createUpstream({
+      primarySyncingUnsupported: true,
+      fallbackSyncingUnsupported: true,
+    });
+    const gateway = controller(upstream.request);
+
+    await gateway.probe();
+
+    expect(gateway.snapshot()).toMatchObject({
+      status: "ok",
+      trafficAvailable: true,
+      headLagBlocks: "0",
+      primary: { syncing: null, healthy: true },
+      fallback: { syncing: null, healthy: true },
+    });
   });
 
   it("keeps Nitro without eth_syncing blocked when the independent head is unavailable", async () => {

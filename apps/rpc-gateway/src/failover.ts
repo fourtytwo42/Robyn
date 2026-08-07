@@ -309,7 +309,7 @@ export class TestnetRpcFailover {
         rpcResult(headResponse, "eth_blockNumber"),
         "eth_blockNumber",
       );
-      const syncingUnsupported = !paid && rpcMethodNotFound(syncingResponse);
+      const syncingUnsupported = rpcMethodNotFound(syncingResponse);
       const syncingResult = syncingUnsupported
         ? null
         : rpcResult(syncingResponse, "eth_syncing");
