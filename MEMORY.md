@@ -1,5 +1,26 @@
 # Project Memory
 
+## Active Handoff
+
+- Last verified 2026-08-07: User authorized the complete Schema-20 Devnet to Testnet to Mainnet rollout, including fresh contract deployment or replacement because Mainnet has no public launches. Work must fail closed on ambiguous receipts, RPC degradation, funding/reserve failure, runtime/calldata drift, accounting mismatch, or replay risk.
+- Active worktree: `/home/hendo420/Robyn-schema20-rollout`, branch `codex/schema20-full-rollout`, created from pushed marketing/RDAO UI commit `4c4a2db1062ffa4da567a0a3ac2f489db8569252`. The qualified Schema-20 contract ancestor is `dd7afcfaad41a8c7054b3e9b581bfd4029e88e60`; newer commits contain application, fixture, media, deployment-31337, and documentation changes.
+- Goal order: inventory and freeze one exact candidate; comprehensive Devnet torture plus browser acceptance; exact Testnet deployment and lifecycle verification; exact LAN-sourced Mainnet fork rehearsal; Mainnet deployment/application cutover and final reconciliation. Never promote a later stage before the preceding stage is sealed.
+- Current live state: Devnet serves the Schema-20 RDAO market application from immutable web release `5aa57a553c73d353d37c88b6e26abd955653ca5e`; Testnet and Mainnet remain Schema-19 until explicitly replaced by the qualified Schema-20 candidate.
+
+## Current State
+
+- Planning and live-state recovery are in progress. No Testnet or Mainnet Schema-20 transaction has been sent in this rollout.
+
+## Open Follow-ups
+
+- Reconcile the Schema-20 contract branch, marketing/RDAO UI changes, existing Schema-19 promotion tooling, live databases/services, network funding, and current route/catalog state.
+- Add or adapt exact Schema-20 Testnet/Mainnet deployment, journal, verifier, reconciliation, application-release, and rollback tooling before broadcasting.
+
+## Do Not Forget
+
+- Use native services only; no Docker. Use the VM for all builds/tests/deployments and the in-app browser for all user-facing acceptance.
+- Never reuse a confirmed or ambiguous journal transaction. Preserve deployment/operator reserves and keep application writes disabled until each network passes exact runtime, accounting, indexer, API, wallet-state, and emergency-control verification.
+
 ### 2026-08-04 - RDAO sale page adopts the token-market experience
 
 - Context: The public RDAO sale surface needed the same focused market hierarchy as ordinary launch-token pages; staking, rewards, and governance were already available in the DAO workspace and should not compete with the sale.
