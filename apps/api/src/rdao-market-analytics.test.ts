@@ -19,6 +19,7 @@ const sale = "0x4000000000000000000000000000000000000004";
 const staking = "0x5000000000000000000000000000000000000005";
 const escrow = "0x6000000000000000000000000000000000000006";
 const locker = "0x7000000000000000000000000000000000000007";
+const poolManager = "0x8000000000000000000000000000000000000008";
 const transactionHash = `0x${"1".repeat(64)}` as const;
 const transferEvent = parseAbiItem(
   "event Transfer(address indexed from,address indexed to,uint256 value)",
@@ -88,9 +89,21 @@ describe("deriveRdaoMarketAnalytics", () => {
         { from: owner, to: escrow, value: 800_000_000n * 10n ** 18n },
         4,
       ),
+      eventLog(
+        token,
+        transferEvent,
+        { from: sale, to: poolManager, value: 50_000_000n * 10n ** 18n },
+        5,
+      ),
     ];
     const result = deriveRdaoMarketAnalytics({
-      contracts: { token, sale, staking, liquidityLocker: locker },
+      contracts: {
+        token,
+        sale,
+        staking,
+        liquidityLocker: locker,
+        poolManager,
+      },
       logs,
       totalSupply: oneBillion,
     });
@@ -104,8 +117,13 @@ describe("deriveRdaoMarketAnalytics", () => {
       }),
       expect.objectContaining({
         address: sale.toLowerCase(),
-        shareBps: "2000",
+        shareBps: "1500",
         label: "Public sale and liquidity",
+      }),
+      expect.objectContaining({
+        address: poolManager.toLowerCase(),
+        shareBps: "500",
+        label: "Permanently locked liquidity",
       }),
     ]);
   });

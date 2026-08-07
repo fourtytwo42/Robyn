@@ -229,7 +229,10 @@ export function deriveRdaoMarketAnalytics({
       left[1] === right[1] ? 0 : left[1] > right[1] ? -1 : 1,
     );
   const holderCount = positiveBalances.filter(
-    ([address]) => address !== sale && address !== liquidityLocker,
+    ([address]) =>
+      address !== sale &&
+      address !== liquidityLocker &&
+      address !== poolManager,
   ).length;
   const uniqueTraders = new Set(
     trades.map((trade) => trade.trader.toLowerCase()),
@@ -258,13 +261,15 @@ export function deriveRdaoMarketAnalytics({
         label:
           address === sale
             ? "Public sale and liquidity"
-            : address === liquidityLocker
+            : address === poolManager
               ? "Permanently locked liquidity"
-              : staked > 0n && liquid > 0n
-                ? "Liquid + staked"
-                : staked > 0n
-                  ? "Staked"
-                  : "Holder",
+              : address === liquidityLocker
+                ? "Locked-liquidity residual"
+                : staked > 0n && liquid > 0n
+                  ? "Liquid + staked"
+                  : staked > 0n
+                    ? "Staked"
+                    : "Holder",
       };
     }),
     recentTrades: trades.slice(-50).reverse(),
