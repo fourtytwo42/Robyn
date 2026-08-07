@@ -264,7 +264,7 @@ if (base.chainId === 4663) {
       continue;
     }
     const catalog = catalogByAddress.get(asset.toLowerCase());
-    if (!catalog?.referencePrice || catalog.route?.kind !== "uniswap-v4") {
+    if (!catalog?.referencePrice || !catalog.candidatePools?.length) {
       throw new Error(`missing canonical Mainnet catalog identity for ${sourceRoute.symbol}`);
     }
     const feedAddress = getAddress(catalog.referencePrice?.feedAddress);
