@@ -230,8 +230,8 @@ if (base.chainId === 4663) {
       continue;
     }
     const catalog = catalogByAddress.get(asset.toLowerCase());
-    if (!catalog?.pool || catalog.route?.kind !== "uniswap-v4") {
-      throw new Error(`missing canonical Mainnet catalog pool for ${sourceRoute.symbol}`);
+    if (!catalog?.referencePrice || catalog.route?.kind !== "uniswap-v4") {
+      throw new Error(`missing canonical Mainnet catalog identity for ${sourceRoute.symbol}`);
     }
     const poolKey = {
       currency0: zeroAddress,
@@ -244,9 +244,6 @@ if (base.chainId === 4663) {
       [{ type: "address" }, { type: "address" }, { type: "uint24" }, { type: "int24" }, { type: "address" }],
       [poolKey.currency0, poolKey.currency1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks],
     ));
-    if (poolId.toLowerCase() !== String(catalog.pool.poolId).toLowerCase()) {
-      throw new Error(`Mainnet pool identity mismatch for ${sourceRoute.symbol}`);
-    }
     const feedAddress = getAddress(catalog.referencePrice?.feedAddress);
     const heartbeat = Number(catalog.referencePrice?.heartbeatSeconds);
     const [liquidity, slot0, feedDecimals, feedRound, assetCode, oraclePaused] = await Promise.all([
@@ -373,7 +370,7 @@ const settings = base.chainId === 4663
       stakingWarmup: 600, stakingRewardDuration: 600, zeroSupplyRewardDuration: 3600,
       maintenanceTaskGas: 2000000, maintenanceCallGas: 2050000,
     };
-const assetCatalog = base.assetCatalog ?? {
+let assetCatalog = base.assetCatalog ?? {
   version: 1,
   assets: routes.map((route) => ({
     address: route.asset,
@@ -390,6 +387,28 @@ const assetCatalog = base.assetCatalog ?? {
     disclosure: "Testnet fixture with no real-world value or redemption rights.",
   })),
 };
+if (base.chainId === 4663) {
+  const routeByAsset = new Map(routes.map((route) => [route.asset.toLowerCase(), route]));
+  assetCatalog = {
+    ...assetCatalog,
+    assets: assetCatalog.assets.map((asset) => {
+      const route = routeByAsset.get(getAddress(asset.address).toLowerCase());
+      if (!route || route.kind === "wrapped-native") return asset;
+      return {
+        ...asset,
+        route: { ...asset.route, kind: "uniswap-v4", ready: true },
+        pool: {
+          fee: route.fee,
+          tickSpacing: route.tickSpacing,
+          hooks: route.hooks,
+          poolId: route.poolId,
+          zeroForOne: true,
+          quoteAmountNativeWei: route.maximumNativeInput,
+        },
+      };
+    }),
+  };
+}
 const input = {
   schemaVersion: 20,
   chainId: base.chainId,
