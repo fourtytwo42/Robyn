@@ -85,7 +85,9 @@ const routes = sourceRoutes.map((route) => {
       maximumNativeInput: String(route.maximumNativeInput),
     };
   }
-  const maximumReferenceTickDeviation = Number(route.maximumReferenceTickDeviation ?? 0);
+  const maximumReferenceTickDeviation = base.chainId === 4663
+    ? Number(route.maximumReferenceTickDeviation ?? 0)
+    : 0;
   return {
     symbol: route.symbol,
     asset: getAddress(route.address),
@@ -96,7 +98,7 @@ const routes = sourceRoutes.map((route) => {
     hooks: getAddress(route.hooks ?? zeroAddress),
     minimumLiquidity: String(route.minimumLiquidity),
     maximumNativeInput: String(route.maximumNativeInput),
-    referenceTick: Number(route.referenceTick ?? 0),
+    referenceTick: base.chainId === 4663 ? Number(route.referenceTick ?? 0) : 0,
     maximumReferenceTickDeviation,
     enforceReferencePrice: maximumReferenceTickDeviation > 0,
     verificationClass: route.verificationClass,
