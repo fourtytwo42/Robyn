@@ -176,6 +176,9 @@ test("Mainnet capture requalifies routes instead of copying stale thresholds", a
   assert.match(source, /quoteExactOutputSingle/);
   assert.match(source, /entry\.amount >= 1_000_000_000_000_000n/);
   assert.match(source, /entry\.recoveryBps >= 9_500/);
+  assert.match(source, /entry\.protectedImpactPassed/);
+  assert.match(source, /protectedQuoteFloor/);
+  assert.match(source, /idealAssetOutput/);
   assert.match(source, /minimumLiquidity = liquidity \/ 2n/);
   assert.match(
     source,

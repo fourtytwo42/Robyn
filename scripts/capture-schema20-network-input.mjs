@@ -252,6 +252,15 @@ if (base.chainId === 4663) {
     25_000_000_000_000_000n,
     50_000_000_000_000_000n,
   ];
+  const Q96 = 1n << 96n;
+  const idealAssetOutput = (nativeInput, sqrtPriceX96) => {
+    const scaled = (nativeInput * sqrtPriceX96) / Q96;
+    return (scaled * sqrtPriceX96) / Q96;
+  };
+  const protectedQuoteFloor = (idealOutput, poolFee) => {
+    const feeAdjustedIdeal = (idealOutput * (1_000_000n - BigInt(poolFee))) / 1_000_000n;
+    return (feeAdjustedIdeal * 9_900n) / 10_000n;
+  };
   routes = [];
   for (const sourceRoute of sourceRoutes) {
     const asset = getAddress(sourceRoute.address);
@@ -345,14 +354,17 @@ if (base.chainId === 4663) {
             const [roundTripOutput] = await quote("quoteExactInputSingle", candidate.poolKey, false, buyOutput);
             const [assetForExactNative] = await quote("quoteExactOutputSingle", candidate.poolKey, false, amount / 2n);
             await quote("quoteExactOutputSingle", candidate.poolKey, true, buyOutput / 2n || 1n);
-            ladderResults.push({ amount, buyOutput, roundTripOutput, assetForExactNative, recoveryBps: Number((roundTripOutput * 10_000n) / amount), passed: true });
+            const idealOutput = idealAssetOutput(amount, slot0[0]);
+            const minimumProtectedQuote = protectedQuoteFloor(idealOutput, candidate.poolKey.fee);
+            const protectedImpactPassed = buyOutput >= minimumProtectedQuote;
+            ladderResults.push({ amount, buyOutput, roundTripOutput, assetForExactNative, idealOutput, minimumProtectedQuote, protectedImpactPassed, recoveryBps: Number((roundTripOutput * 10_000n) / amount), passed: true });
           } catch (error) {
             ladderResults.push({ amount, passed: false, failureReason: String(error?.shortMessage ?? error?.message ?? error).slice(0, 300) });
           }
         }
       }
       const selected = ladderResults
-        .filter((entry) => entry.passed && entry.amount >= 1_000_000_000_000_000n && entry.recoveryBps >= 9_500)
+        .filter((entry) => entry.passed && entry.protectedImpactPassed && entry.amount >= 1_000_000_000_000_000n && entry.recoveryBps >= 9_500)
         .at(-1) ?? null;
       evaluatedCandidates.push({ ...candidate, liquidity, spotTick, referenceDeviationTicks, ladderResults, selected });
     }
@@ -378,6 +390,9 @@ if (base.chainId === 4663) {
           quoteLadder: candidate.ladderResults.map((entry) => ({
             amountWei: entry.amount.toString(),
             recoveryBps: entry.recoveryBps ?? null,
+            idealOutput: entry.idealOutput?.toString() ?? null,
+            minimumProtectedQuote: entry.minimumProtectedQuote?.toString() ?? null,
+            protectedImpactPassed: entry.protectedImpactPassed ?? false,
             failureReason: entry.failureReason ?? null,
           })),
         })),
@@ -429,7 +444,10 @@ if (base.chainId === 4663) {
           buyOutput: entry.buyOutput?.toString() ?? null,
           roundTripOutput: entry.roundTripOutput?.toString() ?? null,
           recoveryBps: entry.recoveryBps ?? null,
-          passed: Boolean(entry.passed && (entry.recoveryBps ?? 0) >= 9_500),
+          idealOutput: entry.idealOutput?.toString() ?? null,
+          minimumProtectedQuote: entry.minimumProtectedQuote?.toString() ?? null,
+          protectedImpactPassed: entry.protectedImpactPassed ?? false,
+          passed: Boolean(entry.passed && entry.protectedImpactPassed && (entry.recoveryBps ?? 0) >= 9_500),
           failureReason: entry.failureReason ?? null,
         })),
         candidatePools: evaluatedCandidates.map((candidate) => ({
