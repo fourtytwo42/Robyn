@@ -177,6 +177,9 @@ test("Schema-20 application manifests declare the scoped v4 venue", async () => 
   assert.match(source, /liquidityVenue: "uniswap-v4"/);
   assert.match(source, /v4Venue:\s*\{/);
   assert.match(source, /quoter: prepared\.external\.quoter/);
+  assert.match(source, /assetCatalog:\s*\{/);
+  assert.match(source, /policyVersion: prepared\.assetCatalog\.version/);
+  assert.match(source, /v4Venue: \{ quoter: prepared\.external\.quoter \}/);
 });
 
 test("Mainnet capture requalifies routes instead of copying stale thresholds", async () => {

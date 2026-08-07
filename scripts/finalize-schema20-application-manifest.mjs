@@ -172,7 +172,18 @@ const manifest = {
   settings: prepared.settings,
   sale: prepared.sale,
   saleOracleEvidence: prepared.saleOracleEvidence,
-  assetCatalog: prepared.assetCatalog,
+  assetCatalog: {
+    ...prepared.assetCatalog,
+    schemaVersion: 20,
+    policyVersion: prepared.assetCatalog.version,
+    policyHash: prepared.assetCatalog.sourcePolicySha256,
+    snapshotAt: new Date(
+      Number(prepared.saleOracleEvidence.updatedAt) * 1_000,
+    ).toISOString(),
+    disclosure:
+      "Canonical Mainnet identities with live Chainlink references and bounded v4 route checks.",
+    v4Venue: { quoter: prepared.external.quoter },
+  },
   assetRoutes: prepared.routes.definitions,
   routes: prepared.routes.definitions.map((route) => ({ symbol: route.symbol, asset: route.asset, enabled: true })),
   routeChecks,

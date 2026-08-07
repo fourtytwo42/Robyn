@@ -546,7 +546,15 @@
         },
         "disclosure": "Catalog-visible only: qualified-readonly-and-local-fork."
       }
-    ]
+    ],
+    "schemaVersion": 20,
+    "policyVersion": "schema20-mainnet-live-qualification-v1",
+    "policyHash": "ee04f04e9f444ea1beaa03b27a50b905b94ba9944a764f2834a482443b9d0b9d",
+    "snapshotAt": "2026-08-07T09:37:59.000Z",
+    "disclosure": "Canonical Mainnet identities with live Chainlink references and bounded v4 route checks.",
+    "v4Venue": {
+      "quoter": "0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94"
+    }
   },
   "assetRoutes": [
     {
