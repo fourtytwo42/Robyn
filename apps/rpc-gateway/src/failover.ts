@@ -93,6 +93,33 @@ function rpcResult(response: unknown, label: string): unknown {
   return (response as { result: unknown }).result;
 }
 
+function rpcMethodNotFound(response: unknown): boolean {
+  if (!response || typeof response !== "object" || Array.isArray(response)) {
+    return false;
+  }
+  const error = (response as { error?: unknown }).error;
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      (error as { code?: unknown }).code === -32_601,
+  );
+}
+
+function isSyncingOnlyBody(body: RpcBody): boolean {
+  const entries = Array.isArray(body) ? body : [body];
+  return entries.length > 0 && entries.every((entry) => entry.method === "eth_syncing");
+}
+
+function syncingFalseResponse(body: RpcBody): unknown {
+  const entries = Array.isArray(body) ? body : [body];
+  const responses = entries.map((entry) => ({
+    jsonrpc: "2.0" as const,
+    id: entry.id ?? null,
+    result: false,
+  }));
+  return Array.isArray(body) ? responses : responses[0];
+}
+
 function methodComputeUnits(method: string): number {
   if (method === "eth_getLogs") return 75;
   if (method === "eth_call") return 26;
@@ -279,8 +306,11 @@ export class TestnetRpcFailover {
         rpcResult(headResponse, "eth_blockNumber"),
         "eth_blockNumber",
       );
-      const syncingResult = rpcResult(syncingResponse, "eth_syncing");
-      syncing = syncingResult === false ? false : true;
+      const syncingUnsupported = !paid && rpcMethodNotFound(syncingResponse);
+      const syncingResult = syncingUnsupported
+        ? null
+        : rpcResult(syncingResponse, "eth_syncing");
+      syncing = syncingUnsupported ? null : syncingResult === false ? false : true;
       if (chainId !== this.expectedChainId) {
         throw new Error(`wrong chain ${chainId}`);
       }
@@ -324,8 +354,12 @@ export class TestnetRpcFailover {
             ? fallback.head - primary.head
             : 0n
           : null;
+      const primarySyncValidated =
+        primary.syncing === false ||
+        (primary.syncing === null && fallback.healthy && headLag !== null);
       const primaryWithinMaximum =
         primary.healthy &&
+        primarySyncValidated &&
         (headLag === null || headLag <= BigInt(this.maximumHeadLagBlocks));
       if (primaryWithinMaximum) {
         this.recoveryHealthyProbes = this.recoveryHealthyProbeTarget;
@@ -349,6 +383,14 @@ export class TestnetRpcFailover {
     if (this.activeProvider === "primary") {
       try {
         const response = await this.upstreamRequest(this.primaryUrl, payload);
+        if (
+          isSyncingOnlyBody(payload) &&
+          this.primary.syncing === null &&
+          this.snapshot().trafficAvailable &&
+          rpcMethodNotFound(response)
+        ) {
+          return syncingFalseResponse(payload);
+        }
         if (isReadOnlyBody(payload) && hasUnavailableStateError(response)) {
           throw new Error("primary state unavailable");
         }
@@ -425,8 +467,14 @@ export class TestnetRpcFailover {
           ? this.fallback.head - this.primary.head
           : 0n
         : null;
+    const primarySyncValidated =
+      this.primary.syncing === false ||
+      (this.primary.syncing === null &&
+        this.fallback.healthy &&
+        headLag !== null);
     const primaryWithinMaximum =
       this.primary.healthy &&
+      primarySyncValidated &&
       (headLag === null || headLag <= BigInt(this.maximumHeadLagBlocks));
     const trafficAvailable =
       this.activeProvider === "primary"

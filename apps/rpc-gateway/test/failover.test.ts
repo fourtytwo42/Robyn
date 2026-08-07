@@ -25,6 +25,7 @@ function createUpstream(options?: {
   fallbackOnline?: boolean;
   primaryChainId?: number;
   primarySyncing?: boolean;
+  primarySyncingUnsupported?: boolean;
 }) {
   let primaryHead = options?.primaryHead ?? 1_000n;
   const fallbackHead = options?.fallbackHead ?? 1_000n;
@@ -52,6 +53,13 @@ function createUpstream(options?: {
       return Promise.resolve(result(entry.id, `0x${head.toString(16)}`));
     }
     if (entry.method === "eth_syncing") {
+      if (url === primaryUrl && options?.primarySyncingUnsupported) {
+        return Promise.resolve({
+          jsonrpc: "2.0",
+          id: entry.id,
+          error: { code: -32_601, message: "method not found" },
+        });
+      }
       return Promise.resolve(
         result(
           entry.id,
@@ -196,6 +204,46 @@ describe("operator-selected RPC policy", () => {
       status: "degraded",
       activeProvider: "primary",
       primary: { syncing: true, healthy: false },
+    });
+  });
+
+  it("accepts Nitro without eth_syncing only when the independent head comparison is healthy", async () => {
+    const upstream = createUpstream({ primarySyncingUnsupported: true });
+    const gateway = controller(upstream.request);
+
+    await gateway.probe();
+
+    expect(gateway.snapshot()).toMatchObject({
+      status: "ok",
+      trafficAvailable: true,
+      headLagBlocks: "0",
+      primary: { syncing: null, healthy: true },
+      fallback: { healthy: true },
+    });
+    await expect(
+      gateway.request({
+        jsonrpc: "2.0",
+        id: 11,
+        method: "eth_syncing",
+        params: [],
+      }),
+    ).resolves.toEqual({ jsonrpc: "2.0", id: 11, result: false });
+  });
+
+  it("keeps Nitro without eth_syncing blocked when the independent head is unavailable", async () => {
+    const upstream = createUpstream({
+      primarySyncingUnsupported: true,
+      fallbackOnline: false,
+    });
+    const gateway = controller(upstream.request);
+
+    await gateway.probe();
+
+    expect(gateway.snapshot()).toMatchObject({
+      status: "degraded",
+      trafficAvailable: false,
+      primary: { syncing: null, healthy: true },
+      fallback: { healthy: false },
     });
   });
 
