@@ -2,6 +2,14 @@
 
 ## Active Handoff
 
+### 2026-08-07 - RDAO analytics Testnet cutover recovered; self-contained verifier fix required
+
+- Context: Application SHA `7883da8b4d311678b5e53c553b1233c3cd7af6b8` was promoted to a fresh Schema-20 Testnet database after a bounded privileged cleanup removed obsolete Testnet release caches. Root filesystem use fell from 91% to 71%, leaving 26 GiB free; databases, evidence, Mainnet releases, and active release state were preserved.
+- Live Testnet: `/opt/robyn/testnet-current` serves `schema20-7883da8`; the retained rollback target is `/opt/robyn/testnet-releases/schema20-0dbc8ee`. Six keyless Testnet processes are healthy, no keeper runs, the fresh scoped database is current, and the public Testnet API is HTTP 200 through a temporary user-owned edge proxy on `127.0.0.1:3081`.
+- Nginx: Root-owned Nginx remains stopped because stale `/etc/nginx/conf.d/robyn.conf` still binds port 3000, conflicting with the Devnet web process. Do not retry `systemctl start nginx` until that stale listener is removed or rewritten. Never place the administrator password in commands, scripts, Git, logs, or memory.
+- Verifier defect: The protected Testnet bundle intentionally omits Foundry `out`, but `verify-schema20-qualified-testnet.mjs` still loaded six ABIs from that directory. The verifier now embeds only the required view signatures using `parseAbi`; focused tests, formatting, live chain-46630 verification, and the frozen Schema-20 closure check pass.
+- Follow-up: Commit/push the self-contained verifier, build a new immutable application-only Testnet release, promote it against the existing fresh database, run the complete release verifier and in-app-browser acceptance for Ownership and Trades, then prepare the signed Mainnet application release. No onchain transaction or Solidity change is required.
+
 ### 2026-08-07 - RDAO ownership and trade history application release qualified
 
 - Context: The public RDAO bonding page had the token-style curve and trade controls but lacked the canonical Ownership and Trades interface used by ordinary Sherwood launch tokens.

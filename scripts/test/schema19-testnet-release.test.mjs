@@ -56,6 +56,19 @@ test("Schema-19 qualified verification requires maintenance and complete asset p
   assert.match(source, /catalogAssets\.length !== rewardAssets\.length/);
 });
 
+test("Schema-20 runtime verification is self-contained in protected releases", async () => {
+  const source = await readFile(
+    "scripts/verify-schema20-qualified-testnet.mjs",
+    "utf8",
+  );
+
+  assert.match(source, /const factory = parseAbi/);
+  assert.match(source, /const router = parseAbi/);
+  assert.match(source, /executionRouteStatus\(address asset\)/);
+  assert.doesNotMatch(source, /packages\/contracts\/out/);
+  assert.doesNotMatch(source, /artifact\(/);
+});
+
 test("every numbered database migration records its own ledger version", async () => {
   const files = (await readdir("packages/db/migrations"))
     .filter((file) => /^\d{4}_[a-z0-9_]+\.sql$/.test(file))
