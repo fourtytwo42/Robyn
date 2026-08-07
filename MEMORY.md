@@ -10,6 +10,8 @@
 ## Current State
 
 - Planning and live-state recovery are in progress. No Testnet or Mainnet Schema-20 transaction has been sent in this rollout.
+- Baseline candidate `5409e961257e2b654dc4fc5a08a1b54fd61ca58a` passed the complete fast Schema-20 gate on seed `2087001`: compile, 1,024-fuzz deterministic suite, four invariant suites, 512-wallet/32-launch/25,000-action/20-seed simulation, isolated receipt broadcast, 90/80 coverage validation, and checksums. Evidence: `/home/hendo420/robyn-evidence/devnet-torture/5409e961257e2b654dc4fc5a08a1b54fd61ca58a/20260807-schema20-fast-01`.
+- Public-network RDAO support is now implemented and pushed at `4b6f312`: Schema-20 Testnet/Mainnet renders the token-style public RDAO market at `/rdao`, the full workspace at `/dao`, bypasses the legacy holder gate, and labels the active network dynamically. All 88 web tests, typecheck, and lint pass. This application change requires fresh fast and deep qualification on the eventual rollout SHA.
 
 ## Open Follow-ups
 
