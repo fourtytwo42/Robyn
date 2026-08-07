@@ -2873,7 +2873,7 @@ registerCampaignRoutes(app, {
     : {}),
 });
 registerDaoRoutes(app, rpcClient, deployment);
-registerRdaoRoutes(app, rpcClient, deployment);
+registerRdaoRoutes(app, rpcClient, deployment, sql, chainId);
 
 void runProtocolAudit();
 protocolAuditTimer = setInterval(

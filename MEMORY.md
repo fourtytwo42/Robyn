@@ -2,6 +2,14 @@
 
 ## Active Handoff
 
+### 2026-08-07 - RDAO ownership and trade history application release qualified
+
+- Context: The public RDAO bonding page had the token-style curve and trade controls but lacked the canonical Ownership and Trades interface used by ordinary Sherwood launch tokens.
+- Decision: Derive RDAO ownership and trade history from canonical retained logs. Liquid and deterministic staking-escrow balances are combined under the beneficial owner; sale and permanently locked liquidity custody remain clearly labeled. Bonding buys/sells and the exact graduated RDAO v4 pool share one paginated trade interface.
+- Files: `apps/api/src/rdao-market-analytics.ts`, `apps/api/src/rdao-routes.ts`, `apps/indexer/src/server.ts`, `apps/web/src/components/rdao-token-market.tsx`, and `apps/web/src/components/token-market-data-tabs.tsx`, with focused API and presentation tests.
+- Verification: API 88/88, indexer 31/31, web 88/88, full application-scope tests, lint, typecheck, production-release tests, diff checks, and frozen Schema-20 closure verification pass. Solidity source and bytecode are unchanged.
+- Follow-up: Commit/push the exact application SHA, build immutable Devnet/Testnet/Mainnet releases, validate the canonical API results and responsive UI in the in-app browser, then promote the signed production release without any onchain transaction.
+
 ### 2026-08-07 - Schema-20 Mainnet rollout complete and public
 
 - Result: Exact candidate `19bdbdfe76c6c797684186ed655a1ae37f9e8d95` passed the complete current-state Mainnet fork rehearsal: 49/49 deployment receipts, nine protected route round trips, retained-stake activation, RDAO sale and graduation, staking rewards, one launch lifecycle, best-effort maintenance, claims, exact reconciliation, and bounded Schema-19 retirement.
@@ -96,7 +104,7 @@
 
 ## Current State
 
-- Schema-20 is live and fully reconciled on Testnet; all 46 deployment transactions and every lifecycle acceptance stage passed. Mainnet remains Schema-19 and no Schema-20 Mainnet transaction has been sent.
+- Schema-20 is live and reconciled on Devnet, Testnet, and Mainnet. Mainnet Schema-19 is guardian-paused and archived; no user-created Schema-20 launch exists yet, and the RDAO public sale is the only live Mainnet market.
 - Baseline candidate `5409e961257e2b654dc4fc5a08a1b54fd61ca58a` passed the complete fast Schema-20 gate on seed `2087001`: compile, 1,024-fuzz deterministic suite, four invariant suites, 512-wallet/32-launch/25,000-action/20-seed simulation, isolated receipt broadcast, 90/80 coverage validation, and checksums. Evidence: `/home/hendo420/robyn-evidence/devnet-torture/5409e961257e2b654dc4fc5a08a1b54fd61ca58a/20260807-schema20-fast-01`.
 - Public-network RDAO support is now implemented and pushed at `4b6f312`: Schema-20 Testnet/Mainnet renders the token-style public RDAO market at `/rdao`, the full workspace at `/dao`, bypasses the legacy holder gate, and labels the active network dynamically. All 88 web tests, typecheck, and lint pass. This application change requires fresh fast and deep qualification on the eventual rollout SHA.
 

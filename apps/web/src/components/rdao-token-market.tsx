@@ -13,6 +13,7 @@ import {
   type WalletClient,
 } from "viem";
 import type { Deployment } from "@/lib/deployment";
+import { TokenMarketDataTabs } from "@/components/token-market-data-tabs";
 
 const saleAbi = parseAbi([
   "function quoteBuy(uint256) view returns (uint256 tokensOut,uint256 principal,uint256 fee,uint256 refund)",
@@ -47,6 +48,26 @@ type RdaoMarketState = {
     graduationReady: boolean;
     currentPriceE18: string;
     terminalPriceE18: string;
+  };
+  market?: {
+    holderCount: number;
+    tradeCount: number;
+    uniqueTraderCount: number;
+    totalVolumeBase: string;
+    topHolders: Array<{
+      address: string;
+      balance: string;
+      shareBps: string;
+      label: string;
+    }>;
+    recentTrades: Array<{
+      transactionHash: string;
+      blockNumber: string;
+      side: "buy" | "sell";
+      trader: string;
+      baseAmount: string;
+      tokenAmount: string;
+    }>;
   };
   account: null | {
     liquidBalance: string;
@@ -94,6 +115,7 @@ function BondingCurveChart({ state }: { state: RdaoMarketState }) {
     formatEther(BigInt(state.sale.terminalPriceE18)),
   );
   const totalSupply = Number(formatEther(BigInt(state.totalSupply)));
+  const market = state.market;
   const ethUsd = Number(state.policy?.pricing.ethUsdFixture ?? 0);
   const impliedValueEth = currentPrice * totalSupply;
   const progress = percent(state.sale.sold, state.sale.saleInventory);
@@ -268,16 +290,16 @@ function BondingCurveChart({ state }: { state: RdaoMarketState }) {
           <dd>{tokens(state.sale.sold)} RDAO</dd>
         </div>
         <div>
-          <dt>Curve principal</dt>
-          <dd>{eth(state.sale.curvePrincipal, 4)} ETH</dd>
+          <dt>All-time volume</dt>
+          <dd>{eth(market?.totalVolumeBase ?? "0", 4)} ETH</dd>
         </div>
         <div>
-          <dt>Bonding fees</dt>
-          <dd>{eth(state.sale.totalBondingFees, 5)} ETH</dd>
+          <dt>Trades</dt>
+          <dd>{market?.tradeCount ?? 0}</dd>
         </div>
         <div>
-          <dt>Sale progress</dt>
-          <dd>{progress.toFixed(2)}%</dd>
+          <dt>Holders</dt>
+          <dd>{market?.holderCount ?? 0}</dd>
         </div>
       </dl>
       <p className="rdao-chart-note">
@@ -451,6 +473,13 @@ export function RdaoTokenMarket({
     <div className="token-market-layout rdao-market-layout">
       <div className="token-market-primary">
         <BondingCurveChart state={state} />
+        <TokenMarketDataTabs
+          holders={state.market?.topHolders ?? []}
+          holderCount={state.market?.holderCount ?? 0}
+          trades={state.market?.recentTrades ?? []}
+          symbol="RDAO"
+          quoteSymbol="ETH"
+        />
         <section
           className="token-data-panel rdao-market-details"
           aria-labelledby="rdao-details-heading"

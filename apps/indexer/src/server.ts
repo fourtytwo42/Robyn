@@ -354,6 +354,9 @@ const schema18GovernanceEventByTopic = new Map(
 const schema18GovernanceEventTopics = [
   ...schema18GovernanceEventByTopic.keys(),
 ];
+const rdaoLiquidityPermanentlyLockedEvent = parseAbiItem(
+  "event LiquidityPermanentlyLocked(bytes32 indexed poolId,uint128 liquidity,uint256 wethUsed,uint256 rdaoUsed,uint256 wethResidual,uint256 rdaoResidual,uint160 sqrtPriceX96)",
+);
 const schema20RdaoEventDefinitions = [
   {
     source: "sale",
@@ -470,9 +473,7 @@ const schema20RdaoEventDefinitions = [
   },
   {
     source: "liquidity-locker",
-    event: parseAbiItem(
-      "event LiquidityPermanentlyLocked(bytes32 indexed poolId,uint128 liquidity,uint256 wethUsed,uint256 rdaoUsed,uint256 wethResidual,uint256 rdaoResidual,uint160 sqrtPriceX96)",
-    ),
+    event: rdaoLiquidityPermanentlyLockedEvent,
   },
   {
     source: "liquidity-locker",
@@ -504,21 +505,30 @@ async function currentIndexedScope() {
     [manifest.chainId],
   );
   const coordinator = manifest.contracts.atomicLaunchCoordinator?.toLowerCase();
-  const coordinatorLogs = coordinator
-    ? await sql.unsafe<
-        {
-          block_number: string;
-          data: Hex;
-          topics: Hex[];
-        }[]
-      >(
-        "SELECT block_number::text,data,topics FROM raw_logs WHERE chain_id=$1 AND address=$2 ORDER BY block_number,transaction_index,log_index",
-        [manifest.chainId, coordinator],
-      )
-    : [];
+  const rdaoLocker =
+    typeof manifest.contracts.rdaoLiquidityLocker === "string"
+      ? manifest.contracts.rdaoLiquidityLocker.toLowerCase()
+      : undefined;
+  const discoveryAddresses = [coordinator, rdaoLocker].filter(
+    (value): value is string => Boolean(value),
+  );
+  const discoveryLogs =
+    discoveryAddresses.length > 0
+      ? await sql.unsafe<
+          {
+            block_number: string;
+            address: Address;
+            data: Hex;
+            topics: Hex[];
+          }[]
+        >(
+          "SELECT block_number::text,address,data,topics FROM raw_logs WHERE chain_id=$1 AND lower(address)=ANY($2::text[]) ORDER BY block_number,transaction_index,log_index",
+          [manifest.chainId, discoveryAddresses],
+        )
+      : [];
   const discovered = newlyCreatedLaunchArtifacts(
-    coordinatorLogs.map((log) => ({
-      address: coordinator as Address,
+    discoveryLogs.map((log) => ({
+      address: log.address,
       blockNumber: BigInt(log.block_number),
       data: log.data,
       topics: log.topics as [] | [Hex, ...Hex[]],
@@ -554,18 +564,33 @@ function newlyCreatedLaunchArtifacts(
   }[],
 ) {
   const coordinator = manifest.contracts.atomicLaunchCoordinator?.toLowerCase();
-  if (!coordinator) {
-    return {
-      addresses: new Map<Address, bigint>(),
-      poolIds: new Map<Hex, bigint>(),
-    };
-  }
+  const rdaoLocker =
+    typeof manifest.contracts.rdaoLiquidityLocker === "string"
+      ? manifest.contracts.rdaoLiquidityLocker.toLowerCase()
+      : undefined;
   const event = usesUniswapV4 ? atomicV4LaunchEvent : atomicLaunchEvent;
   const addresses = new Map<Address, bigint>();
   const poolIds = new Map<Hex, bigint>();
   for (const log of logs) {
-    if (log.address.toLowerCase() !== coordinator) continue;
     if (log.blockNumber === null) continue;
+    if (rdaoLocker && log.address.toLowerCase() === rdaoLocker) {
+      try {
+        const decoded = decodeEventLog({
+          abi: [rdaoLiquidityPermanentlyLockedEvent],
+          data: log.data,
+          topics: log.topics,
+        });
+        const normalized = decoded.args.poolId.toLowerCase() as Hex;
+        const previous = poolIds.get(normalized);
+        if (previous === undefined || log.blockNumber < previous) {
+          poolIds.set(normalized, log.blockNumber);
+        }
+      } catch {
+        // Other locker events do not contribute to the dynamic pool scope.
+      }
+      continue;
+    }
+    if (!coordinator || log.address.toLowerCase() !== coordinator) continue;
     try {
       const decoded = decodeEventLog({
         abi: [event],

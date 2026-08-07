@@ -53,6 +53,7 @@ describe("marketing pages", () => {
     const home = source("../app/page.tsx");
     const rdao = source("../app/rdao/page.tsx");
     const market = source("../components/rdao-token-market.tsx");
+    const marketTabs = source("../components/token-market-data-tabs.tsx");
     const devnetAccess = source("../components/network-dao-access.devnet.tsx");
     const publicAccess = source("../components/network-dao-access.testnet.tsx");
     const publicView = source("../components/network-dao.testnet.tsx");
@@ -61,6 +62,10 @@ describe("marketing pages", () => {
     expect(rdao).not.toContain("NetworkDaoAccessGate");
     expect(rdao).not.toContain("RdaoSaleSpotlight");
     expect(market).toContain("BondingCurveChart");
+    expect(market).toContain("<TokenMarketDataTabs");
+    expect(market).toContain("state.market?.topHolders");
+    expect(market).toContain("state.market?.recentTrades");
+    expect(marketTabs).toContain("rewardEconomy !== undefined");
     expect(market).toContain("Trade RDAO");
     expect(market).toContain(
       'finalized\n                  ? "Bonding complete"',

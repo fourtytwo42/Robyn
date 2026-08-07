@@ -1,11 +1,21 @@
 import type { FastifyInstance } from "fastify";
+import type { createDatabase } from "@robyn/db";
 import {
   getAddress,
   isAddress,
   parseAbi,
+  parseAbiItem,
+  toEventSelector,
   type Address,
+  type Hex,
   type PublicClient,
 } from "viem";
+import {
+  deriveRdaoMarketAnalytics,
+  type RdaoAnalyticsLog,
+} from "./rdao-market-analytics.js";
+
+type SqlClient = ReturnType<typeof createDatabase>["sql"];
 
 type Schema20Deployment = {
   schemaVersion?: number;
@@ -17,6 +27,7 @@ type Schema20Deployment = {
     rdaoStaking?: Address;
     rdaoLiquidityLocker?: Address;
     wrappedNative?: Address;
+    poolManager?: Address;
   };
   rdao?: {
     allocation: { retained: string; sale: string; liquidity: string };
@@ -81,12 +92,40 @@ const tokenAbi = parseAbi([
   "function getVotes(address) view returns (uint256)",
 ]);
 
+const transferTopic = toEventSelector(
+  parseAbiItem(
+    "event Transfer(address indexed from,address indexed to,uint256 value)",
+  ),
+).toLowerCase();
+const boughtTopic = toEventSelector(
+  parseAbiItem(
+    "event Bought(address indexed buyer,address indexed recipient,uint256 principal,uint256 fee,uint256 tokensOut,uint256 refund,uint256 cumulativeSold)",
+  ),
+).toLowerCase();
+const soldTopic = toEventSelector(
+  parseAbiItem(
+    "event Sold(address indexed seller,address indexed recipient,uint256 tokensIn,uint256 principalOut,uint256 fee,uint256 nativeOut,uint256 cumulativeSold)",
+  ),
+).toLowerCase();
+const escrowCreatedTopic = toEventSelector(
+  parseAbiItem(
+    "event EscrowCreated(address indexed account,address indexed escrow,address indexed delegatee)",
+  ),
+).toLowerCase();
+const poolSwapTopic = toEventSelector(
+  parseAbiItem(
+    "event Swap(bytes32 indexed id,address indexed sender,int128 amount0,int128 amount1,uint160 sqrtPriceX96,uint128 liquidity,int24 tick,uint24 fee)",
+  ),
+).toLowerCase();
+
 const zeroAddress = "0x0000000000000000000000000000000000000000" as Address;
 
 export function registerRdaoRoutes(
   app: FastifyInstance,
   rpcClient: PublicClient,
   deployment: Schema20Deployment,
+  sql: SqlClient,
+  chainId: number,
 ) {
   app.get<{ Querystring: { account?: string } }>(
     "/rdao",
@@ -261,6 +300,41 @@ export function registerRdaoRoutes(
         Address,
         bigint,
       ];
+      const poolId = lockerValues[1] as Hex;
+      const analyticsLogs = await sql.unsafe<RdaoAnalyticsLog[]>(
+        "SELECT l.block_number::text,l.transaction_hash,l.log_index,l.address,l.topics,l.data,b.timestamp::text FROM raw_logs l JOIN chain_blocks b ON b.chain_id=l.chain_id AND b.number=l.block_number AND b.hash=l.block_hash AND b.canonical=true WHERE l.chain_id=$1 AND ((lower(l.address)=$2 AND l.topics->>0=$3) OR (lower(l.address)=$4 AND l.topics->>0=ANY($5::text[])) OR (lower(l.address)=$6 AND l.topics->>0=$7) OR ($8::text IS NOT NULL AND lower(l.address)=$8 AND l.topics->>0=$9 AND l.topics->>1=$10)) ORDER BY l.block_number,l.transaction_index,l.log_index LIMIT 10001",
+        [
+          chainId,
+          deployment.contracts.daoToken.toLowerCase(),
+          transferTopic,
+          rdaoSale.toLowerCase(),
+          [boughtTopic, soldTopic],
+          rdaoStaking.toLowerCase(),
+          escrowCreatedTopic,
+          deployment.contracts.poolManager?.toLowerCase() ?? null,
+          poolSwapTopic,
+          poolId.toLowerCase(),
+        ],
+      );
+      if (analyticsLogs.length >= 10_001) {
+        return reply.code(503).send({
+          error: "rdao_analytics_capacity_exceeded",
+          message: "RDAO market history exceeds the bounded canonical query.",
+        });
+      }
+      const market = deriveRdaoMarketAnalytics({
+        contracts: {
+          token: deployment.contracts.daoToken,
+          sale: rdaoSale,
+          staking: rdaoStaking,
+          liquidityLocker: rdaoLiquidityLocker,
+          wrappedNative: deployment.contracts.wrappedNative,
+          poolManager: deployment.contracts.poolManager,
+        },
+        logs: analyticsLogs,
+        totalSupply: supply,
+        poolId,
+      });
       return {
         data: {
           contracts: {
@@ -277,6 +351,7 @@ export function registerRdaoRoutes(
           sale,
           staking,
           liquidity,
+          market,
           account: account
             ? {
                 address: account,

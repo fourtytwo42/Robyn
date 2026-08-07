@@ -39,15 +39,15 @@ export function TokenMarketDataTabs({
   symbol,
   quoteSymbol,
   rewardEconomy,
-  rewardAssetCount,
+  rewardAssetCount = 0,
 }: {
   holders: Holder[];
   holderCount: number;
   trades: Trade[];
   symbol: string;
   quoteSymbol: string;
-  rewardEconomy: ReactNode;
-  rewardAssetCount: number;
+  rewardEconomy?: ReactNode;
+  rewardAssetCount?: number;
 }) {
   const [active, setActive] = useState<"holders" | "trades" | "rewards">(
     "holders",
@@ -104,16 +104,18 @@ export function TokenMarketDataTabs({
             Trades
             <span>{trades.length}</span>
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={active === "rewards"}
-            aria-controls="token-rewards-panel"
-            onClick={() => setActive("rewards")}
-          >
-            Reward economy
-            <span>{rewardAssetCount}</span>
-          </button>
+          {rewardEconomy !== undefined ? (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={active === "rewards"}
+              aria-controls="token-rewards-panel"
+              onClick={() => setActive("rewards")}
+            >
+              Reward economy
+              <span>{rewardAssetCount}</span>
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -164,7 +166,7 @@ export function TokenMarketDataTabs({
             }
           />
         </div>
-      ) : active === "rewards" ? (
+      ) : active === "rewards" && rewardEconomy !== undefined ? (
         <div
           id="token-rewards-panel"
           role="tabpanel"

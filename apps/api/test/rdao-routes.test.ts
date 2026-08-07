@@ -70,23 +70,32 @@ describe("Schema-20 RDAO workspace API", () => {
       });
     const app = Fastify();
     openApps.push(app);
-    registerRdaoRoutes(app, { readContract } as unknown as PublicClient, {
-      schemaVersion: 20,
-      contracts,
-      rdao: {
-        allocation: { retained: "800", sale: "150", liquidity: "50" },
-        pricing: {
-          ethUsdFixture: "1624.95",
-          ownerTargetUsd: "300000",
-          liquidityTargetUsd: "240000",
-        },
-        staking: {
-          warmupSeconds: 86400,
-          rewardDurationSeconds: 3600,
-          zeroSupplyDurationSeconds: 604800,
+    const sql = {
+      unsafe: vi.fn().mockResolvedValue([]),
+    };
+    registerRdaoRoutes(
+      app,
+      { readContract } as unknown as PublicClient,
+      {
+        schemaVersion: 20,
+        contracts,
+        rdao: {
+          allocation: { retained: "800", sale: "150", liquidity: "50" },
+          pricing: {
+            ethUsdFixture: "1624.95",
+            ownerTargetUsd: "300000",
+            liquidityTargetUsd: "240000",
+          },
+          staking: {
+            warmupSeconds: 86400,
+            rewardDurationSeconds: 3600,
+            zeroSupplyDurationSeconds: 604800,
+          },
         },
       },
-    });
+      sql as never,
+      31337,
+    );
     const response = await app.inject({
       method: "GET",
       url: `/rdao?account=${account}`,
@@ -102,6 +111,12 @@ describe("Schema-20 RDAO workspace API", () => {
           wethBalance: "9",
         }),
         liquidity: expect.objectContaining({ initialized: true }),
+        market: expect.objectContaining({
+          holderCount: 0,
+          tradeCount: 0,
+          topHolders: [],
+          recentTrades: [],
+        }),
       }),
     );
   });
