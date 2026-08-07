@@ -26,12 +26,15 @@ import { classifyCanaryJournal } from "./lib/mainnet-canary-journal.mjs";
 import { encodeUniversalV4SingleSwap } from "./lib/v4-universal-router.mjs";
 
 const NETWORK = process.env.ROBYN_SCHEMA19_NETWORK ?? "testnet";
-if (!new Set(["testnet", "mainnet-fork"]).has(NETWORK)) {
-  throw new Error("ROBYN_SCHEMA19_NETWORK must be testnet or mainnet-fork");
+if (!new Set(["testnet", "mainnet-fork", "mainnet-retirement"]).has(NETWORK)) {
+  throw new Error("ROBYN_SCHEMA19_NETWORK must be testnet, mainnet-fork, or mainnet-retirement");
 }
 const mainnetFork = NETWORK === "mainnet-fork";
-const CHAIN_ID = mainnetFork ? 4663 : 46630;
-const RESERVE = mainnetFork ? 0n : 1_500_000_000_000_000n;
+const mainnetRetirement = NETWORK === "mainnet-retirement";
+const retirementRehearsal = mainnetRetirement && process.env.ROBYN_SCHEMA19_RETIREMENT_REHEARSAL === "true";
+const mainnet = mainnetFork || mainnetRetirement;
+const CHAIN_ID = mainnet ? 4663 : 46630;
+const RESERVE = mainnetFork || retirementRehearsal ? 0n : mainnetRetirement ? 20_000_000_000_000_000n : 1_500_000_000_000_000n;
 const L1_FEE_RESERVE = 25_000_000_000_000n;
 const stages = new Set([
   "verify",
@@ -49,6 +52,9 @@ const stage = process.argv[2];
 if (!stages.has(stage)) {
   throw new Error(`usage: ${path.basename(process.argv[1])} ${[...stages].join("|")}`);
 }
+if (mainnetRetirement && !new Set(["verify", "shutdown", "status"]).has(stage)) {
+  throw new Error("live Schema-19 retirement permits only verify, shutdown, or status");
+}
 const readOnly = new Set(["verify", "status"]);
 const required = (name) => {
   const value = process.env[name];
@@ -57,32 +63,32 @@ const required = (name) => {
 };
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const releaseSha = required(
-  mainnetFork
+  mainnet
     ? "ROBYN_SCHEMA19_MAINNET_RELEASE_SHA"
     : "ROBYN_SCHEMA19_TESTNET_RELEASE_SHA",
 );
 const manifestPath = path.resolve(
-  (mainnetFork
+  (mainnet
     ? process.env.ROBYN_SCHEMA19_MAINNET_MANIFEST
     : process.env.ROBYN_SCHEMA19_TESTNET_MANIFEST) ??
-    (mainnetFork
+    (mainnet
       ? "/dev/null"
       : "/opt/robyn/testnet-current/deployments/46630-v4-schema19.json"),
 );
 const evidenceRoot = path.resolve(
   required(
-    mainnetFork
+    mainnet
       ? "ROBYN_SCHEMA19_MAINNET_EVIDENCE"
       : "ROBYN_SCHEMA19_TESTNET_EVIDENCE",
   ),
 );
 const rpc =
-  (mainnetFork
+  (mainnet
     ? process.env.ROBYN_SCHEMA19_MAINNET_RPC_URL
     : process.env.ROBYN_SCHEMA19_TESTNET_RPC_URL) ??
-  (mainnetFork ? "http://127.0.0.1:28548" : "http://127.0.0.1:18548");
+  (mainnetFork ? "http://127.0.0.1:28548" : mainnetRetirement ? "http://127.0.0.1:18549" : "http://127.0.0.1:18548");
 const localRehearsal =
-  mainnetFork ||
+  mainnetFork || retirementRehearsal ||
   process.env.ROBYN_SCHEMA19_TESTNET_LOCAL_REHEARSAL === "true";
 if (!/^http:\/\/(127\.0\.0\.1|localhost):[0-9]+$/.test(rpc)) {
   throw new Error("Schema-19 lifecycle requires a loopback RPC");
@@ -109,8 +115,14 @@ const manifest = JSON.parse(manifestRaw);
 if (manifest.schemaVersion !== 19 || manifest.chainId !== CHAIN_ID) {
   throw new Error("Schema-19 lifecycle manifest identity mismatch");
 }
-if (manifest.toolingSha !== toolingSha) {
+if (manifest.toolingSha !== toolingSha && !mainnetRetirement) {
   throw new Error("Schema-19 lifecycle manifest tooling identity mismatch");
+}
+if (mainnetRetirement) {
+  const expectedManifestSha = required("ROBYN_SCHEMA19_RETIREMENT_MANIFEST_SHA256");
+  if (sha256(manifestRaw) !== expectedManifestSha) {
+    throw new Error("Schema-19 retirement manifest hash mismatch");
+  }
 }
 if (manifest.contractReleaseSha !== releaseSha) {
   throw new Error("Schema-19 contract release identity mismatch");
@@ -151,9 +163,9 @@ if (
 
 let account;
 let wallet;
-if (!readOnly.has(stage) && !mainnetFork) {
-  const keystore = path.resolve(required("ROBYN_TESTNET_KEYSTORE"));
-  const password = (await readFile(path.resolve(required("ROBYN_TESTNET_PASSWORD_FILE")), "utf8")).trimEnd();
+if (!readOnly.has(stage) && !mainnetFork && !retirementRehearsal) {
+  const keystore = path.resolve(required(mainnetRetirement ? "ROBYN_MAINNET_KEYSTORE" : "ROBYN_TESTNET_KEYSTORE"));
+  const password = (await readFile(path.resolve(required(mainnetRetirement ? "ROBYN_MAINNET_PASSWORD_FILE" : "ROBYN_TESTNET_PASSWORD_FILE")), "utf8")).trimEnd();
   const cast = path.join(process.env.HOME ?? "/home/hendo420", ".foundry", "bin", "cast");
   const decrypted = command(
     cast,
@@ -162,7 +174,7 @@ if (!readOnly.has(stage) && !mainnetFork) {
   );
   account = privateKeyToAccount(parseCastDecryptedPrivateKey(decrypted));
   if (account.address.toLowerCase() !== manifest.deployer.toLowerCase()) {
-    throw new Error("Testnet keystore does not match Schema-19 deployer");
+    throw new Error(`${mainnetRetirement ? "Mainnet" : "Testnet"} keystore does not match Schema-19 deployer`);
   }
   wallet = createWalletClient({ account, chain, transport: http(rpc, { timeout: 30_000, retryCount: 0 }) });
 } else if (!readOnly.has(stage)) {
@@ -244,7 +256,7 @@ const receiptDigest = (receipt) =>
 const missing = (error) => /not found|could not be found/i.test(String(error?.shortMessage ?? error?.message ?? error));
 
 const submit = async ({ phase, label, to, data, value = 0n, minimumGas = 0n }) => {
-  const key = `schema19-${mainnetFork ? "mainnet-fork" : "testnet"}:${phase}:${label}`;
+  const key = `schema19-${NETWORK}:${phase}:${label}`;
   const records = await journal();
   const classified = classifyCanaryJournal(records, key);
   if (classified.receipt) {
@@ -293,7 +305,7 @@ const submit = async ({ phase, label, to, data, value = 0n, minimumGas = 0n }) =
   const gas = doubledEstimate > minimumGas ? doubledEstimate : minimumGas;
   const balance = await client.getBalance({ address: account.address });
   if (balance < value + gas * maxFeePerGas + L1_FEE_RESERVE + RESERVE) {
-    throw new Error(`${key} would breach the fixed Testnet reserve`);
+    throw new Error(`${key} would breach the fixed network reserve`);
   }
   const request = {
     account,
@@ -493,10 +505,20 @@ const safeExec = (label, target, data) =>
     safeSignature(),
   ]);
 const shutdown = async () => {
+  if (mainnetRetirement) {
+    const launchCount = await read(
+      checksum(manifest.contracts.launchFactory),
+      parseAbi(["function launchCount() view returns (uint256)"]),
+      "launchCount",
+    );
+    if (launchCount !== 0n) {
+      throw new Error("Schema-19 Mainnet retirement requires exactly zero launches");
+    }
+  }
   const reason = keccak256(
     stringToHex(
-      mainnetFork
-        ? "SCHEMA19_MAINNET_FORK_LIFECYCLE_COMPLETE"
+      mainnet
+        ? "SCHEMA19_MAINNET_RETIRED_FOR_SCHEMA20"
         : "SCHEMA19_TESTNET_LIFECYCLE_COMPLETE",
     ),
   );

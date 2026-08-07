@@ -9,17 +9,27 @@ const source = await readFile(
 
 test("Schema-19 lifecycle is LAN-only, immutable-release-bound, and restart safe", () => {
   for (const pattern of [
-    /const CHAIN_ID = mainnetFork \? 4663 : 46630/,
+    /const CHAIN_ID = mainnet \? 4663 : 46630/,
     /ROBYN_SCHEMA19_TESTNET_RELEASE_SHA/,
     /exact clean pushed tooling/,
     /manifest tooling identity mismatch/,
     /gateway\.fallbackTrafficAuthorized !== false/,
     /unresolved signed intent; automatic replay is prohibited/,
     /submission is ambiguous; manual reconciliation required/,
-    /would breach the fixed Testnet reserve/,
+    /would breach the fixed network reserve/,
   ])
     assert.match(source, pattern);
   assert.doesNotMatch(source, /alchemy\.com|automatic fallback/i);
+});
+
+test("live Schema-19 retirement is exact-manifest-bound and zero-launch-only", () => {
+  assert.match(source, /mainnet-retirement/);
+  assert.match(source, /ROBYN_SCHEMA19_RETIREMENT_MANIFEST_SHA256/);
+  assert.match(source, /retirement permits only verify, shutdown, or status/);
+  assert.match(source, /retirement requires exactly zero launches/);
+  assert.match(source, /20_000_000_000_000_000n/);
+  assert.match(source, /ROBYN_MAINNET_KEYSTORE/);
+  assert.match(source, /ROBYN_SCHEMA19_RETIREMENT_REHEARSAL/);
 });
 
 test("Schema-19 lifecycle starts Public without bootstrap or a live activation vote", () => {
