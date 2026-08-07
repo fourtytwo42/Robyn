@@ -2,6 +2,13 @@
 
 ## Active Handoff
 
+### 2026-08-07 - RDAO chart statistics layout correction
+
+- Cause: `rdao-token-market.tsx` used the nonexistent base class `market-window-stats` instead of the shared `chart-window-stats`, so the five statistics below the bonding chart rendered as an unstyled definition list despite the RDAO column override.
+- Fix: Use `chart-window-stats rdao-market-stats` and assert that exact shared-grid binding in the marketing-page regression test. This is an application-only presentation correction; Solidity, ABIs, bytecode, APIs, databases, and onchain state are unchanged.
+- Verification: All 25 web test files and 88 tests, web typecheck, web lint, and frozen Schema-20 contract-closure verification pass.
+- Follow-up: Build and preview the shared release, verify the statistics grid on desktop/mobile Devnet, then promote the same application identity through Testnet and the signed Mainnet updater.
+
 ### 2026-08-07 - RDAO Ownership and Trades live on Testnet and Mainnet
 
 - Result: Application source `b9cbd7569185e9478a41057b945b98e2f1e5d5c5` is live on Testnet as immutable release `/opt/robyn/testnet-releases/schema20-b9cbd75`. The complete chain-46630 verifier passes, all six keyless services are online with no keeper, and public desktop/mobile browser acceptance passed for the paginated Ownership and Trades tabs with no page overflow or console errors.

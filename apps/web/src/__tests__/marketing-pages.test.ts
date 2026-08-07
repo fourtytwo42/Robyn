@@ -67,6 +67,7 @@ describe("marketing pages", () => {
     expect(market).toContain("state.market?.recentTrades");
     expect(marketTabs).toContain("rewardEconomy !== undefined");
     expect(market).toContain("Trade RDAO");
+    expect(market).toContain('className="chart-window-stats rdao-market-stats"');
     expect(market).toContain(
       'finalized\n                  ? "Bonding complete"',
     );

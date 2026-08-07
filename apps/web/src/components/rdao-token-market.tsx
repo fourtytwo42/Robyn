@@ -278,7 +278,7 @@ function BondingCurveChart({ state }: { state: RdaoMarketState }) {
         </svg>
       </div>
       <dl
-        className="market-window-stats rdao-market-stats"
+        className="chart-window-stats rdao-market-stats"
         aria-label="RDAO sale statistics"
       >
         <div>
