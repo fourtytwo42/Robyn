@@ -105,11 +105,13 @@
 ## Current State
 
 - Schema-20 is live and reconciled on Devnet, Testnet, and Mainnet. Mainnet Schema-19 is guardian-paused and archived; no user-created Schema-20 launch exists yet, and the RDAO public sale is the only live Mainnet market.
+- RDAO market analytics and the launch-token-style Ownership/Trades interface are implemented and pushed at application SHA `7883da8b4d311678b5e53c553b1233c3cd7af6b8`. The final immutable Testnet artifact is `/opt/robyn/testnet-releases/schema20-7883da8`; canonical Testnet preview data reports one beneficial holder, three bonding trades, staking rolled into its owner, and separately labeled permanent-liquidity custody. Public rollout is pending because the staging VM reached the fail-closed 85% disk threshold and privileged cleanup/promotion is required.
 - Baseline candidate `5409e961257e2b654dc4fc5a08a1b54fd61ca58a` passed the complete fast Schema-20 gate on seed `2087001`: compile, 1,024-fuzz deterministic suite, four invariant suites, 512-wallet/32-launch/25,000-action/20-seed simulation, isolated receipt broadcast, 90/80 coverage validation, and checksums. Evidence: `/home/hendo420/robyn-evidence/devnet-torture/5409e961257e2b654dc4fc5a08a1b54fd61ca58a/20260807-schema20-fast-01`.
 - Public-network RDAO support is now implemented and pushed at `4b6f312`: Schema-20 Testnet/Mainnet renders the token-style public RDAO market at `/rdao`, the full workspace at `/dao`, bypasses the legacy holder gate, and labels the active network dynamically. All 88 web tests, typecheck, and lint pass. This application change requires fresh fast and deep qualification on the eventual rollout SHA.
 
 ## Open Follow-ups
 
+- Restore staging root disk below the 85% indexer threshold using privileged removal of obsolete immutable release caches or volume expansion, restart/catch up scoped indexers, promote `schema20-7883da8` with a fresh Testnet database rebuild, complete live Testnet acceptance, then create and promote the signed Mainnet application release. Do not bypass the disk, indexer, or signed-release gates.
 - Reconcile the Schema-20 contract branch, marketing/RDAO UI changes, existing Schema-19 promotion tooling, live databases/services, network funding, and current route/catalog state.
 - Add or adapt exact Schema-20 Testnet/Mainnet deployment, journal, verifier, reconciliation, application-release, and rollback tooling before broadcasting.
 
