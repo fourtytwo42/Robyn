@@ -5,13 +5,12 @@ import { mkdir, open, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  createPublicClient, createWalletClient, defineChain, encodeFunctionData, getAddress, http,
-  keccak256, maxUint160, maxUint256, parseAbi, parseEther, stringToHex, zeroAddress,
+  createPublicClient, createWalletClient, defineChain, encodeDeployData, encodeFunctionData, getAddress, http,
+  keccak256, parseAbi, parseEther, stringToHex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { parseCastDecryptedPrivateKey } from "./lib/campaign-keystore.mjs";
 import { classifyCanaryJournal } from "./lib/mainnet-canary-journal.mjs";
-import { encodeUniversalV4SingleSwap } from "./lib/v4-universal-router.mjs";
 
 const stages = new Set(["verify", "routes", "stake-activate", "rdao-sale", "rdao-graduate", "rdao-rewards", "launch", "maintenance-claims", "reconcile", "status"]);
 const [stage, manifestArgument, evidenceArgument] = process.argv.slice(2);
@@ -88,7 +87,7 @@ const submit = async (phase, label, to, data, value = 0n) => {
     try {
       const receipt = await client.getTransactionReceipt({ hash: classified.activeIntent.transactionHash });
       if (receipt.status !== "success") throw new Error(`${logicalKey} reverted`);
-      await append({ type: "receipt", recordedAt: new Date().toISOString(), logicalKey, idempotencyKey: classified.activeIntent.idempotencyKey, phase, label, transactionHash: receipt.transactionHash, blockNumber: receipt.blockNumber.toString(), status: receipt.status, gasUsed: receipt.gasUsed.toString(), effectiveGasPriceWei: receipt.effectiveGasPrice.toString(), receiptDigest: receiptDigest(receipt) });
+      await append({ type: "receipt", recordedAt: new Date().toISOString(), logicalKey, idempotencyKey: classified.activeIntent.idempotencyKey, phase, label, transactionHash: receipt.transactionHash, blockNumber: receipt.blockNumber.toString(), status: receipt.status, gasUsed: receipt.gasUsed.toString(), effectiveGasPriceWei: receipt.effectiveGasPrice.toString(), contractAddress: receipt.contractAddress, receiptDigest: receiptDigest(receipt) });
       return receipt;
     } catch (error) { if (!missing(error)) throw error; }
     throw new Error(`${logicalKey} has an unresolved signed intent; replay prohibited`);
@@ -112,7 +111,7 @@ const submit = async (phase, label, to, data, value = 0n) => {
     const transactionHash = await wallet.sendTransaction(request);
     const receipt = await client.waitForTransactionReceipt({ hash: transactionHash, timeout: 180_000 });
     if (receipt.status !== "success") throw new Error(`${logicalKey} reverted`);
-    await append({ type: "receipt", recordedAt: new Date().toISOString(), logicalKey, idempotencyKey, phase, label, transactionHash, blockNumber: receipt.blockNumber.toString(), status: receipt.status, gasUsed: receipt.gasUsed.toString(), effectiveGasPriceWei: receipt.effectiveGasPrice.toString(), receiptDigest: receiptDigest(receipt) });
+    await append({ type: "receipt", recordedAt: new Date().toISOString(), logicalKey, idempotencyKey, phase, label, transactionHash, blockNumber: receipt.blockNumber.toString(), status: receipt.status, gasUsed: receipt.gasUsed.toString(), effectiveGasPriceWei: receipt.effectiveGasPrice.toString(), contractAddress: receipt.contractAddress, receiptDigest: receiptDigest(receipt) });
     return receipt;
   }
   const serialized = await wallet.signTransaction(request);
@@ -129,7 +128,7 @@ const submit = async (phase, label, to, data, value = 0n) => {
   if (published !== transactionHash) throw new Error(`${logicalKey} transaction hash changed`);
   const receipt = await client.waitForTransactionReceipt({ hash: transactionHash, timeout: 180_000 });
   if (receipt.status !== "success") throw new Error(`${logicalKey} reverted`);
-  await append({ type: "receipt", recordedAt: new Date().toISOString(), logicalKey, idempotencyKey, phase, label, transactionHash, blockNumber: receipt.blockNumber.toString(), status: receipt.status, gasUsed: receipt.gasUsed.toString(), effectiveGasPriceWei: receipt.effectiveGasPrice.toString(), receiptDigest: receiptDigest(receipt) });
+  await append({ type: "receipt", recordedAt: new Date().toISOString(), logicalKey, idempotencyKey, phase, label, transactionHash, blockNumber: receipt.blockNumber.toString(), status: receipt.status, gasUsed: receipt.gasUsed.toString(), effectiveGasPriceWei: receipt.effectiveGasPrice.toString(), contractAddress: receipt.contractAddress, receiptDigest: receiptDigest(receipt) });
   return receipt;
 };
 const artifact = async (name) => JSON.parse(await readFile(path.join(repoRoot, "packages/contracts/out", `${name}.sol`, `${name}.json`), "utf8"));
@@ -152,9 +151,6 @@ const waitUntil = async (target) => {
 const mark = async (name, extra = {}) => { if (!state.completedStages.includes(name)) state.completedStages.push(name); Object.assign(state, extra); await saveState(); };
 const erc20 = parseAbi(["function totalSupply() view returns (uint256)", "function balanceOf(address) view returns (uint256)", "function approve(address,uint256) returns (bool)", "function allowance(address,address) view returns (uint256)"]);
 const wethAbi = parseAbi(["function deposit() payable", "function balanceOf(address) view returns (uint256)", "function approve(address,uint256) returns (bool)"]);
-const permit2Abi = parseAbi(["function approve(address token,address spender,uint160 amount,uint48 expiration)"]);
-const universalAbi = parseAbi(["function execute(bytes commands,bytes[] inputs,uint256 deadline) payable"]);
-const quoterAbi = parseAbi(["function quoteExactInputSingle(((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) poolKey,bool zeroForOne,uint128 exactAmount,bytes hookData) params) returns (uint256 amountOut,uint256 gasEstimate)"]);
 
 if (stage === "verify" || stage === "status") {
   process.stdout.write(`${json({ stage, chainId: manifest.chainId, toolingSha, blockNumber: await client.getBlockNumber(), balanceWei: await client.getBalance({ address: manifest.deployer }), launchMode: Number(await read(contracts.coordinator, built.coordinator.abi, "launchMode")), conversionsPaused: await read(contracts.assetRouter, built.router.abi, "conversionsPaused"), state })}\n`);
@@ -220,14 +216,12 @@ if (stage === "rdao-rewards") {
   const poolKey = await read(contracts.rdaoLiquidityLocker, built.rdaoLocker.abi, "poolKey");
   const input = manifest.chainId === 46630 ? 100_000_000_000_000n : 1_000_000_000_000_000n;
   await write(stage, "wrap", contracts.wrappedNative, wethAbi, "deposit", [], input);
-  await write(stage, "approve-weth-permit2", contracts.wrappedNative, erc20, "approve", [contracts.permit2, maxUint256]);
-  await write(stage, "permit2-weth-router", contracts.permit2, permit2Abi, "approve", [contracts.wrappedNative, contracts.universalRouter, maxUint160, (await latestTime()) + 3600n]);
-  const zeroForOne = poolKey.currency0.toLowerCase() === contracts.wrappedNative.toLowerCase();
-  const quote = await read(contracts.quoter, quoterAbi, "quoteExactInputSingle", [{ poolKey, zeroForOne, exactAmount: input, hookData: "0x" }]);
-  const swap = encodeUniversalV4SingleSwap({ poolKey, zeroForOne, amount: input, limit: (quote[0] * 99n) / 100n, refundRecipient: account.address });
-  await write(stage, "v4-trade", contracts.universalRouter, universalAbi, "execute", [swap.commands, swap.inputs, await deadline()]);
-  await write(stage, "clear-permit2", contracts.permit2, permit2Abi, "approve", [contracts.wrappedNative, contracts.universalRouter, 0n, 0n]);
-  await write(stage, "clear-weth", contracts.wrappedNative, erc20, "approve", [contracts.permit2, 0n]);
+  const traderArtifact = JSON.parse(await readFile(path.join(repoRoot, "packages/contracts/out/RobynRdaoV4LiquidityLocker.t.sol/Schema20RdaoV4Trader.json"), "utf8"));
+  const traderReceipt = await submit(stage, "deploy-pool-bound-trader", undefined, encodeDeployData({ abi: traderArtifact.abi, bytecode: traderArtifact.bytecode.object, args: [contracts.poolManager, poolKey] }));
+  const trader = getAddress(traderReceipt.contractAddress);
+  await write(stage, "approve-weth-trader", contracts.wrappedNative, erc20, "approve", [trader, input]);
+  await write(stage, "v4-trade", trader, traderArtifact.abi, "swap", [contracts.wrappedNative, input, account.address]);
+  if (await read(contracts.wrappedNative, erc20, "allowance", [account.address, trader]) !== 0n) throw new Error("qualification trader allowance remained");
   await write(stage, "harvest", contracts.rdaoLiquidityLocker, built.rdaoLocker.abi, "harvest", [0n, await deadline()]);
   const stream = await read(contracts.rdaoStaking, built.staking.abi, "ordinaryStream");
   await waitUntil(stream[1]);
