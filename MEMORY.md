@@ -2,12 +2,12 @@
 
 ## Active Handoff
 
-### 2026-08-07 - RDAO Ownership and Trades live on Testnet; corrected production promotion pending
+### 2026-08-07 - RDAO Ownership and Trades live on Testnet and Mainnet
 
 - Result: Application source `b9cbd7569185e9478a41057b945b98e2f1e5d5c5` is live on Testnet as immutable release `/opt/robyn/testnet-releases/schema20-b9cbd75`. The complete chain-46630 verifier passes, all six keyless services are online with no keeper, and public desktop/mobile browser acceptance passed for the paginated Ownership and Trades tabs with no page overflow or console errors.
 - Evidence: `/home/hendo420/robyn-evidence/schema20-testnet/rdao-market-b9cbd75-01`; its `SHA256SUMS` file has SHA-256 `24aefdc732a9b13ec1136508036e236ff6fada1731f9ef8baadc70f927145e6f`.
-- Production guardrail: Signed release `mainnet-prod-20260807-df25838` was rejected before cutover because staging's release ledger incorrectly named `e6aa01a...` as the required previous release. Production remained healthy on verified source `9fa8414b8ac248e52bdf9dfc5371eceeeadb9ac4` and tag `mainnet-prod-20260807-9fa8414`.
-- Follow-up: Synchronize the staging release ledger to the verified production identity, create a fresh documentation checkpoint, regenerate acceptance, publish a new signed tag with `requiredPreviousRelease=9fa8414...`, allow the production updater to deploy it, then run public Mainnet API and responsive browser acceptance. Never mutate or reuse the rejected signed tag.
+- Production guardrail: Signed release `mainnet-prod-20260807-df25838` was rejected before cutover because staging's release ledger incorrectly named `e6aa01a...` as the required previous release. Production remained healthy on verified source `9fa8414b8ac248e52bdf9dfc5371eceeeadb9ac4`; the rejected signed tag remains immutable and was never reused.
+- Production result: Corrected signed release `mainnet-prod-20260807-da87f3a` deployed from source `da87f3ab579aa9e03589c62a01c7448fa42f3340` with exact predecessor `9fa8414...`. All six keyless PM2 services are online, API/indexer/projector health reports zero lag, and public `/rdao` desktop/mobile acceptance passed Ownership, the truthful zero-trade state, no page overflow, and zero browser logs. No Mainnet or other onchain transaction occurred.
 
 ### 2026-08-07 - RDAO analytics Testnet cutover recovered; self-contained verifier fix required
 
@@ -121,13 +121,13 @@
 ## Current State
 
 - Schema-20 is live and reconciled on Devnet, Testnet, and Mainnet. Mainnet Schema-19 is guardian-paused and archived; no user-created Schema-20 launch exists yet, and the RDAO public sale is the only live Mainnet market.
-- RDAO market analytics and the launch-token-style Ownership/Trades interface are implemented at application SHA `b9cbd7569185e9478a41057b945b98e2f1e5d5c5`. The final immutable Testnet artifact is `/opt/robyn/testnet-releases/schema20-b9cbd75`; canonical public Testnet data reports one beneficial holder, four bonding trades, staking rolled into its owner, and separately labeled permanent-liquidity custody. Mainnet production remains on `9fa8414...` until a corrected signed release passes its exact previous-release guard.
+- RDAO market analytics and the launch-token-style Ownership/Trades interface are implemented at application SHA `b9cbd7569185e9478a41057b945b98e2f1e5d5c5`. The final immutable Testnet artifact is `/opt/robyn/testnet-releases/schema20-b9cbd75`; canonical public Testnet data reports one beneficial holder, four bonding trades, staking rolled into its owner, and separately labeled permanent-liquidity custody. Mainnet production serves the same application identity through signed release `mainnet-prod-20260807-da87f3a`.
 - Baseline candidate `5409e961257e2b654dc4fc5a08a1b54fd61ca58a` passed the complete fast Schema-20 gate on seed `2087001`: compile, 1,024-fuzz deterministic suite, four invariant suites, 512-wallet/32-launch/25,000-action/20-seed simulation, isolated receipt broadcast, 90/80 coverage validation, and checksums. Evidence: `/home/hendo420/robyn-evidence/devnet-torture/5409e961257e2b654dc4fc5a08a1b54fd61ca58a/20260807-schema20-fast-01`.
 - Public-network RDAO support is now implemented and pushed at `4b6f312`: Schema-20 Testnet/Mainnet renders the token-style public RDAO market at `/rdao`, the full workspace at `/dao`, bypasses the legacy holder gate, and labels the active network dynamically. All 88 web tests, typecheck, and lint pass. This application change requires fresh fast and deep qualification on the eventual rollout SHA.
 
 ## Open Follow-ups
 
-- Publish and promote a replacement signed Mainnet application release whose required previous release is the verified active production source `9fa8414b8ac248e52bdf9dfc5371eceeeadb9ac4`; then complete public API and responsive browser acceptance. The rejected `mainnet-prod-20260807-df25838` tag must remain immutable and must not be reused.
+- Continue normal production monitoring. The rejected `mainnet-prod-20260807-df25838` tag remains immutable and must not be reused; future promotions use the synchronized staging release ledger, currently `da87f3ab579aa9e03589c62a01c7448fa42f3340`.
 - Reconcile the Schema-20 contract branch, marketing/RDAO UI changes, existing Schema-19 promotion tooling, live databases/services, network funding, and current route/catalog state.
 - Add or adapt exact Schema-20 Testnet/Mainnet deployment, journal, verifier, reconciliation, application-release, and rollback tooling before broadcasting.
 
