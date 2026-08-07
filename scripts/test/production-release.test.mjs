@@ -357,6 +357,8 @@ test("reproducibility smoke server is isolated and cleaned as a process group", 
   );
   assert.match(verifier, /setsid pnpm --filter @robyn\/web start/);
   assert.match(verifier, /kill -- "-\$\{serve_pid\}"/);
+  assert.match(verifier, /127\.0\.0\.1:3300\/security/);
+  assert.match(verifier, /Know what moves/);
 });
 
 test("Mainnet application finalization is independent of contract build output", () => {

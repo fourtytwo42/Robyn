@@ -143,8 +143,8 @@ cleanup_serve() {
 trap cleanup_serve EXIT
 served=0
 for _ in {1..60}; do
-  if curl -fsS --max-time 3 http://127.0.0.1:3300/discover \
-    >"${output}/second-build-discover.html" 2>/dev/null; then
+  if curl -fsS --max-time 3 http://127.0.0.1:3300/security \
+    >"${output}/second-build-security.html" 2>/dev/null; then
     served=1
     break
   fi
@@ -154,8 +154,7 @@ if [[ "${served}" != "1" ]]; then
   echo "Second clean build did not serve successfully." >&2
   exit 1
 fi
-grep -Eq 'Development network only|Controlled development network' \
-  "${output}/second-build-discover.html"
+grep -Fq 'Know what moves' "${output}/second-build-security.html"
 cleanup_serve
 trap - EXIT
 
