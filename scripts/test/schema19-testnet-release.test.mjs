@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
 test("Schema-19 and Schema-20 Testnet release verifier persists qualified state evidence", async () => {
@@ -54,4 +54,21 @@ test("Schema-19 qualified verification requires maintenance and complete asset p
   assert.match(source, /qualified Schema-19 asset catalog mismatch/);
   assert.match(source, /tasksPerUserAction !== 1/);
   assert.match(source, /catalogAssets\.length !== rewardAssets\.length/);
+});
+
+test("every numbered database migration records its own ledger version", async () => {
+  const files = (await readdir("packages/db/migrations"))
+    .filter((file) => /^\d{4}_[a-z0-9_]+\.sql$/.test(file))
+    .sort();
+
+  for (const file of files) {
+    const version = file.replace(/\.sql$/, "");
+    const source = await readFile(`packages/db/migrations/${file}`, "utf8");
+    assert.match(
+      source,
+      new RegExp(`INSERT\\s+INTO\\s+schema_migrations\\s*\\(version\\)`, "i"),
+      `${file} must write the migration ledger`,
+    );
+    assert.match(source, new RegExp(`['\"]${version}['\"]`));
+  }
 });

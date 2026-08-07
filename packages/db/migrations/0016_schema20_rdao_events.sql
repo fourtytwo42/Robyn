@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE TABLE IF NOT EXISTS schema20_rdao_events (
   chain_id integer NOT NULL,
   transaction_hash text NOT NULL,
@@ -19,3 +21,9 @@ CREATE INDEX IF NOT EXISTS schema20_rdao_events_account_idx
   ON schema20_rdao_events (chain_id, account);
 CREATE INDEX IF NOT EXISTS schema20_rdao_events_source_idx
   ON schema20_rdao_events (chain_id, source, event_name);
+
+INSERT INTO schema_migrations(version)
+VALUES ('0016_schema20_rdao_events')
+ON CONFLICT (version) DO NOTHING;
+
+COMMIT;
