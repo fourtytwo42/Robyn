@@ -62,6 +62,14 @@
     "atomicLaunchCoordinator": "0xa70FE1A6894aD807983e5F00fd593B324BAf1D4A",
     "coordinator": "0xa70FE1A6894aD807983e5F00fd593B324BAf1D4A"
   },
+  "v4Venue": {
+    "poolManager": "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+    "positionManager": "0x58daec3116aae6D93017bAAea7749052E8a04fA7",
+    "quoter": "0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94",
+    "universalRouter": "0x06AfBA43Fd06227fA663b0DAecF536f6EaA6bf99",
+    "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "stateView": "0xF3334192D15450CdD385c8B70e03f9A6bD9E673b"
+  },
   "runtimeCodeHashes": {
     "assetRouter": "0x7f9bd634fce12fc8bd3fe36bc6d3ba407c76d38f83ba8a24588ccc324b740034",
     "launchDeployer": "0x5e9049e20a399459cbad4a7508558ab1aeff31f23f0236d31cda0f4ec55c821a",

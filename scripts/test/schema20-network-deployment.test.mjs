@@ -175,6 +175,8 @@ test("Schema-20 application manifests declare the scoped v4 venue", async () => 
     "utf8",
   );
   assert.match(source, /liquidityVenue: "uniswap-v4"/);
+  assert.match(source, /v4Venue:\s*\{/);
+  assert.match(source, /quoter: prepared\.external\.quoter/);
 });
 
 test("Mainnet capture requalifies routes instead of copying stale thresholds", async () => {
