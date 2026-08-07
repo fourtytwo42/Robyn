@@ -187,4 +187,8 @@ test("Mainnet capture requalifies routes instead of copying stale thresholds", a
   assert.match(source, /poolId: route\.poolId/);
   assert.match(source, /catalog-candidate/);
   assert.match(source, /candidatePools/);
+  assert.match(source, /mainnetAssetPolicy\.assets/);
+  assert.match(source, /tokenDecimalAdjustment/);
+  assert.match(source, /routeQualificationRejections/);
+  assert.match(source, /fewer than five safe Mainnet stock routes plus WETH/);
 });
