@@ -2,6 +2,7 @@
   "schemaVersion": 20,
   "environment": "robyn-testnet",
   "chainId": 46630,
+  "liquidityVenue": "uniswap-v4",
   "deploymentBlock": 97928882,
   "gitCommit": "e7522ed13550f3bb247649735c64ab0a4dc6550c",
   "gitSha": "e7522ed13550f3bb247649735c64ab0a4dc6550c",

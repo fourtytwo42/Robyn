@@ -149,6 +149,7 @@ const manifest = {
   schemaVersion: 20,
   environment: prepared.environment,
   chainId: prepared.chainId,
+  liquidityVenue: "uniswap-v4",
   deploymentBlock: Number(receipts[0].blockNumber),
   gitCommit: prepared.toolingSha,
   gitSha: prepared.toolingSha,
