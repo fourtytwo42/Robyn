@@ -2,6 +2,13 @@
 
 ## Active Handoff
 
+### 2026-08-07 - Mainnet rehearsal exposed stale route thresholds; live requalification added
+
+- Context: The first exact Schema-20 Mainnet fork deployment completed all 46 transactions, but read-only acceptance stopped before any lifecycle action because the inherited Schema-19 GOOGL liquidity floor was 5.36 times current liquidity and its reference tick was stale. The route still produced healthy bounded quotes, so this was a capture-policy defect rather than a missing pool.
+- Decision: Mainnet Schema-20 input capture now rebuilds every stock route from the exact canonical pool ID, current nonzero liquidity, a fresh completed Chainlink ETH/USD and stock/USD round, an unpaused stock oracle, an oracle-derived reference tick within the unchanged deviation bound, and a nine-point quote ladder. A route must support exact-input and exact-output in both directions, at least 0.001 ETH useful capacity, and at least 95% round-trip recovery. The largest passing amount becomes the cap; 50% of observed liquidity becomes a nonzero emergency floor while quotes remain the primary admission signal.
+- Validation: Frozen contract closure, syntax checks, focused deployment tests, and capture-policy assertions pass. The fork evidence at `/home/hendo420/robyn-evidence/schema20-mainnet/preflight-b56e424-01` remains diagnostic and invalidated; no Mainnet transaction was broadcast.
+- Follow-up: Commit/push the new tooling SHA, capture fresh live route inputs, repeat the complete Mainnet deployment and lifecycle rehearsal from a fresh LAN-sourced fork, then require exact funding/reserve and retirement checks before any live Mainnet broadcast.
+
 ### 2026-08-07 - Schema-20 Testnet application cutover passed on private ingress
 
 - Context: Live Schema-20 Testnet contracts and the complete lifecycle were already reconciled. The application release `schema20-0dbc8ee` was built twice reproducibly from clean pushed SHA `0dbc8ee13d4b7ff6987c8a001eb375503e02a5e8` and promoted against a fresh scoped database.

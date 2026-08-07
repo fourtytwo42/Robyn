@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   createPublicClient,
+  encodeAbiParameters,
   getAddress,
   http,
   keccak256,
@@ -74,7 +75,7 @@ if (totalSupply !== parseEther("1000000000") || deployerRdao !== totalSupply) {
 }
 const sourceRoutes = base.assetRoutes;
 if (!Array.isArray(sourceRoutes) || sourceRoutes.length < 6) throw new Error("qualified route definitions missing");
-const routes = sourceRoutes.map((route) => {
+const mapSourceRoutes = () => sourceRoutes.map((route) => {
   const enabled = true;
   if (route.kind === "wrapped-native") {
     return {
@@ -104,8 +105,10 @@ const routes = sourceRoutes.map((route) => {
     verificationClass: route.verificationClass,
   };
 });
+let routes = null;
 let sale;
 let saleOracleEvidence = null;
+let ethUsdReference = null;
 if (base.chainId === 4663) {
   const wethCatalog = base.assetCatalog?.assets?.find((asset) => getAddress(asset.address) === external.wrappedNative);
   const feedAddress = getAddress(wethCatalog?.referencePrice?.feedAddress);
@@ -155,6 +158,7 @@ if (base.chainId === 4663) {
     ownerTargetUsd: "300000",
     liquidityTargetUsd: "240000",
   };
+  ethUsdReference = { feedAddress, decimals: Number(decimals), roundId, answer, updatedAt, heartbeat, latestBlock };
 } else {
   const payout = parseEther("0.002");
   const liquidity = parseEther("0.0016");
@@ -173,6 +177,186 @@ if (base.chainId === 4663) {
     maximumRdaoResidual: "1000000",
   };
   saleOracleEvidence = { kind: "accelerated-testnet-fixture", ownerTargetWei: payout.toString(), liquidityTargetWei: liquidity.toString() };
+}
+if (base.chainId === 4663) {
+  const stateViewAbi = parseAbi([
+    "function getLiquidity(bytes32 poolId) view returns (uint128)",
+    "function getSlot0(bytes32 poolId) view returns (uint160 sqrtPriceX96,int24 tick,uint24 protocolFee,uint24 lpFee)",
+  ]);
+  const quoterAbi = parseAbi([
+    "function quoteExactInputSingle(((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) poolKey,bool zeroForOne,uint128 exactAmount,bytes hookData) params) returns (uint256 amountOut,uint256 gasEstimate)",
+    "function quoteExactOutputSingle(((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) poolKey,bool zeroForOne,uint128 exactAmount,bytes hookData) params) returns (uint256 amountIn,uint256 gasEstimate)",
+  ]);
+  const feedAbi = parseAbi([
+    "function decimals() view returns (uint8)",
+    "function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)",
+  ]);
+  const pauseAbi = parseAbi(["function oraclePaused() view returns (bool)"]);
+  const quote = async (functionName, poolKey, zeroForOne, exactAmount) => {
+    const simulation = await client.simulateContract({
+      address: external.quoter,
+      abi: quoterAbi,
+      functionName,
+      args: [{ poolKey, zeroForOne, exactAmount, hookData: "0x" }],
+    });
+    return simulation.result;
+  };
+  const catalogByAddress = new Map(
+    (base.assetCatalog?.assets ?? []).map((asset) => [getAddress(asset.address).toLowerCase(), asset]),
+  );
+  const ladder = [
+    100_000_000_000_000n,
+    250_000_000_000_000n,
+    500_000_000_000_000n,
+    1_000_000_000_000_000n,
+    2_500_000_000_000_000n,
+    5_000_000_000_000_000n,
+    10_000_000_000_000_000n,
+    25_000_000_000_000_000n,
+    50_000_000_000_000_000n,
+  ];
+  routes = [];
+  for (const sourceRoute of sourceRoutes) {
+    const asset = getAddress(sourceRoute.address);
+    if (sourceRoute.kind === "wrapped-native") {
+      if (asset !== external.wrappedNative) throw new Error("Mainnet wrapped-native route is not canonical WETH");
+      routes.push({
+        symbol: sourceRoute.symbol,
+        asset,
+        kind: sourceRoute.kind,
+        enabled: true,
+        maximumNativeInput: String(sourceRoute.maximumNativeInput),
+      });
+      continue;
+    }
+    const catalog = catalogByAddress.get(asset.toLowerCase());
+    if (!catalog?.pool || catalog.route?.kind !== "uniswap-v4") {
+      throw new Error(`missing canonical Mainnet catalog pool for ${sourceRoute.symbol}`);
+    }
+    const poolKey = {
+      currency0: zeroAddress,
+      currency1: asset,
+      fee: Number(sourceRoute.fee),
+      tickSpacing: Number(sourceRoute.tickSpacing),
+      hooks: getAddress(sourceRoute.hooks ?? zeroAddress),
+    };
+    const poolId = keccak256(encodeAbiParameters(
+      [{ type: "address" }, { type: "address" }, { type: "uint24" }, { type: "int24" }, { type: "address" }],
+      [poolKey.currency0, poolKey.currency1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks],
+    ));
+    if (poolId.toLowerCase() !== String(catalog.pool.poolId).toLowerCase()) {
+      throw new Error(`Mainnet pool identity mismatch for ${sourceRoute.symbol}`);
+    }
+    const feedAddress = getAddress(catalog.referencePrice?.feedAddress);
+    const heartbeat = Number(catalog.referencePrice?.heartbeatSeconds);
+    const [liquidity, slot0, feedDecimals, feedRound, assetCode, oraclePaused] = await Promise.all([
+      client.readContract({ address: external.stateView, abi: stateViewAbi, functionName: "getLiquidity", args: [poolId] }),
+      client.readContract({ address: external.stateView, abi: stateViewAbi, functionName: "getSlot0", args: [poolId] }),
+      client.readContract({ address: feedAddress, abi: feedAbi, functionName: "decimals" }),
+      client.readContract({ address: feedAddress, abi: feedAbi, functionName: "latestRoundData" }),
+      client.getCode({ address: asset }),
+      catalog.referencePrice?.oraclePauseCheck || catalog.referencePrice?.oraclePausedCheck
+        ? client.readContract({ address: asset, abi: pauseAbi, functionName: "oraclePaused" })
+        : false,
+    ]);
+    const [feedRoundId, feedAnswer, , feedUpdatedAt, feedAnsweredInRound] = feedRound;
+    const feedAgeSeconds = Number(ethUsdReference.latestBlock.timestamp - feedUpdatedAt);
+    if (!assetCode || assetCode === "0x" || liquidity === 0n || slot0[0] === 0n) {
+      throw new Error(`missing Mainnet route runtime or liquidity for ${sourceRoute.symbol}`);
+    }
+    if (feedAnswer <= 0n || feedUpdatedAt === 0n || feedAnsweredInRound < feedRoundId || feedAgeSeconds > heartbeat || oraclePaused) {
+      throw new Error(`unhealthy Mainnet Chainlink reference for ${sourceRoute.symbol}`);
+    }
+    const ethUsd = Number(ethUsdReference.answer) / (10 ** ethUsdReference.decimals);
+    const assetUsd = Number(feedAnswer) / (10 ** Number(feedDecimals));
+    const referenceTick = Math.round(Math.log(ethUsd / assetUsd) / Math.log(1.0001));
+    const spotTick = Number(slot0[1]);
+    const maximumReferenceTickDeviation = Number(sourceRoute.maximumReferenceTickDeviation ?? 198);
+    if (!Number.isSafeInteger(referenceTick) || Math.abs(spotTick - referenceTick) > maximumReferenceTickDeviation) {
+      throw new Error(`Mainnet pool/reference deviation is unsafe for ${sourceRoute.symbol}: spot=${spotTick} reference=${referenceTick}`);
+    }
+    const maximumCandidate = BigInt(sourceRoute.maximumNativeInput);
+    const ladderResults = [];
+    for (const amount of ladder.filter((entry) => entry <= maximumCandidate)) {
+      try {
+        const [buyOutput] = await quote("quoteExactInputSingle", poolKey, true, amount);
+        const [roundTripOutput] = await quote("quoteExactInputSingle", poolKey, false, buyOutput);
+        const [assetForExactNative] = await quote("quoteExactOutputSingle", poolKey, false, amount / 2n);
+        await quote("quoteExactOutputSingle", poolKey, true, buyOutput / 2n || 1n);
+        ladderResults.push({
+          amount,
+          buyOutput,
+          roundTripOutput,
+          assetForExactNative,
+          recoveryBps: Number((roundTripOutput * 10_000n) / amount),
+          passed: true,
+        });
+      } catch (error) {
+        ladderResults.push({
+          amount,
+          passed: false,
+          failureReason: String(error?.shortMessage ?? error?.message ?? error).slice(0, 300),
+        });
+      }
+    }
+    const selected = ladderResults
+      .filter((entry) => entry.passed && entry.amount >= 1_000_000_000_000_000n && entry.recoveryBps >= 9_500)
+      .at(-1);
+    if (!selected) {
+      throw new Error(`no safe >=0.001 ETH Mainnet quote capacity for ${sourceRoute.symbol}: ${JSON.stringify(ladderResults.map((entry) => ({ amountWei: entry.amount.toString(), recoveryBps: entry.recoveryBps ?? null, failureReason: entry.failureReason ?? null })))}`);
+    }
+    const minimumLiquidity = liquidity / 2n;
+    if (minimumLiquidity === 0n) throw new Error(`zero Mainnet emergency liquidity floor for ${sourceRoute.symbol}`);
+    routes.push({
+      symbol: sourceRoute.symbol,
+      asset,
+      kind: sourceRoute.kind,
+      enabled: true,
+      poolId,
+      fee: poolKey.fee,
+      tickSpacing: poolKey.tickSpacing,
+      hooks: poolKey.hooks,
+      minimumLiquidity: minimumLiquidity.toString(),
+      maximumNativeInput: selected.amount.toString(),
+      referenceTick,
+      maximumReferenceTickDeviation,
+      enforceReferencePrice: true,
+      verificationClass: sourceRoute.verificationClass,
+      liveQualification: {
+        capturedBlock: ethUsdReference.latestBlock.number.toString(),
+        capturedBlockTimestamp: ethUsdReference.latestBlock.timestamp.toString(),
+        observedLiquidity: liquidity.toString(),
+        minimumLiquidity: minimumLiquidity.toString(),
+        liquidityFloorBps: 5_000,
+        spotTick,
+        referenceTick,
+        referenceDeviationTicks: Math.abs(spotTick - referenceTick),
+        assetUsdFeed: feedAddress,
+        assetUsdRoundId: feedRoundId.toString(),
+        assetUsdAnswer: feedAnswer.toString(),
+        assetUsdDecimals: Number(feedDecimals),
+        assetUsdUpdatedAt: feedUpdatedAt.toString(),
+        assetUsdAgeSeconds: feedAgeSeconds,
+        oraclePaused: Boolean(oraclePaused),
+        ethUsdFeed: ethUsdReference.feedAddress,
+        ethUsdRoundId: ethUsdReference.roundId.toString(),
+        selectedCapWei: selected.amount.toString(),
+        selectedRecoveryBps: selected.recoveryBps,
+        exactInputBothDirections: true,
+        exactOutputBothDirections: true,
+        quoteLadder: ladderResults.map((entry) => ({
+          amountWei: entry.amount.toString(),
+          buyOutput: entry.buyOutput?.toString() ?? null,
+          roundTripOutput: entry.roundTripOutput?.toString() ?? null,
+          recoveryBps: entry.recoveryBps ?? null,
+          passed: Boolean(entry.passed && (entry.recoveryBps ?? 0) >= 9_500),
+          failureReason: entry.failureReason ?? null,
+        })),
+      },
+    });
+  }
+} else {
+  routes = mapSourceRoutes();
 }
 const settings = base.chainId === 4663
   ? {

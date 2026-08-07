@@ -160,8 +160,9 @@ if (state.completedStages.includes(stage)) { process.stdout.write(`${JSON.string
 if (Number(await read(contracts.coordinator, built.coordinator.abi, "launchMode")) !== 2 || await read(contracts.assetRouter, built.router.abi, "conversionsPaused")) throw new Error(`${stage} requires Public mode and active conversions`);
 
 if (stage === "routes") {
-  const input = 1_000_000_000_000n;
   for (const route of manifest.assetRoutes) {
+    const input = BigInt(route.maximumNativeInput);
+    if (input < 1_000_000_000_000_000n) throw new Error(`${route.symbol} route cap is below 0.001 ETH`);
     const token = getAddress(route.asset ?? route.address);
     if (route.kind === "wrapped-native") {
       await write(stage, "WETH-wrap", contracts.assetRouter, built.router.abi, "swapExactNativeForAsset", [token, input, account.address, await deadline()], input);
@@ -172,9 +173,10 @@ if (stage === "routes") {
     const quote = await read(contracts.assetRouter, built.router.abi, "quoteNativeToAsset", [token, input]);
     const before = await read(token, erc20, "balanceOf", [account.address]);
     await write(stage, `${route.symbol}-buy`, contracts.assetRouter, built.router.abi, "swapExactNativeForAsset", [token, (quote[0] * 99n) / 100n, account.address, await deadline()], input);
-    const sell = ((await read(token, erc20, "balanceOf", [account.address])) - before) / 2n;
+    const sell = (await read(token, erc20, "balanceOf", [account.address])) - before;
     await write(stage, `${route.symbol}-approve`, token, erc20, "approve", [contracts.assetRouter, sell]);
     const reverse = await read(contracts.assetRouter, built.router.abi, "quoteAssetToNative", [token, sell]);
+    if ((reverse[0] * 10_000n) / input < 9_500n) throw new Error(`${route.symbol} live round-trip recovery is below 95%`);
     await write(stage, `${route.symbol}-sell`, contracts.assetRouter, built.router.abi, "swapExactAssetForNative", [token, sell, (reverse[0] * 99n) / 100n, account.address, await deadline()]);
     if (await read(token, erc20, "allowance", [account.address, contracts.assetRouter]) !== 0n) throw new Error(`${route.symbol} allowance remained`);
   }

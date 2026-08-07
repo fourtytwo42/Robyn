@@ -166,3 +166,20 @@ test("Schema-20 application manifests declare the scoped v4 venue", async () => 
   );
   assert.match(source, /liquidityVenue: "uniswap-v4"/);
 });
+
+test("Mainnet capture requalifies routes instead of copying stale thresholds", async () => {
+  const source = await readFile(
+    path.join(scriptsRoot, "scripts/capture-schema20-network-input.mjs"),
+    "utf8",
+  );
+  assert.match(source, /quoteExactInputSingle/);
+  assert.match(source, /quoteExactOutputSingle/);
+  assert.match(source, /entry\.amount >= 1_000_000_000_000_000n/);
+  assert.match(source, /entry\.recoveryBps >= 9_500/);
+  assert.match(source, /minimumLiquidity = liquidity \/ 2n/);
+  assert.match(
+    source,
+    /Math\.abs\(spotTick - referenceTick\) > maximumReferenceTickDeviation/,
+  );
+  assert.match(source, /oraclePaused/);
+});
