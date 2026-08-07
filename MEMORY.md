@@ -2,14 +2,18 @@
 
 ## Active Handoff
 
-### 2026-08-07 - Schema-20 Mainnet contracts deployed; application cutover in progress
+### 2026-08-07 - Schema-20 Mainnet rollout complete and public
 
 - Result: Exact candidate `19bdbdfe76c6c797684186ed655a1ae37f9e8d95` passed the complete current-state Mainnet fork rehearsal: 49/49 deployment receipts, nine protected route round trips, retained-stake activation, RDAO sale and graduation, staking rewards, one launch lifecycle, best-effort maintenance, claims, exact reconciliation, and bounded Schema-19 retirement.
 - Live deployment: All 49 Schema-20 Mainnet transactions confirmed from nonce 266 through 314. The finalized live manifest is `deployments/4663-v4-schema20.json`; deployment block is 30184368. Fixed RDAO supply, 200m sale custody, warming 800m retained stake, zero liabilities, cleared allowances, Public launch mode, active conversions, and all nine routes reconcile.
 - Legacy retirement: Schema-19 had exactly zero launches. Nine Safe guardian transactions paused launches, both conversion systems, and all six legacy routes. Schema-19 is no longer an active creation surface.
 - Funding: Post-deployment and retirement balance is above the fixed 0.02 ETH reserve. A first raw transaction submission was rejected before admission while the operator gateway relay was disabled; nonce remained 266 and the restart-safe journal recorded the rejection. Relay was enabled only for deployment/retirement and disabled again afterward.
-- Production release chain: The first signed Schema-20 application release `mainnet-prod-20260807-bee5b8a` was safely rejected before process or database mutation because the staging-side prior-release record incorrectly named `6b0fd7c`. Production journal evidence proves the actual current release is `mainnet-prod-20260804-a98217c` at source `a98217c44ddc3e6f4a239aa38113ec3fe55b0743`; the staging release-state record is corrected to that exact identity. The rejected release remains immutable diagnostic evidence and must not be reused.
-- Follow-up: Build and qualify the Schema-20 Mainnet application against the fresh scoped database, promote it with writes disabled, complete private and public browser acceptance, then enable user transaction relay and seal final evidence.
+- Production release: Signed release `mainnet-prod-20260807-9fa8414` is active from immutable source `9fa8414b8ac248e52bdf9dfc5371eceeeadb9ac4` and runtime archive SHA-256 `8d6f1edabf8e4b99b4598484d07601e230f2ab44eeb8ed47f4f28c7c036a7eac`. The scoped Schema-20 database is current with zero ingestion and projection lag, zero launches, 21 tracked protocol addresses, 37 retained logs, and no keeper.
+- Route state: WETH, GOOGL, MSFT, NVDA, SPCX, USDG, AMZN, USAR, and QQQ are enabled, live-quoted, and selectable with 96.92% to 100% bounded round-trip recovery. SPY, INTC, SLV, and GME remain honestly unavailable because no route meets the unchanged qualification policy.
+- Application acceptance: Public homepage, RDAO sale, DAO, Discover, creator, security, demo, Portfolio, shared navigation, disconnected wallet flow, and wallet-selection dialog passed in-app-browser acceptance with zero horizontal overflow. A live 0.01 ETH RDAO quote returned approximately 7,024.303536 RDAO with the exact 1% bonding fee and a 1 wei refund.
+- Relay and RPC: User-signed raw transaction relay is enabled. The production server remains keyless, LAN RPC is primary, Alchemy is probe-only with `fallbackTrafficAuthorized=false` and zero fallback CU, and admin/debug/unlocked-wallet namespaces remain blocked. An invalid `0x00` raw payload reached the LAN node and was rejected as too short without broadcasting a transaction.
+- Evidence: Final application/route/RDAO/relay/browser evidence is `/home/hendo420/robyn-evidence/schema20-mainnet/final-9fa8414-01`; its `SHA256SUMS` file has SHA-256 `6750060dbeb445fe8ef54cfd3be45a5d34e050fa61a22235821cce9e6e7a63b1`.
+- Follow-up: Monitor native PM2/systemd/Prometheus controls for the first 24 public hours. No Codex scheduled task is used. The only public market is the RDAO sale until a user creates the first Schema-20 launch.
 
 ### 2026-08-07 - Mainnet rehearsal exposed stale route thresholds; live requalification added
 
@@ -86,10 +90,9 @@
 - Result: The failed router estimate was unsigned and did not change state. Application routing must not claim the unrelated Universal Router path for RDAO until separately qualified.
 - Follow-up: Repeat the exact full-fork acceptance with the pool-bound trader, then freeze the candidate for Devnet torture.
 
-- Last verified 2026-08-07: User authorized the complete Schema-20 Devnet to Testnet to Mainnet rollout, including fresh contract deployment or replacement because Mainnet has no public launches. Work must fail closed on ambiguous receipts, RPC degradation, funding/reserve failure, runtime/calldata drift, accounting mismatch, or replay risk.
-- Active worktree: `/home/hendo420/Robyn-schema20-rollout`, branch `codex/schema20-full-rollout`, created from pushed marketing/RDAO UI commit `4c4a2db1062ffa4da567a0a3ac2f489db8569252`. The qualified Schema-20 contract ancestor is `dd7afcfaad41a8c7054b3e9b581bfd4029e88e60`; newer commits contain application, fixture, media, deployment-31337, and documentation changes.
-- Goal order: inventory and freeze one exact candidate; comprehensive Devnet torture plus browser acceptance; exact Testnet deployment and lifecycle verification; exact LAN-sourced Mainnet fork rehearsal; Mainnet deployment/application cutover and final reconciliation. Never promote a later stage before the preceding stage is sealed.
-- Current live state: Devnet serves the Schema-20 RDAO market application from immutable web release `5aa57a553c73d353d37c88b6e26abd955653ca5e`; Testnet and Mainnet remain Schema-19 until explicitly replaced by the qualified Schema-20 candidate.
+- Last verified 2026-08-07: The authorized Schema-20 Devnet, Testnet, and Mainnet rollout is complete. Continue to fail closed on ambiguous receipts, RPC degradation, funding/reserve failure, runtime/calldata drift, accounting mismatch, or replay risk.
+- Active worktree: `/home/hendo420/Robyn-schema20-rollout`, branch `codex/schema20-full-rollout`. Schema-20 contracts are frozen by `config/schema20-contract-freeze.json`; the live Mainnet application release is `mainnet-prod-20260807-9fa8414`.
+- Current live state: Schema-20 is active on Devnet, Testnet, and Mainnet. Mainnet Schema-19 is guardian-paused and archived after proving it had zero launches. Production transaction submission is enabled for user-signed raw transactions only.
 
 ## Current State
 
