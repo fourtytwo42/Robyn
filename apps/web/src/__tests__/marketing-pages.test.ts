@@ -62,7 +62,9 @@ describe("marketing pages", () => {
     expect(rdao).not.toContain("RdaoSaleSpotlight");
     expect(market).toContain("BondingCurveChart");
     expect(market).toContain("Trade RDAO");
-    expect(market).toContain('finalized\n                  ? "Bonding complete"');
+    expect(market).toContain(
+      'finalized\n                  ? "Bonding complete"',
+    );
     expect(market).toContain(
       '"Bonding is complete · permanent v4 liquidity is live"',
     );
