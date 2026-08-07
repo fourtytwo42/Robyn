@@ -2,6 +2,15 @@
 
 ## Active Handoff
 
+### 2026-08-07 - Schema-20 Testnet application cutover passed on private ingress
+
+- Context: Live Schema-20 Testnet contracts and the complete lifecycle were already reconciled. The application release `schema20-0dbc8ee` was built twice reproducibly from clean pushed SHA `0dbc8ee13d4b7ff6987c8a001eb375503e02a5e8` and promoted against a fresh scoped database.
+- Result: Six Testnet services are online from `/opt/robyn/testnet-releases/schema20-0dbc8ee`; no keeper runs. `robyn_testnet_rehearsal` has all 16 migrations, 288 scoped logs, one launch, 26 tracked addresses, one Sherwood pool ID, approximately 10.6 MB size, and bounded zero-to-14-block ingestion lag with zero projection lag. Direct verification passes all runtime hashes, six routes, fixed supplies, 800m eligible stake, exact WETH backing, permanent RDAO liquidity, cleared allowances, Public mode, and active conversions.
+- UI acceptance: A same-origin private ingress matching Nginx routing passed desktop and mobile checks for home, RDAO, DAO, Discover, token details, Portfolio, creator, security, and demo surfaces with no horizontal overflow or application console errors. The post-graduation RDAO controls were correctly disabled but had misleading connect labels; the pending application-only correction changes them to `Bonding complete` and states that permanent v4 liquidity is live.
+- Public ingress blocker: `testnet.sherwoodforest.trade` still returns 502 because root-owned Nginx has been inactive since 2026-08-04. The Schema-20 web/API processes are healthy locally. Missing sudo authority prevents repair in the current session; do not treat the Cloudflare/Nginx outage as a contract, database, or application failure.
+- Evidence: `/home/hendo420/robyn-evidence/schema20-testnet/app-cutover-0dbc8ee-01`, including `onchain-final.json`, `status-final.json`, `pm2-final.json`, database counts, and local checksums. The final Testnet manifest SHA-256 after adding `liquidityVenue` is `a7295434429ac943d81602c52eafc217f9b72b002d82aececae63a12c24492e1`.
+- Follow-up: Commit/push the post-graduation copy correction, rebuild and re-promote the application-only Testnet release, rerun private browser acceptance, then begin the exact LAN-sourced Mainnet fork rehearsal. Mainnet broadcasting remains downstream of a passing rehearsal and exact funding/reserve check.
+
 ### 2026-08-07 - Schema-20 live Testnet contracts and lifecycle passed
 
 - Context: The exact Schema-20 Testnet deployment was resumed only from confirmed journal state after the original gas ceiling stopped before nonce 3000. No confirmed or ambiguous transaction was replayed.
@@ -62,7 +71,7 @@
 
 ## Current State
 
-- Planning and live-state recovery are in progress. No Testnet or Mainnet Schema-20 transaction has been sent in this rollout.
+- Schema-20 is live and fully reconciled on Testnet; all 46 deployment transactions and every lifecycle acceptance stage passed. Mainnet remains Schema-19 and no Schema-20 Mainnet transaction has been sent.
 - Baseline candidate `5409e961257e2b654dc4fc5a08a1b54fd61ca58a` passed the complete fast Schema-20 gate on seed `2087001`: compile, 1,024-fuzz deterministic suite, four invariant suites, 512-wallet/32-launch/25,000-action/20-seed simulation, isolated receipt broadcast, 90/80 coverage validation, and checksums. Evidence: `/home/hendo420/robyn-evidence/devnet-torture/5409e961257e2b654dc4fc5a08a1b54fd61ca58a/20260807-schema20-fast-01`.
 - Public-network RDAO support is now implemented and pushed at `4b6f312`: Schema-20 Testnet/Mainnet renders the token-style public RDAO market at `/rdao`, the full workspace at `/dao`, bypasses the legacy holder gate, and labels the active network dynamically. All 88 web tests, typecheck, and lint pass. This application change requires fresh fast and deep qualification on the eventual rollout SHA.
 

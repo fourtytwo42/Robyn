@@ -555,7 +555,11 @@ export function RdaoTokenMarket({
                 disabled={state.sale.buysPaused || finalized}
                 onClick={() => void buy()}
               >
-                {account ? "Buy RDAO" : "Connect wallet to buy"}
+                {finalized
+                  ? "Bonding complete"
+                  : account
+                    ? "Buy RDAO"
+                    : "Connect wallet to buy"}
               </button>
             </>
           ) : (
@@ -579,12 +583,18 @@ export function RdaoTokenMarket({
                 disabled={finalized}
                 onClick={() => void sell()}
               >
-                {account ? "Sell RDAO" : "Connect wallet to sell"}
+                {finalized
+                  ? "Bonding complete"
+                  : account
+                    ? "Sell RDAO"
+                    : "Connect wallet to sell"}
               </button>
             </>
           )}
           <p className="trade-helper">
-            1% bonding fee · 1% quote protection · two-minute deadline
+            {finalized
+              ? "Bonding is complete · permanent v4 liquidity is live"
+              : "1% bonding fee · 1% quote protection · two-minute deadline"}
           </p>
           <p className="trade-status" role="status">
             {status}
