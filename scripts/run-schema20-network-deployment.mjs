@@ -190,8 +190,8 @@ if (stage === "verify") {
 }
 
 const defaultKeystore = prepared.chainId === 4663
-  ? "/home/hendo420/.config/robyn/wallets/robinhood-mainnet-deployer/robyn-mainnet-deployer"
-  : "/home/hendo420/.config/robyn/wallets/robinhood-testnet-deployer/robyn-testnet-deployer";
+  ? "/home/hendo420/.config/robyn/wallets/robinhood-mainnet-deployer/keystore/robyn-mainnet-deployer"
+  : "/home/hendo420/.config/robyn/wallets/robinhood-testnet-deployer/keystore/robyn-testnet-deployer";
 const defaultPassword = prepared.chainId === 4663
   ? "/home/hendo420/.config/robyn/wallets/robinhood-mainnet-deployer/password"
   : "/home/hendo420/.config/robyn/wallets/robinhood-testnet-deployer/password";
