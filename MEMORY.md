@@ -2,6 +2,14 @@
 
 ## Active Handoff
 
+### 2026-08-07 - Schema-20 public-network deployment tooling in progress
+
+- Context: The user authorized a complete Devnet, Testnet, and Mainnet Schema-20 rollout, including contract replacement if required. Mainnet Schema-19 has zero launches and the fixed RDAO supply remains wholly deployer-owned.
+- Decision: Reuse the existing Safe, RDAO, Timelock, Governor, canonical external contracts, and six qualified routes. Deploy only the fresh Schema-20 dependent stack. Configure every route and binding before funding the 200m RDAO sale allocation and staking the retained 800m.
+- Files: `scripts/lib/schema20-network-deployment.mjs`, `scripts/capture-schema20-network-input.mjs`, `scripts/prepare-schema20-network-deployment.mjs`, `scripts/run-schema20-network-deployment.mjs`, `scripts/build-schema20-funding-report.mjs`, `scripts/finalize-schema20-application-manifest.mjs`, `scripts/test/schema20-network-deployment.test.mjs`.
+- Result: The exact plan contains 46 contiguous transactions for the six-route configuration and has unit coverage for prediction, profile rejection, allocation conservation, and route-count rejection. The runner is LAN-only, validates reused runtime hashes, journals intent before broadcast, refuses confirmed or ambiguous replay, and enforces rehearsal-derived gas, fee, and reserve ceilings.
+- Follow-up: Commit and push the tooling, capture Testnet input, execute an exact Testnet fork rehearsal, build the funding report, then freeze and run the complete Devnet qualification before live Testnet deployment.
+
 - Last verified 2026-08-07: User authorized the complete Schema-20 Devnet to Testnet to Mainnet rollout, including fresh contract deployment or replacement because Mainnet has no public launches. Work must fail closed on ambiguous receipts, RPC degradation, funding/reserve failure, runtime/calldata drift, accounting mismatch, or replay risk.
 - Active worktree: `/home/hendo420/Robyn-schema20-rollout`, branch `codex/schema20-full-rollout`, created from pushed marketing/RDAO UI commit `4c4a2db1062ffa4da567a0a3ac2f489db8569252`. The qualified Schema-20 contract ancestor is `dd7afcfaad41a8c7054b3e9b581bfd4029e88e60`; newer commits contain application, fixture, media, deployment-31337, and documentation changes.
 - Goal order: inventory and freeze one exact candidate; comprehensive Devnet torture plus browser acceptance; exact Testnet deployment and lifecycle verification; exact LAN-sourced Mainnet fork rehearsal; Mainnet deployment/application cutover and final reconciliation. Never promote a later stage before the preceding stage is sealed.
