@@ -63,7 +63,13 @@ function MarketLink({
   );
 }
 
-export function MarketTapeClient({ markets }: { markets: TapeMarket[] }) {
+export function MarketTapeClient({
+  markets,
+  unavailable = false,
+}: {
+  markets: TapeMarket[];
+  unavailable?: boolean;
+}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const probeRef = useRef<HTMLDivElement>(null);
   const [repeatCount, setRepeatCount] = useState(1);
@@ -99,7 +105,11 @@ export function MarketTapeClient({ markets }: { markets: TapeMarket[] }) {
     <aside className="market-tape" aria-label="Indexed 24 hour market tape">
       <div className="market-tape-track" ref={trackRef}>
         {markets.length === 0 ? (
-          <span className="market-tape-empty">Market data is loading.</span>
+          <span className="market-tape-empty">
+            {unavailable
+              ? "Market data is temporarily unavailable."
+              : "No Sherwood markets yet. The first launch is waiting."}
+          </span>
         ) : (
           <>
             <div
