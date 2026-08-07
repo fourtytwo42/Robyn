@@ -184,7 +184,20 @@ for (let index = 0; index < prepared.transactions.length; index += 1) {
   }
 }
 if (stage === "verify") {
-  if (!rehearsal && balance < BigInt(funding.requiredBalanceWei)) throw new Error("Schema-20 funding fell below sealed requirement");
+  if (!rehearsal) {
+    const remainingExecutionCeiling = funding.transactionGasCeilings
+      .slice(confirmed)
+      .reduce(
+        (sum, transaction) =>
+          sum + BigInt(transaction.gasCeiling) * BigInt(funding.maxFeePerGasWei)
+            + BigInt(funding.l1FeePerTransactionWei),
+        0n,
+      );
+    const requiredRemainingBalance = BigInt(funding.reserveWei) + remainingExecutionCeiling;
+    if (balance < requiredRemainingBalance) {
+      throw new Error("Schema-20 funding fell below the sealed remaining-work requirement");
+    }
+  }
   process.stdout.write(`${JSON.stringify({ ...statusResult, passed: true })}\n`);
   process.exit(0);
 }

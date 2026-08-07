@@ -1,0 +1,1902 @@
+{
+  "schemaVersion": 20,
+  "environment": "robyn-mainnet",
+  "chainId": 4663,
+  "liquidityVenue": "uniswap-v4",
+  "deploymentBlock": 30184368,
+  "gitCommit": "19bdbdfe76c6c797684186ed655a1ae37f9e8d95",
+  "gitSha": "19bdbdfe76c6c797684186ed655a1ae37f9e8d95",
+  "contractReleaseSha": "dd7afcfaad41a8c7054b3e9b581bfd4029e88e60",
+  "toolingSha": "19bdbdfe76c6c797684186ed655a1ae37f9e8d95",
+  "deployer": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",
+  "guardianSafe": "0xE6CD65E3039fCbb7fD8fb992E5388247d9627549",
+  "governance": {
+    "guardianSafe": "0xE6CD65E3039fCbb7fD8fb992E5388247d9627549",
+    "daoToken": "0x498472DF199920DfA926012ec06fdb607cAfa23d",
+    "timelock": "0x7bfF926aeef64932327720Fafe19091AB47E7FB2",
+    "governor": "0x6a6a02F900f63f7493eA589f8A4E6bE1BF79c687"
+  },
+  "contracts": {
+    "baseAsset": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+    "wrappedNative": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+    "rewardAssets": [
+      "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+      "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+      "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+      "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
+      "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+      "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
+      "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68"
+    ],
+    "poolManager": "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+    "positionManager": "0x58daec3116aae6D93017bAAea7749052E8a04fA7",
+    "quoter": "0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94",
+    "universalRouter": "0x06AfBA43Fd06227fA663b0DAecF536f6EaA6bf99",
+    "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "stateView": "0xF3334192D15450CdD385c8B70e03f9A6bD9E673b",
+    "guardian": "0xE6CD65E3039fCbb7fD8fb992E5388247d9627549",
+    "daoToken": "0x498472DF199920DfA926012ec06fdb607cAfa23d",
+    "timelock": "0x7bfF926aeef64932327720Fafe19091AB47E7FB2",
+    "governor": "0x6a6a02F900f63f7493eA589f8A4E6bE1BF79c687",
+    "assetRouter": "0x55DE62e5D9c75Cf3FCb373b6b3E3eAa4e648a961",
+    "launchDeployer": "0x8bc946a2cc6Ba3cbcee330a8F0E4d36f009fc859",
+    "vaultDeployer": "0x4dbA741c9a46fB4E20a74c8Fe4358921f7248209",
+    "factory": "0xD4bd5d45213efE85f83b15611C5dA557b86C7A66",
+    "launchFactory": "0xD4bd5d45213efE85f83b15611C5dA557b86C7A66",
+    "protocolFeeRouter": "0x7020a87ba6EE8369624587E09FA0eAC5bE628512",
+    "feeRouter": "0x7020a87ba6EE8369624587E09FA0eAC5bE628512",
+    "rdaoStaking": "0x037f2812218E491aA7DC1Df2187Ad7076d507B21",
+    "rdaoLiquidityLocker": "0x121F4f36d74a8f94fe4fD4D8Ad4603b54d8dF311",
+    "rdaoSale": "0x129a606b2Ee20E9cA73Dc1227d4c9772a34724cc",
+    "maintenanceCoordinator": "0xe57660F948825eDfc8Ee1B0DD036Bf6Ccb07A9d6",
+    "claimsRouter": "0x79f9E551eef00cF5b9C68B0D2496dFEdDd81c5fb",
+    "tradeRouter": "0x920BE584c8100c2e9EeF1924Dd79396b40B41f86",
+    "oracleHook": "0xC2F2fd041454C64f11a951b583F50aA9F854D8E4",
+    "adapterDeployer": "0x8405C61A0f01a618eba63452be50560234D6310A",
+    "lockerDeployer": "0xDB2B2b8d1b39c026D1729267BC071b328D8E5C3b",
+    "marketDeployer": "0xB8312EAc6301Bf7482013ce86eEFa5bA9B4aB303",
+    "tokenSink": "0xeD5A52a58b215EB1eB48D7c5378A27fE0CC4D945",
+    "marketFactory": "0x592b3b0D5bEd9Aa6d8e3d4c564Ffe8f8B61335bC",
+    "atomicLaunchCoordinator": "0xa70FE1A6894aD807983e5F00fd593B324BAf1D4A",
+    "coordinator": "0xa70FE1A6894aD807983e5F00fd593B324BAf1D4A"
+  },
+  "runtimeCodeHashes": {
+    "assetRouter": "0x7f9bd634fce12fc8bd3fe36bc6d3ba407c76d38f83ba8a24588ccc324b740034",
+    "launchDeployer": "0x5e9049e20a399459cbad4a7508558ab1aeff31f23f0236d31cda0f4ec55c821a",
+    "vaultDeployer": "0xe00ac2b1a31f5578c30b1c54293758ecda78d992603b85410677f581e003b7d5",
+    "factory": "0x99a5b32bc5d875012550d9ea1a2f3aede860f2385903060a4aac6c8d9b1ab3dd",
+    "launchFactory": "0x99a5b32bc5d875012550d9ea1a2f3aede860f2385903060a4aac6c8d9b1ab3dd",
+    "protocolFeeRouter": "0x65af4466a804bcad62c696fb34fa0d2dde2f6d9a6e95f25879e74f633f7043c3",
+    "feeRouter": "0x65af4466a804bcad62c696fb34fa0d2dde2f6d9a6e95f25879e74f633f7043c3",
+    "rdaoStaking": "0x523360e52fdc71ee81a73beab6ae7e7b00ab2c9d1e16c7687b898237e93affd6",
+    "rdaoLiquidityLocker": "0x3c449f577c962c61122726a68cb1dc5f0ce4587186c5f6586361c0d815472328",
+    "rdaoSale": "0x0d65a2d37bdd6c314bf2a499dc90966a18c85302858ac29a69f4ea62f20ae6c3",
+    "maintenanceCoordinator": "0x0ca37de1eb0ff9ffd33b69ff6aaddbf1524781053d70e5ca3449e7e5cb998c01",
+    "claimsRouter": "0x4dc676f042eec4e11ad7c7930ab80cce4346f992e250061181ddcea3139ff021",
+    "tradeRouter": "0x5c0f3e6b608e05fa9527669360c25c8538b1551a7cd8a1f709c8ca7c0584bb48",
+    "oracleHook": "0x3e18c6b158762d08825bbc6a36dd54327a01da1dcdd00648bbdf01b1df77bcca",
+    "adapterDeployer": "0x6cb02af2a180b742b041e46f83ead8b00f040ad6a492b4a531a7eacb94612c09",
+    "lockerDeployer": "0x79875dceef102d7949bef6d32545d06ae574701b0c8336b6f2988e566edc7568",
+    "marketDeployer": "0x8f4adff29f1ddd3a6b1c2437a177d79da6d23b0f36cac65aee4d8546b975128a",
+    "tokenSink": "0xa8bf7ca1fc247eb461c219e063c9f4e605f1873fc4f813d257262d65011acbc6",
+    "marketFactory": "0x852e40f8fe48c5b0424ab9c08c0ed481de92ae31cd6b51128c52070575ed9d42",
+    "atomicLaunchCoordinator": "0x7259336cbfb90ff1f4db2533a76a3246fb70cf1441b8546381094f3ea31184b6",
+    "coordinator": "0x7259336cbfb90ff1f4db2533a76a3246fb70cf1441b8546381094f3ea31184b6"
+  },
+  "reusedRuntimeCodeHashes": {
+    "guardianSafe": "0xd7d408ebcd99b2b70be43e20253d6d92a8ea8fab29bd3be7f55b10032331fb4c",
+    "daoToken": "0xd034445b5e570d6362b10a016ced554109ffca4631bb0b5d379f5f5b9aef8afc",
+    "timelock": "0x9460575a5b7961e11ced2fd3acfa50e55647d461a3ee4f946bd443ef2450642b",
+    "governor": "0xe8daf95839f8991e049e90eaef22b23de0b79dc18d0afb13882afdac4078fe2e",
+    "create2Deployer": "0x2fa86add0aed31f33a762c9d88e807c475bd51d0f52bd0955754b2608f7e4989",
+    "poolManager": "0xbd3881180b547f5fe817545743cfb4343e96b1bc6640dcd70c106b0066e95626",
+    "positionManager": "0xc873e135dc9aaec88489cfbad146b4cb49d6a32e0d80326377784b7ba17670b2",
+    "quoter": "0xd707b1da8cb165e5ea35a3b4450d971eb562ec171e23492aa117036b78a868f6",
+    "stateView": "0x7d9c591e0956fd89d98feb4ffcfe8bf1f7a62bd485edd979fa21d104b49878a6",
+    "permit2": "0x5208783f52488f7d3493e5e38311ab707c1d75457fe472a19b0b4d57d66a7fca",
+    "universalRouter": "0xbe8e8191bb42d843c2e948a5a55772eaab864ce01e54dcd47c9d089170b302d5",
+    "wrappedNative": "0x5706be52f64875fee65a2cec0d80e47a23d8793cbe85d214b48445e2d05f5353"
+  },
+  "settings": {
+    "rewardDuration": 3600,
+    "failureObservationSpacing": 86400,
+    "fallbackDelay": 259200,
+    "targetGraduationNative": "6000000000000000000",
+    "maximumCurvePurchase": "500000000000000000",
+    "maximumGraduatedPurchase": "500000000000000000",
+    "minimumTradeNative": "1000000000000",
+    "stakingWarmup": 86400,
+    "stakingRewardDuration": 3600,
+    "zeroSupplyRewardDuration": 604800,
+    "maintenanceTaskGas": 2000000,
+    "maintenanceCallGas": 2050000
+  },
+  "sale": {
+    "saleInventory": "150000000000000000000000000",
+    "liquidityInventory": "50000000000000000000000000",
+    "retainedStake": "800000000000000000000000000",
+    "virtualTokenReserve": "600000000000000000000000000",
+    "virtualNativeReserve": "845710109368066612719",
+    "curvePrincipalTarget": "281903369789355537573",
+    "deployerPayout": "156612983216308631985",
+    "liquidityNative": "125290386573046905588",
+    "dustWei": "0",
+    "maximumWethResidual": "1000000",
+    "maximumRdaoResidual": "1000000"
+  },
+  "saleOracleEvidence": {
+    "feedAddress": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+    "roundId": "18446744073709553048",
+    "answer": "191555000000",
+    "decimals": 8,
+    "updatedAt": "1786095479",
+    "heartbeatSeconds": 86400,
+    "capturedBlock": "30181496",
+    "capturedBlockTimestamp": "1786102742",
+    "ownerTargetUsd": "300000",
+    "liquidityTargetUsd": "240000"
+  },
+  "assetCatalog": {
+    "version": "schema20-mainnet-live-qualification-v1",
+    "sourcePolicySha256": "ee04f04e9f444ea1beaa03b27a50b905b94ba9944a764f2834a482443b9d0b9d",
+    "assets": [
+      {
+        "address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+        "symbol": "WETH",
+        "name": "Wrapped Ether",
+        "category": "wrapped-native",
+        "logoUrl": null,
+        "mainnetAddress": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+        "chainId": 4663,
+        "decimals": 18,
+        "mock": false,
+        "mockOnly": false,
+        "network": "robinhood-mainnet",
+        "verification": "canonical-weth-runtime",
+        "referencePrice": {
+          "kind": "native-parity",
+          "feedAddress": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+          "heartbeatSeconds": 86400
+        },
+        "route": {
+          "kind": "wrapped-native",
+          "ready": true
+        },
+        "disclosure": "Canonical runtime and configured route; live feed and two-sided market admission are rechecked before selection.",
+        "pool": null
+      },
+      {
+        "address": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+        "symbol": "GOOGL",
+        "name": "Alphabet Class A",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x2e0847e8910a9732eb3fb1bb4b70a580adad4fe3.png",
+        "mainnetAddress": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+        "chainId": 4663,
+        "decimals": 18,
+        "mock": false,
+        "mockOnly": false,
+        "network": "robinhood-mainnet",
+        "verification": "robinhood-mainnet-token-runtime-and-v4-route",
+        "referencePrice": {
+          "kind": "chainlink-usd",
+          "feedAddress": "0xF6f373a037c30F0e5010d854385cA89185AE638b",
+          "heartbeatSeconds": 86400,
+          "oraclePausedCheck": true
+        },
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0x5182d37e70a1c2e1060f8671739ae929913ceabcf2bd80a1a2a6356eafd4b506",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "10000000000000000"
+        },
+        "disclosure": "Canonical runtime and configured route; live feed and two-sided market admission are rechecked before selection."
+      },
+      {
+        "address": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+        "symbol": "MSFT",
+        "name": "Microsoft",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xe93237c50d904957cf27e7b1133b510c669c2e74.png",
+        "mainnetAddress": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+        "chainId": 4663,
+        "decimals": 18,
+        "mock": false,
+        "mockOnly": false,
+        "network": "robinhood-mainnet",
+        "verification": "robinhood-mainnet-token-runtime-and-v4-route",
+        "referencePrice": {
+          "kind": "chainlink-usd",
+          "feedAddress": "0x45C3C877C15E6BA2EBB19eA114Ea508d14C1Af2E",
+          "heartbeatSeconds": 86400,
+          "oraclePausedCheck": true
+        },
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0x34147f36f89c42a67f77601e612abdb1bd40869e53e8d0edd19705ae0499192d",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "50000000000000000"
+        },
+        "disclosure": "Canonical runtime and configured route; live feed and two-sided market admission are rechecked before selection."
+      },
+      {
+        "address": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+        "symbol": "NVDA",
+        "name": "NVIDIA",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec.png",
+        "mainnetAddress": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+        "chainId": 4663,
+        "decimals": 18,
+        "mock": false,
+        "mockOnly": false,
+        "network": "robinhood-mainnet",
+        "verification": "robinhood-mainnet-token-runtime-and-v4-route",
+        "referencePrice": {
+          "kind": "chainlink-usd",
+          "feedAddress": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15",
+          "heartbeatSeconds": 86400,
+          "oraclePausedCheck": true
+        },
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 500,
+          "tickSpacing": 10,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0x71f9660f9535e3e81d720696a58ea80274da8b2c6eb7c3acb22611d977439a5c",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "50000000000000000"
+        },
+        "disclosure": "Canonical runtime and configured route; live feed and two-sided market admission are rechecked before selection."
+      },
+      {
+        "address": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
+        "symbol": "SPCX",
+        "name": "SpaceX",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x4a0e65a3eccec6dbe60ae065f2e7bb85fae35eea.png",
+        "mainnetAddress": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
+        "chainId": 4663,
+        "decimals": 18,
+        "mock": false,
+        "mockOnly": false,
+        "network": "robinhood-mainnet",
+        "verification": "robinhood-mainnet-token-runtime-and-v4-route",
+        "referencePrice": {
+          "kind": "chainlink-usd",
+          "feedAddress": "0xB265810950ba6c5C0Ff821c9963014a56fD8Bffb",
+          "heartbeatSeconds": 86400,
+          "oraclePausedCheck": true
+        },
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0x39910df82a4009ea98d01e9df0b9f1b5b01583cc62ea5889c6c8a8e41fbef470",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "50000000000000000"
+        },
+        "disclosure": "Canonical runtime and configured route; live feed and two-sided market admission are rechecked before selection."
+      },
+      {
+        "address": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+        "symbol": "SPY",
+        "name": "SPDR S&P 500 ETF Trust",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x117cc2133c37b721f49de2a7a74833232b3b4c0c.png",
+        "mainnetAddress": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+        "chainId": 4663,
+        "decimals": 18,
+        "mock": false,
+        "mockOnly": false,
+        "network": "robinhood-mainnet",
+        "verification": "robinhood-mainnet-token-runtime-and-v4-route",
+        "referencePrice": {
+          "kind": "chainlink-usd",
+          "feedAddress": "0x319724394D3A0e3669269846abE664Cd621f9f6A",
+          "heartbeatSeconds": 86400,
+          "oraclePausedCheck": true
+        },
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": false,
+          "reason": "no-safe-pool-at-minimum-capacity"
+        },
+        "pool": null,
+        "disclosure": "Canonical runtime and configured route; live feed and two-sided market admission are rechecked before selection."
+      },
+      {
+        "address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "symbol": "USDG",
+        "name": "Global Dollar",
+        "category": "stablecoin",
+        "logoUrl": null,
+        "mainnetAddress": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "chainId": 4663,
+        "decimals": 6,
+        "mock": false,
+        "mockOnly": false,
+        "network": "robinhood-mainnet",
+        "verification": "robinhood-mainnet-token-runtime-and-v4-route",
+        "referencePrice": {
+          "kind": "chainlink-usd",
+          "feedAddress": "0x61B7e5650328764B076A108EFF5fa7282a1B9aD2",
+          "heartbeatSeconds": 86400
+        },
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 460,
+          "tickSpacing": 9,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0x54f7883914619af9105355bf83ed678bcf9f63560218ac61c9963b9503d0ba32",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "50000000000000000"
+        },
+        "disclosure": "Catalog-visible only: qualified-readonly-and-local-fork."
+      },
+      {
+        "address": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+        "symbol": "AMZN",
+        "name": "Amazon",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x12f190a9f9d7d37a250758b26824b97ce941bf54.png",
+        "mainnetAddress": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+        "chainId": 4663,
+        "decimals": 18,
+        "mock": false,
+        "mockOnly": false,
+        "network": "robinhood-mainnet",
+        "verification": "robinhood-mainnet-token-runtime-and-v4-route",
+        "referencePrice": {
+          "kind": "chainlink-usd",
+          "feedAddress": "0xD5a1508ceD74c084eBf3cBe853e2C968fB2a651C",
+          "heartbeatSeconds": 86400,
+          "oraclePausedCheck": true
+        },
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 3000,
+          "tickSpacing": 30,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0x59aa257d163e391082943b22a839078a64a959dba8ffa4b69477e98459bb50a4",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "10000000000000000"
+        },
+        "disclosure": "Catalog-visible only: qualified-readonly-and-local-fork."
+      },
+      {
+        "address": "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681",
+        "symbol": "INTC",
+        "name": "Intel",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xc72b96e0e48ecd4dc75e1e45396e26300bc39681.png",
+        "mainnetAddress": "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681",
+        "chainId": 4663,
+        "decimals": 18,
+        "mock": false,
+        "mockOnly": false,
+        "network": "robinhood-mainnet",
+        "verification": "robinhood-mainnet-token-runtime-and-v4-route",
+        "referencePrice": {
+          "kind": "chainlink-usd",
+          "feedAddress": "0x3f390C5C24628Ac7C489515402235FeAD71D1913",
+          "heartbeatSeconds": 86400,
+          "oraclePausedCheck": true
+        },
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": false,
+          "reason": "no-safe-pool-at-minimum-capacity"
+        },
+        "pool": null,
+        "disclosure": "Catalog-visible only: qualified-readonly-and-local-fork."
+      },
+      {
+        "address": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
+        "symbol": "USAR",
+        "name": "USA Rare Earth",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xd917b029c761d264c6a312bbbcda868658ef86a6.png",
+        "mainnetAddress": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
+        "chainId": 4663,
+        "decimals": 18,
+        "mock": false,
+        "mockOnly": false,
+        "network": "robinhood-mainnet",
+        "verification": "robinhood-mainnet-token-runtime-and-v4-route",
+        "referencePrice": {
+          "kind": "chainlink-usd",
+          "feedAddress": "0xA994d3684e8400A6c8078226925779FdeE682DD9",
+          "heartbeatSeconds": 86400,
+          "oraclePausedCheck": true
+        },
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 9000,
+          "tickSpacing": 90,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0x176e2c377b6911ef9be8f2dca2f5419bf8d4d98755aeaf0868191ef2c0a8e726",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "50000000000000000"
+        },
+        "disclosure": "Catalog-visible only: qualified-readonly-and-local-fork."
+      },
+      {
+        "address": "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f",
+        "symbol": "SLV",
+        "name": "iShares Silver Trust",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x411efb0e7f985935daec3d4c3ebaea0d0ad7d89f.png",
+        "mainnetAddress": "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f",
+        "chainId": 4663,
+        "decimals": 18,
+        "mock": false,
+        "mockOnly": false,
+        "network": "robinhood-mainnet",
+        "verification": "robinhood-mainnet-token-runtime-and-v4-route",
+        "referencePrice": {
+          "kind": "chainlink-usd",
+          "feedAddress": "0x209b73908e92Ae021826eD79609845451Ecba2ce",
+          "heartbeatSeconds": 86400,
+          "oraclePausedCheck": true
+        },
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": false,
+          "reason": "no-safe-pool-at-minimum-capacity"
+        },
+        "pool": null,
+        "disclosure": "Catalog-visible only: qualified-readonly-and-local-fork."
+      },
+      {
+        "address": "0x1b0E319c6A659F002271B69dB8A7df2F911c153E",
+        "symbol": "GME",
+        "name": "GameStop",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x1b0e319c6a659f002271b69db8a7df2f911c153e.png",
+        "mainnetAddress": "0x1b0E319c6A659F002271B69dB8A7df2F911c153E",
+        "chainId": 4663,
+        "decimals": 18,
+        "mock": false,
+        "mockOnly": false,
+        "network": "robinhood-mainnet",
+        "verification": "robinhood-mainnet-token-runtime-and-v4-route",
+        "referencePrice": {
+          "kind": "chainlink-usd",
+          "feedAddress": "0x27C71df6A64fB476468EdF256CF72c038baB5B67",
+          "heartbeatSeconds": 86400,
+          "oraclePausedCheck": true
+        },
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": false,
+          "reason": "no-safe-pool-at-minimum-capacity"
+        },
+        "pool": null,
+        "disclosure": "Catalog-visible only: qualified-readonly-and-local-fork."
+      },
+      {
+        "address": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+        "symbol": "QQQ",
+        "name": "Invesco QQQ Trust",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xd5f3879160bc7c32ebb4dc785f8a4f505888de68.png",
+        "mainnetAddress": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+        "chainId": 4663,
+        "decimals": 18,
+        "mock": false,
+        "mockOnly": false,
+        "network": "robinhood-mainnet",
+        "verification": "robinhood-mainnet-token-runtime-and-v4-route",
+        "referencePrice": {
+          "kind": "chainlink-usd",
+          "feedAddress": "0x80901d846d5D7B030F26B480776EE3b29374C2ae",
+          "heartbeatSeconds": 86400,
+          "oraclePausedCheck": true
+        },
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0x7ba2c8a5f53ee4cda9ef07effe81bb8509efafb79a26d0e33b28ada879e5bb52",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "1000000000000000"
+        },
+        "disclosure": "Catalog-visible only: qualified-readonly-and-local-fork."
+      }
+    ]
+  },
+  "assetRoutes": [
+    {
+      "symbol": "WETH",
+      "asset": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+      "kind": "wrapped-native",
+      "enabled": true,
+      "maximumNativeInput": "50000000000000000"
+    },
+    {
+      "symbol": "GOOGL",
+      "asset": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+      "kind": "uniswap-v4",
+      "enabled": true,
+      "poolId": "0x5182d37e70a1c2e1060f8671739ae929913ceabcf2bd80a1a2a6356eafd4b506",
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hooks": "0x0000000000000000000000000000000000000000",
+      "minimumLiquidity": "3007595077643318720",
+      "maximumNativeInput": "10000000000000000",
+      "referenceTick": 16778,
+      "maximumReferenceTickDeviation": 198,
+      "enforceReferencePrice": true,
+      "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf",
+      "liveQualification": {
+        "capturedBlock": "30181496",
+        "capturedBlockTimestamp": "1786102742",
+        "observedLiquidity": "6015190155286637441",
+        "minimumLiquidity": "3007595077643318720",
+        "liquidityFloorBps": 5000,
+        "spotTick": 16682,
+        "referenceTick": 16778,
+        "referenceDeviationTicks": 96,
+        "assetUsdFeed": "0xF6f373a037c30F0e5010d854385cA89185AE638b",
+        "assetUsdRoundId": "18446744073709552193",
+        "assetUsdAnswer": "35783500000",
+        "assetUsdDecimals": 8,
+        "assetUsdUpdatedAt": "1786036828",
+        "assetUsdAgeSeconds": 65914,
+        "oraclePaused": false,
+        "ethUsdFeed": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+        "ethUsdRoundId": "18446744073709553048",
+        "selectedCapWei": "10000000000000000",
+        "selectedRecoveryBps": 9708,
+        "exactInputBothDirections": true,
+        "exactOutputBothDirections": true,
+        "quoteLadder": [
+          {
+            "amountWei": "100000000000000",
+            "buyOutput": "524386163086223",
+            "roundTripOutput": "97806712709977",
+            "recoveryBps": 9780,
+            "idealOutput": "530233280288896",
+            "minimumProtectedQuote": "519681638011146",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "250000000000000",
+            "buyOutput": "1310890964315573",
+            "roundTripOutput": "244489167098644",
+            "recoveryBps": 9779,
+            "idealOutput": "1325583200722240",
+            "minimumProtectedQuote": "1299204095027866",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "500000000000000",
+            "buyOutput": "2621533821536812",
+            "roundTripOutput": "488886312992701",
+            "recoveryBps": 9777,
+            "idealOutput": "2651166401444482",
+            "minimumProtectedQuote": "2598408190055736",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "1000000000000000",
+            "buyOutput": "5242075496392402",
+            "roundTripOutput": "977404748899349",
+            "recoveryBps": 9774,
+            "idealOutput": "5302332802888965",
+            "minimumProtectedQuote": "5196816380111474",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "2500000000000000",
+            "buyOutput": "13097753269999350",
+            "roundTripOutput": "2440756941722739",
+            "recoveryBps": 9763,
+            "idealOutput": "13255832007222418",
+            "minimumProtectedQuote": "12992040950278691",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "5000000000000000",
+            "buyOutput": "26170759100427860",
+            "roundTripOutput": "4872358339142770",
+            "recoveryBps": 9744,
+            "idealOutput": "26511664014444836",
+            "minimumProtectedQuote": "25984081900557383",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "10000000000000000",
+            "buyOutput": "52242808466530692",
+            "roundTripOutput": "9708299791652122",
+            "recoveryBps": 9708,
+            "idealOutput": "53023328028889674",
+            "minimumProtectedQuote": "51968163801114769",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "25000000000000000",
+            "buyOutput": "129872251377239997",
+            "roundTripOutput": "24001660359401502",
+            "recoveryBps": 9600,
+            "idealOutput": "132558320072224190",
+            "minimumProtectedQuote": "129920409502786928",
+            "protectedImpactPassed": false,
+            "passed": false,
+            "failureReason": null
+          },
+          {
+            "amountWei": "50000000000000000",
+            "buyOutput": "257331672557426934",
+            "roundTripOutput": "47132394816629900",
+            "recoveryBps": 9426,
+            "idealOutput": "265116640144448380",
+            "minimumProtectedQuote": "259840819005573857",
+            "protectedImpactPassed": false,
+            "passed": false,
+            "failureReason": null
+          }
+        ],
+        "candidatePools": [
+          {
+            "source": "enabled-execution-route",
+            "poolId": "0x5182d37e70a1c2e1060f8671739ae929913ceabcf2bd80a1a2a6356eafd4b506",
+            "fee": 10000,
+            "tickSpacing": 200,
+            "hooks": "0x0000000000000000000000000000000000000000",
+            "observedLiquidity": "6015190155286637441",
+            "spotTick": 16682,
+            "referenceDeviationTicks": 96,
+            "selectedCapWei": "10000000000000000",
+            "selectedRecoveryBps": 9708,
+            "chosen": true
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "MSFT",
+      "asset": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+      "kind": "uniswap-v4",
+      "enabled": true,
+      "poolId": "0x34147f36f89c42a67f77601e612abdb1bd40869e53e8d0edd19705ae0499192d",
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hooks": "0x0000000000000000000000000000000000000000",
+      "minimumLiquidity": "10461589681622295711",
+      "maximumNativeInput": "50000000000000000",
+      "referenceTick": 13473,
+      "maximumReferenceTickDeviation": 198,
+      "enforceReferencePrice": true,
+      "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf",
+      "liveQualification": {
+        "capturedBlock": "30181496",
+        "capturedBlockTimestamp": "1786102742",
+        "observedLiquidity": "20923179363244591423",
+        "minimumLiquidity": "10461589681622295711",
+        "liquidityFloorBps": 5000,
+        "spotTick": 13402,
+        "referenceTick": 13473,
+        "referenceDeviationTicks": 71,
+        "assetUsdFeed": "0x45C3C877C15E6BA2EBB19eA114Ea508d14C1Af2E",
+        "assetUsdRoundId": "18446744073709552178",
+        "assetUsdAnswer": "49796500000",
+        "assetUsdDecimals": 8,
+        "assetUsdUpdatedAt": "1786062712",
+        "assetUsdAgeSeconds": 40030,
+        "oraclePaused": false,
+        "ethUsdFeed": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+        "ethUsdRoundId": "18446744073709553048",
+        "selectedCapWei": "50000000000000000",
+        "selectedRecoveryBps": 9692,
+        "exactInputBothDirections": true,
+        "exactOutputBothDirections": true,
+        "quoteLadder": [
+          {
+            "amountWei": "100000000000000",
+            "buyOutput": "377776527423669",
+            "roundTripOutput": "97812280702002",
+            "recoveryBps": 9781,
+            "idealOutput": "381977955164570",
+            "minimumProtectedQuote": "374376593856794",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "250000000000000",
+            "buyOutput": "944428231310272",
+            "roundTripOutput": "244523962159620",
+            "recoveryBps": 9780,
+            "idealOutput": "954944887911427",
+            "minimumProtectedQuote": "935941484641988",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "500000000000000",
+            "buyOutput": "1888812840069515",
+            "roundTripOutput": "489025460652341",
+            "recoveryBps": 9780,
+            "idealOutput": "1909889775822857",
+            "minimumProtectedQuote": "1871882969283981",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "1000000000000000",
+            "buyOutput": "3777451202023747",
+            "roundTripOutput": "977961079017952",
+            "recoveryBps": 9779,
+            "idealOutput": "3819779551645716",
+            "minimumProtectedQuote": "3743765938567965",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "2500000000000000",
+            "buyOutput": "9442319660921137",
+            "roundTripOutput": "2444229127909517",
+            "recoveryBps": 9776,
+            "idealOutput": "9549448879114291",
+            "minimumProtectedQuote": "9359414846419916",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "5000000000000000",
+            "buyOutput": "18880279785554534",
+            "roundTripOutput": "4886214672438718",
+            "recoveryBps": 9772,
+            "idealOutput": "19098897758228583",
+            "minimumProtectedQuote": "18718829692839834",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "10000000000000000",
+            "buyOutput": "37743133497220135",
+            "roundTripOutput": "9763467356475807",
+            "recoveryBps": 9763,
+            "idealOutput": "38197795516457167",
+            "minimumProtectedQuote": "37437659385679669",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "25000000000000000",
+            "buyOutput": "94227379113449359",
+            "roundTripOutput": "24341699364446591",
+            "recoveryBps": 9736,
+            "idealOutput": "95494488791142919",
+            "minimumProtectedQuote": "93594148464199174",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "50000000000000000",
+            "buyOutput": "188021508978835136",
+            "roundTripOutput": "48461794450408585",
+            "recoveryBps": 9692,
+            "idealOutput": "190988977582285839",
+            "minimumProtectedQuote": "187188296928398350",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          }
+        ],
+        "candidatePools": [
+          {
+            "source": "enabled-execution-route",
+            "poolId": "0x34147f36f89c42a67f77601e612abdb1bd40869e53e8d0edd19705ae0499192d",
+            "fee": 10000,
+            "tickSpacing": 200,
+            "hooks": "0x0000000000000000000000000000000000000000",
+            "observedLiquidity": "20923179363244591423",
+            "spotTick": 13402,
+            "referenceDeviationTicks": 71,
+            "selectedCapWei": "50000000000000000",
+            "selectedRecoveryBps": 9692,
+            "chosen": true
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "NVDA",
+      "asset": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "kind": "uniswap-v4",
+      "enabled": true,
+      "poolId": "0x71f9660f9535e3e81d720696a58ea80274da8b2c6eb7c3acb22611d977439a5c",
+      "fee": 500,
+      "tickSpacing": 10,
+      "hooks": "0x0000000000000000000000000000000000000000",
+      "minimumLiquidity": "201021620337980050371",
+      "maximumNativeInput": "50000000000000000",
+      "referenceTick": 21647,
+      "maximumReferenceTickDeviation": 198,
+      "enforceReferencePrice": true,
+      "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf",
+      "liveQualification": {
+        "capturedBlock": "30181496",
+        "capturedBlockTimestamp": "1786102742",
+        "observedLiquidity": "402043240675960100742",
+        "minimumLiquidity": "201021620337980050371",
+        "liquidityFloorBps": 5000,
+        "spotTick": 21611,
+        "referenceTick": 21647,
+        "referenceDeviationTicks": 36,
+        "assetUsdFeed": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15",
+        "assetUsdRoundId": "18446744073709552310",
+        "assetUsdAnswer": "21990960000",
+        "assetUsdDecimals": 8,
+        "assetUsdUpdatedAt": "1786090584",
+        "assetUsdAgeSeconds": 12158,
+        "oraclePaused": false,
+        "ethUsdFeed": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+        "ethUsdRoundId": "18446744073709553048",
+        "selectedCapWei": "50000000000000000",
+        "selectedRecoveryBps": 9980,
+        "exactInputBothDirections": true,
+        "exactOutputBothDirections": true,
+        "quoteLadder": [
+          {
+            "amountWei": "100000000000000",
+            "buyOutput": "867514394239565",
+            "roundTripOutput": "99874892817656",
+            "recoveryBps": 9987,
+            "idealOutput": "868057565558725",
+            "minimumProtectedQuote": "858947301408185",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "250000000000000",
+            "buyOutput": "2168783603075696",
+            "roundTripOutput": "249686683627983",
+            "recoveryBps": 9987,
+            "idealOutput": "2170143913896818",
+            "minimumProtectedQuote": "2147368253520470",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "500000000000000",
+            "buyOutput": "4337559264430599",
+            "roundTripOutput": "499371539212818",
+            "recoveryBps": 9987,
+            "idealOutput": "4340287827793637",
+            "minimumProtectedQuote": "4294736507040942",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "1000000000000000",
+            "buyOutput": "8675086762152511",
+            "roundTripOutput": "998735766333342",
+            "recoveryBps": 9987,
+            "idealOutput": "8680575655587277",
+            "minimumProtectedQuote": "8589473014081888",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "2500000000000000",
+            "buyOutput": "21687478658555801",
+            "roundTripOutput": "2496784576747138",
+            "recoveryBps": 9987,
+            "idealOutput": "21701439138968194",
+            "minimumProtectedQuote": "21473682535204721",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "5000000000000000",
+            "buyOutput": "43374163184290438",
+            "roundTripOutput": "4993386367246068",
+            "recoveryBps": 9986,
+            "idealOutput": "43402878277936388",
+            "minimumProtectedQuote": "42947365070409444",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "10000000000000000",
+            "buyOutput": "86745150011762935",
+            "roundTripOutput": "9986041669782642",
+            "recoveryBps": 9986,
+            "idealOutput": "86805756555872779",
+            "minimumProtectedQuote": "85894730140818893",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "25000000000000000",
+            "buyOutput": "216839055842032122",
+            "roundTripOutput": "24959622794273349",
+            "recoveryBps": 9983,
+            "idealOutput": "217014391389681950",
+            "minimumProtectedQuote": "214736825352047237",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "50000000000000000",
+            "buyOutput": "433598737643546792",
+            "roundTripOutput": "49900985015142880",
+            "recoveryBps": 9980,
+            "idealOutput": "434028782779363903",
+            "minimumProtectedQuote": "429473650704094478",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          }
+        ],
+        "candidatePools": [
+          {
+            "source": "enabled-execution-route",
+            "poolId": "0x71f9660f9535e3e81d720696a58ea80274da8b2c6eb7c3acb22611d977439a5c",
+            "fee": 500,
+            "tickSpacing": 10,
+            "hooks": "0x0000000000000000000000000000000000000000",
+            "observedLiquidity": "402043240675960100742",
+            "spotTick": 21611,
+            "referenceDeviationTicks": 36,
+            "selectedCapWei": "50000000000000000",
+            "selectedRecoveryBps": 9980,
+            "chosen": true
+          },
+          {
+            "source": "application-catalog-candidate",
+            "poolId": "0xe2ece3c800a5304cd538658884905779465d54e1e0966ca3bcdd8b424e998740",
+            "fee": 10000,
+            "tickSpacing": 200,
+            "hooks": "0x0000000000000000000000000000000000000000",
+            "observedLiquidity": "20551469476218585260",
+            "spotTick": 21675,
+            "referenceDeviationTicks": 28,
+            "selectedCapWei": "25000000000000000",
+            "selectedRecoveryBps": 9712,
+            "chosen": false
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "SPCX",
+      "asset": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
+      "kind": "uniswap-v4",
+      "enabled": true,
+      "poolId": "0x39910df82a4009ea98d01e9df0b9f1b5b01583cc62ea5889c6c8a8e41fbef470",
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hooks": "0x0000000000000000000000000000000000000000",
+      "minimumLiquidity": "715942398349309382196",
+      "maximumNativeInput": "50000000000000000",
+      "referenceTick": 28032,
+      "maximumReferenceTickDeviation": 198,
+      "enforceReferencePrice": true,
+      "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf",
+      "liveQualification": {
+        "capturedBlock": "30181496",
+        "capturedBlockTimestamp": "1786102742",
+        "observedLiquidity": "1431884796698618764392",
+        "minimumLiquidity": "715942398349309382196",
+        "liquidityFloorBps": 5000,
+        "spotTick": 27994,
+        "referenceTick": 28032,
+        "referenceDeviationTicks": 38,
+        "assetUsdFeed": "0xB265810950ba6c5C0Ff821c9963014a56fD8Bffb",
+        "assetUsdRoundId": "18446744073709553819",
+        "assetUsdAnswer": "11612345000",
+        "assetUsdDecimals": 8,
+        "assetUsdUpdatedAt": "1786102676",
+        "assetUsdAgeSeconds": 66,
+        "oraclePaused": false,
+        "ethUsdFeed": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+        "ethUsdRoundId": "18446744073709553048",
+        "selectedCapWei": "50000000000000000",
+        "selectedRecoveryBps": 9778,
+        "exactInputBothDirections": true,
+        "exactOutputBothDirections": true,
+        "quoteLadder": [
+          {
+            "amountWei": "100000000000000",
+            "buyOutput": "1625253008587218",
+            "roundTripOutput": "97814023535794",
+            "recoveryBps": 9781,
+            "idealOutput": "1643313478784434",
+            "minimumProtectedQuote": "1610611540556623",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "250000000000000",
+            "buyOutput": "4063130814974083",
+            "roundTripOutput": "244534854561500",
+            "recoveryBps": 9781,
+            "idealOutput": "4108283696961083",
+            "minimumProtectedQuote": "4026528851391557",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "500000000000000",
+            "buyOutput": "8126255941641331",
+            "roundTripOutput": "489069028197898",
+            "recoveryBps": 9781,
+            "idealOutput": "8216567393922170",
+            "minimumProtectedQuote": "8053057702783118",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "1000000000000000",
+            "buyOutput": "16252489130103098",
+            "roundTripOutput": "978135332706763",
+            "recoveryBps": 9781,
+            "idealOutput": "16433134787844341",
+            "minimumProtectedQuote": "16106115405566238",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "2500000000000000",
+            "buyOutput": "40631052177366630",
+            "roundTripOutput": "2445317904326683",
+            "recoveryBps": 9781,
+            "idealOutput": "41082836969610861",
+            "minimumProtectedQuote": "40265288513915604",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "5000000000000000",
+            "buyOutput": "81261535534800226",
+            "roundTripOutput": "4890567718702753",
+            "recoveryBps": 9781,
+            "idealOutput": "82165673939221722",
+            "minimumProtectedQuote": "80530577027831208",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "10000000000000000",
+            "buyOutput": "162520795837647279",
+            "roundTripOutput": "9780863088978537",
+            "recoveryBps": 9780,
+            "idealOutput": "164331347878443448",
+            "minimumProtectedQuote": "161061154055662422",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "25000000000000000",
+            "buyOutput": "406284926309988444",
+            "roundTripOutput": "24450115336725234",
+            "recoveryBps": 9780,
+            "idealOutput": "410828369696108624",
+            "minimumProtectedQuote": "402652885139156061",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "50000000000000000",
+            "buyOutput": "812512981375535555",
+            "roundTripOutput": "48893424237207934",
+            "recoveryBps": 9778,
+            "idealOutput": "821656739392217253",
+            "minimumProtectedQuote": "805305770278312129",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          }
+        ],
+        "candidatePools": [
+          {
+            "source": "enabled-execution-route",
+            "poolId": "0x39910df82a4009ea98d01e9df0b9f1b5b01583cc62ea5889c6c8a8e41fbef470",
+            "fee": 10000,
+            "tickSpacing": 200,
+            "hooks": "0x0000000000000000000000000000000000000000",
+            "observedLiquidity": "1431884796698618764392",
+            "spotTick": 27994,
+            "referenceDeviationTicks": 38,
+            "selectedCapWei": "50000000000000000",
+            "selectedRecoveryBps": 9778,
+            "chosen": true
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "USDG",
+      "asset": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "kind": "uniswap-v4",
+      "enabled": true,
+      "poolId": "0x54f7883914619af9105355bf83ed678bcf9f63560218ac61c9963b9503d0ba32",
+      "fee": 460,
+      "tickSpacing": 9,
+      "hooks": "0x0000000000000000000000000000000000000000",
+      "minimumLiquidity": "131394337357917978",
+      "maximumNativeInput": "50000000000000000",
+      "referenceTick": -200743,
+      "maximumReferenceTickDeviation": 198,
+      "enforceReferencePrice": true,
+      "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf",
+      "liveQualification": {
+        "capturedBlock": "30181496",
+        "capturedBlockTimestamp": "1786102742",
+        "observedLiquidity": "262788674715835956",
+        "minimumLiquidity": "131394337357917978",
+        "liquidityFloorBps": 5000,
+        "spotTick": -200749,
+        "referenceTick": -200743,
+        "referenceDeviationTicks": 6,
+        "assetUsdFeed": "0x61B7e5650328764B076A108EFF5fa7282a1B9aD2",
+        "assetUsdRoundId": "18446744073709551679",
+        "assetUsdAnswer": "100001000",
+        "assetUsdDecimals": 8,
+        "assetUsdUpdatedAt": "1786029629",
+        "assetUsdAgeSeconds": 73113,
+        "oraclePaused": false,
+        "ethUsdFeed": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+        "ethUsdRoundId": "18446744073709553048",
+        "selectedCapWei": "50000000000000000",
+        "selectedRecoveryBps": 9988,
+        "exactInputBothDirections": true,
+        "exactOutputBothDirections": true,
+        "quoteLadder": [
+          {
+            "amountWei": "100000000000000",
+            "buyOutput": "191322",
+            "roundTripOutput": "99883791612082",
+            "recoveryBps": 9988,
+            "idealOutput": "191433",
+            "minimumProtectedQuote": "189430",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "250000000000000",
+            "buyOutput": "478307",
+            "roundTripOutput": "249711301112511",
+            "recoveryBps": 9988,
+            "idealOutput": "478583",
+            "minimumProtectedQuote": "473578",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "500000000000000",
+            "buyOutput": "956614",
+            "roundTripOutput": "499422581461135",
+            "recoveryBps": 9988,
+            "idealOutput": "957167",
+            "minimumProtectedQuote": "947158",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "1000000000000000",
+            "buyOutput": "1913229",
+            "roundTripOutput": "998845602241285",
+            "recoveryBps": 9988,
+            "idealOutput": "1914334",
+            "minimumProtectedQuote": "1894318",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "2500000000000000",
+            "buyOutput": "4783155",
+            "roundTripOutput": "2497113502868659",
+            "recoveryBps": 9988,
+            "idealOutput": "4785836",
+            "minimumProtectedQuote": "4735797",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "5000000000000000",
+            "buyOutput": "9566306",
+            "roundTripOutput": "4994222839871279",
+            "recoveryBps": 9988,
+            "idealOutput": "9571672",
+            "minimumProtectedQuote": "9471596",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "10000000000000000",
+            "buyOutput": "19132597",
+            "roundTripOutput": "9988429538673605",
+            "recoveryBps": 9988,
+            "idealOutput": "19143345",
+            "minimumProtectedQuote": "18943193",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "25000000000000000",
+            "buyOutput": "47831374",
+            "roundTripOutput": "24970950177458021",
+            "recoveryBps": 9988,
+            "idealOutput": "47858364",
+            "minimumProtectedQuote": "47357985",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "50000000000000000",
+            "buyOutput": "95662351",
+            "roundTripOutput": "49941485342361646",
+            "recoveryBps": 9988,
+            "idealOutput": "95716729",
+            "minimumProtectedQuote": "94715972",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          }
+        ],
+        "candidatePools": [
+          {
+            "source": "enabled-execution-route",
+            "poolId": "0x54f7883914619af9105355bf83ed678bcf9f63560218ac61c9963b9503d0ba32",
+            "fee": 460,
+            "tickSpacing": 9,
+            "hooks": "0x0000000000000000000000000000000000000000",
+            "observedLiquidity": "262788674715835956",
+            "spotTick": -200749,
+            "referenceDeviationTicks": 6,
+            "selectedCapWei": "50000000000000000",
+            "selectedRecoveryBps": 9988,
+            "chosen": true
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "AMZN",
+      "asset": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+      "kind": "uniswap-v4",
+      "enabled": true,
+      "poolId": "0x59aa257d163e391082943b22a839078a64a959dba8ffa4b69477e98459bb50a4",
+      "fee": 3000,
+      "tickSpacing": 30,
+      "hooks": "0x0000000000000000000000000000000000000000",
+      "minimumLiquidity": "2432190367729949962",
+      "maximumNativeInput": "10000000000000000",
+      "referenceTick": 19447,
+      "maximumReferenceTickDeviation": 198,
+      "enforceReferencePrice": true,
+      "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf",
+      "liveQualification": {
+        "capturedBlock": "30181496",
+        "capturedBlockTimestamp": "1786102742",
+        "observedLiquidity": "4864380735459899924",
+        "minimumLiquidity": "2432190367729949962",
+        "liquidityFloorBps": 5000,
+        "spotTick": 19479,
+        "referenceTick": 19447,
+        "referenceDeviationTicks": 32,
+        "assetUsdFeed": "0xD5a1508ceD74c084eBf3cBe853e2C968fB2a651C",
+        "assetUsdRoundId": "18446744073709552165",
+        "assetUsdAnswer": "27401570000",
+        "assetUsdDecimals": 8,
+        "assetUsdUpdatedAt": "1786097286",
+        "assetUsdAgeSeconds": 5456,
+        "oraclePaused": false,
+        "ethUsdFeed": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+        "ethUsdRoundId": "18446744073709553048",
+        "selectedCapWei": "10000000000000000",
+        "selectedRecoveryBps": 9823,
+        "exactInputBothDirections": true,
+        "exactOutputBothDirections": true,
+        "quoteLadder": [
+          {
+            "amountWei": "100000000000000",
+            "buyOutput": "698896767810949",
+            "roundTripOutput": "99290669370377",
+            "recoveryBps": 9929,
+            "idealOutput": "701388845137018",
+            "minimumProtectedQuote": "692291831815589",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "250000000000000",
+            "buyOutput": "1747099747222306",
+            "roundTripOutput": "248186353357918",
+            "recoveryBps": 9927,
+            "idealOutput": "1753472112842548",
+            "minimumProtectedQuote": "1730729579538979",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "500000000000000",
+            "buyOutput": "3493725689578205",
+            "roundTripOutput": "496238364689221",
+            "recoveryBps": 9924,
+            "idealOutput": "3506944225685096",
+            "minimumProtectedQuote": "3461459159077959",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "1000000000000000",
+            "buyOutput": "6985556930443066",
+            "roundTripOutput": "991939797347923",
+            "recoveryBps": 9919,
+            "idealOutput": "7013888451370196",
+            "minimumProtectedQuote": "6922918318155924",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "2500000000000000",
+            "buyOutput": "17449699357011491",
+            "roundTripOutput": "2475831203461490",
+            "recoveryBps": 9903,
+            "idealOutput": "17534721128425495",
+            "minimumProtectedQuote": "17307295795389815",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "5000000000000000",
+            "buyOutput": "34852191208815112",
+            "roundTripOutput": "4938325828169329",
+            "recoveryBps": 9876,
+            "idealOutput": "35069442256850993",
+            "minimumProtectedQuote": "34614591590779635",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "10000000000000000",
+            "buyOutput": "69516316605661084",
+            "roundTripOutput": "9823734073370457",
+            "recoveryBps": 9823,
+            "idealOutput": "70138884513701989",
+            "minimumProtectedQuote": "69229183181559274",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          }
+        ],
+        "candidatePools": [
+          {
+            "source": "enabled-execution-route",
+            "poolId": "0x59aa257d163e391082943b22a839078a64a959dba8ffa4b69477e98459bb50a4",
+            "fee": 3000,
+            "tickSpacing": 30,
+            "hooks": "0x0000000000000000000000000000000000000000",
+            "observedLiquidity": "4864380735459899924",
+            "spotTick": 19479,
+            "referenceDeviationTicks": 32,
+            "selectedCapWei": "10000000000000000",
+            "selectedRecoveryBps": 9823,
+            "chosen": true
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "USAR",
+      "asset": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
+      "kind": "uniswap-v4",
+      "enabled": true,
+      "poolId": "0x176e2c377b6911ef9be8f2dca2f5419bf8d4d98755aeaf0868191ef2c0a8e726",
+      "fee": 9000,
+      "tickSpacing": 90,
+      "hooks": "0x0000000000000000000000000000000000000000",
+      "minimumLiquidity": "475869926265450720760",
+      "maximumNativeInput": "50000000000000000",
+      "referenceTick": 46481,
+      "maximumReferenceTickDeviation": 198,
+      "enforceReferencePrice": true,
+      "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf",
+      "liveQualification": {
+        "capturedBlock": "30181496",
+        "capturedBlockTimestamp": "1786102742",
+        "observedLiquidity": "951739852530901441520",
+        "minimumLiquidity": "475869926265450720760",
+        "liquidityFloorBps": 5000,
+        "spotTick": 46384,
+        "referenceTick": 46481,
+        "referenceDeviationTicks": 97,
+        "assetUsdFeed": "0xA994d3684e8400A6c8078226925779FdeE682DD9",
+        "assetUsdRoundId": "18446744073709553077",
+        "assetUsdAnswer": "1835500000",
+        "assetUsdDecimals": 8,
+        "assetUsdUpdatedAt": "1786102467",
+        "assetUsdAgeSeconds": 275,
+        "oraclePaused": false,
+        "ethUsdFeed": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+        "ethUsdRoundId": "18446744073709553048",
+        "selectedCapWei": "50000000000000000",
+        "selectedRecoveryBps": 9790,
+        "exactInputBothDirections": true,
+        "exactOutputBothDirections": true,
+        "quoteLadder": [
+          {
+            "amountWei": "100000000000000",
+            "buyOutput": "10232506569879381",
+            "roundTripOutput": "98011575743369",
+            "recoveryBps": 9801,
+            "idealOutput": "10335782190928264",
+            "minimumProtectedQuote": "10140332549697809",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "250000000000000",
+            "buyOutput": "25581225845383259",
+            "roundTripOutput": "245028165869752",
+            "recoveryBps": 9801,
+            "idealOutput": "25839455477320681",
+            "minimumProtectedQuote": "25350831374244546",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "500000000000000",
+            "buyOutput": "51162316426954721",
+            "roundTripOutput": "490053753465641",
+            "recoveryBps": 9801,
+            "idealOutput": "51678910954641362",
+            "minimumProtectedQuote": "50701662748489093",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "1000000000000000",
+            "buyOutput": "102324091802953576",
+            "roundTripOutput": "980097193998600",
+            "recoveryBps": 9800,
+            "idealOutput": "103357821909282724",
+            "minimumProtectedQuote": "101403325496978187",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "2500000000000000",
+            "buyOutput": "255806171711039282",
+            "roundTripOutput": "2450165641256737",
+            "recoveryBps": 9800,
+            "idealOutput": "258394554773206812",
+            "minimumProtectedQuote": "253508313742445470",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "5000000000000000",
+            "buyOutput": "511598818006398124",
+            "roundTripOutput": "4900073491747899",
+            "recoveryBps": 9800,
+            "idealOutput": "516789109546413634",
+            "minimumProtectedQuote": "507016627484890951",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "10000000000000000",
+            "buyOutput": "1023143538640679270",
+            "roundTripOutput": "9799115983154956",
+            "recoveryBps": 9799,
+            "idealOutput": "1033578219092827278",
+            "minimumProtectedQuote": "1014033254969781913",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "25000000000000000",
+            "buyOutput": "2557453202102503404",
+            "roundTripOutput": "24490060708220026",
+            "recoveryBps": 9796,
+            "idealOutput": "2583945547732068212",
+            "minimumProtectedQuote": "2535083137424454802",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "50000000000000000",
+            "buyOutput": "5113554827546870065",
+            "roundTripOutput": "48954378916293085",
+            "recoveryBps": 9790,
+            "idealOutput": "5167891095464136434",
+            "minimumProtectedQuote": "5070166274848909613",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          }
+        ],
+        "candidatePools": [
+          {
+            "source": "enabled-execution-route",
+            "poolId": "0x176e2c377b6911ef9be8f2dca2f5419bf8d4d98755aeaf0868191ef2c0a8e726",
+            "fee": 9000,
+            "tickSpacing": 90,
+            "hooks": "0x0000000000000000000000000000000000000000",
+            "observedLiquidity": "951739852530901441520",
+            "spotTick": 46384,
+            "referenceDeviationTicks": 97,
+            "selectedCapWei": "50000000000000000",
+            "selectedRecoveryBps": 9790,
+            "chosen": true
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "QQQ",
+      "asset": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+      "kind": "uniswap-v4",
+      "enabled": true,
+      "poolId": "0x7ba2c8a5f53ee4cda9ef07effe81bb8509efafb79a26d0e33b28ada879e5bb52",
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hooks": "0x0000000000000000000000000000000000000000",
+      "minimumLiquidity": "181490896056163314",
+      "maximumNativeInput": "1000000000000000",
+      "referenceTick": 9821,
+      "maximumReferenceTickDeviation": 198,
+      "enforceReferencePrice": true,
+      "verificationClass": "0x94a56d4d7a24999d134c28b591161772dbd5cdc883135aeb003f541f75ec7fcf",
+      "liveQualification": {
+        "capturedBlock": "30181496",
+        "capturedBlockTimestamp": "1786102742",
+        "observedLiquidity": "362981792112326629",
+        "minimumLiquidity": "181490896056163314",
+        "liquidityFloorBps": 5000,
+        "spotTick": 9861,
+        "referenceTick": 9821,
+        "referenceDeviationTicks": 40,
+        "assetUsdFeed": "0x80901d846d5D7B030F26B480776EE3b29374C2ae",
+        "assetUsdRoundId": "18446744073709551876",
+        "assetUsdAnswer": "71748000000",
+        "assetUsdDecimals": 8,
+        "assetUsdUpdatedAt": "1786060979",
+        "assetUsdAgeSeconds": 41763,
+        "oraclePaused": false,
+        "ethUsdFeed": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+        "ethUsdRoundId": "18446744073709553048",
+        "selectedCapWei": "1000000000000000",
+        "selectedRecoveryBps": 9695,
+        "exactInputBothDirections": true,
+        "exactOutputBothDirections": true,
+        "quoteLadder": [
+          {
+            "amountWei": "100000000000000",
+            "buyOutput": "265015519125248",
+            "roundTripOutput": "97727361628705",
+            "recoveryBps": 9772,
+            "idealOutput": "268079945445098",
+            "minimumProtectedQuote": "262745154530740",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "250000000000000",
+            "buyOutput": "662095937782935",
+            "roundTripOutput": "243993937414092",
+            "recoveryBps": 9759,
+            "idealOutput": "670199863612745",
+            "minimumProtectedQuote": "656862886326850",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "500000000000000",
+            "buyOutput": "1322718303829659",
+            "roundTripOutput": "486910141131453",
+            "recoveryBps": 9738,
+            "idealOutput": "1340399727225491",
+            "minimumProtectedQuote": "1313725772653703",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          },
+          {
+            "amountWei": "1000000000000000",
+            "buyOutput": "2639561954651512",
+            "roundTripOutput": "969537784298135",
+            "recoveryBps": 9695,
+            "idealOutput": "2680799454450985",
+            "minimumProtectedQuote": "2627451545307410",
+            "protectedImpactPassed": true,
+            "passed": true,
+            "failureReason": null
+          }
+        ],
+        "candidatePools": [
+          {
+            "source": "enabled-execution-route",
+            "poolId": "0x7ba2c8a5f53ee4cda9ef07effe81bb8509efafb79a26d0e33b28ada879e5bb52",
+            "fee": 10000,
+            "tickSpacing": 200,
+            "hooks": "0x0000000000000000000000000000000000000000",
+            "observedLiquidity": "362981792112326629",
+            "spotTick": 9861,
+            "referenceDeviationTicks": 40,
+            "selectedCapWei": "1000000000000000",
+            "selectedRecoveryBps": 9695,
+            "chosen": true
+          }
+        ]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "symbol": "WETH",
+      "asset": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+      "enabled": true
+    },
+    {
+      "symbol": "GOOGL",
+      "asset": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+      "enabled": true
+    },
+    {
+      "symbol": "MSFT",
+      "asset": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+      "enabled": true
+    },
+    {
+      "symbol": "NVDA",
+      "asset": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "enabled": true
+    },
+    {
+      "symbol": "SPCX",
+      "asset": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
+      "enabled": true
+    },
+    {
+      "symbol": "USDG",
+      "asset": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "enabled": true
+    },
+    {
+      "symbol": "AMZN",
+      "asset": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+      "enabled": true
+    },
+    {
+      "symbol": "USAR",
+      "asset": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
+      "enabled": true
+    },
+    {
+      "symbol": "QQQ",
+      "asset": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+      "enabled": true
+    }
+  ],
+  "routeChecks": [
+    {
+      "symbol": "WETH",
+      "asset": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "symbol": "GOOGL",
+      "asset": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "symbol": "MSFT",
+      "asset": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "symbol": "NVDA",
+      "asset": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "symbol": "SPCX",
+      "asset": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "symbol": "USDG",
+      "asset": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "symbol": "AMZN",
+      "asset": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "symbol": "USAR",
+      "asset": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "symbol": "QQQ",
+      "asset": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "initialState": {
+    "launchMode": "Public",
+    "conversionsPaused": false,
+    "launchCount": "0",
+    "rdaoSupply": "1000000000000000000000000000",
+    "rdaoSaleBalance": "200000000000000000000000000",
+    "retainedStakeWarming": "800000000000000000000000000",
+    "retainedStakeEligible": "0",
+    "outstandingStakingLiability": "0"
+  },
+  "indexingPolicy": {
+    "version": 1,
+    "protocolRoots": [
+      "0x037f2812218e491aa7dc1df2187ad7076d507b21",
+      "0x121f4f36d74a8f94fe4fd4d8ad4603b54d8df311",
+      "0x129a606b2ee20e9ca73dc1227d4c9772a34724cc",
+      "0x498472df199920dfa926012ec06fdb607cafa23d",
+      "0x4dba741c9a46fb4e20a74c8fe4358921f7248209",
+      "0x55de62e5d9c75cf3fcb373b6b3e3eaa4e648a961",
+      "0x592b3b0d5bed9aa6d8e3d4c564ffe8f8b61335bc",
+      "0x6a6a02f900f63f7493ea589f8a4e6be1bf79c687",
+      "0x7020a87ba6ee8369624587e09fa0eac5be628512",
+      "0x79f9e551eef00cf5b9c68b0d2496dfeddd81c5fb",
+      "0x7bff926aeef64932327720fafe19091ab47e7fb2",
+      "0x8405c61a0f01a618eba63452be50560234d6310a",
+      "0x8bc946a2cc6ba3cbcee330a8f0e4d36f009fc859",
+      "0x920be584c8100c2e9eef1924dd79396b40b41f86",
+      "0xa70fe1a6894ad807983e5f00fd593b324baf1d4a",
+      "0xb8312eac6301bf7482013ce86eefa5ba9b4ab303",
+      "0xc2f2fd041454c64f11a951b583f50aa9f854d8e4",
+      "0xd4bd5d45213efe85f83b15611c5da557b86c7a66",
+      "0xdb2b2b8d1b39c026d1729267bc071b328d8e5c3b",
+      "0xe57660f948825edfc8ee1b0dd036bf6ccb07a9d6",
+      "0xed5a52a58b215eb1eb48d7c5378a27fe0cc4d945"
+    ],
+    "launchCoordinator": "0xa70fe1a6894ad807983e5f00fd593b324baf1d4a",
+    "launchEventTopics": [
+      "0xd74962c237728681433889a5419834cff77965f55668fb014ee28925e2cef5f1"
+    ],
+    "poolManager": "0x8366a39cc670b4001a1121b8f6a443a643e40951",
+    "poolEventTopics": [
+      "0x29ef05caaff9404b7cb6d1c0e9bbae9eaa7ab2541feba1a9c4248594c08156cb",
+      "0x40e9cecb9f5f1f1c5b9c97dec2917b7ee92e57ba5563708daca94dd84ad7112f",
+      "0xdd466e674ea557f56295e2d0218a125ea4b4f0f6f3307b95f85e6110838d6438",
+      "0xf208f4912782fd25c7f114ca3723a2d5dd6f3bcc3ac8db5af63baa85f711d5ec"
+    ],
+    "addressBatchSize": 64,
+    "poolIdBatchSize": 32,
+    "policyHash": "4f77c75b9e8b8f07eda5ea9961ffcd0f2074893fd3683bae762577e49734f33d"
+  },
+  "rpcPolicy": {
+    "primary": "lan",
+    "gateway": "http://127.0.0.1:18549",
+    "alchemy": "probe-only",
+    "fallbackTrafficAuthorized": false
+  },
+  "deploymentEvidence": {
+    "preparedManifestSha256": "74d6c8b4f74886d3578d9bc0c355d6450c349875ab7ea458810c23d788067ae6",
+    "journalSha256": "ac693cc2d48ec07af835dad9eb932d78889b551cc1837c93e562b246b26e78d9",
+    "transactionPlanSha256": "8ef70571fdec971cc9bb2f36f959df5c13b08380e08f0ecc44baed81e04546cd",
+    "transactionCount": 49
+  }
+}

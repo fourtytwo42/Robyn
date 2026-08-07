@@ -156,6 +156,16 @@ test("rejects fewer than six routes", () => {
   );
 });
 
+test("deployment verification applies funding only to unfinished transactions", async () => {
+  const source = await readFile(
+    path.join(scriptsRoot, "scripts/run-schema20-network-deployment.mjs"),
+    "utf8",
+  );
+  assert.match(source, /transactionGasCeilings\s*\.slice\(confirmed\)/);
+  assert.match(source, /requiredRemainingBalance/);
+  assert.doesNotMatch(source, /balance < BigInt\(funding\.requiredBalanceWei\)/);
+});
+
 test("Schema-20 application manifests declare the scoped v4 venue", async () => {
   const source = await readFile(
     path.join(

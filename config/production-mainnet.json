@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "chainId": 4663,
-  "contractSchema": 19,
-  "qualifiedContractGitSha": "a67288133f09bce68b7386009d702c14dfb8bbab",
-  "contractClosureHash": "8b4b591bebc896fe58ff4457cc72ecb6518862d8",
-  "deploymentManifestHash": "c52241b003e5c84ffaa50faaf10b5a2064d1fbc6e361049dd9b9d97299137064",
-  "indexingPolicyHash": "cd816f7b373bc6af79059b71d3cf0f1674ac56ef0a720574b6b6763c6b3facb0",
-  "deploymentBlock": 27248417,
+  "contractSchema": 20,
+  "qualifiedContractGitSha": "3cb3803bc854e70d616bb8fad89783c8ab9ca1a5",
+  "contractClosureHash": "740639151c7d48e8f57a02e698513d87251b5de1",
+  "deploymentManifestHash": "9c8739d1497205ce1ca91422ef236ea84535e2df70bc10aa029f808453448bffe",
+  "indexingPolicyHash": "4f77c75b9e8b8f07eda5ea9961ffcd0f2074893fd3683bae762577e49734f33d",
+  "deploymentBlock": 30184368,
   "releaseTagPrefix": "mainnet-prod-",
   "processes": [
     "robyn-web-mainnet-prod",
@@ -22,5 +22,5 @@
     "automaticFallback": false,
     "transactionSubmissionDefault": false
   },
-  "applicationReleaseSha": "68e2f5890309234e8e1b7393a7ecb2688d62d94e"
+  "applicationReleaseSha": "d3a485ed52379924b074bd959abbfd245f567f9a"
 }

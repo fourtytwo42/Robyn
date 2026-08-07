@@ -2,6 +2,14 @@
 
 ## Active Handoff
 
+### 2026-08-07 - Schema-20 Mainnet contracts deployed; application cutover in progress
+
+- Result: Exact candidate `19bdbdfe76c6c797684186ed655a1ae37f9e8d95` passed the complete current-state Mainnet fork rehearsal: 49/49 deployment receipts, nine protected route round trips, retained-stake activation, RDAO sale and graduation, staking rewards, one launch lifecycle, best-effort maintenance, claims, exact reconciliation, and bounded Schema-19 retirement.
+- Live deployment: All 49 Schema-20 Mainnet transactions confirmed from nonce 266 through 314. The finalized live manifest is `deployments/4663-v4-schema20.json`; deployment block is 30184368. Fixed RDAO supply, 200m sale custody, warming 800m retained stake, zero liabilities, cleared allowances, Public launch mode, active conversions, and all nine routes reconcile.
+- Legacy retirement: Schema-19 had exactly zero launches. Nine Safe guardian transactions paused launches, both conversion systems, and all six legacy routes. Schema-19 is no longer an active creation surface.
+- Funding: Post-deployment and retirement balance is above the fixed 0.02 ETH reserve. A first raw transaction submission was rejected before admission while the operator gateway relay was disabled; nonce remained 266 and the restart-safe journal recorded the rejection. Relay was enabled only for deployment/retirement and disabled again afterward.
+- Follow-up: Build and qualify the Schema-20 Mainnet application against the fresh scoped database, promote it with writes disabled, complete private and public browser acceptance, then enable user transaction relay and seal final evidence.
+
 ### 2026-08-07 - Mainnet rehearsal exposed stale route thresholds; live requalification added
 
 - Context: The first exact Schema-20 Mainnet fork deployment completed all 46 transactions, but read-only acceptance stopped before any lifecycle action because the inherited Schema-19 GOOGL liquidity floor was 5.36 times current liquidity and its reference tick was stale. The route still produced healthy bounded quotes, so this was a capture-policy defect rather than a missing pool.
