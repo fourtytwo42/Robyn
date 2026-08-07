@@ -17,6 +17,13 @@
 - Decision: Schema-20 Testnet capture clears reference-price enforcement only for deterministic Testnet mock routes. Mainnet continues to require its qualified reference ticks and deviation limits.
 - Follow-up: Push a new tooling SHA, capture a fresh nonce-bound input, restart from a clean fork, and require all six routes ready before proceeding.
 
+### 2026-08-07 - Corrected Schema-20 Testnet rehearsal passed
+
+- Context: Tooling SHA `bdf5d45` captured Testnet nonce 2961 and replayed the complete 46-transaction plan on a fresh LAN-sourced chain-46630 fork.
+- Result: All transactions succeeded; all six routes were enabled and ready; Public mode, active conversions, 200m sale custody, warming 800m retained stake, zero liabilities, cleared allowances, fixed supply, and runtime/indexing identities reconciled. The rehearsal-derived required Testnet balance is `0.00436421116 ETH`, below the observed live balance.
+- Evidence: `/home/hendo420/robyn-evidence/schema20-testnet/preflight-bdf5d45-01`.
+- Follow-up: The added restart-safe network acceptance runner must be included in a new final candidate, then the plan and rehearsal must be regenerated at that exact SHA before live use.
+
 - Last verified 2026-08-07: User authorized the complete Schema-20 Devnet to Testnet to Mainnet rollout, including fresh contract deployment or replacement because Mainnet has no public launches. Work must fail closed on ambiguous receipts, RPC degradation, funding/reserve failure, runtime/calldata drift, accounting mismatch, or replay risk.
 - Active worktree: `/home/hendo420/Robyn-schema20-rollout`, branch `codex/schema20-full-rollout`, created from pushed marketing/RDAO UI commit `4c4a2db1062ffa4da567a0a3ac2f489db8569252`. The qualified Schema-20 contract ancestor is `dd7afcfaad41a8c7054b3e9b581bfd4029e88e60`; newer commits contain application, fixture, media, deployment-31337, and documentation changes.
 - Goal order: inventory and freeze one exact candidate; comprehensive Devnet torture plus browser acceptance; exact Testnet deployment and lifecycle verification; exact LAN-sourced Mainnet fork rehearsal; Mainnet deployment/application cutover and final reconciliation. Never promote a later stage before the preceding stage is sealed.
