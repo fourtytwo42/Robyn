@@ -2,6 +2,14 @@
 
 ## Active Handoff
 
+### 2026-08-07 - Schema-20 Devnet deep qualification passed
+
+- Context: Exact clean pushed candidate `3cb3803bc854e70d616bb8fad89783c8ab9ca1a5` completed the full Schema-20 deep gate before any live Testnet or Mainnet transaction.
+- Result: 10,000-case deterministic/fuzz coverage, 20 seeds across all four invariant families at 1,024 runs/depth 256, the 512-wallet/64-launch/100,000-action/50-seed simulation, isolated Anvil broadcast/replay, and artifact-derived coverage all passed. Coverage is 93.3432% lines and 80.2009% branches. Evidence: `/home/hendo420/robyn-evidence/devnet-torture/3cb3803bc854e70d616bb8fad89783c8ab9ca1a5/20260807-schema20-deep-01`.
+- Evidence correction: The runner checksummed `runner.log` before its final success line was appended. Original evidence is preserved; post-exit `SHA256SUMS.sealed` validates the complete immutable directory. The runner now excludes its externally appended log from internal checksums.
+- Security: A newly published high advisory affected transitive `js-yaml 4.3.0`; the workspace override is updated to patched `4.3.1`, and `pnpm audit --audit-level high` passes. This dependency-only change does not alter the qualified Solidity source or bytecode closure.
+- Freeze: `config/schema20-contract-freeze.json` and `scripts/verify-schema20-contract-freeze.mjs` bind the qualified source, deployment scripts, Foundry config, dependencies, coverage, and sealed deep evidence. Finish clean-push security/reproducibility/application gates, then regenerate the exact Testnet plan and perform live Testnet acceptance.
+
 ### 2026-08-07 - Schema-20 public-network deployment tooling in progress
 
 - Context: The user authorized a complete Devnet, Testnet, and Mainnet Schema-20 rollout, including contract replacement if required. Mainnet Schema-19 has zero launches and the fixed RDAO supply remains wholly deployer-owned.

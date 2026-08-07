@@ -9,6 +9,7 @@ overrides:
   "fast-uri@4.1.1": 4.1.2
   find-my-way: 9.7.0
   "ip-address@10.2.0": 10.3.1
+  js-yaml: 4.3.1
   postcss: 8.5.20
   qr: 0.5.5
   sharp: 0.35.0

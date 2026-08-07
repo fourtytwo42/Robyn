@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "contractSchema": 20,
+  "qualifiedContractGitSha": "3cb3803bc854e70d616bb8fad89783c8ab9ca1a5",
+  "sourceTreeGitObject": "740639151c7d48e8f57a02e698513d87251b5de1",
+  "scriptTreeGitObject": "e483e03e72209112ca1dc16f251ec12ffd4116d2",
+  "foundryConfigGitObject": "de6592071e3143935ecb45231ee5882c27b92f63",
+  "deepEvidence": {
+    "directory": "/home/hendo420/robyn-evidence/devnet-torture/3cb3803bc854e70d616bb8fad89783c8ab9ca1a5/20260807-schema20-deep-01",
+    "summarySha256": "ee8f7ba2fe7b9837fa136a1427a531a984fe3a41a1c98206463ee13f48a8b895",
+    "checksumsFile": "SHA256SUMS.sealed",
+    "checksumsSha256": "c03d0e8e126132888c0d82c7cdaba385e9b400496f5be745e1d8d78cd292712d",
+    "coverageScopeSha256": "6913836b28bbe69f512c5af968158b9b2ae523f9738384103f92862255711951",
+    "validationSha256": "9f833c62f6491790e5785ecf7c8722120840bdd901d889c1e5a131a9128f9937"
+  },
+  "contractDependencies": {
+    "@openzeppelin/contracts": "5.4.0",
+    "@uniswap/universal-router": "2.1.0",
+    "@uniswap/v3-core": "1.0.0",
+    "@uniswap/v3-periphery": "1.4.4",
+    "@uniswap/v4-core": "1.0.2",
+    "@uniswap/v4-periphery": "1.0.3"
+  }
+}

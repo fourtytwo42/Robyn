@@ -93,7 +93,7 @@ finish() {
         passed:false,failedPhase:$failedPhase,assuranceScope:"internal-only"
       }' >"$output/summary.json"
     chmod 0600 "$output/summary.json"
-    (cd "$output" && find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%P\n' \
+    (cd "$output" && find . -maxdepth 1 -type f ! -name SHA256SUMS ! -name runner.log -printf '%P\n' \
       | sort | xargs -r sha256sum >SHA256SUMS)
     chmod 0600 "$output/SHA256SUMS"
   fi
@@ -351,7 +351,7 @@ jq -n \
       "Mainnet liquidity validation","Mainnet deployment authorization"]
   }' >"$output/summary.json"
 chmod 0600 "$output/summary.json"
-(cd "$output" && find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%P\n' \
+(cd "$output" && find . -maxdepth 1 -type f ! -name SHA256SUMS ! -name runner.log -printf '%P\n' \
   | sort | xargs sha256sum >SHA256SUMS)
 chmod 0600 "$output/SHA256SUMS"
 (cd "$output" && sha256sum -c SHA256SUMS >/dev/null)
