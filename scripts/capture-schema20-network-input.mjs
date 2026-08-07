@@ -140,6 +140,8 @@ if (base.chainId === 4663) {
     deployerPayout: payout.toString(),
     liquidityNative: liquidity.toString(),
     dustWei: dust.toString(),
+    maximumWethResidual: "1000000",
+    maximumRdaoResidual: "1000000",
   };
   saleOracleEvidence = {
     feedAddress,
@@ -167,6 +169,8 @@ if (base.chainId === 4663) {
     deployerPayout: payout.toString(),
     liquidityNative: liquidity.toString(),
     dustWei: "0",
+    maximumWethResidual: "1000000",
+    maximumRdaoResidual: "1000000",
   };
   saleOracleEvidence = { kind: "accelerated-testnet-fixture", ownerTargetWei: payout.toString(), liquidityTargetWei: liquidity.toString() };
 }

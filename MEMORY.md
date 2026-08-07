@@ -24,6 +24,14 @@
 - Evidence: `/home/hendo420/robyn-evidence/schema20-testnet/preflight-bdf5d45-01`.
 - Follow-up: The added restart-safe network acceptance runner must be included in a new final candidate, then the plan and rehearsal must be regenerated at that exact SHA before live use.
 
+### 2026-08-07 - Testnet-fork RDAO graduation residual bound corrected
+
+- Context: The complete public-subsystem acceptance run at SHA `07e3bc3` passed six route round trips, retained-stake activation, and the RDAO buy/sell/full-sale flow before graduation reverted atomically.
+- Cause: Testnet price-continuous liquidity required 15 wei WETH and 59,720 wei RDAO rounding residual, while the plan inherited a 100-wei RDAO ceiling.
+- Decision: Seal explicit maximum residuals of 1,000,000 wei for WETH and RDAO. Both are negligible, bounded, recorded, and non-withdrawable; WETH residual is deposited into staking rewards and RDAO residual remains permanently held by the principal-only locker.
+- Result: No Testnet transaction was broadcast and no fork payout or liquidity state escaped the reverting finalization. The `07e3bc3` acceptance is invalidated and retained as diagnostic evidence.
+- Follow-up: Push the corrected input/plan tooling and repeat deployment plus every acceptance stage from a clean fork.
+
 - Last verified 2026-08-07: User authorized the complete Schema-20 Devnet to Testnet to Mainnet rollout, including fresh contract deployment or replacement because Mainnet has no public launches. Work must fail closed on ambiguous receipts, RPC degradation, funding/reserve failure, runtime/calldata drift, accounting mismatch, or replay risk.
 - Active worktree: `/home/hendo420/Robyn-schema20-rollout`, branch `codex/schema20-full-rollout`, created from pushed marketing/RDAO UI commit `4c4a2db1062ffa4da567a0a3ac2f489db8569252`. The qualified Schema-20 contract ancestor is `dd7afcfaad41a8c7054b3e9b581bfd4029e88e60`; newer commits contain application, fixture, media, deployment-31337, and documentation changes.
 - Goal order: inventory and freeze one exact candidate; comprehensive Devnet torture plus browser acceptance; exact Testnet deployment and lifecycle verification; exact LAN-sourced Mainnet fork rehearsal; Mainnet deployment/application cutover and final reconciliation. Never promote a later stage before the preceding stage is sealed.

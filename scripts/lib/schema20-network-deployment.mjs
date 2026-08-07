@@ -101,6 +101,10 @@ export function validateSchema20NetworkInput(input) {
     BigInt(input.sale.virtualNativeReserve) === BigInt(input.sale.curvePrincipalTarget) * 3n,
     "virtual native reserve must be three times curve principal",
   );
+  for (const field of ["maximumWethResidual", "maximumRdaoResidual"]) {
+    const value = BigInt(input.sale?.[field] ?? 0);
+    assert(value > 0n && value <= 1_000_000_000n, `invalid bounded ${field}`);
+  }
   assert(Array.isArray(input.routes) && input.routes.length >= 6, "six qualified routes required");
   return input;
 }
@@ -169,8 +173,8 @@ export function buildSchema20NetworkPlan(input, artifactRoot) {
   ]);
   const rdaoLiquidityLocker = addDeploy("rdaoLiquidityLocker", [
     external.poolManager, rdao, external.wrappedNative, staking,
-    BigInt(input.sale.maximumWethResidual ?? "10000"),
-    BigInt(input.sale.maximumRdaoResidual ?? "100"),
+    BigInt(input.sale.maximumWethResidual),
+    BigInt(input.sale.maximumRdaoResidual),
   ]);
   const rdaoSale = addDeploy("rdaoSale", [
     rdao,

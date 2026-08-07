@@ -62,6 +62,8 @@ const baseInput = (chainId = 46630) => ({
     deployerPayout: "2000000000000000",
     liquidityNative: "1600000000000000",
     dustWei: "0",
+    maximumWethResidual: "1000000",
+    maximumRdaoResidual: "1000000",
   },
   routes: [
     ...["GOOGL", "MSFT", "NVDA", "SPCX", "SPY"].map((symbol, index) => ({
