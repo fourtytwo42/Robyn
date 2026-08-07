@@ -179,10 +179,12 @@ test("Mainnet capture requalifies routes instead of copying stale thresholds", a
   assert.match(source, /minimumLiquidity = liquidity \/ 2n/);
   assert.match(
     source,
-    /Math\.abs\(spotTick - referenceTick\) > maximumReferenceTickDeviation/,
+    /referenceDeviationTicks <= maximumReferenceTickDeviation/,
   );
   assert.match(source, /oraclePaused/);
   assert.match(source, /routeByAsset/);
   assert.match(source, /fee: Number\(sourceRoute\.fee\)/);
   assert.match(source, /poolId: route\.poolId/);
+  assert.match(source, /catalog-candidate/);
+  assert.match(source, /candidatePools/);
 });

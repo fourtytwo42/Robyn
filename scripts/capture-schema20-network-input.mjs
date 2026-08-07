@@ -233,22 +233,9 @@ if (base.chainId === 4663) {
     if (!catalog?.referencePrice || catalog.route?.kind !== "uniswap-v4") {
       throw new Error(`missing canonical Mainnet catalog identity for ${sourceRoute.symbol}`);
     }
-    const poolKey = {
-      currency0: zeroAddress,
-      currency1: asset,
-      fee: Number(sourceRoute.fee),
-      tickSpacing: Number(sourceRoute.tickSpacing),
-      hooks: getAddress(sourceRoute.hooks ?? zeroAddress),
-    };
-    const poolId = keccak256(encodeAbiParameters(
-      [{ type: "address" }, { type: "address" }, { type: "uint24" }, { type: "int24" }, { type: "address" }],
-      [poolKey.currency0, poolKey.currency1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks],
-    ));
     const feedAddress = getAddress(catalog.referencePrice?.feedAddress);
     const heartbeat = Number(catalog.referencePrice?.heartbeatSeconds);
-    const [liquidity, slot0, feedDecimals, feedRound, assetCode, oraclePaused] = await Promise.all([
-      client.readContract({ address: external.stateView, abi: stateViewAbi, functionName: "getLiquidity", args: [poolId] }),
-      client.readContract({ address: external.stateView, abi: stateViewAbi, functionName: "getSlot0", args: [poolId] }),
+    const [feedDecimals, feedRound, assetCode, oraclePaused] = await Promise.all([
       client.readContract({ address: feedAddress, abi: feedAbi, functionName: "decimals" }),
       client.readContract({ address: feedAddress, abi: feedAbi, functionName: "latestRoundData" }),
       client.getCode({ address: asset }),
@@ -258,50 +245,77 @@ if (base.chainId === 4663) {
     ]);
     const [feedRoundId, feedAnswer, , feedUpdatedAt, feedAnsweredInRound] = feedRound;
     const feedAgeSeconds = Number(ethUsdReference.latestBlock.timestamp - feedUpdatedAt);
-    if (!assetCode || assetCode === "0x" || liquidity === 0n || slot0[0] === 0n) {
-      throw new Error(`missing Mainnet route runtime or liquidity for ${sourceRoute.symbol}`);
-    }
+    if (!assetCode || assetCode === "0x") throw new Error(`missing Mainnet asset runtime for ${sourceRoute.symbol}`);
     if (feedAnswer <= 0n || feedUpdatedAt === 0n || feedAnsweredInRound < feedRoundId || feedAgeSeconds > heartbeat || oraclePaused) {
       throw new Error(`unhealthy Mainnet Chainlink reference for ${sourceRoute.symbol}`);
     }
     const ethUsd = Number(ethUsdReference.answer) / (10 ** ethUsdReference.decimals);
     const assetUsd = Number(feedAnswer) / (10 ** Number(feedDecimals));
     const referenceTick = Math.round(Math.log(ethUsd / assetUsd) / Math.log(1.0001));
-    const spotTick = Number(slot0[1]);
     const maximumReferenceTickDeviation = Number(sourceRoute.maximumReferenceTickDeviation ?? 198);
-    if (!Number.isSafeInteger(referenceTick) || Math.abs(spotTick - referenceTick) > maximumReferenceTickDeviation) {
-      throw new Error(`Mainnet pool/reference deviation is unsafe for ${sourceRoute.symbol}: spot=${spotTick} reference=${referenceTick}`);
-    }
+    if (!Number.isSafeInteger(referenceTick)) throw new Error(`invalid Mainnet oracle tick for ${sourceRoute.symbol}`);
     const maximumCandidate = BigInt(sourceRoute.maximumNativeInput);
-    const ladderResults = [];
-    for (const amount of ladder.filter((entry) => entry <= maximumCandidate)) {
-      try {
-        const [buyOutput] = await quote("quoteExactInputSingle", poolKey, true, amount);
-        const [roundTripOutput] = await quote("quoteExactInputSingle", poolKey, false, buyOutput);
-        const [assetForExactNative] = await quote("quoteExactOutputSingle", poolKey, false, amount / 2n);
-        await quote("quoteExactOutputSingle", poolKey, true, buyOutput / 2n || 1n);
-        ladderResults.push({
-          amount,
-          buyOutput,
-          roundTripOutput,
-          assetForExactNative,
-          recoveryBps: Number((roundTripOutput * 10_000n) / amount),
-          passed: true,
-        });
-      } catch (error) {
-        ladderResults.push({
-          amount,
-          passed: false,
-          failureReason: String(error?.shortMessage ?? error?.message ?? error).slice(0, 300),
-        });
+    const candidates = [
+      {
+        source: "enabled-execution-route",
+        fee: Number(sourceRoute.fee),
+        tickSpacing: Number(sourceRoute.tickSpacing),
+        hooks: getAddress(sourceRoute.hooks ?? zeroAddress),
+      },
+      ...(catalog.pool ? [{
+        source: "catalog-candidate",
+        fee: Number(catalog.pool.fee),
+        tickSpacing: Number(catalog.pool.tickSpacing),
+        hooks: getAddress(catalog.pool.hooks ?? zeroAddress),
+      }] : []),
+    ];
+    const uniqueCandidates = new Map();
+    for (const candidate of candidates) {
+      const poolKey = { currency0: zeroAddress, currency1: asset, fee: candidate.fee, tickSpacing: candidate.tickSpacing, hooks: candidate.hooks };
+      const poolId = keccak256(encodeAbiParameters(
+        [{ type: "address" }, { type: "address" }, { type: "uint24" }, { type: "int24" }, { type: "address" }],
+        [poolKey.currency0, poolKey.currency1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks],
+      ));
+      if (!uniqueCandidates.has(poolId)) uniqueCandidates.set(poolId, { ...candidate, poolKey, poolId });
+    }
+    const evaluatedCandidates = [];
+    for (const candidate of uniqueCandidates.values()) {
+      const [liquidity, slot0] = await Promise.all([
+        client.readContract({ address: external.stateView, abi: stateViewAbi, functionName: "getLiquidity", args: [candidate.poolId] }),
+        client.readContract({ address: external.stateView, abi: stateViewAbi, functionName: "getSlot0", args: [candidate.poolId] }),
+      ]);
+      const spotTick = Number(slot0[1]);
+      const referenceDeviationTicks = Math.abs(spotTick - referenceTick);
+      const ladderResults = [];
+      if (liquidity > 0n && slot0[0] > 0n && referenceDeviationTicks <= maximumReferenceTickDeviation) {
+        for (const amount of ladder.filter((entry) => entry <= maximumCandidate)) {
+          try {
+            const [buyOutput] = await quote("quoteExactInputSingle", candidate.poolKey, true, amount);
+            const [roundTripOutput] = await quote("quoteExactInputSingle", candidate.poolKey, false, buyOutput);
+            const [assetForExactNative] = await quote("quoteExactOutputSingle", candidate.poolKey, false, amount / 2n);
+            await quote("quoteExactOutputSingle", candidate.poolKey, true, buyOutput / 2n || 1n);
+            ladderResults.push({ amount, buyOutput, roundTripOutput, assetForExactNative, recoveryBps: Number((roundTripOutput * 10_000n) / amount), passed: true });
+          } catch (error) {
+            ladderResults.push({ amount, passed: false, failureReason: String(error?.shortMessage ?? error?.message ?? error).slice(0, 300) });
+          }
+        }
       }
+      const selected = ladderResults
+        .filter((entry) => entry.passed && entry.amount >= 1_000_000_000_000_000n && entry.recoveryBps >= 9_500)
+        .at(-1) ?? null;
+      evaluatedCandidates.push({ ...candidate, liquidity, spotTick, referenceDeviationTicks, ladderResults, selected });
     }
-    const selected = ladderResults
-      .filter((entry) => entry.passed && entry.amount >= 1_000_000_000_000_000n && entry.recoveryBps >= 9_500)
-      .at(-1);
-    if (!selected) {
-      throw new Error(`no safe >=0.001 ETH Mainnet quote capacity for ${sourceRoute.symbol}: ${JSON.stringify(ladderResults.map((entry) => ({ amountWei: entry.amount.toString(), recoveryBps: entry.recoveryBps ?? null, failureReason: entry.failureReason ?? null })))}`);
+    const chosen = evaluatedCandidates
+      .filter((candidate) => candidate.selected)
+      .sort((left, right) => {
+        if (left.selected.amount !== right.selected.amount) return left.selected.amount > right.selected.amount ? -1 : 1;
+        if (left.selected.recoveryBps !== right.selected.recoveryBps) return right.selected.recoveryBps - left.selected.recoveryBps;
+        return left.liquidity === right.liquidity ? 0 : left.liquidity > right.liquidity ? -1 : 1;
+      })[0];
+    if (!chosen) {
+      throw new Error(`no safe >=0.001 ETH Mainnet pool for ${sourceRoute.symbol}: ${JSON.stringify(evaluatedCandidates.map((candidate) => ({ poolId: candidate.poolId, source: candidate.source, liquidity: candidate.liquidity.toString(), spotTick: candidate.spotTick, referenceTick, referenceDeviationTicks: candidate.referenceDeviationTicks, ladder: candidate.ladderResults.map((entry) => ({ amountWei: entry.amount.toString(), recoveryBps: entry.recoveryBps ?? null, failureReason: entry.failureReason ?? null })) })))}`);
     }
+    const { poolKey, poolId, liquidity, spotTick, referenceDeviationTicks, ladderResults, selected } = chosen;
     const minimumLiquidity = liquidity / 2n;
     if (minimumLiquidity === 0n) throw new Error(`zero Mainnet emergency liquidity floor for ${sourceRoute.symbol}`);
     routes.push({
@@ -327,7 +341,7 @@ if (base.chainId === 4663) {
         liquidityFloorBps: 5_000,
         spotTick,
         referenceTick,
-        referenceDeviationTicks: Math.abs(spotTick - referenceTick),
+        referenceDeviationTicks,
         assetUsdFeed: feedAddress,
         assetUsdRoundId: feedRoundId.toString(),
         assetUsdAnswer: feedAnswer.toString(),
@@ -348,6 +362,19 @@ if (base.chainId === 4663) {
           recoveryBps: entry.recoveryBps ?? null,
           passed: Boolean(entry.passed && (entry.recoveryBps ?? 0) >= 9_500),
           failureReason: entry.failureReason ?? null,
+        })),
+        candidatePools: evaluatedCandidates.map((candidate) => ({
+          source: candidate.source,
+          poolId: candidate.poolId,
+          fee: candidate.poolKey.fee,
+          tickSpacing: candidate.poolKey.tickSpacing,
+          hooks: candidate.poolKey.hooks,
+          observedLiquidity: candidate.liquidity.toString(),
+          spotTick: candidate.spotTick,
+          referenceDeviationTicks: candidate.referenceDeviationTicks,
+          selectedCapWei: candidate.selected?.amount.toString() ?? null,
+          selectedRecoveryBps: candidate.selected?.recoveryBps ?? null,
+          chosen: candidate.poolId === poolId,
         })),
       },
     });
