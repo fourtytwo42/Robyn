@@ -134,10 +134,10 @@ cd "${work}"
 PORT=3300 HOSTNAME=127.0.0.1 \
   ROBYN_NETWORK_MODE=devnet \
   ROBYN_INTERNAL_API_URL=http://127.0.0.1:3100 \
-  pnpm --filter @robyn/web start >"${output}/second-build-serve.log" 2>&1 &
+  setsid pnpm --filter @robyn/web start >"${output}/second-build-serve.log" 2>&1 &
 serve_pid="$!"
 cleanup_serve() {
-  kill "${serve_pid}" >/dev/null 2>&1 || true
+  kill -- "-${serve_pid}" >/dev/null 2>&1 || true
   wait "${serve_pid}" >/dev/null 2>&1 || true
 }
 trap cleanup_serve EXIT

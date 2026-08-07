@@ -350,6 +350,15 @@ test("production updater follows authenticated asset redirects under the hardene
   );
 });
 
+test("reproducibility smoke server is isolated and cleaned as a process group", () => {
+  const verifier = readFileSync(
+    path.join(repositoryRoot, "scripts", "verify-reproducible-builds.sh"),
+    "utf8",
+  );
+  assert.match(verifier, /setsid pnpm --filter @robyn\/web start/);
+  assert.match(verifier, /kill -- "-\$\{serve_pid\}"/);
+});
+
 test("Mainnet application finalization is independent of contract build output", () => {
   const finalizer = readFileSync(
     path.join(
