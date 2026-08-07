@@ -320,7 +320,7 @@ const submit = async ({ phase, label, to, data, value = 0n, minimumGas = 0n }) =
     type: "eip1559",
   };
   const idempotencyKey = keccak256(stringToHex(key));
-  if (mainnetFork) {
+  if (mainnetFork || retirementRehearsal) {
     await append({
       type: "intent",
       recordedAt: new Date().toISOString(),
