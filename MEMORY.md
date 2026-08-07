@@ -6,8 +6,8 @@
 
 - Cause: `rdao-token-market.tsx` used the nonexistent base class `market-window-stats` instead of the shared `chart-window-stats`, so the five statistics below the bonding chart rendered as an unstyled definition list despite the RDAO column override.
 - Fix: Use `chart-window-stats rdao-market-stats` and assert that exact shared-grid binding in the marketing-page regression test. This is an application-only presentation correction; Solidity, ABIs, bytecode, APIs, databases, and onchain state are unchanged.
-- Verification: All 25 web test files and 88 tests, web typecheck, web lint, and frozen Schema-20 contract-closure verification pass.
-- Follow-up: Build and preview the shared release, verify the statistics grid on desktop/mobile Devnet, then promote the same application identity through Testnet and the signed Mainnet updater.
+- Verification: All 25 web test files and 88 tests, web typecheck, web lint, frozen Schema-20 contract-closure verification, and two reproducible Testnet builds pass. Desktop renders five equal columns; mobile renders two columns with no page overflow or browser warnings/errors.
+- Deployment: Testnet serves immutable release `/opt/robyn/testnet-releases/schema20-ae71226`. Mainnet serves signed release `mainnet-prod-20260807-3e316f0` from source `3e316f0a8c586978e63d8c77072734a84e1f9d1a`; production API/indexer/projector health reports zero lag. No contract, database, route, wallet, or onchain change occurred.
 
 ### 2026-08-07 - RDAO Ownership and Trades live on Testnet and Mainnet
 
