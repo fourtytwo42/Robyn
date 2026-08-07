@@ -238,6 +238,9 @@ if (base.chainId === 4663) {
   const catalogByAddress = new Map(
     mainnetAssetPolicy.assets.map((asset) => [getAddress(asset.address).toLowerCase(), asset]),
   );
+  const baseCatalogByAddress = new Map(
+    (base.assetCatalog?.assets ?? []).map((asset) => [getAddress(asset.address).toLowerCase(), asset]),
+  );
   const ladder = [
     100_000_000_000_000n,
     250_000_000_000_000n,
@@ -264,6 +267,7 @@ if (base.chainId === 4663) {
       continue;
     }
     const catalog = catalogByAddress.get(asset.toLowerCase());
+    const baseCatalog = baseCatalogByAddress.get(asset.toLowerCase());
     if (!catalog?.referencePrice || !catalog.candidatePools?.length) {
       throw new Error(`missing canonical Mainnet catalog identity for ${sourceRoute.symbol}`);
     }
@@ -302,6 +306,12 @@ if (base.chainId === 4663) {
         fee: Number(catalog.pool.fee),
         tickSpacing: Number(catalog.pool.tickSpacing),
         hooks: getAddress(catalog.pool.hooks ?? zeroAddress),
+      }] : []),
+      ...(baseCatalog?.pool ? [{
+        source: "application-catalog-candidate",
+        fee: Number(baseCatalog.pool.fee),
+        tickSpacing: Number(baseCatalog.pool.tickSpacing),
+        hooks: getAddress(baseCatalog.pool.hooks ?? zeroAddress),
       }] : []),
       ...(sourceRoute.candidatePools ?? []).map((pool) => ({
         source: "support-policy-candidate",
