@@ -26,8 +26,33 @@ const toolingSha = git("rev-parse", "HEAD");
 if (git("status", "--porcelain") !== "" || git("rev-parse", "@{upstream}") !== toolingSha) {
   throw new Error("Schema-20 input capture requires exact clean pushed tooling");
 }
-const base = JSON.parse(await readFile(path.resolve(baseManifestArgument), "utf8"));
-if (base.schemaVersion !== 19 || ![46630, 4663].includes(base.chainId)) throw new Error("qualified Schema-19 network manifest required");
+const captureSeed = JSON.parse(await readFile(path.resolve(baseManifestArgument), "utf8"));
+if (![46630, 4663].includes(captureSeed.chainId)) throw new Error("qualified network capture seed required");
+let sourceSchema19ManifestSha256;
+let base;
+if (captureSeed.schemaVersion === 19) {
+  base = captureSeed;
+  sourceSchema19ManifestSha256 = createHash("sha256").update(JSON.stringify(base)).digest("hex");
+} else if (captureSeed.schemaVersion === 20 && /^[0-9a-f]{64}$/.test(captureSeed.sourceSchema19ManifestSha256 ?? "")) {
+  base = {
+    schemaVersion: 19,
+    chainId: captureSeed.chainId,
+    deployer: captureSeed.deployer,
+    guardianSafe: captureSeed.guardianSafe,
+    contracts: {
+      guardian: captureSeed.guardianSafe,
+      daoToken: captureSeed.daoToken,
+      timelock: captureSeed.timelock,
+      governor: captureSeed.governor,
+      ...captureSeed.external,
+    },
+    assetRoutes: captureSeed.routes,
+    assetCatalog: captureSeed.assetCatalog,
+  };
+  sourceSchema19ManifestSha256 = captureSeed.sourceSchema19ManifestSha256;
+} else {
+  throw new Error("qualified Schema-19 manifest or prior protected Schema-20 input required");
+}
 let mainnetAssetPolicy = null;
 let mainnetAssetPolicySha256 = null;
 if (base.chainId === 4663) {
@@ -567,7 +592,7 @@ const input = {
   routes,
   assetCatalog,
   sourceSchema19Manifest: path.resolve(baseManifestArgument),
-  sourceSchema19ManifestSha256: createHash("sha256").update(JSON.stringify(base)).digest("hex"),
+  sourceSchema19ManifestSha256,
   mainnetAssetPolicySha256,
   routeQualificationRejections,
   capturedAt: new Date().toISOString(),
