@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import deployment from "@robyn/deployment";
 import { NetworkDaoView } from "@robyn/network-dao";
 import { SiteHeader } from "@/components/site-header";
+import { publicEnvironment } from "@/lib/public-environment";
 
 export const metadata: Metadata = {
   title: "RDAO Public Bonding Market | Sherwood Forest",
@@ -44,7 +45,9 @@ export default function RdaoPage() {
               <div className="token-title-line">
                 <p className="eyebrow">Sherwood&apos;s governance token</p>
                 <span className="live-chip">Public bonding</span>
-                <span className="campaign-test-chip">Schema-20 Devnet</span>
+                <span className="campaign-test-chip">
+                  {publicEnvironment.networkLabel}
+                </span>
               </div>
               <h1>
                 Robyn DAO <span>$RDAO</span>

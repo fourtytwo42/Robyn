@@ -12,6 +12,7 @@ import {
   type WalletClient,
 } from "viem";
 import type { Deployment } from "@/lib/deployment";
+import { publicEnvironment } from "@/lib/public-environment";
 import { DaoView } from "./dao-view";
 
 const saleAbi = parseAbi([
@@ -213,7 +214,9 @@ export function RdaoWorkspace({
 
   return <section className="dao-console rdao-workspace">
     <div className="dao-status-row">
-      <span className="status-chip success">Schema-20 Devnet only</span>
+      <span className="status-chip success">
+        Schema-20 on {publicEnvironment.networkLabel}
+      </span>
       <span className="muted">{status}</span>
       {!account && <button className="button primary" onClick={() => void connect()}>Connect wallet</button>}
     </div>

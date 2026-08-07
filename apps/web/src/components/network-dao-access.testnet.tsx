@@ -32,6 +32,7 @@ export function NetworkDaoAccessGate({
     daoToken: deployment.contracts.daoToken,
     publicClient,
   });
+  if (deployment.schemaVersion === 20) return children;
   return (
     <DaoAccessGate status={status} connect={connect}>
       {children}

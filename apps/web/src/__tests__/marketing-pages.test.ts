@@ -54,6 +54,8 @@ describe("marketing pages", () => {
     const rdao = source("../app/rdao/page.tsx");
     const market = source("../components/rdao-token-market.tsx");
     const devnetAccess = source("../components/network-dao-access.devnet.tsx");
+    const publicAccess = source("../components/network-dao-access.testnet.tsx");
+    const publicView = source("../components/network-dao.testnet.tsx");
     expect(home).toContain("<RdaoSaleSpotlight />");
     expect(rdao).toContain('surface="market"');
     expect(rdao).not.toContain("NetworkDaoAccessGate");
@@ -64,6 +66,18 @@ describe("marketing pages", () => {
     expect(market).not.toContain('label: "Stake"');
     expect(market).not.toContain('label: "Governance"');
     expect(devnetAccess).toContain("deployment.schemaVersion === 20");
+    expect(publicAccess).toContain("deployment.schemaVersion === 20");
+    expect(publicView).toContain("<RdaoTokenMarket");
+    expect(publicView).toContain("<RdaoWorkspace");
+    expect(publicView).toContain('surface === "market"');
+  });
+
+  it("keeps Schema-20 RDAO labels environment-aware", () => {
+    const page = source("../app/rdao/page.tsx");
+    const workspace = source("../components/rdao-workspace.tsx");
+    expect(page).toContain("publicEnvironment.networkLabel");
+    expect(workspace).toContain("publicEnvironment.networkLabel");
+    expect(workspace).not.toContain("Schema-20 Devnet only");
   });
 
   it("proxies direct Devnet browser API requests to the scoped data API", () => {
