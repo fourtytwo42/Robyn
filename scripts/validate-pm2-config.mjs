@@ -18,7 +18,7 @@ const testnet = loadConfig("infrastructure/pm2/ecosystem.testnet.config.cjs", {
   ROBYN_TESTNET_RELEASE_ROOT: "/opt/robyn/releases/validation",
   ROBYN_TESTNET_MANIFEST: path.join(
     repoRoot,
-    "deployments/46630-v4-schema19.json",
+    "deployments/46630-v4-schema20.json",
   ),
   ROBYN_TESTNET_AUTH_ORIGINS: "https://testnet.sherwoodforest.trade",
   ROBYN_TESTNET_PRIMARY_RPC_URL: "http://192.0.2.20:8547",
@@ -105,7 +105,7 @@ for (const name of minimums.keys()) {
   if (!names.has(name)) throw new Error(`reviewed PM2 app is missing: ${name}`);
 }
 if (names.has("robyn-keeper-testnet")) {
-  throw new Error("Schema-19 Testnet must not run a routine keeper");
+  throw new Error("Schema-19/20 Testnet must not run a routine keeper");
 }
 
 const privateTestnetRpc = "http://127.0.0.1:18548";

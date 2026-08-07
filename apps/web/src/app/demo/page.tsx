@@ -40,11 +40,7 @@ export default function DemoPage() {
             <p className="eyebrow">Accessible transcript</p>
             <h2 id="transcript-heading">The Sherwood story</h2>
           </div>
-          <a
-            className="text-link"
-            href="/media/sherwood-sizzle.vtt"
-            download
-          >
+          <a className="text-link" href="/media/sherwood-sizzle.vtt" download>
             Download captions
           </a>
         </div>
@@ -63,8 +59,8 @@ export default function DemoPage() {
           <article>
             <time>0:10–0:15</time>
             <p>
-              Every trade helps the market grow. A share of the fees can build
-              a reward basket chosen when the token is created.
+              Every trade helps the market grow. A share of the fees can build a
+              reward basket chosen when the token is created.
             </p>
           </article>
           <article>

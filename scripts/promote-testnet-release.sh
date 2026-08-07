@@ -90,8 +90,9 @@ prepare_database() {
       as_operator psql -h /var/run/postgresql -d "$database" -Atqc \
         "SELECT count(*) FROM schema_migrations"
     )"
-    [[ "$migration_count" == 15 ]] || {
-      echo "expected 15 migrations in $database, found $migration_count" >&2
+    expected_migrations="$(find "$target/packages/db/migrations" -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' | wc -l)"
+    [[ "$migration_count" == "$expected_migrations" ]] || {
+      echo "expected $expected_migrations migrations in $database, found $migration_count" >&2
       exit 1
     }
   elif ! database_exists; then
@@ -145,7 +146,7 @@ rollback() {
 
 prepare_database
 link_atomically "$target" "$current"
-target_manifest="$target/deployments/46630-v4-schema19.json"
+target_manifest="$target/$(jq -r '.deploymentManifestPath' "$target/testnet-release-manifest.json")"
 [[ -r "$target_manifest" ]]
 if ! start_stack "$target" "$database" "$target_manifest"; then rollback; exit 1; fi
 healthy=false

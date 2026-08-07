@@ -10,7 +10,7 @@ release_id="${1:-$git_sha}"
 target="/opt/robyn/testnet-releases/$release_id"
 staging="/opt/robyn/testnet-staging/$release_id.$$"
 archive="/tmp/robyn-testnet-source-$$.tar"
-deployment_manifest="${ROBYN_TESTNET_DEPLOYMENT_MANIFEST:-deployments/46630-v4-schema19.json}"
+deployment_manifest="${ROBYN_TESTNET_DEPLOYMENT_MANIFEST:-deployments/46630-v4-schema20.json}"
 gate_log="/tmp/robyn-testnet-gates-$$.log"
 security_json="/tmp/robyn-testnet-security-$$.json"
 gitleaks_json="/tmp/robyn-testnet-gitleaks-$$.json"
@@ -35,6 +35,20 @@ trap cleanup EXIT
 mkdir -p /opt/robyn/testnet-releases /opt/robyn/testnet-staging
 
 [[ -r "$deployment_manifest" ]] || { echo "missing Testnet deployment manifest: $deployment_manifest" >&2; exit 1; }
+schema_version="$(jq -r '.schemaVersion' "$deployment_manifest")"
+case "$schema_version" in
+  19)
+    contract_mode="frozen-schema19"
+    freeze_config="config/schema19-contract-freeze.json"
+    freeze_verifier="scripts/verify-schema19-contract-freeze.mjs"
+    ;;
+  20)
+    contract_mode="frozen-schema20"
+    freeze_config="config/schema20-contract-freeze.json"
+    freeze_verifier="scripts/verify-schema20-contract-freeze.mjs"
+    ;;
+  *) echo "unsupported Testnet schema: $schema_version" >&2; exit 1 ;;
+esac
 set -a
 # shellcheck disable=SC1090
 source "$release_env"
@@ -57,7 +71,7 @@ NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(
   pnpm format
   pnpm test:testnet-application-scope
   node --test scripts/test/testnet-endurance-policy.test.mjs
-  node scripts/verify-schema19-contract-freeze.mjs > "$freeze_evidence"
+  node "$freeze_verifier" > "$freeze_evidence"
   gitleaks git --redact --report-format json --report-path "$gitleaks_json" .
   pnpm audit --audit-level high --json > "$dependency_audit_json"
   jq -n \
@@ -65,7 +79,8 @@ NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(
     --arg gitSha "$git_sha" \
     --slurpfile gitleaks "$gitleaks_json" \
     --slurpfile dependencyAudit "$dependency_audit_json" \
-    '{schemaVersion:1,generatedAt:$generatedAt,gitSha:$gitSha,scope:"application-only",contractMode:"frozen-schema19",gitleaksFindings:($gitleaks[0]|length),dependencyAudit:$dependencyAudit[0],passed:(($gitleaks[0]|length)==0)}' \
+    --arg contractMode "$contract_mode" \
+    '{schemaVersion:1,generatedAt:$generatedAt,gitSha:$gitSha,scope:"application-only",contractMode:$contractMode,gitleaksFindings:($gitleaks[0]|length),dependencyAudit:$dependencyAudit[0],passed:(($gitleaks[0]|length)==0)}' \
     > "$security_json"
   jq -e '.passed == true' "$security_json" >/dev/null
 } 2>&1 | tee "$gate_log"
@@ -191,10 +206,12 @@ cp "$runtime_b" "$staging/release-evidence/runtime-build-b.sha256"
     --arg createdAt "$(date -u +%FT%TZ)" \
     --arg sourceArchiveSha256 "$source_sha" \
     --arg deploymentManifestSha256 "$(sha256sum "$deployment_manifest" | cut -d' ' -f1)" \
-    --arg contractFreezeSha256 "$(sha256sum config/schema19-contract-freeze.json | cut -d' ' -f1)" \
+    --arg deploymentManifestPath "$deployment_manifest" \
+    --arg contractFreezeSha256 "$(sha256sum "$freeze_config" | cut -d' ' -f1)" \
+    --arg contractMode "$contract_mode" \
     --arg nodeVersion "$(node --version)" \
     --arg pnpmVersion "$(pnpm --version)" \
-    '{schemaVersion:1,releaseId:$releaseId,gitSha:$gitSha,createdAt:$createdAt,environment:"robinhood-testnet",chainId:46630,sourceArchiveSha256:$sourceArchiveSha256,deploymentManifestSha256:$deploymentManifestSha256,contractFreezeSha256:$contractFreezeSha256,nodeVersion:$nodeVersion,pnpmVersion:$pnpmVersion,packageImportMethod:"copy",publicRpc:"https://rpc.testnet.chain.robinhood.com",contractMode:"frozen-schema19",gates:["format","application-tests","frozen-contract-attestation","endurance-policy","application-security-audit","two-build-reproducibility","protected-bundle"]}' \
+    '{schemaVersion:1,releaseId:$releaseId,gitSha:$gitSha,createdAt:$createdAt,environment:"robinhood-testnet",chainId:46630,deploymentManifestPath:$deploymentManifestPath,sourceArchiveSha256:$sourceArchiveSha256,deploymentManifestSha256:$deploymentManifestSha256,contractFreezeSha256:$contractFreezeSha256,nodeVersion:$nodeVersion,pnpmVersion:$pnpmVersion,packageImportMethod:"copy",publicRpc:"https://rpc.testnet.chain.robinhood.com",contractMode:$contractMode,gates:["format","application-tests","frozen-contract-attestation","endurance-policy","application-security-audit","two-build-reproducibility","protected-bundle"]}' \
     > testnet-release-manifest.json
   sha256sum testnet-release-manifest.json > testnet-release-manifest.json.sha256
   sha256sum -c testnet-release-files.sha256 >/dev/null
@@ -204,4 +221,4 @@ find "$staging" -mindepth 1 -exec chmod a-w {} +
 mv "$staging" "$target"
 staging=""
 chmod a-w "$target"
-printf 'release=%s\ngitSha=%s\ncontractMode=frozen-schema19\n' "$target" "$git_sha"
+printf 'release=%s\ngitSha=%s\ncontractMode=%s\n' "$target" "$git_sha" "$contract_mode"

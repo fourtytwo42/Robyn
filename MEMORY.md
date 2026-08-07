@@ -2,6 +2,14 @@
 
 ## Active Handoff
 
+### 2026-08-07 - Schema-20 live Testnet contracts and lifecycle passed
+
+- Context: The exact Schema-20 Testnet deployment was resumed only from confirmed journal state after the original gas ceiling stopped before nonce 3000. No confirmed or ambiguous transaction was replayed.
+- Result: All 46 deployment transactions and every restart-safe acceptance stage passed on chain 46630: six routes, launch, stake activation, RDAO sale, RDAO graduation, RDAO rewards, maintenance/claims, and reconciliation. Final state has fixed 1B RDAO supply, 800M retained eligible stake, exact WETH liability backing of `18035518342331` wei, nonzero locked liquidity, one launch, cleared deployment allowances, and Public mode with active conversions.
+- Manifests/evidence: `deployments/46630-v4-schema20.json` is the application-rebound live manifest with SHA-256 `446054ddaf4197045592011a146f9fcfff9339b67bd563727ee1a46ef67df132`. Sealed lifecycle evidence is `/home/hendo420/robyn-evidence/schema20-testnet/live-continuation-e7522ed-01`; `SHA256SUMS` has SHA-256 `1b8b7239eca6b2aa950f1d8a2a0b45a9e745b49a9f242c81a3218cd547688425`.
+- RPC correction: Current Nitro omits `eth_syncing`. Gateway tooling at `e7522ed13550f3bb247649735c64ab0a4dc6550c` accepts method-not-found only when independent head/chain probes pass, synthesizes `false` only for that validated request, and remains fail-closed without a healthy comparison head.
+- Follow-up: Commit/push the Schema-20-aware Testnet release and exact-state verifier, build twice reproducibly, promote into a fresh scoped database with transaction relay disabled, complete browser acceptance, then begin the exact LAN-sourced Mainnet fork rehearsal.
+
 ### 2026-08-07 - Schema-20 Devnet deep qualification passed
 
 - Context: Exact clean pushed candidate `3cb3803bc854e70d616bb8fad89783c8ab9ca1a5` completed the full Schema-20 deep gate before any live Testnet or Mainnet transaction.

@@ -7,8 +7,13 @@ cd "$release_real"
 sha256sum -c testnet-release-manifest.json.sha256 >/dev/null
 sha256sum -c testnet-release-files.sha256 >/dev/null
 git_sha="$(jq -r .gitSha testnet-release-manifest.json)"
-manifest="$release_real/deployments/46630-v4-schema19.json"
-jq -e '.schemaVersion == 19 and .chainId == 46630 and .initialState.launchMode == "Paused" and .deploymentEvidence.qualificationPassed == true' "$manifest" >/dev/null
+manifest="$release_real/$(jq -r .deploymentManifestPath testnet-release-manifest.json)"
+schema_version="$(jq -r .schemaVersion "$manifest")"
+case "$schema_version" in
+  19) jq -e '.chainId == 46630 and .initialState.launchMode == "Paused" and .deploymentEvidence.qualificationPassed == true' "$manifest" >/dev/null ;;
+  20) jq -e '.chainId == 46630 and .initialState.launchMode == "Public" and .deploymentEvidence.transactionCount == 46 and .applicationReleaseEvidence.contractRuntimeHashesUnchanged == true' "$manifest" >/dev/null ;;
+  *) echo "unsupported Testnet schema: $schema_version" >&2; exit 1 ;;
+esac
 
 pm2_json="$(PM2_HOME=/home/hendo420/.pm2 "$release_real/node_modules/.bin/pm2" jlist)"
 testnet="$(jq '[.[]|select(.name|endswith("-testnet"))]' <<<"$pm2_json")"
@@ -40,6 +45,7 @@ gateway_health="$(curl -fsS http://127.0.0.1:18548/health)"
 [[ "$(jq -r .expectedChainId <<<"$gateway_health")" -eq 46630 ]]
 [[ "$(jq -r .activeProvider <<<"$gateway_health")" == "primary" ]]
 [[ "$(jq -r .fallbackTrafficAuthorized <<<"$gateway_health")" == "false" ]]
+[[ "$(jq -r .publicRpcPolicy.transactionSubmissionAuthorized <<<"$gateway_health")" == "false" ]]
 [[ "$(jq -r .primary.healthy <<<"$gateway_health")" == "true" ]]
 [[ "$(jq -r .fallback.healthy <<<"$gateway_health")" == "true" ]]
 [[ "$(jq -r .headLagBlocks <<<"$gateway_health")" -le 50 ]]
@@ -73,8 +79,9 @@ status="$(curl -fsS http://127.0.0.1:3111/status)"
 curl -fsS http://127.0.0.1:3210/health >/dev/null
 public_status="$(curl -fsS https://testnet.sherwoodforest.trade/api/status)"
 [[ "$(jq -r .chainId <<<"$status")" -eq 46630 ]]
-[[ "$(jq -r .launchCount <<<"$status")" -eq 1 ]]
-[[ "$(jq -r .launchCount <<<"$public_status")" -eq 1 ]]
+expected_launches=1
+[[ "$(jq -r .launchCount <<<"$status")" -eq "$expected_launches" ]]
+[[ "$(jq -r .launchCount <<<"$public_status")" -eq "$expected_launches" ]]
 [[ "$(jq -r .launchCount <<<"$status")" == \
    "$(jq -r .launchCount <<<"$public_status")" ]]
 [[ "$(jq -r .chainId <<<"$public_status")" -eq 46630 ]]
@@ -91,9 +98,9 @@ for observed in "$status" "$public_status"; do
   [[ "$(jq -r .projectionStatus <<<"$observed")" == "ok" ]]
   [[ "$(jq -r .projectionAsOfBlock <<<"$observed")" =~ ^[0-9]+$ ]]
   [[ "$(jq -r .projectionLagBlocks <<<"$observed")" -le 100 ]]
-  [[ "$(jq -r .trackedLaunches <<<"$observed")" -eq 1 ]]
+  [[ "$(jq -r .trackedLaunches <<<"$observed")" -eq "$expected_launches" ]]
   [[ "$(jq -r .trackedAddresses <<<"$observed")" -ge 23 ]]
-  [[ "$(jq -r .trackedPoolIds <<<"$observed")" -eq 1 ]]
+  [[ "$(jq -r .trackedPoolIds <<<"$observed")" -ge 1 ]]
   jq -e '.ingestionCycleMs >= 0 and .projectionCycleMs >= 0 and .rpcRetryCount >= 0' \
     <<<"$observed" >/dev/null
 done
@@ -104,11 +111,19 @@ observed_head_gap=$(( local_observed_head - public_observed_head ))
 [[ "$observed_head_gap" -le 100 ]]
 deployment_verify_file=/tmp/robyn-testnet-deployment-verify.json
 rm -f "$deployment_verify_file"
-ROBYN_SCHEMA19_RPC_URL="$server_rpc_url" \
-  node scripts/verify-schema19-qualified-testnet.mjs \
-  "$manifest" \
-  "$deployment_verify_file" \
-  >/dev/null
+if [[ "$schema_version" == 20 ]]; then
+  ROBYN_SCHEMA20_RPC_URL="$server_rpc_url" \
+    node scripts/verify-schema20-qualified-testnet.mjs \
+    "$manifest" \
+    "$deployment_verify_file" \
+    >/dev/null
+else
+  ROBYN_SCHEMA19_RPC_URL="$server_rpc_url" \
+    node scripts/verify-schema19-qualified-testnet.mjs \
+    "$manifest" \
+    "$deployment_verify_file" \
+    >/dev/null
+fi
 jq -e '.passed == true' "$deployment_verify_file" >/dev/null
 
 jq -n \

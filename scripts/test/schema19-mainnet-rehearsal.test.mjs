@@ -25,11 +25,17 @@ test("Mainnet rehearsal is pinned to LAN, chain 4663, and local Anvil", () => {
   assert.match(runner, /has\("error"\) \| not/);
   assert.match(runner, /funded_balance/);
   assert.match(runner, /100000000000000000000/);
-  assert.match(runner, /packages\/contracts\/tmp\/schema19-mainnet-rehearsal-input\.json/);
+  assert.match(
+    runner,
+    /packages\/contracts\/tmp\/schema19-mainnet-rehearsal-input\.json/,
+  );
   assert.match(runner, /install -m 0600/);
   assert.match(runner, /sha256sum "\$local_deployment_input"/);
   assert.match(runner, /rm -f "\$local_deployment_input"/);
-  assert.match(runner, /local_deployment_input_name=tmp\/schema19-mainnet-rehearsal-input\.json/);
+  assert.match(
+    runner,
+    /local_deployment_input_name=tmp\/schema19-mainnet-rehearsal-input\.json/,
+  );
   assert.match(runner, /cd "\$repo\/packages\/contracts"/);
   assert.doesNotMatch(runner, /--root packages\/contracts/);
   assert.match(runner, /\(cd "\$evidence" && sha256sum -c SHA256SUMS\)/);

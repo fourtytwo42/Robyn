@@ -1,5 +1,11 @@
 import type { FastifyInstance } from "fastify";
-import { getAddress, isAddress, parseAbi, type Address, type PublicClient } from "viem";
+import {
+  getAddress,
+  isAddress,
+  parseAbi,
+  type Address,
+  type PublicClient,
+} from "viem";
 
 type Schema20Deployment = {
   schemaVersion?: number;
@@ -14,8 +20,16 @@ type Schema20Deployment = {
   };
   rdao?: {
     allocation: { retained: string; sale: string; liquidity: string };
-    pricing: { ethUsdFixture: string; ownerTargetUsd: string; liquidityTargetUsd: string };
-    staking: { warmupSeconds: number; rewardDurationSeconds: number; zeroSupplyDurationSeconds: number };
+    pricing: {
+      ethUsdFixture: string;
+      ownerTargetUsd: string;
+      liquidityTargetUsd: string;
+    };
+    staking: {
+      warmupSeconds: number;
+      rewardDurationSeconds: number;
+      zeroSupplyDurationSeconds: number;
+    };
   };
 };
 
@@ -74,103 +88,212 @@ export function registerRdaoRoutes(
   rpcClient: PublicClient,
   deployment: Schema20Deployment,
 ) {
-  app.get<{ Querystring: { account?: string } }>("/rdao", async (request, reply) => {
-    const { rdaoSale, rdaoStaking, rdaoLiquidityLocker } = deployment.contracts;
-    if (
-      deployment.schemaVersion !== 20 ||
-      !rdaoSale ||
-      !rdaoStaking ||
-      !rdaoLiquidityLocker
-    ) {
-      return reply.code(404).send({ error: "schema20_rdao_unavailable" });
-    }
-    const account = request.query.account && isAddress(request.query.account)
-      ? getAddress(request.query.account)
-      : undefined;
-    const saleReads = [
-      "saleInventory", "liquidityInventory", "sold", "curvePrincipal",
-      "curvePrincipalTarget", "deployerPayout", "liquidityNative", "totalBondingFees",
-      "totalFeesSettled", "pendingStakingFees", "buysPaused", "finalized",
-      "graduationReady", "currentPriceE18", "terminalPriceE18",
-    ] as const;
-    const stakingReads = [
-      "paused", "totalPrincipal", "totalEligibleStake", "totalWarmingStake",
-      "queuedRewards", "totalRewardsDeposited", "totalRewardsClaimed",
-      "outstandingLiability", "ordinaryStream", "zeroSupplyStream",
-    ] as const;
-    const lockerReads = [
-      "initialized", "poolId", "principalLiquidity", "principalWethUsed",
-      "principalRdaoUsed", "lockedRdaoResidual", "cumulativeWethFees",
-      "cumulativeRdaoFees", "cumulativeWethRewardsDeposited",
-    ] as const;
-    const [saleValues, stakingValues, lockerValues, supply, accountValues] = await Promise.all([
-      Promise.all(saleReads.map((functionName) => rpcClient.readContract({
-        address: rdaoSale, abi: saleAbi, functionName,
-      }))),
-      Promise.all(stakingReads.map((functionName) => rpcClient.readContract({
-        address: rdaoStaking, abi: stakingAbi, functionName,
-      }))),
-      Promise.all(lockerReads.map((functionName) => rpcClient.readContract({
-        address: rdaoLiquidityLocker, abi: lockerAbi, functionName,
-      }))),
-      rpcClient.readContract({
-        address: deployment.contracts.daoToken, abi: tokenAbi, functionName: "totalSupply",
-      }),
-      account
-        ? Promise.all([
-            rpcClient.readContract({ address: deployment.contracts.daoToken, abi: tokenAbi, functionName: "balanceOf", args: [account] }),
-            rpcClient.readContract({ address: deployment.contracts.daoToken, abi: tokenAbi, functionName: "delegates", args: [account] }),
-            rpcClient.readContract({ address: deployment.contracts.daoToken, abi: tokenAbi, functionName: "getVotes", args: [account] }),
-            rpcClient.readContract({ address: rdaoStaking, abi: stakingAbi, functionName: "position", args: [account] }),
-            deployment.contracts.wrappedNative
-              ? rpcClient.readContract({ address: deployment.contracts.wrappedNative, abi: tokenAbi, functionName: "balanceOf", args: [account] })
-              : Promise.resolve(0n),
-          ])
-        : Promise.resolve([0n, zeroAddress, 0n, [zeroAddress, 0n, 0n, 0n, zeroAddress, 0n], 0n] as const),
-    ]);
-    const sale = Object.fromEntries(saleReads.map((key, index) => [
-      key, typeof saleValues[index] === "bigint" ? saleValues[index].toString() : saleValues[index],
-    ]));
-    const staking = Object.fromEntries(stakingReads.map((key, index) => {
-      const value = stakingValues[index];
-      return [key, Array.isArray(value)
-        ? value.map((item) => typeof item === "bigint" ? item.toString() : item)
-        : typeof value === "bigint" ? value.toString() : value];
-    }));
-    const liquidity = Object.fromEntries(lockerReads.map((key, index) => [
-      key, typeof lockerValues[index] === "bigint" ? lockerValues[index].toString() : lockerValues[index],
-    ]));
-    const position = accountValues[3] as readonly [Address, bigint, bigint, bigint, Address, bigint];
-    return {
-      data: {
-        contracts: {
-          token: deployment.contracts.daoToken,
-          sale: rdaoSale,
-          staking: rdaoStaking,
-          liquidityLocker: rdaoLiquidityLocker,
-          governor: deployment.contracts.governor,
-          timelock: deployment.contracts.timelock,
-          wrappedNative: deployment.contracts.wrappedNative,
+  app.get<{ Querystring: { account?: string } }>(
+    "/rdao",
+    async (request, reply) => {
+      const { rdaoSale, rdaoStaking, rdaoLiquidityLocker } =
+        deployment.contracts;
+      if (
+        deployment.schemaVersion !== 20 ||
+        !rdaoSale ||
+        !rdaoStaking ||
+        !rdaoLiquidityLocker
+      ) {
+        return reply.code(404).send({ error: "schema20_rdao_unavailable" });
+      }
+      const account =
+        request.query.account && isAddress(request.query.account)
+          ? getAddress(request.query.account)
+          : undefined;
+      const saleReads = [
+        "saleInventory",
+        "liquidityInventory",
+        "sold",
+        "curvePrincipal",
+        "curvePrincipalTarget",
+        "deployerPayout",
+        "liquidityNative",
+        "totalBondingFees",
+        "totalFeesSettled",
+        "pendingStakingFees",
+        "buysPaused",
+        "finalized",
+        "graduationReady",
+        "currentPriceE18",
+        "terminalPriceE18",
+      ] as const;
+      const stakingReads = [
+        "paused",
+        "totalPrincipal",
+        "totalEligibleStake",
+        "totalWarmingStake",
+        "queuedRewards",
+        "totalRewardsDeposited",
+        "totalRewardsClaimed",
+        "outstandingLiability",
+        "ordinaryStream",
+        "zeroSupplyStream",
+      ] as const;
+      const lockerReads = [
+        "initialized",
+        "poolId",
+        "principalLiquidity",
+        "principalWethUsed",
+        "principalRdaoUsed",
+        "lockedRdaoResidual",
+        "cumulativeWethFees",
+        "cumulativeRdaoFees",
+        "cumulativeWethRewardsDeposited",
+      ] as const;
+      const [saleValues, stakingValues, lockerValues, supply, accountValues] =
+        await Promise.all([
+          Promise.all(
+            saleReads.map((functionName) =>
+              rpcClient.readContract({
+                address: rdaoSale,
+                abi: saleAbi,
+                functionName,
+              }),
+            ),
+          ),
+          Promise.all(
+            stakingReads.map((functionName) =>
+              rpcClient.readContract({
+                address: rdaoStaking,
+                abi: stakingAbi,
+                functionName,
+              }),
+            ),
+          ),
+          Promise.all(
+            lockerReads.map((functionName) =>
+              rpcClient.readContract({
+                address: rdaoLiquidityLocker,
+                abi: lockerAbi,
+                functionName,
+              }),
+            ),
+          ),
+          rpcClient.readContract({
+            address: deployment.contracts.daoToken,
+            abi: tokenAbi,
+            functionName: "totalSupply",
+          }),
+          account
+            ? Promise.all([
+                rpcClient.readContract({
+                  address: deployment.contracts.daoToken,
+                  abi: tokenAbi,
+                  functionName: "balanceOf",
+                  args: [account],
+                }),
+                rpcClient.readContract({
+                  address: deployment.contracts.daoToken,
+                  abi: tokenAbi,
+                  functionName: "delegates",
+                  args: [account],
+                }),
+                rpcClient.readContract({
+                  address: deployment.contracts.daoToken,
+                  abi: tokenAbi,
+                  functionName: "getVotes",
+                  args: [account],
+                }),
+                rpcClient.readContract({
+                  address: rdaoStaking,
+                  abi: stakingAbi,
+                  functionName: "position",
+                  args: [account],
+                }),
+                deployment.contracts.wrappedNative
+                  ? rpcClient.readContract({
+                      address: deployment.contracts.wrappedNative,
+                      abi: tokenAbi,
+                      functionName: "balanceOf",
+                      args: [account],
+                    })
+                  : Promise.resolve(0n),
+              ])
+            : Promise.resolve([
+                0n,
+                zeroAddress,
+                0n,
+                [zeroAddress, 0n, 0n, 0n, zeroAddress, 0n],
+                0n,
+              ] as const),
+        ]);
+      const sale = Object.fromEntries(
+        saleReads.map((key, index) => [
+          key,
+          typeof saleValues[index] === "bigint"
+            ? saleValues[index].toString()
+            : saleValues[index],
+        ]),
+      );
+      const staking = Object.fromEntries(
+        stakingReads.map((key, index) => {
+          const value = stakingValues[index];
+          return [
+            key,
+            Array.isArray(value)
+              ? value.map((item) =>
+                  typeof item === "bigint" ? item.toString() : item,
+                )
+              : typeof value === "bigint"
+                ? value.toString()
+                : value,
+          ];
+        }),
+      );
+      const liquidity = Object.fromEntries(
+        lockerReads.map((key, index) => [
+          key,
+          typeof lockerValues[index] === "bigint"
+            ? lockerValues[index].toString()
+            : lockerValues[index],
+        ]),
+      );
+      const position = accountValues[3] as readonly [
+        Address,
+        bigint,
+        bigint,
+        bigint,
+        Address,
+        bigint,
+      ];
+      return {
+        data: {
+          contracts: {
+            token: deployment.contracts.daoToken,
+            sale: rdaoSale,
+            staking: rdaoStaking,
+            liquidityLocker: rdaoLiquidityLocker,
+            governor: deployment.contracts.governor,
+            timelock: deployment.contracts.timelock,
+            wrappedNative: deployment.contracts.wrappedNative,
+          },
+          policy: deployment.rdao ?? null,
+          totalSupply: supply.toString(),
+          sale,
+          staking,
+          liquidity,
+          account: account
+            ? {
+                address: account,
+                liquidBalance: accountValues[0].toString(),
+                liquidDelegate: accountValues[1],
+                votingPower: accountValues[2].toString(),
+                escrow: position[0],
+                eligibleStake: position[1].toString(),
+                warmingStake: position[2].toString(),
+                activationTime: position[3].toString(),
+                stakeDelegate: position[4],
+                claimableWeth: position[5].toString(),
+                wethBalance: accountValues[4].toString(),
+              }
+            : null,
         },
-        policy: deployment.rdao ?? null,
-        totalSupply: supply.toString(),
-        sale,
-        staking,
-        liquidity,
-        account: account ? {
-          address: account,
-          liquidBalance: accountValues[0].toString(),
-          liquidDelegate: accountValues[1],
-          votingPower: accountValues[2].toString(),
-          escrow: position[0],
-          eligibleStake: position[1].toString(),
-          warmingStake: position[2].toString(),
-          activationTime: position[3].toString(),
-          stakeDelegate: position[4],
-          claimableWeth: position[5].toString(),
-          wethBalance: accountValues[4].toString(),
-        } : null,
-      },
-    };
-  });
+      };
+    },
+  );
 }

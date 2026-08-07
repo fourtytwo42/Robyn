@@ -100,14 +100,17 @@ function rpcMethodNotFound(response: unknown): boolean {
   const error = (response as { error?: unknown }).error;
   return Boolean(
     error &&
-      typeof error === "object" &&
-      (error as { code?: unknown }).code === -32_601,
+    typeof error === "object" &&
+    (error as { code?: unknown }).code === -32_601,
   );
 }
 
 function isSyncingOnlyBody(body: RpcBody): boolean {
   const entries = Array.isArray(body) ? body : [body];
-  return entries.length > 0 && entries.every((entry) => entry.method === "eth_syncing");
+  return (
+    entries.length > 0 &&
+    entries.every((entry) => entry.method === "eth_syncing")
+  );
 }
 
 function syncingFalseResponse(body: RpcBody): unknown {
@@ -310,7 +313,11 @@ export class TestnetRpcFailover {
       const syncingResult = syncingUnsupported
         ? null
         : rpcResult(syncingResponse, "eth_syncing");
-      syncing = syncingUnsupported ? null : syncingResult === false ? false : true;
+      syncing = syncingUnsupported
+        ? null
+        : syncingResult === false
+          ? false
+          : true;
       if (chainId !== this.expectedChainId) {
         throw new Error(`wrong chain ${chainId}`);
       }

@@ -32,7 +32,10 @@ export default async function FilmScenesPage({
   const scene: SceneName = isScene(query.scene) ? query.scene : "opening";
 
   return (
-    <main className={`${styles.stage} ${styles[scene]}`} data-film-scene={scene}>
+    <main
+      className={`${styles.stage} ${styles[scene]}`}
+      data-film-scene={scene}
+    >
       {/* Film capture is a fixed 1920x1080 canvas; bypass responsive image transforms. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -59,13 +62,24 @@ export default async function FilmScenesPage({
         <section className={styles.splitScene}>
           <div>
             <p className={styles.kicker}>FIND YOUR CROWD</p>
-            <h1>Follow the story.<br />Make your move.</h1>
+            <h1>
+              Follow the story.
+              <br />
+              Make your move.
+            </h1>
           </div>
           <div className={styles.marketStack}>
-            {[["CANOPY", "+704%"], ["SIGNAL", "+223%"], ["MOON", "+49%"]].map(([symbol, change]) => (
+            {[
+              ["CANOPY", "+704%"],
+              ["SIGNAL", "+223%"],
+              ["MOON", "+49%"],
+            ].map(([symbol, change]) => (
               <article key={symbol}>
-                <span>${symbol}</span><strong>{change}</strong>
-                <div><i /></div>
+                <span>${symbol}</span>
+                <strong>{change}</strong>
+                <div>
+                  <i />
+                </div>
               </article>
             ))}
           </div>
@@ -77,9 +91,17 @@ export default async function FilmScenesPage({
           <p className={styles.kicker}>THE MARKET GROWS A BASKET</p>
           <h1>Trade. Grow. Claim.</h1>
           <div className={styles.rewardFlow}>
-            <span>EVERY TRADE</span><b>→</b><span>REWARD BASKET</span><b>→</b><span>YOUR CLAIM</span>
+            <span>EVERY TRADE</span>
+            <b>→</b>
+            <span>REWARD BASKET</span>
+            <b>→</b>
+            <span>YOUR CLAIM</span>
           </div>
-          <div className={styles.assetRow}><i>GOOGL</i><i>NVDA</i><i>WETH</i></div>
+          <div className={styles.assetRow}>
+            <i>GOOGL</i>
+            <i>NVDA</i>
+            <i>WETH</i>
+          </div>
         </section>
       )}
 
@@ -88,12 +110,17 @@ export default async function FilmScenesPage({
           <div>
             <p className={styles.kicker}>YOUR IDEA. YOUR COMMUNITY.</p>
             <h1>Launch in minutes.</h1>
-            <p className={styles.subline}>Name it. Style it. Choose the rewards.</p>
+            <p className={styles.subline}>
+              Name it. Style it. Choose the rewards.
+            </p>
           </div>
           <div className={styles.launchCard}>
-            <span>01</span><strong>Choose a name</strong>
-            <span>02</span><strong>Build the look</strong>
-            <span>03</span><strong>Pick the basket</strong>
+            <span>01</span>
+            <strong>Choose a name</strong>
+            <span>02</span>
+            <strong>Build the look</strong>
+            <span>03</span>
+            <strong>Pick the basket</strong>
             <button>PLANT YOUR TOKEN →</button>
           </div>
         </section>
@@ -102,9 +129,17 @@ export default async function FilmScenesPage({
       {scene === "graduate" && (
         <section className={styles.centerScene}>
           <p className={styles.kicker}>FROM SPARK TO OPEN MARKET</p>
-          <h1>Build momentum.<br />Graduate.</h1>
-          <div className={styles.progress}><i /></div>
-          <div className={styles.locked}>◆ LIQUIDITY LOCKED FOR THE LONG HAUL</div>
+          <h1>
+            Build momentum.
+            <br />
+            Graduate.
+          </h1>
+          <div className={styles.progress}>
+            <i />
+          </div>
+          <div className={styles.locked}>
+            ◆ LIQUIDITY LOCKED FOR THE LONG HAUL
+          </div>
         </section>
       )}
 
@@ -114,15 +149,25 @@ export default async function FilmScenesPage({
             <p className={styles.kicker}>OWN A PIECE OF THE FOREST</p>
             <h1>Stake. Earn. Vote.</h1>
           </div>
-          <div className={styles.rdaoOrb}><span>RDAO</span><small>THE FOREST&apos;S HEARTBEAT</small></div>
+          <div className={styles.rdaoOrb}>
+            <span>RDAO</span>
+            <small>THE FOREST&apos;S HEARTBEAT</small>
+          </div>
         </section>
       )}
 
       {scene === "close" && (
         <section className={styles.centerScene}>
           <p className={styles.kicker}>THE NEXT STORY STARTS HERE</p>
-          <h1>Trade communities.<br /><em>Harvest what they grow.</em></h1>
-          <div className={styles.closeActions}><b>EXPLORE MARKETS</b><b>LAUNCH YOUR TOKEN</b></div>
+          <h1>
+            Trade communities.
+            <br />
+            <em>Harvest what they grow.</em>
+          </h1>
+          <div className={styles.closeActions}>
+            <b>EXPLORE MARKETS</b>
+            <b>LAUNCH YOUR TOKEN</b>
+          </div>
           <p className={styles.brand}>SHERWOOD FOREST</p>
         </section>
       )}

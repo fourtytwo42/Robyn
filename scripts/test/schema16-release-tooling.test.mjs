@@ -73,7 +73,7 @@ test("Schema-16 rehearsal is isolated and emits exact-commit gas evidence", asyn
   assert.match(source, /rm -rf -- "\$work"/);
 });
 
-test("Testnet release pipeline binds the Schema-18 manifest", async () => {
+test("Testnet release pipeline binds the active Schema-20 manifest", async () => {
   const build = await readFile("scripts/build-testnet-release.sh", "utf8");
   const promote = await readFile("scripts/promote-testnet-release.sh", "utf8");
   const verify = await readFile("scripts/verify-testnet-release.sh", "utf8");
@@ -82,10 +82,10 @@ test("Testnet release pipeline binds the Schema-18 manifest", async () => {
     "utf8",
   );
   const endurance = await readFile("scripts/testnet-endurance.mjs", "utf8");
-  assert.match(build, /deployments\/46630-v4-schema18\.json/);
+  assert.match(build, /deployments\/46630-v4-schema20\.json/);
   assert.match(
     build,
-    /ROBYN_DEPLOYMENT_PATH="\$staging\/\$deployment_manifest"/,
+    /ROBYN_DEPLOYMENT_PATH="\$build_root\/\$deployment_manifest"/,
   );
   assert.match(promote, /old_manifest=""/);
   assert.match(promote, /pm2_env\.env\.ROBYN_TESTNET_MANIFEST/);
@@ -95,15 +95,15 @@ test("Testnet release pipeline binds the Schema-18 manifest", async () => {
     promote,
     /start_stack[\s\\\n]+"\$old"[\s\\\n]+"\$\{old_database/,
   );
-  assert.match(verify, /\.schemaVersion == 18/);
-  assert.match(verify, /ROBYN_SCHEMA18_RPC_URL="\$server_rpc_url"/);
+  assert.match(verify, /deploymentManifestPath/);
+  assert.match(verify, /ROBYN_SCHEMA20_RPC_URL="\$server_rpc_url"/);
   assert.doesNotMatch(verify, /ROBYN_TESTNET_RPC_URL="\$server_rpc_url"/);
-  assert.match(verify, /verify-schema18-deployment\.mjs "\$manifest"/);
+  assert.match(verify, /verify-schema20-qualified-testnet\.mjs/);
   assert.match(verify, /fallbackTrafficAuthorized/);
   assert.match(promote, /ROBYN_TESTNET_CREATE_DATABASE/);
   assert.match(promote, /refusing to reuse database requested as fresh/);
   assert.match(promote, /createdb --owner="\$operator"/);
-  assert.match(promote, /expected 15 migrations/);
+  assert.match(promote, /expected \$expected_migrations migrations/);
   assert.match(promote, /ROBYN_TESTNET_WS_RPC_URL=""/);
   assert.match(
     installEndurance,

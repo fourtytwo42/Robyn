@@ -1,0 +1,520 @@
+{
+  "schemaVersion": 20,
+  "environment": "robyn-testnet",
+  "chainId": 46630,
+  "deploymentBlock": 97928882,
+  "gitCommit": "e7522ed13550f3bb247649735c64ab0a4dc6550c",
+  "gitSha": "e7522ed13550f3bb247649735c64ab0a4dc6550c",
+  "contractReleaseSha": "dd7afcfaad41a8c7054b3e9b581bfd4029e88e60",
+  "toolingSha": "e7522ed13550f3bb247649735c64ab0a4dc6550c",
+  "deployer": "0xecc5d6d032ADc9ca9E0F4042128067b8366da17A",
+  "guardianSafe": "0x8d523af06C357c689A7290fD76FaF72791eC60Ea",
+  "governance": {
+    "guardianSafe": "0x8d523af06C357c689A7290fD76FaF72791eC60Ea",
+    "daoToken": "0xb9Eac50f14D22d90CaD4Ec34fb93ff243f5FC9D6",
+    "timelock": "0x37D1457895cC5C23532e5be42AE7d518d1fE83dc",
+    "governor": "0xc71b81b2fa0F890b6d9B17E78d0b290305a5C5bb"
+  },
+  "contracts": {
+    "baseAsset": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+    "wrappedNative": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+    "rewardAssets": [
+      "0xD8c939f427815934e099002aFb59512191EE464c",
+      "0xF6ADDebdb72a47ee7d55B8D4914270fB723d01d4",
+      "0x2f63e9484CF6242507b1cE8C8A479e6Dbbc7e677",
+      "0x613863f5DcbD415039602e5A579103F160f69997",
+      "0xDfCcA159be0d4E1a034BD653728F7543B53cD940",
+      "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19"
+    ],
+    "poolManager": "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+    "positionManager": "0x58daec3116aae6D93017bAAea7749052E8a04fA7",
+    "quoter": "0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94",
+    "universalRouter": "0x8876789976dEcBfCbBbe364623C63652db8C0904",
+    "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "stateView": "0x8C5dB7B072e586ea4ea3ADE80d5BAc9A34E90fa5",
+    "guardian": "0x8d523af06C357c689A7290fD76FaF72791eC60Ea",
+    "daoToken": "0xb9Eac50f14D22d90CaD4Ec34fb93ff243f5FC9D6",
+    "timelock": "0x37D1457895cC5C23532e5be42AE7d518d1fE83dc",
+    "governor": "0xc71b81b2fa0F890b6d9B17E78d0b290305a5C5bb",
+    "assetRouter": "0x265E1370237aa63B21F1432a9419FcE69EA4a0Fe",
+    "launchDeployer": "0x778B74Ace9f53e867486Abb462A622b73BFe761E",
+    "vaultDeployer": "0x9243e76A88E50f2737D7A00fdfA70c409f1B783e",
+    "factory": "0x0AD5c3c2505B70907da2831A5879aFc96dD62425",
+    "launchFactory": "0x0AD5c3c2505B70907da2831A5879aFc96dD62425",
+    "protocolFeeRouter": "0x7b4b1831939d0eEF85C6a0C88334C09faDbd4751",
+    "feeRouter": "0x7b4b1831939d0eEF85C6a0C88334C09faDbd4751",
+    "rdaoStaking": "0xD8fec1ba677ea4FF1c30c0AB4b77CCB80a2bfda3",
+    "rdaoLiquidityLocker": "0xB75405cfDe57223dDf8d2F53fC00f677ad9712a0",
+    "rdaoSale": "0x8904D3A4D1D6511B9d8e6CF4ef285ad4f04b787d",
+    "maintenanceCoordinator": "0x6f4e44c8CdFdaF6E77FdE14fc17C88b1b5E00eE1",
+    "claimsRouter": "0xa3f67094Cd636b9CD46871Efd31d7F89bb0b56F0",
+    "tradeRouter": "0x3FF48BbdB431211971A7288F7D357EeC9b0c51e4",
+    "oracleHook": "0xfA914d698DC0C4333325E34201E0b242a1Ca98E4",
+    "adapterDeployer": "0x6f40b371544fB9D0aC9664062F44B2B4DCc887e5",
+    "lockerDeployer": "0xCAc6C34C7A6FD5e84829b9e0F6687a03E882f824",
+    "marketDeployer": "0x33d7Ade688DFfa99b864Ddfb2bE70d61a50eCF10",
+    "tokenSink": "0x3D916048ccCa451eAb0a62166c6b828f1e8c75fE",
+    "marketFactory": "0xCef96b17f28720E748498b3eFfaF3C86C2501ad2",
+    "atomicLaunchCoordinator": "0xE3D156eB1d299C3ECbEF68ee39B33B52Af5ad1A6",
+    "coordinator": "0xE3D156eB1d299C3ECbEF68ee39B33B52Af5ad1A6"
+  },
+  "runtimeCodeHashes": {
+    "assetRouter": "0xf27425ff753c2cc510b1925d82e0cc768dad052762e0f39bc951ba612aeed60f",
+    "launchDeployer": "0x72624512ecdccd021e67a7ef038beeb9fbff57a3554e2bcada9f21a21cb12d7e",
+    "vaultDeployer": "0xe00ac2b1a31f5578c30b1c54293758ecda78d992603b85410677f581e003b7d5",
+    "factory": "0x80598b9051cfaebd2d4a0c4ea955213913fd79002d78c5e038e4ecdac497a51d",
+    "launchFactory": "0x80598b9051cfaebd2d4a0c4ea955213913fd79002d78c5e038e4ecdac497a51d",
+    "protocolFeeRouter": "0x61e679bfd721d4bf2b34483320c2cf1d4d342d785e7689168c3c8dd4a5f920f8",
+    "feeRouter": "0x61e679bfd721d4bf2b34483320c2cf1d4d342d785e7689168c3c8dd4a5f920f8",
+    "rdaoStaking": "0xfee9de4f4f81a8fc2bfbebfc8093073c96c7042127587a8c8f33ae86ef3bfa5f",
+    "rdaoLiquidityLocker": "0x0a1638e78b5d6f43e3f56bbeb464b31d1b7d5c10976df4a9bba2cb01b0b86dfd",
+    "rdaoSale": "0x1270535fba94feae0fb9d729c36a889c81531f95f9eb9c264827099bcbff9613",
+    "maintenanceCoordinator": "0xcbef2118ef2c98b69dbb3a10175a51ba6012c04099bae9186b5b0827170bcdbc",
+    "claimsRouter": "0xaa3abd286e744344d40ec7ca6c5a7f39a75eede93c016ff765d08735f49f6237",
+    "tradeRouter": "0x5c0f3e6b608e05fa9527669360c25c8538b1551a7cd8a1f709c8ca7c0584bb48",
+    "oracleHook": "0xc4d91944763b5fec54af173b583e8a220d53b4cb3c627e2c85bcba3323d536d6",
+    "adapterDeployer": "0x6cb02af2a180b742b041e46f83ead8b00f040ad6a492b4a531a7eacb94612c09",
+    "lockerDeployer": "0x79875dceef102d7949bef6d32545d06ae574701b0c8336b6f2988e566edc7568",
+    "marketDeployer": "0x8f4adff29f1ddd3a6b1c2437a177d79da6d23b0f36cac65aee4d8546b975128a",
+    "tokenSink": "0xa8bf7ca1fc247eb461c219e063c9f4e605f1873fc4f813d257262d65011acbc6",
+    "marketFactory": "0x49f6eac958aaac3abddb568f45fb45479fd6c7f62436f50b7e5525c3ba894e91",
+    "atomicLaunchCoordinator": "0x8ae444fe03d1d32fc5eb167c7b3faeef207ad07ce8ba110b6dc53611ddce102b",
+    "coordinator": "0x8ae444fe03d1d32fc5eb167c7b3faeef207ad07ce8ba110b6dc53611ddce102b"
+  },
+  "reusedRuntimeCodeHashes": {
+    "guardianSafe": "0xd7d408ebcd99b2b70be43e20253d6d92a8ea8fab29bd3be7f55b10032331fb4c",
+    "daoToken": "0x2f2465c35240a6c9e14be65d6cf0e54510deffd7d16bbaf859ef9946305b3b78",
+    "timelock": "0xda8ce73375fcb32c9bba2d41cbcdb0a0c453a2423f0855263263184087daf0a1",
+    "governor": "0xaf37eedfc75dadba536904769103d42240552903aef9e4e76c8768fc62b3c582",
+    "create2Deployer": "0x2fa86add0aed31f33a762c9d88e807c475bd51d0f52bd0955754b2608f7e4989",
+    "poolManager": "0xbd3881180b547f5fe817545743cfb4343e96b1bc6640dcd70c106b0066e95626",
+    "positionManager": "0xf3a0edb689229fa4bf135a728f2ec2eb4a2fbee2e41e3e74ffadb7b4c56e8a6d",
+    "quoter": "0xd707b1da8cb165e5ea35a3b4450d971eb562ec171e23492aa117036b78a868f6",
+    "stateView": "0x7d9c591e0956fd89d98feb4ffcfe8bf1f7a62bd485edd979fa21d104b49878a6",
+    "permit2": "0x0117e0ed818bc3f2a8729ffc336c837e63e965f04b473047b39b35ad86aac259",
+    "universalRouter": "0xfdd90802f39ce5fc8bac4c2f1b3ac7bac530fd17ff46b0630f1bd00f1e14082f",
+    "wrappedNative": "0xa1513c4410cec44875c9b4877dabf3b4c3fc38230be914ac7ab5caf941daabcb"
+  },
+  "settings": {
+    "rewardDuration": 600,
+    "failureObservationSpacing": 60,
+    "fallbackDelay": 180,
+    "targetGraduationNative": "10000000000000000",
+    "maximumCurvePurchase": "1000000000000000",
+    "maximumGraduatedPurchase": "1000000000000000",
+    "minimumTradeNative": "1000000000000",
+    "stakingWarmup": 600,
+    "stakingRewardDuration": 600,
+    "zeroSupplyRewardDuration": 3600,
+    "maintenanceTaskGas": 2000000,
+    "maintenanceCallGas": 2050000
+  },
+  "sale": {
+    "saleInventory": "150000000000000000000000000",
+    "liquidityInventory": "50000000000000000000000000",
+    "retainedStake": "800000000000000000000000000",
+    "virtualTokenReserve": "600000000000000000000000000",
+    "virtualNativeReserve": "10800000000000000",
+    "curvePrincipalTarget": "3600000000000000",
+    "deployerPayout": "2000000000000000",
+    "liquidityNative": "1600000000000000",
+    "dustWei": "0",
+    "maximumWethResidual": "1000000",
+    "maximumRdaoResidual": "1000000"
+  },
+  "saleOracleEvidence": {
+    "kind": "accelerated-testnet-fixture",
+    "ownerTargetWei": "2000000000000000",
+    "liquidityTargetWei": "1600000000000000"
+  },
+  "assetCatalog": {
+    "schemaVersion": 19,
+    "snapshotAt": "2026-08-03T23:06:38.875Z",
+    "disclosure": "Schema-19 Testnet assets are deterministic test fixtures. They are not production Stock Tokens, backed shares, or redeemable securities.",
+    "policyVersion": "schema19-testnet-assets-v1",
+    "v4Venue": {
+      "quoter": "0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94"
+    },
+    "assets": [
+      {
+        "symbol": "GOOGL",
+        "mockSymbol": "tmGOOGL",
+        "name": "Robyn Testnet Mock Alphabet Class A",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x2e0847e8910a9732eb3fb1bb4b70a580adad4fe3.png",
+        "mainnetAddress": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+        "referencePriceUsd": "319.64",
+        "address": "0xD8c939f427815934e099002aFb59512191EE464c",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0xb1a665a5b9248cad13618ab970df14e481df34f637746a4511640de60a807975",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "100000000000000"
+        }
+      },
+      {
+        "symbol": "MSFT",
+        "mockSymbol": "tmMSFT",
+        "name": "Robyn Testnet Mock Microsoft",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xe93237c50d904957cf27e7b1133b510c669c2e74.png",
+        "mainnetAddress": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+        "referencePriceUsd": "383.25",
+        "address": "0xF6ADDebdb72a47ee7d55B8D4914270fB723d01d4",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0x1e8deab3f22246371d19ff3fddb2640948674040bfa6dbced9ae291e9fdaa60f",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "100000000000000"
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "mockSymbol": "tmNVDA",
+        "name": "Robyn Testnet Mock NVIDIA",
+        "category": "stock",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec.png",
+        "mainnetAddress": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+        "referencePriceUsd": "208.34",
+        "address": "0x2f63e9484CF6242507b1cE8C8A479e6Dbbc7e677",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0x97c1fccbf4119735593063ebe8f2bc23d3b28b911c848a54318ddfcc7a34e160",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "100000000000000"
+        }
+      },
+      {
+        "symbol": "SPCX",
+        "mockSymbol": "tmSPCX",
+        "name": "Robyn Testnet Mock SpaceX",
+        "category": "stock",
+        "logoUrl": null,
+        "mainnetAddress": null,
+        "referencePriceUsd": null,
+        "address": "0x613863f5DcbD415039602e5A579103F160f69997",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0x3ecd75f7b25e4ad891754853c48983bfdab1940ea570f09f4b55c5335295edca",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "100000000000000"
+        }
+      },
+      {
+        "symbol": "SPY",
+        "mockSymbol": "tmSPY",
+        "name": "Robyn Testnet Mock SPDR S&P 500 ETF Trust",
+        "category": "etf-commodity",
+        "logoUrl": "https://cdn.robinhood.com/ncw_assets/logos/0x117cc2133c37b721f49de2a7a74833232b3b4c0c.png",
+        "mainnetAddress": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+        "referencePriceUsd": "739.22",
+        "address": "0xDfCcA159be0d4E1a034BD653728F7543B53cD940",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-testnet-mock",
+        "mockOnly": true,
+        "route": {
+          "kind": "uniswap-v4",
+          "ready": true
+        },
+        "pool": {
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000",
+          "poolId": "0xc6f786e302f8393c768e1cbdbee08936e9da411d0182adf4aae9701ae9440c1f",
+          "zeroForOne": true,
+          "quoteAmountNativeWei": "100000000000000"
+        }
+      },
+      {
+        "symbol": "WETH",
+        "mockSymbol": "WETH",
+        "name": "Wrapped Ether",
+        "category": "crypto",
+        "logoUrl": "/assets/launchpad/asset-meth.webp",
+        "mainnetAddress": null,
+        "referencePriceUsd": null,
+        "address": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+        "chainId": 46630,
+        "decimals": 18,
+        "verification": "robyn-controlled-testnet-dex",
+        "mockOnly": true,
+        "route": {
+          "kind": "wrapped-native",
+          "ready": true
+        }
+      }
+    ],
+    "policyHash": "4e685645b4646cdc9ab0e5459817c02f8112aed4ecf46faa180b6dec165e9e4e"
+  },
+  "assetRoutes": [
+    {
+      "symbol": "GOOGL",
+      "asset": "0xD8c939f427815934e099002aFb59512191EE464c",
+      "kind": "uniswap-v4",
+      "enabled": true,
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hooks": "0x0000000000000000000000000000000000000000",
+      "minimumLiquidity": "1",
+      "maximumNativeInput": "1000000000000",
+      "referenceTick": 0,
+      "maximumReferenceTickDeviation": 0,
+      "enforceReferencePrice": false,
+      "verificationClass": "0xb35416af50ea2d860002633f2052208cedd01de06c995303329f070799c5ec12"
+    },
+    {
+      "symbol": "MSFT",
+      "asset": "0xF6ADDebdb72a47ee7d55B8D4914270fB723d01d4",
+      "kind": "uniswap-v4",
+      "enabled": true,
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hooks": "0x0000000000000000000000000000000000000000",
+      "minimumLiquidity": "1",
+      "maximumNativeInput": "1000000000000",
+      "referenceTick": 0,
+      "maximumReferenceTickDeviation": 0,
+      "enforceReferencePrice": false,
+      "verificationClass": "0xb35416af50ea2d860002633f2052208cedd01de06c995303329f070799c5ec12"
+    },
+    {
+      "symbol": "NVDA",
+      "asset": "0x2f63e9484CF6242507b1cE8C8A479e6Dbbc7e677",
+      "kind": "uniswap-v4",
+      "enabled": true,
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hooks": "0x0000000000000000000000000000000000000000",
+      "minimumLiquidity": "1",
+      "maximumNativeInput": "1000000000000",
+      "referenceTick": 0,
+      "maximumReferenceTickDeviation": 0,
+      "enforceReferencePrice": false,
+      "verificationClass": "0xb35416af50ea2d860002633f2052208cedd01de06c995303329f070799c5ec12"
+    },
+    {
+      "symbol": "SPCX",
+      "asset": "0x613863f5DcbD415039602e5A579103F160f69997",
+      "kind": "uniswap-v4",
+      "enabled": true,
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hooks": "0x0000000000000000000000000000000000000000",
+      "minimumLiquidity": "1",
+      "maximumNativeInput": "1000000000000",
+      "referenceTick": 0,
+      "maximumReferenceTickDeviation": 0,
+      "enforceReferencePrice": false,
+      "verificationClass": "0xb35416af50ea2d860002633f2052208cedd01de06c995303329f070799c5ec12"
+    },
+    {
+      "symbol": "SPY",
+      "asset": "0xDfCcA159be0d4E1a034BD653728F7543B53cD940",
+      "kind": "uniswap-v4",
+      "enabled": true,
+      "fee": 10000,
+      "tickSpacing": 200,
+      "hooks": "0x0000000000000000000000000000000000000000",
+      "minimumLiquidity": "1",
+      "maximumNativeInput": "1000000000000",
+      "referenceTick": 0,
+      "maximumReferenceTickDeviation": 0,
+      "enforceReferencePrice": false,
+      "verificationClass": "0xb35416af50ea2d860002633f2052208cedd01de06c995303329f070799c5ec12"
+    },
+    {
+      "symbol": "WETH",
+      "asset": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+      "kind": "wrapped-native",
+      "enabled": true,
+      "maximumNativeInput": "1000000000000000"
+    }
+  ],
+  "routes": [
+    {
+      "symbol": "GOOGL",
+      "asset": "0xD8c939f427815934e099002aFb59512191EE464c",
+      "enabled": true
+    },
+    {
+      "symbol": "MSFT",
+      "asset": "0xF6ADDebdb72a47ee7d55B8D4914270fB723d01d4",
+      "enabled": true
+    },
+    {
+      "symbol": "NVDA",
+      "asset": "0x2f63e9484CF6242507b1cE8C8A479e6Dbbc7e677",
+      "enabled": true
+    },
+    {
+      "symbol": "SPCX",
+      "asset": "0x613863f5DcbD415039602e5A579103F160f69997",
+      "enabled": true
+    },
+    {
+      "symbol": "SPY",
+      "asset": "0xDfCcA159be0d4E1a034BD653728F7543B53cD940",
+      "enabled": true
+    },
+    {
+      "symbol": "WETH",
+      "asset": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+      "enabled": true
+    }
+  ],
+  "routeChecks": [
+    {
+      "symbol": "GOOGL",
+      "asset": "0xD8c939f427815934e099002aFb59512191EE464c",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "symbol": "MSFT",
+      "asset": "0xF6ADDebdb72a47ee7d55B8D4914270fB723d01d4",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "symbol": "NVDA",
+      "asset": "0x2f63e9484CF6242507b1cE8C8A479e6Dbbc7e677",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "symbol": "SPCX",
+      "asset": "0x613863f5DcbD415039602e5A579103F160f69997",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "symbol": "SPY",
+      "asset": "0xDfCcA159be0d4E1a034BD653728F7543B53cD940",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "symbol": "WETH",
+      "asset": "0xB1babE777EFfc0C27FD45e34B15dc50fDC6b7D19",
+      "enabled": true,
+      "ready": true,
+      "reason": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "initialState": {
+    "launchMode": "Public",
+    "conversionsPaused": false,
+    "launchCount": "0",
+    "rdaoSupply": "1000000000000000000000000000",
+    "rdaoSaleBalance": "200000000000000000000000000",
+    "retainedStakeWarming": "800000000000000000000000000",
+    "retainedStakeEligible": "0",
+    "outstandingStakingLiability": "0"
+  },
+  "indexingPolicy": {
+    "version": 1,
+    "protocolRoots": [
+      "0x0ad5c3c2505b70907da2831a5879afc96dd62425",
+      "0x265e1370237aa63b21f1432a9419fce69ea4a0fe",
+      "0x33d7ade688dffa99b864ddfb2be70d61a50ecf10",
+      "0x37d1457895cc5c23532e5be42ae7d518d1fe83dc",
+      "0x3d916048ccca451eab0a62166c6b828f1e8c75fe",
+      "0x3ff48bbdb431211971a7288f7d357eec9b0c51e4",
+      "0x6f40b371544fb9d0ac9664062f44b2b4dcc887e5",
+      "0x6f4e44c8cdfdaf6e77fde14fc17c88b1b5e00ee1",
+      "0x778b74ace9f53e867486abb462a622b73bfe761e",
+      "0x7b4b1831939d0eef85c6a0c88334c09fadbd4751",
+      "0x8904d3a4d1d6511b9d8e6cf4ef285ad4f04b787d",
+      "0x9243e76a88e50f2737d7a00fdfa70c409f1b783e",
+      "0xa3f67094cd636b9cd46871efd31d7f89bb0b56f0",
+      "0xb75405cfde57223ddf8d2f53fc00f677ad9712a0",
+      "0xb9eac50f14d22d90cad4ec34fb93ff243f5fc9d6",
+      "0xc71b81b2fa0f890b6d9b17e78d0b290305a5c5bb",
+      "0xcac6c34c7a6fd5e84829b9e0f6687a03e882f824",
+      "0xcef96b17f28720e748498b3effaf3c86c2501ad2",
+      "0xd8fec1ba677ea4ff1c30c0ab4b77ccb80a2bfda3",
+      "0xe3d156eb1d299c3ecbef68ee39b33b52af5ad1a6",
+      "0xfa914d698dc0c4333325e34201e0b242a1ca98e4"
+    ],
+    "launchCoordinator": "0xe3d156eb1d299c3ecbef68ee39b33b52af5ad1a6",
+    "launchEventTopics": [
+      "0xd74962c237728681433889a5419834cff77965f55668fb014ee28925e2cef5f1"
+    ],
+    "poolManager": "0x8366a39cc670b4001a1121b8f6a443a643e40951",
+    "poolEventTopics": [
+      "0x29ef05caaff9404b7cb6d1c0e9bbae9eaa7ab2541feba1a9c4248594c08156cb",
+      "0x40e9cecb9f5f1f1c5b9c97dec2917b7ee92e57ba5563708daca94dd84ad7112f",
+      "0xdd466e674ea557f56295e2d0218a125ea4b4f0f6f3307b95f85e6110838d6438",
+      "0xf208f4912782fd25c7f114ca3723a2d5dd6f3bcc3ac8db5af63baa85f711d5ec"
+    ],
+    "addressBatchSize": 64,
+    "poolIdBatchSize": 32,
+    "policyHash": "752b4c3614c55c89591ae723dc62e9c183badd1eef35772d71d2ece739ab5be5"
+  },
+  "rpcPolicy": {
+    "primary": "lan",
+    "gateway": "http://127.0.0.1:18548",
+    "alchemy": "probe-only",
+    "fallbackTrafficAuthorized": false
+  },
+  "deploymentEvidence": {
+    "preparedManifestSha256": "6a00b4cd3228f55619306aaaef4dbdbd3390f5c80448d76eedb588108102f738",
+    "journalSha256": "0a04337f319083d0084dc845e3f65cc5124deba65220b9f500301b7661727d59",
+    "transactionPlanSha256": "9d7577cb5300d9b77af6e66b598545a8774feb3a5c3b14c8e24e89ca0eac9bdf",
+    "transactionCount": 46
+  },
+  "applicationReleaseEvidence": {
+    "previousToolingSha": "f5d503cae1fc56ad9b997d931d32582a1c35a065",
+    "previousManifestSha256": "fb7e3b8c244f4c7fe0219432d12f7201e29f72a95212eb1bfa85214797813796",
+    "reason": "Nitro primary omits eth_syncing; application gateway validates chain and bounded independent head comparison",
+    "contractReleaseSha": "dd7afcfaad41a8c7054b3e9b581bfd4029e88e60",
+    "contractSourceTree": "740639151c7d48e8f57a02e698513d87251b5de1",
+    "contractRuntimeHashesUnchanged": true
+  }
+}

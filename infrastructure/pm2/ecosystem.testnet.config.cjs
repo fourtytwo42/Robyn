@@ -13,7 +13,7 @@ const manifest = required("ROBYN_TESTNET_MANIFEST");
 const schemaVersion = JSON.parse(
   fs.readFileSync(manifest, "utf8"),
 ).schemaVersion;
-if (![18, 19].includes(schemaVersion)) {
+if (![18, 19, 20].includes(schemaVersion)) {
   throw new Error(`Unsupported Testnet schema: ${String(schemaVersion)}`);
 }
 const rpcUrl =
@@ -58,6 +58,7 @@ module.exports = {
               RPC_FALLBACK_TRAFFIC_AUTHORIZED:
                 process.env.ROBYN_TESTNET_RPC_FALLBACK_TRAFFIC_AUTHORIZED ||
                 "false",
+              RPC_TRANSACTION_SUBMISSION_AUTHORIZED: "false",
               RPC_PROBE_INTERVAL_MS: "30000",
               RPC_MAX_HEAD_LAG_BLOCKS: "50",
               RPC_RECOVERY_HEAD_LAG_BLOCKS: "10",
