@@ -4,6 +4,27 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Last verified 2026-08-11 23:23 CDT: dedicated Mainnet production host
+  `192.168.50.108` is restored after its 2026-08-11 reboot. The outage was
+  caused by `robyn-production.service` being disabled even though its saved
+  `robynapp` PM2 dump was valid; the unit is now enabled and a controlled
+  service restart resurrected all six production processes with zero PM2
+  restarts. `robyn-production-tunnel`, Nginx, PostgreSQL, and Redis are active
+  and enabled. Public `https://sherwoodforest.trade` and `/api/health` return
+  HTTP 200 on chain 4663 with zero ingestion/projection lag, and in-browser
+  acceptance found live RDAO state and no application console errors.
+- Last verified 2026-08-11 23:23 CDT: the authoritative VM
+  `192.168.50.250` now retains only the six Devnet and six Testnet PM2
+  processes; obsolete duplicate Mainnet entries were removed and the corrected
+  12-process list was saved. Devnet was rebuilt from the committed PM2
+  ecosystem after an old port-3000 dump caused a restart loop; Devnet health is
+  `ok` on chain 31337 and Testnet health is `ok` on chain 46630 with zero lag.
+  The monitoring collector now calls the deployed PM2 binary directly instead
+  of `pnpm exec pm2 jlist`, restoring successful 30-second metric collection.
+- Last verified 2026-08-11 23:23 CDT: Mainnet RPC
+  `192.168.50.173:8547`, Testnet RPC `192.168.50.117:8547`, and the public
+  Mainnet `/rpc` gateway return chain IDs 4663, 46630, and 4663 respectively;
+  all report `eth_syncing=false` and advancing heads.
 - Last verified 2026-08-02 21:47 CDT: mainnet
   `192.168.50.173:8547` now runs the pinned Nitro image with
   `--execution.caching.trie-dirty-cache=8192`. A controlled restart completed

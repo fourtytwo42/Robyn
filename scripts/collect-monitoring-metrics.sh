@@ -6,7 +6,6 @@ drill_file="/etc/robyn/monitoring-drill.env"
 if [[ -r "${drill_file}" ]]; then
   source "${drill_file}"
 fi
-repo="/home/hendo420/Robyn"
 tmp="$(mktemp "${output}.XXXXXX")"
 trap 'rm -f -- "${tmp}"' EXIT
 
@@ -63,7 +62,8 @@ metric "robyn_ipfs_pins{chain_id=\"31337\",component=\"ipfs\",scope=\"remote\",s
 metric "robyn_ipfs_stale_objects{chain_id=\"31337\",component=\"ipfs\"}" "${ipfs_stale}"
 metric "robyn_ipfs_stale_preparations{chain_id=\"31337\",component=\"ipfs\"}" "${prepared_stale}"
 
-pm2_json="$(cd "${repo}" && pnpm exec pm2 jlist 2>/dev/null || printf '[]')"
+pm2_bin="${ROBYN_PM2_BIN:-/opt/robyn/current/node_modules/.bin/pm2}"
+pm2_json="$(PM2_HOME="${PM2_HOME:-/home/hendo420/.pm2}" "${pm2_bin}" jlist 2>/dev/null || printf '[]')"
 printf '# HELP robyn_pm2_process_up Whether a declared PM2 process is online.\n# TYPE robyn_pm2_process_up gauge\n# HELP robyn_pm2_process_restarts PM2 restart count for a declared process.\n# TYPE robyn_pm2_process_restarts gauge\n' >>"${tmp}"
 for process in robyn-web robyn-rpc-gateway robyn-api robyn-indexer robyn-keeper robyn-artifacts; do
   status="$(jq -r --arg name "${process}" '.[] | select(.name==$name) | .pm2_env.status' <<<"${pm2_json}" 2>/dev/null | head -1)"
