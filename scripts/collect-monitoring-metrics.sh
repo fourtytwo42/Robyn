@@ -73,7 +73,19 @@ for process in robyn-web robyn-rpc-gateway robyn-api robyn-indexer robyn-keeper 
   metric "robyn_pm2_process_up{chain_id=\"31337\",component=\"${process}\",launch=\"all\",asset=\"all\"}" "${up}"
   metric "robyn_pm2_process_restarts{chain_id=\"31337\",component=\"${process}\"}" "${restarts}"
 done
-for process in robyn-web-testnet robyn-api-testnet robyn-indexer-testnet robyn-projector-testnet robyn-keeper-testnet robyn-artifacts-testnet; do
+testnet_status_json="$(curl -fsS --max-time 3 http://127.0.0.1:3111/status 2>/dev/null || printf '{}')"
+testnet_processes=(
+  robyn-web-testnet
+  robyn-rpc-gateway-testnet
+  robyn-api-testnet
+  robyn-indexer-testnet
+  robyn-projector-testnet
+  robyn-artifacts-testnet
+)
+if [[ "$(json_get "${testnet_status_json}" '.keeperExpected')" == "true" ]]; then
+  testnet_processes+=(robyn-keeper-testnet)
+fi
+for process in "${testnet_processes[@]}"; do
   status="$(jq -r --arg name "${process}" '.[] | select(.name==$name) | .pm2_env.status' <<<"${pm2_json}" 2>/dev/null | head -1)"
   restarts="$(jq -r --arg name "${process}" '.[] | select(.name==$name) | .pm2_env.restart_time' <<<"${pm2_json}" 2>/dev/null | head -1)"
   [[ "${status}" == "online" ]] && up=1 || up=0
@@ -114,7 +126,6 @@ metric "robyn_indexer_lag_blocks{chain_id=\"31337\",component=\"indexer\",launch
 printf '# HELP robyn_rpc_divergence_blocks Difference between operator and restricted user RPC heads.\n# TYPE robyn_rpc_divergence_blocks gauge\n' >>"${tmp}"
 metric "robyn_rpc_divergence_blocks{chain_id=\"31337\",component=\"rpc\",launch=\"all\",asset=\"all\"}" "${divergence}"
 
-testnet_status_json="$(curl -fsS --max-time 3 http://127.0.0.1:3111/status 2>/dev/null || printf '{}')"
 testnet_ingestion_lag="$(json_get "${testnet_status_json}" '.ingestionLagBlocks')"; [[ "${testnet_ingestion_lag}" =~ ^[0-9]+$ ]] || testnet_ingestion_lag=0
 testnet_projection_lag="$(json_get "${testnet_status_json}" '.projectionLagBlocks')"; [[ "${testnet_projection_lag}" =~ ^[0-9]+$ ]] || testnet_projection_lag=0
 testnet_ingestion_cycle="$(json_get "${testnet_status_json}" '.ingestionCycleMs')"; [[ "${testnet_ingestion_cycle}" =~ ^[0-9]+([.][0-9]+)?$ ]] || testnet_ingestion_cycle=0

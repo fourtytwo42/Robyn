@@ -4,6 +4,31 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Last verified 2026-08-17 17:34 CDT: Proxmox VM 108
+  (`SherwoodForest`) was stopped after host maintenance, causing Cloudflare 530
+  responses for `sherwoodforest.trade`. The exact VM was started through the
+  authenticated Proxmox console and its `Start at boot` option was changed from
+  `No` to `Yes`. Inside the VM, all six Mainnet PM2 processes resurrected with
+  zero restarts; the production service, tunnel, Nginx, PostgreSQL, Redis,
+  MinIO, IPFS, Prometheus, Alertmanager, and node exporter are active, and all
+  boot-critical units are enabled. Public browser acceptance passed with live
+  RDAO state and no application console errors.
+- Last verified 2026-08-17 17:34 CDT: Mainnet RPC
+  `192.168.50.173:8547` reports chain 4663, `eth_syncing=false`, and an
+  advancing head; its Prometheus host and Nitro targets are up. Testnet RPC
+  `192.168.50.117:8547` reports chain 46630, `eth_syncing=false`, and an
+  advancing head. The application gateways select LAN primary, report both LAN
+  and comparison providers healthy, and observed only two Mainnet blocks and
+  one Testnet block of comparison lag with zero authorized or actual fallback
+  traffic. Mainnet and Testnet application ingestion/projection lag are zero.
+- Last verified 2026-08-17 17:34 CDT: the shared VM has 12/12 intended Devnet
+  and Testnet PM2 processes online with zero restarts and no failed systemd
+  units. A false critical alert was fixed by making the metrics collector derive
+  the optional Testnet keeper from live `keeperExpected` policy and by adding
+  the required Testnet RPC gateway to its monitored topology. The live policy
+  says `keeperExpected=false`; the six emitted Testnet PM2 health metrics are
+  all 1 and Alertmanager has zero active alerts. Root disk use is 84 percent
+  with about 15 GiB free and should continue to be watched.
 - Last verified 2026-08-11 23:23 CDT: dedicated Mainnet production host
   `192.168.50.108` is restored after its 2026-08-11 reboot. The outage was
   caused by `robyn-production.service` being disabled even though its saved
