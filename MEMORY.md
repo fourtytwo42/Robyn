@@ -4,6 +4,24 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Last verified 2026-08-21 12:50 CDT: Mainnet and Testnet public sites return
+  HTTP 200 and passed Codex in-app-browser acceptance with live data and no
+  application console warnings/errors. Mainnet production has 6/6 PM2
+  processes online with zero restarts; its Cloudflare tunnel and all
+  boot-critical services are active and enabled. The shared VM has all 12/12
+  intended Devnet/Testnet PM2 processes online and no failed systemd units or
+  active Alertmanager alerts.
+- Last verified 2026-08-21 12:50 CDT: Mainnet RPC `192.168.50.173:8547`
+  (chain 4663) and Testnet RPC `192.168.50.117:8547` (chain 46630) both report
+  `eth_syncing=false` with advancing heads. Both application gateways select
+  the healthy LAN primary, both comparison providers are healthy, and paid
+  fallback traffic is zero. Mainnet and Testnet ingestion/projection lag are
+  zero. Testnet indexer restarts were traced to the shared VM crossing its 85%
+  disk guard because PM2 logs had accumulated to 6.2 GiB. Those logs were
+  truncated (not recoverable), disk use fell to 73% with about 24 GiB free,
+  and persistent daily rotation at 100 MiB with seven compressed copies was
+  installed as `/etc/logrotate.d/robyn-pm2`; `logrotate.timer` is active and
+  enabled.
 - Last verified 2026-08-17 17:34 CDT: Proxmox VM 108
   (`SherwoodForest`) was stopped after host maintenance, causing Cloudflare 530
   responses for `sherwoodforest.trade`. The exact VM was started through the
@@ -1405,6 +1423,29 @@ Durable project context lives here. Update this file whenever information should
 - Follow-up: Complete desktop/mobile Codex in-app-browser acceptance when the listed IAB backend returns a bindable session. The browser runtime failure is tooling-side and is not counted as a passed UI gate.
 
 ## Current State
+
+### 2026-08-21 - Full production, app, and RPC health audit
+
+- Context: the user requested an end-to-end check of the app, all servers, and
+  both dedicated RPC nodes after the earlier Mainnet outage.
+- Verification: both public sites return HTTP 200 and passed in-app-browser
+  acceptance with live data and no application console warnings/errors.
+  Mainnet production has 6/6 PM2 processes online; the shared VM has all 12/12
+  intended Devnet/Testnet processes online; systemd services and reboot
+  persistence are enabled; Alertmanager has no active alerts. Mainnet and
+  Testnet APIs reported zero ingestion and projection lag. Dedicated RPCs
+  returned chain IDs 4663 and 46630, `eth_syncing=false`, and advancing heads;
+  both gateways use their healthy LAN primaries with healthy comparison
+  providers and zero paid fallback traffic.
+- Repair: Testnet indexer restart count 20 was caused by its intentional disk
+  guard when shared-VM disk utilization crossed 85%. PM2 logs were the cause
+  at 6.2 GiB, including a 4.4 GiB stale gateway error log. All PM2 `.log` files
+  were truncated and cannot be recovered. Root disk utilization fell from 85%
+  to 73%, leaving about 24 GiB free. `/etc/logrotate.d/robyn-pm2` now rotates
+  daily when logs exceed 100 MiB, retains seven compressed generations, and
+  uses `copytruncate`; the system `logrotate.timer` is active and enabled.
+- Result: the indexer recovered without a manual restart, is current at the
+  observed Testnet head, and all 12 shared-VM processes remained online.
 
 ### 2026-08-01 - Public-only RPC resilience deployed
 
