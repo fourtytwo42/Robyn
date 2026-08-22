@@ -4,6 +4,21 @@ Durable project context lives here. Update this file whenever information should
 
 ## Active Handoff
 
+- Last verified 2026-08-22 16:49 CDT: Proxmox VM 173
+  (`RH-Mainnet-RPC` on node `fourtyfour`) was resized from 96 GiB to 72 GiB,
+  reclaiming 24 GiB for the cluster. `Start at boot` remains `Yes`. The Nitro
+  container is now bounded to 62 GiB memory / 66 GiB memory-plus-swap with
+  `GOMEMLIMIT=54GiB`; the 8 GiB dirty-trie cache and 8 GB host free-memory
+  guard remain enabled. A rollback service file exists at
+  `/etc/systemd/system/robinhood-mainnet-node.service.pre-72g.20260822T214136Z`.
+  After the controlled reboot, Ubuntu sees 70 GiB RAM and 8 GiB swap, Nitro has
+  zero OOM events, all six node/failover services and timers are active and
+  enabled, and both Prometheus targets are up with no Alertmanager alerts.
+  Direct RPC reports chain 4663, `eth_syncing=false`, an advancing head, and a
+  matching official-RPC hash 1,000 blocks deep. The application gateway is
+  back on its healthy LAN primary with zero head, ingestion, and projection
+  lag and zero paid fallback traffic. Public HTTP and in-app-browser acceptance
+  passed with live RDAO data and no application console warnings/errors.
 - Last verified 2026-08-21 12:50 CDT: Mainnet and Testnet public sites return
   HTTP 200 and passed Codex in-app-browser acceptance with live data and no
   application console warnings/errors. Mainnet production has 6/6 PM2
@@ -1424,6 +1439,27 @@ Durable project context lives here. Update this file whenever information should
 
 ## Current State
 
+### 2026-08-22 - Mainnet RPC VM resized to 72 GiB
+
+- Context: seven-day Nitro telemetry showed a 43.5 GiB working-set peak while
+  the 96 GiB VM never fell below about 51 GiB available. The user needed RAM
+  for another VM and explicitly approved a controlled resize.
+- Decision: Proxmox VM 173 (`RH-Mainnet-RPC`) now has 72 GiB RAM. The deployed
+  and repository systemd service use Docker memory 62 GiB, total memory+swap
+  66 GiB, and `GOMEMLIMIT=54GiB`; the existing 8 GiB dirty-trie cache and
+  8 GB Nitro host-free guard remain. Do not lower this VM below Robinhood's
+  documented 64 GiB minimum without a new capacity review.
+- Files: deployed `/etc/systemd/system/robinhood-mainnet-node.service` with
+  rollback `.pre-72g.20260822T214136Z`; source
+  `infrastructure/robinhood-rpc/systemd/robinhood-mainnet-node.service`.
+- Verification: Proxmox reports 72.00 GiB and `Start at boot: Yes`; Ubuntu
+  reports 70 GiB visible RAM and 8 GiB swap. All required services/timers are
+  active and enabled, cgroup OOM counters are zero, and host/Nitro Prometheus
+  targets are up with no active alerts. Direct RPC is synchronized and
+  advancing, the block hash at head minus 1,000 matches Robinhood's official
+  RPC, the application gateway is healthy on LAN primary with zero lag and
+  zero paid fallback traffic, and public browser acceptance passed.
+
 ### 2026-08-21 - Full production, app, and RPC health audit
 
 - Context: the user requested an end-to-end check of the app, all servers, and
@@ -2457,6 +2493,15 @@ When sources conflict, use this order:
 - Testnet proof uses locally deployed mock ERC-20s, mock Chainlink-style feeds, and a mock issuer-controlled token. Do not reuse mainnet Stock Token addresses because no canonical testnet Stock Token registry was located.
 
 ## Verification Ledger
+
+- 2026-08-22: Mainnet RPC Proxmox VM 173 was cleanly powered down, resized from
+  96 GiB to 72 GiB, and booted with coordinated Nitro limits of 62 GiB Docker
+  memory, 66 GiB memory-plus-swap, and `GOMEMLIMIT=54GiB`. Start-at-boot stayed
+  enabled. Post-reboot checks passed `eth_syncing=false`, advancing heads,
+  official/local canonical hash equality 1,000 blocks deep, healthy LAN
+  gateway selection, zero ingestion/projection/head lag, zero paid fallback,
+  zero cgroup OOM events, both Prometheus targets up, no Alertmanager alerts,
+  HTTP 200, and in-app-browser acceptance with no application console errors.
 
 - 2026-08-02: Mainnet Nitro disk-growth correction was installed on
   `192.168.50.173` without pruning or rebuilding chain data. Pre-change
